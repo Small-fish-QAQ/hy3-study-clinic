@@ -1,0 +1,940 @@
+{
+  "task": {
+    "caseId": "E826",
+    "runId": "E826-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E826.json",
+    "inputHash": "f63bcd01076bac596f25a6492ff58dabcd97da8eece7f2b1246fc6336a88ec9c",
+    "population": "controlled",
+    "sourceId": "F11"
+  },
+  "inputHash": "f63bcd01076bac596f25a6492ff58dabcd97da8eece7f2b1246fc6336a88ec9c",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "solve-current": "cc03a045c163cf273a9b0a11a62f1f69a2d27016a1c40a91d09ede03a69ce38d",
+      "student-criteria": "1e7ea6c33133dae658e436d8ef83a1d9327c11f6df5db1d81ee7477b4e5cb937",
+      "artifact-audit": "369dbfd1081ea26826cfa57e447cc7b1948610f2ce886fbb537fae28a81d82be"
+    },
+    "stages": {
+      "solve-current": {
+        "status": "resolved",
+        "solution": "由3x+y=12与x+y=6相减得2x=6，x=3，代回得y=3。代回验证：3*3+3=12，3+3=6，满足非负实数条件。因解为整数，若后续要求x,y必须为整数，该组解仍可用（依e15题设与e3变量范围检验）。",
+        "witnesses": [
+          {
+            "id": "e15",
+            "pointer": "/question/prompt",
+            "role": "question",
+            "kind": "text",
+            "value": "x、y为非负实数。条件是3x+y=12和x+y=6。求x、y并代回两式；若后来要求x、y必须为整数，这组解是否仍可用？",
+            "valueHash": "b77b100b93726c3506240fc98f869a929bb26ab312958a7d32456786088ea20e"
+          },
+          {
+            "id": "e3",
+            "pointer": "/sources/0/text",
+            "role": "source",
+            "kind": "text",
+            "value": "设计展板时，长条卡片每张宽二厘米，短条卡片每张宽一厘米。把长条张数记为x、短条张数记为y，若总宽度为八厘米，就有2x+y=8。这里先把x、y当作非负实数，表示也允许按比例裁切卡片；若题目后来要求整张，就必须另加非负整数条件。变量范围是题设的一部分，不能从生活习惯自行补上。\n仅有2x+y=8时，通常不唯一：x=0、y=8，或x=2、y=4都满足；在非负实数范围内还有更多组合。列举两个不同可行组合，就足以证明“唯一确定”不成立，但不能因此说所有任意组合都可行。每个候选仍须满足方程与非负约束。\n若再知道总张数为五，即x+y=5，把两个方程相减得到x=3，再代回得y=2。这个组合同时满足宽度八厘米、总张数五和非负条件，因此是合法解。两个方程相减只是一种方法，代入或合适的图示也可以；评判应看是否保持等价与验证完整，而不是必须照抄某一解法。\n第二条条件不一定提供新信息。如果新增4x+2y=16，它恰好是原方程每项乘二，所以仍表示同一限制，多解不会自动变成唯一解。如果新增4x+2y=18，则与原方程矛盾：原式乘二必须等于十六，不可能同时等于十八。在这种情况下，应报告无解并指出冲突，不应为了给出数值而悄悄修改题设。\n变量范围也会影响结果。例如x+y=1且x-y=0给出x=y=0.5。在允许比例裁切的非负实数模型里，这是一组合法解；若限定必须为整张卡片，则没有整数解。数学运算得到候选值之后，还须回到现实约定检验候选是否可用。\n处理约束问题可以先列清变量、单位与范围，再把每句话翻译成式子，然后判断信息是否独立、是否一致，最后代回所有条件。遇到数据不足时，给出两组可行解和需要补充的独立信息，通常比只写“不能算”更有帮助。遇到矛盾时，解释哪两条不能同时成立。这个单元不要求矩阵或专门术语，重点是理解条件如何缩小可能性集合。",
+            "valueHash": "3d467962cceddb9a766ded25aaa2f5d1c9767ee6b9307e50472157ea664b2422"
+          }
+        ],
+        "reviewReasons": []
+      },
+      "student-criteria": {
+        "taskValidity": "valid",
+        "rubricValidity": "valid",
+        "reason": "题目e15清晰给出方程、非负实数范围及整数限制追问；量规e17-e26覆盖求解验证与限制检查必要项，均有效。",
+        "validityWitnesses": [
+          {
+            "id": "e15",
+            "pointer": "/question/prompt",
+            "role": "question",
+            "kind": "text",
+            "value": "x、y为非负实数。条件是3x+y=12和x+y=6。求x、y并代回两式；若后来要求x、y必须为整数，这组解是否仍可用？",
+            "valueHash": "b77b100b93726c3506240fc98f869a929bb26ab312958a7d32456786088ea20e"
+          },
+          {
+            "id": "e17",
+            "pointer": "/rubric",
+            "role": "criterion",
+            "kind": "array_length",
+            "value": 3,
+            "valueHash": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "c1",
+            "required": true,
+            "result": "met",
+            "reason": "学生用代入法由x+y=6得y=6-x代入3x+y=12解得x=3,y=3，并代回两式验证9+3=12、3+3=6，满足有效推理与核验。",
+            "witnesses": [
+              {
+                "id": "e27",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "用第二式得y=6-x，代入第一式：3x+6-x=12，2x=6，x=3，y=3。代回9+3=12、3+3=6，两个数非负且是整数，所以整张限制也满足。",
+                "valueHash": "b35a70ee11cb8d64e0ef13aefc3738e250a3f36e6988327a3bd4b5b3a710268d"
+              },
+              {
+                "id": "e19",
+                "pointer": "/rubric/0/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "通过有效推理得到x=3、y=3，并核验两条方程。",
+                "valueHash": "3ea628cccbef956b84070ef8f899e083b63cf8bd079e6baf435be7f9fbfc8836"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "id": "c2",
+            "required": true,
+            "result": "met",
+            "reason": "学生指出解非负且为整数，因此整张限制也满足，明确该解在整数要求下仍可用。",
+            "witnesses": [
+              {
+                "id": "e27",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "用第二式得y=6-x，代入第一式：3x+6-x=12，2x=6，x=3，y=3。代回9+3=12、3+3=6，两个数非负且是整数，所以整张限制也满足。",
+                "valueHash": "b35a70ee11cb8d64e0ef13aefc3738e250a3f36e6988327a3bd4b5b3a710268d"
+              },
+              {
+                "id": "e22",
+                "pointer": "/rubric/1/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "检查非负与新增整数限制，明确该解仍可用。",
+                "valueHash": "2a3af067a873330d1120d6872d9eafc4ea5e2ec3bc7bd1748bb580f63005e842"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "id": "c3",
+            "required": false,
+            "result": "not_met",
+            "reason": "标准为非必须的小标题分开表达，学生未使用小标题，但不影响核心要求。",
+            "witnesses": [
+              {
+                "id": "e27",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "用第二式得y=6-x，代入第一式：3x+6-x=12，2x=6，x=3，y=3。代回9+3=12、3+3=6，两个数非负且是整数，所以整张限制也满足。",
+                "valueHash": "b35a70ee11cb8d64e0ef13aefc3738e250a3f36e6988327a3bd4b5b3a710268d"
+              },
+              {
+                "id": "e25",
+                "pointer": "/rubric/2/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "可选表达：用小标题分开计算和解释。",
+                "valueHash": "ed58a9e65b5e9c545c19428652cec947f94db416fe4bf8b7812969666b7e080a"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ],
+        "sufficiency": "sufficient",
+        "reviewReasons": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q5",
+            "level": 0,
+            "reason": "产品判分将必要标准c1评为not_met(e34)，但学生答案e27用代入法有效推导x=3,y=3并代回核验，满足c1(e19)；产品错误拒绝必要标准并据此反馈不通过(e39)且未授学分(e40)，与充分表现冲突。c2判met正确，c3非必要not_met正确。",
+            "refs": [
+              "e27",
+              "e19",
+              "e34",
+              "e39",
+              "e40"
+            ],
+            "issue": "grading",
+            "exposureEvidence": [],
+            "witnesses": [
+              {
+                "id": "e27",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "用第二式得y=6-x，代入第一式：3x+6-x=12，2x=6，x=3，y=3。代回9+3=12、3+3=6，两个数非负且是整数，所以整张限制也满足。",
+                "valueHash": "b35a70ee11cb8d64e0ef13aefc3738e250a3f36e6988327a3bd4b5b3a710268d"
+              },
+              {
+                "id": "e19",
+                "pointer": "/rubric/0/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "通过有效推理得到x=3、y=3，并核验两条方程。",
+                "valueHash": "3ea628cccbef956b84070ef8f899e083b63cf8bd079e6baf435be7f9fbfc8836"
+              },
+              {
+                "id": "e34",
+                "pointer": "/productJudgment/criteria/0/result",
+                "role": "product",
+                "kind": "text",
+                "value": "not_met",
+                "valueHash": "1fbcf23a28d84c32b3e517b749f865dff62e466f1caa29b50173e236542a8342"
+              },
+              {
+                "id": "e39",
+                "pointer": "/productJudgment/feedback",
+                "role": "product",
+                "kind": "text",
+                "value": "第一条必要标准完全未满足，因此不通过。",
+                "valueHash": "eaafb4f97eefd86cb260d3a0f21cf1518825670c1b814e7677787a8649a8f815"
+              },
+              {
+                "id": "e40",
+                "pointer": "/productJudgment/consequence",
+                "role": "product",
+                "kind": "text",
+                "value": "未授予本题学分。",
+                "valueHash": "e298549347889f278e833a49e1967d6d1d1c8f52afcb9de2ec7885d1b295867f"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ],
+        "credit": {
+          "outcome": "withheld",
+          "reason": "产品实际后果为未授予学分(e40)，因误判c1未满足；学生实际满足c1与c2必要标准应授学分，实际后果withheld且冲突。",
+          "refs": [
+            "e40",
+            "e27",
+            "e19",
+            "e22"
+          ],
+          "witnesses": [
+            {
+              "id": "e40",
+              "pointer": "/productJudgment/consequence",
+              "role": "product",
+              "kind": "text",
+              "value": "未授予本题学分。",
+              "valueHash": "e298549347889f278e833a49e1967d6d1d1c8f52afcb9de2ec7885d1b295867f"
+            },
+            {
+              "id": "e27",
+              "pointer": "/answer",
+              "role": "student",
+              "kind": "text",
+              "value": "用第二式得y=6-x，代入第一式：3x+6-x=12，2x=6，x=3，y=3。代回9+3=12、3+3=6，两个数非负且是整数，所以整张限制也满足。",
+              "valueHash": "b35a70ee11cb8d64e0ef13aefc3738e250a3f36e6988327a3bd4b5b3a710268d"
+            },
+            {
+              "id": "e19",
+              "pointer": "/rubric/0/text",
+              "role": "criterion",
+              "kind": "text",
+              "value": "通过有效推理得到x=3、y=3，并核验两条方程。",
+              "valueHash": "3ea628cccbef956b84070ef8f899e083b63cf8bd079e6baf435be7f9fbfc8836"
+            },
+            {
+              "id": "e22",
+              "pointer": "/rubric/1/text",
+              "role": "criterion",
+              "kind": "text",
+              "value": "检查非负与新增整数限制，明确该解仍可用。",
+              "valueHash": "2a3af067a873330d1120d6872d9eafc4ea5e2ec3bc7bd1748bb580f63005e842"
+            }
+          ],
+          "reviewReasons": []
+        },
+        "studentCheck": {
+          "taskValidity": "valid",
+          "rubricValidity": "valid",
+          "reason": "题目e15清晰，量规c1c2必要合理c3可选；学生e27代入法推导验证并检整数限制，满足必要标准。",
+          "validityWitnesses": [
+            {
+              "id": "e15",
+              "pointer": "/question/prompt",
+              "role": "question",
+              "kind": "text",
+              "value": "x、y为非负实数。条件是3x+y=12和x+y=6。求x、y并代回两式；若后来要求x、y必须为整数，这组解是否仍可用？",
+              "valueHash": "b77b100b93726c3506240fc98f869a929bb26ab312958a7d32456786088ea20e"
+            },
+            {
+              "id": "e27",
+              "pointer": "/answer",
+              "role": "student",
+              "kind": "text",
+              "value": "用第二式得y=6-x，代入第一式：3x+6-x=12，2x=6，x=3，y=3。代回9+3=12、3+3=6，两个数非负且是整数，所以整张限制也满足。",
+              "valueHash": "b35a70ee11cb8d64e0ef13aefc3738e250a3f36e6988327a3bd4b5b3a710268d"
+            },
+            {
+              "id": "e19",
+              "pointer": "/rubric/0/text",
+              "role": "criterion",
+              "kind": "text",
+              "value": "通过有效推理得到x=3、y=3，并核验两条方程。",
+              "valueHash": "3ea628cccbef956b84070ef8f899e083b63cf8bd079e6baf435be7f9fbfc8836"
+            },
+            {
+              "id": "e22",
+              "pointer": "/rubric/1/text",
+              "role": "criterion",
+              "kind": "text",
+              "value": "检查非负与新增整数限制，明确该解仍可用。",
+              "valueHash": "2a3af067a873330d1120d6872d9eafc4ea5e2ec3bc7bd1748bb580f63005e842"
+            },
+            {
+              "id": "e25",
+              "pointer": "/rubric/2/text",
+              "role": "criterion",
+              "kind": "text",
+              "value": "可选表达：用小标题分开计算和解释。",
+              "valueHash": "ed58a9e65b5e9c545c19428652cec947f94db416fe4bf8b7812969666b7e080a"
+            }
+          ],
+          "criteria": [
+            {
+              "id": "c1",
+              "required": true,
+              "result": "met",
+              "reason": "代入法得x=3,y=3并代回两式验证，保持等价完整，符合有效推理与核验",
+              "witnesses": [
+                {
+                  "id": "e27",
+                  "pointer": "/answer",
+                  "role": "student",
+                  "kind": "text",
+                  "value": "用第二式得y=6-x，代入第一式：3x+6-x=12，2x=6，x=3，y=3。代回9+3=12、3+3=6，两个数非负且是整数，所以整张限制也满足。",
+                  "valueHash": "b35a70ee11cb8d64e0ef13aefc3738e250a3f36e6988327a3bd4b5b3a710268d"
+                },
+                {
+                  "id": "e19",
+                  "pointer": "/rubric/0/text",
+                  "role": "criterion",
+                  "kind": "text",
+                  "value": "通过有效推理得到x=3、y=3，并核验两条方程。",
+                  "valueHash": "3ea628cccbef956b84070ef8f899e083b63cf8bd079e6baf435be7f9fbfc8836"
+                }
+              ],
+              "reviewReasons": []
+            },
+            {
+              "id": "c2",
+              "required": true,
+              "result": "met",
+              "reason": "明确非负且整数，整张限制满足，解仍可用，符合检查要求",
+              "witnesses": [
+                {
+                  "id": "e27",
+                  "pointer": "/answer",
+                  "role": "student",
+                  "kind": "text",
+                  "value": "用第二式得y=6-x，代入第一式：3x+6-x=12，2x=6，x=3，y=3。代回9+3=12、3+3=6，两个数非负且是整数，所以整张限制也满足。",
+                  "valueHash": "b35a70ee11cb8d64e0ef13aefc3738e250a3f36e6988327a3bd4b5b3a710268d"
+                },
+                {
+                  "id": "e22",
+                  "pointer": "/rubric/1/text",
+                  "role": "criterion",
+                  "kind": "text",
+                  "value": "检查非负与新增整数限制，明确该解仍可用。",
+                  "valueHash": "2a3af067a873330d1120d6872d9eafc4ea5e2ec3bc7bd1748bb580f63005e842"
+                }
+              ],
+              "reviewReasons": []
+            },
+            {
+              "id": "c3",
+              "required": false,
+              "result": "not_met",
+              "reason": "未用小标题，但标准非必要不影响有效性",
+              "witnesses": [
+                {
+                  "id": "e27",
+                  "pointer": "/answer",
+                  "role": "student",
+                  "kind": "text",
+                  "value": "用第二式得y=6-x，代入第一式：3x+6-x=12，2x=6，x=3，y=3。代回9+3=12、3+3=6，两个数非负且是整数，所以整张限制也满足。",
+                  "valueHash": "b35a70ee11cb8d64e0ef13aefc3738e250a3f36e6988327a3bd4b5b3a710268d"
+                },
+                {
+                  "id": "e25",
+                  "pointer": "/rubric/2/text",
+                  "role": "criterion",
+                  "kind": "text",
+                  "value": "可选表达：用小标题分开计算和解释。",
+                  "valueHash": "ed58a9e65b5e9c545c19428652cec947f94db416fe4bf8b7812969666b7e080a"
+                }
+              ],
+              "reviewReasons": []
+            }
+          ],
+          "sufficiency": "sufficient",
+          "reviewReasons": []
+        }
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q5",
+          "level": 0,
+          "reason": "REQUIRED_CRITERION_CONTRADICTION",
+          "refs": [
+            "e27",
+            "e19",
+            "e34",
+            "e39",
+            "e40"
+          ],
+          "issue": "grading",
+          "exposureEvidence": [],
+          "witnesses": [
+            {
+              "id": "e27",
+              "pointer": "/answer",
+              "role": "student",
+              "kind": "text",
+              "value": "用第二式得y=6-x，代入第一式：3x+6-x=12，2x=6，x=3，y=3。代回9+3=12、3+3=6，两个数非负且是整数，所以整张限制也满足。",
+              "valueHash": "b35a70ee11cb8d64e0ef13aefc3738e250a3f36e6988327a3bd4b5b3a710268d"
+            },
+            {
+              "id": "e19",
+              "pointer": "/rubric/0/text",
+              "role": "criterion",
+              "kind": "text",
+              "value": "通过有效推理得到x=3、y=3，并核验两条方程。",
+              "valueHash": "3ea628cccbef956b84070ef8f899e083b63cf8bd079e6baf435be7f9fbfc8836"
+            },
+            {
+              "id": "e34",
+              "pointer": "/productJudgment/criteria/0/result",
+              "role": "product",
+              "kind": "text",
+              "value": "not_met",
+              "valueHash": "1fbcf23a28d84c32b3e517b749f865dff62e466f1caa29b50173e236542a8342"
+            },
+            {
+              "id": "e39",
+              "pointer": "/productJudgment/feedback",
+              "role": "product",
+              "kind": "text",
+              "value": "第一条必要标准完全未满足，因此不通过。",
+              "valueHash": "eaafb4f97eefd86cb260d3a0f21cf1518825670c1b814e7677787a8649a8f815"
+            },
+            {
+              "id": "e40",
+              "pointer": "/productJudgment/consequence",
+              "role": "product",
+              "kind": "text",
+              "value": "未授予本题学分。",
+              "valueHash": "e298549347889f278e833a49e1967d6d1d1c8f52afcb9de2ec7885d1b295867f"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [
+            {
+              "level": 0,
+              "code": "REQUIRED_CRITERION_CONTRADICTION",
+              "detail": {
+                "independent": {
+                  "id": "c1",
+                  "required": true,
+                  "result": "met",
+                  "reason": "学生用代入法由x+y=6得y=6-x代入3x+y=12解得x=3,y=3，并代回两式验证9+3=12、3+3=6，满足有效推理与核验。",
+                  "witnesses": [
+                    {
+                      "id": "e27",
+                      "pointer": "/answer",
+                      "role": "student",
+                      "kind": "text",
+                      "value": "用第二式得y=6-x，代入第一式：3x+6-x=12，2x=6，x=3，y=3。代回9+3=12、3+3=6，两个数非负且是整数，所以整张限制也满足。",
+                      "valueHash": "b35a70ee11cb8d64e0ef13aefc3738e250a3f36e6988327a3bd4b5b3a710268d"
+                    },
+                    {
+                      "id": "e19",
+                      "pointer": "/rubric/0/text",
+                      "role": "criterion",
+                      "kind": "text",
+                      "value": "通过有效推理得到x=3、y=3，并核验两条方程。",
+                      "valueHash": "3ea628cccbef956b84070ef8f899e083b63cf8bd079e6baf435be7f9fbfc8836"
+                    }
+                  ],
+                  "reviewReasons": [],
+                  "independentWitnesses": [
+                    {
+                      "id": "e27",
+                      "pointer": "/answer",
+                      "role": "student",
+                      "kind": "text",
+                      "value": "用第二式得y=6-x，代入第一式：3x+6-x=12，2x=6，x=3，y=3。代回9+3=12、3+3=6，两个数非负且是整数，所以整张限制也满足。",
+                      "valueHash": "b35a70ee11cb8d64e0ef13aefc3738e250a3f36e6988327a3bd4b5b3a710268d"
+                    },
+                    {
+                      "id": "e19",
+                      "pointer": "/rubric/0/text",
+                      "role": "criterion",
+                      "kind": "text",
+                      "value": "通过有效推理得到x=3、y=3，并核验两条方程。",
+                      "valueHash": "3ea628cccbef956b84070ef8f899e083b63cf8bd079e6baf435be7f9fbfc8836"
+                    }
+                  ]
+                },
+                "product": {
+                  "id": "c1",
+                  "result": "not_met"
+                }
+              }
+            },
+            {
+              "level": 0,
+              "code": "CREDIT_CONTRADICTION",
+              "detail": {
+                "sufficiency": "sufficient",
+                "credit": {
+                  "outcome": "withheld",
+                  "reason": "产品实际后果为未授予学分(e40)，因误判c1未满足；学生实际满足c1与c2必要标准应授学分，实际后果withheld且冲突。",
+                  "refs": [
+                    "e40",
+                    "e27",
+                    "e19",
+                    "e22"
+                  ],
+                  "witnesses": [
+                    {
+                      "id": "e40",
+                      "pointer": "/productJudgment/consequence",
+                      "role": "product",
+                      "kind": "text",
+                      "value": "未授予本题学分。",
+                      "valueHash": "e298549347889f278e833a49e1967d6d1d1c8f52afcb9de2ec7885d1b295867f"
+                    },
+                    {
+                      "id": "e27",
+                      "pointer": "/answer",
+                      "role": "student",
+                      "kind": "text",
+                      "value": "用第二式得y=6-x，代入第一式：3x+6-x=12，2x=6，x=3，y=3。代回9+3=12、3+3=6，两个数非负且是整数，所以整张限制也满足。",
+                      "valueHash": "b35a70ee11cb8d64e0ef13aefc3738e250a3f36e6988327a3bd4b5b3a710268d"
+                    },
+                    {
+                      "id": "e19",
+                      "pointer": "/rubric/0/text",
+                      "role": "criterion",
+                      "kind": "text",
+                      "value": "通过有效推理得到x=3、y=3，并核验两条方程。",
+                      "valueHash": "3ea628cccbef956b84070ef8f899e083b63cf8bd079e6baf435be7f9fbfc8836"
+                    },
+                    {
+                      "id": "e22",
+                      "pointer": "/rubric/1/text",
+                      "role": "criterion",
+                      "kind": "text",
+                      "value": "检查非负与新增整数限制，明确该解仍可用。",
+                      "valueHash": "2a3af067a873330d1120d6872d9eafc4ea5e2ec3bc7bd1748bb580f63005e842"
+                    }
+                  ],
+                  "reviewReasons": []
+                }
+              }
+            }
+          ],
+          "proposedLevel": 0,
+          "proposedReason": "产品判分将必要标准c1评为not_met(e34)，但学生答案e27用代入法有效推导x=3,y=3并代回核验，满足c1(e19)；产品错误拒绝必要标准并据此反馈不通过(e39)且未授学分(e40)，与充分表现冲突。c2判met正确，c3非必要not_met正确。",
+          "decidingConstraint": "REQUIRED_CRITERION_CONTRADICTION"
+        }
+      ],
+      "studentAssessment": {
+        "taskValidity": "valid",
+        "rubricValidity": "valid",
+        "reason": "题目e15清晰给出方程、非负实数范围及整数限制追问；量规e17-e26覆盖求解验证与限制检查必要项，均有效。",
+        "validityWitnesses": [
+          {
+            "id": "e15",
+            "pointer": "/question/prompt",
+            "role": "question",
+            "kind": "text",
+            "value": "x、y为非负实数。条件是3x+y=12和x+y=6。求x、y并代回两式；若后来要求x、y必须为整数，这组解是否仍可用？",
+            "valueHash": "b77b100b93726c3506240fc98f869a929bb26ab312958a7d32456786088ea20e"
+          },
+          {
+            "id": "e17",
+            "pointer": "/rubric",
+            "role": "criterion",
+            "kind": "array_length",
+            "value": 3,
+            "valueHash": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "c1",
+            "required": true,
+            "result": "met",
+            "reason": "学生用代入法由x+y=6得y=6-x代入3x+y=12解得x=3,y=3，并代回两式验证9+3=12、3+3=6，满足有效推理与核验。",
+            "witnesses": [
+              {
+                "id": "e27",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "用第二式得y=6-x，代入第一式：3x+6-x=12，2x=6，x=3，y=3。代回9+3=12、3+3=6，两个数非负且是整数，所以整张限制也满足。",
+                "valueHash": "b35a70ee11cb8d64e0ef13aefc3738e250a3f36e6988327a3bd4b5b3a710268d"
+              },
+              {
+                "id": "e19",
+                "pointer": "/rubric/0/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "通过有效推理得到x=3、y=3，并核验两条方程。",
+                "valueHash": "3ea628cccbef956b84070ef8f899e083b63cf8bd079e6baf435be7f9fbfc8836"
+              }
+            ],
+            "reviewReasons": [],
+            "independentWitnesses": [
+              {
+                "id": "e27",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "用第二式得y=6-x，代入第一式：3x+6-x=12，2x=6，x=3，y=3。代回9+3=12、3+3=6，两个数非负且是整数，所以整张限制也满足。",
+                "valueHash": "b35a70ee11cb8d64e0ef13aefc3738e250a3f36e6988327a3bd4b5b3a710268d"
+              },
+              {
+                "id": "e19",
+                "pointer": "/rubric/0/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "通过有效推理得到x=3、y=3，并核验两条方程。",
+                "valueHash": "3ea628cccbef956b84070ef8f899e083b63cf8bd079e6baf435be7f9fbfc8836"
+              }
+            ]
+          },
+          {
+            "id": "c2",
+            "required": true,
+            "result": "met",
+            "reason": "学生指出解非负且为整数，因此整张限制也满足，明确该解在整数要求下仍可用。",
+            "witnesses": [
+              {
+                "id": "e27",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "用第二式得y=6-x，代入第一式：3x+6-x=12，2x=6，x=3，y=3。代回9+3=12、3+3=6，两个数非负且是整数，所以整张限制也满足。",
+                "valueHash": "b35a70ee11cb8d64e0ef13aefc3738e250a3f36e6988327a3bd4b5b3a710268d"
+              },
+              {
+                "id": "e22",
+                "pointer": "/rubric/1/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "检查非负与新增整数限制，明确该解仍可用。",
+                "valueHash": "2a3af067a873330d1120d6872d9eafc4ea5e2ec3bc7bd1748bb580f63005e842"
+              }
+            ],
+            "reviewReasons": [],
+            "independentWitnesses": [
+              {
+                "id": "e27",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "用第二式得y=6-x，代入第一式：3x+6-x=12，2x=6，x=3，y=3。代回9+3=12、3+3=6，两个数非负且是整数，所以整张限制也满足。",
+                "valueHash": "b35a70ee11cb8d64e0ef13aefc3738e250a3f36e6988327a3bd4b5b3a710268d"
+              },
+              {
+                "id": "e22",
+                "pointer": "/rubric/1/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "检查非负与新增整数限制，明确该解仍可用。",
+                "valueHash": "2a3af067a873330d1120d6872d9eafc4ea5e2ec3bc7bd1748bb580f63005e842"
+              }
+            ]
+          },
+          {
+            "id": "c3",
+            "required": false,
+            "result": "not_met",
+            "reason": "标准为非必须的小标题分开表达，学生未使用小标题，但不影响核心要求。",
+            "witnesses": [
+              {
+                "id": "e27",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "用第二式得y=6-x，代入第一式：3x+6-x=12，2x=6，x=3，y=3。代回9+3=12、3+3=6，两个数非负且是整数，所以整张限制也满足。",
+                "valueHash": "b35a70ee11cb8d64e0ef13aefc3738e250a3f36e6988327a3bd4b5b3a710268d"
+              },
+              {
+                "id": "e25",
+                "pointer": "/rubric/2/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "可选表达：用小标题分开计算和解释。",
+                "valueHash": "ed58a9e65b5e9c545c19428652cec947f94db416fe4bf8b7812969666b7e080a"
+              }
+            ],
+            "reviewReasons": [],
+            "independentWitnesses": [
+              {
+                "id": "e27",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "用第二式得y=6-x，代入第一式：3x+6-x=12，2x=6，x=3，y=3。代回9+3=12、3+3=6，两个数非负且是整数，所以整张限制也满足。",
+                "valueHash": "b35a70ee11cb8d64e0ef13aefc3738e250a3f36e6988327a3bd4b5b3a710268d"
+              },
+              {
+                "id": "e25",
+                "pointer": "/rubric/2/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "可选表达：用小标题分开计算和解释。",
+                "valueHash": "ed58a9e65b5e9c545c19428652cec947f94db416fe4bf8b7812969666b7e080a"
+              }
+            ]
+          }
+        ],
+        "sufficiency": "sufficient",
+        "reviewReasons": [],
+        "independentAssessments": [
+          {
+            "taskValidity": "valid",
+            "rubricValidity": "valid",
+            "reason": "题目e15清晰给出方程、非负实数范围及整数限制追问；量规e17-e26覆盖求解验证与限制检查必要项，均有效。",
+            "validityWitnesses": [
+              {
+                "id": "e15",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "x、y为非负实数。条件是3x+y=12和x+y=6。求x、y并代回两式；若后来要求x、y必须为整数，这组解是否仍可用？",
+                "valueHash": "b77b100b93726c3506240fc98f869a929bb26ab312958a7d32456786088ea20e"
+              },
+              {
+                "id": "e17",
+                "pointer": "/rubric",
+                "role": "criterion",
+                "kind": "array_length",
+                "value": 3,
+                "valueHash": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce"
+              }
+            ],
+            "criteria": [
+              {
+                "id": "c1",
+                "required": true,
+                "result": "met",
+                "reason": "学生用代入法由x+y=6得y=6-x代入3x+y=12解得x=3,y=3，并代回两式验证9+3=12、3+3=6，满足有效推理与核验。",
+                "witnesses": [
+                  {
+                    "id": "e27",
+                    "pointer": "/answer",
+                    "role": "student",
+                    "kind": "text",
+                    "value": "用第二式得y=6-x，代入第一式：3x+6-x=12，2x=6，x=3，y=3。代回9+3=12、3+3=6，两个数非负且是整数，所以整张限制也满足。",
+                    "valueHash": "b35a70ee11cb8d64e0ef13aefc3738e250a3f36e6988327a3bd4b5b3a710268d"
+                  },
+                  {
+                    "id": "e19",
+                    "pointer": "/rubric/0/text",
+                    "role": "criterion",
+                    "kind": "text",
+                    "value": "通过有效推理得到x=3、y=3，并核验两条方程。",
+                    "valueHash": "3ea628cccbef956b84070ef8f899e083b63cf8bd079e6baf435be7f9fbfc8836"
+                  }
+                ],
+                "reviewReasons": []
+              },
+              {
+                "id": "c2",
+                "required": true,
+                "result": "met",
+                "reason": "学生指出解非负且为整数，因此整张限制也满足，明确该解在整数要求下仍可用。",
+                "witnesses": [
+                  {
+                    "id": "e27",
+                    "pointer": "/answer",
+                    "role": "student",
+                    "kind": "text",
+                    "value": "用第二式得y=6-x，代入第一式：3x+6-x=12，2x=6，x=3，y=3。代回9+3=12、3+3=6，两个数非负且是整数，所以整张限制也满足。",
+                    "valueHash": "b35a70ee11cb8d64e0ef13aefc3738e250a3f36e6988327a3bd4b5b3a710268d"
+                  },
+                  {
+                    "id": "e22",
+                    "pointer": "/rubric/1/text",
+                    "role": "criterion",
+                    "kind": "text",
+                    "value": "检查非负与新增整数限制，明确该解仍可用。",
+                    "valueHash": "2a3af067a873330d1120d6872d9eafc4ea5e2ec3bc7bd1748bb580f63005e842"
+                  }
+                ],
+                "reviewReasons": []
+              },
+              {
+                "id": "c3",
+                "required": false,
+                "result": "not_met",
+                "reason": "标准为非必须的小标题分开表达，学生未使用小标题，但不影响核心要求。",
+                "witnesses": [
+                  {
+                    "id": "e27",
+                    "pointer": "/answer",
+                    "role": "student",
+                    "kind": "text",
+                    "value": "用第二式得y=6-x，代入第一式：3x+6-x=12，2x=6，x=3，y=3。代回9+3=12、3+3=6，两个数非负且是整数，所以整张限制也满足。",
+                    "valueHash": "b35a70ee11cb8d64e0ef13aefc3738e250a3f36e6988327a3bd4b5b3a710268d"
+                  },
+                  {
+                    "id": "e25",
+                    "pointer": "/rubric/2/text",
+                    "role": "criterion",
+                    "kind": "text",
+                    "value": "可选表达：用小标题分开计算和解释。",
+                    "valueHash": "ed58a9e65b5e9c545c19428652cec947f94db416fe4bf8b7812969666b7e080a"
+                  }
+                ],
+                "reviewReasons": []
+              }
+            ],
+            "sufficiency": "sufficient",
+            "reviewReasons": []
+          },
+          {
+            "taskValidity": "valid",
+            "rubricValidity": "valid",
+            "reason": "题目e15清晰，量规c1c2必要合理c3可选；学生e27代入法推导验证并检整数限制，满足必要标准。",
+            "validityWitnesses": [
+              {
+                "id": "e15",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "x、y为非负实数。条件是3x+y=12和x+y=6。求x、y并代回两式；若后来要求x、y必须为整数，这组解是否仍可用？",
+                "valueHash": "b77b100b93726c3506240fc98f869a929bb26ab312958a7d32456786088ea20e"
+              },
+              {
+                "id": "e27",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "用第二式得y=6-x，代入第一式：3x+6-x=12，2x=6，x=3，y=3。代回9+3=12、3+3=6，两个数非负且是整数，所以整张限制也满足。",
+                "valueHash": "b35a70ee11cb8d64e0ef13aefc3738e250a3f36e6988327a3bd4b5b3a710268d"
+              },
+              {
+                "id": "e19",
+                "pointer": "/rubric/0/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "通过有效推理得到x=3、y=3，并核验两条方程。",
+                "valueHash": "3ea628cccbef956b84070ef8f899e083b63cf8bd079e6baf435be7f9fbfc8836"
+              },
+              {
+                "id": "e22",
+                "pointer": "/rubric/1/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "检查非负与新增整数限制，明确该解仍可用。",
+                "valueHash": "2a3af067a873330d1120d6872d9eafc4ea5e2ec3bc7bd1748bb580f63005e842"
+              },
+              {
+                "id": "e25",
+                "pointer": "/rubric/2/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "可选表达：用小标题分开计算和解释。",
+                "valueHash": "ed58a9e65b5e9c545c19428652cec947f94db416fe4bf8b7812969666b7e080a"
+              }
+            ],
+            "criteria": [
+              {
+                "id": "c1",
+                "required": true,
+                "result": "met",
+                "reason": "代入法得x=3,y=3并代回两式验证，保持等价完整，符合有效推理与核验",
+                "witnesses": [
+                  {
+                    "id": "e27",
+                    "pointer": "/answer",
+                    "role": "student",
+                    "kind": "text",
+                    "value": "用第二式得y=6-x，代入第一式：3x+6-x=12，2x=6，x=3，y=3。代回9+3=12、3+3=6，两个数非负且是整数，所以整张限制也满足。",
+                    "valueHash": "b35a70ee11cb8d64e0ef13aefc3738e250a3f36e6988327a3bd4b5b3a710268d"
+                  },
+                  {
+                    "id": "e19",
+                    "pointer": "/rubric/0/text",
+                    "role": "criterion",
+                    "kind": "text",
+                    "value": "通过有效推理得到x=3、y=3，并核验两条方程。",
+                    "valueHash": "3ea628cccbef956b84070ef8f899e083b63cf8bd079e6baf435be7f9fbfc8836"
+                  }
+                ],
+                "reviewReasons": []
+              },
+              {
+                "id": "c2",
+                "required": true,
+                "result": "met",
+                "reason": "明确非负且整数，整张限制满足，解仍可用，符合检查要求",
+                "witnesses": [
+                  {
+                    "id": "e27",
+                    "pointer": "/answer",
+                    "role": "student",
+                    "kind": "text",
+                    "value": "用第二式得y=6-x，代入第一式：3x+6-x=12，2x=6，x=3，y=3。代回9+3=12、3+3=6，两个数非负且是整数，所以整张限制也满足。",
+                    "valueHash": "b35a70ee11cb8d64e0ef13aefc3738e250a3f36e6988327a3bd4b5b3a710268d"
+                  },
+                  {
+                    "id": "e22",
+                    "pointer": "/rubric/1/text",
+                    "role": "criterion",
+                    "kind": "text",
+                    "value": "检查非负与新增整数限制，明确该解仍可用。",
+                    "valueHash": "2a3af067a873330d1120d6872d9eafc4ea5e2ec3bc7bd1748bb580f63005e842"
+                  }
+                ],
+                "reviewReasons": []
+              },
+              {
+                "id": "c3",
+                "required": false,
+                "result": "not_met",
+                "reason": "未用小标题，但标准非必要不影响有效性",
+                "witnesses": [
+                  {
+                    "id": "e27",
+                    "pointer": "/answer",
+                    "role": "student",
+                    "kind": "text",
+                    "value": "用第二式得y=6-x，代入第一式：3x+6-x=12，2x=6，x=3，y=3。代回9+3=12、3+3=6，两个数非负且是整数，所以整张限制也满足。",
+                    "valueHash": "b35a70ee11cb8d64e0ef13aefc3738e250a3f36e6988327a3bd4b5b3a710268d"
+                  },
+                  {
+                    "id": "e25",
+                    "pointer": "/rubric/2/text",
+                    "role": "criterion",
+                    "kind": "text",
+                    "value": "可选表达：用小标题分开计算和解释。",
+                    "valueHash": "ed58a9e65b5e9c545c19428652cec947f94db416fe4bf8b7812969666b7e080a"
+                  }
+                ],
+                "reviewReasons": []
+              }
+            ],
+            "sufficiency": "sufficient",
+            "reviewReasons": []
+          }
+        ]
+      },
+      "reviewRequired": []
+    },
+    "resultHash": "027c4cb5a84a3da8708b34c4953a6db471c46a298f6d36553ca48ccee70a0470"
+  }
+}

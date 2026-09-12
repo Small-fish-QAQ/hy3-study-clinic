@@ -1,0 +1,90 @@
+{
+  "dimensions": [
+    "Q6"
+  ],
+  "evidence": {
+    "sources": [
+      {
+        "id": "E01",
+        "text": "Your feet feel cold as you walk barefoot across the living room carpet in your cold house and then step onto the kitchen tile floor. This result is intriguing, since the carpet and tile floor are both at the same temperature. The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.\n\nSome materials conduct thermal energy faster than others. In general, good conductors of electricity (metals like copper, aluminum, gold, and silver) are also good heat conductors, whereas insulators of electricity (wood, plastic, and rubber) are poor heat conductors.\n\nThe (average) kinetic energy of a molecule in the hot body is higher than in the colder body. If two molecules collide, an energy transfer from the molecule with greater kinetic energy to the molecule with less kinetic energy occurs. The cumulative effect from all collisions results in a net flux of heat from the hot body to the colder body. The heat flux thus depends on the temperature difference ΔΤ=Τhot−Tcold. Therefore, you will get a more severe burn from boiling water than from hot tap water. Conversely, if the temperatures are the same, the net heat transfer rate falls to zero, and equilibrium is achieved. Owing to the fact that the number of collisions increases with increasing area, heat conduction depends on the cross-sectional area. If you touch a cold wall with your palm, your hand cools faster than if you just touch it with your fingertip."
+      }
+    ],
+    "goals": [
+      "针对这次实际错误给出有依据的诊断、补救解释和后续检查"
+    ],
+    "prerequisites": [
+      "知道温度与热传递是不同概念",
+      "能借助中文解释阅读简单英文科学教材",
+      "Explain in Chinese why same-temperature carpet and tile feel different: because they have different rates of heat transfer (tile conducts faster from skin), causing greater heat loss and temperature drop on skin over the same time interval, while both floor materials are at the same temperature. Must retain the comparison boundary that temperatures are identical and other contact conditions are held same.",
+      "Explain and distinguish heat transfer direction, temperature difference, and thermal equilibrium: energy transfers from higher-kinetic-energy molecules to lower via collisions, cumulative effect yields net heat flux from hot to cold body; heat flux depends on temperature difference ΔT = T_hot - T_cold; if temperatures are same, net transfer rate is zero and equilibrium achieved."
+    ],
+    "desiredDepth": "working_fluency",
+    "authorityBoundaries": [
+      "本次评估只涉及所给来源、明确的教学范围和实际展示的产物；脚本作答用于检查工作流，不代表真实学习者。"
+    ],
+    "artifacts": [
+      {
+        "id": "actual-failed-question",
+        "text": "两块地板面板A和B均处于25°C，赤脚以相同接触面积踩踏相同时间。皮肤传感器记录：4秒内A处皮肤降温2.0°C，B处降温0.5°C。下列哪一解释符合该观测？"
+      },
+      {
+        "id": "actual-repair/selectedAnswer",
+        "text": "A面板实际温度低于B面板（如20°C对25°C）"
+      },
+      {
+        "id": "actual-repair/feedback",
+        "text": "错误：若A温度更低，则违背题设两面板均25°C的相同温度条件。"
+      },
+      {
+        "id": "actual-repair/learnerNote",
+        "text": "请根据我刚才选择的答案，解释关键错误，并给我新的检验机会。"
+      },
+      {
+        "id": "actual-repair/diagnosis/observation",
+        "text": "你选择了‘A面板实际温度低于B面板（如20°C对25°C）’这一选项，把皮肤降温更多解释为两块面板本身温度不同。"
+      },
+      {
+        "id": "actual-repair/diagnosis/gap",
+        "text": "缺失的关键区分是：在题设已固定两面板同温（均25°C）且接触面积、时间相同的边界下，皮肤降温幅度差异只能用于诊断材料从皮肤取热速率的差异，而不能归因于物体初始温度不同。你混淆了‘同温下的热传递速率差’与‘温度差导致热流’两个不同因果机制，缺少在给定同温边界内用速率而非温度解释观测的步骤。"
+      },
+      {
+        "id": "actual-repair/diagnosis/uncertainty",
+        "text": "这是根据这次回答作出的判断；读题疏漏也可能导致同样的选择。"
+      },
+      {
+        "id": "actual-repair/teaching/explanation",
+        "text": "当皮肤接触物体时，若皮肤温度高于物体，热从皮肤流向物体。在两者温度相同（如均25°C）且接触面积、时间等条件也相同的边界内，热流方向一致、温差一致，此时皮肤降温幅度由单位时间从皮肤移走的热量决定。材料导热能力不同会导致传递速率不同：速率越高，相同时间内皮肤热损失越多，降温越大。因此，同温边界下的降温差直接诊断材料热传递速率差，而非温度差。课程中地毯与瓷砖同温但触感不同，正是瓷砖导热速率更高导致皮肤降温更多。"
+      },
+      {
+        "id": "actual-repair/teaching/workedExample/prompt",
+        "text": "两块烹饪砧板C和D均处于24°C，你用前臂内侧以相同面积（约50 cm²）接触5秒，皮肤初始温度为33°C。传感器测得C处皮肤降温1.8°C，D处降温0.4°C。请依据同温边界推导原因。"
+      },
+      {
+        "id": "actual-repair/teaching/workedExample/steps/0",
+        "text": "确认边界：C和D温度均为24°C，接触面积、时间、皮肤初始温度相同，热从皮肤（33°C）流向砧板（24°C）。"
+      },
+      {
+        "id": "actual-repair/teaching/workedExample/steps/1",
+        "text": "皮肤降温幅度由单位时间从皮肤移走的热量决定：降温越大，说明同期热损失越多。"
+      },
+      {
+        "id": "actual-repair/teaching/workedExample/steps/2",
+        "text": "因两板温度与接触条件相同，热损失差异不能来自温差或面积，只能来自材料本身从皮肤带走热的速率不同。"
+      },
+      {
+        "id": "actual-repair/teaching/workedExample/steps/3",
+        "text": "C降温1.8°C > D降温0.4°C，故C材料的热传递速率更高，导致更大皮肤热损失。"
+      },
+      {
+        "id": "actual-repair/teaching/workedExample/conclusion",
+        "text": "在同温且接触条件相同的前提下，C处皮肤降温更大说明C的导热速率高于D，而非C温度更低。"
+      },
+      {
+        "id": "actual-repair/teaching/contrast",
+        "text": "若误用‘皮肤降温越多说明物体温度越低’的规则来解释上述砧板案例：假设C实际22°C而D为24°C，则直接违背题设‘均24°C’的同温边界，且无法在给定条件下区分材料速率。该错误规则仅在两物体温度确实不同且其他条件相同时才可用来解释冷却差；在同温边界内它失效，必须用热传递速率差替代。"
+      }
+    ],
+    "exposure": [],
+    "answer": "A面板实际温度低于B面板（如20°C对25°C）"
+  }
+}

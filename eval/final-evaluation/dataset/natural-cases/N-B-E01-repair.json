@@ -1,0 +1,90 @@
+{
+  "dimensions": [
+    "Q6"
+  ],
+  "evidence": {
+    "sources": [
+      {
+        "id": "B-E01",
+        "text": "Your feet feel cold as you walk barefoot across the living room carpet in your cold house and then step onto the kitchen tile floor. This result is intriguing, since the carpet and tile floor are both at the same temperature. The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.\n\nSome materials conduct thermal energy faster than others. In general, good conductors of electricity (metals like copper, aluminum, gold, and silver) are also good heat conductors, whereas insulators of electricity (wood, plastic, and rubber) are poor heat conductors.\n\nThe (average) kinetic energy of a molecule in the hot body is higher than in the colder body. If two molecules collide, an energy transfer from the molecule with greater kinetic energy to the molecule with less kinetic energy occurs. The cumulative effect from all collisions results in a net flux of heat from the hot body to the colder body. The heat flux thus depends on the temperature difference ΔΤ=Τhot−Tcold. Therefore, you will get a more severe burn from boiling water than from hot tap water. Conversely, if the temperatures are the same, the net heat transfer rate falls to zero, and equilibrium is achieved. Owing to the fact that the number of collisions increases with increasing area, heat conduction depends on the cross-sectional area. If you touch a cold wall with your palm, your hand cools faster than if you just touch it with your fingertip."
+      }
+    ],
+    "goals": [
+      "针对这次实际错误给出有依据的诊断、补救解释和后续检查"
+    ],
+    "prerequisites": [
+      "知道温度与热传递是不同概念",
+      "能借助中文解释阅读简单英文科学教材",
+      "解释同温度地毯与瓷砖触感不同的原因：在相同温度和相同时间区间内，因热传递速率不同导致瓷砖接触皮肤热损失更大、温度下降更大，且其他条件相同。",
+      "识别热传递方向（从高温物体到低温物体）、热通量依赖温差ΔT=Thot−Tcold、以及温度相同时净热传递为零并达到热平衡。"
+    ],
+    "desiredDepth": "pass_oriented",
+    "authorityBoundaries": [
+      "本次评估只涉及所给来源、明确的教学范围和实际展示的产物；脚本作答用于检查工作流，不代表真实学习者。"
+    ],
+    "artifacts": [
+      {
+        "id": "actual-failed-question",
+        "text": "同温25°C下，皮肤接触金属勺5秒后温度降3°C，接触布垫降1°C。哪种解释符合此观察？"
+      },
+      {
+        "id": "actual-repair/selectedAnswer",
+        "text": "布垫导热比金属快，导致皮肤热损失更大"
+      },
+      {
+        "id": "actual-repair/feedback",
+        "text": "错误：原观察中布垫降温更少，若布垫导热更快则应有相反结果。"
+      },
+      {
+        "id": "actual-repair/learnerNote",
+        "text": "请根据我刚才选择的答案，解释关键错误，并给我新的检验机会。"
+      },
+      {
+        "id": "actual-repair/diagnosis/observation",
+        "text": "你选择了“布垫导热比金属快，导致皮肤热损失更大”。原观察中金属勺侧皮肤5秒降3°C、布垫侧降1°C，降温更多的是金属侧，你的选项把导热更快归给了降温更少的布垫。"
+      },
+      {
+        "id": "actual-repair/diagnosis/gap",
+        "text": "未建立“同温同时间下皮肤降温越大，说明接触材料导热速率越快”这一因果方向；把皮肤热损失大小与材料导热快慢的对应关系弄反了。"
+      },
+      {
+        "id": "actual-repair/diagnosis/uncertainty",
+        "text": "这是根据这次回答作出的判断；读题疏漏也可能导致同样的选择。"
+      },
+      {
+        "id": "actual-repair/teaching/explanation",
+        "text": "当皮肤与物体温度相同、接触时间相同时，热量从较热的皮肤流向物体。材料导热速率越高，单位时间内从皮肤带走的热量越多，皮肤温度下降就越大。因此，观察哪一侧皮肤降温更多，就能诊断那一侧的物体导热更快，而不是更慢。"
+      },
+      {
+        "id": "actual-repair/teaching/workedExample/prompt",
+        "text": "新案例：夏日室内两物体均为20°C，小敏手指初始33°C。她同时用左右手食指分别接触玻璃片和泡沫板，4秒后左手指温降至31°C，右手指温降至32.5°C。请依据此观察判断哪种材料导热更快。"
+      },
+      {
+        "id": "actual-repair/teaching/workedExample/steps/0",
+        "text": "1. 两物体初始温度相同（20°C），手指温度相同（33°C），接触时间相同（4秒），满足同温同时间前提。"
+      },
+      {
+        "id": "actual-repair/teaching/workedExample/steps/1",
+        "text": "2. 左手接触玻璃片后降温2°C（33→31），右手接触泡沫板后降温1.5°C（33→32.5），玻璃片侧皮肤热损失更大。"
+      },
+      {
+        "id": "actual-repair/teaching/workedExample/steps/2",
+        "text": "3. 皮肤热量流向物体，单位时间流失热量越多，说明物体从皮肤带走热量的速率越高。"
+      },
+      {
+        "id": "actual-repair/teaching/workedExample/steps/3",
+        "text": "4. 带走热量速率高对应材料导热速率更高，因此玻璃片比泡沫板导热快。"
+      },
+      {
+        "id": "actual-repair/teaching/workedExample/conclusion",
+        "text": "玻璃片导热比泡沫板快；该判断仅依据同温同时间下的皮肤降温差，不依赖其他未知属性。"
+      },
+      {
+        "id": "actual-repair/teaching/contrast",
+        "text": "若采用你原选的错误规则——“皮肤降温少说明材料导热快”——套用上述案例会得到泡沫板更快的结论，但这与热传导机制矛盾：泡沫板实际隔热，降温应更小。错误规则在比较任何同温接触案例时都会颠倒因果。"
+      }
+    ],
+    "exposure": [],
+    "answer": "布垫导热比金属快，导致皮肤热损失更大"
+  }
+}

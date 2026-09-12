@@ -1,0 +1,32 @@
+{
+  "task": {
+    "caseId": "N-F12-teaching",
+    "runId": "N-F12-teaching-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-F12-teaching.json",
+    "inputHash": "7b4fb980d1fbc47ec7dacf77ca332191acf8ef08a59c7025e7812fe6294f0001",
+    "population": "natural",
+    "sourceId": "F12"
+  },
+  "inputHash": "7b4fb980d1fbc47ec7dacf77ca332191acf8ef08a59c7025e7812fe6294f0001",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "correctness": "25257c1a542eb49eadfd0bb5b9d85dc6baf3e7a1fe71e980d785df73c740b2da"
+    },
+    "stages": {
+      "correctness": {
+        "status": "JUDGE_INVALID",
+        "category": "output_contract",
+        "reason": "TRUNCATED_OUTPUT"
+      }
+    },
+    "result": {
+      "status": "JUDGE_INVALID",
+      "category": "output_contract",
+      "reason": "TRUNCATED_OUTPUT"
+    },
+    "resultHash": "fa300d519134b1c2f1472700b5189451ecb96b7596f8f6debb399101ca99953e"
+  }
+}

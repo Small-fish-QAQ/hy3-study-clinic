@@ -1,0 +1,84 @@
+{
+  "task": {
+    "caseId": "N-B-E01-retest",
+    "runId": "N-B-E01-retest-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-B-E01-retest.json",
+    "inputHash": "9ef176af716c6690bacf35fa87485d7532d417a49f084dde0c6f52bb65404a9a",
+    "population": "natural",
+    "sourceId": "B-E01"
+  },
+  "inputHash": "9ef176af716c6690bacf35fa87485d7532d417a49f084dde0c6f52bb65404a9a",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "prepare-context-current": "54d40a2a43cc7eed01abcd4a729ab9a02311c8c3ee8aa0058c935128cd3ebfb6",
+      "solve-current": "8590bd98c6eb3cabcc5984aee4de7bddf8752622430aa785685d18ef635f9289",
+      "correctness": "4f02059d006c16421a395ddd6a337e016431f8d4c48b46577489ceb0421dcdf2"
+    },
+    "stages": {
+      "prepare-context-current": {
+        "contexts": [
+          {
+            "taskId": "current",
+            "status": "ready",
+            "reason": "题干自身包含同温20°C、皮肤初始34°C、木材与大理石5秒后指温及小A断言等完整情景参数，可自足分离，无需history补充",
+            "premises": [],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "solve-current": {
+        "status": "resolved",
+        "solution": "小A推理错误：同温20°C、同初始皮肤34°C、同5秒，大理石侧降温2.2°C（34-31.8）大于木材0.8°C（34-33.2）。根据e3与e9，其他条件相同时降温大表明热传递速率快、材料导热更好，故大理石是更佳导体而非不良导体。小A将最终温度更低误认为导热慢，颠倒因果。选项A（e17）正确诊断；C（e21）以面积未给出为由不成立，因e9明确“其他条件相同”假设。",
+        "witnesses": [
+          {
+            "id": "e3",
+            "pointer": "/sources/0/text",
+            "role": "source",
+            "kind": "text",
+            "value": "Your feet feel cold as you walk barefoot across the living room carpet in your cold house and then step onto the kitchen tile floor. This result is intriguing, since the carpet and tile floor are both at the same temperature. The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.\n\nSome materials conduct thermal energy faster than others. In general, good conductors of electricity (metals like copper, aluminum, gold, and silver) are also good heat conductors, whereas insulators of electricity (wood, plastic, and rubber) are poor heat conductors.\n\nThe (average) kinetic energy of a molecule in the hot body is higher than in the colder body. If two molecules collide, an energy transfer from the molecule with greater kinetic energy to the molecule with less kinetic energy occurs. The cumulative effect from all collisions results in a net flux of heat from the hot body to the colder body. The heat flux thus depends on the temperature difference ΔΤ=Τhot−Tcold. Therefore, you will get a more severe burn from boiling water than from hot tap water. Conversely, if the temperatures are the same, the net heat transfer rate falls to zero, and equilibrium is achieved. Owing to the fact that the number of collisions increases with increasing area, heat conduction depends on the cross-sectional area. If you touch a cold wall with your palm, your hand cools faster than if you just touch it with your fingertip.",
+            "valueHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd"
+          },
+          {
+            "id": "e9",
+            "pointer": "/prerequisites/2",
+            "role": "context",
+            "kind": "text",
+            "value": "解释同温度地毯与瓷砖触感不同的原因：在相同温度和相同时间区间内，因热传递速率不同导致瓷砖接触皮肤热损失更大、温度下降更大，且其他条件相同。",
+            "valueHash": "ddd265caebe0d2facdb2f53d103a3b1628e6181fcc7e1dfb2f150f1232b5ebc1"
+          },
+          {
+            "id": "e14",
+            "pointer": "/question/prompt",
+            "role": "question",
+            "kind": "text",
+            "value": "下表记录同温20°C下，皮肤初始34°C时接触木材与大理石5秒后的指温。\n材料 | 5秒后皮肤温\n木材 | 33.2°C\n大理石 | 31.8°C\n学生小A写道：“大理石侧皮肤只降到31.8°C，比木材的33.2°C更低，说明大理石导热慢，是不良导体。” 请诊断小A推理中的错误。",
+            "valueHash": "dd6398fa907be35c7e6812321e490ec35ea93521e0a4e475953bbfb8fbf862d9"
+          },
+          {
+            "id": "e17",
+            "pointer": "/question/options/0/text",
+            "role": "question",
+            "kind": "text",
+            "value": "小A把降温幅度与导热方向弄反了：大理石侧皮肤降了2.2°C多于木材0.8°C，降温大才说明大理石导热更快。",
+            "valueHash": "82a6b91d6f4e2ff482e5c169d4eed6ec67ea44da794daf10802d2051ab5d4fb1"
+          }
+        ],
+        "reviewReasons": []
+      },
+      "correctness": {
+        "status": "JUDGE_INVALID",
+        "category": "output_contract",
+        "reason": "TRUNCATED_OUTPUT"
+      }
+    },
+    "result": {
+      "status": "JUDGE_INVALID",
+      "category": "output_contract",
+      "reason": "TRUNCATED_OUTPUT"
+    },
+    "resultHash": "fa300d519134b1c2f1472700b5189451ecb96b7596f8f6debb399101ca99953e"
+  }
+}

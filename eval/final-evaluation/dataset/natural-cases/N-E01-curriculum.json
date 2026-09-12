@@ -1,0 +1,38 @@
+{
+  "dimensions": [
+    "Q2"
+  ],
+  "evidence": {
+    "sources": [
+      {
+        "id": "E01",
+        "text": "Your feet feel cold as you walk barefoot across the living room carpet in your cold house and then step onto the kitchen tile floor. This result is intriguing, since the carpet and tile floor are both at the same temperature. The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.\n\nSome materials conduct thermal energy faster than others. In general, good conductors of electricity (metals like copper, aluminum, gold, and silver) are also good heat conductors, whereas insulators of electricity (wood, plastic, and rubber) are poor heat conductors.\n\nThe (average) kinetic energy of a molecule in the hot body is higher than in the colder body. If two molecules collide, an energy transfer from the molecule with greater kinetic energy to the molecule with less kinetic energy occurs. The cumulative effect from all collisions results in a net flux of heat from the hot body to the colder body. The heat flux thus depends on the temperature difference ΔΤ=Τhot−Tcold. Therefore, you will get a more severe burn from boiling water than from hot tap water. Conversely, if the temperatures are the same, the net heat transfer rate falls to zero, and equilibrium is achieved. Owing to the fact that the number of collisions increases with increasing area, heat conduction depends on the cross-sectional area. If you touch a cold wall with your palm, your hand cools faster than if you just touch it with your fingertip."
+      }
+    ],
+    "goals": [
+      "用中文解释同温度地毯与瓷砖触感不同的原因",
+      "区分热传递方向、温差与热平衡",
+      "说明接触面积如何影响导热，并保留其他条件相同的比较边界"
+    ],
+    "prerequisites": [
+      "知道温度与热传递是不同概念",
+      "能借助中文解释阅读简单英文科学教材"
+    ],
+    "desiredDepth": "working_fluency",
+    "authorityBoundaries": [
+      "本次评估只涉及所给来源、明确的教学范围和实际展示的产物；脚本作答用于检查工作流，不代表真实学习者。",
+      "Q2评价提议课程对所注册学习目标的保留和范围；不将尚未发生的教学交付或Formal准入当成已经完成。"
+    ],
+    "artifacts": [
+      {
+        "id": "cun_08c7e0d7-7164-4787-97d8-694d720d1ba1/title",
+        "text": "同温度触感差异的热传递原理：速率、方向与面积"
+      },
+      {
+        "id": "cun_08c7e0d7-7164-4787-97d8-694d720d1ba1/objectives",
+        "text": "[{\"id\":\"obj_049a4705-9620-42bd-a5cb-7156c29e2f26\",\"title\":\"解释同温地毯与瓷砖触感不同的原因\",\"description\":\"Explain in Chinese why same-temperature carpet and tile feel different: because they have different rates of heat transfer (tile conducts faster from skin), causing greater heat loss and temperature drop on skin over the same time interval, while both floor materials are at the same temperature. Must retain the comparison boundary that temperatures are identical and other contact conditions are held same.\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_04af1065-9f9c-48aa-8523-e5d435bef43d\",\"ta_e9bf810f-9efb-4113-bcff-d981de0baad3\"],\"authorityClaimIds\":[\"tac_9e250daf-0bc2-435c-ad25-9e06773fd15a\",\"tac_72ad6dda-b9c9-4602-a5f5-6ae9024e9cb8\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E2 provides formal_sufficient authority for explain construct, satisfying required formal path.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"explain\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_f1dbb48a\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_f1dbb48a\"]},{\"id\":\"obj_cb19407f-5d56-49cc-baab-401d012e9d55\",\"title\":\"解释并区分热传递方向、温差与热平衡\",\"description\":\"Explain and distinguish heat transfer direction, temperature difference, and thermal equilibrium: energy transfers from higher-kinetic-energy molecules to lower via collisions, cumulative effect yields net heat flux from hot to cold body; heat flux depends on temperature difference ΔT = T_hot - T_cold; if temperatures are same, net transfer rate is zero and equilibrium achieved.\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_e98bde36-9a4a-4487-9b2d-676bad86cf85\",\"ta_ac866f87-872b-4d23-9f08-1f0c6c099881\"],\"authorityClaimIds\":[\"tac_1c476670-13b6-4564-9c8c-7072eb7c3138\",\"tac_71712b59-abb6-4e2f-9fac-77402843f6e5\",\"tac_a3901aca-7b0c-4b0d-8180-89aa41a935c7\",\"tac_cdd44ad1-1252-41ab-92f3-71e7c6445516\",\"tac_1d892679-831e-481f-937f-562a00247e3c\",\"tac_73f79b9d-e653-4d6e-ad92-cf8a4aea87cb\",\"tac_e0da2379-065a-42da-862e-fc859b3381d6\",\"tac_f73e2cf5-18fd-405a-92f6-97a0fecd83d8\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E4 and E7 provide formal_sufficient authority for explain construct, satisfying required formal path.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"explain\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_2_3c1674d7\"],\"formalEvidenceSourceBlockIds\":[\"blk_2_3c1674d7\"]},{\"id\":\"obj_eb99173a-5894-4d84-bbf0-ed67c594a069\",\"title\":\"解释接触面积对热传导的影响\",\"description\":\"Explain how contact area affects heat conduction, preserving the condition that other factors (temperature, material, time) are identical: heat conduction depends on cross-sectional area because more collisions occur with larger area, so touching a cold wall with palm cools hand faster than with fingertip.\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation but evidence E19 is unavailable for formal assessment; retains explain construct as teaching-only non-credit objective.\",\"formalAssessmentConstruct\":\"explain\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]}]"
+      }
+    ],
+    "exposure": []
+  }
+}

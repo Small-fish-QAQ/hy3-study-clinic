@@ -1,0 +1,241 @@
+{
+  "dimensions": [
+    "Q1",
+    "Q3"
+  ],
+  "evidence": {
+    "sources": [
+      {
+        "id": "F11",
+        "text": "设计展板时，长条卡片每张宽二厘米，短条卡片每张宽一厘米。把长条张数记为x、短条张数记为y，若总宽度为八厘米，就有2x+y=8。这里先把x、y当作非负实数，表示也允许按比例裁切卡片；若题目后来要求整张，就必须另加非负整数条件。变量范围是题设的一部分，不能从生活习惯自行补上。\n仅有2x+y=8时，通常不唯一：x=0、y=8，或x=2、y=4都满足；在非负实数范围内还有更多组合。列举两个不同可行组合，就足以证明“唯一确定”不成立，但不能因此说所有任意组合都可行。每个候选仍须满足方程与非负约束。\n若再知道总张数为五，即x+y=5，把两个方程相减得到x=3，再代回得y=2。这个组合同时满足宽度八厘米、总张数五和非负条件，因此是合法解。两个方程相减只是一种方法，代入或合适的图示也可以；评判应看是否保持等价与验证完整，而不是必须照抄某一解法。\n第二条条件不一定提供新信息。如果新增4x+2y=16，它恰好是原方程每项乘二，所以仍表示同一限制，多解不会自动变成唯一解。如果新增4x+2y=18，则与原方程矛盾：原式乘二必须等于十六，不可能同时等于十八。在这种情况下，应报告无解并指出冲突，不应为了给出数值而悄悄修改题设。\n变量范围也会影响结果。例如x+y=1且x-y=0给出x=y=0.5。在允许比例裁切的非负实数模型里，这是一组合法解；若限定必须为整张卡片，则没有整数解。数学运算得到候选值之后，还须回到现实约定检验候选是否可用。\n处理约束问题可以先列清变量、单位与范围，再把每句话翻译成式子，然后判断信息是否独立、是否一致，最后代回所有条件。遇到数据不足时，给出两组可行解和需要补充的独立信息，通常比只写“不能算”更有帮助。遇到矛盾时，解释哪两条不能同时成立。这个单元不要求矩阵或专门术语，重点是理解条件如何缩小可能性集合。"
+      }
+    ],
+    "goals": [
+      "评价本次实际讲解的内容：配比条件到线性约束的转化与解集合分析"
+    ],
+    "prerequisites": [
+      "简单方程",
+      "代入检验",
+      "非负数"
+    ],
+    "desiredDepth": "deep_transfer",
+    "authorityBoundaries": [
+      "本次评估只涉及所给来源、明确的教学范围和实际展示的产物；脚本作答用于检查工作流，不代表真实学习者。"
+    ],
+    "artifacts": [
+      {
+        "id": "deliveredLesson/objective/title",
+        "text": "配比条件到线性约束的转化与解集合分析"
+      },
+      {
+        "id": "deliveredLesson/objective/whyNow",
+        "text": "当我们面对“宽条/窄条卡片总宽”类文字时，常直接列等式却忽略域与独立性，导致误判解唯一性或可行性。先建立逐步翻译与检验模型，再处理实际整数边界。"
+      },
+      {
+        "id": "deliveredLesson/objective/outcomes/0/title",
+        "text": "Translate textual ratio/matching conditions into linear constraints"
+      },
+      {
+        "id": "deliveredLesson/objective/outcomes/0/description",
+        "text": "Translate textual ratio/matching conditions into linear constraints: define variables and units, write equations such as 2x+y=8 from card widths and total width, explicitly state variable domain (non-negative real or integer when required) as given by problem, and follow stepwise process of listing variables/ranges, translating each sentence, then checking independence/consistency and substituting back."
+      },
+      {
+        "id": "deliveredLesson/objective/outcomes/1/title",
+        "text": "Distinguish solution set types and test added condition independence"
+      },
+      {
+        "id": "deliveredLesson/objective/outcomes/1/description",
+        "text": "Distinguish solution set types (multiple, unique, contradiction) for ratio lines and test if added condition is independent or duplicate: show multiple via two feasible combos satisfying constraints; verify unique legal solution from two independent equations; identify scalar-multiple as duplicate; report contradiction without altering assumptions; check domain real vs integer after solving."
+      },
+      {
+        "id": "deliveredLesson/segments/0/explanation",
+        "text": "处理配比文字时，先写明变量代表什么、单位与允许范围（如非负实数或非负整数），再把每句话转成等式或不等式。例如规划两种布料：每卷宽4米与2米，总宽16米，记a,b为卷数，域为非负整数（整卷），则4a+2b=16。这一步不求解，只建立约束集。后续检查这些式子是否互相独立：若一条是另一条的倍数，则未新增信息；若数值冲突则无解。该模型让我们看清哪些自由度仍存。"
+      },
+      {
+        "id": "deliveredLesson/segments/1/explanation",
+        "text": "下面用植树案例演练完整步骤：松树占地2㎡、枫树3㎡，总面18㎡；且树共8棵。我们列出变量、译式、求解并验证域。"
+      },
+      {
+        "id": "deliveredLesson/segments/1/workedProcess/startingState",
+        "text": "松树p棵、枫树m棵，域为非负整数（整树）。条件：总占地18㎡（松2㎡/棵、枫3㎡/棵），总棵数8。"
+      },
+      {
+        "id": "deliveredLesson/segments/1/workedProcess/inputs/0",
+        "text": "2p+3m=18"
+      },
+      {
+        "id": "deliveredLesson/segments/1/workedProcess/inputs/1",
+        "text": "p+m=8"
+      },
+      {
+        "id": "deliveredLesson/segments/1/workedProcess/inputs/2",
+        "text": "域非负整数"
+      },
+      {
+        "id": "deliveredLesson/segments/1/workedProcess/result",
+        "text": "p=6,m=2"
+      },
+      {
+        "id": "deliveredLesson/segments/1/workedProcess/whyResultFollows",
+        "text": "联立代入后候选值唯一且落在整数域，代回两式均成立"
+      },
+      {
+        "id": "deliveredLesson/segments/1/workedProcess/interaction/activity/prompt",
+        "text": "已知2p+3m=18且p,m为非负整数，并新增条件总棵数8即p+m=8。哪组具体数值是合法解？"
+      },
+      {
+        "id": "deliveredLesson/segments/1/workedProcess/interaction/activity/options/0/text",
+        "text": "p=6,m=2"
+      },
+      {
+        "id": "deliveredLesson/segments/1/workedProcess/interaction/activity/options/1/text",
+        "text": "p=4,m=4"
+      },
+      {
+        "id": "deliveredLesson/segments/1/workedProcess/interaction/activity/options/2/text",
+        "text": "p=3,m=5"
+      },
+      {
+        "id": "deliveredLesson/segments/1/workedProcess/interaction/activity/feedback",
+        "text": "正确：代入两式均成立且为整数。"
+      },
+      {
+        "id": "deliveredLesson/segments/1/workedProcess/interaction/activity/debrief",
+        "text": "逐步代入可保等价，验证域完整。"
+      },
+      {
+        "id": "deliveredLesson/segments/1/workedProcess/interaction/transfer/prompt",
+        "text": "新约束下哪组解合法？"
+      },
+      {
+        "id": "deliveredLesson/segments/1/workedProcess/interaction/transfer/options/0/text",
+        "text": "p=6,m=2（沿用旧面积式）"
+      },
+      {
+        "id": "deliveredLesson/segments/1/workedProcess/interaction/transfer/options/1/text",
+        "text": "p=4,m=4（由4p+2m=24与p+m=8得）"
+      },
+      {
+        "id": "deliveredLesson/segments/1/workedProcess/interaction/transfer/options/2/text",
+        "text": "p=2,m=6（系数互换）"
+      },
+      {
+        "id": "deliveredLesson/segments/1/workedProcess/interaction/transfer/feedback",
+        "text": "正确：新预算式与棵数式联立得此，且为整数。"
+      },
+      {
+        "id": "deliveredLesson/segments/1/workedProcess/interaction/transfer/debrief",
+        "text": "重新翻译新条件为4p+2m=24，与棵数式联立，设计新约束集。"
+      },
+      {
+        "id": "deliveredLesson/segments/1/workedProcess/interaction/transfer/changedCondition",
+        "text": "原面积条件作废，改为预算：松树每棵4元、枫树2元，总预算24元，总棵数仍8，域非负整数。"
+      },
+      {
+        "id": "deliveredLesson/segments/2/explanation",
+        "text": "域边界决定解是否可用。源文指出实数解0.5在整张要求下非法；若题设未言整张却自加整数限制，会误杀合法解。"
+      },
+      {
+        "id": "deliveredLesson/segments/2/contrast/text",
+        "text": "题设说“x+y=1且x-y=0得x=y=0.5”，若未要求整张，实数模型接受；若擅自假定整张则判无解，反之若要求整张却当实数会采纳不可行裁切。"
+      },
+      {
+        "id": "deliveredLesson/segments/3/explanation",
+        "text": "省略步骤易失败：不写域会混淆解集合；不查独立性会误认多解变唯一；不代回会漏矛盾。先列变量范围，再逐句译，后判关系，最后验证，是稳定流程。"
+      },
+      {
+        "id": "deliveredLesson/segments/4/explanation",
+        "text": "设计新增条件需独立且相容。例如大包重5千克、小包重2千克，总重10千克，记大包u、小包v为非负实数，有5u+2v=10。仅此式时，u=0,v=5与u=2,v=0都可行，解不唯一。下面逐步体会添加独立等式的效果。"
+      },
+      {
+        "id": "deliveredLesson/segments/4/workedProcess/startingState",
+        "text": "大包u张、小包v张，域为非负实数，总重约束5u+2v=10"
+      },
+      {
+        "id": "deliveredLesson/segments/4/workedProcess/inputs/0",
+        "text": "5u+2v=10"
+      },
+      {
+        "id": "deliveredLesson/segments/4/workedProcess/inputs/1",
+        "text": "域非负实数"
+      },
+      {
+        "id": "deliveredLesson/segments/4/workedProcess/result",
+        "text": "u=2,v=0"
+      },
+      {
+        "id": "deliveredLesson/segments/4/workedProcess/whyResultFollows",
+        "text": "u+v=2与5u+2v=10联立得唯一解且落域"
+      },
+      {
+        "id": "deliveredLesson/segments/4/workedProcess/interaction/activity/prompt",
+        "text": "非负实数域下，5u+2v=10有(u=0,v=5)与(u=2,v=0)等可行组合。欲使其解唯一，下列哪一个新增条件可达到目的？"
+      },
+      {
+        "id": "deliveredLesson/segments/4/workedProcess/interaction/activity/options/0/text",
+        "text": "u+v=2（联立得u=2,v=0）"
+      },
+      {
+        "id": "deliveredLesson/segments/4/workedProcess/interaction/activity/options/1/text",
+        "text": "10u+4v=20（原式乘二）"
+      },
+      {
+        "id": "deliveredLesson/segments/4/workedProcess/interaction/activity/options/2/text",
+        "text": "10u+4v=22（原式乘二但右侧不同）"
+      },
+      {
+        "id": "deliveredLesson/segments/4/workedProcess/interaction/activity/feedback",
+        "text": "正确：该式与原式独立，联立唯一确定(2,0)。"
+      },
+      {
+        "id": "deliveredLesson/segments/4/workedProcess/interaction/activity/debrief",
+        "text": "独立相容等式才能缩小解集合至唯一。"
+      },
+      {
+        "id": "deliveredLesson/segments/4/workedProcess/interaction/transfer/prompt",
+        "text": "新约束下哪组解合法？"
+      },
+      {
+        "id": "deliveredLesson/segments/4/workedProcess/interaction/transfer/options/0/text",
+        "text": "u=2,v=0（沿用旧重式）"
+      },
+      {
+        "id": "deliveredLesson/segments/4/workedProcess/interaction/transfer/options/1/text",
+        "text": "x=2.5,y=0.5（由3x+y=8与x+y=3得）"
+      },
+      {
+        "id": "deliveredLesson/segments/4/workedProcess/interaction/transfer/options/2/text",
+        "text": "x=0,y=8（仅满足宽度）"
+      },
+      {
+        "id": "deliveredLesson/segments/4/workedProcess/interaction/transfer/feedback",
+        "text": "正确：新宽度式与张数式联立得此，且为实数。"
+      },
+      {
+        "id": "deliveredLesson/segments/4/workedProcess/interaction/transfer/debrief",
+        "text": "重新翻译新条件为3x+y=8，与张数式联立。"
+      },
+      {
+        "id": "deliveredLesson/segments/4/workedProcess/interaction/transfer/changedCondition",
+        "text": "原总重条件作废，改为宽度：宽卡3宽、窄卡1宽，总宽8，域非负实数，新增总张数3。"
+      },
+      {
+        "id": "deliveredLesson/segments/5/explanation",
+        "text": "解的可行性还受变量域边界控制。即使代数得出候选值，若域从非负实数改为非负整数，原候选可能越界。设每板长贴纸长4单位、短贴纸长1单位，总长为6单位，记长板m、短板n为非负实数则有4m+n=6，得m=1.5,n=0等；若题设明确要求整张，则m,n必须非负整数，此时4m+n=6仅有m=1,n=2（m=0时n=6；m=1时n=2；m≥2时n负）。代数候选若含小数便不可行，须回到现实约定检验。"
+      },
+      {
+        "id": "deliveredLesson/segments/5/contrast/text",
+        "text": "若未要求整张却自行假定整数，会把m=1.5,n=0判为无解而漏掉合法实数解；反之要求整张却当实数，会采纳不可行的裁切方案。"
+      },
+      {
+        "id": "deliveredLesson/segments/6/explanation",
+        "text": "检验新增条件是否提供新信息，核心看它与已有式子是否独立。若新增式子是原方程的标量倍，例如原4r+s=8新增8r+2s=16，则两式描述同一直线，解集合类型不变仍多解。若新增式子与原方程矛盾，例如4r+s=8新增8r+2s=18，则联立无解，应报告冲突而非篡改数据。这种判断不依赖具体数值巧合，而依赖系数与常数项的比例关系。"
+      },
+      {
+        "id": "deliveredLesson/summary/text",
+        "text": "翻译条件为线性约束须四步：列变量单位与域、逐句译式、判独立与一致、代回验证。域是题设一部分，方程冗余或矛盾需显式识别。"
+      }
+    ],
+    "exposure": []
+  }
+}

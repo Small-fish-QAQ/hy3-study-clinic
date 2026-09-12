@@ -1,0 +1,244 @@
+{
+  "task": {
+    "caseId": "N-E02-curriculum",
+    "runId": "N-E02-curriculum-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-E02-curriculum.json",
+    "inputHash": "8986463467244eb3ef7a3a8ef6f32ee29c760fde5b026743baa15bea01927426",
+    "population": "natural",
+    "sourceId": "E02"
+  },
+  "inputHash": "8986463467244eb3ef7a3a8ef6f32ee29c760fde5b026743baa15bea01927426",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "correctness": "74f09a90c20945f2ae3175969d75f33951c4e550ea1844015802dd04ab533e54",
+      "artifact-audit": "74f09a90c20945f2ae3175969d75f33951c4e550ea1844015802dd04ab533e54"
+    },
+    "stages": {
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "uncertain",
+            "affected": [
+              "Q2"
+            ],
+            "reason": "The counterexample check is not established.",
+            "proposed": {
+              "kind": "conditions",
+              "status": "clear",
+              "affected": [
+                "Q2"
+              ],
+              "reason": "核验artifacts/1中四个objective描述与source e3及goals e5-e7一致：所有生物需能量、食物网定向流动、三种能量获取方式、自养关键且化能不依赖阳光。作者未混淆充分必要，obj_82ff3130从化能合成不依赖阳光推出非所有生态直接依赖阳光，推理有效，无局部不足。",
+              "refs": [
+                "e3",
+                "e19",
+                "e14"
+              ],
+              "challenge": {
+                "status": "closed",
+                "reason": "尝试构造相容反例使所有生态系统直接依赖阳光，但source e3明示chemosynthetic autotrophs使用无机分子而非阳光且属于autotrophs，故存在不依赖阳光的生态系统，反例被给定事实排除，原结论建立。",
+                "refs": [
+                  "e3"
+                ]
+              }
+            },
+            "reviewReasons": [
+              "CONDITIONS_CHALLENGE_UNGROUNDED"
+            ]
+          },
+          {
+            "kind": "quantities",
+            "status": "not_applicable",
+            "affected": [],
+            "reason": "产物中无百分比/千分比或数量单位断言，rates为空数组，无重算需求。",
+            "contextHash": "74f09a90c20945f2ae3175969d75f33951c4e550ea1844015802dd04ab533e54",
+            "proposed": {
+              "kind": "quantities",
+              "status": "not_applicable",
+              "affected": [],
+              "reason": "产物中无百分比/千分比或数量单位断言，rates为空数组，无重算需求。",
+              "refs": [
+                "e15",
+                "e19"
+              ]
+            },
+            "reviewReasons": []
+          }
+        ],
+        "keys": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 2,
+            "reason": "Artifact objectives(e19)中obj_52e145ad、obj_2f162280、obj_82ff3130分别映射声明目标e5、e6、e7，描述忠实且未削弱（如obj_82ff3130澄清化能合成不依赖阳光），符合e14对Q2评价提议课程保留与范围的要求；无基本目标消失或扭曲。",
+            "refs": [
+              "e19",
+              "e5",
+              "e6",
+              "e7",
+              "e14"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e19",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "[{\"id\":\"obj_1b66befd-507a-4d9d-95f9-986e1a9647a6\",\"title\":\"解释所有生物都需要某种形式的能量\",\"description\":\"解释所有生物都需要能量，作为理解生态系统能量动态的基础。\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_da27d812-1ceb-4766-90a9-52f94591c128\",\"ta_77dc12c0-84a4-45df-baa4-c793f3a7f417\"],\"authorityClaimIds\":[\"tac_07f3821e-2379-422e-9eef-fe332b327e1d\",\"tac_662909c0-5127-4bfe-bf04-84eef4e66292\"],\"priority\":\"required\",\"priorityRationale\":\"证据E1具有正式充分权威，支持explain构造\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"explain\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_8022212b\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_8022212b\"]},{\"id\":\"obj_52e145ad-0b1a-4350-b088-cf922945c46b\",\"title\":\"解释食物网如何展示生态系统中能量的定向流动\",\"description\":\"解释食物网如何展示生态系统中能量的定向流动，包括生物获取和利用能量的效率以及剩余多少供其他食物网生物使用。\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_bf9e9ec3-00a7-400d-a9be-43f31826f25c\",\"ta_ec18fcb8-029f-4220-a50a-cef05e49ca42\"],\"authorityClaimIds\":[\"tac_4d130dcb-8c69-4804-8fe1-d0590e92540d\",\"tac_d3d1c1c4-fe84-4521-9f4d-f74d0882f6d4\"],\"priority\":\"required\",\"priorityRationale\":\"证据E4具有正式充分权威，支持explain构造\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"explain\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_1_41640f81\"],\"formalEvidenceSourceBlockIds\":[\"blk_1_41640f81\"]},{\"id\":\"obj_2f162280-87cf-49d1-8bf2-16d2d7367a9a\",\"title\":\"识别生物获取能量的三种途径\",\"description\":\"识别生物获取能量的三种方式：光合作用、化能合成作用，以及异养生物对其他生物（或曾生物）的消耗与消化。\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_e773a792-d856-4e1e-b899-5ef112ccfbd9\",\"ta_b99203c7-8969-4757-8e83-58fe23cfef9a\"],\"authorityClaimIds\":[\"tac_a762e37f-23ad-42b6-90cd-97d128bf6669\",\"tac_016b808e-3a27-4679-b40c-5363fcb39591\"],\"priority\":\"required\",\"priorityRationale\":\"证据E2支持identify构造，具有正式权威\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_2_56e552f9\"],\"formalEvidenceSourceBlockIds\":[\"blk_2_56e552f9\"]},{\"id\":\"obj_82ff3130-f9f4-450f-8d28-37239a4c3320\",\"title\":\"解释自养生物的关键生态作用并澄清化能合成不依赖阳光\",\"description\":\"解释自养生物对所有生态系统至关重要（为其他生物提供能量），并澄清化能合成自养生物使用无机分子而非阳光作为能量来源，因此并非所有生态系统都直接依赖阳光。\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_dc84d08f-ffa9-4b85-bae7-6a51ed129b9e\",\"ta_1d23b9df-c8f7-4def-b138-2ba825eec540\"],\"authorityClaimIds\":[\"tac_c206bfa0-44e7-41c2-8bff-7b1831162557\",\"tac_84a16b94-9b2b-4fd1-a6ef-1341c8177bea\"],\"priority\":\"required\",\"priorityRationale\":\"证据E12具有正式充分权威支持explain构造，E15提供主题上下文但无正式权威\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"explain\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_3_8cb50b60\"],\"formalEvidenceSourceBlockIds\":[\"blk_3_8cb50b60\"]}]",
+                "valueHash": "4a24689828610f203be1c0c975fad3e94652d9353750813ff40d69161f010c0c"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "用中文解释食物网描述的能量流动",
+                "valueHash": "f02833acd690de98875b2315b610c4225d2741fe584e193acb24f1ce584aa094"
+              },
+              {
+                "id": "e6",
+                "pointer": "/goals/1",
+                "role": "goal",
+                "kind": "text",
+                "value": "区分光合作用、化能合成和异养摄食的能量获取方式",
+                "valueHash": "864b2f44168e54c93993b3cc20181331911827d99e72b7574233f8acf0cdd52b"
+              },
+              {
+                "id": "e7",
+                "pointer": "/goals/2",
+                "role": "goal",
+                "kind": "text",
+                "value": "说明自养生物在生态系统中的作用，避免把所有生态系统都解释为直接依赖阳光",
+                "valueHash": "f8269fe70b13c83638e2d423b401e876261d4b9ca4cf97af6e75a79bad598ead"
+              },
+              {
+                "id": "e14",
+                "pointer": "/authorityBoundaries/1",
+                "role": "boundary",
+                "kind": "text",
+                "value": "Q2评价提议课程对所注册学习目标的保留和范围；不将尚未发生的教学交付或Formal准入当成已经完成。",
+                "valueHash": "fda6a582e8f32aff1fc754c529607badc828976824498d64a102c9649555f08d"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q2",
+          "level": "U",
+          "reason": "The counterexample check is not established.",
+          "refs": [
+            "e19",
+            "e5",
+            "e6",
+            "e7",
+            "e14"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e19",
+              "pointer": "/artifacts/1/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "[{\"id\":\"obj_1b66befd-507a-4d9d-95f9-986e1a9647a6\",\"title\":\"解释所有生物都需要某种形式的能量\",\"description\":\"解释所有生物都需要能量，作为理解生态系统能量动态的基础。\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_da27d812-1ceb-4766-90a9-52f94591c128\",\"ta_77dc12c0-84a4-45df-baa4-c793f3a7f417\"],\"authorityClaimIds\":[\"tac_07f3821e-2379-422e-9eef-fe332b327e1d\",\"tac_662909c0-5127-4bfe-bf04-84eef4e66292\"],\"priority\":\"required\",\"priorityRationale\":\"证据E1具有正式充分权威，支持explain构造\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"explain\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_8022212b\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_8022212b\"]},{\"id\":\"obj_52e145ad-0b1a-4350-b088-cf922945c46b\",\"title\":\"解释食物网如何展示生态系统中能量的定向流动\",\"description\":\"解释食物网如何展示生态系统中能量的定向流动，包括生物获取和利用能量的效率以及剩余多少供其他食物网生物使用。\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_bf9e9ec3-00a7-400d-a9be-43f31826f25c\",\"ta_ec18fcb8-029f-4220-a50a-cef05e49ca42\"],\"authorityClaimIds\":[\"tac_4d130dcb-8c69-4804-8fe1-d0590e92540d\",\"tac_d3d1c1c4-fe84-4521-9f4d-f74d0882f6d4\"],\"priority\":\"required\",\"priorityRationale\":\"证据E4具有正式充分权威，支持explain构造\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"explain\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_1_41640f81\"],\"formalEvidenceSourceBlockIds\":[\"blk_1_41640f81\"]},{\"id\":\"obj_2f162280-87cf-49d1-8bf2-16d2d7367a9a\",\"title\":\"识别生物获取能量的三种途径\",\"description\":\"识别生物获取能量的三种方式：光合作用、化能合成作用，以及异养生物对其他生物（或曾生物）的消耗与消化。\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_e773a792-d856-4e1e-b899-5ef112ccfbd9\",\"ta_b99203c7-8969-4757-8e83-58fe23cfef9a\"],\"authorityClaimIds\":[\"tac_a762e37f-23ad-42b6-90cd-97d128bf6669\",\"tac_016b808e-3a27-4679-b40c-5363fcb39591\"],\"priority\":\"required\",\"priorityRationale\":\"证据E2支持identify构造，具有正式权威\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_2_56e552f9\"],\"formalEvidenceSourceBlockIds\":[\"blk_2_56e552f9\"]},{\"id\":\"obj_82ff3130-f9f4-450f-8d28-37239a4c3320\",\"title\":\"解释自养生物的关键生态作用并澄清化能合成不依赖阳光\",\"description\":\"解释自养生物对所有生态系统至关重要（为其他生物提供能量），并澄清化能合成自养生物使用无机分子而非阳光作为能量来源，因此并非所有生态系统都直接依赖阳光。\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_dc84d08f-ffa9-4b85-bae7-6a51ed129b9e\",\"ta_1d23b9df-c8f7-4def-b138-2ba825eec540\"],\"authorityClaimIds\":[\"tac_c206bfa0-44e7-41c2-8bff-7b1831162557\",\"tac_84a16b94-9b2b-4fd1-a6ef-1341c8177bea\"],\"priority\":\"required\",\"priorityRationale\":\"证据E12具有正式充分权威支持explain构造，E15提供主题上下文但无正式权威\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"explain\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_3_8cb50b60\"],\"formalEvidenceSourceBlockIds\":[\"blk_3_8cb50b60\"]}]",
+              "valueHash": "4a24689828610f203be1c0c975fad3e94652d9353750813ff40d69161f010c0c"
+            },
+            {
+              "id": "e5",
+              "pointer": "/goals/0",
+              "role": "goal",
+              "kind": "text",
+              "value": "用中文解释食物网描述的能量流动",
+              "valueHash": "f02833acd690de98875b2315b610c4225d2741fe584e193acb24f1ce584aa094"
+            },
+            {
+              "id": "e6",
+              "pointer": "/goals/1",
+              "role": "goal",
+              "kind": "text",
+              "value": "区分光合作用、化能合成和异养摄食的能量获取方式",
+              "valueHash": "864b2f44168e54c93993b3cc20181331911827d99e72b7574233f8acf0cdd52b"
+            },
+            {
+              "id": "e7",
+              "pointer": "/goals/2",
+              "role": "goal",
+              "kind": "text",
+              "value": "说明自养生物在生态系统中的作用，避免把所有生态系统都解释为直接依赖阳光",
+              "valueHash": "f8269fe70b13c83638e2d423b401e876261d4b9ca4cf97af6e75a79bad598ead"
+            },
+            {
+              "id": "e14",
+              "pointer": "/authorityBoundaries/1",
+              "role": "boundary",
+              "kind": "text",
+              "value": "Q2评价提议课程对所注册学习目标的保留和范围；不将尚未发生的教学交付或Formal准入当成已经完成。",
+              "valueHash": "fda6a582e8f32aff1fc754c529607badc828976824498d64a102c9649555f08d"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [
+            {
+              "level": "U",
+              "code": "INDEPENDENT_CONDITIONS",
+              "detail": {
+                "kind": "conditions",
+                "status": "uncertain",
+                "affected": [
+                  "Q2"
+                ],
+                "reason": "The counterexample check is not established.",
+                "proposed": {
+                  "kind": "conditions",
+                  "status": "clear",
+                  "affected": [
+                    "Q2"
+                  ],
+                  "reason": "核验artifacts/1中四个objective描述与source e3及goals e5-e7一致：所有生物需能量、食物网定向流动、三种能量获取方式、自养关键且化能不依赖阳光。作者未混淆充分必要，obj_82ff3130从化能合成不依赖阳光推出非所有生态直接依赖阳光，推理有效，无局部不足。",
+                  "refs": [
+                    "e3",
+                    "e19",
+                    "e14"
+                  ],
+                  "challenge": {
+                    "status": "closed",
+                    "reason": "尝试构造相容反例使所有生态系统直接依赖阳光，但source e3明示chemosynthetic autotrophs使用无机分子而非阳光且属于autotrophs，故存在不依赖阳光的生态系统，反例被给定事实排除，原结论建立。",
+                    "refs": [
+                      "e3"
+                    ]
+                  }
+                },
+                "reviewReasons": [
+                  "CONDITIONS_CHALLENGE_UNGROUNDED"
+                ]
+              }
+            }
+          ],
+          "proposedLevel": 2,
+          "proposedReason": "Artifact objectives(e19)中obj_52e145ad、obj_2f162280、obj_82ff3130分别映射声明目标e5、e6、e7，描述忠实且未削弱（如obj_82ff3130澄清化能合成不依赖阳光），符合e14对Q2评价提议课程保留与范围的要求；无基本目标消失或扭曲。",
+          "decidingConstraint": "INDEPENDENT_CONDITIONS"
+        }
+      ],
+      "reviewRequired": [
+        {
+          "dimension": "Q2",
+          "reason": "UNRESOLVED"
+        }
+      ]
+    },
+    "resultHash": "4a38fcf5509410fcb2e067794280abf0aa6b362e25266c2dfc13afcaf293becf"
+  }
+}

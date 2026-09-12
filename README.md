@@ -7,7 +7,7 @@ A Hy3-powered learning agent that turns your materials into a course, with guide
 [![CI](https://github.com/Small-fish-QAQ/hy3-study-clinic/actions/workflows/ci.yml/badge.svg)](https://github.com/Small-fish-QAQ/hy3-study-clinic/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 
-[截图导览](docs/DEMO.md) · [快速运行](#快速运行) · [评估方法与状态](docs/EVALUATION.md)
+[截图导览](docs/DEMO.md) · [快速运行](#快速运行) · [最终机器结果](docs/EVALUATION_RESULTS.md) · [评测样本与复现](eval/final-evaluation/README.md)
 
 ### ▶ 1 分 50 秒演示
 
@@ -86,11 +86,17 @@ npm run dev
 
 ## 评估与已验证的范围
 
+**截至 2026-09-12：最终机器评估已完成；两位盲评独立模型审阅已完成；真实人类验证进行中。**
+
+冻结运行完成 **279/279 次观察**，包含 209 个不同案例、239 条首次维度判断及重复观察。24 个对抗案例均检出为 0；重复评估有 29/44 个维度组完全一致。受控三档严格排序仅 5/24 组，48/239 条首次判断为 U，评估器局限仍然明显。两位模型评审在 34 条判断中一致 32 条；这是模型间比较，不能代替人类验证。
+
+完整匿名结果、冻结方法及可公开的 51 个原始案例见[评测材料](eval/final-evaluation/README.md)。与进行中的人类标注共享来源家族的原文、逐题意见和映射暂缓公开；全部失败与不确定判断保留在[完整结果](docs/EVALUATION_RESULTS.md)中。
+
 | 证据                                                              | 能回答什么                                                       | 当前边界                                                                                 |
 | ----------------------------------------------------------------- | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
 | 自动化测试与 `eval:fake`                                          | 来源校验、状态转换、隔离、重复提交、失败恢复等规则是否按设计执行 | 可在当前代码上复现；不测量真实教学质量。                                                 |
 | [已公开的 Hy3 在线记录](docs/evidence/hy3-online-verification.md) | 真实 Hy3 是否完成过概念分析、评分、跨文档出题等操作              | **2026-07-31，提交 `46d34f2`，6/6 项操作通过**；小样本历史记录，不覆盖当前完整课程链路。 |
-| [StudyEval 方法与状态](docs/EVALUATION.md)                        | 如何评价开放式教学输出，以及如何验证评估器本身                   | 小型新样本检查未满足证据充分性要求；最终新样本评估、真实人工标注与人工一致性尚未完成。   |
+| [StudyEval 最终机器结果](docs/EVALUATION_RESULTS.md)              | 六个操作维度的判别力、重复稳定性、对抗性与自然产品表现           | 机器运行与独立模型审阅完成；真实人类验证进行中。严格排序、U、生成失败和正式准入均有限。  |
 | [产品演示](docs/DEMO.md)                                          | 界面与学习过程实际是什么样                                       | 展示用途，不作为教学效果或总体成功率的实验。                                             |
 
 可复现检查与证据入口见 [验证说明](docs/VERIFICATION.md)。本项目尚无学习效果实验，不声称提升了成绩、记忆保持或长期掌握率。

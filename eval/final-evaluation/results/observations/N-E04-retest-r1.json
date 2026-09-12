@@ -1,0 +1,438 @@
+{
+  "task": {
+    "caseId": "N-E04-retest",
+    "runId": "N-E04-retest-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-E04-retest.json",
+    "inputHash": "a52ebf465e3e02fa2ec4a7ff156c8f749df1082233ac97598c2ae83a2d16d80e",
+    "population": "natural",
+    "sourceId": "E04"
+  },
+  "inputHash": "a52ebf465e3e02fa2ec4a7ff156c8f749df1082233ac97598c2ae83a2d16d80e",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "prepare-context-current": "a749cdbfca4fa0441c9b356d8257d2a8042cc86caa337e5e9442d3ab02565edb",
+      "solve-current": "62b5e17cda6267699d360261771fcab3df5163ff5bd3c096c2fdc19c298e51d0",
+      "correctness": "38ba82a9c807a68d8e7dc2505b9703c804381d1c1a3064e590f4f33b74d90df6",
+      "artifact-audit": "38ba82a9c807a68d8e7dc2505b9703c804381d1c1a3064e590f4f33b74d90df6"
+    },
+    "stages": {
+      "prepare-context-current": {
+        "contexts": [
+          {
+            "taskId": "current",
+            "status": "ready",
+            "reason": "题干情景事实完整存在于 history h48 中，可逐字摘录分离，无解答混入；通用编码规则已在 sources E04 提供，不重复提取。",
+            "premises": [
+              {
+                "ref": "e97",
+                "quote": "被试默读词表“旗帜、爱情、戒指、逻辑、河流、观点”",
+                "proposedRef": "h48",
+                "witness": {
+                  "id": "e97",
+                  "pointer": "/history/47/text",
+                  "role": "prior_exposure",
+                  "kind": "text",
+                  "value": "在一项研究中，被试默读词表“旗帜、爱情、戒指、逻辑、河流、观点”。意外回忆测试发现具体词（旗帜、戒指、河流）回忆率更高。助教写了一个中间分析：“所有词都通过声学编码，因为具体词发音更短促，所以更容易被声音通道记住。” 请诊断这个中间步骤的错误所在。",
+                  "valueHash": "fb29643a0457afddbce43de6da8807b3d7bb38f2f8cf675f3032ba63db8a6240"
+                }
+              },
+              {
+                "ref": "e97",
+                "quote": "意外回忆测试发现具体词（旗帜、戒指、河流）回忆率更高",
+                "proposedRef": "h48",
+                "witness": {
+                  "id": "e97",
+                  "pointer": "/history/47/text",
+                  "role": "prior_exposure",
+                  "kind": "text",
+                  "value": "在一项研究中，被试默读词表“旗帜、爱情、戒指、逻辑、河流、观点”。意外回忆测试发现具体词（旗帜、戒指、河流）回忆率更高。助教写了一个中间分析：“所有词都通过声学编码，因为具体词发音更短促，所以更容易被声音通道记住。” 请诊断这个中间步骤的错误所在。",
+                  "valueHash": "fb29643a0457afddbce43de6da8807b3d7bb38f2f8cf675f3032ba63db8a6240"
+                }
+              },
+              {
+                "ref": "e97",
+                "quote": "助教写了一个中间分析：“所有词都通过声学编码，因为具体词发音更短促，所以更容易被声音通道记住。”",
+                "proposedRef": "h48",
+                "witness": {
+                  "id": "e97",
+                  "pointer": "/history/47/text",
+                  "role": "prior_exposure",
+                  "kind": "text",
+                  "value": "在一项研究中，被试默读词表“旗帜、爱情、戒指、逻辑、河流、观点”。意外回忆测试发现具体词（旗帜、戒指、河流）回忆率更高。助教写了一个中间分析：“所有词都通过声学编码，因为具体词发音更短促，所以更容易被声音通道记住。” 请诊断这个中间步骤的错误所在。",
+                  "valueHash": "fb29643a0457afddbce43de6da8807b3d7bb38f2f8cf675f3032ba63db8a6240"
+                }
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "solve-current": {
+        "status": "resolved",
+        "solution": "助教错误在于：被试默读词表（e23）属视觉/文字呈现而非听音，声学编码未主导；具体词回忆率高（e24）按来源e3应归因于高意象词引发视觉与语义双重编码（high-imagery words encoded both visually and semantically），而非发音短促致声音通道易记。其断言“所有词通过声学编码”忽略呈现方式与编码类型匹配，误将具体词优势归为声学。",
+        "witnesses": [
+          {
+            "id": "e3",
+            "pointer": "/sources/0/text",
+            "role": "source",
+            "kind": "text",
+            "value": "We get information into our brains through a process called encoding, which is the input of information into the memory system. Once we receive sensory information from the environment, our brains label or code it. We organize the information with other similar information and connect new concepts to existing concepts. Encoding information occurs through automatic processing and effortful processing.\n\nThere are three types of encoding. The encoding of words and their meaning is known as semantic encoding. It was first demonstrated by William Bousfield (1935) in an experiment in which he asked people to memorize words. The 60 words were actually divided into 4 categories of meaning, although the participants did not know this because the words were randomly presented. When they were asked to remember the words, they tended to recall them in categories, showing that they paid attention to the meanings of the words as they learned them.\n\nVisual encoding is the encoding of images, and acoustic encoding is the encoding of sounds, words in particular. To see how visual encoding works, read over this list of words: car, level, dog, truth, book, value. If you were asked later to recall the words from this list, which ones do you think you’d most likely remember? You would probably have an easier time recalling the words car, dog, and book, and a more difficult time recalling the words level, truth, and value. Why is this? Because you can recall images (mental pictures) more easily than words alone. When you read the words car, dog, and book you created images of these things in your mind. These are concrete, high-imagery words. On the other hand, abstract words like level, truth, and value are low-imagery words. High-imagery words are encoded both visually and semantically (Paivio, 1986), thus building a stronger memory.\n\nNow let’s turn our attention to acoustic encoding. You are driving in your car and a song comes on the radio that you haven’t heard in at least 10 years, but you sing along, recalling every word. In the United States, children often learn the alphabet through song, and they learn the number of days in each month through rhyme: “Thirty days hath September, / April, June, and November; / All the rest have thirty-one, / Save February, with twenty-eight days clear, / And twenty-nine each leap year.” These lessons are easy to remember because of acoustic encoding. We encode the sounds the words make. This is one of the reasons why much of what we teach young children is done through song, rhyme, and rhythm.",
+            "valueHash": "bf1b2eea6b7f20a856c4cfc2f378ff4216695c2cb1b009da66f5aca83f238b9f"
+          },
+          {
+            "id": "e14",
+            "pointer": "/question/prompt",
+            "role": "question",
+            "kind": "text",
+            "value": "在一项研究中，被试默读词表“旗帜、爱情、戒指、逻辑、河流、观点”。意外回忆测试发现具体词（旗帜、戒指、河流）回忆率更高。助教写了一个中间分析：“所有词都通过声学编码，因为具体词发音更短促，所以更容易被声音通道记住。” 请诊断这个中间步骤的错误所在。",
+            "valueHash": "fb29643a0457afddbce43de6da8807b3d7bb38f2f8cf675f3032ba63db8a6240"
+          },
+          {
+            "id": "e23",
+            "pointer": "/scenarioContext/0/text",
+            "role": "context",
+            "kind": "text",
+            "value": "被试默读词表“旗帜、爱情、戒指、逻辑、河流、观点”",
+            "valueHash": "216b07f3039a964cff49ddad09b0e11148b65b68996c2e39206f52d6699d4740"
+          },
+          {
+            "id": "e24",
+            "pointer": "/scenarioContext/1/text",
+            "role": "context",
+            "kind": "text",
+            "value": "意外回忆测试发现具体词（旗帜、戒指、河流）回忆率更高",
+            "valueHash": "c1c2cb5d99dee769bce83ae77743da049138751c68b342d641cc822e86a7f94b"
+          },
+          {
+            "id": "e25",
+            "pointer": "/scenarioContext/2/text",
+            "role": "context",
+            "kind": "text",
+            "value": "助教写了一个中间分析：“所有词都通过声学编码，因为具体词发音更短促，所以更容易被声音通道记住。”",
+            "valueHash": "a4f13231b4e61dfdaa9a6c87dec60123ded41177f46303f18a5c49294bad2467"
+          }
+        ],
+        "reviewReasons": []
+      },
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "uncertain",
+            "affected": [
+              "Q4"
+            ],
+            "reason": "The counterexample check is not established.",
+            "proposed": {
+              "kind": "conditions",
+              "status": "uncertain",
+              "affected": [
+                "Q4"
+              ],
+              "reason": "产物(e24,e26)断言具体词优势来自高意象触发的视觉与语义双重编码，依据e3读具体词创建图像双重编码。场景e133默读、e134具体词回忆高，但未明示被试自发形成图像；e131边界指出该双重编码需安静默读并自发成像假设。构造相容反例：默读但注意力占用未生成图像，则视觉编码可能未触发，原结论未建立。给定事实不能排除此反例，故适用性 uncertain。",
+              "refs": [
+                "e24",
+                "e26",
+                "e3",
+                "e133",
+                "e134",
+                "e131"
+              ],
+              "challenge": {
+                "status": "counterexample",
+                "reason": "补充与e133/e134相容情况：被试默读但未自发形成心理图像(如注意力被占用，见e131边界及e3非绝对强制)，则高意象触发视觉编码条件不成立，具体词优势未必来自双重编码，证明原诊断未必然成立。",
+                "refs": [
+                  "e133",
+                  "e131",
+                  "e3"
+                ]
+              }
+            },
+            "reviewReasons": [
+              "CONDITIONS_CHALLENGE_UNGROUNDED"
+            ]
+          },
+          {
+            "kind": "quantities",
+            "status": "not_applicable",
+            "affected": [],
+            "reason": "题目与产物无数值、百分比或单位换算断言，packet.rates为空，无需独立重算。",
+            "contextHash": "38ba82a9c807a68d8e7dc2505b9703c804381d1c1a3064e590f4f33b74d90df6",
+            "proposed": {
+              "kind": "quantities",
+              "status": "not_applicable",
+              "affected": [],
+              "reason": "题目与产物无数值、百分比或单位换算断言，packet.rates为空，无需独立重算。",
+              "refs": [
+                "e14",
+                "e24",
+                "e26"
+              ]
+            },
+            "reviewReasons": []
+          }
+        ],
+        "keys": [
+          {
+            "taskId": "current",
+            "status": "agrees",
+            "reason": "产物e24选中选项A(e17文本一致)，e26解释默读无声音声学不主导、具体高意象词因心理图像获视觉语义双重编码；盲解同样依据e3诊断助教误将声学套用于默读、具体词优势归双重编码。完整理由与来源机制一致，无保留疑问，故agrees。",
+            "refs": [
+              "e24",
+              "e26",
+              "e17",
+              "e3"
+            ],
+            "witnesses": [
+              {
+                "id": "e24",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "错误在于呈现方式是默读文字而非听音，声学编码未主导；具体词优势来自高意象触发的视觉与语义双重编码",
+                "valueHash": "8ab84345b7501f59d22e30b09f1a999dd4dd16ec756639713485fc40aa8690d0"
+              },
+              {
+                "id": "e26",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "默读无声音，声学编码不主导；具体高意象词因心理图像获得视觉与语义双重编码，这才是回忆差异隐藏成因。",
+                "valueHash": "ead0fdf7faed45f26f6d120c11f27a553ab8f5e77d967d73c571ca8cc8afc970"
+              },
+              {
+                "id": "e17",
+                "pointer": "/question/options/0/text",
+                "role": "question",
+                "kind": "text",
+                "value": "错误在于呈现方式是默读文字而非听音，声学编码未主导；具体词优势来自高意象触发的视觉与语义双重编码",
+                "valueHash": "8ab84345b7501f59d22e30b09f1a999dd4dd16ec756639713485fc40aa8690d0"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "We get information into our brains through a process called encoding, which is the input of information into the memory system. Once we receive sensory information from the environment, our brains label or code it. We organize the information with other similar information and connect new concepts to existing concepts. Encoding information occurs through automatic processing and effortful processing.\n\nThere are three types of encoding. The encoding of words and their meaning is known as semantic encoding. It was first demonstrated by William Bousfield (1935) in an experiment in which he asked people to memorize words. The 60 words were actually divided into 4 categories of meaning, although the participants did not know this because the words were randomly presented. When they were asked to remember the words, they tended to recall them in categories, showing that they paid attention to the meanings of the words as they learned them.\n\nVisual encoding is the encoding of images, and acoustic encoding is the encoding of sounds, words in particular. To see how visual encoding works, read over this list of words: car, level, dog, truth, book, value. If you were asked later to recall the words from this list, which ones do you think you’d most likely remember? You would probably have an easier time recalling the words car, dog, and book, and a more difficult time recalling the words level, truth, and value. Why is this? Because you can recall images (mental pictures) more easily than words alone. When you read the words car, dog, and book you created images of these things in your mind. These are concrete, high-imagery words. On the other hand, abstract words like level, truth, and value are low-imagery words. High-imagery words are encoded both visually and semantically (Paivio, 1986), thus building a stronger memory.\n\nNow let’s turn our attention to acoustic encoding. You are driving in your car and a song comes on the radio that you haven’t heard in at least 10 years, but you sing along, recalling every word. In the United States, children often learn the alphabet through song, and they learn the number of days in each month through rhyme: “Thirty days hath September, / April, June, and November; / All the rest have thirty-one, / Save February, with twenty-eight days clear, / And twenty-nine each leap year.” These lessons are easy to remember because of acoustic encoding. We encode the sounds the words make. This is one of the reasons why much of what we teach young children is done through song, rhyme, and rhythm.",
+                "valueHash": "bf1b2eea6b7f20a856c4cfc2f378ff4216695c2cb1b009da66f5aca83f238b9f"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q4",
+            "level": 2,
+            "reason": "题目(e14)含默读词表与助教误析，scenarioContext(e133-e135)提供完整情景，来源e3明确编码定义与高意象双重编码机制；选项A(e17)正确诊断声学未主导且具体词优势来自视觉语义双重编码，与blindSolutions(current)一致；产物选定A(e23)及解释(e26)匹配。priorExposure(e123-e129)虽含本题题干与三个选项文本，但仅未选定选项与情景，无指定答案或推理透露，不构成solution disclosure，本题必要判断（诊断错误）未在先前完成，独立性适当。任务前提充分、答案集可辩护、无泄露或强制模糊键，满足Q4的2分标准。",
+            "refs": [
+              "e14",
+              "e17",
+              "e23",
+              "e3",
+              "e133",
+              "e123",
+              "e125"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "在一项研究中，被试默读词表“旗帜、爱情、戒指、逻辑、河流、观点”。意外回忆测试发现具体词（旗帜、戒指、河流）回忆率更高。助教写了一个中间分析：“所有词都通过声学编码，因为具体词发音更短促，所以更容易被声音通道记住。” 请诊断这个中间步骤的错误所在。",
+                "valueHash": "fb29643a0457afddbce43de6da8807b3d7bb38f2f8cf675f3032ba63db8a6240"
+              },
+              {
+                "id": "e17",
+                "pointer": "/question/options/0/text",
+                "role": "question",
+                "kind": "text",
+                "value": "错误在于呈现方式是默读文字而非听音，声学编码未主导；具体词优势来自高意象触发的视觉与语义双重编码",
+                "valueHash": "8ab84345b7501f59d22e30b09f1a999dd4dd16ec756639713485fc40aa8690d0"
+              },
+              {
+                "id": "e23",
+                "pointer": "/artifacts/0/id",
+                "role": "artifact",
+                "kind": "text",
+                "value": "current-retest-selected-option",
+                "valueHash": "e616e3a5f76ec84c63d9e263a7a81397d7adc717d7be2dac3334e0d0e5d653fc"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "We get information into our brains through a process called encoding, which is the input of information into the memory system. Once we receive sensory information from the environment, our brains label or code it. We organize the information with other similar information and connect new concepts to existing concepts. Encoding information occurs through automatic processing and effortful processing.\n\nThere are three types of encoding. The encoding of words and their meaning is known as semantic encoding. It was first demonstrated by William Bousfield (1935) in an experiment in which he asked people to memorize words. The 60 words were actually divided into 4 categories of meaning, although the participants did not know this because the words were randomly presented. When they were asked to remember the words, they tended to recall them in categories, showing that they paid attention to the meanings of the words as they learned them.\n\nVisual encoding is the encoding of images, and acoustic encoding is the encoding of sounds, words in particular. To see how visual encoding works, read over this list of words: car, level, dog, truth, book, value. If you were asked later to recall the words from this list, which ones do you think you’d most likely remember? You would probably have an easier time recalling the words car, dog, and book, and a more difficult time recalling the words level, truth, and value. Why is this? Because you can recall images (mental pictures) more easily than words alone. When you read the words car, dog, and book you created images of these things in your mind. These are concrete, high-imagery words. On the other hand, abstract words like level, truth, and value are low-imagery words. High-imagery words are encoded both visually and semantically (Paivio, 1986), thus building a stronger memory.\n\nNow let’s turn our attention to acoustic encoding. You are driving in your car and a song comes on the radio that you haven’t heard in at least 10 years, but you sing along, recalling every word. In the United States, children often learn the alphabet through song, and they learn the number of days in each month through rhyme: “Thirty days hath September, / April, June, and November; / All the rest have thirty-one, / Save February, with twenty-eight days clear, / And twenty-nine each leap year.” These lessons are easy to remember because of acoustic encoding. We encode the sounds the words make. This is one of the reasons why much of what we teach young children is done through song, rhyme, and rhythm.",
+                "valueHash": "bf1b2eea6b7f20a856c4cfc2f378ff4216695c2cb1b009da66f5aca83f238b9f"
+              },
+              {
+                "id": "e133",
+                "pointer": "/scenarioContext/0/text",
+                "role": "context",
+                "kind": "text",
+                "value": "被试默读词表“旗帜、爱情、戒指、逻辑、河流、观点”",
+                "valueHash": "216b07f3039a964cff49ddad09b0e11148b65b68996c2e39206f52d6699d4740"
+              },
+              {
+                "id": "e123",
+                "pointer": "/priorExposure/47/text",
+                "role": "prior_exposure",
+                "kind": "text",
+                "value": "在一项研究中，被试默读词表“旗帜、爱情、戒指、逻辑、河流、观点”。意外回忆测试发现具体词（旗帜、戒指、河流）回忆率更高。助教写了一个中间分析：“所有词都通过声学编码，因为具体词发音更短促，所以更容易被声音通道记住。” 请诊断这个中间步骤的错误所在。",
+                "valueHash": "fb29643a0457afddbce43de6da8807b3d7bb38f2f8cf675f3032ba63db8a6240"
+              },
+              {
+                "id": "e125",
+                "pointer": "/priorExposure/48/text",
+                "role": "prior_exposure",
+                "kind": "text",
+                "value": "错误在于呈现方式是默读文字而非听音，声学编码未主导；具体词优势来自高意象触发的视觉与语义双重编码",
+                "valueHash": "8ab84345b7501f59d22e30b09f1a999dd4dd16ec756639713485fc40aa8690d0"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q4",
+          "level": "U",
+          "reason": "The counterexample check is not established.",
+          "refs": [
+            "e14",
+            "e17",
+            "e23",
+            "e3",
+            "e133",
+            "e123",
+            "e125"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e14",
+              "pointer": "/question/prompt",
+              "role": "question",
+              "kind": "text",
+              "value": "在一项研究中，被试默读词表“旗帜、爱情、戒指、逻辑、河流、观点”。意外回忆测试发现具体词（旗帜、戒指、河流）回忆率更高。助教写了一个中间分析：“所有词都通过声学编码，因为具体词发音更短促，所以更容易被声音通道记住。” 请诊断这个中间步骤的错误所在。",
+              "valueHash": "fb29643a0457afddbce43de6da8807b3d7bb38f2f8cf675f3032ba63db8a6240"
+            },
+            {
+              "id": "e17",
+              "pointer": "/question/options/0/text",
+              "role": "question",
+              "kind": "text",
+              "value": "错误在于呈现方式是默读文字而非听音，声学编码未主导；具体词优势来自高意象触发的视觉与语义双重编码",
+              "valueHash": "8ab84345b7501f59d22e30b09f1a999dd4dd16ec756639713485fc40aa8690d0"
+            },
+            {
+              "id": "e23",
+              "pointer": "/artifacts/0/id",
+              "role": "artifact",
+              "kind": "text",
+              "value": "current-retest-selected-option",
+              "valueHash": "e616e3a5f76ec84c63d9e263a7a81397d7adc717d7be2dac3334e0d0e5d653fc"
+            },
+            {
+              "id": "e3",
+              "pointer": "/sources/0/text",
+              "role": "source",
+              "kind": "text",
+              "value": "We get information into our brains through a process called encoding, which is the input of information into the memory system. Once we receive sensory information from the environment, our brains label or code it. We organize the information with other similar information and connect new concepts to existing concepts. Encoding information occurs through automatic processing and effortful processing.\n\nThere are three types of encoding. The encoding of words and their meaning is known as semantic encoding. It was first demonstrated by William Bousfield (1935) in an experiment in which he asked people to memorize words. The 60 words were actually divided into 4 categories of meaning, although the participants did not know this because the words were randomly presented. When they were asked to remember the words, they tended to recall them in categories, showing that they paid attention to the meanings of the words as they learned them.\n\nVisual encoding is the encoding of images, and acoustic encoding is the encoding of sounds, words in particular. To see how visual encoding works, read over this list of words: car, level, dog, truth, book, value. If you were asked later to recall the words from this list, which ones do you think you’d most likely remember? You would probably have an easier time recalling the words car, dog, and book, and a more difficult time recalling the words level, truth, and value. Why is this? Because you can recall images (mental pictures) more easily than words alone. When you read the words car, dog, and book you created images of these things in your mind. These are concrete, high-imagery words. On the other hand, abstract words like level, truth, and value are low-imagery words. High-imagery words are encoded both visually and semantically (Paivio, 1986), thus building a stronger memory.\n\nNow let’s turn our attention to acoustic encoding. You are driving in your car and a song comes on the radio that you haven’t heard in at least 10 years, but you sing along, recalling every word. In the United States, children often learn the alphabet through song, and they learn the number of days in each month through rhyme: “Thirty days hath September, / April, June, and November; / All the rest have thirty-one, / Save February, with twenty-eight days clear, / And twenty-nine each leap year.” These lessons are easy to remember because of acoustic encoding. We encode the sounds the words make. This is one of the reasons why much of what we teach young children is done through song, rhyme, and rhythm.",
+              "valueHash": "bf1b2eea6b7f20a856c4cfc2f378ff4216695c2cb1b009da66f5aca83f238b9f"
+            },
+            {
+              "id": "e133",
+              "pointer": "/scenarioContext/0/text",
+              "role": "context",
+              "kind": "text",
+              "value": "被试默读词表“旗帜、爱情、戒指、逻辑、河流、观点”",
+              "valueHash": "216b07f3039a964cff49ddad09b0e11148b65b68996c2e39206f52d6699d4740"
+            },
+            {
+              "id": "e123",
+              "pointer": "/priorExposure/47/text",
+              "role": "prior_exposure",
+              "kind": "text",
+              "value": "在一项研究中，被试默读词表“旗帜、爱情、戒指、逻辑、河流、观点”。意外回忆测试发现具体词（旗帜、戒指、河流）回忆率更高。助教写了一个中间分析：“所有词都通过声学编码，因为具体词发音更短促，所以更容易被声音通道记住。” 请诊断这个中间步骤的错误所在。",
+              "valueHash": "fb29643a0457afddbce43de6da8807b3d7bb38f2f8cf675f3032ba63db8a6240"
+            },
+            {
+              "id": "e125",
+              "pointer": "/priorExposure/48/text",
+              "role": "prior_exposure",
+              "kind": "text",
+              "value": "错误在于呈现方式是默读文字而非听音，声学编码未主导；具体词优势来自高意象触发的视觉与语义双重编码",
+              "valueHash": "8ab84345b7501f59d22e30b09f1a999dd4dd16ec756639713485fc40aa8690d0"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [
+            {
+              "level": "U",
+              "code": "INDEPENDENT_CONDITIONS",
+              "detail": {
+                "kind": "conditions",
+                "status": "uncertain",
+                "affected": [
+                  "Q4"
+                ],
+                "reason": "The counterexample check is not established.",
+                "proposed": {
+                  "kind": "conditions",
+                  "status": "uncertain",
+                  "affected": [
+                    "Q4"
+                  ],
+                  "reason": "产物(e24,e26)断言具体词优势来自高意象触发的视觉与语义双重编码，依据e3读具体词创建图像双重编码。场景e133默读、e134具体词回忆高，但未明示被试自发形成图像；e131边界指出该双重编码需安静默读并自发成像假设。构造相容反例：默读但注意力占用未生成图像，则视觉编码可能未触发，原结论未建立。给定事实不能排除此反例，故适用性 uncertain。",
+                  "refs": [
+                    "e24",
+                    "e26",
+                    "e3",
+                    "e133",
+                    "e134",
+                    "e131"
+                  ],
+                  "challenge": {
+                    "status": "counterexample",
+                    "reason": "补充与e133/e134相容情况：被试默读但未自发形成心理图像(如注意力被占用，见e131边界及e3非绝对强制)，则高意象触发视觉编码条件不成立，具体词优势未必来自双重编码，证明原诊断未必然成立。",
+                    "refs": [
+                      "e133",
+                      "e131",
+                      "e3"
+                    ]
+                  }
+                },
+                "reviewReasons": [
+                  "CONDITIONS_CHALLENGE_UNGROUNDED"
+                ]
+              }
+            }
+          ],
+          "proposedLevel": 2,
+          "proposedReason": "题目(e14)含默读词表与助教误析，scenarioContext(e133-e135)提供完整情景，来源e3明确编码定义与高意象双重编码机制；选项A(e17)正确诊断声学未主导且具体词优势来自视觉语义双重编码，与blindSolutions(current)一致；产物选定A(e23)及解释(e26)匹配。priorExposure(e123-e129)虽含本题题干与三个选项文本，但仅未选定选项与情景，无指定答案或推理透露，不构成solution disclosure，本题必要判断（诊断错误）未在先前完成，独立性适当。任务前提充分、答案集可辩护、无泄露或强制模糊键，满足Q4的2分标准。",
+          "decidingConstraint": "INDEPENDENT_CONDITIONS"
+        }
+      ],
+      "reviewRequired": [
+        {
+          "dimension": "Q4",
+          "reason": "UNRESOLVED"
+        }
+      ]
+    },
+    "resultHash": "b2a2fb3a87eec364e2c522c5c28a599319fa8ff5378068c9cfef5d56e9e359db"
+  }
+}

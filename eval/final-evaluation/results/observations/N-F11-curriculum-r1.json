@@ -1,0 +1,352 @@
+{
+  "task": {
+    "caseId": "N-F11-curriculum",
+    "runId": "N-F11-curriculum-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-F11-curriculum.json",
+    "inputHash": "63506e29d1d3a10682c244d139b9fbe9a0d0637f979f883f076bf7c266946923",
+    "population": "natural",
+    "sourceId": "F11"
+  },
+  "inputHash": "63506e29d1d3a10682c244d139b9fbe9a0d0637f979f883f076bf7c266946923",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "correctness": "e9548e24b697867bfae6d6d2b591ca183f0ec5d8a9f46a5956d1fa8e7c03b15d",
+      "artifact-audit": "e9548e24b697867bfae6d6d2b591ca183f0ec5d8a9f46a5956d1fa8e7c03b15d",
+      "certification": "e9548e24b697867bfae6d6d2b591ca183f0ec5d8a9f46a5956d1fa8e7c03b15d"
+    },
+    "stages": {
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "clear",
+            "affected": [
+              "Q2"
+            ],
+            "reason": "Artifact objectives (e20) state conditional rules matching source e3: domain non-negative real or integer as given by problem; unique legal solution verified from two independent equations with post-solving domain check; scalar-multiple identified as duplicate; contradiction reported without altering assumptions. No sufficient/necessary confusion; assertions align with instantiated examples in e3.",
+            "refs": [
+              "e20",
+              "e3"
+            ],
+            "challenge": {
+              "status": "closed",
+              "reason": "Constructed compatible case: two independent equations like 2x+y=8 and x-y=10 give x=6,y=-4 violating non-negativity, but author limits claim to 'legal solution' and requires domain check after solving (e20), so qualified conclusion stands. Case forcing integer when problem silent contradicts 'as given by problem' clause, thus excluded by explicit condition. No open counterexample.",
+              "refs": [
+                "e20",
+                "e3"
+              ]
+            },
+            "witnesses": [
+              {
+                "id": "e20",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "[{\"id\":\"obj_dde8352e-aa50-42c5-b62c-fe415a2067ca\",\"title\":\"Translate textual ratio/matching conditions into linear constraints\",\"description\":\"Translate textual ratio/matching conditions into linear constraints: define variables and units, write equations such as 2x+y=8 from card widths and total width, explicitly state variable domain (non-negative real or integer when required) as given by problem, and follow stepwise process of listing variables/ranges, translating each sentence, then checking independence/consistency and substituting back.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_d9b9b9b3-43ad-4a7b-8f40-16cd08b7191c\",\"ta_0cc72a40-f819-4cba-9555-ef09e238312d\"],\"authorityClaimIds\":[\"tac_51ee3446-a55a-4d22-b669-5cd0ce6c51fd\",\"tac_99345f0e-9b8c-4b34-9edc-7b3fa20bb657\",\"tac_b43f1acb-a600-48a2-9292-ddcf19b93167\",\"tac_4eaaf330-60bb-4324-93cc-f57154b79858\",\"tac_6e033236-e2b1-4bec-b5ad-4a11ba90ed22\",\"tac_f9c1bb3d-47fc-4a97-932d-83d3d4d63e25\"],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation for modeling ratio conditions; exact evidence supports only identify/explain, so apply is teaching-only with high priority not required.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_ab60dd19\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_f8a85c7d-19b6-4a90-9a42-0d4386ebd357\",\"title\":\"Distinguish solution set types and test added condition independence\",\"description\":\"Distinguish solution set types (multiple, unique, contradiction) for ratio lines and test if added condition is independent or duplicate: show multiple via two feasible combos satisfying constraints; verify unique legal solution from two independent equations; identify scalar-multiple as duplicate; report contradiction without altering assumptions; check domain real vs integer after solving.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_d9b9b9b3-43ad-4a7b-8f40-16cd08b7191c\",\"ta_0cc72a40-f819-4cba-9555-ef09e238312d\"],\"authorityClaimIds\":[\"tac_3bf61e77-fc43-4f5f-9418-d6ea1aa9491d\",\"tac_91dcca45-1010-45c2-a29f-7099f3b2ce1c\",\"tac_9a1d99ff-e344-49cc-8020-305b158f31fc\",\"tac_5737d465-73a5-4551-8c25-47d22c2f7d82\",\"tac_99610d2b-ca2f-4062-9b60-32c8c0fd1771\",\"tac_a4c8862f-28f4-4a34-a647-cc23a816dd17\"],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation for solution set analysis; evaluate is teaching-only construct with no formal authority, retained as high priority.\",\"formalAssessmentConstruct\":\"evaluate\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_ab60dd19\"],\"formalEvidenceSourceBlockIds\":[]}]",
+                "valueHash": "a0fabedda826a20b9fe6fc389c240d0622b28c788248f2d2f912c220ad1dc014"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "设计展板时，长条卡片每张宽二厘米，短条卡片每张宽一厘米。把长条张数记为x、短条张数记为y，若总宽度为八厘米，就有2x+y=8。这里先把x、y当作非负实数，表示也允许按比例裁切卡片；若题目后来要求整张，就必须另加非负整数条件。变量范围是题设的一部分，不能从生活习惯自行补上。\n仅有2x+y=8时，通常不唯一：x=0、y=8，或x=2、y=4都满足；在非负实数范围内还有更多组合。列举两个不同可行组合，就足以证明“唯一确定”不成立，但不能因此说所有任意组合都可行。每个候选仍须满足方程与非负约束。\n若再知道总张数为五，即x+y=5，把两个方程相减得到x=3，再代回得y=2。这个组合同时满足宽度八厘米、总张数五和非负条件，因此是合法解。两个方程相减只是一种方法，代入或合适的图示也可以；评判应看是否保持等价与验证完整，而不是必须照抄某一解法。\n第二条条件不一定提供新信息。如果新增4x+2y=16，它恰好是原方程每项乘二，所以仍表示同一限制，多解不会自动变成唯一解。如果新增4x+2y=18，则与原方程矛盾：原式乘二必须等于十六，不可能同时等于十八。在这种情况下，应报告无解并指出冲突，不应为了给出数值而悄悄修改题设。\n变量范围也会影响结果。例如x+y=1且x-y=0给出x=y=0.5。在允许比例裁切的非负实数模型里，这是一组合法解；若限定必须为整张卡片，则没有整数解。数学运算得到候选值之后，还须回到现实约定检验候选是否可用。\n处理约束问题可以先列清变量、单位与范围，再把每句话翻译成式子，然后判断信息是否独立、是否一致，最后代回所有条件。遇到数据不足时，给出两组可行解和需要补充的独立信息，通常比只写“不能算”更有帮助。遇到矛盾时，解释哪两条不能同时成立。这个单元不要求矩阵或专门术语，重点是理解条件如何缩小可能性集合。",
+                "valueHash": "3d467962cceddb9a766ded25aaa2f5d1c9767ee6b9307e50472157ea664b2422"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "kind": "quantities",
+            "status": "not_applicable",
+            "affected": [],
+            "reason": "Artifacts (e17,e20) contain no numerical derivation, unit conversion, or rate application; rates array empty. No quantity assertion to independently recompute.",
+            "contextHash": "e9548e24b697867bfae6d6d2b591ca183f0ec5d8a9f46a5956d1fa8e7c03b15d",
+            "proposed": {
+              "kind": "quantities",
+              "status": "not_applicable",
+              "affected": [],
+              "reason": "Artifacts (e17,e20) contain no numerical derivation, unit conversion, or rate application; rates array empty. No quantity assertion to independently recompute.",
+              "refs": [
+                "e16",
+                "e17",
+                "e20"
+              ]
+            },
+            "reviewReasons": []
+          }
+        ],
+        "keys": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 2,
+            "reason": "产物 objectives（e19,e20）定义两个目标：obj1 覆盖 goal1（e5）文字配比转线性约束，obj2 覆盖 goal2（e6）与 goal3（e7）解集合类型与新增条件独立性；描述与源 e3 教学断言一致（变量域、方程、多解/矛盾/重复判定），无扭曲或弱化，满足至少2个本质目标忠实可用处理。",
+            "refs": [
+              "e5",
+              "e6",
+              "e7",
+              "e19",
+              "e20",
+              "e3"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "把文字配比条件写成线性约束",
+                "valueHash": "4c71c009edd9c59a70ddf84075c248185982d40b810bdb81ccfcc735020a383f"
+              },
+              {
+                "id": "e6",
+                "pointer": "/goals/1",
+                "role": "goal",
+                "kind": "text",
+                "value": "区分唯一解、多解与矛盾条件",
+                "valueHash": "a305c4a3f6cf219c1c62ae8404416fc053312729e18fef810c0d4e5bb60a1cea"
+              },
+              {
+                "id": "e7",
+                "pointer": "/goals/2",
+                "role": "goal",
+                "kind": "text",
+                "value": "检验新增条件是独立信息还是原条件重复",
+                "valueHash": "292e0ea55db8ef66d576d4ecfe1d7affe33f5258bb6f4c1a446d4a392299bd88"
+              },
+              {
+                "id": "e19",
+                "pointer": "/artifacts/1/id",
+                "role": "artifact",
+                "kind": "text",
+                "value": "cun_9057988b-f1b9-40f0-9744-5f3860f7e31e/objectives",
+                "valueHash": "0347c28d005277bbf73f974612ca3882e84d8f343c7ace98d690127293e8076e"
+              },
+              {
+                "id": "e20",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "[{\"id\":\"obj_dde8352e-aa50-42c5-b62c-fe415a2067ca\",\"title\":\"Translate textual ratio/matching conditions into linear constraints\",\"description\":\"Translate textual ratio/matching conditions into linear constraints: define variables and units, write equations such as 2x+y=8 from card widths and total width, explicitly state variable domain (non-negative real or integer when required) as given by problem, and follow stepwise process of listing variables/ranges, translating each sentence, then checking independence/consistency and substituting back.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_d9b9b9b3-43ad-4a7b-8f40-16cd08b7191c\",\"ta_0cc72a40-f819-4cba-9555-ef09e238312d\"],\"authorityClaimIds\":[\"tac_51ee3446-a55a-4d22-b669-5cd0ce6c51fd\",\"tac_99345f0e-9b8c-4b34-9edc-7b3fa20bb657\",\"tac_b43f1acb-a600-48a2-9292-ddcf19b93167\",\"tac_4eaaf330-60bb-4324-93cc-f57154b79858\",\"tac_6e033236-e2b1-4bec-b5ad-4a11ba90ed22\",\"tac_f9c1bb3d-47fc-4a97-932d-83d3d4d63e25\"],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation for modeling ratio conditions; exact evidence supports only identify/explain, so apply is teaching-only with high priority not required.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_ab60dd19\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_f8a85c7d-19b6-4a90-9a42-0d4386ebd357\",\"title\":\"Distinguish solution set types and test added condition independence\",\"description\":\"Distinguish solution set types (multiple, unique, contradiction) for ratio lines and test if added condition is independent or duplicate: show multiple via two feasible combos satisfying constraints; verify unique legal solution from two independent equations; identify scalar-multiple as duplicate; report contradiction without altering assumptions; check domain real vs integer after solving.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_d9b9b9b3-43ad-4a7b-8f40-16cd08b7191c\",\"ta_0cc72a40-f819-4cba-9555-ef09e238312d\"],\"authorityClaimIds\":[\"tac_3bf61e77-fc43-4f5f-9418-d6ea1aa9491d\",\"tac_91dcca45-1010-45c2-a29f-7099f3b2ce1c\",\"tac_9a1d99ff-e344-49cc-8020-305b158f31fc\",\"tac_5737d465-73a5-4551-8c25-47d22c2f7d82\",\"tac_99610d2b-ca2f-4062-9b60-32c8c0fd1771\",\"tac_a4c8862f-28f4-4a34-a647-cc23a816dd17\"],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation for solution set analysis; evaluate is teaching-only construct with no formal authority, retained as high priority.\",\"formalAssessmentConstruct\":\"evaluate\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_ab60dd19\"],\"formalEvidenceSourceBlockIds\":[]}]",
+                "valueHash": "a0fabedda826a20b9fe6fc389c240d0622b28c788248f2d2f912c220ad1dc014"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "设计展板时，长条卡片每张宽二厘米，短条卡片每张宽一厘米。把长条张数记为x、短条张数记为y，若总宽度为八厘米，就有2x+y=8。这里先把x、y当作非负实数，表示也允许按比例裁切卡片；若题目后来要求整张，就必须另加非负整数条件。变量范围是题设的一部分，不能从生活习惯自行补上。\n仅有2x+y=8时，通常不唯一：x=0、y=8，或x=2、y=4都满足；在非负实数范围内还有更多组合。列举两个不同可行组合，就足以证明“唯一确定”不成立，但不能因此说所有任意组合都可行。每个候选仍须满足方程与非负约束。\n若再知道总张数为五，即x+y=5，把两个方程相减得到x=3，再代回得y=2。这个组合同时满足宽度八厘米、总张数五和非负条件，因此是合法解。两个方程相减只是一种方法，代入或合适的图示也可以；评判应看是否保持等价与验证完整，而不是必须照抄某一解法。\n第二条条件不一定提供新信息。如果新增4x+2y=16，它恰好是原方程每项乘二，所以仍表示同一限制，多解不会自动变成唯一解。如果新增4x+2y=18，则与原方程矛盾：原式乘二必须等于十六，不可能同时等于十八。在这种情况下，应报告无解并指出冲突，不应为了给出数值而悄悄修改题设。\n变量范围也会影响结果。例如x+y=1且x-y=0给出x=y=0.5。在允许比例裁切的非负实数模型里，这是一组合法解；若限定必须为整张卡片，则没有整数解。数学运算得到候选值之后，还须回到现实约定检验候选是否可用。\n处理约束问题可以先列清变量、单位与范围，再把每句话翻译成式子，然后判断信息是否独立、是否一致，最后代回所有条件。遇到数据不足时，给出两组可行解和需要补充的独立信息，通常比只写“不能算”更有帮助。遇到矛盾时，解释哪两条不能同时成立。这个单元不要求矩阵或专门术语，重点是理解条件如何缩小可能性集合。",
+                "valueHash": "3d467962cceddb9a766ded25aaa2f5d1c9767ee6b9307e50472157ea664b2422"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q2",
+            "status": "supported",
+            "reason": "产物 objectives (e19,e20) 定义 obj1 覆盖 goal1(e5) 文字转线性约束，obj2 覆盖 goal2(e6)与 goal3(e7) 解集合类型与新增条件独立性；描述与源 e3 教学断言一致（变量域、方程、多解/矛盾/重复判定），无扭曲弱化，满足 rubric 至少2本质目标忠实可用处理，无未决依赖。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e19",
+                "pointer": "/artifacts/1/id",
+                "role": "artifact",
+                "kind": "text",
+                "value": "cun_9057988b-f1b9-40f0-9744-5f3860f7e31e/objectives",
+                "valueHash": "0347c28d005277bbf73f974612ca3882e84d8f343c7ace98d690127293e8076e"
+              },
+              {
+                "id": "e20",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "[{\"id\":\"obj_dde8352e-aa50-42c5-b62c-fe415a2067ca\",\"title\":\"Translate textual ratio/matching conditions into linear constraints\",\"description\":\"Translate textual ratio/matching conditions into linear constraints: define variables and units, write equations such as 2x+y=8 from card widths and total width, explicitly state variable domain (non-negative real or integer when required) as given by problem, and follow stepwise process of listing variables/ranges, translating each sentence, then checking independence/consistency and substituting back.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_d9b9b9b3-43ad-4a7b-8f40-16cd08b7191c\",\"ta_0cc72a40-f819-4cba-9555-ef09e238312d\"],\"authorityClaimIds\":[\"tac_51ee3446-a55a-4d22-b669-5cd0ce6c51fd\",\"tac_99345f0e-9b8c-4b34-9edc-7b3fa20bb657\",\"tac_b43f1acb-a600-48a2-9292-ddcf19b93167\",\"tac_4eaaf330-60bb-4324-93cc-f57154b79858\",\"tac_6e033236-e2b1-4bec-b5ad-4a11ba90ed22\",\"tac_f9c1bb3d-47fc-4a97-932d-83d3d4d63e25\"],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation for modeling ratio conditions; exact evidence supports only identify/explain, so apply is teaching-only with high priority not required.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_ab60dd19\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_f8a85c7d-19b6-4a90-9a42-0d4386ebd357\",\"title\":\"Distinguish solution set types and test added condition independence\",\"description\":\"Distinguish solution set types (multiple, unique, contradiction) for ratio lines and test if added condition is independent or duplicate: show multiple via two feasible combos satisfying constraints; verify unique legal solution from two independent equations; identify scalar-multiple as duplicate; report contradiction without altering assumptions; check domain real vs integer after solving.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_d9b9b9b3-43ad-4a7b-8f40-16cd08b7191c\",\"ta_0cc72a40-f819-4cba-9555-ef09e238312d\"],\"authorityClaimIds\":[\"tac_3bf61e77-fc43-4f5f-9418-d6ea1aa9491d\",\"tac_91dcca45-1010-45c2-a29f-7099f3b2ce1c\",\"tac_9a1d99ff-e344-49cc-8020-305b158f31fc\",\"tac_5737d465-73a5-4551-8c25-47d22c2f7d82\",\"tac_99610d2b-ca2f-4062-9b60-32c8c0fd1771\",\"tac_a4c8862f-28f4-4a34-a647-cc23a816dd17\"],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation for solution set analysis; evaluate is teaching-only construct with no formal authority, retained as high priority.\",\"formalAssessmentConstruct\":\"evaluate\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_ab60dd19\"],\"formalEvidenceSourceBlockIds\":[]}]",
+                "valueHash": "a0fabedda826a20b9fe6fc389c240d0622b28c788248f2d2f912c220ad1dc014"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "设计展板时，长条卡片每张宽二厘米，短条卡片每张宽一厘米。把长条张数记为x、短条张数记为y，若总宽度为八厘米，就有2x+y=8。这里先把x、y当作非负实数，表示也允许按比例裁切卡片；若题目后来要求整张，就必须另加非负整数条件。变量范围是题设的一部分，不能从生活习惯自行补上。\n仅有2x+y=8时，通常不唯一：x=0、y=8，或x=2、y=4都满足；在非负实数范围内还有更多组合。列举两个不同可行组合，就足以证明“唯一确定”不成立，但不能因此说所有任意组合都可行。每个候选仍须满足方程与非负约束。\n若再知道总张数为五，即x+y=5，把两个方程相减得到x=3，再代回得y=2。这个组合同时满足宽度八厘米、总张数五和非负条件，因此是合法解。两个方程相减只是一种方法，代入或合适的图示也可以；评判应看是否保持等价与验证完整，而不是必须照抄某一解法。\n第二条条件不一定提供新信息。如果新增4x+2y=16，它恰好是原方程每项乘二，所以仍表示同一限制，多解不会自动变成唯一解。如果新增4x+2y=18，则与原方程矛盾：原式乘二必须等于十六，不可能同时等于十八。在这种情况下，应报告无解并指出冲突，不应为了给出数值而悄悄修改题设。\n变量范围也会影响结果。例如x+y=1且x-y=0给出x=y=0.5。在允许比例裁切的非负实数模型里，这是一组合法解；若限定必须为整张卡片，则没有整数解。数学运算得到候选值之后，还须回到现实约定检验候选是否可用。\n处理约束问题可以先列清变量、单位与范围，再把每句话翻译成式子，然后判断信息是否独立、是否一致，最后代回所有条件。遇到数据不足时，给出两组可行解和需要补充的独立信息，通常比只写“不能算”更有帮助。遇到矛盾时，解释哪两条不能同时成立。这个单元不要求矩阵或专门术语，重点是理解条件如何缩小可能性集合。",
+                "valueHash": "3d467962cceddb9a766ded25aaa2f5d1c9767ee6b9307e50472157ea664b2422"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "把文字配比条件写成线性约束",
+                "valueHash": "4c71c009edd9c59a70ddf84075c248185982d40b810bdb81ccfcc735020a383f"
+              },
+              {
+                "id": "e6",
+                "pointer": "/goals/1",
+                "role": "goal",
+                "kind": "text",
+                "value": "区分唯一解、多解与矛盾条件",
+                "valueHash": "a305c4a3f6cf219c1c62ae8404416fc053312729e18fef810c0d4e5bb60a1cea"
+              },
+              {
+                "id": "e7",
+                "pointer": "/goals/2",
+                "role": "goal",
+                "kind": "text",
+                "value": "检验新增条件是独立信息还是原条件重复",
+                "valueHash": "292e0ea55db8ef66d576d4ecfe1d7affe33f5258bb6f4c1a446d4a392299bd88"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q2",
+          "level": 2,
+          "reason": "产物 objectives（e19,e20）定义两个目标：obj1 覆盖 goal1（e5）文字配比转线性约束，obj2 覆盖 goal2（e6）与 goal3（e7）解集合类型与新增条件独立性；描述与源 e3 教学断言一致（变量域、方程、多解/矛盾/重复判定），无扭曲或弱化，满足至少2个本质目标忠实可用处理。",
+          "refs": [
+            "e5",
+            "e6",
+            "e7",
+            "e19",
+            "e20",
+            "e3"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e5",
+              "pointer": "/goals/0",
+              "role": "goal",
+              "kind": "text",
+              "value": "把文字配比条件写成线性约束",
+              "valueHash": "4c71c009edd9c59a70ddf84075c248185982d40b810bdb81ccfcc735020a383f"
+            },
+            {
+              "id": "e6",
+              "pointer": "/goals/1",
+              "role": "goal",
+              "kind": "text",
+              "value": "区分唯一解、多解与矛盾条件",
+              "valueHash": "a305c4a3f6cf219c1c62ae8404416fc053312729e18fef810c0d4e5bb60a1cea"
+            },
+            {
+              "id": "e7",
+              "pointer": "/goals/2",
+              "role": "goal",
+              "kind": "text",
+              "value": "检验新增条件是独立信息还是原条件重复",
+              "valueHash": "292e0ea55db8ef66d576d4ecfe1d7affe33f5258bb6f4c1a446d4a392299bd88"
+            },
+            {
+              "id": "e19",
+              "pointer": "/artifacts/1/id",
+              "role": "artifact",
+              "kind": "text",
+              "value": "cun_9057988b-f1b9-40f0-9744-5f3860f7e31e/objectives",
+              "valueHash": "0347c28d005277bbf73f974612ca3882e84d8f343c7ace98d690127293e8076e"
+            },
+            {
+              "id": "e20",
+              "pointer": "/artifacts/1/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "[{\"id\":\"obj_dde8352e-aa50-42c5-b62c-fe415a2067ca\",\"title\":\"Translate textual ratio/matching conditions into linear constraints\",\"description\":\"Translate textual ratio/matching conditions into linear constraints: define variables and units, write equations such as 2x+y=8 from card widths and total width, explicitly state variable domain (non-negative real or integer when required) as given by problem, and follow stepwise process of listing variables/ranges, translating each sentence, then checking independence/consistency and substituting back.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_d9b9b9b3-43ad-4a7b-8f40-16cd08b7191c\",\"ta_0cc72a40-f819-4cba-9555-ef09e238312d\"],\"authorityClaimIds\":[\"tac_51ee3446-a55a-4d22-b669-5cd0ce6c51fd\",\"tac_99345f0e-9b8c-4b34-9edc-7b3fa20bb657\",\"tac_b43f1acb-a600-48a2-9292-ddcf19b93167\",\"tac_4eaaf330-60bb-4324-93cc-f57154b79858\",\"tac_6e033236-e2b1-4bec-b5ad-4a11ba90ed22\",\"tac_f9c1bb3d-47fc-4a97-932d-83d3d4d63e25\"],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation for modeling ratio conditions; exact evidence supports only identify/explain, so apply is teaching-only with high priority not required.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_ab60dd19\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_f8a85c7d-19b6-4a90-9a42-0d4386ebd357\",\"title\":\"Distinguish solution set types and test added condition independence\",\"description\":\"Distinguish solution set types (multiple, unique, contradiction) for ratio lines and test if added condition is independent or duplicate: show multiple via two feasible combos satisfying constraints; verify unique legal solution from two independent equations; identify scalar-multiple as duplicate; report contradiction without altering assumptions; check domain real vs integer after solving.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_d9b9b9b3-43ad-4a7b-8f40-16cd08b7191c\",\"ta_0cc72a40-f819-4cba-9555-ef09e238312d\"],\"authorityClaimIds\":[\"tac_3bf61e77-fc43-4f5f-9418-d6ea1aa9491d\",\"tac_91dcca45-1010-45c2-a29f-7099f3b2ce1c\",\"tac_9a1d99ff-e344-49cc-8020-305b158f31fc\",\"tac_5737d465-73a5-4551-8c25-47d22c2f7d82\",\"tac_99610d2b-ca2f-4062-9b60-32c8c0fd1771\",\"tac_a4c8862f-28f4-4a34-a647-cc23a816dd17\"],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation for solution set analysis; evaluate is teaching-only construct with no formal authority, retained as high priority.\",\"formalAssessmentConstruct\":\"evaluate\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_ab60dd19\"],\"formalEvidenceSourceBlockIds\":[]}]",
+              "valueHash": "a0fabedda826a20b9fe6fc389c240d0622b28c788248f2d2f912c220ad1dc014"
+            },
+            {
+              "id": "e3",
+              "pointer": "/sources/0/text",
+              "role": "source",
+              "kind": "text",
+              "value": "设计展板时，长条卡片每张宽二厘米，短条卡片每张宽一厘米。把长条张数记为x、短条张数记为y，若总宽度为八厘米，就有2x+y=8。这里先把x、y当作非负实数，表示也允许按比例裁切卡片；若题目后来要求整张，就必须另加非负整数条件。变量范围是题设的一部分，不能从生活习惯自行补上。\n仅有2x+y=8时，通常不唯一：x=0、y=8，或x=2、y=4都满足；在非负实数范围内还有更多组合。列举两个不同可行组合，就足以证明“唯一确定”不成立，但不能因此说所有任意组合都可行。每个候选仍须满足方程与非负约束。\n若再知道总张数为五，即x+y=5，把两个方程相减得到x=3，再代回得y=2。这个组合同时满足宽度八厘米、总张数五和非负条件，因此是合法解。两个方程相减只是一种方法，代入或合适的图示也可以；评判应看是否保持等价与验证完整，而不是必须照抄某一解法。\n第二条条件不一定提供新信息。如果新增4x+2y=16，它恰好是原方程每项乘二，所以仍表示同一限制，多解不会自动变成唯一解。如果新增4x+2y=18，则与原方程矛盾：原式乘二必须等于十六，不可能同时等于十八。在这种情况下，应报告无解并指出冲突，不应为了给出数值而悄悄修改题设。\n变量范围也会影响结果。例如x+y=1且x-y=0给出x=y=0.5。在允许比例裁切的非负实数模型里，这是一组合法解；若限定必须为整张卡片，则没有整数解。数学运算得到候选值之后，还须回到现实约定检验候选是否可用。\n处理约束问题可以先列清变量、单位与范围，再把每句话翻译成式子，然后判断信息是否独立、是否一致，最后代回所有条件。遇到数据不足时，给出两组可行解和需要补充的独立信息，通常比只写“不能算”更有帮助。遇到矛盾时，解释哪两条不能同时成立。这个单元不要求矩阵或专门术语，重点是理解条件如何缩小可能性集合。",
+              "valueHash": "3d467962cceddb9a766ded25aaa2f5d1c9767ee6b9307e50472157ea664b2422"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [],
+          "proposedLevel": 2,
+          "proposedReason": "产物 objectives（e19,e20）定义两个目标：obj1 覆盖 goal1（e5）文字配比转线性约束，obj2 覆盖 goal2（e6）与 goal3（e7）解集合类型与新增条件独立性；描述与源 e3 教学断言一致（变量域、方程、多解/矛盾/重复判定），无扭曲或弱化，满足至少2个本质目标忠实可用处理。"
+        }
+      ],
+      "reviewRequired": [],
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q2",
+            "status": "supported",
+            "reason": "产物 objectives (e19,e20) 定义 obj1 覆盖 goal1(e5) 文字转线性约束，obj2 覆盖 goal2(e6)与 goal3(e7) 解集合类型与新增条件独立性；描述与源 e3 教学断言一致（变量域、方程、多解/矛盾/重复判定），无扭曲弱化，满足 rubric 至少2本质目标忠实可用处理，无未决依赖。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e19",
+                "pointer": "/artifacts/1/id",
+                "role": "artifact",
+                "kind": "text",
+                "value": "cun_9057988b-f1b9-40f0-9744-5f3860f7e31e/objectives",
+                "valueHash": "0347c28d005277bbf73f974612ca3882e84d8f343c7ace98d690127293e8076e"
+              },
+              {
+                "id": "e20",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "[{\"id\":\"obj_dde8352e-aa50-42c5-b62c-fe415a2067ca\",\"title\":\"Translate textual ratio/matching conditions into linear constraints\",\"description\":\"Translate textual ratio/matching conditions into linear constraints: define variables and units, write equations such as 2x+y=8 from card widths and total width, explicitly state variable domain (non-negative real or integer when required) as given by problem, and follow stepwise process of listing variables/ranges, translating each sentence, then checking independence/consistency and substituting back.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_d9b9b9b3-43ad-4a7b-8f40-16cd08b7191c\",\"ta_0cc72a40-f819-4cba-9555-ef09e238312d\"],\"authorityClaimIds\":[\"tac_51ee3446-a55a-4d22-b669-5cd0ce6c51fd\",\"tac_99345f0e-9b8c-4b34-9edc-7b3fa20bb657\",\"tac_b43f1acb-a600-48a2-9292-ddcf19b93167\",\"tac_4eaaf330-60bb-4324-93cc-f57154b79858\",\"tac_6e033236-e2b1-4bec-b5ad-4a11ba90ed22\",\"tac_f9c1bb3d-47fc-4a97-932d-83d3d4d63e25\"],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation for modeling ratio conditions; exact evidence supports only identify/explain, so apply is teaching-only with high priority not required.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_ab60dd19\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_f8a85c7d-19b6-4a90-9a42-0d4386ebd357\",\"title\":\"Distinguish solution set types and test added condition independence\",\"description\":\"Distinguish solution set types (multiple, unique, contradiction) for ratio lines and test if added condition is independent or duplicate: show multiple via two feasible combos satisfying constraints; verify unique legal solution from two independent equations; identify scalar-multiple as duplicate; report contradiction without altering assumptions; check domain real vs integer after solving.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_d9b9b9b3-43ad-4a7b-8f40-16cd08b7191c\",\"ta_0cc72a40-f819-4cba-9555-ef09e238312d\"],\"authorityClaimIds\":[\"tac_3bf61e77-fc43-4f5f-9418-d6ea1aa9491d\",\"tac_91dcca45-1010-45c2-a29f-7099f3b2ce1c\",\"tac_9a1d99ff-e344-49cc-8020-305b158f31fc\",\"tac_5737d465-73a5-4551-8c25-47d22c2f7d82\",\"tac_99610d2b-ca2f-4062-9b60-32c8c0fd1771\",\"tac_a4c8862f-28f4-4a34-a647-cc23a816dd17\"],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation for solution set analysis; evaluate is teaching-only construct with no formal authority, retained as high priority.\",\"formalAssessmentConstruct\":\"evaluate\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_ab60dd19\"],\"formalEvidenceSourceBlockIds\":[]}]",
+                "valueHash": "a0fabedda826a20b9fe6fc389c240d0622b28c788248f2d2f912c220ad1dc014"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "设计展板时，长条卡片每张宽二厘米，短条卡片每张宽一厘米。把长条张数记为x、短条张数记为y，若总宽度为八厘米，就有2x+y=8。这里先把x、y当作非负实数，表示也允许按比例裁切卡片；若题目后来要求整张，就必须另加非负整数条件。变量范围是题设的一部分，不能从生活习惯自行补上。\n仅有2x+y=8时，通常不唯一：x=0、y=8，或x=2、y=4都满足；在非负实数范围内还有更多组合。列举两个不同可行组合，就足以证明“唯一确定”不成立，但不能因此说所有任意组合都可行。每个候选仍须满足方程与非负约束。\n若再知道总张数为五，即x+y=5，把两个方程相减得到x=3，再代回得y=2。这个组合同时满足宽度八厘米、总张数五和非负条件，因此是合法解。两个方程相减只是一种方法，代入或合适的图示也可以；评判应看是否保持等价与验证完整，而不是必须照抄某一解法。\n第二条条件不一定提供新信息。如果新增4x+2y=16，它恰好是原方程每项乘二，所以仍表示同一限制，多解不会自动变成唯一解。如果新增4x+2y=18，则与原方程矛盾：原式乘二必须等于十六，不可能同时等于十八。在这种情况下，应报告无解并指出冲突，不应为了给出数值而悄悄修改题设。\n变量范围也会影响结果。例如x+y=1且x-y=0给出x=y=0.5。在允许比例裁切的非负实数模型里，这是一组合法解；若限定必须为整张卡片，则没有整数解。数学运算得到候选值之后，还须回到现实约定检验候选是否可用。\n处理约束问题可以先列清变量、单位与范围，再把每句话翻译成式子，然后判断信息是否独立、是否一致，最后代回所有条件。遇到数据不足时，给出两组可行解和需要补充的独立信息，通常比只写“不能算”更有帮助。遇到矛盾时，解释哪两条不能同时成立。这个单元不要求矩阵或专门术语，重点是理解条件如何缩小可能性集合。",
+                "valueHash": "3d467962cceddb9a766ded25aaa2f5d1c9767ee6b9307e50472157ea664b2422"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "把文字配比条件写成线性约束",
+                "valueHash": "4c71c009edd9c59a70ddf84075c248185982d40b810bdb81ccfcc735020a383f"
+              },
+              {
+                "id": "e6",
+                "pointer": "/goals/1",
+                "role": "goal",
+                "kind": "text",
+                "value": "区分唯一解、多解与矛盾条件",
+                "valueHash": "a305c4a3f6cf219c1c62ae8404416fc053312729e18fef810c0d4e5bb60a1cea"
+              },
+              {
+                "id": "e7",
+                "pointer": "/goals/2",
+                "role": "goal",
+                "kind": "text",
+                "value": "检验新增条件是独立信息还是原条件重复",
+                "valueHash": "292e0ea55db8ef66d576d4ecfe1d7affe33f5258bb6f4c1a446d4a392299bd88"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "resultHash": "beec50bd5c304e103019d3ac2d758e9f234a3b00f8033043fe62194773f14287"
+  }
+}

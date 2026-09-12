@@ -1,0 +1,150 @@
+{
+  "status": "MODEL_REVIEW_COMPLETE_HUMAN_VALIDATION_PENDING",
+  "unit": "one primary requested packet-item dimension; repeats excluded",
+  "items": 27,
+  "judgments": 34,
+  "savedMachineRows": 74,
+  "distributions": {
+    "StudyEval": {
+      "U": 3,
+      "2": 20,
+      "0": 8,
+      "1": 3
+    },
+    "Max": {
+      "2": 22,
+      "1": 4,
+      "0": 7,
+      "U": 1
+    },
+    "Fable": {
+      "2": 21,
+      "1": 6,
+      "0": 7
+    }
+  },
+  "comparisons": {
+    "MaxVsFable": {
+      "n": 34,
+      "exact": 32,
+      "bothNumeric": 33,
+      "numericExact": 32,
+      "adjacent": 1,
+      "leftHigher": 1,
+      "leftLower": 0,
+      "polarityReversals": 0,
+      "leftUOnly": 1,
+      "rightUOnly": 0,
+      "bothU": 0
+    },
+    "StudyEvalVsMax": {
+      "n": 34,
+      "exact": 27,
+      "bothNumeric": 30,
+      "numericExact": 27,
+      "adjacent": 3,
+      "leftHigher": 1,
+      "leftLower": 2,
+      "polarityReversals": 0,
+      "leftUOnly": 3,
+      "rightUOnly": 1,
+      "bothU": 0
+    },
+    "StudyEvalVsFable": {
+      "n": 34,
+      "exact": 28,
+      "bothNumeric": 31,
+      "numericExact": 28,
+      "adjacent": 3,
+      "leftHigher": 2,
+      "leftLower": 1,
+      "polarityReversals": 0,
+      "leftUOnly": 3,
+      "rightUOnly": 0,
+      "bothU": 0
+    },
+    "StudyEvalVsModelConsensus": {
+      "n": 32,
+      "exact": 27,
+      "bothNumeric": 29,
+      "numericExact": 27,
+      "adjacent": 2,
+      "leftHigher": 1,
+      "leftLower": 1,
+      "polarityReversals": 0,
+      "leftUOnly": 3,
+      "rightUOnly": 0,
+      "bothU": 0
+    }
+  },
+  "jointCounts": [
+    {
+      "StudyEval": "0",
+      "Max": "0",
+      "Fable": "0",
+      "count": 7
+    },
+    {
+      "StudyEval": "0",
+      "Max": "1",
+      "Fable": "1",
+      "count": 1
+    },
+    {
+      "StudyEval": "1",
+      "Max": "1",
+      "Fable": "1",
+      "count": 2
+    },
+    {
+      "StudyEval": "1",
+      "Max": "2",
+      "Fable": "1",
+      "count": 1
+    },
+    {
+      "StudyEval": "2",
+      "Max": "1",
+      "Fable": "1",
+      "count": 1
+    },
+    {
+      "StudyEval": "2",
+      "Max": "2",
+      "Fable": "2",
+      "count": 18
+    },
+    {
+      "StudyEval": "2",
+      "Max": "U",
+      "Fable": "1",
+      "count": 1
+    },
+    {
+      "StudyEval": "U",
+      "Max": "2",
+      "Fable": "2",
+      "count": 3
+    }
+  ],
+  "ambiguity": {
+    "Max": 7,
+    "Fable": 7,
+    "union": 9,
+    "both": 5
+  },
+  "sourceFiles": [
+    {
+      "label": "StudyEval",
+      "sha256": "d29429a64e1270f679a3dce5216ea3e22653b710e2dca9c73864966f4bbd89b7"
+    },
+    {
+      "label": "Max",
+      "sha256": "8d31974a2be5213805895c3c969e90019b3fee2c57bb157f687aca3e2fe6470f"
+    },
+    {
+      "label": "Fable",
+      "sha256": "d4c63a26945e3395601a09ead3cc421458258ce197afe8106aaeb248392724fe"
+    }
+  ]
+}

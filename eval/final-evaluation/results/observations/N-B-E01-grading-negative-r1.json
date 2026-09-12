@@ -1,0 +1,663 @@
+{
+  "task": {
+    "caseId": "N-B-E01-grading-negative",
+    "runId": "N-B-E01-grading-negative-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-B-E01-grading-negative.json",
+    "inputHash": "db9feff30912c9dd835ce951cefa5e8be627870c630fb2f98fa2c4ba06c4f292",
+    "population": "natural",
+    "sourceId": "B-E01"
+  },
+  "inputHash": "db9feff30912c9dd835ce951cefa5e8be627870c630fb2f98fa2c4ba06c4f292",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "solve-current": "faee536fee2a2aeb93025567dbf9007599f06747ff663b10e8dc44243ff03d61",
+      "student-criteria": "e4890ed1f5e3d0a164de3cd66ee623a31e6d6ba84baead6ce74dd3fe0ca11c96",
+      "artifact-audit": "f69662c458f55af607b27562f3b1e20646e04b30dc8f33908b175a8e1cc99658"
+    },
+    "stages": {
+      "solve-current": {
+        "status": "resolved",
+        "solution": "地毯与瓷砖同温(e14)，但瓷砖导热速率快于地毯(e3)，相同接触时间内瓷砖从皮肤带走热量更多、皮温降更大(e9)，故脚感更冷。必要前提：区分温度与热传递(e7)，材料导热性不同(e3)。",
+        "witnesses": [
+          {
+            "id": "e14",
+            "pointer": "/question/prompt",
+            "role": "question",
+            "kind": "text",
+            "value": "在一个寒冷的房子里，你赤脚走过客厅地毯，然后踩到厨房瓷砖地板。地毯和瓷砖温度相同，但脚感不同。请解释这种不同触感的原因。",
+            "valueHash": "60c4fa29e47606601cfb6a7cfa56f393064eb5188bf6c0fa90eae83e713cfd38"
+          },
+          {
+            "id": "e3",
+            "pointer": "/sources/0/text",
+            "role": "source",
+            "kind": "text",
+            "value": "Your feet feel cold as you walk barefoot across the living room carpet in your cold house and then step onto the kitchen tile floor. This result is intriguing, since the carpet and tile floor are both at the same temperature. The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.\n\nSome materials conduct thermal energy faster than others. In general, good conductors of electricity (metals like copper, aluminum, gold, and silver) are also good heat conductors, whereas insulators of electricity (wood, plastic, and rubber) are poor heat conductors.\n\nThe (average) kinetic energy of a molecule in the hot body is higher than in the colder body. If two molecules collide, an energy transfer from the molecule with greater kinetic energy to the molecule with less kinetic energy occurs. The cumulative effect from all collisions results in a net flux of heat from the hot body to the colder body. The heat flux thus depends on the temperature difference ΔΤ=Τhot−Tcold. Therefore, you will get a more severe burn from boiling water than from hot tap water. Conversely, if the temperatures are the same, the net heat transfer rate falls to zero, and equilibrium is achieved. Owing to the fact that the number of collisions increases with increasing area, heat conduction depends on the cross-sectional area. If you touch a cold wall with your palm, your hand cools faster than if you just touch it with your fingertip.",
+            "valueHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd"
+          },
+          {
+            "id": "e9",
+            "pointer": "/prerequisites/2",
+            "role": "context",
+            "kind": "text",
+            "value": "解释同温度地毯与瓷砖触感不同的原因：在相同温度和相同时间区间内，因热传递速率不同导致瓷砖接触皮肤热损失更大、温度下降更大，且其他条件相同。",
+            "valueHash": "ddd265caebe0d2facdb2f53d103a3b1628e6181fcc7e1dfb2f150f1232b5ebc1"
+          },
+          {
+            "id": "e7",
+            "pointer": "/prerequisites/0",
+            "role": "context",
+            "kind": "text",
+            "value": "知道温度与热传递是不同概念",
+            "valueHash": "be9897bf4972f90e022866216c9cc412a49357ac372d5d78cf4d1c9d9597efc0"
+          }
+        ],
+        "reviewReasons": []
+      },
+      "student-criteria": {
+        "taskValidity": "valid",
+        "rubricValidity": "valid",
+        "reason": "题目e14要求解释同温地毯瓷砖触感不同原因，与来源e3及前提e9一致；量规e18准确提取必要机制（不同热传递速率导致相同时间瓷砖热损失大、皮温降大），无错误。学生回答e20明确拒绝解释关系与条件，未提供任何因果说明，不满足量规。",
+        "validityWitnesses": [
+          {
+            "id": "e14",
+            "pointer": "/question/prompt",
+            "role": "question",
+            "kind": "text",
+            "value": "在一个寒冷的房子里，你赤脚走过客厅地毯，然后踩到厨房瓷砖地板。地毯和瓷砖温度相同，但脚感不同。请解释这种不同触感的原因。",
+            "valueHash": "60c4fa29e47606601cfb6a7cfa56f393064eb5188bf6c0fa90eae83e713cfd38"
+          },
+          {
+            "id": "e18",
+            "pointer": "/rubric/0/text",
+            "role": "criterion",
+            "kind": "text",
+            "value": "The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.",
+            "valueHash": "2fb1384c6a10575b6d0df4da73f502153bde0156f1c1afa0feae4ec3cd004c35"
+          },
+          {
+            "id": "e20",
+            "pointer": "/answer",
+            "role": "student",
+            "kind": "text",
+            "value": "我只根据结果作判断，不需要解释资料中的关系、定义或适用条件。",
+            "valueHash": "853fac0d7b03cbcb9c411c257becc312ffe0ab31c0add90d3cb03d64eae80ad7"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "criterion_182c7e6b-ceaa-4df7-86b0-cd144ebe5a61",
+            "required": true,
+            "result": "not_met",
+            "reason": "学生回答e20声明仅根据结果判断且不需要解释资料中的关系、定义或适用条件，未阐述热传递速率差异、热损失更大或温度下降更大等必要含义，与标准e18要求的解释机制矛盾。",
+            "witnesses": [
+              {
+                "id": "e20",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "我只根据结果作判断，不需要解释资料中的关系、定义或适用条件。",
+                "valueHash": "853fac0d7b03cbcb9c411c257becc312ffe0ab31c0add90d3cb03d64eae80ad7"
+              },
+              {
+                "id": "e18",
+                "pointer": "/rubric/0/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.",
+                "valueHash": "2fb1384c6a10575b6d0df4da73f502153bde0156f1c1afa0feae4ec3cd004c35"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ],
+        "sufficiency": "insufficient",
+        "reviewReasons": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q5",
+            "level": 2,
+            "reason": "产品评分器(productJudgment)判定criterion_182c7e6b not_met(e27)与反馈未回应关键内容(e28)一致；学生答案e20仅声明不解释资料关系，未阐述同温下瓷砖热传递速率更快致皮肤热损失大、温降大，确未满足required rubric e18。credit consequence withheld(e29)与不足表现相符，无本质标准错判或学分冲突。",
+            "refs": [
+              "e20",
+              "e27",
+              "e28",
+              "e29",
+              "e18"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e20",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "我只根据结果作判断，不需要解释资料中的关系、定义或适用条件。",
+                "valueHash": "853fac0d7b03cbcb9c411c257becc312ffe0ab31c0add90d3cb03d64eae80ad7"
+              },
+              {
+                "id": "e27",
+                "pointer": "/productJudgment/criteria/0/result",
+                "role": "product",
+                "kind": "text",
+                "value": "not_met",
+                "valueHash": "1fbcf23a28d84c32b3e517b749f865dff62e466f1caa29b50173e236542a8342"
+              },
+              {
+                "id": "e28",
+                "pointer": "/productJudgment/feedback",
+                "role": "product",
+                "kind": "text",
+                "value": "这次回答还没有回应题目要求的关键内容。",
+                "valueHash": "1ded2d4e9a69bf76d0e4a2da11dae0c4d5fcc55335eb33bf55e372a8e7bb8496"
+              },
+              {
+                "id": "e29",
+                "pointer": "/productJudgment/consequence",
+                "role": "product",
+                "kind": "text",
+                "value": "withheld",
+                "valueHash": "a3b3d76fdf1e33a8c7bde9a7152980d0de2656e3d541feafb198261dcc7cf51c"
+              },
+              {
+                "id": "e18",
+                "pointer": "/rubric/0/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.",
+                "valueHash": "2fb1384c6a10575b6d0df4da73f502153bde0156f1c1afa0feae4ec3cd004c35"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ],
+        "credit": {
+          "outcome": "withheld",
+          "reason": "产品实际后果为withheld(e29)，因学生未满足必要标准，拒绝给分正确，无冲突。",
+          "refs": [
+            "e29",
+            "e20",
+            "e18"
+          ],
+          "witnesses": [
+            {
+              "id": "e29",
+              "pointer": "/productJudgment/consequence",
+              "role": "product",
+              "kind": "text",
+              "value": "withheld",
+              "valueHash": "a3b3d76fdf1e33a8c7bde9a7152980d0de2656e3d541feafb198261dcc7cf51c"
+            },
+            {
+              "id": "e20",
+              "pointer": "/answer",
+              "role": "student",
+              "kind": "text",
+              "value": "我只根据结果作判断，不需要解释资料中的关系、定义或适用条件。",
+              "valueHash": "853fac0d7b03cbcb9c411c257becc312ffe0ab31c0add90d3cb03d64eae80ad7"
+            },
+            {
+              "id": "e18",
+              "pointer": "/rubric/0/text",
+              "role": "criterion",
+              "kind": "text",
+              "value": "The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.",
+              "valueHash": "2fb1384c6a10575b6d0df4da73f502153bde0156f1c1afa0feae4ec3cd004c35"
+            }
+          ],
+          "reviewReasons": []
+        },
+        "studentCheck": {
+          "taskValidity": "invalid",
+          "rubricValidity": "valid",
+          "reason": "学生回答e20明确拒绝解释，未提供任何热传递速率/热损失/温度降的说明，完全缺失criterion e18必要含义，任务无效；rubric e18与来源e3,e9一致，有效。",
+          "validityWitnesses": [
+            {
+              "id": "e20",
+              "pointer": "/answer",
+              "role": "student",
+              "kind": "text",
+              "value": "我只根据结果作判断，不需要解释资料中的关系、定义或适用条件。",
+              "valueHash": "853fac0d7b03cbcb9c411c257becc312ffe0ab31c0add90d3cb03d64eae80ad7"
+            },
+            {
+              "id": "e18",
+              "pointer": "/rubric/0/text",
+              "role": "criterion",
+              "kind": "text",
+              "value": "The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.",
+              "valueHash": "2fb1384c6a10575b6d0df4da73f502153bde0156f1c1afa0feae4ec3cd004c35"
+            },
+            {
+              "id": "e3",
+              "pointer": "/sources/0/text",
+              "role": "source",
+              "kind": "text",
+              "value": "Your feet feel cold as you walk barefoot across the living room carpet in your cold house and then step onto the kitchen tile floor. This result is intriguing, since the carpet and tile floor are both at the same temperature. The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.\n\nSome materials conduct thermal energy faster than others. In general, good conductors of electricity (metals like copper, aluminum, gold, and silver) are also good heat conductors, whereas insulators of electricity (wood, plastic, and rubber) are poor heat conductors.\n\nThe (average) kinetic energy of a molecule in the hot body is higher than in the colder body. If two molecules collide, an energy transfer from the molecule with greater kinetic energy to the molecule with less kinetic energy occurs. The cumulative effect from all collisions results in a net flux of heat from the hot body to the colder body. The heat flux thus depends on the temperature difference ΔΤ=Τhot−Tcold. Therefore, you will get a more severe burn from boiling water than from hot tap water. Conversely, if the temperatures are the same, the net heat transfer rate falls to zero, and equilibrium is achieved. Owing to the fact that the number of collisions increases with increasing area, heat conduction depends on the cross-sectional area. If you touch a cold wall with your palm, your hand cools faster than if you just touch it with your fingertip.",
+              "valueHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd"
+            },
+            {
+              "id": "e9",
+              "pointer": "/prerequisites/2",
+              "role": "context",
+              "kind": "text",
+              "value": "解释同温度地毯与瓷砖触感不同的原因：在相同温度和相同时间区间内，因热传递速率不同导致瓷砖接触皮肤热损失更大、温度下降更大，且其他条件相同。",
+              "valueHash": "ddd265caebe0d2facdb2f53d103a3b1628e6181fcc7e1dfb2f150f1232b5ebc1"
+            }
+          ],
+          "criteria": [
+            {
+              "id": "criterion_182c7e6b-ceaa-4df7-86b0-cd144ebe5a61",
+              "required": true,
+              "result": "not_met",
+              "reason": "必要含义要求解释同温下瓷砖热传递速率大于地毯导致皮肤热损失更大、温降更大；学生答案未包含该解释且声明不解释。",
+              "witnesses": [
+                {
+                  "id": "e20",
+                  "pointer": "/answer",
+                  "role": "student",
+                  "kind": "text",
+                  "value": "我只根据结果作判断，不需要解释资料中的关系、定义或适用条件。",
+                  "valueHash": "853fac0d7b03cbcb9c411c257becc312ffe0ab31c0add90d3cb03d64eae80ad7"
+                },
+                {
+                  "id": "e18",
+                  "pointer": "/rubric/0/text",
+                  "role": "criterion",
+                  "kind": "text",
+                  "value": "The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.",
+                  "valueHash": "2fb1384c6a10575b6d0df4da73f502153bde0156f1c1afa0feae4ec3cd004c35"
+                }
+              ],
+              "reviewReasons": []
+            }
+          ],
+          "sufficiency": "uncertain",
+          "reviewReasons": []
+        }
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q5",
+          "level": "U",
+          "reason": "REQUIRED_CRITERION_UNCERTAIN",
+          "refs": [
+            "e20",
+            "e27",
+            "e28",
+            "e29",
+            "e18"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e20",
+              "pointer": "/answer",
+              "role": "student",
+              "kind": "text",
+              "value": "我只根据结果作判断，不需要解释资料中的关系、定义或适用条件。",
+              "valueHash": "853fac0d7b03cbcb9c411c257becc312ffe0ab31c0add90d3cb03d64eae80ad7"
+            },
+            {
+              "id": "e27",
+              "pointer": "/productJudgment/criteria/0/result",
+              "role": "product",
+              "kind": "text",
+              "value": "not_met",
+              "valueHash": "1fbcf23a28d84c32b3e517b749f865dff62e466f1caa29b50173e236542a8342"
+            },
+            {
+              "id": "e28",
+              "pointer": "/productJudgment/feedback",
+              "role": "product",
+              "kind": "text",
+              "value": "这次回答还没有回应题目要求的关键内容。",
+              "valueHash": "1ded2d4e9a69bf76d0e4a2da11dae0c4d5fcc55335eb33bf55e372a8e7bb8496"
+            },
+            {
+              "id": "e29",
+              "pointer": "/productJudgment/consequence",
+              "role": "product",
+              "kind": "text",
+              "value": "withheld",
+              "valueHash": "a3b3d76fdf1e33a8c7bde9a7152980d0de2656e3d541feafb198261dcc7cf51c"
+            },
+            {
+              "id": "e18",
+              "pointer": "/rubric/0/text",
+              "role": "criterion",
+              "kind": "text",
+              "value": "The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.",
+              "valueHash": "2fb1384c6a10575b6d0df4da73f502153bde0156f1c1afa0feae4ec3cd004c35"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [
+            {
+              "level": "U",
+              "code": "REQUIRED_CRITERION_UNCERTAIN",
+              "detail": {
+                "independent": {
+                  "id": "criterion_182c7e6b-ceaa-4df7-86b0-cd144ebe5a61",
+                  "required": true,
+                  "result": "not_met",
+                  "reason": "学生回答e20声明仅根据结果判断且不需要解释资料中的关系、定义或适用条件，未阐述热传递速率差异、热损失更大或温度下降更大等必要含义，与标准e18要求的解释机制矛盾。",
+                  "witnesses": [
+                    {
+                      "id": "e20",
+                      "pointer": "/answer",
+                      "role": "student",
+                      "kind": "text",
+                      "value": "我只根据结果作判断，不需要解释资料中的关系、定义或适用条件。",
+                      "valueHash": "853fac0d7b03cbcb9c411c257becc312ffe0ab31c0add90d3cb03d64eae80ad7"
+                    },
+                    {
+                      "id": "e18",
+                      "pointer": "/rubric/0/text",
+                      "role": "criterion",
+                      "kind": "text",
+                      "value": "The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.",
+                      "valueHash": "2fb1384c6a10575b6d0df4da73f502153bde0156f1c1afa0feae4ec3cd004c35"
+                    }
+                  ],
+                  "reviewReasons": [],
+                  "independentWitnesses": [
+                    {
+                      "id": "e20",
+                      "pointer": "/answer",
+                      "role": "student",
+                      "kind": "text",
+                      "value": "我只根据结果作判断，不需要解释资料中的关系、定义或适用条件。",
+                      "valueHash": "853fac0d7b03cbcb9c411c257becc312ffe0ab31c0add90d3cb03d64eae80ad7"
+                    },
+                    {
+                      "id": "e18",
+                      "pointer": "/rubric/0/text",
+                      "role": "criterion",
+                      "kind": "text",
+                      "value": "The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.",
+                      "valueHash": "2fb1384c6a10575b6d0df4da73f502153bde0156f1c1afa0feae4ec3cd004c35"
+                    }
+                  ]
+                },
+                "product": {
+                  "id": "criterion_182c7e6b-ceaa-4df7-86b0-cd144ebe5a61",
+                  "result": "not_met"
+                }
+              }
+            },
+            {
+              "level": "U",
+              "code": "CREDIT_CORRECTNESS_UNCERTAIN",
+              "detail": {
+                "sufficiency": "uncertain",
+                "credit": {
+                  "outcome": "withheld",
+                  "reason": "产品实际后果为withheld(e29)，因学生未满足必要标准，拒绝给分正确，无冲突。",
+                  "refs": [
+                    "e29",
+                    "e20",
+                    "e18"
+                  ],
+                  "witnesses": [
+                    {
+                      "id": "e29",
+                      "pointer": "/productJudgment/consequence",
+                      "role": "product",
+                      "kind": "text",
+                      "value": "withheld",
+                      "valueHash": "a3b3d76fdf1e33a8c7bde9a7152980d0de2656e3d541feafb198261dcc7cf51c"
+                    },
+                    {
+                      "id": "e20",
+                      "pointer": "/answer",
+                      "role": "student",
+                      "kind": "text",
+                      "value": "我只根据结果作判断，不需要解释资料中的关系、定义或适用条件。",
+                      "valueHash": "853fac0d7b03cbcb9c411c257becc312ffe0ab31c0add90d3cb03d64eae80ad7"
+                    },
+                    {
+                      "id": "e18",
+                      "pointer": "/rubric/0/text",
+                      "role": "criterion",
+                      "kind": "text",
+                      "value": "The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.",
+                      "valueHash": "2fb1384c6a10575b6d0df4da73f502153bde0156f1c1afa0feae4ec3cd004c35"
+                    }
+                  ],
+                  "reviewReasons": []
+                }
+              }
+            }
+          ],
+          "proposedLevel": 2,
+          "proposedReason": "产品评分器(productJudgment)判定criterion_182c7e6b not_met(e27)与反馈未回应关键内容(e28)一致；学生答案e20仅声明不解释资料关系，未阐述同温下瓷砖热传递速率更快致皮肤热损失大、温降大，确未满足required rubric e18。credit consequence withheld(e29)与不足表现相符，无本质标准错判或学分冲突。",
+          "decidingConstraint": "REQUIRED_CRITERION_UNCERTAIN"
+        }
+      ],
+      "studentAssessment": {
+        "taskValidity": "uncertain",
+        "rubricValidity": "valid",
+        "reason": "题目e14要求解释同温地毯瓷砖触感不同原因，与来源e3及前提e9一致；量规e18准确提取必要机制（不同热传递速率导致相同时间瓷砖热损失大、皮温降大），无错误。学生回答e20明确拒绝解释关系与条件，未提供任何因果说明，不满足量规。",
+        "validityWitnesses": [
+          {
+            "id": "e14",
+            "pointer": "/question/prompt",
+            "role": "question",
+            "kind": "text",
+            "value": "在一个寒冷的房子里，你赤脚走过客厅地毯，然后踩到厨房瓷砖地板。地毯和瓷砖温度相同，但脚感不同。请解释这种不同触感的原因。",
+            "valueHash": "60c4fa29e47606601cfb6a7cfa56f393064eb5188bf6c0fa90eae83e713cfd38"
+          },
+          {
+            "id": "e18",
+            "pointer": "/rubric/0/text",
+            "role": "criterion",
+            "kind": "text",
+            "value": "The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.",
+            "valueHash": "2fb1384c6a10575b6d0df4da73f502153bde0156f1c1afa0feae4ec3cd004c35"
+          },
+          {
+            "id": "e20",
+            "pointer": "/answer",
+            "role": "student",
+            "kind": "text",
+            "value": "我只根据结果作判断，不需要解释资料中的关系、定义或适用条件。",
+            "valueHash": "853fac0d7b03cbcb9c411c257becc312ffe0ab31c0add90d3cb03d64eae80ad7"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "criterion_182c7e6b-ceaa-4df7-86b0-cd144ebe5a61",
+            "required": true,
+            "result": "not_met",
+            "reason": "学生回答e20声明仅根据结果判断且不需要解释资料中的关系、定义或适用条件，未阐述热传递速率差异、热损失更大或温度下降更大等必要含义，与标准e18要求的解释机制矛盾。",
+            "witnesses": [
+              {
+                "id": "e20",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "我只根据结果作判断，不需要解释资料中的关系、定义或适用条件。",
+                "valueHash": "853fac0d7b03cbcb9c411c257becc312ffe0ab31c0add90d3cb03d64eae80ad7"
+              },
+              {
+                "id": "e18",
+                "pointer": "/rubric/0/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.",
+                "valueHash": "2fb1384c6a10575b6d0df4da73f502153bde0156f1c1afa0feae4ec3cd004c35"
+              }
+            ],
+            "reviewReasons": [],
+            "independentWitnesses": [
+              {
+                "id": "e20",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "我只根据结果作判断，不需要解释资料中的关系、定义或适用条件。",
+                "valueHash": "853fac0d7b03cbcb9c411c257becc312ffe0ab31c0add90d3cb03d64eae80ad7"
+              },
+              {
+                "id": "e18",
+                "pointer": "/rubric/0/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.",
+                "valueHash": "2fb1384c6a10575b6d0df4da73f502153bde0156f1c1afa0feae4ec3cd004c35"
+              }
+            ]
+          }
+        ],
+        "sufficiency": "uncertain",
+        "reviewReasons": [],
+        "independentAssessments": [
+          {
+            "taskValidity": "valid",
+            "rubricValidity": "valid",
+            "reason": "题目e14要求解释同温地毯瓷砖触感不同原因，与来源e3及前提e9一致；量规e18准确提取必要机制（不同热传递速率导致相同时间瓷砖热损失大、皮温降大），无错误。学生回答e20明确拒绝解释关系与条件，未提供任何因果说明，不满足量规。",
+            "validityWitnesses": [
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "在一个寒冷的房子里，你赤脚走过客厅地毯，然后踩到厨房瓷砖地板。地毯和瓷砖温度相同，但脚感不同。请解释这种不同触感的原因。",
+                "valueHash": "60c4fa29e47606601cfb6a7cfa56f393064eb5188bf6c0fa90eae83e713cfd38"
+              },
+              {
+                "id": "e18",
+                "pointer": "/rubric/0/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.",
+                "valueHash": "2fb1384c6a10575b6d0df4da73f502153bde0156f1c1afa0feae4ec3cd004c35"
+              },
+              {
+                "id": "e20",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "我只根据结果作判断，不需要解释资料中的关系、定义或适用条件。",
+                "valueHash": "853fac0d7b03cbcb9c411c257becc312ffe0ab31c0add90d3cb03d64eae80ad7"
+              }
+            ],
+            "criteria": [
+              {
+                "id": "criterion_182c7e6b-ceaa-4df7-86b0-cd144ebe5a61",
+                "required": true,
+                "result": "not_met",
+                "reason": "学生回答e20声明仅根据结果判断且不需要解释资料中的关系、定义或适用条件，未阐述热传递速率差异、热损失更大或温度下降更大等必要含义，与标准e18要求的解释机制矛盾。",
+                "witnesses": [
+                  {
+                    "id": "e20",
+                    "pointer": "/answer",
+                    "role": "student",
+                    "kind": "text",
+                    "value": "我只根据结果作判断，不需要解释资料中的关系、定义或适用条件。",
+                    "valueHash": "853fac0d7b03cbcb9c411c257becc312ffe0ab31c0add90d3cb03d64eae80ad7"
+                  },
+                  {
+                    "id": "e18",
+                    "pointer": "/rubric/0/text",
+                    "role": "criterion",
+                    "kind": "text",
+                    "value": "The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.",
+                    "valueHash": "2fb1384c6a10575b6d0df4da73f502153bde0156f1c1afa0feae4ec3cd004c35"
+                  }
+                ],
+                "reviewReasons": []
+              }
+            ],
+            "sufficiency": "insufficient",
+            "reviewReasons": []
+          },
+          {
+            "taskValidity": "invalid",
+            "rubricValidity": "valid",
+            "reason": "学生回答e20明确拒绝解释，未提供任何热传递速率/热损失/温度降的说明，完全缺失criterion e18必要含义，任务无效；rubric e18与来源e3,e9一致，有效。",
+            "validityWitnesses": [
+              {
+                "id": "e20",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "我只根据结果作判断，不需要解释资料中的关系、定义或适用条件。",
+                "valueHash": "853fac0d7b03cbcb9c411c257becc312ffe0ab31c0add90d3cb03d64eae80ad7"
+              },
+              {
+                "id": "e18",
+                "pointer": "/rubric/0/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.",
+                "valueHash": "2fb1384c6a10575b6d0df4da73f502153bde0156f1c1afa0feae4ec3cd004c35"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "Your feet feel cold as you walk barefoot across the living room carpet in your cold house and then step onto the kitchen tile floor. This result is intriguing, since the carpet and tile floor are both at the same temperature. The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.\n\nSome materials conduct thermal energy faster than others. In general, good conductors of electricity (metals like copper, aluminum, gold, and silver) are also good heat conductors, whereas insulators of electricity (wood, plastic, and rubber) are poor heat conductors.\n\nThe (average) kinetic energy of a molecule in the hot body is higher than in the colder body. If two molecules collide, an energy transfer from the molecule with greater kinetic energy to the molecule with less kinetic energy occurs. The cumulative effect from all collisions results in a net flux of heat from the hot body to the colder body. The heat flux thus depends on the temperature difference ΔΤ=Τhot−Tcold. Therefore, you will get a more severe burn from boiling water than from hot tap water. Conversely, if the temperatures are the same, the net heat transfer rate falls to zero, and equilibrium is achieved. Owing to the fact that the number of collisions increases with increasing area, heat conduction depends on the cross-sectional area. If you touch a cold wall with your palm, your hand cools faster than if you just touch it with your fingertip.",
+                "valueHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd"
+              },
+              {
+                "id": "e9",
+                "pointer": "/prerequisites/2",
+                "role": "context",
+                "kind": "text",
+                "value": "解释同温度地毯与瓷砖触感不同的原因：在相同温度和相同时间区间内，因热传递速率不同导致瓷砖接触皮肤热损失更大、温度下降更大，且其他条件相同。",
+                "valueHash": "ddd265caebe0d2facdb2f53d103a3b1628e6181fcc7e1dfb2f150f1232b5ebc1"
+              }
+            ],
+            "criteria": [
+              {
+                "id": "criterion_182c7e6b-ceaa-4df7-86b0-cd144ebe5a61",
+                "required": true,
+                "result": "not_met",
+                "reason": "必要含义要求解释同温下瓷砖热传递速率大于地毯导致皮肤热损失更大、温降更大；学生答案未包含该解释且声明不解释。",
+                "witnesses": [
+                  {
+                    "id": "e20",
+                    "pointer": "/answer",
+                    "role": "student",
+                    "kind": "text",
+                    "value": "我只根据结果作判断，不需要解释资料中的关系、定义或适用条件。",
+                    "valueHash": "853fac0d7b03cbcb9c411c257becc312ffe0ab31c0add90d3cb03d64eae80ad7"
+                  },
+                  {
+                    "id": "e18",
+                    "pointer": "/rubric/0/text",
+                    "role": "criterion",
+                    "kind": "text",
+                    "value": "The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.",
+                    "valueHash": "2fb1384c6a10575b6d0df4da73f502153bde0156f1c1afa0feae4ec3cd004c35"
+                  }
+                ],
+                "reviewReasons": []
+              }
+            ],
+            "sufficiency": "uncertain",
+            "reviewReasons": []
+          }
+        ]
+      },
+      "reviewRequired": [
+        {
+          "dimension": "Q5",
+          "reason": "UNRESOLVED"
+        }
+      ]
+    },
+    "resultHash": "1010efa5153e1174ca53567583aae23c1ea83b2bc7861e66b72e2a66b0064892"
+  }
+}

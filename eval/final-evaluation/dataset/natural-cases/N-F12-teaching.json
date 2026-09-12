@@ -1,0 +1,172 @@
+{
+  "dimensions": [
+    "Q1",
+    "Q3"
+  ],
+  "evidence": {
+    "sources": [
+      {
+        "id": "F12",
+        "text": "玩具工坊用一台筛查器寻找表面有裂纹的木片。这不是最终判定，机器标记后还要人工复查。为了练习分类计数，设有一千片已经人工核对真相的木片，其中一百片有裂纹，九百片没有裂纹。机器把有裂纹的一百片中的九十片标记出来，也把没有裂纹的九百片中的四十五片误标记了。\n整理这些信息时，可以画出四格：真有裂纹且被标记九十片；真有裂纹但未标记十片；无裂纹却被标记四十五片；无裂纹且未标记八百五十五片。四格合计一千片，分别加总行列能够检查是否漏计。同一片木片只能落入其中一格，不能因为两种描述就重复计数。\n“有裂纹的木片中有多少被找出”以真实有裂纹的一百片为分母，因此比例为九十除以一百，等于百分之九十。“被标记的木片中有多少真的有裂纹”则以全部被标记的一百三十五片为分母，因此为九十除以一百三十五，等于三分之二。两句话的条件不同，即使都出现“裂纹”和“标记”，也不能交换分母。\n假设机器在另一批木片中的上述检出比例与误标比例保持不变，但有裂纹木片的占比变低。举例说，一千片中只有二十片有裂纹，预计标记其中十八片；其余九百八十片按百分之五的误标比例，会误标四十九片。此时所有标记共六十七片，其中真正有裂纹十八片，占十八除以六十七，约百分之二十六点九。这里把给定比例直接作用于整批计数作为练习模型，不讨论随机波动。\n这说明机器“找出有裂纹物品的比例”保持相同，也不保证“一个标记结果有多可靠”保持相同。后者还依赖这批物品中有裂纹的基础比例。不能只看到百分之九十就宣称任意被标记木片都有百分之九十是真裂纹，也不能因有误标就说机器毫无用途。\n回答问题时先用一句话明确分母群体，再列对应分子；若现有材料只给机器检出比例，却没给误标情况或有裂纹占比，就可能无法计算标记结果中的真实占比。此时可说明需要哪些数据，并给出条件式表达。所有结论限定于题设检测规则及其稳定性假设，不能把一次验证无条件推广到新材料、新设备或新的操作流程。"
+      }
+    ],
+    "goals": [
+      "评价本次实际讲解的内容：四格分类互斥计数与双比例分母区分及基础比例影响"
+    ],
+    "prerequisites": [
+      "比例和分数",
+      "按条件分类计数"
+    ],
+    "desiredDepth": "deep_transfer",
+    "authorityBoundaries": [
+      "本次评估只涉及所给来源、明确的教学范围和实际展示的产物；脚本作答用于检查工作流，不代表真实学习者。"
+    ],
+    "artifacts": [
+      {
+        "id": "deliveredLesson/objective/title",
+        "text": "四格分类互斥计数与双比例分母区分及基础比例影响"
+      },
+      {
+        "id": "deliveredLesson/objective/whyNow",
+        "text": "当基础比例下降时，为何机器检出率不变却可能让标记结果可靠性骤降？"
+      },
+      {
+        "id": "deliveredLesson/objective/outcomes/0/title",
+        "text": "构建四格互斥计数与双比例计算及基础比例变化推演"
+      },
+      {
+        "id": "deliveredLesson/objective/outcomes/0/description",
+        "text": "Build mutually exclusive four-cell counts from a single-test scenario and verify totals; compute detection proportion (true positives/total true condition) and marked true-positive proportion (true positives/total marked) with distinct denominators, not swapped; when base rate changes with given rates constant, reconstruct counts and compute new precision deterministically without random fluctuation."
+      },
+      {
+        "id": "deliveredLesson/objective/outcomes/1/title",
+        "text": "解释双比例分母差异与基础比例依赖及结论边界"
+      },
+      {
+        "id": "deliveredLesson/objective/outcomes/1/description",
+        "text": "Explain detection vs marked true-positive proportions use different denominators; latter depends on base rate so unchanged detection rate doesn't guarantee marked reliability. State denominator then numerator; note cannot compute without false-mark and base-rate data; conclusions limited to stated test rules, not generalizable."
+      },
+      {
+        "id": "deliveredLesson/segments/0/explanation",
+        "text": "在分类筛查中，每片物品只能落入四格之一：真阳性、假阴性、假阳性、真阴性。先依据‘真实状态’与‘机器标记’两个维度列出互斥计数，再分别用不同分母算比例。检出比例分母是真实阳性总数，标记精度分母是全部标记数。基础比例变化时，即使机器两项错误率不变，标记精度也会变。本部分先建立这个计数与分母区分的心智模型。"
+      },
+      {
+        "id": "deliveredLesson/segments/1/explanation",
+        "text": "下面用一批新数字演练四格构建与双比例计算，注意步骤只展示部分中间态，最终精度需自行推演。"
+      },
+      {
+        "id": "deliveredLesson/segments/1/workedProcess/startingState",
+        "text": "一批400片木片，已知其中40片真有裂纹，机器检出比例90%不变，无裂纹误标比例5%不变。尚未计算四格与标记精度。"
+      },
+      {
+        "id": "deliveredLesson/segments/1/workedProcess/inputs/0",
+        "text": "总片数400"
+      },
+      {
+        "id": "deliveredLesson/segments/1/workedProcess/inputs/1",
+        "text": "真裂纹40片"
+      },
+      {
+        "id": "deliveredLesson/segments/1/workedProcess/inputs/2",
+        "text": "检出率90%"
+      },
+      {
+        "id": "deliveredLesson/segments/1/workedProcess/inputs/3",
+        "text": "误标率5%"
+      },
+      {
+        "id": "deliveredLesson/segments/1/workedProcess/result",
+        "text": "66.7%"
+      },
+      {
+        "id": "deliveredLesson/segments/1/workedProcess/whyResultFollows",
+        "text": "TP与总标记均由已知率与基数确定，比例唯一"
+      },
+      {
+        "id": "deliveredLesson/segments/1/workedProcess/interaction/activity/prompt",
+        "text": "基于已得‘真有裂纹且被标记36片’与给定误标率5%、总片400、真裂纹40，被标记木片中真裂纹比例是多少？"
+      },
+      {
+        "id": "deliveredLesson/segments/1/workedProcess/interaction/activity/options/0/text",
+        "text": "约66.7%"
+      },
+      {
+        "id": "deliveredLesson/segments/1/workedProcess/interaction/activity/options/1/text",
+        "text": "90%"
+      },
+      {
+        "id": "deliveredLesson/segments/1/workedProcess/interaction/activity/options/2/text",
+        "text": "10%"
+      },
+      {
+        "id": "deliveredLesson/segments/1/workedProcess/interaction/activity/feedback",
+        "text": "正确，36/(36+18)=66.7%。"
+      },
+      {
+        "id": "deliveredLesson/segments/1/workedProcess/interaction/activity/debrief",
+        "text": "分母区分后，精度由TP与总标记数得出。"
+      },
+      {
+        "id": "deliveredLesson/segments/1/workedProcess/interaction/transfer/prompt",
+        "text": "在满足仅用抽样数据、不推断整体的约束下，应选哪种汇报设计？"
+      },
+      {
+        "id": "deliveredLesson/segments/1/workedProcess/interaction/transfer/options/0/text",
+        "text": "直接宣布整批标记精度66.7%"
+      },
+      {
+        "id": "deliveredLesson/segments/1/workedProcess/interaction/transfer/options/1/text",
+        "text": "报告样本精度60%并注明仅基于20片抽样"
+      },
+      {
+        "id": "deliveredLesson/segments/1/workedProcess/interaction/transfer/options/2/text",
+        "text": "用检出率90%代表精度"
+      },
+      {
+        "id": "deliveredLesson/segments/1/workedProcess/interaction/transfer/feedback",
+        "text": "符合约束且透明。"
+      },
+      {
+        "id": "deliveredLesson/segments/1/workedProcess/interaction/transfer/debrief",
+        "text": "抽样下只能报告样本统计量，不可外推。"
+      },
+      {
+        "id": "deliveredLesson/segments/1/workedProcess/interaction/transfer/changedCondition",
+        "text": "现改为：批次400片参数同上，但人工只复查了被标记木片中的随机20片，其中12片真裂纹，禁止用整批假设推断全部标记精度，需基于样本设计汇报方式"
+      },
+      {
+        "id": "deliveredLesson/segments/2/explanation",
+        "text": "若只知机器检出比例（如90%），但缺失误标比例与真实基础比例，则无法计算被标记物中真阳性的占比。此时不能臆测精度。"
+      },
+      {
+        "id": "deliveredLesson/segments/2/contrast/text",
+        "text": "已知完整四格可算双比例；仅知检出率却缺误标率与基础率时，标记精度不可确定。"
+      },
+      {
+        "id": "deliveredLesson/segments/3/explanation",
+        "text": "构建四格后，加总行列可验证无漏计；若跳过误标数直接计算标记精度，会得到错误分母。"
+      },
+      {
+        "id": "deliveredLesson/segments/4/explanation",
+        "text": "以300片陶瓷为例：真实瑕疵30片（基础比例10%），机器检出率80%标记其中24片；无瑕疵270片误标率10%误标27片。被标记共51片，精度24/51≈47.1%，分母为全部标记。若基础比例降至2%（6片瑕疵），同率下标记真瑕疵约5片、误标约29片，总标记约34片，精度约14.7%。可见相同机器率下，基础比例降低使误标在总标记中占比相对上升，拉低标记精度。先定分母群体再列分子是核心机制。"
+      },
+      {
+        "id": "deliveredLesson/segments/5/explanation",
+        "text": "当仅知机器检出率与误标率，却缺失违规单据基础占比与总单数时，被标记单据中真违规比例因分母（总标记数）依赖基础比例而无法计算。此时汇报设计必须诚示数据缺口，而非偷换分母。下面以审计系统为例检验设计选择。"
+      },
+      {
+        "id": "deliveredLesson/segments/6/explanation",
+        "text": "上述四格与双比例结论建立在题设给定的检测规则与‘比例稳定作用于整批’练习模型上。一旦材料、设备或流程改变且未提供对应率，已得精度不可无条件迁移。结论边界必须随新证据重新划定。"
+      },
+      {
+        "id": "deliveredLesson/segments/6/contrast/text",
+        "text": "题设内由给定四格可算双比例；跨新材料且未给率的条件下，标记精度不可外推。"
+      },
+      {
+        "id": "deliveredLesson/summary/text",
+        "text": "四格互斥计数确保总量一致；双比例分母不同；基础率变化通过误标绝对数改变标记精度。"
+      }
+    ],
+    "exposure": []
+  }
+}

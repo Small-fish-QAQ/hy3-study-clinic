@@ -1,0 +1,329 @@
+{
+  "task": {
+    "caseId": "N-E04-curriculum",
+    "runId": "N-E04-curriculum-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-E04-curriculum.json",
+    "inputHash": "a3ffef2e79f58b1bf66db6d10603918274bb5326d5b3d7134b56ad1eed5219c7",
+    "population": "natural",
+    "sourceId": "E04"
+  },
+  "inputHash": "a3ffef2e79f58b1bf66db6d10603918274bb5326d5b3d7134b56ad1eed5219c7",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "correctness": "051702bbf956cd865669e7cb00352725e6033600bc58844c9d2170aab5068d47",
+      "artifact-audit": "051702bbf956cd865669e7cb00352725e6033600bc58844c9d2170aab5068d47",
+      "certification": "051702bbf956cd865669e7cb00352725e6033600bc58844c9d2170aab5068d47"
+    },
+    "stages": {
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "not_applicable",
+            "affected": [],
+            "reason": "待评产物(artifacts中的title与objectives)仅包含课程标题与四个学习目标描述，未提出任何条件式规则、量词断言或作者总结的实例对照规则；无适用条件断言。",
+            "contextHash": "051702bbf956cd865669e7cb00352725e6033600bc58844c9d2170aab5068d47",
+            "proposed": {
+              "kind": "conditions",
+              "status": "not_applicable",
+              "affected": [],
+              "reason": "待评产物(artifacts中的title与objectives)仅包含课程标题与四个学习目标描述，未提出任何条件式规则、量词断言或作者总结的实例对照规则；无适用条件断言。",
+              "refs": [
+                "e15",
+                "e16",
+                "e17",
+                "e18",
+                "e19"
+              ],
+              "challenge": {
+                "status": "not_applicable",
+                "reason": "无适用条件规则断言，无需构造相容反例。",
+                "refs": [
+                  "e15",
+                  "e16",
+                  "e17",
+                  "e18",
+                  "e19"
+                ]
+              }
+            },
+            "reviewReasons": []
+          },
+          {
+            "kind": "quantities",
+            "status": "not_applicable",
+            "affected": [],
+            "reason": "产物中无数值演算、单位转换或百分比/千分比推导；rates为空，objectives无数量重算断言。",
+            "contextHash": "051702bbf956cd865669e7cb00352725e6033600bc58844c9d2170aab5068d47",
+            "proposed": {
+              "kind": "quantities",
+              "status": "not_applicable",
+              "affected": [],
+              "reason": "产物中无数值演算、单位转换或百分比/千分比推导；rates为空，objectives无数量重算断言。",
+              "refs": [
+                "e15",
+                "e16",
+                "e17",
+                "e18",
+                "e19"
+              ]
+            },
+            "reviewReasons": []
+          }
+        ],
+        "keys": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 2,
+            "reason": "声明目标 e5/e6/e7 均被产物 artifact1(e18,e19) 中的 objectives 忠实覆盖：obj_be2b 对应区分语义/视觉/声学(听觉)编码且定义合教材 e3；obj_2f0e 使用教材词语分类、具体形象、韵律例子解释编码；obj_f75a 识别一般记忆倾向非个人保证。无目标消失或扭曲，符合 Q2 的 faithful usable treatment。",
+            "refs": [
+              "e5",
+              "e6",
+              "e7",
+              "e18",
+              "e19"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "用中文区分语义、视觉与听觉编码",
+                "valueHash": "cbb2b94abbb598afcf329190550dccbf25c06b7f3f83d51b8bf1af81ce2542d4"
+              },
+              {
+                "id": "e6",
+                "pointer": "/goals/1",
+                "role": "goal",
+                "kind": "text",
+                "value": "使用教材中的词语分类、具体形象和韵律例子解释编码",
+                "valueHash": "a9ff5b72c35fb89e7547e5dcbf65039eee046cb1a3c42df3daa54876f8b9dda2"
+              },
+              {
+                "id": "e7",
+                "pointer": "/goals/2",
+                "role": "goal",
+                "kind": "text",
+                "value": "把教材中的一般记忆倾向与对每个人的保证区分开",
+                "valueHash": "c4119051166b794f4dedc123fca4591aa23d37bf1fdcdb9fc36ed4236fb34a9a"
+              },
+              {
+                "id": "e18",
+                "pointer": "/artifacts/1/id",
+                "role": "artifact",
+                "kind": "text",
+                "value": "cun_3fb4f750-2e90-42dd-94ab-e01c8adedd61/objectives",
+                "valueHash": "1d3072e94dbba2f635b5c0ad8b67bb9c89f90752166ea3893277480a713322e1"
+              },
+              {
+                "id": "e19",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "[{\"id\":\"obj_be2b1418-877f-4dd5-baa9-a7248bccdd70\",\"title\":\"用中文识别并区分语义编码、视觉编码与声学编码的定义及差异（语义：词语及意义；视觉：图像；声学：声音尤其是词语发音）\",\"description\":\"用中文识别并区分语义编码、视觉编码与声学编码的定义及差异（语义：词语及意义；视觉：图像；声学：声音尤其是词语发音）\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_ce640291-5b00-4b33-a4fd-77b00c0ebafd\",\"ta_68d1b82b-9431-4b0c-8210-624b8377868e\",\"ta_3f1cd383-8bd7-478e-a2dd-817f3a1dee8a\",\"ta_d08d930c-7b5f-4b19-80cb-1fc161339a31\"],\"authorityClaimIds\":[\"tac_7ce7b902-fbb5-4e08-a703-7862b7094fe2\",\"tac_952a3d06-c01e-4af6-872a-2108543e7f6c\",\"tac_9885f976-4201-4b0a-9b2a-4972bd791e9f\",\"tac_ed003ca9-aa5c-4443-9e7b-5c7559f9cd00\",\"tac_90ff0238-f371-48bb-a9a1-c0895b2b153c\",\"tac_99e96d87-4aa1-4ad0-a81c-67057d7c1117\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E3, E1, E11 envelopes support identify as formal_sufficient.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_1_11708d88\",\"blk_2_b33a5538\"],\"formalEvidenceSourceBlockIds\":[\"blk_1_11708d88\",\"blk_2_b33a5538\"]},{\"id\":\"obj_7931b0b0-3917-42cc-b45c-04f11ebf9fca\",\"title\":\"解释编码作为信息输入记忆系统的过程，包括接收感觉信息后大脑对其标记或编码并通过自动或努力加工\",\"description\":\"解释编码作为信息输入记忆系统的过程，包括接收感觉信息后大脑对其标记或编码并通过自动或努力加工\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_b827cfad-51cc-4ef7-98ba-92fa295b98d8\",\"ta_079cbddc-2ef3-40a2-bf85-d062d2bff5f8\"],\"authorityClaimIds\":[\"tac_e897e2a0-85f1-4801-8a56-84dcb45f10ef\",\"tac_7df4507d-7a3b-4b9e-95eb-e73abd344147\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E2 envelope supports explain as formal_sufficient.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"explain\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_cc25c3ad\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_cc25c3ad\"]},{\"id\":\"obj_2f0e48a9-ea21-4ece-bf9d-2700a099763e\",\"title\":\"使用教材中的词语分类（Bousfield实验按意义分类）、具体形象（高意象词car/dog/book产生心理图像，低意象抽象词level/truth/value）和韵律（字母歌、月份韵律）例子解释语义、视觉与声学编码\",\"description\":\"使用教材中的词语分类（Bousfield实验按意义分类）、具体形象（高意象词car/dog/book产生心理图像，低意象抽象词level/truth/value）和韵律（字母歌、月份韵律）例子解释语义、视觉与声学编码\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_fa87206b-9cce-4123-90a0-6b1326ba3416\",\"ta_a37ecffc-ce9e-4b7b-80d2-96f2ee134162\"],\"authorityClaimIds\":[\"tac_7f96bf41-a751-4772-b1f0-cda8846f25ae\",\"tac_307d37fe-be37-45d9-90b3-331a9d142377\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E20 envelope supports explain as formal_sufficient.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"explain\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_3_d6d6f3d4\"],\"formalEvidenceSourceBlockIds\":[\"blk_3_d6d6f3d4\"]},{\"id\":\"obj_f75a57eb-f694-4a65-aa86-5e087d786126\",\"title\":\"识别教材中表述的是一般记忆倾向（如高意象词可能更容易回忆、建立更强记忆）而非对每个人的保证\",\"description\":\"识别教材中表述的是一般记忆倾向（如高意象词可能更容易回忆、建立更强记忆）而非对每个人的保证\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_3f1cd383-8bd7-478e-a2dd-817f3a1dee8a\",\"ta_d08d930c-7b5f-4b19-80cb-1fc161339a31\"],\"authorityClaimIds\":[\"tac_2d3b8e68-a674-487b-a159-6d75b6bcf6e2\",\"tac_c29137c4-31b7-4723-b704-df953afb1be4\",\"tac_908a94cc-fb3a-46cf-bbab-5ad7e9d0e3a6\",\"tac_c80a0d32-a107-43b1-84b7-05cdb2062221\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E25, E5 envelopes support identify as formal_sufficient.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_2_b33a5538\"],\"formalEvidenceSourceBlockIds\":[\"blk_2_b33a5538\"]}]",
+                "valueHash": "fd3464cc9fe5f073b3d3f1d3e379abc5c08da8b23315cc3d3d02a775b36fe5f6"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q2",
+            "status": "supported",
+            "reason": "候选Q2正向(level2)称e5/e6/e7被artifact1(e18,e19)的objectives忠实覆盖，与findings.audit一致；correctness无适用异议，issues空无未解依赖。obj_be2b合e5及e3定义，obj_2f0e合e6，obj_f75a合e7。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "We get information into our brains through a process called encoding, which is the input of information into the memory system. Once we receive sensory information from the environment, our brains label or code it. We organize the information with other similar information and connect new concepts to existing concepts. Encoding information occurs through automatic processing and effortful processing.\n\nThere are three types of encoding. The encoding of words and their meaning is known as semantic encoding. It was first demonstrated by William Bousfield (1935) in an experiment in which he asked people to memorize words. The 60 words were actually divided into 4 categories of meaning, although the participants did not know this because the words were randomly presented. When they were asked to remember the words, they tended to recall them in categories, showing that they paid attention to the meanings of the words as they learned them.\n\nVisual encoding is the encoding of images, and acoustic encoding is the encoding of sounds, words in particular. To see how visual encoding works, read over this list of words: car, level, dog, truth, book, value. If you were asked later to recall the words from this list, which ones do you think you’d most likely remember? You would probably have an easier time recalling the words car, dog, and book, and a more difficult time recalling the words level, truth, and value. Why is this? Because you can recall images (mental pictures) more easily than words alone. When you read the words car, dog, and book you created images of these things in your mind. These are concrete, high-imagery words. On the other hand, abstract words like level, truth, and value are low-imagery words. High-imagery words are encoded both visually and semantically (Paivio, 1986), thus building a stronger memory.\n\nNow let’s turn our attention to acoustic encoding. You are driving in your car and a song comes on the radio that you haven’t heard in at least 10 years, but you sing along, recalling every word. In the United States, children often learn the alphabet through song, and they learn the number of days in each month through rhyme: “Thirty days hath September, / April, June, and November; / All the rest have thirty-one, / Save February, with twenty-eight days clear, / And twenty-nine each leap year.” These lessons are easy to remember because of acoustic encoding. We encode the sounds the words make. This is one of the reasons why much of what we teach young children is done through song, rhyme, and rhythm.",
+                "valueHash": "bf1b2eea6b7f20a856c4cfc2f378ff4216695c2cb1b009da66f5aca83f238b9f"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "用中文区分语义、视觉与听觉编码",
+                "valueHash": "cbb2b94abbb598afcf329190550dccbf25c06b7f3f83d51b8bf1af81ce2542d4"
+              },
+              {
+                "id": "e6",
+                "pointer": "/goals/1",
+                "role": "goal",
+                "kind": "text",
+                "value": "使用教材中的词语分类、具体形象和韵律例子解释编码",
+                "valueHash": "a9ff5b72c35fb89e7547e5dcbf65039eee046cb1a3c42df3daa54876f8b9dda2"
+              },
+              {
+                "id": "e7",
+                "pointer": "/goals/2",
+                "role": "goal",
+                "kind": "text",
+                "value": "把教材中的一般记忆倾向与对每个人的保证区分开",
+                "valueHash": "c4119051166b794f4dedc123fca4591aa23d37bf1fdcdb9fc36ed4236fb34a9a"
+              },
+              {
+                "id": "e18",
+                "pointer": "/artifacts/1/id",
+                "role": "artifact",
+                "kind": "text",
+                "value": "cun_3fb4f750-2e90-42dd-94ab-e01c8adedd61/objectives",
+                "valueHash": "1d3072e94dbba2f635b5c0ad8b67bb9c89f90752166ea3893277480a713322e1"
+              },
+              {
+                "id": "e19",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "[{\"id\":\"obj_be2b1418-877f-4dd5-baa9-a7248bccdd70\",\"title\":\"用中文识别并区分语义编码、视觉编码与声学编码的定义及差异（语义：词语及意义；视觉：图像；声学：声音尤其是词语发音）\",\"description\":\"用中文识别并区分语义编码、视觉编码与声学编码的定义及差异（语义：词语及意义；视觉：图像；声学：声音尤其是词语发音）\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_ce640291-5b00-4b33-a4fd-77b00c0ebafd\",\"ta_68d1b82b-9431-4b0c-8210-624b8377868e\",\"ta_3f1cd383-8bd7-478e-a2dd-817f3a1dee8a\",\"ta_d08d930c-7b5f-4b19-80cb-1fc161339a31\"],\"authorityClaimIds\":[\"tac_7ce7b902-fbb5-4e08-a703-7862b7094fe2\",\"tac_952a3d06-c01e-4af6-872a-2108543e7f6c\",\"tac_9885f976-4201-4b0a-9b2a-4972bd791e9f\",\"tac_ed003ca9-aa5c-4443-9e7b-5c7559f9cd00\",\"tac_90ff0238-f371-48bb-a9a1-c0895b2b153c\",\"tac_99e96d87-4aa1-4ad0-a81c-67057d7c1117\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E3, E1, E11 envelopes support identify as formal_sufficient.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_1_11708d88\",\"blk_2_b33a5538\"],\"formalEvidenceSourceBlockIds\":[\"blk_1_11708d88\",\"blk_2_b33a5538\"]},{\"id\":\"obj_7931b0b0-3917-42cc-b45c-04f11ebf9fca\",\"title\":\"解释编码作为信息输入记忆系统的过程，包括接收感觉信息后大脑对其标记或编码并通过自动或努力加工\",\"description\":\"解释编码作为信息输入记忆系统的过程，包括接收感觉信息后大脑对其标记或编码并通过自动或努力加工\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_b827cfad-51cc-4ef7-98ba-92fa295b98d8\",\"ta_079cbddc-2ef3-40a2-bf85-d062d2bff5f8\"],\"authorityClaimIds\":[\"tac_e897e2a0-85f1-4801-8a56-84dcb45f10ef\",\"tac_7df4507d-7a3b-4b9e-95eb-e73abd344147\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E2 envelope supports explain as formal_sufficient.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"explain\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_cc25c3ad\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_cc25c3ad\"]},{\"id\":\"obj_2f0e48a9-ea21-4ece-bf9d-2700a099763e\",\"title\":\"使用教材中的词语分类（Bousfield实验按意义分类）、具体形象（高意象词car/dog/book产生心理图像，低意象抽象词level/truth/value）和韵律（字母歌、月份韵律）例子解释语义、视觉与声学编码\",\"description\":\"使用教材中的词语分类（Bousfield实验按意义分类）、具体形象（高意象词car/dog/book产生心理图像，低意象抽象词level/truth/value）和韵律（字母歌、月份韵律）例子解释语义、视觉与声学编码\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_fa87206b-9cce-4123-90a0-6b1326ba3416\",\"ta_a37ecffc-ce9e-4b7b-80d2-96f2ee134162\"],\"authorityClaimIds\":[\"tac_7f96bf41-a751-4772-b1f0-cda8846f25ae\",\"tac_307d37fe-be37-45d9-90b3-331a9d142377\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E20 envelope supports explain as formal_sufficient.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"explain\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_3_d6d6f3d4\"],\"formalEvidenceSourceBlockIds\":[\"blk_3_d6d6f3d4\"]},{\"id\":\"obj_f75a57eb-f694-4a65-aa86-5e087d786126\",\"title\":\"识别教材中表述的是一般记忆倾向（如高意象词可能更容易回忆、建立更强记忆）而非对每个人的保证\",\"description\":\"识别教材中表述的是一般记忆倾向（如高意象词可能更容易回忆、建立更强记忆）而非对每个人的保证\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_3f1cd383-8bd7-478e-a2dd-817f3a1dee8a\",\"ta_d08d930c-7b5f-4b19-80cb-1fc161339a31\"],\"authorityClaimIds\":[\"tac_2d3b8e68-a674-487b-a159-6d75b6bcf6e2\",\"tac_c29137c4-31b7-4723-b704-df953afb1be4\",\"tac_908a94cc-fb3a-46cf-bbab-5ad7e9d0e3a6\",\"tac_c80a0d32-a107-43b1-84b7-05cdb2062221\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E25, E5 envelopes support identify as formal_sufficient.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_2_b33a5538\"],\"formalEvidenceSourceBlockIds\":[\"blk_2_b33a5538\"]}]",
+                "valueHash": "fd3464cc9fe5f073b3d3f1d3e379abc5c08da8b23315cc3d3d02a775b36fe5f6"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q2",
+          "level": 2,
+          "reason": "声明目标 e5/e6/e7 均被产物 artifact1(e18,e19) 中的 objectives 忠实覆盖：obj_be2b 对应区分语义/视觉/声学(听觉)编码且定义合教材 e3；obj_2f0e 使用教材词语分类、具体形象、韵律例子解释编码；obj_f75a 识别一般记忆倾向非个人保证。无目标消失或扭曲，符合 Q2 的 faithful usable treatment。",
+          "refs": [
+            "e5",
+            "e6",
+            "e7",
+            "e18",
+            "e19"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e5",
+              "pointer": "/goals/0",
+              "role": "goal",
+              "kind": "text",
+              "value": "用中文区分语义、视觉与听觉编码",
+              "valueHash": "cbb2b94abbb598afcf329190550dccbf25c06b7f3f83d51b8bf1af81ce2542d4"
+            },
+            {
+              "id": "e6",
+              "pointer": "/goals/1",
+              "role": "goal",
+              "kind": "text",
+              "value": "使用教材中的词语分类、具体形象和韵律例子解释编码",
+              "valueHash": "a9ff5b72c35fb89e7547e5dcbf65039eee046cb1a3c42df3daa54876f8b9dda2"
+            },
+            {
+              "id": "e7",
+              "pointer": "/goals/2",
+              "role": "goal",
+              "kind": "text",
+              "value": "把教材中的一般记忆倾向与对每个人的保证区分开",
+              "valueHash": "c4119051166b794f4dedc123fca4591aa23d37bf1fdcdb9fc36ed4236fb34a9a"
+            },
+            {
+              "id": "e18",
+              "pointer": "/artifacts/1/id",
+              "role": "artifact",
+              "kind": "text",
+              "value": "cun_3fb4f750-2e90-42dd-94ab-e01c8adedd61/objectives",
+              "valueHash": "1d3072e94dbba2f635b5c0ad8b67bb9c89f90752166ea3893277480a713322e1"
+            },
+            {
+              "id": "e19",
+              "pointer": "/artifacts/1/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "[{\"id\":\"obj_be2b1418-877f-4dd5-baa9-a7248bccdd70\",\"title\":\"用中文识别并区分语义编码、视觉编码与声学编码的定义及差异（语义：词语及意义；视觉：图像；声学：声音尤其是词语发音）\",\"description\":\"用中文识别并区分语义编码、视觉编码与声学编码的定义及差异（语义：词语及意义；视觉：图像；声学：声音尤其是词语发音）\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_ce640291-5b00-4b33-a4fd-77b00c0ebafd\",\"ta_68d1b82b-9431-4b0c-8210-624b8377868e\",\"ta_3f1cd383-8bd7-478e-a2dd-817f3a1dee8a\",\"ta_d08d930c-7b5f-4b19-80cb-1fc161339a31\"],\"authorityClaimIds\":[\"tac_7ce7b902-fbb5-4e08-a703-7862b7094fe2\",\"tac_952a3d06-c01e-4af6-872a-2108543e7f6c\",\"tac_9885f976-4201-4b0a-9b2a-4972bd791e9f\",\"tac_ed003ca9-aa5c-4443-9e7b-5c7559f9cd00\",\"tac_90ff0238-f371-48bb-a9a1-c0895b2b153c\",\"tac_99e96d87-4aa1-4ad0-a81c-67057d7c1117\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E3, E1, E11 envelopes support identify as formal_sufficient.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_1_11708d88\",\"blk_2_b33a5538\"],\"formalEvidenceSourceBlockIds\":[\"blk_1_11708d88\",\"blk_2_b33a5538\"]},{\"id\":\"obj_7931b0b0-3917-42cc-b45c-04f11ebf9fca\",\"title\":\"解释编码作为信息输入记忆系统的过程，包括接收感觉信息后大脑对其标记或编码并通过自动或努力加工\",\"description\":\"解释编码作为信息输入记忆系统的过程，包括接收感觉信息后大脑对其标记或编码并通过自动或努力加工\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_b827cfad-51cc-4ef7-98ba-92fa295b98d8\",\"ta_079cbddc-2ef3-40a2-bf85-d062d2bff5f8\"],\"authorityClaimIds\":[\"tac_e897e2a0-85f1-4801-8a56-84dcb45f10ef\",\"tac_7df4507d-7a3b-4b9e-95eb-e73abd344147\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E2 envelope supports explain as formal_sufficient.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"explain\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_cc25c3ad\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_cc25c3ad\"]},{\"id\":\"obj_2f0e48a9-ea21-4ece-bf9d-2700a099763e\",\"title\":\"使用教材中的词语分类（Bousfield实验按意义分类）、具体形象（高意象词car/dog/book产生心理图像，低意象抽象词level/truth/value）和韵律（字母歌、月份韵律）例子解释语义、视觉与声学编码\",\"description\":\"使用教材中的词语分类（Bousfield实验按意义分类）、具体形象（高意象词car/dog/book产生心理图像，低意象抽象词level/truth/value）和韵律（字母歌、月份韵律）例子解释语义、视觉与声学编码\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_fa87206b-9cce-4123-90a0-6b1326ba3416\",\"ta_a37ecffc-ce9e-4b7b-80d2-96f2ee134162\"],\"authorityClaimIds\":[\"tac_7f96bf41-a751-4772-b1f0-cda8846f25ae\",\"tac_307d37fe-be37-45d9-90b3-331a9d142377\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E20 envelope supports explain as formal_sufficient.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"explain\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_3_d6d6f3d4\"],\"formalEvidenceSourceBlockIds\":[\"blk_3_d6d6f3d4\"]},{\"id\":\"obj_f75a57eb-f694-4a65-aa86-5e087d786126\",\"title\":\"识别教材中表述的是一般记忆倾向（如高意象词可能更容易回忆、建立更强记忆）而非对每个人的保证\",\"description\":\"识别教材中表述的是一般记忆倾向（如高意象词可能更容易回忆、建立更强记忆）而非对每个人的保证\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_3f1cd383-8bd7-478e-a2dd-817f3a1dee8a\",\"ta_d08d930c-7b5f-4b19-80cb-1fc161339a31\"],\"authorityClaimIds\":[\"tac_2d3b8e68-a674-487b-a159-6d75b6bcf6e2\",\"tac_c29137c4-31b7-4723-b704-df953afb1be4\",\"tac_908a94cc-fb3a-46cf-bbab-5ad7e9d0e3a6\",\"tac_c80a0d32-a107-43b1-84b7-05cdb2062221\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E25, E5 envelopes support identify as formal_sufficient.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_2_b33a5538\"],\"formalEvidenceSourceBlockIds\":[\"blk_2_b33a5538\"]}]",
+              "valueHash": "fd3464cc9fe5f073b3d3f1d3e379abc5c08da8b23315cc3d3d02a775b36fe5f6"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [],
+          "proposedLevel": 2,
+          "proposedReason": "声明目标 e5/e6/e7 均被产物 artifact1(e18,e19) 中的 objectives 忠实覆盖：obj_be2b 对应区分语义/视觉/声学(听觉)编码且定义合教材 e3；obj_2f0e 使用教材词语分类、具体形象、韵律例子解释编码；obj_f75a 识别一般记忆倾向非个人保证。无目标消失或扭曲，符合 Q2 的 faithful usable treatment。"
+        }
+      ],
+      "reviewRequired": [],
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q2",
+            "status": "supported",
+            "reason": "候选Q2正向(level2)称e5/e6/e7被artifact1(e18,e19)的objectives忠实覆盖，与findings.audit一致；correctness无适用异议，issues空无未解依赖。obj_be2b合e5及e3定义，obj_2f0e合e6，obj_f75a合e7。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "We get information into our brains through a process called encoding, which is the input of information into the memory system. Once we receive sensory information from the environment, our brains label or code it. We organize the information with other similar information and connect new concepts to existing concepts. Encoding information occurs through automatic processing and effortful processing.\n\nThere are three types of encoding. The encoding of words and their meaning is known as semantic encoding. It was first demonstrated by William Bousfield (1935) in an experiment in which he asked people to memorize words. The 60 words were actually divided into 4 categories of meaning, although the participants did not know this because the words were randomly presented. When they were asked to remember the words, they tended to recall them in categories, showing that they paid attention to the meanings of the words as they learned them.\n\nVisual encoding is the encoding of images, and acoustic encoding is the encoding of sounds, words in particular. To see how visual encoding works, read over this list of words: car, level, dog, truth, book, value. If you were asked later to recall the words from this list, which ones do you think you’d most likely remember? You would probably have an easier time recalling the words car, dog, and book, and a more difficult time recalling the words level, truth, and value. Why is this? Because you can recall images (mental pictures) more easily than words alone. When you read the words car, dog, and book you created images of these things in your mind. These are concrete, high-imagery words. On the other hand, abstract words like level, truth, and value are low-imagery words. High-imagery words are encoded both visually and semantically (Paivio, 1986), thus building a stronger memory.\n\nNow let’s turn our attention to acoustic encoding. You are driving in your car and a song comes on the radio that you haven’t heard in at least 10 years, but you sing along, recalling every word. In the United States, children often learn the alphabet through song, and they learn the number of days in each month through rhyme: “Thirty days hath September, / April, June, and November; / All the rest have thirty-one, / Save February, with twenty-eight days clear, / And twenty-nine each leap year.” These lessons are easy to remember because of acoustic encoding. We encode the sounds the words make. This is one of the reasons why much of what we teach young children is done through song, rhyme, and rhythm.",
+                "valueHash": "bf1b2eea6b7f20a856c4cfc2f378ff4216695c2cb1b009da66f5aca83f238b9f"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "用中文区分语义、视觉与听觉编码",
+                "valueHash": "cbb2b94abbb598afcf329190550dccbf25c06b7f3f83d51b8bf1af81ce2542d4"
+              },
+              {
+                "id": "e6",
+                "pointer": "/goals/1",
+                "role": "goal",
+                "kind": "text",
+                "value": "使用教材中的词语分类、具体形象和韵律例子解释编码",
+                "valueHash": "a9ff5b72c35fb89e7547e5dcbf65039eee046cb1a3c42df3daa54876f8b9dda2"
+              },
+              {
+                "id": "e7",
+                "pointer": "/goals/2",
+                "role": "goal",
+                "kind": "text",
+                "value": "把教材中的一般记忆倾向与对每个人的保证区分开",
+                "valueHash": "c4119051166b794f4dedc123fca4591aa23d37bf1fdcdb9fc36ed4236fb34a9a"
+              },
+              {
+                "id": "e18",
+                "pointer": "/artifacts/1/id",
+                "role": "artifact",
+                "kind": "text",
+                "value": "cun_3fb4f750-2e90-42dd-94ab-e01c8adedd61/objectives",
+                "valueHash": "1d3072e94dbba2f635b5c0ad8b67bb9c89f90752166ea3893277480a713322e1"
+              },
+              {
+                "id": "e19",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "[{\"id\":\"obj_be2b1418-877f-4dd5-baa9-a7248bccdd70\",\"title\":\"用中文识别并区分语义编码、视觉编码与声学编码的定义及差异（语义：词语及意义；视觉：图像；声学：声音尤其是词语发音）\",\"description\":\"用中文识别并区分语义编码、视觉编码与声学编码的定义及差异（语义：词语及意义；视觉：图像；声学：声音尤其是词语发音）\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_ce640291-5b00-4b33-a4fd-77b00c0ebafd\",\"ta_68d1b82b-9431-4b0c-8210-624b8377868e\",\"ta_3f1cd383-8bd7-478e-a2dd-817f3a1dee8a\",\"ta_d08d930c-7b5f-4b19-80cb-1fc161339a31\"],\"authorityClaimIds\":[\"tac_7ce7b902-fbb5-4e08-a703-7862b7094fe2\",\"tac_952a3d06-c01e-4af6-872a-2108543e7f6c\",\"tac_9885f976-4201-4b0a-9b2a-4972bd791e9f\",\"tac_ed003ca9-aa5c-4443-9e7b-5c7559f9cd00\",\"tac_90ff0238-f371-48bb-a9a1-c0895b2b153c\",\"tac_99e96d87-4aa1-4ad0-a81c-67057d7c1117\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E3, E1, E11 envelopes support identify as formal_sufficient.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_1_11708d88\",\"blk_2_b33a5538\"],\"formalEvidenceSourceBlockIds\":[\"blk_1_11708d88\",\"blk_2_b33a5538\"]},{\"id\":\"obj_7931b0b0-3917-42cc-b45c-04f11ebf9fca\",\"title\":\"解释编码作为信息输入记忆系统的过程，包括接收感觉信息后大脑对其标记或编码并通过自动或努力加工\",\"description\":\"解释编码作为信息输入记忆系统的过程，包括接收感觉信息后大脑对其标记或编码并通过自动或努力加工\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_b827cfad-51cc-4ef7-98ba-92fa295b98d8\",\"ta_079cbddc-2ef3-40a2-bf85-d062d2bff5f8\"],\"authorityClaimIds\":[\"tac_e897e2a0-85f1-4801-8a56-84dcb45f10ef\",\"tac_7df4507d-7a3b-4b9e-95eb-e73abd344147\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E2 envelope supports explain as formal_sufficient.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"explain\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_cc25c3ad\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_cc25c3ad\"]},{\"id\":\"obj_2f0e48a9-ea21-4ece-bf9d-2700a099763e\",\"title\":\"使用教材中的词语分类（Bousfield实验按意义分类）、具体形象（高意象词car/dog/book产生心理图像，低意象抽象词level/truth/value）和韵律（字母歌、月份韵律）例子解释语义、视觉与声学编码\",\"description\":\"使用教材中的词语分类（Bousfield实验按意义分类）、具体形象（高意象词car/dog/book产生心理图像，低意象抽象词level/truth/value）和韵律（字母歌、月份韵律）例子解释语义、视觉与声学编码\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_fa87206b-9cce-4123-90a0-6b1326ba3416\",\"ta_a37ecffc-ce9e-4b7b-80d2-96f2ee134162\"],\"authorityClaimIds\":[\"tac_7f96bf41-a751-4772-b1f0-cda8846f25ae\",\"tac_307d37fe-be37-45d9-90b3-331a9d142377\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E20 envelope supports explain as formal_sufficient.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"explain\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_3_d6d6f3d4\"],\"formalEvidenceSourceBlockIds\":[\"blk_3_d6d6f3d4\"]},{\"id\":\"obj_f75a57eb-f694-4a65-aa86-5e087d786126\",\"title\":\"识别教材中表述的是一般记忆倾向（如高意象词可能更容易回忆、建立更强记忆）而非对每个人的保证\",\"description\":\"识别教材中表述的是一般记忆倾向（如高意象词可能更容易回忆、建立更强记忆）而非对每个人的保证\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_3f1cd383-8bd7-478e-a2dd-817f3a1dee8a\",\"ta_d08d930c-7b5f-4b19-80cb-1fc161339a31\"],\"authorityClaimIds\":[\"tac_2d3b8e68-a674-487b-a159-6d75b6bcf6e2\",\"tac_c29137c4-31b7-4723-b704-df953afb1be4\",\"tac_908a94cc-fb3a-46cf-bbab-5ad7e9d0e3a6\",\"tac_c80a0d32-a107-43b1-84b7-05cdb2062221\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E25, E5 envelopes support identify as formal_sufficient.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_2_b33a5538\"],\"formalEvidenceSourceBlockIds\":[\"blk_2_b33a5538\"]}]",
+                "valueHash": "fd3464cc9fe5f073b3d3f1d3e379abc5c08da8b23315cc3d3d02a775b36fe5f6"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "resultHash": "d808ecb38aba84b43f3aa8b5134995520933d0ab05504bd4351f4f3973cb4a24"
+  }
+}

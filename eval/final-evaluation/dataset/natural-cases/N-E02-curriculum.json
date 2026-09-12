@@ -1,0 +1,38 @@
+{
+  "dimensions": [
+    "Q2"
+  ],
+  "evidence": {
+    "sources": [
+      {
+        "id": "E02",
+        "text": "All living things require energy in one form or another. Energy is required by most complex metabolic pathways (often in the form of adenosine triphosphate, ATP), especially those responsible for building large molecules from smaller compounds, and life itself is an energy-driven process. Living organisms would not be able to assemble macromolecules (proteins, lipids, nucleic acids, and complex carbohydrates) from their monomeric subunits without a constant energy input.\n\nIt is important to understand how organisms acquire energy and how that energy is passed from one organism to another through food webs and their constituent food chains. Food webs illustrate how energy flows directionally through ecosystems, including how efficiently organisms acquire it, use it, and how much remains for use by other organisms of the food web.\n\nEnergy is acquired by living things in three ways: photosynthesis, chemosynthesis, and the consumption and digestion of other living or previously living organisms by heterotrophs.\n\nPhotosynthetic and chemosynthetic organisms are both grouped into a category known as autotrophs: organisms capable of synthesizing their own food (more specifically, capable of using inorganic carbon as a carbon source). Photosynthetic autotrophs (photoautotrophs) use sunlight as an energy source, whereas chemosynthetic autotrophs (chemoautotrophs) use inorganic molecules as an energy source. Autotrophs are critical for all ecosystems. Without these organisms, energy would not be available to other living organisms and life itself would not be possible."
+      }
+    ],
+    "goals": [
+      "用中文解释食物网描述的能量流动",
+      "区分光合作用、化能合成和异养摄食的能量获取方式",
+      "说明自养生物在生态系统中的作用，避免把所有生态系统都解释为直接依赖阳光"
+    ],
+    "prerequisites": [
+      "知道生物需要能量",
+      "能区分有机物与无机物的一般含义"
+    ],
+    "desiredDepth": "working_fluency",
+    "authorityBoundaries": [
+      "本次评估只涉及所给来源、明确的教学范围和实际展示的产物；脚本作答用于检查工作流，不代表真实学习者。",
+      "Q2评价提议课程对所注册学习目标的保留和范围；不将尚未发生的教学交付或Formal准入当成已经完成。"
+    ],
+    "artifacts": [
+      {
+        "id": "cun_4dd4b44b-5b43-47df-a20b-43f3ff8bd03d/title",
+        "text": "能量需求、食物网能量流动与自养生物作用"
+      },
+      {
+        "id": "cun_4dd4b44b-5b43-47df-a20b-43f3ff8bd03d/objectives",
+        "text": "[{\"id\":\"obj_1b66befd-507a-4d9d-95f9-986e1a9647a6\",\"title\":\"解释所有生物都需要某种形式的能量\",\"description\":\"解释所有生物都需要能量，作为理解生态系统能量动态的基础。\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_da27d812-1ceb-4766-90a9-52f94591c128\",\"ta_77dc12c0-84a4-45df-baa4-c793f3a7f417\"],\"authorityClaimIds\":[\"tac_07f3821e-2379-422e-9eef-fe332b327e1d\",\"tac_662909c0-5127-4bfe-bf04-84eef4e66292\"],\"priority\":\"required\",\"priorityRationale\":\"证据E1具有正式充分权威，支持explain构造\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"explain\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_8022212b\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_8022212b\"]},{\"id\":\"obj_52e145ad-0b1a-4350-b088-cf922945c46b\",\"title\":\"解释食物网如何展示生态系统中能量的定向流动\",\"description\":\"解释食物网如何展示生态系统中能量的定向流动，包括生物获取和利用能量的效率以及剩余多少供其他食物网生物使用。\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_bf9e9ec3-00a7-400d-a9be-43f31826f25c\",\"ta_ec18fcb8-029f-4220-a50a-cef05e49ca42\"],\"authorityClaimIds\":[\"tac_4d130dcb-8c69-4804-8fe1-d0590e92540d\",\"tac_d3d1c1c4-fe84-4521-9f4d-f74d0882f6d4\"],\"priority\":\"required\",\"priorityRationale\":\"证据E4具有正式充分权威，支持explain构造\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"explain\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_1_41640f81\"],\"formalEvidenceSourceBlockIds\":[\"blk_1_41640f81\"]},{\"id\":\"obj_2f162280-87cf-49d1-8bf2-16d2d7367a9a\",\"title\":\"识别生物获取能量的三种途径\",\"description\":\"识别生物获取能量的三种方式：光合作用、化能合成作用，以及异养生物对其他生物（或曾生物）的消耗与消化。\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_e773a792-d856-4e1e-b899-5ef112ccfbd9\",\"ta_b99203c7-8969-4757-8e83-58fe23cfef9a\"],\"authorityClaimIds\":[\"tac_a762e37f-23ad-42b6-90cd-97d128bf6669\",\"tac_016b808e-3a27-4679-b40c-5363fcb39591\"],\"priority\":\"required\",\"priorityRationale\":\"证据E2支持identify构造，具有正式权威\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_2_56e552f9\"],\"formalEvidenceSourceBlockIds\":[\"blk_2_56e552f9\"]},{\"id\":\"obj_82ff3130-f9f4-450f-8d28-37239a4c3320\",\"title\":\"解释自养生物的关键生态作用并澄清化能合成不依赖阳光\",\"description\":\"解释自养生物对所有生态系统至关重要（为其他生物提供能量），并澄清化能合成自养生物使用无机分子而非阳光作为能量来源，因此并非所有生态系统都直接依赖阳光。\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_dc84d08f-ffa9-4b85-bae7-6a51ed129b9e\",\"ta_1d23b9df-c8f7-4def-b138-2ba825eec540\"],\"authorityClaimIds\":[\"tac_c206bfa0-44e7-41c2-8bff-7b1831162557\",\"tac_84a16b94-9b2b-4fd1-a6ef-1341c8177bea\"],\"priority\":\"required\",\"priorityRationale\":\"证据E12具有正式充分权威支持explain构造，E15提供主题上下文但无正式权威\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"explain\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_3_8cb50b60\"],\"formalEvidenceSourceBlockIds\":[\"blk_3_8cb50b60\"]}]"
+      }
+    ],
+    "exposure": []
+  }
+}

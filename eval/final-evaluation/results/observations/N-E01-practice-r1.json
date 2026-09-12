@@ -1,0 +1,44 @@
+{
+  "task": {
+    "caseId": "N-E01-practice",
+    "runId": "N-E01-practice-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-E01-practice.json",
+    "inputHash": "1180a657521eae8c77860226c2bde3b270e1c40f1e67c87b3b5332981bdadb81",
+    "population": "natural",
+    "sourceId": "E01"
+  },
+  "inputHash": "1180a657521eae8c77860226c2bde3b270e1c40f1e67c87b3b5332981bdadb81",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "prepare-context-current": "970d346a72a7b443622028d65ddc11d8a2d4a92f68de2917ddef10bb73276c67",
+      "solve-current": "c678ae54a537b2661931d878245b4fdf4e900628499c6eb4967bb96249c28c37"
+    },
+    "stages": {
+      "prepare-context-current": {
+        "contexts": [
+          {
+            "taskId": "current",
+            "status": "ready",
+            "reason": "题干自身逐字给出完整情景事实与参数（两面板均25°C、赤脚相同接触面积踩踏相同时间、4秒内A降温2.0°C/B降温0.5°C），自足无需引用history字段，premises为空。",
+            "premises": [],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "solve-current": {
+        "status": "JUDGE_INVALID",
+        "category": "output_contract",
+        "reason": "MALFORMED_JSON"
+      }
+    },
+    "result": {
+      "status": "JUDGE_INVALID",
+      "category": "output_contract",
+      "reason": "MALFORMED_JSON"
+    },
+    "resultHash": "3a2398e5abb757205c73976d49523a027fce42527d879b1703cd00da58a1b9b2"
+  }
+}

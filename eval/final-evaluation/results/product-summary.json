@@ -1,0 +1,30 @@
+{
+  "courses": 20,
+  "independentSourceRoots": 16,
+  "withDeliveredLesson": 13,
+  "withTutor": 15,
+  "withRepair": 13,
+  "withTwoRetests": 13,
+  "withAdmittedFormal": 4,
+  "withSupportedEvidence": 2,
+  "physicalRequests": 380,
+  "logicalCalls": 307,
+  "logicalFailures": 20,
+  "usage": {
+    "known": 377,
+    "unknown": 3,
+    "promptTokens": 1360569,
+    "completionTokens": 1776712,
+    "cachedInputTokens": 450432,
+    "reasoningTokensComponent": 1358726,
+    "estimatedCNY": 8.129593,
+    "latencyMs": 13907823,
+    "costDescription": "Returned usage subtotal at owner rates, not invoice; reasoning included once in completion_tokens"
+  },
+  "logicalCounts": {
+    "started": 307,
+    "completed": 287,
+    "failed": 20,
+    "pending": 0
+  }
+}

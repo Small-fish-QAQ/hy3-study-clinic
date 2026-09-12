@@ -1,0 +1,397 @@
+[
+  {
+    "courseId": "course-01680f10a504b765",
+    "surface": "formal-question",
+    "reason": "No admitted Formal question"
+  },
+  {
+    "courseId": "course-01680f10a504b765",
+    "surface": "grading-negative",
+    "reason": "No admitted Formal question"
+  },
+  {
+    "courseId": "course-01680f10a504b765",
+    "surface": "grading-positive",
+    "reason": "No admitted Formal question"
+  },
+  {
+    "courseId": "course-01680f10a504b765",
+    "surface": "repair",
+    "reason": "Repair not delivered in sampled route"
+  },
+  {
+    "courseId": "course-01680f10a504b765",
+    "surface": "retest",
+    "reason": "Retest not reached"
+  },
+  {
+    "courseId": "course-17610dfc6d39952e",
+    "surface": "formal-question",
+    "reason": "No admitted Formal question"
+  },
+  {
+    "courseId": "course-17610dfc6d39952e",
+    "surface": "grading-negative",
+    "reason": "No admitted Formal question"
+  },
+  {
+    "courseId": "course-17610dfc6d39952e",
+    "surface": "grading-positive",
+    "reason": "No admitted Formal question"
+  },
+  {
+    "courseId": "course-2bdaf8871d701d22",
+    "surface": "formal-question",
+    "reason": "No admitted Formal question"
+  },
+  {
+    "courseId": "course-2bdaf8871d701d22",
+    "surface": "grading-negative",
+    "reason": "No admitted Formal question"
+  },
+  {
+    "courseId": "course-2bdaf8871d701d22",
+    "surface": "grading-positive",
+    "reason": "No admitted Formal question"
+  },
+  {
+    "courseId": "course-2ff0d2b503fa9698",
+    "surface": "formal-question",
+    "reason": "No admitted Formal question"
+  },
+  {
+    "courseId": "course-2ff0d2b503fa9698",
+    "surface": "grading-negative",
+    "reason": "No admitted Formal question"
+  },
+  {
+    "courseId": "course-2ff0d2b503fa9698",
+    "surface": "grading-positive",
+    "reason": "No admitted Formal question"
+  },
+  {
+    "courseId": "course-34011a1dddcf898a",
+    "surface": "formal-question",
+    "reason": "No admitted Formal question"
+  },
+  {
+    "courseId": "course-34011a1dddcf898a",
+    "surface": "grading-negative",
+    "reason": "No admitted Formal question"
+  },
+  {
+    "courseId": "course-34011a1dddcf898a",
+    "surface": "grading-positive",
+    "reason": "No admitted Formal question"
+  },
+  {
+    "courseId": "course-38b597f36efe7a66",
+    "surface": "formal-question",
+    "reason": "No admitted Formal question"
+  },
+  {
+    "courseId": "course-38b597f36efe7a66",
+    "surface": "grading-negative",
+    "reason": "No admitted Formal question"
+  },
+  {
+    "courseId": "course-38b597f36efe7a66",
+    "surface": "grading-positive",
+    "reason": "No admitted Formal question"
+  },
+  {
+    "courseId": "course-513f5dc47e0d2bd5",
+    "surface": "curriculum",
+    "reason": "No accepted curriculum"
+  },
+  {
+    "courseId": "course-513f5dc47e0d2bd5",
+    "surface": "formal-question",
+    "reason": "No admitted Formal question"
+  },
+  {
+    "courseId": "course-513f5dc47e0d2bd5",
+    "surface": "grading-negative",
+    "reason": "No admitted Formal question"
+  },
+  {
+    "courseId": "course-513f5dc47e0d2bd5",
+    "surface": "grading-positive",
+    "reason": "No admitted Formal question"
+  },
+  {
+    "courseId": "course-513f5dc47e0d2bd5",
+    "surface": "practice",
+    "reason": "First Practice not reached"
+  },
+  {
+    "courseId": "course-513f5dc47e0d2bd5",
+    "surface": "repair",
+    "reason": "Repair not delivered in sampled route"
+  },
+  {
+    "courseId": "course-513f5dc47e0d2bd5",
+    "surface": "retest",
+    "reason": "Retest not reached"
+  },
+  {
+    "courseId": "course-513f5dc47e0d2bd5",
+    "surface": "teaching",
+    "reason": "First sampled Lesson not delivered"
+  },
+  {
+    "courseId": "course-513f5dc47e0d2bd5",
+    "surface": "tutor",
+    "reason": "Tutor not reached"
+  },
+  {
+    "courseId": "course-754fec7e6983fd57",
+    "surface": "formal-question",
+    "reason": "No admitted Formal question"
+  },
+  {
+    "courseId": "course-754fec7e6983fd57",
+    "surface": "grading-negative",
+    "reason": "No admitted Formal question"
+  },
+  {
+    "courseId": "course-754fec7e6983fd57",
+    "surface": "grading-positive",
+    "reason": "No admitted Formal question"
+  },
+  {
+    "courseId": "course-754fec7e6983fd57",
+    "surface": "practice",
+    "reason": "First Practice not reached"
+  },
+  {
+    "courseId": "course-754fec7e6983fd57",
+    "surface": "repair",
+    "reason": "Repair not delivered in sampled route"
+  },
+  {
+    "courseId": "course-754fec7e6983fd57",
+    "surface": "retest",
+    "reason": "Retest not reached"
+  },
+  {
+    "courseId": "course-754fec7e6983fd57",
+    "surface": "teaching",
+    "reason": "First sampled Lesson not delivered"
+  },
+  {
+    "courseId": "course-754fec7e6983fd57",
+    "surface": "tutor",
+    "reason": "Tutor not reached"
+  },
+  {
+    "courseId": "course-75ef620714036001",
+    "surface": "curriculum",
+    "reason": "No accepted curriculum"
+  },
+  {
+    "courseId": "course-75ef620714036001",
+    "surface": "formal-question",
+    "reason": "No admitted Formal question"
+  },
+  {
+    "courseId": "course-75ef620714036001",
+    "surface": "grading-negative",
+    "reason": "No admitted Formal question"
+  },
+  {
+    "courseId": "course-75ef620714036001",
+    "surface": "grading-positive",
+    "reason": "No admitted Formal question"
+  },
+  {
+    "courseId": "course-75ef620714036001",
+    "surface": "practice",
+    "reason": "First Practice not reached"
+  },
+  {
+    "courseId": "course-75ef620714036001",
+    "surface": "repair",
+    "reason": "Repair not delivered in sampled route"
+  },
+  {
+    "courseId": "course-75ef620714036001",
+    "surface": "retest",
+    "reason": "Retest not reached"
+  },
+  {
+    "courseId": "course-75ef620714036001",
+    "surface": "teaching",
+    "reason": "First sampled Lesson not delivered"
+  },
+  {
+    "courseId": "course-75ef620714036001",
+    "surface": "tutor",
+    "reason": "Tutor not reached"
+  },
+  {
+    "courseId": "course-ae45e947bdadedb9",
+    "surface": "formal-question",
+    "reason": "No admitted Formal question"
+  },
+  {
+    "courseId": "course-ae45e947bdadedb9",
+    "surface": "grading-negative",
+    "reason": "No admitted Formal question"
+  },
+  {
+    "courseId": "course-ae45e947bdadedb9",
+    "surface": "grading-positive",
+    "reason": "No admitted Formal question"
+  },
+  {
+    "courseId": "course-b0167dc0675b70b7",
+    "surface": "formal-question",
+    "reason": "No admitted Formal question"
+  },
+  {
+    "courseId": "course-b0167dc0675b70b7",
+    "surface": "grading-negative",
+    "reason": "No admitted Formal question"
+  },
+  {
+    "courseId": "course-b0167dc0675b70b7",
+    "surface": "grading-positive",
+    "reason": "No admitted Formal question"
+  },
+  {
+    "courseId": "course-b51a15933a9c0636",
+    "surface": "formal-question",
+    "reason": "No admitted Formal question"
+  },
+  {
+    "courseId": "course-b51a15933a9c0636",
+    "surface": "grading-negative",
+    "reason": "No admitted Formal question"
+  },
+  {
+    "courseId": "course-b51a15933a9c0636",
+    "surface": "grading-positive",
+    "reason": "No admitted Formal question"
+  },
+  {
+    "courseId": "course-b51a15933a9c0636",
+    "surface": "practice",
+    "reason": "First Practice not reached"
+  },
+  {
+    "courseId": "course-b51a15933a9c0636",
+    "surface": "repair",
+    "reason": "Repair not delivered in sampled route"
+  },
+  {
+    "courseId": "course-b51a15933a9c0636",
+    "surface": "retest",
+    "reason": "Retest not reached"
+  },
+  {
+    "courseId": "course-b51a15933a9c0636",
+    "surface": "teaching",
+    "reason": "First sampled Lesson not delivered"
+  },
+  {
+    "courseId": "course-b51a15933a9c0636",
+    "surface": "tutor",
+    "reason": "Tutor not reached"
+  },
+  {
+    "courseId": "course-c648954f860209f4",
+    "surface": "formal-question",
+    "reason": "No admitted Formal question"
+  },
+  {
+    "courseId": "course-c648954f860209f4",
+    "surface": "grading-negative",
+    "reason": "No admitted Formal question"
+  },
+  {
+    "courseId": "course-c648954f860209f4",
+    "surface": "grading-positive",
+    "reason": "No admitted Formal question"
+  },
+  {
+    "courseId": "course-d09d37013f41ec52",
+    "surface": "formal-question",
+    "reason": "No admitted Formal question"
+  },
+  {
+    "courseId": "course-d09d37013f41ec52",
+    "surface": "grading-negative",
+    "reason": "No admitted Formal question"
+  },
+  {
+    "courseId": "course-d09d37013f41ec52",
+    "surface": "grading-positive",
+    "reason": "No admitted Formal question"
+  },
+  {
+    "courseId": "course-d6e85959f83cc891",
+    "surface": "formal-question",
+    "reason": "No admitted Formal question"
+  },
+  {
+    "courseId": "course-d6e85959f83cc891",
+    "surface": "grading-negative",
+    "reason": "No admitted Formal question"
+  },
+  {
+    "courseId": "course-d6e85959f83cc891",
+    "surface": "grading-positive",
+    "reason": "No admitted Formal question"
+  },
+  {
+    "courseId": "course-d6e85959f83cc891",
+    "surface": "repair",
+    "reason": "Repair not delivered in sampled route"
+  },
+  {
+    "courseId": "course-d6e85959f83cc891",
+    "surface": "retest",
+    "reason": "Retest not reached"
+  },
+  {
+    "courseId": "course-dea9e0be16c38f1c",
+    "surface": "formal-question",
+    "reason": "No admitted Formal question"
+  },
+  {
+    "courseId": "course-dea9e0be16c38f1c",
+    "surface": "grading-negative",
+    "reason": "No admitted Formal question"
+  },
+  {
+    "courseId": "course-dea9e0be16c38f1c",
+    "surface": "grading-positive",
+    "reason": "No admitted Formal question"
+  },
+  {
+    "courseId": "course-dea9e0be16c38f1c",
+    "surface": "practice",
+    "reason": "First Practice not reached"
+  },
+  {
+    "courseId": "course-dea9e0be16c38f1c",
+    "surface": "repair",
+    "reason": "Repair not delivered in sampled route"
+  },
+  {
+    "courseId": "course-dea9e0be16c38f1c",
+    "surface": "retest",
+    "reason": "Retest not reached"
+  },
+  {
+    "courseId": "course-dea9e0be16c38f1c",
+    "surface": "teaching",
+    "reason": "First sampled Lesson not delivered"
+  },
+  {
+    "courseId": "course-dea9e0be16c38f1c",
+    "surface": "tutor",
+    "reason": "Tutor not reached"
+  }
+]

@@ -1,0 +1,280 @@
+{
+  "at": "2026-09-11T23:10:56.017Z",
+  "phase": "final",
+  "scheduleHash": "f006ba4da631a25753a99b315e9ae6200088de2f34ceec4790d6946e8479cb2e",
+  "scheduledObservations": 279,
+  "completedObservations": 279,
+  "totalSlots": 327,
+  "primarySlots": 239,
+  "primaryCounts": {
+    "0": 62,
+    "1": 9,
+    "2": 113,
+    "U": 48,
+    "INVALID": 7,
+    "MISSING": 0
+  },
+  "baselines": {
+    "method": "Prespecified untuned length ranking and source/artifact structural presence; neither is a semantic evaluator.",
+    "lengthTriplets": 24,
+    "lengthStrictOrder": 8,
+    "structuralPresent": 72,
+    "structuralDenominator": 72,
+    "structuralRanking": "All records satisfying presence receive a tie; no quality order is inferred."
+  },
+  "byDimension": {
+    "Q1": {
+      "scheduled": 59,
+      "counts": {
+        "0": 26,
+        "1": 2,
+        "2": 23,
+        "U": 7,
+        "INVALID": 1,
+        "MISSING": 0
+      }
+    },
+    "Q2": {
+      "scheduled": 30,
+      "counts": {
+        "0": 5,
+        "1": 0,
+        "2": 19,
+        "U": 6,
+        "INVALID": 0,
+        "MISSING": 0
+      }
+    },
+    "Q3": {
+      "scheduled": 42,
+      "counts": {
+        "0": 5,
+        "1": 2,
+        "2": 27,
+        "U": 7,
+        "INVALID": 1,
+        "MISSING": 0
+      }
+    },
+    "Q4": {
+      "scheduled": 63,
+      "counts": {
+        "0": 16,
+        "1": 1,
+        "2": 27,
+        "U": 15,
+        "INVALID": 4,
+        "MISSING": 0
+      }
+    },
+    "Q5": {
+      "scheduled": 20,
+      "counts": {
+        "0": 5,
+        "1": 2,
+        "2": 5,
+        "U": 8,
+        "INVALID": 0,
+        "MISSING": 0
+      }
+    },
+    "Q6": {
+      "scheduled": 25,
+      "counts": {
+        "0": 5,
+        "1": 2,
+        "2": 12,
+        "U": 5,
+        "INVALID": 1,
+        "MISSING": 0
+      }
+    }
+  },
+  "byCollection": {
+    "adversarial": {
+      "scheduled": 24,
+      "counts": {
+        "0": 24,
+        "1": 0,
+        "2": 0,
+        "U": 0,
+        "INVALID": 0,
+        "MISSING": 0
+      }
+    },
+    "boundary": {
+      "scheduled": 12,
+      "counts": {
+        "0": 2,
+        "1": 0,
+        "2": 5,
+        "U": 4,
+        "INVALID": 1,
+        "MISSING": 0
+      }
+    },
+    "controlled": {
+      "scheduled": 72,
+      "counts": {
+        "0": 26,
+        "1": 6,
+        "2": 28,
+        "U": 12,
+        "INVALID": 0,
+        "MISSING": 0
+      }
+    },
+    "natural": {
+      "scheduled": 131,
+      "counts": {
+        "0": 10,
+        "1": 3,
+        "2": 80,
+        "U": 32,
+        "INVALID": 6,
+        "MISSING": 0
+      }
+    }
+  },
+  "discrimination": {
+    "triplets": 24,
+    "fullyNumericTriplets": 14,
+    "strictlyOrdered": 5,
+    "pairs": 72,
+    "numericPairs": 50,
+    "correctlyOrderedPairs": 40,
+    "controlledSlots": 72,
+    "numericControls": 60,
+    "exactConstructorAgreement": 48,
+    "referenceStatus": "constructor hypotheses, independently reviewed; not human ground truth"
+  },
+  "consistency": {
+    "repeatedCaseIds": 35,
+    "dimensionGroups": 44,
+    "exactGroups": 29,
+    "numericGroups": 32,
+    "transitions": {
+      "U -> U": 3,
+      "U -> 2": 10,
+      "0 -> 0": 30,
+      "2 -> 2": 35,
+      "2 -> U": 4,
+      "0 -> INVALID": 1,
+      "U -> 0": 1,
+      "0 -> 2": 1,
+      "2 -> 1": 3
+    }
+  },
+  "adversarial": {
+    "scheduled": 24,
+    "detectedAsZero": 24,
+    "positive": 0,
+    "byFamily": {
+      "decisive_premise_change": {
+        "scheduled": 4,
+        "counts": {
+          "0": 4,
+          "1": 0,
+          "2": 0,
+          "U": 0,
+          "INVALID": 0,
+          "MISSING": 0
+        }
+      },
+      "exposure_cosmetic_transfer": {
+        "scheduled": 4,
+        "counts": {
+          "0": 4,
+          "1": 0,
+          "2": 0,
+          "U": 0,
+          "INVALID": 0,
+          "MISSING": 0
+        }
+      },
+      "fabricated_support": {
+        "scheduled": 4,
+        "counts": {
+          "0": 4,
+          "1": 0,
+          "2": 0,
+          "U": 0,
+          "INVALID": 0,
+          "MISSING": 0
+        }
+      },
+      "instruction_injection": {
+        "scheduled": 4,
+        "counts": {
+          "0": 4,
+          "1": 0,
+          "2": 0,
+          "U": 0,
+          "INVALID": 0,
+          "MISSING": 0
+        }
+      },
+      "jargon": {
+        "scheduled": 4,
+        "counts": {
+          "0": 4,
+          "1": 0,
+          "2": 0,
+          "U": 0,
+          "INVALID": 0,
+          "MISSING": 0
+        }
+      },
+      "padding": {
+        "scheduled": 4,
+        "counts": {
+          "0": 4,
+          "1": 0,
+          "2": 0,
+          "U": 0,
+          "INVALID": 0,
+          "MISSING": 0
+        }
+      }
+    }
+  },
+  "cost": {
+    "physicalRequests": 847,
+    "terminal": 847,
+    "pending": 0,
+    "retries": 0,
+    "httpFailures": 0,
+    "transportFailures": 0,
+    "knownUsage": 847,
+    "unknownUsage": 0,
+    "promptTokens": 3107449,
+    "cachedInputTokens": 953280,
+    "completionTokens": 2732620,
+    "reasoningTokensComponent": 2529261,
+    "estimatedCNY": 13.322969,
+    "rates": {
+      "uncachedInput": 1,
+      "cachedInput": 0.25,
+      "output": 4,
+      "unit": "CNY/million tokens",
+      "source": "existing owner rate; estimate, not invoice",
+      "reasoning": "included once in completion_tokens"
+    },
+    "latencyMs": {
+      "sum": 21249405,
+      "p50": 22345,
+      "p95": 50395,
+      "max": 71902
+    }
+  },
+  "publicationStatus": "INTERIM_FINAL_MACHINE_COMPLETE_HUMAN_PENDING",
+  "authority": "public-export-final-v6; no rescoring",
+  "allCounts": {
+    "0": 93,
+    "1": 12,
+    "2": 159,
+    "U": 55,
+    "INVALID": 8,
+    "MISSING": 0
+  }
+}

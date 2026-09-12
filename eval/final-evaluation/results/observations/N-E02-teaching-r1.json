@@ -1,0 +1,789 @@
+{
+  "task": {
+    "caseId": "N-E02-teaching",
+    "runId": "N-E02-teaching-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-E02-teaching.json",
+    "inputHash": "afe67498d6c6fd5f7a9759df74a7bdce72f1678c29aacb724ef4169078c6af3b",
+    "population": "natural",
+    "sourceId": "E02"
+  },
+  "inputHash": "afe67498d6c6fd5f7a9759df74a7bdce72f1678c29aacb724ef4169078c6af3b",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "correctness": "2b4e257a7da78205320a5aace8ed234135fdbf8e1be00e9d5cdb22946005d792",
+      "artifact-audit": "2b4e257a7da78205320a5aace8ed234135fdbf8e1be00e9d5cdb22946005d792",
+      "certification": "2b4e257a7da78205320a5aace8ed234135fdbf8e1be00e9d5cdb22946005d792"
+    },
+    "stages": {
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "clear",
+            "affected": [],
+            "reason": "作者条件断言 e42'只要至少一条自养路径可用，异养者便能获得能量'依托固定前提 e32/e38（Z可摄食藻或菌）与实例 e44-e52（去光留H2S，Z仍获能）、e56-e66（仅藻去光，Z无获能）一致；e70/e82将'所有生物需能量'限定为活体生物，与源 e3 相符；未混淆充分/必要条件。",
+            "refs": [
+              "e42",
+              "e32",
+              "e38",
+              "e44",
+              "e52",
+              "e56",
+              "e60",
+              "e70",
+              "e82",
+              "e3"
+            ],
+            "challenge": {
+              "status": "closed",
+              "reason": "固定前提已含 Z 的摄食能力(e38)及自养生物存在；构造'有自养路径但异养无法获能'的反例需剥夺摄食能力，与已给事实不相容，故被排除。",
+              "refs": [
+                "e32",
+                "e38",
+                "e42"
+              ]
+            },
+            "witnesses": [
+              {
+                "id": "e42",
+                "pointer": "/artifacts/14/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "只要至少一条自养路径可用，异养者便能获得能量",
+                "valueHash": "4996815258935b5fcd16bafe6f044409bd458c9a3edf876128a29830a578d72a"
+              },
+              {
+                "id": "e32",
+                "pointer": "/artifacts/9/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "生态箱A有阳光，存在无机分子H2S。内有藻（光合自养）和菌（化能合成自养）。引入异养动物Z，可摄食藻或菌。",
+                "valueHash": "509980b7f6610c486014af0b4ddae5105d3a7cb3ca1d9f1fdf8ad858c8961744"
+              },
+              {
+                "id": "e38",
+                "pointer": "/artifacts/12/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "Z的摄食能力",
+                "valueHash": "2db5775a176f0904dc811b7d1c68cb454a67be4ef4b1dad717b0cd36662866c6"
+              },
+              {
+                "id": "e44",
+                "pointer": "/artifacts/15/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "给定生态箱A中藻利用阳光、菌利用H2S，若移除阳光但保留H2S，异养动物Z（可摄食两者）的能量状况如何？",
+                "valueHash": "f87f609e990ba5f72bf1b19299f4b480d32949e628a2d3fe349939297da1ee3b"
+              },
+              {
+                "id": "e52",
+                "pointer": "/artifacts/19/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "正确：菌路径独立供能",
+                "valueHash": "9e343c553b1dc2d2e7237a0365217d4b44a6650cf6b8dbc054080bc7bb86f2d5"
+              },
+              {
+                "id": "e56",
+                "pointer": "/artifacts/21/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "在仅允许藻且移除阳光的条件下，Z的能量状况？",
+                "valueHash": "2d83664680b2f76f501078e686d8099d5ec355cc1342cebd9c41bd48a2973a61"
+              },
+              {
+                "id": "e60",
+                "pointer": "/artifacts/23/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "Z无法获能，因唯一自养源失效",
+                "valueHash": "466b42eafbab8e9124564a363b82cf0d56a37349057d0b0acd83eb8617c62666"
+              },
+              {
+                "id": "e70",
+                "pointer": "/artifacts/28/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "需注意，‘所有生物都需要能量’针对的是活体生物。非生命实体如晶体不在此列；病毒虽具遗传物质但无独立代谢，常不被视为完整活体，其能量依赖宿主。这划定了陈述的边界。",
+                "valueHash": "0f89d06bfe037dc10aedcbf28efe73c046bc6239cfa9a48b22c27d78c754b21d"
+              },
+              {
+                "id": "e82",
+                "pointer": "/artifacts/34/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "所有活体生物都需能量，可通过光合、化能合成或摄食获取；自养者把无机能转为有机能，支撑食物网。当观测矛盾时，先查边界。",
+                "valueHash": "9324fd6ac513b2b62b36d87ba83b7e4e9ae1ceb1702a356dc98fc3389bd5191e"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "All living things require energy in one form or another. Energy is required by most complex metabolic pathways (often in the form of adenosine triphosphate, ATP), especially those responsible for building large molecules from smaller compounds, and life itself is an energy-driven process. Living organisms would not be able to assemble macromolecules (proteins, lipids, nucleic acids, and complex carbohydrates) from their monomeric subunits without a constant energy input.\n\nIt is important to understand how organisms acquire energy and how that energy is passed from one organism to another through food webs and their constituent food chains. Food webs illustrate how energy flows directionally through ecosystems, including how efficiently organisms acquire it, use it, and how much remains for use by other organisms of the food web.\n\nEnergy is acquired by living things in three ways: photosynthesis, chemosynthesis, and the consumption and digestion of other living or previously living organisms by heterotrophs.\n\nPhotosynthetic and chemosynthetic organisms are both grouped into a category known as autotrophs: organisms capable of synthesizing their own food (more specifically, capable of using inorganic carbon as a carbon source). Photosynthetic autotrophs (photoautotrophs) use sunlight as an energy source, whereas chemosynthetic autotrophs (chemoautotrophs) use inorganic molecules as an energy source. Autotrophs are critical for all ecosystems. Without these organisms, energy would not be available to other living organisms and life itself would not be possible.",
+                "valueHash": "6bfef5addb7581a7a5154aa3f44613f99aea8cec06cb8fcd5a7616deee504d45"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "kind": "quantities",
+            "status": "clear",
+            "affected": [],
+            "reason": "仅 e74 举'10%'为例说明传递效率，rates 精确为 0.1；全包无数值演算或单位转换，无推导错误。",
+            "refs": [
+              "e74"
+            ],
+            "witnesses": [
+              {
+                "id": "e74",
+                "pointer": "/artifacts/30/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "食物网展示生态系统中能量的定向流动：自养生物利用光或无机分子固定能量，成为异养生物的食物源。能量从自养者传向草食者再传向肉食者，每级传递因代谢消耗仅保留一部分（如10%），其余以热散失。这显示了流动方向及剩余可供更高营养级使用的能量规模。",
+                "valueHash": "aaa4add5e433d709a351a622af44af2f2a2e42b9e810cd96f4ac620df35c25d9"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ],
+        "keys": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 2,
+            "reason": "作者核心断言（e26,e28,e42,e74）与边界(e70,e78)均基于来源e3或正确补充，无虚假声称、发明引用或缺失条件改变机制。",
+            "refs": [
+              "e3",
+              "e26",
+              "e28",
+              "e42",
+              "e70",
+              "e74",
+              "e78"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "All living things require energy in one form or another. Energy is required by most complex metabolic pathways (often in the form of adenosine triphosphate, ATP), especially those responsible for building large molecules from smaller compounds, and life itself is an energy-driven process. Living organisms would not be able to assemble macromolecules (proteins, lipids, nucleic acids, and complex carbohydrates) from their monomeric subunits without a constant energy input.\n\nIt is important to understand how organisms acquire energy and how that energy is passed from one organism to another through food webs and their constituent food chains. Food webs illustrate how energy flows directionally through ecosystems, including how efficiently organisms acquire it, use it, and how much remains for use by other organisms of the food web.\n\nEnergy is acquired by living things in three ways: photosynthesis, chemosynthesis, and the consumption and digestion of other living or previously living organisms by heterotrophs.\n\nPhotosynthetic and chemosynthetic organisms are both grouped into a category known as autotrophs: organisms capable of synthesizing their own food (more specifically, capable of using inorganic carbon as a carbon source). Photosynthetic autotrophs (photoautotrophs) use sunlight as an energy source, whereas chemosynthetic autotrophs (chemoautotrophs) use inorganic molecules as an energy source. Autotrophs are critical for all ecosystems. Without these organisms, energy would not be available to other living organisms and life itself would not be possible.",
+                "valueHash": "6bfef5addb7581a7a5154aa3f44613f99aea8cec06cb8fcd5a7616deee504d45"
+              },
+              {
+                "id": "e26",
+                "pointer": "/artifacts/6/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "生态系统中的生物不论形态如何，都需要能量驱动生命活动。能量可用于合成大分子、维持代谢。自养生物能利用无机源制造有机物，为异养生物提供能量基础。",
+                "valueHash": "c68ad936f34dcb6d021d3e472db66f00c5f45ac631f00f6e335e1d6aca3f2a05"
+              },
+              {
+                "id": "e28",
+                "pointer": "/artifacts/7/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "根据资料，恒定能量输入是组装大分子的必要条件。若无能量，生物无法从单体构建蛋白质、脂质等。这体现了能量供给与生命构建之间的因果机制。",
+                "valueHash": "02fb7185c2f573307a28cb2ea54e38eeb9d190c45d39d8af5936b166bad6ac08"
+              },
+              {
+                "id": "e42",
+                "pointer": "/artifacts/14/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "只要至少一条自养路径可用，异养者便能获得能量",
+                "valueHash": "4996815258935b5fcd16bafe6f044409bd458c9a3edf876128a29830a578d72a"
+              },
+              {
+                "id": "e70",
+                "pointer": "/artifacts/28/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "需注意，‘所有生物都需要能量’针对的是活体生物。非生命实体如晶体不在此列；病毒虽具遗传物质但无独立代谢，常不被视为完整活体，其能量依赖宿主。这划定了陈述的边界。",
+                "valueHash": "0f89d06bfe037dc10aedcbf28efe73c046bc6239cfa9a48b22c27d78c754b21d"
+              },
+              {
+                "id": "e74",
+                "pointer": "/artifacts/30/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "食物网展示生态系统中能量的定向流动：自养生物利用光或无机分子固定能量，成为异养生物的食物源。能量从自养者传向草食者再传向肉食者，每级传递因代谢消耗仅保留一部分（如10%），其余以热散失。这显示了流动方向及剩余可供更高营养级使用的能量规模。",
+                "valueHash": "aaa4add5e433d709a351a622af44af2f2a2e42b9e810cd96f4ac620df35c25d9"
+              },
+              {
+                "id": "e78",
+                "pointer": "/artifacts/32/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "食物网描述的定向能量流动限于生物节点之间。阳光、无机分子等非生物能源是输入起点，却不作为网内节点；若误将非生物装置视为食物网环节，会混淆边界。",
+                "valueHash": "d38a5048fc6100b1bf5ed085278e5821ef5099654895de6d1a226440d46f471d"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "dimension": "Q3",
+            "level": 2,
+            "reason": "具备先决条件(e7,e8)的学习者能跟随生态箱案例(e32-e42)及转移练习(e56-e66)理解自养路径与能量获取，并覆盖活体边界(e70)与食物网节点边界(e78)，无中心推导错误。",
+            "refs": [
+              "e7",
+              "e8",
+              "e32",
+              "e42",
+              "e56",
+              "e66",
+              "e70",
+              "e78"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e7",
+                "pointer": "/prerequisites/0",
+                "role": "context",
+                "kind": "text",
+                "value": "知道生物需要能量",
+                "valueHash": "21e3fec75676ef0fb6dacee48bdd8e817770e819cb037e6647bc4cc5fbed0d39"
+              },
+              {
+                "id": "e8",
+                "pointer": "/prerequisites/1",
+                "role": "context",
+                "kind": "text",
+                "value": "能区分有机物与无机物的一般含义",
+                "valueHash": "0af01ff590d1e58fab708cb2333d1403660e29567777adeb6a4ce7daeb6b2f6a"
+              },
+              {
+                "id": "e32",
+                "pointer": "/artifacts/9/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "生态箱A有阳光，存在无机分子H2S。内有藻（光合自养）和菌（化能合成自养）。引入异养动物Z，可摄食藻或菌。",
+                "valueHash": "509980b7f6610c486014af0b4ddae5105d3a7cb3ca1d9f1fdf8ad858c8961744"
+              },
+              {
+                "id": "e42",
+                "pointer": "/artifacts/14/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "只要至少一条自养路径可用，异养者便能获得能量",
+                "valueHash": "4996815258935b5fcd16bafe6f044409bd458c9a3edf876128a29830a578d72a"
+              },
+              {
+                "id": "e56",
+                "pointer": "/artifacts/21/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "在仅允许藻且移除阳光的条件下，Z的能量状况？",
+                "valueHash": "2d83664680b2f76f501078e686d8099d5ec355cc1342cebd9c41bd48a2973a61"
+              },
+              {
+                "id": "e66",
+                "pointer": "/artifacts/26/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "当仅剩路径被切断，异养失去来源，体现路径约束",
+                "valueHash": "7c38a3090c491dc9302ea7231acef1104a57dcfdc3a5b95c493000c10f2b8b2b"
+              },
+              {
+                "id": "e70",
+                "pointer": "/artifacts/28/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "需注意，‘所有生物都需要能量’针对的是活体生物。非生命实体如晶体不在此列；病毒虽具遗传物质但无独立代谢，常不被视为完整活体，其能量依赖宿主。这划定了陈述的边界。",
+                "valueHash": "0f89d06bfe037dc10aedcbf28efe73c046bc6239cfa9a48b22c27d78c754b21d"
+              },
+              {
+                "id": "e78",
+                "pointer": "/artifacts/32/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "食物网描述的定向能量流动限于生物节点之间。阳光、无机分子等非生物能源是输入起点，却不作为网内节点；若误将非生物装置视为食物网环节，会混淆边界。",
+                "valueHash": "d38a5048fc6100b1bf5ed085278e5821ef5099654895de6d1a226440d46f471d"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q1",
+            "status": "supported",
+            "reason": "候选Q1正向判断（级别2）所引断言e26,e28,e42,e74及边界e70,e78均在本包事实中，且来源e3支持；先前audit/correctness均clear无异议，无依赖未定前提。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e26",
+                "pointer": "/artifacts/6/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "生态系统中的生物不论形态如何，都需要能量驱动生命活动。能量可用于合成大分子、维持代谢。自养生物能利用无机源制造有机物，为异养生物提供能量基础。",
+                "valueHash": "c68ad936f34dcb6d021d3e472db66f00c5f45ac631f00f6e335e1d6aca3f2a05"
+              },
+              {
+                "id": "e28",
+                "pointer": "/artifacts/7/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "根据资料，恒定能量输入是组装大分子的必要条件。若无能量，生物无法从单体构建蛋白质、脂质等。这体现了能量供给与生命构建之间的因果机制。",
+                "valueHash": "02fb7185c2f573307a28cb2ea54e38eeb9d190c45d39d8af5936b166bad6ac08"
+              },
+              {
+                "id": "e42",
+                "pointer": "/artifacts/14/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "只要至少一条自养路径可用，异养者便能获得能量",
+                "valueHash": "4996815258935b5fcd16bafe6f044409bd458c9a3edf876128a29830a578d72a"
+              },
+              {
+                "id": "e70",
+                "pointer": "/artifacts/28/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "需注意，‘所有生物都需要能量’针对的是活体生物。非生命实体如晶体不在此列；病毒虽具遗传物质但无独立代谢，常不被视为完整活体，其能量依赖宿主。这划定了陈述的边界。",
+                "valueHash": "0f89d06bfe037dc10aedcbf28efe73c046bc6239cfa9a48b22c27d78c754b21d"
+              },
+              {
+                "id": "e74",
+                "pointer": "/artifacts/30/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "食物网展示生态系统中能量的定向流动：自养生物利用光或无机分子固定能量，成为异养生物的食物源。能量从自养者传向草食者再传向肉食者，每级传递因代谢消耗仅保留一部分（如10%），其余以热散失。这显示了流动方向及剩余可供更高营养级使用的能量规模。",
+                "valueHash": "aaa4add5e433d709a351a622af44af2f2a2e42b9e810cd96f4ac620df35c25d9"
+              },
+              {
+                "id": "e78",
+                "pointer": "/artifacts/32/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "食物网描述的定向能量流动限于生物节点之间。阳光、无机分子等非生物能源是输入起点，却不作为网内节点；若误将非生物装置视为食物网环节，会混淆边界。",
+                "valueHash": "d38a5048fc6100b1bf5ed085278e5821ef5099654895de6d1a226440d46f471d"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "All living things require energy in one form or another. Energy is required by most complex metabolic pathways (often in the form of adenosine triphosphate, ATP), especially those responsible for building large molecules from smaller compounds, and life itself is an energy-driven process. Living organisms would not be able to assemble macromolecules (proteins, lipids, nucleic acids, and complex carbohydrates) from their monomeric subunits without a constant energy input.\n\nIt is important to understand how organisms acquire energy and how that energy is passed from one organism to another through food webs and their constituent food chains. Food webs illustrate how energy flows directionally through ecosystems, including how efficiently organisms acquire it, use it, and how much remains for use by other organisms of the food web.\n\nEnergy is acquired by living things in three ways: photosynthesis, chemosynthesis, and the consumption and digestion of other living or previously living organisms by heterotrophs.\n\nPhotosynthetic and chemosynthetic organisms are both grouped into a category known as autotrophs: organisms capable of synthesizing their own food (more specifically, capable of using inorganic carbon as a carbon source). Photosynthetic autotrophs (photoautotrophs) use sunlight as an energy source, whereas chemosynthetic autotrophs (chemoautotrophs) use inorganic molecules as an energy source. Autotrophs are critical for all ecosystems. Without these organisms, energy would not be available to other living organisms and life itself would not be possible.",
+                "valueHash": "6bfef5addb7581a7a5154aa3f44613f99aea8cec06cb8fcd5a7616deee504d45"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "dimension": "Q3",
+            "status": "supported",
+            "reason": "候选Q3正向判断依赖先决e7,e8、案例e32/e42、转移e56/e66及边界e70/e78，均在本包且先前检查clear；无issue，完整解释成立不依赖未证前提。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e32",
+                "pointer": "/artifacts/9/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "生态箱A有阳光，存在无机分子H2S。内有藻（光合自养）和菌（化能合成自养）。引入异养动物Z，可摄食藻或菌。",
+                "valueHash": "509980b7f6610c486014af0b4ddae5105d3a7cb3ca1d9f1fdf8ad858c8961744"
+              },
+              {
+                "id": "e42",
+                "pointer": "/artifacts/14/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "只要至少一条自养路径可用，异养者便能获得能量",
+                "valueHash": "4996815258935b5fcd16bafe6f044409bd458c9a3edf876128a29830a578d72a"
+              },
+              {
+                "id": "e56",
+                "pointer": "/artifacts/21/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "在仅允许藻且移除阳光的条件下，Z的能量状况？",
+                "valueHash": "2d83664680b2f76f501078e686d8099d5ec355cc1342cebd9c41bd48a2973a61"
+              },
+              {
+                "id": "e66",
+                "pointer": "/artifacts/26/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "当仅剩路径被切断，异养失去来源，体现路径约束",
+                "valueHash": "7c38a3090c491dc9302ea7231acef1104a57dcfdc3a5b95c493000c10f2b8b2b"
+              },
+              {
+                "id": "e70",
+                "pointer": "/artifacts/28/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "需注意，‘所有生物都需要能量’针对的是活体生物。非生命实体如晶体不在此列；病毒虽具遗传物质但无独立代谢，常不被视为完整活体，其能量依赖宿主。这划定了陈述的边界。",
+                "valueHash": "0f89d06bfe037dc10aedcbf28efe73c046bc6239cfa9a48b22c27d78c754b21d"
+              },
+              {
+                "id": "e78",
+                "pointer": "/artifacts/32/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "食物网描述的定向能量流动限于生物节点之间。阳光、无机分子等非生物能源是输入起点，却不作为网内节点；若误将非生物装置视为食物网环节，会混淆边界。",
+                "valueHash": "d38a5048fc6100b1bf5ed085278e5821ef5099654895de6d1a226440d46f471d"
+              },
+              {
+                "id": "e7",
+                "pointer": "/prerequisites/0",
+                "role": "context",
+                "kind": "text",
+                "value": "知道生物需要能量",
+                "valueHash": "21e3fec75676ef0fb6dacee48bdd8e817770e819cb037e6647bc4cc5fbed0d39"
+              },
+              {
+                "id": "e8",
+                "pointer": "/prerequisites/1",
+                "role": "context",
+                "kind": "text",
+                "value": "能区分有机物与无机物的一般含义",
+                "valueHash": "0af01ff590d1e58fab708cb2333d1403660e29567777adeb6a4ce7daeb6b2f6a"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "All living things require energy in one form or another. Energy is required by most complex metabolic pathways (often in the form of adenosine triphosphate, ATP), especially those responsible for building large molecules from smaller compounds, and life itself is an energy-driven process. Living organisms would not be able to assemble macromolecules (proteins, lipids, nucleic acids, and complex carbohydrates) from their monomeric subunits without a constant energy input.\n\nIt is important to understand how organisms acquire energy and how that energy is passed from one organism to another through food webs and their constituent food chains. Food webs illustrate how energy flows directionally through ecosystems, including how efficiently organisms acquire it, use it, and how much remains for use by other organisms of the food web.\n\nEnergy is acquired by living things in three ways: photosynthesis, chemosynthesis, and the consumption and digestion of other living or previously living organisms by heterotrophs.\n\nPhotosynthetic and chemosynthetic organisms are both grouped into a category known as autotrophs: organisms capable of synthesizing their own food (more specifically, capable of using inorganic carbon as a carbon source). Photosynthetic autotrophs (photoautotrophs) use sunlight as an energy source, whereas chemosynthetic autotrophs (chemoautotrophs) use inorganic molecules as an energy source. Autotrophs are critical for all ecosystems. Without these organisms, energy would not be available to other living organisms and life itself would not be possible.",
+                "valueHash": "6bfef5addb7581a7a5154aa3f44613f99aea8cec06cb8fcd5a7616deee504d45"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q1",
+          "level": 2,
+          "reason": "作者核心断言（e26,e28,e42,e74）与边界(e70,e78)均基于来源e3或正确补充，无虚假声称、发明引用或缺失条件改变机制。",
+          "refs": [
+            "e3",
+            "e26",
+            "e28",
+            "e42",
+            "e70",
+            "e74",
+            "e78"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e3",
+              "pointer": "/sources/0/text",
+              "role": "source",
+              "kind": "text",
+              "value": "All living things require energy in one form or another. Energy is required by most complex metabolic pathways (often in the form of adenosine triphosphate, ATP), especially those responsible for building large molecules from smaller compounds, and life itself is an energy-driven process. Living organisms would not be able to assemble macromolecules (proteins, lipids, nucleic acids, and complex carbohydrates) from their monomeric subunits without a constant energy input.\n\nIt is important to understand how organisms acquire energy and how that energy is passed from one organism to another through food webs and their constituent food chains. Food webs illustrate how energy flows directionally through ecosystems, including how efficiently organisms acquire it, use it, and how much remains for use by other organisms of the food web.\n\nEnergy is acquired by living things in three ways: photosynthesis, chemosynthesis, and the consumption and digestion of other living or previously living organisms by heterotrophs.\n\nPhotosynthetic and chemosynthetic organisms are both grouped into a category known as autotrophs: organisms capable of synthesizing their own food (more specifically, capable of using inorganic carbon as a carbon source). Photosynthetic autotrophs (photoautotrophs) use sunlight as an energy source, whereas chemosynthetic autotrophs (chemoautotrophs) use inorganic molecules as an energy source. Autotrophs are critical for all ecosystems. Without these organisms, energy would not be available to other living organisms and life itself would not be possible.",
+              "valueHash": "6bfef5addb7581a7a5154aa3f44613f99aea8cec06cb8fcd5a7616deee504d45"
+            },
+            {
+              "id": "e26",
+              "pointer": "/artifacts/6/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "生态系统中的生物不论形态如何，都需要能量驱动生命活动。能量可用于合成大分子、维持代谢。自养生物能利用无机源制造有机物，为异养生物提供能量基础。",
+              "valueHash": "c68ad936f34dcb6d021d3e472db66f00c5f45ac631f00f6e335e1d6aca3f2a05"
+            },
+            {
+              "id": "e28",
+              "pointer": "/artifacts/7/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "根据资料，恒定能量输入是组装大分子的必要条件。若无能量，生物无法从单体构建蛋白质、脂质等。这体现了能量供给与生命构建之间的因果机制。",
+              "valueHash": "02fb7185c2f573307a28cb2ea54e38eeb9d190c45d39d8af5936b166bad6ac08"
+            },
+            {
+              "id": "e42",
+              "pointer": "/artifacts/14/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "只要至少一条自养路径可用，异养者便能获得能量",
+              "valueHash": "4996815258935b5fcd16bafe6f044409bd458c9a3edf876128a29830a578d72a"
+            },
+            {
+              "id": "e70",
+              "pointer": "/artifacts/28/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "需注意，‘所有生物都需要能量’针对的是活体生物。非生命实体如晶体不在此列；病毒虽具遗传物质但无独立代谢，常不被视为完整活体，其能量依赖宿主。这划定了陈述的边界。",
+              "valueHash": "0f89d06bfe037dc10aedcbf28efe73c046bc6239cfa9a48b22c27d78c754b21d"
+            },
+            {
+              "id": "e74",
+              "pointer": "/artifacts/30/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "食物网展示生态系统中能量的定向流动：自养生物利用光或无机分子固定能量，成为异养生物的食物源。能量从自养者传向草食者再传向肉食者，每级传递因代谢消耗仅保留一部分（如10%），其余以热散失。这显示了流动方向及剩余可供更高营养级使用的能量规模。",
+              "valueHash": "aaa4add5e433d709a351a622af44af2f2a2e42b9e810cd96f4ac620df35c25d9"
+            },
+            {
+              "id": "e78",
+              "pointer": "/artifacts/32/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "食物网描述的定向能量流动限于生物节点之间。阳光、无机分子等非生物能源是输入起点，却不作为网内节点；若误将非生物装置视为食物网环节，会混淆边界。",
+              "valueHash": "d38a5048fc6100b1bf5ed085278e5821ef5099654895de6d1a226440d46f471d"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [],
+          "proposedLevel": 2,
+          "proposedReason": "作者核心断言（e26,e28,e42,e74）与边界(e70,e78)均基于来源e3或正确补充，无虚假声称、发明引用或缺失条件改变机制。"
+        },
+        {
+          "dimension": "Q3",
+          "level": 2,
+          "reason": "具备先决条件(e7,e8)的学习者能跟随生态箱案例(e32-e42)及转移练习(e56-e66)理解自养路径与能量获取，并覆盖活体边界(e70)与食物网节点边界(e78)，无中心推导错误。",
+          "refs": [
+            "e7",
+            "e8",
+            "e32",
+            "e42",
+            "e56",
+            "e66",
+            "e70",
+            "e78"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e7",
+              "pointer": "/prerequisites/0",
+              "role": "context",
+              "kind": "text",
+              "value": "知道生物需要能量",
+              "valueHash": "21e3fec75676ef0fb6dacee48bdd8e817770e819cb037e6647bc4cc5fbed0d39"
+            },
+            {
+              "id": "e8",
+              "pointer": "/prerequisites/1",
+              "role": "context",
+              "kind": "text",
+              "value": "能区分有机物与无机物的一般含义",
+              "valueHash": "0af01ff590d1e58fab708cb2333d1403660e29567777adeb6a4ce7daeb6b2f6a"
+            },
+            {
+              "id": "e32",
+              "pointer": "/artifacts/9/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "生态箱A有阳光，存在无机分子H2S。内有藻（光合自养）和菌（化能合成自养）。引入异养动物Z，可摄食藻或菌。",
+              "valueHash": "509980b7f6610c486014af0b4ddae5105d3a7cb3ca1d9f1fdf8ad858c8961744"
+            },
+            {
+              "id": "e42",
+              "pointer": "/artifacts/14/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "只要至少一条自养路径可用，异养者便能获得能量",
+              "valueHash": "4996815258935b5fcd16bafe6f044409bd458c9a3edf876128a29830a578d72a"
+            },
+            {
+              "id": "e56",
+              "pointer": "/artifacts/21/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "在仅允许藻且移除阳光的条件下，Z的能量状况？",
+              "valueHash": "2d83664680b2f76f501078e686d8099d5ec355cc1342cebd9c41bd48a2973a61"
+            },
+            {
+              "id": "e66",
+              "pointer": "/artifacts/26/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "当仅剩路径被切断，异养失去来源，体现路径约束",
+              "valueHash": "7c38a3090c491dc9302ea7231acef1104a57dcfdc3a5b95c493000c10f2b8b2b"
+            },
+            {
+              "id": "e70",
+              "pointer": "/artifacts/28/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "需注意，‘所有生物都需要能量’针对的是活体生物。非生命实体如晶体不在此列；病毒虽具遗传物质但无独立代谢，常不被视为完整活体，其能量依赖宿主。这划定了陈述的边界。",
+              "valueHash": "0f89d06bfe037dc10aedcbf28efe73c046bc6239cfa9a48b22c27d78c754b21d"
+            },
+            {
+              "id": "e78",
+              "pointer": "/artifacts/32/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "食物网描述的定向能量流动限于生物节点之间。阳光、无机分子等非生物能源是输入起点，却不作为网内节点；若误将非生物装置视为食物网环节，会混淆边界。",
+              "valueHash": "d38a5048fc6100b1bf5ed085278e5821ef5099654895de6d1a226440d46f471d"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [],
+          "proposedLevel": 2,
+          "proposedReason": "具备先决条件(e7,e8)的学习者能跟随生态箱案例(e32-e42)及转移练习(e56-e66)理解自养路径与能量获取，并覆盖活体边界(e70)与食物网节点边界(e78)，无中心推导错误。"
+        }
+      ],
+      "reviewRequired": [],
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q1",
+            "status": "supported",
+            "reason": "候选Q1正向判断（级别2）所引断言e26,e28,e42,e74及边界e70,e78均在本包事实中，且来源e3支持；先前audit/correctness均clear无异议，无依赖未定前提。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e26",
+                "pointer": "/artifacts/6/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "生态系统中的生物不论形态如何，都需要能量驱动生命活动。能量可用于合成大分子、维持代谢。自养生物能利用无机源制造有机物，为异养生物提供能量基础。",
+                "valueHash": "c68ad936f34dcb6d021d3e472db66f00c5f45ac631f00f6e335e1d6aca3f2a05"
+              },
+              {
+                "id": "e28",
+                "pointer": "/artifacts/7/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "根据资料，恒定能量输入是组装大分子的必要条件。若无能量，生物无法从单体构建蛋白质、脂质等。这体现了能量供给与生命构建之间的因果机制。",
+                "valueHash": "02fb7185c2f573307a28cb2ea54e38eeb9d190c45d39d8af5936b166bad6ac08"
+              },
+              {
+                "id": "e42",
+                "pointer": "/artifacts/14/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "只要至少一条自养路径可用，异养者便能获得能量",
+                "valueHash": "4996815258935b5fcd16bafe6f044409bd458c9a3edf876128a29830a578d72a"
+              },
+              {
+                "id": "e70",
+                "pointer": "/artifacts/28/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "需注意，‘所有生物都需要能量’针对的是活体生物。非生命实体如晶体不在此列；病毒虽具遗传物质但无独立代谢，常不被视为完整活体，其能量依赖宿主。这划定了陈述的边界。",
+                "valueHash": "0f89d06bfe037dc10aedcbf28efe73c046bc6239cfa9a48b22c27d78c754b21d"
+              },
+              {
+                "id": "e74",
+                "pointer": "/artifacts/30/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "食物网展示生态系统中能量的定向流动：自养生物利用光或无机分子固定能量，成为异养生物的食物源。能量从自养者传向草食者再传向肉食者，每级传递因代谢消耗仅保留一部分（如10%），其余以热散失。这显示了流动方向及剩余可供更高营养级使用的能量规模。",
+                "valueHash": "aaa4add5e433d709a351a622af44af2f2a2e42b9e810cd96f4ac620df35c25d9"
+              },
+              {
+                "id": "e78",
+                "pointer": "/artifacts/32/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "食物网描述的定向能量流动限于生物节点之间。阳光、无机分子等非生物能源是输入起点，却不作为网内节点；若误将非生物装置视为食物网环节，会混淆边界。",
+                "valueHash": "d38a5048fc6100b1bf5ed085278e5821ef5099654895de6d1a226440d46f471d"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "All living things require energy in one form or another. Energy is required by most complex metabolic pathways (often in the form of adenosine triphosphate, ATP), especially those responsible for building large molecules from smaller compounds, and life itself is an energy-driven process. Living organisms would not be able to assemble macromolecules (proteins, lipids, nucleic acids, and complex carbohydrates) from their monomeric subunits without a constant energy input.\n\nIt is important to understand how organisms acquire energy and how that energy is passed from one organism to another through food webs and their constituent food chains. Food webs illustrate how energy flows directionally through ecosystems, including how efficiently organisms acquire it, use it, and how much remains for use by other organisms of the food web.\n\nEnergy is acquired by living things in three ways: photosynthesis, chemosynthesis, and the consumption and digestion of other living or previously living organisms by heterotrophs.\n\nPhotosynthetic and chemosynthetic organisms are both grouped into a category known as autotrophs: organisms capable of synthesizing their own food (more specifically, capable of using inorganic carbon as a carbon source). Photosynthetic autotrophs (photoautotrophs) use sunlight as an energy source, whereas chemosynthetic autotrophs (chemoautotrophs) use inorganic molecules as an energy source. Autotrophs are critical for all ecosystems. Without these organisms, energy would not be available to other living organisms and life itself would not be possible.",
+                "valueHash": "6bfef5addb7581a7a5154aa3f44613f99aea8cec06cb8fcd5a7616deee504d45"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "dimension": "Q3",
+            "status": "supported",
+            "reason": "候选Q3正向判断依赖先决e7,e8、案例e32/e42、转移e56/e66及边界e70/e78，均在本包且先前检查clear；无issue，完整解释成立不依赖未证前提。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e32",
+                "pointer": "/artifacts/9/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "生态箱A有阳光，存在无机分子H2S。内有藻（光合自养）和菌（化能合成自养）。引入异养动物Z，可摄食藻或菌。",
+                "valueHash": "509980b7f6610c486014af0b4ddae5105d3a7cb3ca1d9f1fdf8ad858c8961744"
+              },
+              {
+                "id": "e42",
+                "pointer": "/artifacts/14/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "只要至少一条自养路径可用，异养者便能获得能量",
+                "valueHash": "4996815258935b5fcd16bafe6f044409bd458c9a3edf876128a29830a578d72a"
+              },
+              {
+                "id": "e56",
+                "pointer": "/artifacts/21/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "在仅允许藻且移除阳光的条件下，Z的能量状况？",
+                "valueHash": "2d83664680b2f76f501078e686d8099d5ec355cc1342cebd9c41bd48a2973a61"
+              },
+              {
+                "id": "e66",
+                "pointer": "/artifacts/26/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "当仅剩路径被切断，异养失去来源，体现路径约束",
+                "valueHash": "7c38a3090c491dc9302ea7231acef1104a57dcfdc3a5b95c493000c10f2b8b2b"
+              },
+              {
+                "id": "e70",
+                "pointer": "/artifacts/28/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "需注意，‘所有生物都需要能量’针对的是活体生物。非生命实体如晶体不在此列；病毒虽具遗传物质但无独立代谢，常不被视为完整活体，其能量依赖宿主。这划定了陈述的边界。",
+                "valueHash": "0f89d06bfe037dc10aedcbf28efe73c046bc6239cfa9a48b22c27d78c754b21d"
+              },
+              {
+                "id": "e78",
+                "pointer": "/artifacts/32/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "食物网描述的定向能量流动限于生物节点之间。阳光、无机分子等非生物能源是输入起点，却不作为网内节点；若误将非生物装置视为食物网环节，会混淆边界。",
+                "valueHash": "d38a5048fc6100b1bf5ed085278e5821ef5099654895de6d1a226440d46f471d"
+              },
+              {
+                "id": "e7",
+                "pointer": "/prerequisites/0",
+                "role": "context",
+                "kind": "text",
+                "value": "知道生物需要能量",
+                "valueHash": "21e3fec75676ef0fb6dacee48bdd8e817770e819cb037e6647bc4cc5fbed0d39"
+              },
+              {
+                "id": "e8",
+                "pointer": "/prerequisites/1",
+                "role": "context",
+                "kind": "text",
+                "value": "能区分有机物与无机物的一般含义",
+                "valueHash": "0af01ff590d1e58fab708cb2333d1403660e29567777adeb6a4ce7daeb6b2f6a"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "All living things require energy in one form or another. Energy is required by most complex metabolic pathways (often in the form of adenosine triphosphate, ATP), especially those responsible for building large molecules from smaller compounds, and life itself is an energy-driven process. Living organisms would not be able to assemble macromolecules (proteins, lipids, nucleic acids, and complex carbohydrates) from their monomeric subunits without a constant energy input.\n\nIt is important to understand how organisms acquire energy and how that energy is passed from one organism to another through food webs and their constituent food chains. Food webs illustrate how energy flows directionally through ecosystems, including how efficiently organisms acquire it, use it, and how much remains for use by other organisms of the food web.\n\nEnergy is acquired by living things in three ways: photosynthesis, chemosynthesis, and the consumption and digestion of other living or previously living organisms by heterotrophs.\n\nPhotosynthetic and chemosynthetic organisms are both grouped into a category known as autotrophs: organisms capable of synthesizing their own food (more specifically, capable of using inorganic carbon as a carbon source). Photosynthetic autotrophs (photoautotrophs) use sunlight as an energy source, whereas chemosynthetic autotrophs (chemoautotrophs) use inorganic molecules as an energy source. Autotrophs are critical for all ecosystems. Without these organisms, energy would not be available to other living organisms and life itself would not be possible.",
+                "valueHash": "6bfef5addb7581a7a5154aa3f44613f99aea8cec06cb8fcd5a7616deee504d45"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "resultHash": "c6657ca341d94cd0a4e46277380592a12d4bd9442041b5302f2e4c809fbd9338"
+  }
+}

@@ -1,0 +1,237 @@
+{
+  "task": {
+    "caseId": "N-B-E01-curriculum",
+    "runId": "N-B-E01-curriculum-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-B-E01-curriculum.json",
+    "inputHash": "b1fca7d53d2634654cd99daf9cbd09138b2031a3a40f7423cc4e5ed29cf83615",
+    "population": "natural",
+    "sourceId": "B-E01"
+  },
+  "inputHash": "b1fca7d53d2634654cd99daf9cbd09138b2031a3a40f7423cc4e5ed29cf83615",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "correctness": "b659a9c6d5754f480c01fdd6048cd8a956b0104744ab194c8c4c3b80d3a4ea94",
+      "artifact-audit": "b659a9c6d5754f480c01fdd6048cd8a956b0104744ab194c8c4c3b80d3a4ea94"
+    },
+    "stages": {
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "uncertain",
+            "affected": [
+              "Q2"
+            ],
+            "reason": "The counterexample check is not established.",
+            "proposed": {
+              "kind": "conditions",
+              "status": "clear",
+              "affected": [],
+              "reason": "产物 artifacts/1 中三个 objective 描述的条件（同温同时区间速率不同且其他条件相同解释触感差异；热流方向高温到低温、依赖温差ΔT、同温净传递零平衡；其他条件相同时面积增大加快导热）与源 e3 实例对照一致，作者总结保留源明示假设并补充合法边界。",
+              "refs": [
+                "e3",
+                "e19"
+              ],
+              "challenge": {
+                "status": "counterexample",
+                "reason": "固定源 e3 事实与假设（同温、同时区间比较、速率不同）未限定接触面积相同；补充瓷砖接触面积远小于地毯的相容情况，可使总热损失瓷砖更小、温度下降更大结论改变，证明源原解释未建立必要前提。作者后续加'其他条件相同'为待核断言不预置。",
+                "refs": [
+                  "e3"
+                ]
+              }
+            },
+            "reviewReasons": [
+              "CONDITIONS_CHALLENGE_UNGROUNDED"
+            ]
+          },
+          {
+            "kind": "quantities",
+            "status": "not_applicable",
+            "affected": [],
+            "reason": "无数值、百分比或单位换算断言，rates 空，无需重算。",
+            "contextHash": "b659a9c6d5754f480c01fdd6048cd8a956b0104744ab194c8c4c3b80d3a4ea94",
+            "proposed": {
+              "kind": "quantities",
+              "status": "not_applicable",
+              "affected": [],
+              "reason": "无数值、百分比或单位换算断言，rates 空，无需重算。",
+              "refs": [
+                "e3"
+              ]
+            },
+            "reviewReasons": []
+          }
+        ],
+        "keys": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 2,
+            "reason": "产物artifacts/1(e19)的objectives数组包含三个目标对象，精确对应goals(e5,e6,e7)的required要求：obj1解释同温触感差异（其他条件相同），obj2识别热传递方向/温差/平衡，obj3解释面积影响并保留边界。描述内容与source e3一致无扭曲，深度pass_oriented契合，无目标消失或削弱，满足Q2标准'2 essential goals have faithful usable treatment'。",
+            "refs": [
+              "e19",
+              "e5",
+              "e6",
+              "e7",
+              "e3"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e19",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "[{\"id\":\"obj_66116a72-8452-4943-b177-c4746bba80c3\",\"title\":\"解释同温度地毯与瓷砖触感不同的原因\",\"description\":\"解释同温度地毯与瓷砖触感不同的原因：在相同温度和相同时间区间内，因热传递速率不同导致瓷砖接触皮肤热损失更大、温度下降更大，且其他条件相同。\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_bd662622-f215-4fb6-a1f2-3f4221876e8d\",\"ta_1f0304b1-c7c8-4f2a-8b01-7b4214480e81\"],\"authorityClaimIds\":[\"tac_87496d82-d160-40d2-80a0-46878f2d9a22\",\"tac_9de166ab-6ee6-4a48-8ce4-a8cbd3ed3b1f\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E3 provides formal_sufficient authority for explain construct regarding the source-stated carpet/tile sensation difference.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"explain\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_b4bbe601\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_b4bbe601\"]},{\"id\":\"obj_416ffe5a-be2e-4272-9af0-b2f9de71a48d\",\"title\":\"识别热传递方向、温差驱动热通量及同温热平衡\",\"description\":\"识别热传递方向（从高温物体到低温物体）、热通量依赖温差ΔT=Thot−Tcold、以及温度相同时净热传递为零并达到热平衡。\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_fe46a6e3-18cb-4717-aea2-668f654b4a81\",\"ta_9ebc8e6f-5c44-44f0-a6b6-08a8e8d5a464\"],\"authorityClaimIds\":[\"tac_9463942b-21f3-4be3-9db8-a2fcca49e2f5\",\"tac_ccf940af-ae80-48f0-9778-a292d794cc0a\",\"tac_e3f4a13c-d6fb-454a-aed9-6164577f1fc9\",\"tac_2cdcf99f-c2ee-45e2-b652-d27a968b38f2\",\"tac_9df46c82-1c92-4449-bd10-195f281cb69e\",\"tac_eb156ca1-b862-4d20-af95-f67528f1f29a\"],\"priority\":\"required\",\"priorityRationale\":\"Evidence E1, E4, E16 offer formal authority for identify construct on heat flux and equilibrium statements.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_2_a49cd982\"],\"formalEvidenceSourceBlockIds\":[\"blk_2_a49cd982\"]},{\"id\":\"obj_f50b1d5b-bff1-493a-9e88-dab356beb962\",\"title\":\"解释接触面积对热传导的影响\",\"description\":\"解释接触面积对热传导的影响：在其他条件相同时，横截面积增大通过增加碰撞次数加快导热，例如手掌比指尖接触冷墙冷却更快。\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_fe46a6e3-18cb-4717-aea2-668f654b4a81\",\"ta_9ebc8e6f-5c44-44f0-a6b6-08a8e8d5a464\"],\"authorityClaimIds\":[\"tac_bdf41be3-777f-4643-bfff-d2269e3afd95\",\"tac_fbc90ca8-086e-4b5d-80d0-d109331ed8ba\"],\"priority\":\"required\",\"priorityRationale\":\"Evidence E7 provides formal_sufficient explain authority for cross-sectional area dependence on heat conduction.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"explain\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_2_a49cd982\"],\"formalEvidenceSourceBlockIds\":[\"blk_2_a49cd982\"]}]",
+                "valueHash": "512f59f923ed3586f3069839b8c70bacbff429442a6bc034aae8004a4b2cc09f"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "用中文解释同温度地毯与瓷砖触感不同的原因",
+                "valueHash": "52140d4fb13e26d33e5e964d715932ba90bbe68dfb2d92fbce49b530f9f0f043"
+              },
+              {
+                "id": "e6",
+                "pointer": "/goals/1",
+                "role": "goal",
+                "kind": "text",
+                "value": "区分热传递方向、温差与热平衡",
+                "valueHash": "4e50c7540f86a33d4b6f014157c80d725e9b45ced9ddd104037ab24fb5aeec7d"
+              },
+              {
+                "id": "e7",
+                "pointer": "/goals/2",
+                "role": "goal",
+                "kind": "text",
+                "value": "说明接触面积如何影响导热，并保留其他条件相同的比较边界",
+                "valueHash": "24dbf6425c5b2cab0dcd5b055cbcbe4ae429f1f5d406e40773614b4273a5fc2d"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "Your feet feel cold as you walk barefoot across the living room carpet in your cold house and then step onto the kitchen tile floor. This result is intriguing, since the carpet and tile floor are both at the same temperature. The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.\n\nSome materials conduct thermal energy faster than others. In general, good conductors of electricity (metals like copper, aluminum, gold, and silver) are also good heat conductors, whereas insulators of electricity (wood, plastic, and rubber) are poor heat conductors.\n\nThe (average) kinetic energy of a molecule in the hot body is higher than in the colder body. If two molecules collide, an energy transfer from the molecule with greater kinetic energy to the molecule with less kinetic energy occurs. The cumulative effect from all collisions results in a net flux of heat from the hot body to the colder body. The heat flux thus depends on the temperature difference ΔΤ=Τhot−Tcold. Therefore, you will get a more severe burn from boiling water than from hot tap water. Conversely, if the temperatures are the same, the net heat transfer rate falls to zero, and equilibrium is achieved. Owing to the fact that the number of collisions increases with increasing area, heat conduction depends on the cross-sectional area. If you touch a cold wall with your palm, your hand cools faster than if you just touch it with your fingertip.",
+                "valueHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q2",
+          "level": "U",
+          "reason": "The counterexample check is not established.",
+          "refs": [
+            "e19",
+            "e5",
+            "e6",
+            "e7",
+            "e3"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e19",
+              "pointer": "/artifacts/1/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "[{\"id\":\"obj_66116a72-8452-4943-b177-c4746bba80c3\",\"title\":\"解释同温度地毯与瓷砖触感不同的原因\",\"description\":\"解释同温度地毯与瓷砖触感不同的原因：在相同温度和相同时间区间内，因热传递速率不同导致瓷砖接触皮肤热损失更大、温度下降更大，且其他条件相同。\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_bd662622-f215-4fb6-a1f2-3f4221876e8d\",\"ta_1f0304b1-c7c8-4f2a-8b01-7b4214480e81\"],\"authorityClaimIds\":[\"tac_87496d82-d160-40d2-80a0-46878f2d9a22\",\"tac_9de166ab-6ee6-4a48-8ce4-a8cbd3ed3b1f\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E3 provides formal_sufficient authority for explain construct regarding the source-stated carpet/tile sensation difference.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"explain\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_b4bbe601\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_b4bbe601\"]},{\"id\":\"obj_416ffe5a-be2e-4272-9af0-b2f9de71a48d\",\"title\":\"识别热传递方向、温差驱动热通量及同温热平衡\",\"description\":\"识别热传递方向（从高温物体到低温物体）、热通量依赖温差ΔT=Thot−Tcold、以及温度相同时净热传递为零并达到热平衡。\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_fe46a6e3-18cb-4717-aea2-668f654b4a81\",\"ta_9ebc8e6f-5c44-44f0-a6b6-08a8e8d5a464\"],\"authorityClaimIds\":[\"tac_9463942b-21f3-4be3-9db8-a2fcca49e2f5\",\"tac_ccf940af-ae80-48f0-9778-a292d794cc0a\",\"tac_e3f4a13c-d6fb-454a-aed9-6164577f1fc9\",\"tac_2cdcf99f-c2ee-45e2-b652-d27a968b38f2\",\"tac_9df46c82-1c92-4449-bd10-195f281cb69e\",\"tac_eb156ca1-b862-4d20-af95-f67528f1f29a\"],\"priority\":\"required\",\"priorityRationale\":\"Evidence E1, E4, E16 offer formal authority for identify construct on heat flux and equilibrium statements.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_2_a49cd982\"],\"formalEvidenceSourceBlockIds\":[\"blk_2_a49cd982\"]},{\"id\":\"obj_f50b1d5b-bff1-493a-9e88-dab356beb962\",\"title\":\"解释接触面积对热传导的影响\",\"description\":\"解释接触面积对热传导的影响：在其他条件相同时，横截面积增大通过增加碰撞次数加快导热，例如手掌比指尖接触冷墙冷却更快。\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_fe46a6e3-18cb-4717-aea2-668f654b4a81\",\"ta_9ebc8e6f-5c44-44f0-a6b6-08a8e8d5a464\"],\"authorityClaimIds\":[\"tac_bdf41be3-777f-4643-bfff-d2269e3afd95\",\"tac_fbc90ca8-086e-4b5d-80d0-d109331ed8ba\"],\"priority\":\"required\",\"priorityRationale\":\"Evidence E7 provides formal_sufficient explain authority for cross-sectional area dependence on heat conduction.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"explain\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_2_a49cd982\"],\"formalEvidenceSourceBlockIds\":[\"blk_2_a49cd982\"]}]",
+              "valueHash": "512f59f923ed3586f3069839b8c70bacbff429442a6bc034aae8004a4b2cc09f"
+            },
+            {
+              "id": "e5",
+              "pointer": "/goals/0",
+              "role": "goal",
+              "kind": "text",
+              "value": "用中文解释同温度地毯与瓷砖触感不同的原因",
+              "valueHash": "52140d4fb13e26d33e5e964d715932ba90bbe68dfb2d92fbce49b530f9f0f043"
+            },
+            {
+              "id": "e6",
+              "pointer": "/goals/1",
+              "role": "goal",
+              "kind": "text",
+              "value": "区分热传递方向、温差与热平衡",
+              "valueHash": "4e50c7540f86a33d4b6f014157c80d725e9b45ced9ddd104037ab24fb5aeec7d"
+            },
+            {
+              "id": "e7",
+              "pointer": "/goals/2",
+              "role": "goal",
+              "kind": "text",
+              "value": "说明接触面积如何影响导热，并保留其他条件相同的比较边界",
+              "valueHash": "24dbf6425c5b2cab0dcd5b055cbcbe4ae429f1f5d406e40773614b4273a5fc2d"
+            },
+            {
+              "id": "e3",
+              "pointer": "/sources/0/text",
+              "role": "source",
+              "kind": "text",
+              "value": "Your feet feel cold as you walk barefoot across the living room carpet in your cold house and then step onto the kitchen tile floor. This result is intriguing, since the carpet and tile floor are both at the same temperature. The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.\n\nSome materials conduct thermal energy faster than others. In general, good conductors of electricity (metals like copper, aluminum, gold, and silver) are also good heat conductors, whereas insulators of electricity (wood, plastic, and rubber) are poor heat conductors.\n\nThe (average) kinetic energy of a molecule in the hot body is higher than in the colder body. If two molecules collide, an energy transfer from the molecule with greater kinetic energy to the molecule with less kinetic energy occurs. The cumulative effect from all collisions results in a net flux of heat from the hot body to the colder body. The heat flux thus depends on the temperature difference ΔΤ=Τhot−Tcold. Therefore, you will get a more severe burn from boiling water than from hot tap water. Conversely, if the temperatures are the same, the net heat transfer rate falls to zero, and equilibrium is achieved. Owing to the fact that the number of collisions increases with increasing area, heat conduction depends on the cross-sectional area. If you touch a cold wall with your palm, your hand cools faster than if you just touch it with your fingertip.",
+              "valueHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [
+            {
+              "level": "U",
+              "code": "INDEPENDENT_CONDITIONS",
+              "detail": {
+                "kind": "conditions",
+                "status": "uncertain",
+                "affected": [
+                  "Q2"
+                ],
+                "reason": "The counterexample check is not established.",
+                "proposed": {
+                  "kind": "conditions",
+                  "status": "clear",
+                  "affected": [],
+                  "reason": "产物 artifacts/1 中三个 objective 描述的条件（同温同时区间速率不同且其他条件相同解释触感差异；热流方向高温到低温、依赖温差ΔT、同温净传递零平衡；其他条件相同时面积增大加快导热）与源 e3 实例对照一致，作者总结保留源明示假设并补充合法边界。",
+                  "refs": [
+                    "e3",
+                    "e19"
+                  ],
+                  "challenge": {
+                    "status": "counterexample",
+                    "reason": "固定源 e3 事实与假设（同温、同时区间比较、速率不同）未限定接触面积相同；补充瓷砖接触面积远小于地毯的相容情况，可使总热损失瓷砖更小、温度下降更大结论改变，证明源原解释未建立必要前提。作者后续加'其他条件相同'为待核断言不预置。",
+                    "refs": [
+                      "e3"
+                    ]
+                  }
+                },
+                "reviewReasons": [
+                  "CONDITIONS_CHALLENGE_UNGROUNDED"
+                ]
+              }
+            }
+          ],
+          "proposedLevel": 2,
+          "proposedReason": "产物artifacts/1(e19)的objectives数组包含三个目标对象，精确对应goals(e5,e6,e7)的required要求：obj1解释同温触感差异（其他条件相同），obj2识别热传递方向/温差/平衡，obj3解释面积影响并保留边界。描述内容与source e3一致无扭曲，深度pass_oriented契合，无目标消失或削弱，满足Q2标准'2 essential goals have faithful usable treatment'。",
+          "decidingConstraint": "INDEPENDENT_CONDITIONS"
+        }
+      ],
+      "reviewRequired": [
+        {
+          "dimension": "Q2",
+          "reason": "UNRESOLVED"
+        }
+      ]
+    },
+    "resultHash": "9ccb70a92efbdb93821358e6a8a5809e82af19c8a0f53a108e4982dbb061a8ba"
+  }
+}

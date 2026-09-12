@@ -1,0 +1,263 @@
+{
+  "dimensions": [
+    "Q4"
+  ],
+  "evidence": {
+    "sources": [
+      {
+        "id": "E04",
+        "text": "We get information into our brains through a process called encoding, which is the input of information into the memory system. Once we receive sensory information from the environment, our brains label or code it. We organize the information with other similar information and connect new concepts to existing concepts. Encoding information occurs through automatic processing and effortful processing.\n\nThere are three types of encoding. The encoding of words and their meaning is known as semantic encoding. It was first demonstrated by William Bousfield (1935) in an experiment in which he asked people to memorize words. The 60 words were actually divided into 4 categories of meaning, although the participants did not know this because the words were randomly presented. When they were asked to remember the words, they tended to recall them in categories, showing that they paid attention to the meanings of the words as they learned them.\n\nVisual encoding is the encoding of images, and acoustic encoding is the encoding of sounds, words in particular. To see how visual encoding works, read over this list of words: car, level, dog, truth, book, value. If you were asked later to recall the words from this list, which ones do you think you’d most likely remember? You would probably have an easier time recalling the words car, dog, and book, and a more difficult time recalling the words level, truth, and value. Why is this? Because you can recall images (mental pictures) more easily than words alone. When you read the words car, dog, and book you created images of these things in your mind. These are concrete, high-imagery words. On the other hand, abstract words like level, truth, and value are low-imagery words. High-imagery words are encoded both visually and semantically (Paivio, 1986), thus building a stronger memory.\n\nNow let’s turn our attention to acoustic encoding. You are driving in your car and a song comes on the radio that you haven’t heard in at least 10 years, but you sing along, recalling every word. In the United States, children often learn the alphabet through song, and they learn the number of days in each month through rhyme: “Thirty days hath September, / April, June, and November; / All the rest have thirty-one, / Save February, with twenty-eight days clear, / And twenty-nine each leap year.” These lessons are easy to remember because of acoustic encoding. We encode the sounds the words make. This is one of the reasons why much of what we teach young children is done through song, rhyme, and rhythm."
+      }
+    ],
+    "goals": [
+      "用新的问题独立检验刚才补救的理解"
+    ],
+    "prerequisites": [
+      "能够理解记忆编码与回忆的日常含义",
+      "不需要心理学专业背景",
+      "用中文识别并区分语义编码、视觉编码与声学编码的定义及差异（语义：词语及意义；视觉：图像；声学：声音尤其是词语发音）",
+      "解释编码作为信息输入记忆系统的过程，包括接收感觉信息后大脑对其标记或编码并通过自动或努力加工"
+    ],
+    "desiredDepth": "working_fluency",
+    "authorityBoundaries": [
+      "本次评估只涉及所给来源、明确的教学范围和实际展示的产物；脚本作答用于检查工作流，不代表真实学习者。"
+    ],
+    "artifacts": [
+      {
+        "id": "current-retest-selected-option",
+        "text": "错误在于呈现方式是默读文字而非听音，声学编码未主导；具体词优势来自高意象触发的视觉与语义双重编码"
+      },
+      {
+        "id": "current-retest-explanation",
+        "text": "默读无声音，声学编码不主导；具体高意象词因心理图像获得视觉与语义双重编码，这才是回忆差异隐藏成因。"
+      }
+    ],
+    "exposure": [
+      {
+        "id": "prior-0",
+        "text": "记忆编码是把环境信息贴上标签的过程。语义编码处理词语及意义，如Bousfield实验中被试按含义分类回忆；视觉编码处理图像，具体词易引发心理图片；声学编码处理声音特别是词语发音，如儿歌韵律。高意象词可同时视觉与语义编码，形成更强记忆；抽象词缺乏视觉编码。这些机制取决于信息呈现方式，可单独或联合作用。"
+      },
+      {
+        "id": "prior-1",
+        "text": "通过新词表案例看视觉编码如何与语义编码联合作用。先分类意象水平，再应用双重编码规则，可预测哪些词获得视觉辅助。"
+      },
+      {
+        "id": "prior-2",
+        "text": "呈现词表：'铃铛、荣誉、铅笔、悲伤、苹果、尺度'。被试安静默读并自发形成图像，未听音。需判定哪些词获得视觉编码辅助。"
+      },
+      {
+        "id": "prior-3",
+        "text": "词表六词"
+      },
+      {
+        "id": "prior-4",
+        "text": "默读且形成图像条件"
+      },
+      {
+        "id": "prior-5",
+        "text": "高意象词视觉+语义编码规则"
+      },
+      {
+        "id": "prior-6",
+        "text": "根据上述分类与规则，哪些词在记忆中获得了视觉编码辅助？"
+      },
+      {
+        "id": "prior-7",
+        "text": "铃铛、铅笔、苹果"
+      },
+      {
+        "id": "prior-8",
+        "text": "荣誉、悲伤、尺度"
+      },
+      {
+        "id": "prior-9",
+        "text": "全部六个词"
+      },
+      {
+        "id": "prior-10",
+        "text": "铃铛、铅笔、苹果获得视觉编码辅助"
+      },
+      {
+        "id": "prior-11",
+        "text": "正确：三者为具体高意象词，默读成像触发视觉+语义编码。"
+      },
+      {
+        "id": "prior-12",
+        "text": "具体高意象词在默读条件下获得视觉编码辅助，抽象词否。"
+      },
+      {
+        "id": "prior-13",
+        "text": "此时哪些词主要依赖声学编码而非视觉编码？"
+      },
+      {
+        "id": "prior-14",
+        "text": "全部六个词（声学编码）"
+      },
+      {
+        "id": "prior-15",
+        "text": "仅抽象词"
+      },
+      {
+        "id": "prior-16",
+        "text": "词表改为由录音播放且不提供图像，要求被试只关注发音韵律"
+      },
+      {
+        "id": "prior-17",
+        "text": "{\"prompt\":\"根据上述分类与规则，哪些词在记忆中获得了视觉编码辅助？\",\"options\":[{\"id\":\"A\",\"text\":\"铃铛、铅笔、苹果\"},{\"id\":\"B\",\"text\":\"荣誉、悲伤、尺度\"},{\"id\":\"C\",\"text\":\"全部六个词\"}],\"response\":\"A\",\"correct\":true,\"feedback\":\"正确：三者为具体高意象词，默读成像触发视觉+语义编码。\",\"debrief\":\"具体高意象词在默读条件下获得视觉编码辅助，抽象词否。\"}"
+      },
+      {
+        "id": "prior-18",
+        "text": "仅具体高意象词在默读成像条件下触发视觉通道，与教材机制一致"
+      },
+      {
+        "id": "prior-19",
+        "text": "正确：听觉通道使所有词通过声音编码，视觉未参与。"
+      },
+      {
+        "id": "prior-20",
+        "text": "移除视觉通道后，声学编码统御全部词，打破原双重编码边界。"
+      },
+      {
+        "id": "prior-21",
+        "text": "{\"prompt\":\"此时哪些词主要依赖声学编码而非视觉编码？\",\"options\":[{\"id\":\"A\",\"text\":\"铃铛、铅笔、苹果\"},{\"id\":\"B\",\"text\":\"全部六个词（声学编码）\"},{\"id\":\"C\",\"text\":\"仅抽象词\"}],\"response\":\"B\",\"correct\":true,\"feedback\":\"正确：听觉通道使所有词通过声音编码，视觉未参与。\",\"debrief\":\"移除视觉通道后，声学编码统御全部词，打破原双重编码边界。\"}"
+      },
+      {
+        "id": "prior-22",
+        "text": "编码类型有清晰边界：视觉编码必须依赖心理图像的形成，若刺激仅为声音而未引发图像，则不属于视觉编码；声学编码可独立运作。教材中高意象词双重编码仅在默读或见文字时成立，听到词未必触发视觉。"
+      },
+      {
+        "id": "prior-23",
+        "text": "注意：广播新闻纯声音无图像时只有声学编码；若同时阅读文稿则可能叠加视觉编码。不可把任何词语呈现都默认为视觉编码。"
+      },
+      {
+        "id": "prior-24",
+        "text": "编码始于环境感觉信息进入大脑。以嗅觉为例：人在花园接收花香这一感觉信息后，大脑自动记录气味特征（自动加工），随后努力将其标记为“玫瑰”并与已知植物概念联系（努力加工）。此过程显示接收刺激后贴标签可通过两条通道并行或顺序发生，自动加工无需刻意努力，努力加工则需主动归类。"
+      },
+      {
+        "id": "prior-25",
+        "text": "声学编码在韵律呈现时效果更强。下面用独立案例看预测。"
+      },
+      {
+        "id": "prior-26",
+        "text": "两组幼儿学习月份天数：甲组通过儿歌《三十天》韵律演唱，乙组由成人随机朗读相同词句无韵律。预期哪组记忆成绩更高？"
+      },
+      {
+        "id": "prior-27",
+        "text": "甲组（儿歌韵律声学编码辅助）"
+      },
+      {
+        "id": "prior-28",
+        "text": "乙组（随机朗读无韵律）"
+      },
+      {
+        "id": "prior-29",
+        "text": "正确：韵律触发声学编码，符合教材儿歌易记机制。"
+      },
+      {
+        "id": "prior-30",
+        "text": "{\"prompt\":\"两组幼儿学习月份天数：甲组通过儿歌《三十天》韵律演唱，乙组由成人随机朗读相同词句无韵律。预期哪组记忆成绩更高？\",\"options\":[{\"id\":\"A\",\"text\":\"甲组（儿歌韵律声学编码辅助）\"},{\"id\":\"B\",\"text\":\"乙组（随机朗读无韵律）\"}],\"response\":\"A\",\"correct\":true,\"feedback\":\"正确：韵律触发声学编码，符合教材儿歌易记机制。\"}"
+      },
+      {
+        "id": "prior-31",
+        "text": "编码边界需注意：自动加工虽常无意识发生，但并非所有感觉输入都必然成功编码。若注意力被占用，即使感觉信息到达，标签或编码也可能薄弱。努力加工则依赖可用认知资源。"
+      },
+      {
+        "id": "prior-32",
+        "text": "注意：在嘈杂街道边走边聊天时，对路牌颜色的自动编码可能失效，需回头努力注视才完成视觉标签；不可认为任何呈现的感觉必被编码。"
+      },
+      {
+        "id": "prior-33",
+        "text": "三种编码按感官通道与符号性质区分：语义重意义，视觉重图像，声学重声音；具体词常双重编码，抽象词缺视觉。"
+      },
+      {
+        "id": "prior-34",
+        "text": "错误：呈现方式为阅读文字而非听音，声学编码未主导；教材指出视觉意象差异解释此现象。"
+      },
+      {
+        "id": "prior-35",
+        "text": "所有词均通过声学编码，因发音节奏差异导致锤子、鸟、树更易回忆"
+      },
+      {
+        "id": "prior-36",
+        "text": "请根据我刚才选择的答案，解释关键错误，并给我新的检验机会。"
+      },
+      {
+        "id": "prior-37",
+        "text": "你选择了“所有词均通过声学编码，因发音节奏差异导致锤子、鸟、树更易回忆”。在原案例中，题目明确说“被试阅读一组词”，即文字视觉呈现，未提供声音。"
+      },
+      {
+        "id": "prior-38",
+        "text": "你未区分编码的触发条件：视觉编码需要具体高意象词在默读或见文字时形成心理图像，而声学编码需要声音呈现。你误将声学编码套用于阅读场景，且忽略了具体词因高意象获得视觉与语义双重编码这一规则。"
+      },
+      {
+        "id": "prior-39",
+        "text": "这是根据这次回答作出的判断；读题疏漏也可能导致同样的选择。"
+      },
+      {
+        "id": "prior-40",
+        "text": "教材指出，编码类型取决于信息进入感官的通道。阅读文字时，具体高意象词（锤子、鸟、树）易引发心理图片，从而被视觉与语义双重编码，记忆更强；抽象词（真理、平等、概念）缺乏视觉图像，仅语义编码。声学编码只在听到发音时主导。你的选项假设了声音通道，与原题“阅读”矛盾，因此错失了隐藏成因。"
+      },
+      {
+        "id": "prior-41",
+        "text": "呈现词表“吉他、正义、玫瑰、速度、地图、自由”，被试安静默读并自发形成图像，未听音。请依据编码规则判定回忆差异的隐藏成因。"
+      },
+      {
+        "id": "prior-42",
+        "text": "第一步：将六词按能否轻易绘出心理图像分类。吉他、玫瑰、地图为具体高意象词；正义、速度、自由为抽象低意象词。"
+      },
+      {
+        "id": "prior-43",
+        "text": "第二步：应用规则——默读文字时，具体高意象词触发视觉与语义双重编码，抽象低意象词仅语义编码（因无图像）。"
+      },
+      {
+        "id": "prior-44",
+        "text": "第三步：推导预期回忆优势。吉他、玫瑰、地图因有视觉编码辅助，形成更强记忆痕迹，预期在意外回忆中更易记起。"
+      },
+      {
+        "id": "prior-45",
+        "text": "若后续回忆显示吉他、玫瑰、地图明显优于另三个词，隐藏成因是具体高意象词获得了视觉编码辅助，而非声学编码。"
+      },
+      {
+        "id": "prior-46",
+        "text": "若同一词表改为录音播放且不提供文字图像，则所有词通过声学编码，具体词不再因视觉而占优。此时若仍用“声学节奏差异解释默读回忆”就会失败，因为默读时无声音输入，声学编码根本未触发。"
+      },
+      {
+        "id": "prior-47",
+        "text": "在一项研究中，被试默读词表“旗帜、爱情、戒指、逻辑、河流、观点”。意外回忆测试发现具体词（旗帜、戒指、河流）回忆率更高。助教写了一个中间分析：“所有词都通过声学编码，因为具体词发音更短促，所以更容易被声音通道记住。” 请诊断这个中间步骤的错误所在。"
+      },
+      {
+        "id": "prior-48",
+        "text": "错误在于呈现方式是默读文字而非听音，声学编码未主导；具体词优势来自高意象触发的视觉与语义双重编码"
+      },
+      {
+        "id": "prior-49",
+        "text": "错误在于具体词发音并不短促，声学编码对抽象词同样有效，所以原分析仅事实错误"
+      },
+      {
+        "id": "prior-50",
+        "text": "错误在于语义编码在此任务中完全失效，只有视觉编码起作用，与原分析忽略语义无关"
+      },
+      {
+        "id": "prior-51",
+        "text": "课程资料中提到，高意象词会被同时以视觉和语义方式编码，从而建立更强记忆；而抽象低意象词缺乏视觉编码（原文指出 concrete, high-imagery words 被双重编码，abstract words 为低意象词）。\n\n举例：想象记忆“大象”和“勇敢”两个词。默读“大象”时，你脑中自然浮现灰色庞然大物形象，同时理解它指一种动物，于是视觉与语义双编码；而“勇敢”很难绘出具体画面，只靠含义记忆。这就直观展示了具体词获得视觉辅助、抽象词不获得的区别。\n\n此例子的适用边界：它假设学习者像补充案例那样安静默读并自发形成图像。若改为听音频而未鼓励想象，可能只触发声学编码；若具体词对读者过于陌生（如罕见动植物），心理图像模糊，双重编码优势也会减弱。此外，本例仅说明视觉与语义联合，不涉及声学编码规则。"
+      }
+    ],
+    "question": {
+      "prompt": "在一项研究中，被试默读词表“旗帜、爱情、戒指、逻辑、河流、观点”。意外回忆测试发现具体词（旗帜、戒指、河流）回忆率更高。助教写了一个中间分析：“所有词都通过声学编码，因为具体词发音更短促，所以更容易被声音通道记住。” 请诊断这个中间步骤的错误所在。",
+      "options": [
+        {
+          "id": "A",
+          "text": "错误在于呈现方式是默读文字而非听音，声学编码未主导；具体词优势来自高意象触发的视觉与语义双重编码"
+        },
+        {
+          "id": "B",
+          "text": "错误在于具体词发音并不短促，声学编码对抽象词同样有效，所以原分析仅事实错误"
+        },
+        {
+          "id": "C",
+          "text": "错误在于语义编码在此任务中完全失效，只有视觉编码起作用，与原分析忽略语义无关"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,90 @@
+{
+  "dimensions": [
+    "Q6"
+  ],
+  "evidence": {
+    "sources": [
+      {
+        "id": "F12",
+        "text": "玩具工坊用一台筛查器寻找表面有裂纹的木片。这不是最终判定，机器标记后还要人工复查。为了练习分类计数，设有一千片已经人工核对真相的木片，其中一百片有裂纹，九百片没有裂纹。机器把有裂纹的一百片中的九十片标记出来，也把没有裂纹的九百片中的四十五片误标记了。\n整理这些信息时，可以画出四格：真有裂纹且被标记九十片；真有裂纹但未标记十片；无裂纹却被标记四十五片；无裂纹且未标记八百五十五片。四格合计一千片，分别加总行列能够检查是否漏计。同一片木片只能落入其中一格，不能因为两种描述就重复计数。\n“有裂纹的木片中有多少被找出”以真实有裂纹的一百片为分母，因此比例为九十除以一百，等于百分之九十。“被标记的木片中有多少真的有裂纹”则以全部被标记的一百三十五片为分母，因此为九十除以一百三十五，等于三分之二。两句话的条件不同，即使都出现“裂纹”和“标记”，也不能交换分母。\n假设机器在另一批木片中的上述检出比例与误标比例保持不变，但有裂纹木片的占比变低。举例说，一千片中只有二十片有裂纹，预计标记其中十八片；其余九百八十片按百分之五的误标比例，会误标四十九片。此时所有标记共六十七片，其中真正有裂纹十八片，占十八除以六十七，约百分之二十六点九。这里把给定比例直接作用于整批计数作为练习模型，不讨论随机波动。\n这说明机器“找出有裂纹物品的比例”保持相同，也不保证“一个标记结果有多可靠”保持相同。后者还依赖这批物品中有裂纹的基础比例。不能只看到百分之九十就宣称任意被标记木片都有百分之九十是真裂纹，也不能因有误标就说机器毫无用途。\n回答问题时先用一句话明确分母群体，再列对应分子；若现有材料只给机器检出比例，却没给误标情况或有裂纹占比，就可能无法计算标记结果中的真实占比。此时可说明需要哪些数据，并给出条件式表达。所有结论限定于题设检测规则及其稳定性假设，不能把一次验证无条件推广到新材料、新设备或新的操作流程。"
+      }
+    ],
+    "goals": [
+      "针对这次实际错误给出有依据的诊断、补救解释和后续检查"
+    ],
+    "prerequisites": [
+      "比例和分数",
+      "按条件分类计数",
+      "Build mutually exclusive four-cell counts from a single-test scenario and verify totals; compute detection proportion (true positives/total true condition) and marked true-positive proportion (true positives/total marked) with distinct denominators, not swapped; when base rate changes with given rates constant, reconstruct counts and compute new precision deterministically without random fluctuation.",
+      "Explain detection vs marked true-positive proportions use different denominators; latter depends on base rate so unchanged detection rate doesn't guarantee marked reliability. State denominator then numerator; note cannot compute without false-mark and base-rate data; conclusions limited to stated test rules, not generalizable."
+    ],
+    "desiredDepth": "deep_transfer",
+    "authorityBoundaries": [
+      "本次评估只涉及所给来源、明确的教学范围和实际展示的产物；脚本作答用于检查工作流，不代表真实学习者。"
+    ],
+    "artifacts": [
+      {
+        "id": "actual-failed-question",
+        "text": "某批2000片木片，机器标记了134片，其中人工确认36片真有裂纹。已知该机器真裂纹检出比例保持90%，无裂纹误标比例保持5%不变。造成当前标记构成（即真实裂纹木片总数）的最可能原因是？"
+      },
+      {
+        "id": "actual-repair/selectedAnswer",
+        "text": "真实裂纹木片共20片"
+      },
+      {
+        "id": "actual-repair/feedback",
+        "text": "若总数20，则检出36片矛盾于90%检出比例。"
+      },
+      {
+        "id": "actual-repair/learnerNote",
+        "text": "请根据我刚才选择的答案，解释关键错误，并给我新的检验机会。"
+      },
+      {
+        "id": "actual-repair/diagnosis/observation",
+        "text": "你选择了‘真实裂纹木片共20片’这一选项。原题明确人工确认36片真有裂纹，即机器标记中的真阳性数（TP）为36。"
+      },
+      {
+        "id": "actual-repair/diagnosis/gap",
+        "text": "缺失的关键步骤是：利用‘检出比例 = 真阳性数 ÷ 真实裂纹总数’这一关系，用观测TP（36）除以检出率（90%）反推真实裂纹总数（36÷0.9=40）。你未建立该分母区分，也可能混淆了比例方向。"
+      },
+      {
+        "id": "actual-repair/diagnosis/uncertainty",
+        "text": "这是根据这次回答作出的判断；读题疏漏也可能导致同样的选择。"
+      },
+      {
+        "id": "actual-repair/teaching/explanation",
+        "text": "在分类筛查中，检出比例的分母永远是‘真实阳性总数’，分子是‘被标记出的真阳性数’。当题目已经给出被人工确认的真阳性数（TP）和稳定的检出比例时，要求隐藏的真实基础率，就必须用除法反推：真实阳性总数 = TP ÷ 检出比例。之后可用误标比例和总片数算出预期假阳性与总标记数，与题给标记数对照验证自洽。若误用乘法或忽略分母方向，反推基数会直接矛盾于观测TP。"
+      },
+      {
+        "id": "actual-repair/teaching/workedExample/prompt",
+        "text": "新案例：某批100片陶瓷，机器标记可疑件，人工确认其中9片真有缺损（TP=9）。已知机器真缺损检出比例保持90%不变，无缺损误标比例保持10%不变，总片数100。请推真实缺损总数并验证自洽。"
+      },
+      {
+        "id": "actual-repair/teaching/workedExample/steps/0",
+        "text": "明确检出比例定义：检出比例 = 真阳性数 ÷ 真实阳性总数，即 90% = 9 ÷ 真实缺损总数。"
+      },
+      {
+        "id": "actual-repair/teaching/workedExample/steps/1",
+        "text": "反推真实缺损总数 = 9 ÷ 0.9 = 10片。"
+      },
+      {
+        "id": "actual-repair/teaching/workedExample/steps/2",
+        "text": "用误标比例算假阳性：FP = 10% × (100-10) = 9片。"
+      },
+      {
+        "id": "actual-repair/teaching/workedExample/steps/3",
+        "text": "预期总标记 = TP + FP = 9 + 9 = 18片；若题给总标记18则自洽，说明基础率10片合理。"
+      },
+      {
+        "id": "actual-repair/teaching/workedExample/conclusion",
+        "text": "真实缺损总数为10片，且与总标记数自洽。"
+      },
+      {
+        "id": "actual-repair/teaching/contrast",
+        "text": "若错误规则为‘真实阳性数等于观测真阳性数（9）’或‘用TP乘以检出率’，则会得到9或8.1，此时按90%检出率应标记8.1片而非9片，与观测TP矛盾；且总标记验证会失败。只有在正确除以检出率时，反推基数才能与观测标记构成一致。"
+      }
+    ],
+    "exposure": [],
+    "answer": "真实裂纹木片共20片"
+  }
+}

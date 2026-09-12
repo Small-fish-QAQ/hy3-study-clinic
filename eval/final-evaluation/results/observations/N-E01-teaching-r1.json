@@ -1,0 +1,718 @@
+{
+  "task": {
+    "caseId": "N-E01-teaching",
+    "runId": "N-E01-teaching-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-E01-teaching.json",
+    "inputHash": "b3cd92b9bc7b4a153419baedaf896e3faf54b1fcb4bc421d201da490af00bfb3",
+    "population": "natural",
+    "sourceId": "E01"
+  },
+  "inputHash": "b3cd92b9bc7b4a153419baedaf896e3faf54b1fcb4bc421d201da490af00bfb3",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "correctness": "3884c9a8c3ee0cc0f8f39fcef94673c516fe9576f4a20b6d1d4bef1a2633c407",
+      "artifact-audit": "3884c9a8c3ee0cc0f8f39fcef94673c516fe9576f4a20b6d1d4bef1a2633c407",
+      "certification": "3884c9a8c3ee0cc0f8f39fcef94673c516fe9576f4a20b6d1d4bef1a2633c407"
+    },
+    "stages": {
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "clear",
+            "affected": [],
+            "reason": "作者明示同温触感差异结论需保留温度相同且其他接触条件相同的比较边界（e20,e76,e88），并声明面积/压力不同则边界破坏结论修正（e76,e78），未混淆充分与必要条件。冷墙案例在ΔT、材料、时间相同仅面积不同下得面积大降温更多（e32,e46,e48），转移案例ΔT=0时得面积不影响净传热（e70,e72），均与条件规则一致。铜块与平衡解释符合ΔT决定方向及同温净流零（e80,e84）。",
+            "refs": [
+              "e20",
+              "e76",
+              "e88",
+              "e32",
+              "e46",
+              "e48",
+              "e70",
+              "e72",
+              "e80",
+              "e3"
+            ],
+            "challenge": {
+              "status": "closed",
+              "reason": "尝试补充同温同接触条件但触感不异的反例，被e3与e20边界断言排除；尝试ΔT=0但面积不同致降温差的反例，被e80/e70净流零规则排除；尝试同ΔT同材料面积大但降温不更多的反例，被e48面积正比热流规则排除。均无相容反例。",
+              "refs": [
+                "e3",
+                "e20",
+                "e80",
+                "e70",
+                "e48"
+              ]
+            },
+            "witnesses": [
+              {
+                "id": "e20",
+                "pointer": "/artifacts/3/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "Explain in Chinese why same-temperature carpet and tile feel different: because they have different rates of heat transfer (tile conducts faster from skin), causing greater heat loss and temperature drop on skin over the same time interval, while both floor materials are at the same temperature. Must retain the comparison boundary that temperatures are identical and other contact conditions are held same.",
+                "valueHash": "0ba31e046c494f947547e52347cb2562449ab46618eef512f6a5b1277af8176f"
+              },
+              {
+                "id": "e76",
+                "pointer": "/artifacts/31/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "回到地毯与瓷砖问题：两者同温且通常赤脚接触面积相近、时间相近，因此触感差异不能归因于面积或温度，只能归于导热速率。若某比较中面积或压力不同，则边界被破坏，结论需修正。",
+                "valueHash": "9b1025c5704ad23d35f68764d6205c79b35cef429dd94a0ebf76e9f75b666ba9"
+              },
+              {
+                "id": "e88",
+                "pointer": "/artifacts/37/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "同温下触感差异来自材料热传递速率不同：速率高者在相同时间内从皮肤带走更多热，皮肤降温更大；若接触面积等条件变化，则还需考虑面积对热流的影响，但等同比较时那些条件应保持不变。",
+                "valueHash": "2612291faa43392c7496bcec8419de59cc31e0b8b1a9c6ce15a59d4b43c741b4"
+              },
+              {
+                "id": "e32",
+                "pointer": "/artifacts/9/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "冷墙温度10°C，皮肤温度33°C。甲用整个手掌接触（面积100 cm²），乙用指尖接触（面积5 cm²），材料相同、接触时间3秒。尚未知谁皮肤降温更多。",
+                "valueHash": "a34aff72303459cd2604aed681518800c8baa0d937dc7e223bf68a6019c085be"
+              },
+              {
+                "id": "e46",
+                "pointer": "/artifacts/16/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "甲手掌降温更多",
+                "valueHash": "967d2048e38683b7fcc43989234491cb7f9ea1f2af0cbb28b393b4b2b3ad9db5"
+              },
+              {
+                "id": "e48",
+                "pointer": "/artifacts/17/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "面积大者热流大，相同ΔT和时间内带走更多热，皮肤温降更大",
+                "valueHash": "c5d91d638706c9e000c9d436b0143f5c97cbb8fee66bb93fbb61ec8fa9ac5b60"
+              },
+              {
+                "id": "e70",
+                "pointer": "/artifacts/28/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "正确：ΔT=0热流为零，面积不影响净传热",
+                "valueHash": "993b70d2db90f222fdf989778b244e4572c2bccd08ad65298739270fd78c4106"
+              },
+              {
+                "id": "e72",
+                "pointer": "/artifacts/29/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "温差为零时热传递率整体为零，面积差异不再产生冷却差。",
+                "valueHash": "d2db3eb8f74512e2939f1da42597a59008ae32cc17c9bc2c8cded79eddb3b4fd"
+              },
+              {
+                "id": "e80",
+                "pointer": "/artifacts/33/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "根据资料，高温物体分子平均动能更高，碰撞时能量从高能分子传向低能分子，累积形成从热物体到冷物体的净热流。净热流大小依赖温差ΔT=Thot-Tcold；若两物体温度相同，净传递率为零，达到热平衡。此机制说明热传递方向由温差决定，而非由材料本身单独决定。",
+                "valueHash": "936ed8bca823588a888fa3fa10def8869da23eabb8639218ccc22ca0ba07cb0c"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "Your feet feel cold as you walk barefoot across the living room carpet in your cold house and then step onto the kitchen tile floor. This result is intriguing, since the carpet and tile floor are both at the same temperature. The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.\n\nSome materials conduct thermal energy faster than others. In general, good conductors of electricity (metals like copper, aluminum, gold, and silver) are also good heat conductors, whereas insulators of electricity (wood, plastic, and rubber) are poor heat conductors.\n\nThe (average) kinetic energy of a molecule in the hot body is higher than in the colder body. If two molecules collide, an energy transfer from the molecule with greater kinetic energy to the molecule with less kinetic energy occurs. The cumulative effect from all collisions results in a net flux of heat from the hot body to the colder body. The heat flux thus depends on the temperature difference ΔΤ=Τhot−Tcold. Therefore, you will get a more severe burn from boiling water than from hot tap water. Conversely, if the temperatures are the same, the net heat transfer rate falls to zero, and equilibrium is achieved. Owing to the fact that the number of collisions increases with increasing area, heat conduction depends on the cross-sectional area. If you touch a cold wall with your palm, your hand cools faster than if you just touch it with your fingertip.",
+                "valueHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "kind": "quantities",
+            "status": "not_applicable",
+            "affected": [],
+            "reason": "产物未给出百分比/千分比或需独立重算的数值等式；冷墙案例（e32,e46）与铜块案例（e82）仅定性输入与结论，无具体数值推导、单位换算或数量级错误可核验。",
+            "contextHash": "3884c9a8c3ee0cc0f8f39fcef94673c516fe9576f4a20b6d1d4bef1a2633c407",
+            "proposed": {
+              "kind": "quantities",
+              "status": "not_applicable",
+              "affected": [],
+              "reason": "产物未给出百分比/千分比或需独立重算的数值等式；冷墙案例（e32,e46）与铜块案例（e82）仅定性输入与结论，无具体数值推导、单位换算或数量级错误可核验。",
+              "refs": [
+                "e32",
+                "e46",
+                "e82"
+              ]
+            },
+            "reviewReasons": []
+          }
+        ],
+        "keys": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 2,
+            "reason": "作者断言同温触感差异源于热传递速率不同（e14,e20,e28）、方向由温差定（e24,e80）、面积影响热流（e30,e48）均有来源e3支持；正确指出边界：地毯瓷砖面积相近（e76）、ΔT=0时面积不影响（e70,e72）、平衡看净速率（e84），无虚假声明或缺失条件改变机制。",
+            "refs": [
+              "e3",
+              "e14",
+              "e28",
+              "e48",
+              "e70",
+              "e80"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "Your feet feel cold as you walk barefoot across the living room carpet in your cold house and then step onto the kitchen tile floor. This result is intriguing, since the carpet and tile floor are both at the same temperature. The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.\n\nSome materials conduct thermal energy faster than others. In general, good conductors of electricity (metals like copper, aluminum, gold, and silver) are also good heat conductors, whereas insulators of electricity (wood, plastic, and rubber) are poor heat conductors.\n\nThe (average) kinetic energy of a molecule in the hot body is higher than in the colder body. If two molecules collide, an energy transfer from the molecule with greater kinetic energy to the molecule with less kinetic energy occurs. The cumulative effect from all collisions results in a net flux of heat from the hot body to the colder body. The heat flux thus depends on the temperature difference ΔΤ=Τhot−Tcold. Therefore, you will get a more severe burn from boiling water than from hot tap water. Conversely, if the temperatures are the same, the net heat transfer rate falls to zero, and equilibrium is achieved. Owing to the fact that the number of collisions increases with increasing area, heat conduction depends on the cross-sectional area. If you touch a cold wall with your palm, your hand cools faster than if you just touch it with your fingertip.",
+                "valueHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd"
+              },
+              {
+                "id": "e14",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "同温度触感差异的热传递原理：速率、方向与面积",
+                "valueHash": "db67651e70c2cb72fa61757b8b73b8b13fdd49bedb45c9fabacbd3d3add4e281"
+              },
+              {
+                "id": "e28",
+                "pointer": "/artifacts/7/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "根据资料，地毯和瓷砖同温但触感不同，是因为瓷砖从皮肤导热更快，相同时间内皮肤热损失更大、降温更多。热传导方向由温度差决定，同温时若皮肤高于地板则热从皮肤流向地板；地板材料只改变传递速率而非方向。",
+                "valueHash": "75021b6c91fc4decd7804c20bdc606fb4cf6184c9a2e8e8e55e4c4d306f65162"
+              },
+              {
+                "id": "e48",
+                "pointer": "/artifacts/17/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "面积大者热流大，相同ΔT和时间内带走更多热，皮肤温降更大",
+                "valueHash": "c5d91d638706c9e000c9d436b0143f5c97cbb8fee66bb93fbb61ec8fa9ac5b60"
+              },
+              {
+                "id": "e70",
+                "pointer": "/artifacts/28/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "正确：ΔT=0热流为零，面积不影响净传热",
+                "valueHash": "993b70d2db90f222fdf989778b244e4572c2bccd08ad65298739270fd78c4106"
+              },
+              {
+                "id": "e80",
+                "pointer": "/artifacts/33/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "根据资料，高温物体分子平均动能更高，碰撞时能量从高能分子传向低能分子，累积形成从热物体到冷物体的净热流。净热流大小依赖温差ΔT=Thot-Tcold；若两物体温度相同，净传递率为零，达到热平衡。此机制说明热传递方向由温差决定，而非由材料本身单独决定。",
+                "valueHash": "936ed8bca823588a888fa3fa10def8869da23eabb8639218ccc22ca0ba07cb0c"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "dimension": "Q3",
+            "level": 2,
+            "reason": "具备前提（e7,e8）的学习者能跟随中文讲解：从现象到速率机制（e26），面积案例演练与条件转移（e30,e46,e70），回到原问题边界（e76），分子动能与平衡边界（e80,e84）；推导连贯无中心错误，含相关边界。",
+            "refs": [
+              "e26",
+              "e30",
+              "e46",
+              "e76",
+              "e84"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e26",
+                "pointer": "/artifacts/6/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "设想两种合成材料M1和M2均处于22°C，皮肤温度为32°C。热从皮肤流向材料，净热流大小由材料导热能力决定。若接触面积与时间相同，导热能力强的材料在单位时间内移走更多皮肤热量，使皮肤温度下降更明显。这说明同温物体间仍可有不同热传递速率，速率差导致触感差。",
+                "valueHash": "f3b103ee9be34df2972321b221548056da8ca77d29bc9dfbab9540d050ca870b"
+              },
+              {
+                "id": "e30",
+                "pointer": "/artifacts/8/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "已知热传导依赖接触面积：手掌接触冷墙比指尖接触冷却更快。下面用一新案例演练该机制。",
+                "valueHash": "dccf86491fc7cb424602fe68a2921e58a2657ad67b2d79454c0e09cde81cbc93"
+              },
+              {
+                "id": "e46",
+                "pointer": "/artifacts/16/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "甲手掌降温更多",
+                "valueHash": "967d2048e38683b7fcc43989234491cb7f9ea1f2af0cbb28b393b4b2b3ad9db5"
+              },
+              {
+                "id": "e76",
+                "pointer": "/artifacts/31/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "回到地毯与瓷砖问题：两者同温且通常赤脚接触面积相近、时间相近，因此触感差异不能归因于面积或温度，只能归于导热速率。若某比较中面积或压力不同，则边界被破坏，结论需修正。",
+                "valueHash": "9b1025c5704ad23d35f68764d6205c79b35cef429dd94a0ebf76e9f75b666ba9"
+              },
+              {
+                "id": "e84",
+                "pointer": "/artifacts/35/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "热平衡条件为净热流为零，但这不要求两物体微观碰撞停止，只是双向分子传递在统计上抵消。同温下若质量不同，总热含量可不同，但净传递仍为零。此边界提醒：判断平衡看净速率而非单一分子事件。",
+                "valueHash": "56088285556deec4ae59903e631b20c5f5c4c507184f045559e023e9882b9bb4"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q1",
+            "status": "supported",
+            "reason": "作者断言同温触感差异源于热传递速率不同(e14,e28)、方向由温差定(e24,e80)、面积影响热流(e48)均有源e3支持；产物正确保留边界：地毯瓷砖面积相近(e76)、ΔT=0面积不影响(e70,e72)、平衡看净速率(e84)，无虚假声明或缺失条件改变机制，与audit及conditions clear一致。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e14",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "同温度触感差异的热传递原理：速率、方向与面积",
+                "valueHash": "db67651e70c2cb72fa61757b8b73b8b13fdd49bedb45c9fabacbd3d3add4e281"
+              },
+              {
+                "id": "e28",
+                "pointer": "/artifacts/7/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "根据资料，地毯和瓷砖同温但触感不同，是因为瓷砖从皮肤导热更快，相同时间内皮肤热损失更大、降温更多。热传导方向由温度差决定，同温时若皮肤高于地板则热从皮肤流向地板；地板材料只改变传递速率而非方向。",
+                "valueHash": "75021b6c91fc4decd7804c20bdc606fb4cf6184c9a2e8e8e55e4c4d306f65162"
+              },
+              {
+                "id": "e48",
+                "pointer": "/artifacts/17/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "面积大者热流大，相同ΔT和时间内带走更多热，皮肤温降更大",
+                "valueHash": "c5d91d638706c9e000c9d436b0143f5c97cbb8fee66bb93fbb61ec8fa9ac5b60"
+              },
+              {
+                "id": "e70",
+                "pointer": "/artifacts/28/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "正确：ΔT=0热流为零，面积不影响净传热",
+                "valueHash": "993b70d2db90f222fdf989778b244e4572c2bccd08ad65298739270fd78c4106"
+              },
+              {
+                "id": "e80",
+                "pointer": "/artifacts/33/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "根据资料，高温物体分子平均动能更高，碰撞时能量从高能分子传向低能分子，累积形成从热物体到冷物体的净热流。净热流大小依赖温差ΔT=Thot-Tcold；若两物体温度相同，净传递率为零，达到热平衡。此机制说明热传递方向由温差决定，而非由材料本身单独决定。",
+                "valueHash": "936ed8bca823588a888fa3fa10def8869da23eabb8639218ccc22ca0ba07cb0c"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "Your feet feel cold as you walk barefoot across the living room carpet in your cold house and then step onto the kitchen tile floor. This result is intriguing, since the carpet and tile floor are both at the same temperature. The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.\n\nSome materials conduct thermal energy faster than others. In general, good conductors of electricity (metals like copper, aluminum, gold, and silver) are also good heat conductors, whereas insulators of electricity (wood, plastic, and rubber) are poor heat conductors.\n\nThe (average) kinetic energy of a molecule in the hot body is higher than in the colder body. If two molecules collide, an energy transfer from the molecule with greater kinetic energy to the molecule with less kinetic energy occurs. The cumulative effect from all collisions results in a net flux of heat from the hot body to the colder body. The heat flux thus depends on the temperature difference ΔΤ=Τhot−Tcold. Therefore, you will get a more severe burn from boiling water than from hot tap water. Conversely, if the temperatures are the same, the net heat transfer rate falls to zero, and equilibrium is achieved. Owing to the fact that the number of collisions increases with increasing area, heat conduction depends on the cross-sectional area. If you touch a cold wall with your palm, your hand cools faster than if you just touch it with your fingertip.",
+                "valueHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd"
+              },
+              {
+                "id": "e76",
+                "pointer": "/artifacts/31/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "回到地毯与瓷砖问题：两者同温且通常赤脚接触面积相近、时间相近，因此触感差异不能归因于面积或温度，只能归于导热速率。若某比较中面积或压力不同，则边界被破坏，结论需修正。",
+                "valueHash": "9b1025c5704ad23d35f68764d6205c79b35cef429dd94a0ebf76e9f75b666ba9"
+              },
+              {
+                "id": "e72",
+                "pointer": "/artifacts/29/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "温差为零时热传递率整体为零，面积差异不再产生冷却差。",
+                "valueHash": "d2db3eb8f74512e2939f1da42597a59008ae32cc17c9bc2c8cded79eddb3b4fd"
+              },
+              {
+                "id": "e84",
+                "pointer": "/artifacts/35/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "热平衡条件为净热流为零，但这不要求两物体微观碰撞停止，只是双向分子传递在统计上抵消。同温下若质量不同，总热含量可不同，但净传递仍为零。此边界提醒：判断平衡看净速率而非单一分子事件。",
+                "valueHash": "56088285556deec4ae59903e631b20c5f5c4c507184f045559e023e9882b9bb4"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "dimension": "Q3",
+            "status": "supported",
+            "reason": "具备前提(e7,e8)的学习者能跟随中文讲解：现象到速率机制(e26)、面积案例与条件转移(e30,e46,e70)、回原边界(e76)、分子动能与平衡边界(e80,e84)；推导连贯无中心错误且含相关边界，与audit一致。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e26",
+                "pointer": "/artifacts/6/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "设想两种合成材料M1和M2均处于22°C，皮肤温度为32°C。热从皮肤流向材料，净热流大小由材料导热能力决定。若接触面积与时间相同，导热能力强的材料在单位时间内移走更多皮肤热量，使皮肤温度下降更明显。这说明同温物体间仍可有不同热传递速率，速率差导致触感差。",
+                "valueHash": "f3b103ee9be34df2972321b221548056da8ca77d29bc9dfbab9540d050ca870b"
+              },
+              {
+                "id": "e30",
+                "pointer": "/artifacts/8/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "已知热传导依赖接触面积：手掌接触冷墙比指尖接触冷却更快。下面用一新案例演练该机制。",
+                "valueHash": "dccf86491fc7cb424602fe68a2921e58a2657ad67b2d79454c0e09cde81cbc93"
+              },
+              {
+                "id": "e46",
+                "pointer": "/artifacts/16/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "甲手掌降温更多",
+                "valueHash": "967d2048e38683b7fcc43989234491cb7f9ea1f2af0cbb28b393b4b2b3ad9db5"
+              },
+              {
+                "id": "e76",
+                "pointer": "/artifacts/31/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "回到地毯与瓷砖问题：两者同温且通常赤脚接触面积相近、时间相近，因此触感差异不能归因于面积或温度，只能归于导热速率。若某比较中面积或压力不同，则边界被破坏，结论需修正。",
+                "valueHash": "9b1025c5704ad23d35f68764d6205c79b35cef429dd94a0ebf76e9f75b666ba9"
+              },
+              {
+                "id": "e84",
+                "pointer": "/artifacts/35/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "热平衡条件为净热流为零，但这不要求两物体微观碰撞停止，只是双向分子传递在统计上抵消。同温下若质量不同，总热含量可不同，但净传递仍为零。此边界提醒：判断平衡看净速率而非单一分子事件。",
+                "valueHash": "56088285556deec4ae59903e631b20c5f5c4c507184f045559e023e9882b9bb4"
+              },
+              {
+                "id": "e7",
+                "pointer": "/prerequisites/0",
+                "role": "context",
+                "kind": "text",
+                "value": "知道温度与热传递是不同概念",
+                "valueHash": "be9897bf4972f90e022866216c9cc412a49357ac372d5d78cf4d1c9d9597efc0"
+              },
+              {
+                "id": "e8",
+                "pointer": "/prerequisites/1",
+                "role": "context",
+                "kind": "text",
+                "value": "能借助中文解释阅读简单英文科学教材",
+                "valueHash": "a32d6796812be3e0de0442d5611cc89d18208dc4d97d05b03989e30a64999bfb"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q1",
+          "level": 2,
+          "reason": "作者断言同温触感差异源于热传递速率不同（e14,e20,e28）、方向由温差定（e24,e80）、面积影响热流（e30,e48）均有来源e3支持；正确指出边界：地毯瓷砖面积相近（e76）、ΔT=0时面积不影响（e70,e72）、平衡看净速率（e84），无虚假声明或缺失条件改变机制。",
+          "refs": [
+            "e3",
+            "e14",
+            "e28",
+            "e48",
+            "e70",
+            "e80"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e3",
+              "pointer": "/sources/0/text",
+              "role": "source",
+              "kind": "text",
+              "value": "Your feet feel cold as you walk barefoot across the living room carpet in your cold house and then step onto the kitchen tile floor. This result is intriguing, since the carpet and tile floor are both at the same temperature. The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.\n\nSome materials conduct thermal energy faster than others. In general, good conductors of electricity (metals like copper, aluminum, gold, and silver) are also good heat conductors, whereas insulators of electricity (wood, plastic, and rubber) are poor heat conductors.\n\nThe (average) kinetic energy of a molecule in the hot body is higher than in the colder body. If two molecules collide, an energy transfer from the molecule with greater kinetic energy to the molecule with less kinetic energy occurs. The cumulative effect from all collisions results in a net flux of heat from the hot body to the colder body. The heat flux thus depends on the temperature difference ΔΤ=Τhot−Tcold. Therefore, you will get a more severe burn from boiling water than from hot tap water. Conversely, if the temperatures are the same, the net heat transfer rate falls to zero, and equilibrium is achieved. Owing to the fact that the number of collisions increases with increasing area, heat conduction depends on the cross-sectional area. If you touch a cold wall with your palm, your hand cools faster than if you just touch it with your fingertip.",
+              "valueHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd"
+            },
+            {
+              "id": "e14",
+              "pointer": "/artifacts/0/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "同温度触感差异的热传递原理：速率、方向与面积",
+              "valueHash": "db67651e70c2cb72fa61757b8b73b8b13fdd49bedb45c9fabacbd3d3add4e281"
+            },
+            {
+              "id": "e28",
+              "pointer": "/artifacts/7/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "根据资料，地毯和瓷砖同温但触感不同，是因为瓷砖从皮肤导热更快，相同时间内皮肤热损失更大、降温更多。热传导方向由温度差决定，同温时若皮肤高于地板则热从皮肤流向地板；地板材料只改变传递速率而非方向。",
+              "valueHash": "75021b6c91fc4decd7804c20bdc606fb4cf6184c9a2e8e8e55e4c4d306f65162"
+            },
+            {
+              "id": "e48",
+              "pointer": "/artifacts/17/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "面积大者热流大，相同ΔT和时间内带走更多热，皮肤温降更大",
+              "valueHash": "c5d91d638706c9e000c9d436b0143f5c97cbb8fee66bb93fbb61ec8fa9ac5b60"
+            },
+            {
+              "id": "e70",
+              "pointer": "/artifacts/28/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "正确：ΔT=0热流为零，面积不影响净传热",
+              "valueHash": "993b70d2db90f222fdf989778b244e4572c2bccd08ad65298739270fd78c4106"
+            },
+            {
+              "id": "e80",
+              "pointer": "/artifacts/33/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "根据资料，高温物体分子平均动能更高，碰撞时能量从高能分子传向低能分子，累积形成从热物体到冷物体的净热流。净热流大小依赖温差ΔT=Thot-Tcold；若两物体温度相同，净传递率为零，达到热平衡。此机制说明热传递方向由温差决定，而非由材料本身单独决定。",
+              "valueHash": "936ed8bca823588a888fa3fa10def8869da23eabb8639218ccc22ca0ba07cb0c"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [],
+          "proposedLevel": 2,
+          "proposedReason": "作者断言同温触感差异源于热传递速率不同（e14,e20,e28）、方向由温差定（e24,e80）、面积影响热流（e30,e48）均有来源e3支持；正确指出边界：地毯瓷砖面积相近（e76）、ΔT=0时面积不影响（e70,e72）、平衡看净速率（e84），无虚假声明或缺失条件改变机制。"
+        },
+        {
+          "dimension": "Q3",
+          "level": 2,
+          "reason": "具备前提（e7,e8）的学习者能跟随中文讲解：从现象到速率机制（e26），面积案例演练与条件转移（e30,e46,e70），回到原问题边界（e76），分子动能与平衡边界（e80,e84）；推导连贯无中心错误，含相关边界。",
+          "refs": [
+            "e26",
+            "e30",
+            "e46",
+            "e76",
+            "e84"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e26",
+              "pointer": "/artifacts/6/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "设想两种合成材料M1和M2均处于22°C，皮肤温度为32°C。热从皮肤流向材料，净热流大小由材料导热能力决定。若接触面积与时间相同，导热能力强的材料在单位时间内移走更多皮肤热量，使皮肤温度下降更明显。这说明同温物体间仍可有不同热传递速率，速率差导致触感差。",
+              "valueHash": "f3b103ee9be34df2972321b221548056da8ca77d29bc9dfbab9540d050ca870b"
+            },
+            {
+              "id": "e30",
+              "pointer": "/artifacts/8/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "已知热传导依赖接触面积：手掌接触冷墙比指尖接触冷却更快。下面用一新案例演练该机制。",
+              "valueHash": "dccf86491fc7cb424602fe68a2921e58a2657ad67b2d79454c0e09cde81cbc93"
+            },
+            {
+              "id": "e46",
+              "pointer": "/artifacts/16/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "甲手掌降温更多",
+              "valueHash": "967d2048e38683b7fcc43989234491cb7f9ea1f2af0cbb28b393b4b2b3ad9db5"
+            },
+            {
+              "id": "e76",
+              "pointer": "/artifacts/31/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "回到地毯与瓷砖问题：两者同温且通常赤脚接触面积相近、时间相近，因此触感差异不能归因于面积或温度，只能归于导热速率。若某比较中面积或压力不同，则边界被破坏，结论需修正。",
+              "valueHash": "9b1025c5704ad23d35f68764d6205c79b35cef429dd94a0ebf76e9f75b666ba9"
+            },
+            {
+              "id": "e84",
+              "pointer": "/artifacts/35/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "热平衡条件为净热流为零，但这不要求两物体微观碰撞停止，只是双向分子传递在统计上抵消。同温下若质量不同，总热含量可不同，但净传递仍为零。此边界提醒：判断平衡看净速率而非单一分子事件。",
+              "valueHash": "56088285556deec4ae59903e631b20c5f5c4c507184f045559e023e9882b9bb4"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [],
+          "proposedLevel": 2,
+          "proposedReason": "具备前提（e7,e8）的学习者能跟随中文讲解：从现象到速率机制（e26），面积案例演练与条件转移（e30,e46,e70），回到原问题边界（e76），分子动能与平衡边界（e80,e84）；推导连贯无中心错误，含相关边界。"
+        }
+      ],
+      "reviewRequired": [],
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q1",
+            "status": "supported",
+            "reason": "作者断言同温触感差异源于热传递速率不同(e14,e28)、方向由温差定(e24,e80)、面积影响热流(e48)均有源e3支持；产物正确保留边界：地毯瓷砖面积相近(e76)、ΔT=0面积不影响(e70,e72)、平衡看净速率(e84)，无虚假声明或缺失条件改变机制，与audit及conditions clear一致。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e14",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "同温度触感差异的热传递原理：速率、方向与面积",
+                "valueHash": "db67651e70c2cb72fa61757b8b73b8b13fdd49bedb45c9fabacbd3d3add4e281"
+              },
+              {
+                "id": "e28",
+                "pointer": "/artifacts/7/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "根据资料，地毯和瓷砖同温但触感不同，是因为瓷砖从皮肤导热更快，相同时间内皮肤热损失更大、降温更多。热传导方向由温度差决定，同温时若皮肤高于地板则热从皮肤流向地板；地板材料只改变传递速率而非方向。",
+                "valueHash": "75021b6c91fc4decd7804c20bdc606fb4cf6184c9a2e8e8e55e4c4d306f65162"
+              },
+              {
+                "id": "e48",
+                "pointer": "/artifacts/17/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "面积大者热流大，相同ΔT和时间内带走更多热，皮肤温降更大",
+                "valueHash": "c5d91d638706c9e000c9d436b0143f5c97cbb8fee66bb93fbb61ec8fa9ac5b60"
+              },
+              {
+                "id": "e70",
+                "pointer": "/artifacts/28/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "正确：ΔT=0热流为零，面积不影响净传热",
+                "valueHash": "993b70d2db90f222fdf989778b244e4572c2bccd08ad65298739270fd78c4106"
+              },
+              {
+                "id": "e80",
+                "pointer": "/artifacts/33/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "根据资料，高温物体分子平均动能更高，碰撞时能量从高能分子传向低能分子，累积形成从热物体到冷物体的净热流。净热流大小依赖温差ΔT=Thot-Tcold；若两物体温度相同，净传递率为零，达到热平衡。此机制说明热传递方向由温差决定，而非由材料本身单独决定。",
+                "valueHash": "936ed8bca823588a888fa3fa10def8869da23eabb8639218ccc22ca0ba07cb0c"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "Your feet feel cold as you walk barefoot across the living room carpet in your cold house and then step onto the kitchen tile floor. This result is intriguing, since the carpet and tile floor are both at the same temperature. The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.\n\nSome materials conduct thermal energy faster than others. In general, good conductors of electricity (metals like copper, aluminum, gold, and silver) are also good heat conductors, whereas insulators of electricity (wood, plastic, and rubber) are poor heat conductors.\n\nThe (average) kinetic energy of a molecule in the hot body is higher than in the colder body. If two molecules collide, an energy transfer from the molecule with greater kinetic energy to the molecule with less kinetic energy occurs. The cumulative effect from all collisions results in a net flux of heat from the hot body to the colder body. The heat flux thus depends on the temperature difference ΔΤ=Τhot−Tcold. Therefore, you will get a more severe burn from boiling water than from hot tap water. Conversely, if the temperatures are the same, the net heat transfer rate falls to zero, and equilibrium is achieved. Owing to the fact that the number of collisions increases with increasing area, heat conduction depends on the cross-sectional area. If you touch a cold wall with your palm, your hand cools faster than if you just touch it with your fingertip.",
+                "valueHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd"
+              },
+              {
+                "id": "e76",
+                "pointer": "/artifacts/31/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "回到地毯与瓷砖问题：两者同温且通常赤脚接触面积相近、时间相近，因此触感差异不能归因于面积或温度，只能归于导热速率。若某比较中面积或压力不同，则边界被破坏，结论需修正。",
+                "valueHash": "9b1025c5704ad23d35f68764d6205c79b35cef429dd94a0ebf76e9f75b666ba9"
+              },
+              {
+                "id": "e72",
+                "pointer": "/artifacts/29/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "温差为零时热传递率整体为零，面积差异不再产生冷却差。",
+                "valueHash": "d2db3eb8f74512e2939f1da42597a59008ae32cc17c9bc2c8cded79eddb3b4fd"
+              },
+              {
+                "id": "e84",
+                "pointer": "/artifacts/35/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "热平衡条件为净热流为零，但这不要求两物体微观碰撞停止，只是双向分子传递在统计上抵消。同温下若质量不同，总热含量可不同，但净传递仍为零。此边界提醒：判断平衡看净速率而非单一分子事件。",
+                "valueHash": "56088285556deec4ae59903e631b20c5f5c4c507184f045559e023e9882b9bb4"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "dimension": "Q3",
+            "status": "supported",
+            "reason": "具备前提(e7,e8)的学习者能跟随中文讲解：现象到速率机制(e26)、面积案例与条件转移(e30,e46,e70)、回原边界(e76)、分子动能与平衡边界(e80,e84)；推导连贯无中心错误且含相关边界，与audit一致。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e26",
+                "pointer": "/artifacts/6/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "设想两种合成材料M1和M2均处于22°C，皮肤温度为32°C。热从皮肤流向材料，净热流大小由材料导热能力决定。若接触面积与时间相同，导热能力强的材料在单位时间内移走更多皮肤热量，使皮肤温度下降更明显。这说明同温物体间仍可有不同热传递速率，速率差导致触感差。",
+                "valueHash": "f3b103ee9be34df2972321b221548056da8ca77d29bc9dfbab9540d050ca870b"
+              },
+              {
+                "id": "e30",
+                "pointer": "/artifacts/8/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "已知热传导依赖接触面积：手掌接触冷墙比指尖接触冷却更快。下面用一新案例演练该机制。",
+                "valueHash": "dccf86491fc7cb424602fe68a2921e58a2657ad67b2d79454c0e09cde81cbc93"
+              },
+              {
+                "id": "e46",
+                "pointer": "/artifacts/16/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "甲手掌降温更多",
+                "valueHash": "967d2048e38683b7fcc43989234491cb7f9ea1f2af0cbb28b393b4b2b3ad9db5"
+              },
+              {
+                "id": "e76",
+                "pointer": "/artifacts/31/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "回到地毯与瓷砖问题：两者同温且通常赤脚接触面积相近、时间相近，因此触感差异不能归因于面积或温度，只能归于导热速率。若某比较中面积或压力不同，则边界被破坏，结论需修正。",
+                "valueHash": "9b1025c5704ad23d35f68764d6205c79b35cef429dd94a0ebf76e9f75b666ba9"
+              },
+              {
+                "id": "e84",
+                "pointer": "/artifacts/35/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "热平衡条件为净热流为零，但这不要求两物体微观碰撞停止，只是双向分子传递在统计上抵消。同温下若质量不同，总热含量可不同，但净传递仍为零。此边界提醒：判断平衡看净速率而非单一分子事件。",
+                "valueHash": "56088285556deec4ae59903e631b20c5f5c4c507184f045559e023e9882b9bb4"
+              },
+              {
+                "id": "e7",
+                "pointer": "/prerequisites/0",
+                "role": "context",
+                "kind": "text",
+                "value": "知道温度与热传递是不同概念",
+                "valueHash": "be9897bf4972f90e022866216c9cc412a49357ac372d5d78cf4d1c9d9597efc0"
+              },
+              {
+                "id": "e8",
+                "pointer": "/prerequisites/1",
+                "role": "context",
+                "kind": "text",
+                "value": "能借助中文解释阅读简单英文科学教材",
+                "valueHash": "a32d6796812be3e0de0442d5611cc89d18208dc4d97d05b03989e30a64999bfb"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "resultHash": "0854a96d5ba8bb95fd60b577a929eeaaf56b613588d3c968a972c451fda7e91e"
+  }
+}

@@ -1,0 +1,419 @@
+{
+  "task": {
+    "caseId": "N-E02-practice",
+    "runId": "N-E02-practice-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-E02-practice.json",
+    "inputHash": "44b057609c990a9eb059e4f8e48682b2d80353dfc382b7e2c2597d1117e61155",
+    "population": "natural",
+    "sourceId": "E02"
+  },
+  "inputHash": "44b057609c990a9eb059e4f8e48682b2d80353dfc382b7e2c2597d1117e61155",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "prepare-context-current": "f1cf3c403fc1f79ba13d0143d80bef9b911a94e51faf7180e25c2323c94a9c3c",
+      "solve-current": "f896f14b7fb859574cd1fb53db87417b5f5a5736041601e1af5f73be2e11ac15",
+      "correctness": "4cf995e262b253ef3e0bf1d3e5c9f5718e1cf25afe6a8ede7f0a46a5f256a68b",
+      "artifact-audit": "4cf995e262b253ef3e0bf1d3e5c9f5718e1cf25afe6a8ede7f0a46a5f256a68b",
+      "certification": "4cf995e262b253ef3e0bf1d3e5c9f5718e1cf25afe6a8ede7f0a46a5f256a68b"
+    },
+    "stages": {
+      "prepare-context-current": {
+        "contexts": [
+          {
+            "taskId": "current",
+            "status": "ready",
+            "reason": "题干(e83)自足给出实验舱X参数与观测：完全黑暗、未输入死亡或活体有机物、初始放M(异养摄食有机物)和N(化能合成自养利用H2S)、提供H2S、30天后M全死N存活繁殖；能量获取通用规则已在sources(E02)提供，无需history补充，premises为空",
+            "premises": [],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "solve-current": {
+        "status": "resolved",
+        "solution": "依据e3能量获取三方式：光合需光、化能合成用无机物、异养摄食有机物。题设e14完全黑暗、未输入有机物、提供H2S；M异养缺有机物死，N化能合成自养用H2S活，选项A(e17)正确。B违黑暗，C违无有机物。",
+        "witnesses": [
+          {
+            "id": "e3",
+            "pointer": "/sources/0/text",
+            "role": "source",
+            "kind": "text",
+            "value": "All living things require energy in one form or another. Energy is required by most complex metabolic pathways (often in the form of adenosine triphosphate, ATP), especially those responsible for building large molecules from smaller compounds, and life itself is an energy-driven process. Living organisms would not be able to assemble macromolecules (proteins, lipids, nucleic acids, and complex carbohydrates) from their monomeric subunits without a constant energy input.\n\nIt is important to understand how organisms acquire energy and how that energy is passed from one organism to another through food webs and their constituent food chains. Food webs illustrate how energy flows directionally through ecosystems, including how efficiently organisms acquire it, use it, and how much remains for use by other organisms of the food web.\n\nEnergy is acquired by living things in three ways: photosynthesis, chemosynthesis, and the consumption and digestion of other living or previously living organisms by heterotrophs.\n\nPhotosynthetic and chemosynthetic organisms are both grouped into a category known as autotrophs: organisms capable of synthesizing their own food (more specifically, capable of using inorganic carbon as a carbon source). Photosynthetic autotrophs (photoautotrophs) use sunlight as an energy source, whereas chemosynthetic autotrophs (chemoautotrophs) use inorganic molecules as an energy source. Autotrophs are critical for all ecosystems. Without these organisms, energy would not be available to other living organisms and life itself would not be possible.",
+            "valueHash": "6bfef5addb7581a7a5154aa3f44613f99aea8cec06cb8fcd5a7616deee504d45"
+          },
+          {
+            "id": "e14",
+            "pointer": "/question/prompt",
+            "role": "question",
+            "kind": "text",
+            "value": "实验舱X完全黑暗，且未输入任何死亡或活体有机物。舱内初始放入物种M（异养，靠摄食有机物）和物种N（化能合成自养，利用H2S无机分子）。舱内提供H2S。30天后观测：物种M全部死亡，物种N存活并繁殖。根据所有生物都需要能量且能量获取方式为光合、化能合成或异养摄食，哪项解释最契合该观测？",
+            "valueHash": "5cd8cf978d11bcd4b6a81481cac40ae47e77888c0dccb2a3953bcdc546d6947c"
+          },
+          {
+            "id": "e17",
+            "pointer": "/question/options/0/text",
+            "role": "question",
+            "kind": "text",
+            "value": "物种N利用H2S进行化能合成获得能量，物种M因无有机物能量来源死亡",
+            "valueHash": "82c99ef0846d85aeddbab44f1ec1a8dcf8b0ddd8a80a8e5503666d3cdb6f9568"
+          }
+        ],
+        "reviewReasons": []
+      },
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "not_applicable",
+            "affected": [],
+            "reason": "产物artifact仅为选中选项文本(e24)与解释(e26)，未总结带量词/条件的普遍规则或适用断言，无作者条件式结论可对照实例或反例。",
+            "contextHash": "4cf995e262b253ef3e0bf1d3e5c9f5718e1cf25afe6a8ede7f0a46a5f256a68b",
+            "proposed": {
+              "kind": "conditions",
+              "status": "not_applicable",
+              "affected": [],
+              "reason": "产物artifact仅为选中选项文本(e24)与解释(e26)，未总结带量词/条件的普遍规则或适用断言，无作者条件式结论可对照实例或反例。",
+              "refs": [
+                "e23",
+                "e24",
+                "e25",
+                "e26"
+              ],
+              "challenge": {
+                "status": "not_applicable",
+                "reason": "因无作者条件规则断言，不构造相容反例挑战。",
+                "refs": [
+                  "e23",
+                  "e24"
+                ]
+              }
+            },
+            "reviewReasons": []
+          },
+          {
+            "kind": "quantities",
+            "status": "not_applicable",
+            "affected": [],
+            "reason": "当前题设与产物无数值、单位或效率演算；rates中百分比仅关联priorExposure别例，非本产物断言，无重算需求。",
+            "contextHash": "4cf995e262b253ef3e0bf1d3e5c9f5718e1cf25afe6a8ede7f0a46a5f256a68b",
+            "proposed": {
+              "kind": "quantities",
+              "status": "not_applicable",
+              "affected": [],
+              "reason": "当前题设与产物无数值、单位或效率演算；rates中百分比仅关联priorExposure别例，非本产物断言，无重算需求。",
+              "refs": [
+                "e22",
+                "e24",
+                "e26"
+              ]
+            },
+            "reviewReasons": []
+          }
+        ],
+        "keys": [
+          {
+            "taskId": "current",
+            "status": "agrees",
+            "reason": "作者指定答案见e24(选项A/e17)。盲解同选A，基于e3能量三方式与e14事实(黑暗、无有机物、有H2S)推出N化能合成存活、M缺有机物死，与作者选项因果及e26解释边界一致，无未建立异议。",
+            "refs": [
+              "e24",
+              "e17",
+              "e14",
+              "e3",
+              "e23"
+            ],
+            "witnesses": [
+              {
+                "id": "e24",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "物种N利用H2S进行化能合成获得能量，物种M因无有机物能量来源死亡",
+                "valueHash": "82c99ef0846d85aeddbab44f1ec1a8dcf8b0ddd8a80a8e5503666d3cdb6f9568"
+              },
+              {
+                "id": "e17",
+                "pointer": "/question/options/0/text",
+                "role": "question",
+                "kind": "text",
+                "value": "物种N利用H2S进行化能合成获得能量，物种M因无有机物能量来源死亡",
+                "valueHash": "82c99ef0846d85aeddbab44f1ec1a8dcf8b0ddd8a80a8e5503666d3cdb6f9568"
+              },
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "实验舱X完全黑暗，且未输入任何死亡或活体有机物。舱内初始放入物种M（异养，靠摄食有机物）和物种N（化能合成自养，利用H2S无机分子）。舱内提供H2S。30天后观测：物种M全部死亡，物种N存活并繁殖。根据所有生物都需要能量且能量获取方式为光合、化能合成或异养摄食，哪项解释最契合该观测？",
+                "valueHash": "5cd8cf978d11bcd4b6a81481cac40ae47e77888c0dccb2a3953bcdc546d6947c"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "All living things require energy in one form or another. Energy is required by most complex metabolic pathways (often in the form of adenosine triphosphate, ATP), especially those responsible for building large molecules from smaller compounds, and life itself is an energy-driven process. Living organisms would not be able to assemble macromolecules (proteins, lipids, nucleic acids, and complex carbohydrates) from their monomeric subunits without a constant energy input.\n\nIt is important to understand how organisms acquire energy and how that energy is passed from one organism to another through food webs and their constituent food chains. Food webs illustrate how energy flows directionally through ecosystems, including how efficiently organisms acquire it, use it, and how much remains for use by other organisms of the food web.\n\nEnergy is acquired by living things in three ways: photosynthesis, chemosynthesis, and the consumption and digestion of other living or previously living organisms by heterotrophs.\n\nPhotosynthetic and chemosynthetic organisms are both grouped into a category known as autotrophs: organisms capable of synthesizing their own food (more specifically, capable of using inorganic carbon as a carbon source). Photosynthetic autotrophs (photoautotrophs) use sunlight as an energy source, whereas chemosynthetic autotrophs (chemoautotrophs) use inorganic molecules as an energy source. Autotrophs are critical for all ecosystems. Without these organisms, energy would not be available to other living organisms and life itself would not be possible.",
+                "valueHash": "6bfef5addb7581a7a5154aa3f44613f99aea8cec06cb8fcd5a7616deee504d45"
+              },
+              {
+                "id": "e23",
+                "pointer": "/artifacts/0/id",
+                "role": "artifact",
+                "kind": "text",
+                "value": "current-author-selected-option",
+                "valueHash": "b816aad189ec75d38f56f282fa787e18d257272991403797ca4ce5fe2bfe5a2d"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q4",
+            "level": 2,
+            "reason": "题干e14给出完全黑暗、无有机物、提供H2S及M异养N化能自养，来源e3定义能量三获取方式；选项e17正确（N化能合成、M缺有机物死），e19违黑暗、e21违无有机物，答案集可辩护。盲解current解析一致键为A。priorExposure(e27-e103)仅含生态箱A/B等先前案例，未含本题题干/选项/解答，无提前曝光，独立性适当。前提充分，符合2级。",
+            "refs": [
+              "e14",
+              "e17",
+              "e3"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "实验舱X完全黑暗，且未输入任何死亡或活体有机物。舱内初始放入物种M（异养，靠摄食有机物）和物种N（化能合成自养，利用H2S无机分子）。舱内提供H2S。30天后观测：物种M全部死亡，物种N存活并繁殖。根据所有生物都需要能量且能量获取方式为光合、化能合成或异养摄食，哪项解释最契合该观测？",
+                "valueHash": "5cd8cf978d11bcd4b6a81481cac40ae47e77888c0dccb2a3953bcdc546d6947c"
+              },
+              {
+                "id": "e17",
+                "pointer": "/question/options/0/text",
+                "role": "question",
+                "kind": "text",
+                "value": "物种N利用H2S进行化能合成获得能量，物种M因无有机物能量来源死亡",
+                "valueHash": "82c99ef0846d85aeddbab44f1ec1a8dcf8b0ddd8a80a8e5503666d3cdb6f9568"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "All living things require energy in one form or another. Energy is required by most complex metabolic pathways (often in the form of adenosine triphosphate, ATP), especially those responsible for building large molecules from smaller compounds, and life itself is an energy-driven process. Living organisms would not be able to assemble macromolecules (proteins, lipids, nucleic acids, and complex carbohydrates) from their monomeric subunits without a constant energy input.\n\nIt is important to understand how organisms acquire energy and how that energy is passed from one organism to another through food webs and their constituent food chains. Food webs illustrate how energy flows directionally through ecosystems, including how efficiently organisms acquire it, use it, and how much remains for use by other organisms of the food web.\n\nEnergy is acquired by living things in three ways: photosynthesis, chemosynthesis, and the consumption and digestion of other living or previously living organisms by heterotrophs.\n\nPhotosynthetic and chemosynthetic organisms are both grouped into a category known as autotrophs: organisms capable of synthesizing their own food (more specifically, capable of using inorganic carbon as a carbon source). Photosynthetic autotrophs (photoautotrophs) use sunlight as an energy source, whereas chemosynthetic autotrophs (chemoautotrophs) use inorganic molecules as an energy source. Autotrophs are critical for all ecosystems. Without these organisms, energy would not be available to other living organisms and life itself would not be possible.",
+                "valueHash": "6bfef5addb7581a7a5154aa3f44613f99aea8cec06cb8fcd5a7616deee504d45"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q4",
+            "status": "supported",
+            "reason": "题干e14给定黑暗、无有机物、有H2S、M异养N化能自养；源e3定义能量三获取方式；选项e17正确（N化能合成、M缺有机物死），e19违黑暗、e21违无有机物；作者选中e24即e17，盲解resolved同选A，因果一致；priorExposure(e27起)仅含旧案例未含本题，无提前曝光，独立性适当。前提充分，符合2级。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "实验舱X完全黑暗，且未输入任何死亡或活体有机物。舱内初始放入物种M（异养，靠摄食有机物）和物种N（化能合成自养，利用H2S无机分子）。舱内提供H2S。30天后观测：物种M全部死亡，物种N存活并繁殖。根据所有生物都需要能量且能量获取方式为光合、化能合成或异养摄食，哪项解释最契合该观测？",
+                "valueHash": "5cd8cf978d11bcd4b6a81481cac40ae47e77888c0dccb2a3953bcdc546d6947c"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "All living things require energy in one form or another. Energy is required by most complex metabolic pathways (often in the form of adenosine triphosphate, ATP), especially those responsible for building large molecules from smaller compounds, and life itself is an energy-driven process. Living organisms would not be able to assemble macromolecules (proteins, lipids, nucleic acids, and complex carbohydrates) from their monomeric subunits without a constant energy input.\n\nIt is important to understand how organisms acquire energy and how that energy is passed from one organism to another through food webs and their constituent food chains. Food webs illustrate how energy flows directionally through ecosystems, including how efficiently organisms acquire it, use it, and how much remains for use by other organisms of the food web.\n\nEnergy is acquired by living things in three ways: photosynthesis, chemosynthesis, and the consumption and digestion of other living or previously living organisms by heterotrophs.\n\nPhotosynthetic and chemosynthetic organisms are both grouped into a category known as autotrophs: organisms capable of synthesizing their own food (more specifically, capable of using inorganic carbon as a carbon source). Photosynthetic autotrophs (photoautotrophs) use sunlight as an energy source, whereas chemosynthetic autotrophs (chemoautotrophs) use inorganic molecules as an energy source. Autotrophs are critical for all ecosystems. Without these organisms, energy would not be available to other living organisms and life itself would not be possible.",
+                "valueHash": "6bfef5addb7581a7a5154aa3f44613f99aea8cec06cb8fcd5a7616deee504d45"
+              },
+              {
+                "id": "e17",
+                "pointer": "/question/options/0/text",
+                "role": "question",
+                "kind": "text",
+                "value": "物种N利用H2S进行化能合成获得能量，物种M因无有机物能量来源死亡",
+                "valueHash": "82c99ef0846d85aeddbab44f1ec1a8dcf8b0ddd8a80a8e5503666d3cdb6f9568"
+              },
+              {
+                "id": "e19",
+                "pointer": "/question/options/1/text",
+                "role": "question",
+                "kind": "text",
+                "value": "物种N通过残存微弱光线光合获得能量，物种M因无有机物死亡",
+                "valueHash": "9cf0453a65dc42aed07e089ac2e443dee35e08a66f23f24a413440e7b1a14227"
+              },
+              {
+                "id": "e21",
+                "pointer": "/question/options/2/text",
+                "role": "question",
+                "kind": "text",
+                "value": "物种M和N都靠舱内未知有机物存活，但M竞争失败死亡",
+                "valueHash": "0d86e47afb7b0a5acbf4dcca92e316216ec932cf93f18111a272888c3928d6b4"
+              },
+              {
+                "id": "e24",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "物种N利用H2S进行化能合成获得能量，物种M因无有机物能量来源死亡",
+                "valueHash": "82c99ef0846d85aeddbab44f1ec1a8dcf8b0ddd8a80a8e5503666d3cdb6f9568"
+              },
+              {
+                "id": "e27",
+                "pointer": "/priorExposure",
+                "role": "prior_exposure",
+                "kind": "array_length",
+                "value": 38,
+                "valueHash": "aea92132c4cbeb263e6ac2bf6c183b5d81737f179f21efdc5863739672f0f470"
+              },
+              {
+                "id": "e103",
+                "pointer": "/priorExposure/37/text",
+                "role": "prior_exposure",
+                "kind": "text",
+                "value": "课程资料指出，光合与化能合成自养生物能利用无机源制造有机物，是所有生态系统中异养生物能量可用的关键（见课程资料自养生物相关摘录）。当前案例表明，不同自养路径可共同决定异养能量状况：移除阳光但保留H2S，异养动物Z仍可通过化能合成菌获得能量。\n\n举例（补充说明）：想象一个农场有太阳能水泵和柴油发电机两种独立灌溉动力，作物（类似异养消费者）依赖水存活；若连日阴天太阳能停摆，发电机仍可提供水流，作物不因单一源头中断而枯萎。这个日常例子直观对应“多条能量通路冗余支持”的关系。\n\n该例子适用边界：它只帮助理解结构上的多源支持，但不涉及真实自养生物的无机碳固定、ATP参与大分子组装等生化因果，也不能替代食物网中能量流动效率与方向的分析。实际生态判断还需看异养生物是否具备摄食对应自养者的能力。",
+                "valueHash": "af638f5fbcd1b50c817241764ff20c4b9ab1d41f14ace9df9baedf9c32101d94"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q4",
+          "level": 2,
+          "reason": "题干e14给出完全黑暗、无有机物、提供H2S及M异养N化能自养，来源e3定义能量三获取方式；选项e17正确（N化能合成、M缺有机物死），e19违黑暗、e21违无有机物，答案集可辩护。盲解current解析一致键为A。priorExposure(e27-e103)仅含生态箱A/B等先前案例，未含本题题干/选项/解答，无提前曝光，独立性适当。前提充分，符合2级。",
+          "refs": [
+            "e14",
+            "e17",
+            "e3"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e14",
+              "pointer": "/question/prompt",
+              "role": "question",
+              "kind": "text",
+              "value": "实验舱X完全黑暗，且未输入任何死亡或活体有机物。舱内初始放入物种M（异养，靠摄食有机物）和物种N（化能合成自养，利用H2S无机分子）。舱内提供H2S。30天后观测：物种M全部死亡，物种N存活并繁殖。根据所有生物都需要能量且能量获取方式为光合、化能合成或异养摄食，哪项解释最契合该观测？",
+              "valueHash": "5cd8cf978d11bcd4b6a81481cac40ae47e77888c0dccb2a3953bcdc546d6947c"
+            },
+            {
+              "id": "e17",
+              "pointer": "/question/options/0/text",
+              "role": "question",
+              "kind": "text",
+              "value": "物种N利用H2S进行化能合成获得能量，物种M因无有机物能量来源死亡",
+              "valueHash": "82c99ef0846d85aeddbab44f1ec1a8dcf8b0ddd8a80a8e5503666d3cdb6f9568"
+            },
+            {
+              "id": "e3",
+              "pointer": "/sources/0/text",
+              "role": "source",
+              "kind": "text",
+              "value": "All living things require energy in one form or another. Energy is required by most complex metabolic pathways (often in the form of adenosine triphosphate, ATP), especially those responsible for building large molecules from smaller compounds, and life itself is an energy-driven process. Living organisms would not be able to assemble macromolecules (proteins, lipids, nucleic acids, and complex carbohydrates) from their monomeric subunits without a constant energy input.\n\nIt is important to understand how organisms acquire energy and how that energy is passed from one organism to another through food webs and their constituent food chains. Food webs illustrate how energy flows directionally through ecosystems, including how efficiently organisms acquire it, use it, and how much remains for use by other organisms of the food web.\n\nEnergy is acquired by living things in three ways: photosynthesis, chemosynthesis, and the consumption and digestion of other living or previously living organisms by heterotrophs.\n\nPhotosynthetic and chemosynthetic organisms are both grouped into a category known as autotrophs: organisms capable of synthesizing their own food (more specifically, capable of using inorganic carbon as a carbon source). Photosynthetic autotrophs (photoautotrophs) use sunlight as an energy source, whereas chemosynthetic autotrophs (chemoautotrophs) use inorganic molecules as an energy source. Autotrophs are critical for all ecosystems. Without these organisms, energy would not be available to other living organisms and life itself would not be possible.",
+              "valueHash": "6bfef5addb7581a7a5154aa3f44613f99aea8cec06cb8fcd5a7616deee504d45"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [],
+          "proposedLevel": 2,
+          "proposedReason": "题干e14给出完全黑暗、无有机物、提供H2S及M异养N化能自养，来源e3定义能量三获取方式；选项e17正确（N化能合成、M缺有机物死），e19违黑暗、e21违无有机物，答案集可辩护。盲解current解析一致键为A。priorExposure(e27-e103)仅含生态箱A/B等先前案例，未含本题题干/选项/解答，无提前曝光，独立性适当。前提充分，符合2级。"
+        }
+      ],
+      "reviewRequired": [],
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q4",
+            "status": "supported",
+            "reason": "题干e14给定黑暗、无有机物、有H2S、M异养N化能自养；源e3定义能量三获取方式；选项e17正确（N化能合成、M缺有机物死），e19违黑暗、e21违无有机物；作者选中e24即e17，盲解resolved同选A，因果一致；priorExposure(e27起)仅含旧案例未含本题，无提前曝光，独立性适当。前提充分，符合2级。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "实验舱X完全黑暗，且未输入任何死亡或活体有机物。舱内初始放入物种M（异养，靠摄食有机物）和物种N（化能合成自养，利用H2S无机分子）。舱内提供H2S。30天后观测：物种M全部死亡，物种N存活并繁殖。根据所有生物都需要能量且能量获取方式为光合、化能合成或异养摄食，哪项解释最契合该观测？",
+                "valueHash": "5cd8cf978d11bcd4b6a81481cac40ae47e77888c0dccb2a3953bcdc546d6947c"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "All living things require energy in one form or another. Energy is required by most complex metabolic pathways (often in the form of adenosine triphosphate, ATP), especially those responsible for building large molecules from smaller compounds, and life itself is an energy-driven process. Living organisms would not be able to assemble macromolecules (proteins, lipids, nucleic acids, and complex carbohydrates) from their monomeric subunits without a constant energy input.\n\nIt is important to understand how organisms acquire energy and how that energy is passed from one organism to another through food webs and their constituent food chains. Food webs illustrate how energy flows directionally through ecosystems, including how efficiently organisms acquire it, use it, and how much remains for use by other organisms of the food web.\n\nEnergy is acquired by living things in three ways: photosynthesis, chemosynthesis, and the consumption and digestion of other living or previously living organisms by heterotrophs.\n\nPhotosynthetic and chemosynthetic organisms are both grouped into a category known as autotrophs: organisms capable of synthesizing their own food (more specifically, capable of using inorganic carbon as a carbon source). Photosynthetic autotrophs (photoautotrophs) use sunlight as an energy source, whereas chemosynthetic autotrophs (chemoautotrophs) use inorganic molecules as an energy source. Autotrophs are critical for all ecosystems. Without these organisms, energy would not be available to other living organisms and life itself would not be possible.",
+                "valueHash": "6bfef5addb7581a7a5154aa3f44613f99aea8cec06cb8fcd5a7616deee504d45"
+              },
+              {
+                "id": "e17",
+                "pointer": "/question/options/0/text",
+                "role": "question",
+                "kind": "text",
+                "value": "物种N利用H2S进行化能合成获得能量，物种M因无有机物能量来源死亡",
+                "valueHash": "82c99ef0846d85aeddbab44f1ec1a8dcf8b0ddd8a80a8e5503666d3cdb6f9568"
+              },
+              {
+                "id": "e19",
+                "pointer": "/question/options/1/text",
+                "role": "question",
+                "kind": "text",
+                "value": "物种N通过残存微弱光线光合获得能量，物种M因无有机物死亡",
+                "valueHash": "9cf0453a65dc42aed07e089ac2e443dee35e08a66f23f24a413440e7b1a14227"
+              },
+              {
+                "id": "e21",
+                "pointer": "/question/options/2/text",
+                "role": "question",
+                "kind": "text",
+                "value": "物种M和N都靠舱内未知有机物存活，但M竞争失败死亡",
+                "valueHash": "0d86e47afb7b0a5acbf4dcca92e316216ec932cf93f18111a272888c3928d6b4"
+              },
+              {
+                "id": "e24",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "物种N利用H2S进行化能合成获得能量，物种M因无有机物能量来源死亡",
+                "valueHash": "82c99ef0846d85aeddbab44f1ec1a8dcf8b0ddd8a80a8e5503666d3cdb6f9568"
+              },
+              {
+                "id": "e27",
+                "pointer": "/priorExposure",
+                "role": "prior_exposure",
+                "kind": "array_length",
+                "value": 38,
+                "valueHash": "aea92132c4cbeb263e6ac2bf6c183b5d81737f179f21efdc5863739672f0f470"
+              },
+              {
+                "id": "e103",
+                "pointer": "/priorExposure/37/text",
+                "role": "prior_exposure",
+                "kind": "text",
+                "value": "课程资料指出，光合与化能合成自养生物能利用无机源制造有机物，是所有生态系统中异养生物能量可用的关键（见课程资料自养生物相关摘录）。当前案例表明，不同自养路径可共同决定异养能量状况：移除阳光但保留H2S，异养动物Z仍可通过化能合成菌获得能量。\n\n举例（补充说明）：想象一个农场有太阳能水泵和柴油发电机两种独立灌溉动力，作物（类似异养消费者）依赖水存活；若连日阴天太阳能停摆，发电机仍可提供水流，作物不因单一源头中断而枯萎。这个日常例子直观对应“多条能量通路冗余支持”的关系。\n\n该例子适用边界：它只帮助理解结构上的多源支持，但不涉及真实自养生物的无机碳固定、ATP参与大分子组装等生化因果，也不能替代食物网中能量流动效率与方向的分析。实际生态判断还需看异养生物是否具备摄食对应自养者的能力。",
+                "valueHash": "af638f5fbcd1b50c817241764ff20c4b9ab1d41f14ace9df9baedf9c32101d94"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "resultHash": "122ca05ef4e86ef28772eb0ad9e1f70c6c87f9eac91ce98237a22a426d7c6188"
+  }
+}

@@ -1,0 +1,333 @@
+{
+  "task": {
+    "caseId": "N-E02-repair",
+    "runId": "N-E02-repair-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-E02-repair.json",
+    "inputHash": "3de3b445e3d09c30390a16745f40e961e4d2cfaac9124b7eb587df1cac86966f",
+    "population": "natural",
+    "sourceId": "E02"
+  },
+  "inputHash": "3de3b445e3d09c30390a16745f40e961e4d2cfaac9124b7eb587df1cac86966f",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "correctness": "9e4810680bf98e3c6067fd5a057d631152634292a9b4c60524fac3fa330a5336",
+      "artifact-audit": "9e4810680bf98e3c6067fd5a057d631152634292a9b4c60524fac3fa330a5336",
+      "certification": "9e4810680bf98e3c6067fd5a057d631152634292a9b4c60524fac3fa330a5336"
+    },
+    "stages": {
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "clear",
+            "affected": [],
+            "reason": "作者诊断(e21,e27)与补救规则(e31,e43)明确区分自养子类与环境约束：基于e3能量三方式及自养定义，正确指出黑暗中存活自养者必为化能合成而非光合；工作示例(e33-e41)严格匹配物种属性与环境供给，无混淆充分/必要条件或只满足部分条件之错。",
+            "refs": [
+              "e3",
+              "e17",
+              "e21",
+              "e27",
+              "e31",
+              "e43"
+            ],
+            "challenge": {
+              "status": "closed",
+              "reason": "对'黑暗中存活的自养者必依赖化能合成'规则，e3明确定义自养仅光合/化能合成且光合需光，排除光合自养黑暗存活之相容反例；e31规则限定'反推隐藏能量原因'假设下，由异养死亡即缺有机物、自养黑暗存活即化能合成可排除其他能量原因反例。",
+              "refs": [
+                "e3",
+                "e31",
+                "e43"
+              ]
+            },
+            "witnesses": [
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "All living things require energy in one form or another. Energy is required by most complex metabolic pathways (often in the form of adenosine triphosphate, ATP), especially those responsible for building large molecules from smaller compounds, and life itself is an energy-driven process. Living organisms would not be able to assemble macromolecules (proteins, lipids, nucleic acids, and complex carbohydrates) from their monomeric subunits without a constant energy input.\n\nIt is important to understand how organisms acquire energy and how that energy is passed from one organism to another through food webs and their constituent food chains. Food webs illustrate how energy flows directionally through ecosystems, including how efficiently organisms acquire it, use it, and how much remains for use by other organisms of the food web.\n\nEnergy is acquired by living things in three ways: photosynthesis, chemosynthesis, and the consumption and digestion of other living or previously living organisms by heterotrophs.\n\nPhotosynthetic and chemosynthetic organisms are both grouped into a category known as autotrophs: organisms capable of synthesizing their own food (more specifically, capable of using inorganic carbon as a carbon source). Photosynthetic autotrophs (photoautotrophs) use sunlight as an energy source, whereas chemosynthetic autotrophs (chemoautotrophs) use inorganic molecules as an energy source. Autotrophs are critical for all ecosystems. Without these organisms, energy would not be available to other living organisms and life itself would not be possible.",
+                "valueHash": "6bfef5addb7581a7a5154aa3f44613f99aea8cec06cb8fcd5a7616deee504d45"
+              },
+              {
+                "id": "e17",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "实验舱X完全黑暗，且未输入任何死亡或活体有机物。舱内初始放入物种M（异养，靠摄食有机物）和物种N（化能合成自养，利用H2S无机分子）。舱内提供H2S。30天后观测：物种M全部死亡，物种N存活并繁殖。根据所有生物都需要能量且能量获取方式为光合、化能合成或异养摄食，哪项解释最契合该观测？",
+                "valueHash": "5cd8cf978d11bcd4b6a81481cac40ae47e77888c0dccb2a3953bcdc546d6947c"
+              },
+              {
+                "id": "e21",
+                "pointer": "/artifacts/2/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "错误：舱内完全黑暗，光合不可能；且N被设定为化能合成自养。",
+                "valueHash": "ba62cfd8a1c1c6fa32c5c6e494044005f77a893c4708609aae7ce0eff4bd05a2"
+              },
+              {
+                "id": "e27",
+                "pointer": "/artifacts/5/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "缺失的区别在于：完全黑暗条件下光合路径不可行，且物种N被明确设定为化能合成自养（利用H2S）；从存活/死亡反推隐藏能量原因时必须严格匹配各物种给定能量路径属性与环境供给，不能混淆自养子类。",
+                "valueHash": "55accb7453c377c6cc9bee339a88e23b8d30ad897d0cc8832de75930cff0c140"
+              },
+              {
+                "id": "e31",
+                "pointer": "/artifacts/7/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "所有生物都需要能量，获取方式仅有光合、化能合成、异养摄食三种。当你从存活/死亡观测反推隐藏原因时，必须将每个物种的设定属性（如N是化能合成自养、舱内提供H2S）与观测环境（完全黑暗、无有机物）结合。光合必须依赖光；化能合成利用无机分子；异养需摄入有机物。若你见自养生物在黑暗中存活、异养生物死亡，因果上是因为环境提供了该自养者所需的无机能源且缺少异养者的有机物源，而非套用“自养即光合”的错觉。",
+                "valueHash": "a7bc2a85d0d8cfb64a3157c329460bd249ee942948fe646dfb259fb8d7db817d"
+              },
+              {
+                "id": "e43",
+                "pointer": "/artifacts/13/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "错误规则：若见自养生物存活，便默认其通过光合获能，忽略环境光条件与物种设定路径。正确规则：自养生物存活需匹配其特定能量路径与环境供给；黑暗中存活的自养者必依赖化能合成等无光路径。错误规则在“完全黑暗但提供无机能源且物种为化能合成自养”的案例下失败，因为它会误判存活原因为光合，而真实原因是化能合成。",
+                "valueHash": "35714d36d8cf65b6cc52b30ccb589ce7a60a6fd1040ffec6f3b05d1fabb1723f"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "kind": "quantities",
+            "status": "not_applicable",
+            "affected": [],
+            "reason": "产物中无数值、百分比或单位换算断言，rates为空，无数量重算需求。",
+            "contextHash": "9e4810680bf98e3c6067fd5a057d631152634292a9b4c60524fac3fa330a5336",
+            "proposed": {
+              "kind": "quantities",
+              "status": "not_applicable",
+              "affected": [],
+              "reason": "产物中无数值、百分比或单位换算断言，rates为空，无数量重算需求。",
+              "refs": [
+                "e15"
+              ]
+            },
+            "reviewReasons": []
+          }
+        ],
+        "keys": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 2,
+            "reason": "产品诊断(e27)明确针对学生将N归为光合的实际错误差距：完全黑暗光合不可行且N为化能合成自养，必须匹配物种设定路径与环境；补救解释(e31,e43)正确基于来源能量三方式(e3)；并提供新舱Y情景示例(e33)作为相关后续检查，无发明诊断或错误干预，符合Q6的2分。",
+            "refs": [
+              "e27",
+              "e31",
+              "e33",
+              "e3"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e27",
+                "pointer": "/artifacts/5/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "缺失的区别在于：完全黑暗条件下光合路径不可行，且物种N被明确设定为化能合成自养（利用H2S）；从存活/死亡反推隐藏能量原因时必须严格匹配各物种给定能量路径属性与环境供给，不能混淆自养子类。",
+                "valueHash": "55accb7453c377c6cc9bee339a88e23b8d30ad897d0cc8832de75930cff0c140"
+              },
+              {
+                "id": "e31",
+                "pointer": "/artifacts/7/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "所有生物都需要能量，获取方式仅有光合、化能合成、异养摄食三种。当你从存活/死亡观测反推隐藏原因时，必须将每个物种的设定属性（如N是化能合成自养、舱内提供H2S）与观测环境（完全黑暗、无有机物）结合。光合必须依赖光；化能合成利用无机分子；异养需摄入有机物。若你见自养生物在黑暗中存活、异养生物死亡，因果上是因为环境提供了该自养者所需的无机能源且缺少异养者的有机物源，而非套用“自养即光合”的错觉。",
+                "valueHash": "a7bc2a85d0d8cfb64a3157c329460bd249ee942948fe646dfb259fb8d7db817d"
+              },
+              {
+                "id": "e33",
+                "pointer": "/artifacts/8/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "实验舱Y持续黑暗，无输入有机物，但提供CO2、H2O以及无机分子NH3。初始放入物种P（异养，需摄食有机物）和物种Q（化能合成自养，利用NH3）。30天后P死亡，Q存活繁殖。根据能量三方式，推导隐藏能量原因。",
+                "valueHash": "cce3ced6fc48fb7769cfec533da9fcf9461d900e7b3f48b80d8d2f9721f1f5f2"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "All living things require energy in one form or another. Energy is required by most complex metabolic pathways (often in the form of adenosine triphosphate, ATP), especially those responsible for building large molecules from smaller compounds, and life itself is an energy-driven process. Living organisms would not be able to assemble macromolecules (proteins, lipids, nucleic acids, and complex carbohydrates) from their monomeric subunits without a constant energy input.\n\nIt is important to understand how organisms acquire energy and how that energy is passed from one organism to another through food webs and their constituent food chains. Food webs illustrate how energy flows directionally through ecosystems, including how efficiently organisms acquire it, use it, and how much remains for use by other organisms of the food web.\n\nEnergy is acquired by living things in three ways: photosynthesis, chemosynthesis, and the consumption and digestion of other living or previously living organisms by heterotrophs.\n\nPhotosynthetic and chemosynthetic organisms are both grouped into a category known as autotrophs: organisms capable of synthesizing their own food (more specifically, capable of using inorganic carbon as a carbon source). Photosynthetic autotrophs (photoautotrophs) use sunlight as an energy source, whereas chemosynthetic autotrophs (chemoautotrophs) use inorganic molecules as an energy source. Autotrophs are critical for all ecosystems. Without these organisms, energy would not be available to other living organisms and life itself would not be possible.",
+                "valueHash": "6bfef5addb7581a7a5154aa3f44613f99aea8cec06cb8fcd5a7616deee504d45"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q6",
+            "status": "supported",
+            "reason": "候选Q6的2分判断基于诊断(e27)精准针对将N误归光合的实际错误，补救解释(e31,e43)正确依据来源能量三方式(e3)区分自养路径，并提供舱Y新示例(e33)作为后续检查；findings中audit与correctness均确认无保留异议，无未解依赖。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e27",
+                "pointer": "/artifacts/5/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "缺失的区别在于：完全黑暗条件下光合路径不可行，且物种N被明确设定为化能合成自养（利用H2S）；从存活/死亡反推隐藏能量原因时必须严格匹配各物种给定能量路径属性与环境供给，不能混淆自养子类。",
+                "valueHash": "55accb7453c377c6cc9bee339a88e23b8d30ad897d0cc8832de75930cff0c140"
+              },
+              {
+                "id": "e31",
+                "pointer": "/artifacts/7/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "所有生物都需要能量，获取方式仅有光合、化能合成、异养摄食三种。当你从存活/死亡观测反推隐藏原因时，必须将每个物种的设定属性（如N是化能合成自养、舱内提供H2S）与观测环境（完全黑暗、无有机物）结合。光合必须依赖光；化能合成利用无机分子；异养需摄入有机物。若你见自养生物在黑暗中存活、异养生物死亡，因果上是因为环境提供了该自养者所需的无机能源且缺少异养者的有机物源，而非套用“自养即光合”的错觉。",
+                "valueHash": "a7bc2a85d0d8cfb64a3157c329460bd249ee942948fe646dfb259fb8d7db817d"
+              },
+              {
+                "id": "e33",
+                "pointer": "/artifacts/8/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "实验舱Y持续黑暗，无输入有机物，但提供CO2、H2O以及无机分子NH3。初始放入物种P（异养，需摄食有机物）和物种Q（化能合成自养，利用NH3）。30天后P死亡，Q存活繁殖。根据能量三方式，推导隐藏能量原因。",
+                "valueHash": "cce3ced6fc48fb7769cfec533da9fcf9461d900e7b3f48b80d8d2f9721f1f5f2"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "All living things require energy in one form or another. Energy is required by most complex metabolic pathways (often in the form of adenosine triphosphate, ATP), especially those responsible for building large molecules from smaller compounds, and life itself is an energy-driven process. Living organisms would not be able to assemble macromolecules (proteins, lipids, nucleic acids, and complex carbohydrates) from their monomeric subunits without a constant energy input.\n\nIt is important to understand how organisms acquire energy and how that energy is passed from one organism to another through food webs and their constituent food chains. Food webs illustrate how energy flows directionally through ecosystems, including how efficiently organisms acquire it, use it, and how much remains for use by other organisms of the food web.\n\nEnergy is acquired by living things in three ways: photosynthesis, chemosynthesis, and the consumption and digestion of other living or previously living organisms by heterotrophs.\n\nPhotosynthetic and chemosynthetic organisms are both grouped into a category known as autotrophs: organisms capable of synthesizing their own food (more specifically, capable of using inorganic carbon as a carbon source). Photosynthetic autotrophs (photoautotrophs) use sunlight as an energy source, whereas chemosynthetic autotrophs (chemoautotrophs) use inorganic molecules as an energy source. Autotrophs are critical for all ecosystems. Without these organisms, energy would not be available to other living organisms and life itself would not be possible.",
+                "valueHash": "6bfef5addb7581a7a5154aa3f44613f99aea8cec06cb8fcd5a7616deee504d45"
+              },
+              {
+                "id": "e43",
+                "pointer": "/artifacts/13/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "错误规则：若见自养生物存活，便默认其通过光合获能，忽略环境光条件与物种设定路径。正确规则：自养生物存活需匹配其特定能量路径与环境供给；黑暗中存活的自养者必依赖化能合成等无光路径。错误规则在“完全黑暗但提供无机能源且物种为化能合成自养”的案例下失败，因为它会误判存活原因为光合，而真实原因是化能合成。",
+                "valueHash": "35714d36d8cf65b6cc52b30ccb589ce7a60a6fd1040ffec6f3b05d1fabb1723f"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q6",
+          "level": 2,
+          "reason": "产品诊断(e27)明确针对学生将N归为光合的实际错误差距：完全黑暗光合不可行且N为化能合成自养，必须匹配物种设定路径与环境；补救解释(e31,e43)正确基于来源能量三方式(e3)；并提供新舱Y情景示例(e33)作为相关后续检查，无发明诊断或错误干预，符合Q6的2分。",
+          "refs": [
+            "e27",
+            "e31",
+            "e33",
+            "e3"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e27",
+              "pointer": "/artifacts/5/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "缺失的区别在于：完全黑暗条件下光合路径不可行，且物种N被明确设定为化能合成自养（利用H2S）；从存活/死亡反推隐藏能量原因时必须严格匹配各物种给定能量路径属性与环境供给，不能混淆自养子类。",
+              "valueHash": "55accb7453c377c6cc9bee339a88e23b8d30ad897d0cc8832de75930cff0c140"
+            },
+            {
+              "id": "e31",
+              "pointer": "/artifacts/7/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "所有生物都需要能量，获取方式仅有光合、化能合成、异养摄食三种。当你从存活/死亡观测反推隐藏原因时，必须将每个物种的设定属性（如N是化能合成自养、舱内提供H2S）与观测环境（完全黑暗、无有机物）结合。光合必须依赖光；化能合成利用无机分子；异养需摄入有机物。若你见自养生物在黑暗中存活、异养生物死亡，因果上是因为环境提供了该自养者所需的无机能源且缺少异养者的有机物源，而非套用“自养即光合”的错觉。",
+              "valueHash": "a7bc2a85d0d8cfb64a3157c329460bd249ee942948fe646dfb259fb8d7db817d"
+            },
+            {
+              "id": "e33",
+              "pointer": "/artifacts/8/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "实验舱Y持续黑暗，无输入有机物，但提供CO2、H2O以及无机分子NH3。初始放入物种P（异养，需摄食有机物）和物种Q（化能合成自养，利用NH3）。30天后P死亡，Q存活繁殖。根据能量三方式，推导隐藏能量原因。",
+              "valueHash": "cce3ced6fc48fb7769cfec533da9fcf9461d900e7b3f48b80d8d2f9721f1f5f2"
+            },
+            {
+              "id": "e3",
+              "pointer": "/sources/0/text",
+              "role": "source",
+              "kind": "text",
+              "value": "All living things require energy in one form or another. Energy is required by most complex metabolic pathways (often in the form of adenosine triphosphate, ATP), especially those responsible for building large molecules from smaller compounds, and life itself is an energy-driven process. Living organisms would not be able to assemble macromolecules (proteins, lipids, nucleic acids, and complex carbohydrates) from their monomeric subunits without a constant energy input.\n\nIt is important to understand how organisms acquire energy and how that energy is passed from one organism to another through food webs and their constituent food chains. Food webs illustrate how energy flows directionally through ecosystems, including how efficiently organisms acquire it, use it, and how much remains for use by other organisms of the food web.\n\nEnergy is acquired by living things in three ways: photosynthesis, chemosynthesis, and the consumption and digestion of other living or previously living organisms by heterotrophs.\n\nPhotosynthetic and chemosynthetic organisms are both grouped into a category known as autotrophs: organisms capable of synthesizing their own food (more specifically, capable of using inorganic carbon as a carbon source). Photosynthetic autotrophs (photoautotrophs) use sunlight as an energy source, whereas chemosynthetic autotrophs (chemoautotrophs) use inorganic molecules as an energy source. Autotrophs are critical for all ecosystems. Without these organisms, energy would not be available to other living organisms and life itself would not be possible.",
+              "valueHash": "6bfef5addb7581a7a5154aa3f44613f99aea8cec06cb8fcd5a7616deee504d45"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [],
+          "proposedLevel": 2,
+          "proposedReason": "产品诊断(e27)明确针对学生将N归为光合的实际错误差距：完全黑暗光合不可行且N为化能合成自养，必须匹配物种设定路径与环境；补救解释(e31,e43)正确基于来源能量三方式(e3)；并提供新舱Y情景示例(e33)作为相关后续检查，无发明诊断或错误干预，符合Q6的2分。"
+        }
+      ],
+      "reviewRequired": [],
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q6",
+            "status": "supported",
+            "reason": "候选Q6的2分判断基于诊断(e27)精准针对将N误归光合的实际错误，补救解释(e31,e43)正确依据来源能量三方式(e3)区分自养路径，并提供舱Y新示例(e33)作为后续检查；findings中audit与correctness均确认无保留异议，无未解依赖。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e27",
+                "pointer": "/artifacts/5/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "缺失的区别在于：完全黑暗条件下光合路径不可行，且物种N被明确设定为化能合成自养（利用H2S）；从存活/死亡反推隐藏能量原因时必须严格匹配各物种给定能量路径属性与环境供给，不能混淆自养子类。",
+                "valueHash": "55accb7453c377c6cc9bee339a88e23b8d30ad897d0cc8832de75930cff0c140"
+              },
+              {
+                "id": "e31",
+                "pointer": "/artifacts/7/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "所有生物都需要能量，获取方式仅有光合、化能合成、异养摄食三种。当你从存活/死亡观测反推隐藏原因时，必须将每个物种的设定属性（如N是化能合成自养、舱内提供H2S）与观测环境（完全黑暗、无有机物）结合。光合必须依赖光；化能合成利用无机分子；异养需摄入有机物。若你见自养生物在黑暗中存活、异养生物死亡，因果上是因为环境提供了该自养者所需的无机能源且缺少异养者的有机物源，而非套用“自养即光合”的错觉。",
+                "valueHash": "a7bc2a85d0d8cfb64a3157c329460bd249ee942948fe646dfb259fb8d7db817d"
+              },
+              {
+                "id": "e33",
+                "pointer": "/artifacts/8/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "实验舱Y持续黑暗，无输入有机物，但提供CO2、H2O以及无机分子NH3。初始放入物种P（异养，需摄食有机物）和物种Q（化能合成自养，利用NH3）。30天后P死亡，Q存活繁殖。根据能量三方式，推导隐藏能量原因。",
+                "valueHash": "cce3ced6fc48fb7769cfec533da9fcf9461d900e7b3f48b80d8d2f9721f1f5f2"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "All living things require energy in one form or another. Energy is required by most complex metabolic pathways (often in the form of adenosine triphosphate, ATP), especially those responsible for building large molecules from smaller compounds, and life itself is an energy-driven process. Living organisms would not be able to assemble macromolecules (proteins, lipids, nucleic acids, and complex carbohydrates) from their monomeric subunits without a constant energy input.\n\nIt is important to understand how organisms acquire energy and how that energy is passed from one organism to another through food webs and their constituent food chains. Food webs illustrate how energy flows directionally through ecosystems, including how efficiently organisms acquire it, use it, and how much remains for use by other organisms of the food web.\n\nEnergy is acquired by living things in three ways: photosynthesis, chemosynthesis, and the consumption and digestion of other living or previously living organisms by heterotrophs.\n\nPhotosynthetic and chemosynthetic organisms are both grouped into a category known as autotrophs: organisms capable of synthesizing their own food (more specifically, capable of using inorganic carbon as a carbon source). Photosynthetic autotrophs (photoautotrophs) use sunlight as an energy source, whereas chemosynthetic autotrophs (chemoautotrophs) use inorganic molecules as an energy source. Autotrophs are critical for all ecosystems. Without these organisms, energy would not be available to other living organisms and life itself would not be possible.",
+                "valueHash": "6bfef5addb7581a7a5154aa3f44613f99aea8cec06cb8fcd5a7616deee504d45"
+              },
+              {
+                "id": "e43",
+                "pointer": "/artifacts/13/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "错误规则：若见自养生物存活，便默认其通过光合获能，忽略环境光条件与物种设定路径。正确规则：自养生物存活需匹配其特定能量路径与环境供给；黑暗中存活的自养者必依赖化能合成等无光路径。错误规则在“完全黑暗但提供无机能源且物种为化能合成自养”的案例下失败，因为它会误判存活原因为光合，而真实原因是化能合成。",
+                "valueHash": "35714d36d8cf65b6cc52b30ccb589ce7a60a6fd1040ffec6f3b05d1fabb1723f"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "resultHash": "ac07a994f204905c0ddc4c86c986ef27606233522e45b55e6038555d53590b40"
+  }
+}

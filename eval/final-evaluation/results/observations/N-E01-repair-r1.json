@@ -1,0 +1,391 @@
+{
+  "task": {
+    "caseId": "N-E01-repair",
+    "runId": "N-E01-repair-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-E01-repair.json",
+    "inputHash": "016fa40105045ed0dcbb6b87cfb1d228bfe438d038da356c207eec916653fca5",
+    "population": "natural",
+    "sourceId": "E01"
+  },
+  "inputHash": "016fa40105045ed0dcbb6b87cfb1d228bfe438d038da356c207eec916653fca5",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "correctness": "c8d14ed40c1ccf5c34726bc549f905772e7584feca42fb2a3b8b7920f759bdf2",
+      "artifact-audit": "c8d14ed40c1ccf5c34726bc549f905772e7584feca42fb2a3b8b7920f759bdf2"
+    },
+    "stages": {
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "uncertain",
+            "affected": [
+              "Q6"
+            ],
+            "reason": "The authored conclusion has a compatible counterexample or an unresolved necessary premise. 固定题设(e17)面板均25°C、同面积同时间，补充踩A前皮肤33°C、踩B前皮肤31°C（相容），降温差可能源于皮肤初始温度不同而非材料速率差，使作者结论的最弱必要条件缺失；未被给定事实排除。",
+            "refs": [
+              "e17",
+              "e27",
+              "e31",
+              "e43"
+            ],
+            "challenge": {
+              "status": "counterexample",
+              "reason": "固定题设(e17)面板均25°C、同面积同时间，补充踩A前皮肤33°C、踩B前皮肤31°C（相容），降温差可能源于皮肤初始温度不同而非材料速率差，使作者结论的最弱必要条件缺失；未被给定事实排除。",
+              "refs": [
+                "e17",
+                "e27"
+              ]
+            },
+            "witnesses": [
+              {
+                "id": "e17",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "两块地板面板A和B均处于25°C，赤脚以相同接触面积踩踏相同时间。皮肤传感器记录：4秒内A处皮肤降温2.0°C，B处降温0.5°C。下列哪一解释符合该观测？",
+                "valueHash": "ddfb868c51123d607fef7d598f38c8cc4460b1a89377a74392234043b5a63477"
+              },
+              {
+                "id": "e27",
+                "pointer": "/artifacts/5/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "缺失的关键区分是：在题设已固定两面板同温（均25°C）且接触面积、时间相同的边界下，皮肤降温幅度差异只能用于诊断材料从皮肤取热速率的差异，而不能归因于物体初始温度不同。你混淆了‘同温下的热传递速率差’与‘温度差导致热流’两个不同因果机制，缺少在给定同温边界内用速率而非温度解释观测的步骤。",
+                "valueHash": "fdb8b6c7f8dac732387efcd22db403460395ac017706001b2b1f149d76c41ab8"
+              },
+              {
+                "id": "e31",
+                "pointer": "/artifacts/7/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "当皮肤接触物体时，若皮肤温度高于物体，热从皮肤流向物体。在两者温度相同（如均25°C）且接触面积、时间等条件也相同的边界内，热流方向一致、温差一致，此时皮肤降温幅度由单位时间从皮肤移走的热量决定。材料导热能力不同会导致传递速率不同：速率越高，相同时间内皮肤热损失越多，降温越大。因此，同温边界下的降温差直接诊断材料热传递速率差，而非温度差。课程中地毯与瓷砖同温但触感不同，正是瓷砖导热速率更高导致皮肤降温更多。",
+                "valueHash": "3e3327aabe4132564b572c8c0854dfd67b979f629e1539d4172731aad209cd1d"
+              },
+              {
+                "id": "e43",
+                "pointer": "/artifacts/13/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "在同温且接触条件相同的前提下，C处皮肤降温更大说明C的导热速率高于D，而非C温度更低。",
+                "valueHash": "de7f312e7b510a117360404ddaef6508cc98bb8c7ec4635a0261895a98e04ed2"
+              }
+            ],
+            "proposed": {
+              "kind": "conditions",
+              "status": "uncertain",
+              "affected": [
+                "Q6"
+              ],
+              "reason": "作者断言(e27,e31,e43)在同温、同接触面积与时间边界下皮肤降温差只能诊断材料热传递速率差而不能归因物体温度不同。题设(e17)仅固定面板同温、面积与时间相同，未固定皮肤初始温度等其它条件。补充皮肤初始温度不同的相容情况可使'只能诊断速率差'不成立，原结论未充分建立。",
+              "refs": [
+                "e17",
+                "e27",
+                "e31",
+                "e43"
+              ],
+              "challenge": {
+                "status": "counterexample",
+                "reason": "固定题设(e17)面板均25°C、同面积同时间，补充踩A前皮肤33°C、踩B前皮肤31°C（相容），降温差可能源于皮肤初始温度不同而非材料速率差，使作者结论的最弱必要条件缺失；未被给定事实排除。",
+                "refs": [
+                  "e17",
+                  "e27"
+                ]
+              }
+            },
+            "reviewReasons": [
+              "CONDITIONS_COUNTEREXAMPLE_REVIEW"
+            ]
+          },
+          {
+            "kind": "quantities",
+            "status": "clear",
+            "affected": [],
+            "reason": "作者仅定性比较降温幅度(e17中2.0 vs 0.5°C, e33中1.8 vs 0.4°C)推导速率高低，无具体公式或单位换算错误；原始输入数值与比较一致。",
+            "refs": [
+              "e17",
+              "e33",
+              "e37",
+              "e41"
+            ],
+            "witnesses": [
+              {
+                "id": "e17",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "两块地板面板A和B均处于25°C，赤脚以相同接触面积踩踏相同时间。皮肤传感器记录：4秒内A处皮肤降温2.0°C，B处降温0.5°C。下列哪一解释符合该观测？",
+                "valueHash": "ddfb868c51123d607fef7d598f38c8cc4460b1a89377a74392234043b5a63477"
+              },
+              {
+                "id": "e33",
+                "pointer": "/artifacts/8/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "两块烹饪砧板C和D均处于24°C，你用前臂内侧以相同面积（约50 cm²）接触5秒，皮肤初始温度为33°C。传感器测得C处皮肤降温1.8°C，D处降温0.4°C。请依据同温边界推导原因。",
+                "valueHash": "c500723055b9391fba67d7b9da9c0c21fc5c329badbe8f3bd933266e48169959"
+              },
+              {
+                "id": "e37",
+                "pointer": "/artifacts/10/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "皮肤降温幅度由单位时间从皮肤移走的热量决定：降温越大，说明同期热损失越多。",
+                "valueHash": "cfa7c5c15f288bcb6bf85521e6a17113919b5197f933f8caaa5ce5f86482deb5"
+              },
+              {
+                "id": "e41",
+                "pointer": "/artifacts/12/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "C降温1.8°C > D降温0.4°C，故C材料的热传递速率更高，导致更大皮肤热损失。",
+                "valueHash": "7f5d44bb346f6c6bf7ba4eecd3ac98ba81fcd31110157295d00370655b35daee"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ],
+        "keys": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 2,
+            "reason": "诊断(e25,e27)明确证据缺口：题设同温边界下学生误将皮肤降温差归因于面板温度不同，缺失速率差机制；补救解释(e31)正确引用源e3同温导热速率差原理并类比地毯/瓷砖；提供砧板同温推导问题(e33)作为可区分的相关后续检查，虽附解答但满足rubric‘提供可用next check且不强求执行’的2分要求。无内容或曝光缺陷。",
+            "refs": [
+              "e17",
+              "e19",
+              "e25",
+              "e27",
+              "e31",
+              "e33"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e17",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "两块地板面板A和B均处于25°C，赤脚以相同接触面积踩踏相同时间。皮肤传感器记录：4秒内A处皮肤降温2.0°C，B处降温0.5°C。下列哪一解释符合该观测？",
+                "valueHash": "ddfb868c51123d607fef7d598f38c8cc4460b1a89377a74392234043b5a63477"
+              },
+              {
+                "id": "e19",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "A面板实际温度低于B面板（如20°C对25°C）",
+                "valueHash": "5cbeb816dce4c091e58915bb9aba08d01eefc6cfa642fd2fdfc402d7c134cae9"
+              },
+              {
+                "id": "e25",
+                "pointer": "/artifacts/4/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "你选择了‘A面板实际温度低于B面板（如20°C对25°C）’这一选项，把皮肤降温更多解释为两块面板本身温度不同。",
+                "valueHash": "b7587f0553f21a6bd56064d6bfbf0806205a8061faabd37aa9e150e910955b3e"
+              },
+              {
+                "id": "e27",
+                "pointer": "/artifacts/5/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "缺失的关键区分是：在题设已固定两面板同温（均25°C）且接触面积、时间相同的边界下，皮肤降温幅度差异只能用于诊断材料从皮肤取热速率的差异，而不能归因于物体初始温度不同。你混淆了‘同温下的热传递速率差’与‘温度差导致热流’两个不同因果机制，缺少在给定同温边界内用速率而非温度解释观测的步骤。",
+                "valueHash": "fdb8b6c7f8dac732387efcd22db403460395ac017706001b2b1f149d76c41ab8"
+              },
+              {
+                "id": "e31",
+                "pointer": "/artifacts/7/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "当皮肤接触物体时，若皮肤温度高于物体，热从皮肤流向物体。在两者温度相同（如均25°C）且接触面积、时间等条件也相同的边界内，热流方向一致、温差一致，此时皮肤降温幅度由单位时间从皮肤移走的热量决定。材料导热能力不同会导致传递速率不同：速率越高，相同时间内皮肤热损失越多，降温越大。因此，同温边界下的降温差直接诊断材料热传递速率差，而非温度差。课程中地毯与瓷砖同温但触感不同，正是瓷砖导热速率更高导致皮肤降温更多。",
+                "valueHash": "3e3327aabe4132564b572c8c0854dfd67b979f629e1539d4172731aad209cd1d"
+              },
+              {
+                "id": "e33",
+                "pointer": "/artifacts/8/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "两块烹饪砧板C和D均处于24°C，你用前臂内侧以相同面积（约50 cm²）接触5秒，皮肤初始温度为33°C。传感器测得C处皮肤降温1.8°C，D处降温0.4°C。请依据同温边界推导原因。",
+                "valueHash": "c500723055b9391fba67d7b9da9c0c21fc5c329badbe8f3bd933266e48169959"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q6",
+          "level": "U",
+          "reason": "The authored conclusion has a compatible counterexample or an unresolved necessary premise. 固定题设(e17)面板均25°C、同面积同时间，补充踩A前皮肤33°C、踩B前皮肤31°C（相容），降温差可能源于皮肤初始温度不同而非材料速率差，使作者结论的最弱必要条件缺失；未被给定事实排除。",
+          "refs": [
+            "e17",
+            "e19",
+            "e25",
+            "e27",
+            "e31",
+            "e33"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e17",
+              "pointer": "/artifacts/0/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "两块地板面板A和B均处于25°C，赤脚以相同接触面积踩踏相同时间。皮肤传感器记录：4秒内A处皮肤降温2.0°C，B处降温0.5°C。下列哪一解释符合该观测？",
+              "valueHash": "ddfb868c51123d607fef7d598f38c8cc4460b1a89377a74392234043b5a63477"
+            },
+            {
+              "id": "e19",
+              "pointer": "/artifacts/1/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "A面板实际温度低于B面板（如20°C对25°C）",
+              "valueHash": "5cbeb816dce4c091e58915bb9aba08d01eefc6cfa642fd2fdfc402d7c134cae9"
+            },
+            {
+              "id": "e25",
+              "pointer": "/artifacts/4/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "你选择了‘A面板实际温度低于B面板（如20°C对25°C）’这一选项，把皮肤降温更多解释为两块面板本身温度不同。",
+              "valueHash": "b7587f0553f21a6bd56064d6bfbf0806205a8061faabd37aa9e150e910955b3e"
+            },
+            {
+              "id": "e27",
+              "pointer": "/artifacts/5/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "缺失的关键区分是：在题设已固定两面板同温（均25°C）且接触面积、时间相同的边界下，皮肤降温幅度差异只能用于诊断材料从皮肤取热速率的差异，而不能归因于物体初始温度不同。你混淆了‘同温下的热传递速率差’与‘温度差导致热流’两个不同因果机制，缺少在给定同温边界内用速率而非温度解释观测的步骤。",
+              "valueHash": "fdb8b6c7f8dac732387efcd22db403460395ac017706001b2b1f149d76c41ab8"
+            },
+            {
+              "id": "e31",
+              "pointer": "/artifacts/7/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "当皮肤接触物体时，若皮肤温度高于物体，热从皮肤流向物体。在两者温度相同（如均25°C）且接触面积、时间等条件也相同的边界内，热流方向一致、温差一致，此时皮肤降温幅度由单位时间从皮肤移走的热量决定。材料导热能力不同会导致传递速率不同：速率越高，相同时间内皮肤热损失越多，降温越大。因此，同温边界下的降温差直接诊断材料热传递速率差，而非温度差。课程中地毯与瓷砖同温但触感不同，正是瓷砖导热速率更高导致皮肤降温更多。",
+              "valueHash": "3e3327aabe4132564b572c8c0854dfd67b979f629e1539d4172731aad209cd1d"
+            },
+            {
+              "id": "e33",
+              "pointer": "/artifacts/8/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "两块烹饪砧板C和D均处于24°C，你用前臂内侧以相同面积（约50 cm²）接触5秒，皮肤初始温度为33°C。传感器测得C处皮肤降温1.8°C，D处降温0.4°C。请依据同温边界推导原因。",
+              "valueHash": "c500723055b9391fba67d7b9da9c0c21fc5c329badbe8f3bd933266e48169959"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [
+            {
+              "level": "U",
+              "code": "INDEPENDENT_CONDITIONS",
+              "detail": {
+                "kind": "conditions",
+                "status": "uncertain",
+                "affected": [
+                  "Q6"
+                ],
+                "reason": "The authored conclusion has a compatible counterexample or an unresolved necessary premise. 固定题设(e17)面板均25°C、同面积同时间，补充踩A前皮肤33°C、踩B前皮肤31°C（相容），降温差可能源于皮肤初始温度不同而非材料速率差，使作者结论的最弱必要条件缺失；未被给定事实排除。",
+                "refs": [
+                  "e17",
+                  "e27",
+                  "e31",
+                  "e43"
+                ],
+                "challenge": {
+                  "status": "counterexample",
+                  "reason": "固定题设(e17)面板均25°C、同面积同时间，补充踩A前皮肤33°C、踩B前皮肤31°C（相容），降温差可能源于皮肤初始温度不同而非材料速率差，使作者结论的最弱必要条件缺失；未被给定事实排除。",
+                  "refs": [
+                    "e17",
+                    "e27"
+                  ]
+                },
+                "witnesses": [
+                  {
+                    "id": "e17",
+                    "pointer": "/artifacts/0/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "两块地板面板A和B均处于25°C，赤脚以相同接触面积踩踏相同时间。皮肤传感器记录：4秒内A处皮肤降温2.0°C，B处降温0.5°C。下列哪一解释符合该观测？",
+                    "valueHash": "ddfb868c51123d607fef7d598f38c8cc4460b1a89377a74392234043b5a63477"
+                  },
+                  {
+                    "id": "e27",
+                    "pointer": "/artifacts/5/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "缺失的关键区分是：在题设已固定两面板同温（均25°C）且接触面积、时间相同的边界下，皮肤降温幅度差异只能用于诊断材料从皮肤取热速率的差异，而不能归因于物体初始温度不同。你混淆了‘同温下的热传递速率差’与‘温度差导致热流’两个不同因果机制，缺少在给定同温边界内用速率而非温度解释观测的步骤。",
+                    "valueHash": "fdb8b6c7f8dac732387efcd22db403460395ac017706001b2b1f149d76c41ab8"
+                  },
+                  {
+                    "id": "e31",
+                    "pointer": "/artifacts/7/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "当皮肤接触物体时，若皮肤温度高于物体，热从皮肤流向物体。在两者温度相同（如均25°C）且接触面积、时间等条件也相同的边界内，热流方向一致、温差一致，此时皮肤降温幅度由单位时间从皮肤移走的热量决定。材料导热能力不同会导致传递速率不同：速率越高，相同时间内皮肤热损失越多，降温越大。因此，同温边界下的降温差直接诊断材料热传递速率差，而非温度差。课程中地毯与瓷砖同温但触感不同，正是瓷砖导热速率更高导致皮肤降温更多。",
+                    "valueHash": "3e3327aabe4132564b572c8c0854dfd67b979f629e1539d4172731aad209cd1d"
+                  },
+                  {
+                    "id": "e43",
+                    "pointer": "/artifacts/13/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "在同温且接触条件相同的前提下，C处皮肤降温更大说明C的导热速率高于D，而非C温度更低。",
+                    "valueHash": "de7f312e7b510a117360404ddaef6508cc98bb8c7ec4635a0261895a98e04ed2"
+                  }
+                ],
+                "proposed": {
+                  "kind": "conditions",
+                  "status": "uncertain",
+                  "affected": [
+                    "Q6"
+                  ],
+                  "reason": "作者断言(e27,e31,e43)在同温、同接触面积与时间边界下皮肤降温差只能诊断材料热传递速率差而不能归因物体温度不同。题设(e17)仅固定面板同温、面积与时间相同，未固定皮肤初始温度等其它条件。补充皮肤初始温度不同的相容情况可使'只能诊断速率差'不成立，原结论未充分建立。",
+                  "refs": [
+                    "e17",
+                    "e27",
+                    "e31",
+                    "e43"
+                  ],
+                  "challenge": {
+                    "status": "counterexample",
+                    "reason": "固定题设(e17)面板均25°C、同面积同时间，补充踩A前皮肤33°C、踩B前皮肤31°C（相容），降温差可能源于皮肤初始温度不同而非材料速率差，使作者结论的最弱必要条件缺失；未被给定事实排除。",
+                    "refs": [
+                      "e17",
+                      "e27"
+                    ]
+                  }
+                },
+                "reviewReasons": [
+                  "CONDITIONS_COUNTEREXAMPLE_REVIEW"
+                ]
+              }
+            }
+          ],
+          "proposedLevel": 2,
+          "proposedReason": "诊断(e25,e27)明确证据缺口：题设同温边界下学生误将皮肤降温差归因于面板温度不同，缺失速率差机制；补救解释(e31)正确引用源e3同温导热速率差原理并类比地毯/瓷砖；提供砧板同温推导问题(e33)作为可区分的相关后续检查，虽附解答但满足rubric‘提供可用next check且不强求执行’的2分要求。无内容或曝光缺陷。",
+          "decidingConstraint": "INDEPENDENT_CONDITIONS"
+        }
+      ],
+      "reviewRequired": [
+        {
+          "dimension": "Q6",
+          "reason": "UNRESOLVED"
+        }
+      ]
+    },
+    "resultHash": "56d5c030325bc4e16670db64971d2afd10eb9245d96a3bacd8a3b0ba495ff31c"
+  }
+}

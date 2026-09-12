@@ -1,0 +1,565 @@
+{
+  "task": {
+    "caseId": "N-B-E01-practice",
+    "runId": "N-B-E01-practice-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-B-E01-practice.json",
+    "inputHash": "beeb921efc5bc6ea6945536983f0b235e4e6ec80c09ddff63ef3b11247ff3ee3",
+    "population": "natural",
+    "sourceId": "B-E01"
+  },
+  "inputHash": "beeb921efc5bc6ea6945536983f0b235e4e6ec80c09ddff63ef3b11247ff3ee3",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "prepare-context-current": "edb0391f5bf776b33b0e41d535980c4cdc05f0c8753c7903579d94ba7adb8028",
+      "solve-current": "7ac612d42e7c83542a3fcfb27765971e18e0779b2d1a0e62ff5d8137e0763dbd",
+      "correctness": "aa550be465e1b393601675322afb33f34b55c7396d962cb7b05977591e7264b2",
+      "artifact-audit": "aa550be465e1b393601675322afb33f34b55c7396d962cb7b05977591e7264b2"
+    },
+    "stages": {
+      "prepare-context-current": {
+        "contexts": [
+          {
+            "taskId": "current",
+            "status": "ready",
+            "reason": "题干自含情景事实与参数：同温25°C下皮肤接触金属勺5秒后温度降3°C，接触布垫降1°C；historyIds中无本题特指先前事实，通用规则在sources(B-E01)已涵盖不重复提取，所需情景可完整分离",
+            "premises": [],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "solve-current": {
+        "status": "resolved",
+        "solution": "选A：金属导热比布垫快，导致皮肤热损失更大。e3指出金属为良导热体、布类属不良导体；同温同时间下热传递速率不同使良导体接触皮肤热损失更大、降温更多（e9），题设金属勺降3°C>布垫降1°C与之相符。必要前提：除材料外接触条件相同，题目隐含。",
+        "witnesses": [
+          {
+            "id": "e3",
+            "pointer": "/sources/0/text",
+            "role": "source",
+            "kind": "text",
+            "value": "Your feet feel cold as you walk barefoot across the living room carpet in your cold house and then step onto the kitchen tile floor. This result is intriguing, since the carpet and tile floor are both at the same temperature. The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.\n\nSome materials conduct thermal energy faster than others. In general, good conductors of electricity (metals like copper, aluminum, gold, and silver) are also good heat conductors, whereas insulators of electricity (wood, plastic, and rubber) are poor heat conductors.\n\nThe (average) kinetic energy of a molecule in the hot body is higher than in the colder body. If two molecules collide, an energy transfer from the molecule with greater kinetic energy to the molecule with less kinetic energy occurs. The cumulative effect from all collisions results in a net flux of heat from the hot body to the colder body. The heat flux thus depends on the temperature difference ΔΤ=Τhot−Tcold. Therefore, you will get a more severe burn from boiling water than from hot tap water. Conversely, if the temperatures are the same, the net heat transfer rate falls to zero, and equilibrium is achieved. Owing to the fact that the number of collisions increases with increasing area, heat conduction depends on the cross-sectional area. If you touch a cold wall with your palm, your hand cools faster than if you just touch it with your fingertip.",
+            "valueHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd"
+          },
+          {
+            "id": "e9",
+            "pointer": "/prerequisites/2",
+            "role": "context",
+            "kind": "text",
+            "value": "解释同温度地毯与瓷砖触感不同的原因：在相同温度和相同时间区间内，因热传递速率不同导致瓷砖接触皮肤热损失更大、温度下降更大，且其他条件相同。",
+            "valueHash": "ddd265caebe0d2facdb2f53d103a3b1628e6181fcc7e1dfb2f150f1232b5ebc1"
+          },
+          {
+            "id": "e14",
+            "pointer": "/question/prompt",
+            "role": "question",
+            "kind": "text",
+            "value": "同温25°C下，皮肤接触金属勺5秒后温度降3°C，接触布垫降1°C。哪种解释符合此观察？",
+            "valueHash": "fab8e482e4998596820003cdf69821ddcddcff666e8dd444fa23c6586c9ad137"
+          },
+          {
+            "id": "e17",
+            "pointer": "/question/options/0/text",
+            "role": "question",
+            "kind": "text",
+            "value": "金属导热比布垫快，导致皮肤热损失更大",
+            "valueHash": "f3b89d01dc10c9f9eb1f3ac0664deac1e9e9c1c49e5db042013bf0b28c0a0ad2"
+          }
+        ],
+        "reviewReasons": []
+      },
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "uncertain",
+            "affected": [
+              "Q4"
+            ],
+            "reason": "The authored conclusion has a compatible counterexample or an unresolved necessary premise. 固定已知事实(同温25°C、5秒、金属降3°C>布垫降1°C)与明示假设，可相容补充'布垫接触压力远小于金属勺'之具体情况，使'其他条件相同'不成立而结论(金属导热更快为唯一原因)改变，该反例无法由给定事实/规则排除。",
+            "refs": [
+              "e26",
+              "e14",
+              "e9",
+              "e3"
+            ],
+            "challenge": {
+              "status": "counterexample",
+              "reason": "固定已知事实(同温25°C、5秒、金属降3°C>布垫降1°C)与明示假设，可相容补充'布垫接触压力远小于金属勺'之具体情况，使'其他条件相同'不成立而结论(金属导热更快为唯一原因)改变，该反例无法由给定事实/规则排除。",
+              "refs": [
+                "e14",
+                "e9"
+              ]
+            },
+            "witnesses": [
+              {
+                "id": "e26",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "观察显示同温同时间金属侧降温更多，依据热传导速率差异可诊断原因为金属导热更快。",
+                "valueHash": "4c33e62185ac1f8f090ba5f027d743f463abef351a69426e9efb0162048fcc01"
+              },
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "同温25°C下，皮肤接触金属勺5秒后温度降3°C，接触布垫降1°C。哪种解释符合此观察？",
+                "valueHash": "fab8e482e4998596820003cdf69821ddcddcff666e8dd444fa23c6586c9ad137"
+              },
+              {
+                "id": "e9",
+                "pointer": "/prerequisites/2",
+                "role": "context",
+                "kind": "text",
+                "value": "解释同温度地毯与瓷砖触感不同的原因：在相同温度和相同时间区间内，因热传递速率不同导致瓷砖接触皮肤热损失更大、温度下降更大，且其他条件相同。",
+                "valueHash": "ddd265caebe0d2facdb2f53d103a3b1628e6181fcc7e1dfb2f150f1232b5ebc1"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "Your feet feel cold as you walk barefoot across the living room carpet in your cold house and then step onto the kitchen tile floor. This result is intriguing, since the carpet and tile floor are both at the same temperature. The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.\n\nSome materials conduct thermal energy faster than others. In general, good conductors of electricity (metals like copper, aluminum, gold, and silver) are also good heat conductors, whereas insulators of electricity (wood, plastic, and rubber) are poor heat conductors.\n\nThe (average) kinetic energy of a molecule in the hot body is higher than in the colder body. If two molecules collide, an energy transfer from the molecule with greater kinetic energy to the molecule with less kinetic energy occurs. The cumulative effect from all collisions results in a net flux of heat from the hot body to the colder body. The heat flux thus depends on the temperature difference ΔΤ=Τhot−Tcold. Therefore, you will get a more severe burn from boiling water than from hot tap water. Conversely, if the temperatures are the same, the net heat transfer rate falls to zero, and equilibrium is achieved. Owing to the fact that the number of collisions increases with increasing area, heat conduction depends on the cross-sectional area. If you touch a cold wall with your palm, your hand cools faster than if you just touch it with your fingertip.",
+                "valueHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd"
+              }
+            ],
+            "proposed": {
+              "kind": "conditions",
+              "status": "uncertain",
+              "affected": [
+                "Q4"
+              ],
+              "reason": "作者解释(e26)由观察(同温同时间金属侧降温更多，e14)直接诊断原因为金属导热更快，但未明示'其他条件相同'这一来源(e9)要求的联合必要条件；题设未提供接触面积/压力等是否相同，支持条件不明，不能从结论倒推前提成立。",
+              "refs": [
+                "e26",
+                "e14",
+                "e9",
+                "e3"
+              ],
+              "challenge": {
+                "status": "counterexample",
+                "reason": "固定已知事实(同温25°C、5秒、金属降3°C>布垫降1°C)与明示假设，可相容补充'布垫接触压力远小于金属勺'之具体情况，使'其他条件相同'不成立而结论(金属导热更快为唯一原因)改变，该反例无法由给定事实/规则排除。",
+                "refs": [
+                  "e14",
+                  "e9"
+                ]
+              }
+            },
+            "reviewReasons": [
+              "CONDITIONS_COUNTEREXAMPLE_REVIEW"
+            ]
+          },
+          {
+            "kind": "quantities",
+            "status": "not_applicable",
+            "affected": [],
+            "reason": "作者产物(e24,e26)及题设(e14)仅含定性观测值与选项，无公式、比率或数值演算断言，rates为空，无重算对象。",
+            "contextHash": "aa550be465e1b393601675322afb33f34b55c7396d962cb7b05977591e7264b2",
+            "proposed": {
+              "kind": "quantities",
+              "status": "not_applicable",
+              "affected": [],
+              "reason": "作者产物(e24,e26)及题设(e14)仅含定性观测值与选项，无公式、比率或数值演算断言，rates为空，无重算对象。",
+              "refs": [
+                "e14",
+                "e26"
+              ]
+            },
+            "reviewReasons": []
+          }
+        ],
+        "keys": [
+          {
+            "taskId": "current",
+            "status": "uncertain",
+            "reason": "作者指定选项为A文本'金属导热比布垫快，导致皮肤热损失更大'(e24)及解释(e26)；盲解(taskId current)同样选A并引e3/e9，但盲解称'除材料外接触条件相同，题目隐含'。当前题设(e14)未明示其他条件相同，而e9规则要求该条件才能诊断导热差异；存在相容反例使A未必正确，无法裁定作者键正确性，亦不能因盲解选择相同而升级为agrees。",
+            "refs": [
+              "e24",
+              "e26",
+              "e14",
+              "e9"
+            ],
+            "witnesses": [
+              {
+                "id": "e24",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "金属导热比布垫快，导致皮肤热损失更大",
+                "valueHash": "f3b89d01dc10c9f9eb1f3ac0664deac1e9e9c1c49e5db042013bf0b28c0a0ad2"
+              },
+              {
+                "id": "e26",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "观察显示同温同时间金属侧降温更多，依据热传导速率差异可诊断原因为金属导热更快。",
+                "valueHash": "4c33e62185ac1f8f090ba5f027d743f463abef351a69426e9efb0162048fcc01"
+              },
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "同温25°C下，皮肤接触金属勺5秒后温度降3°C，接触布垫降1°C。哪种解释符合此观察？",
+                "valueHash": "fab8e482e4998596820003cdf69821ddcddcff666e8dd444fa23c6586c9ad137"
+              },
+              {
+                "id": "e9",
+                "pointer": "/prerequisites/2",
+                "role": "context",
+                "kind": "text",
+                "value": "解释同温度地毯与瓷砖触感不同的原因：在相同温度和相同时间区间内，因热传递速率不同导致瓷砖接触皮肤热损失更大、温度下降更大，且其他条件相同。",
+                "valueHash": "ddd265caebe0d2facdb2f53d103a3b1628e6181fcc7e1dfb2f150f1232b5ebc1"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q4",
+            "level": 2,
+            "reason": "当前题 e14 设同温25°C同时间5秒金属勺降3°C布垫降1°C，选项 e17(A) 为金属导热快致皮肤热损失更大，e23/e24 作者选定 A。盲解 current 解析选A且状态 resolved，键一致。前提充分：e3 指金属良导、绝缘体差，e9 解释同温同时间速率不同致降温差；priorExposure e31/e57/e59 提供金属快于绝缘体原理但未泄露本题具体答案（e35/e43 为铜板木板旧题不同），无 solution disclosure。题目有充分前提、可辩护答案集、独立于先前曝光，符合 Q4 的2分标准。",
+            "refs": [
+              "e14",
+              "e17",
+              "e23",
+              "e24",
+              "e3",
+              "e9",
+              "e31",
+              "e35",
+              "e43"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "同温25°C下，皮肤接触金属勺5秒后温度降3°C，接触布垫降1°C。哪种解释符合此观察？",
+                "valueHash": "fab8e482e4998596820003cdf69821ddcddcff666e8dd444fa23c6586c9ad137"
+              },
+              {
+                "id": "e17",
+                "pointer": "/question/options/0/text",
+                "role": "question",
+                "kind": "text",
+                "value": "金属导热比布垫快，导致皮肤热损失更大",
+                "valueHash": "f3b89d01dc10c9f9eb1f3ac0664deac1e9e9c1c49e5db042013bf0b28c0a0ad2"
+              },
+              {
+                "id": "e23",
+                "pointer": "/artifacts/0/id",
+                "role": "artifact",
+                "kind": "text",
+                "value": "current-author-selected-option",
+                "valueHash": "b816aad189ec75d38f56f282fa787e18d257272991403797ca4ce5fe2bfe5a2d"
+              },
+              {
+                "id": "e24",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "金属导热比布垫快，导致皮肤热损失更大",
+                "valueHash": "f3b89d01dc10c9f9eb1f3ac0664deac1e9e9c1c49e5db042013bf0b28c0a0ad2"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "Your feet feel cold as you walk barefoot across the living room carpet in your cold house and then step onto the kitchen tile floor. This result is intriguing, since the carpet and tile floor are both at the same temperature. The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.\n\nSome materials conduct thermal energy faster than others. In general, good conductors of electricity (metals like copper, aluminum, gold, and silver) are also good heat conductors, whereas insulators of electricity (wood, plastic, and rubber) are poor heat conductors.\n\nThe (average) kinetic energy of a molecule in the hot body is higher than in the colder body. If two molecules collide, an energy transfer from the molecule with greater kinetic energy to the molecule with less kinetic energy occurs. The cumulative effect from all collisions results in a net flux of heat from the hot body to the colder body. The heat flux thus depends on the temperature difference ΔΤ=Τhot−Tcold. Therefore, you will get a more severe burn from boiling water than from hot tap water. Conversely, if the temperatures are the same, the net heat transfer rate falls to zero, and equilibrium is achieved. Owing to the fact that the number of collisions increases with increasing area, heat conduction depends on the cross-sectional area. If you touch a cold wall with your palm, your hand cools faster than if you just touch it with your fingertip.",
+                "valueHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd"
+              },
+              {
+                "id": "e9",
+                "pointer": "/prerequisites/2",
+                "role": "context",
+                "kind": "text",
+                "value": "解释同温度地毯与瓷砖触感不同的原因：在相同温度和相同时间区间内，因热传递速率不同导致瓷砖接触皮肤热损失更大、温度下降更大，且其他条件相同。",
+                "valueHash": "ddd265caebe0d2facdb2f53d103a3b1628e6181fcc7e1dfb2f150f1232b5ebc1"
+              },
+              {
+                "id": "e31",
+                "pointer": "/priorExposure/1/text",
+                "role": "prior_exposure",
+                "kind": "text",
+                "value": "地毯和瓷砖温度相同，但皮肤接触瓷砖时相同时间内热损失更大、温度下降更大。进一步，材料导热能力不同，金属等良导体比木材塑料等绝缘体传热快。瓷砖类致密材质导热优于地毯纤维，因此更快带走皮肤热量。",
+                "valueHash": "966b80071f0293f7b5d93534b7d58392cee9f93739c5cf9746afd07604bf0f12"
+              },
+              {
+                "id": "e35",
+                "pointer": "/priorExposure/3/text",
+                "role": "prior_exposure",
+                "kind": "text",
+                "value": "同温20°C的铜板与木板，用手指尖同样接触2秒。铜导热优于木且同温同时间接触。哪侧手指温度下降更多？",
+                "valueHash": "0c1065883e36dfd15c0c3c8c76563b076f0500da1e2e797868b7341447d62856"
+              },
+              {
+                "id": "e43",
+                "pointer": "/priorExposure/7/text",
+                "role": "prior_exposure",
+                "kind": "text",
+                "value": "{\"prompt\":\"同温20°C的铜板与木板，用手指尖同样接触2秒。铜导热优于木且同温同时间接触。哪侧手指温度下降更多？\",\"options\":[{\"id\":\"A\",\"text\":\"铜板侧下降更多\"},{\"id\":\"B\",\"text\":\"木板侧下降更多\"}],\"response\":\"A\",\"correct\":true,\"feedback\":\"正确：铜导热快，相同条件下热损失更大。\"}",
+                "valueHash": "f4b86bac413e559dd55761e9a38565fec67c283c4db27ed352bbfb08babd3d37"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q4",
+          "level": "U",
+          "reason": "The authored conclusion has a compatible counterexample or an unresolved necessary premise. 固定已知事实(同温25°C、5秒、金属降3°C>布垫降1°C)与明示假设，可相容补充'布垫接触压力远小于金属勺'之具体情况，使'其他条件相同'不成立而结论(金属导热更快为唯一原因)改变，该反例无法由给定事实/规则排除。",
+          "refs": [
+            "e14",
+            "e17",
+            "e23",
+            "e24",
+            "e3",
+            "e9",
+            "e31",
+            "e35",
+            "e43"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e14",
+              "pointer": "/question/prompt",
+              "role": "question",
+              "kind": "text",
+              "value": "同温25°C下，皮肤接触金属勺5秒后温度降3°C，接触布垫降1°C。哪种解释符合此观察？",
+              "valueHash": "fab8e482e4998596820003cdf69821ddcddcff666e8dd444fa23c6586c9ad137"
+            },
+            {
+              "id": "e17",
+              "pointer": "/question/options/0/text",
+              "role": "question",
+              "kind": "text",
+              "value": "金属导热比布垫快，导致皮肤热损失更大",
+              "valueHash": "f3b89d01dc10c9f9eb1f3ac0664deac1e9e9c1c49e5db042013bf0b28c0a0ad2"
+            },
+            {
+              "id": "e23",
+              "pointer": "/artifacts/0/id",
+              "role": "artifact",
+              "kind": "text",
+              "value": "current-author-selected-option",
+              "valueHash": "b816aad189ec75d38f56f282fa787e18d257272991403797ca4ce5fe2bfe5a2d"
+            },
+            {
+              "id": "e24",
+              "pointer": "/artifacts/0/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "金属导热比布垫快，导致皮肤热损失更大",
+              "valueHash": "f3b89d01dc10c9f9eb1f3ac0664deac1e9e9c1c49e5db042013bf0b28c0a0ad2"
+            },
+            {
+              "id": "e3",
+              "pointer": "/sources/0/text",
+              "role": "source",
+              "kind": "text",
+              "value": "Your feet feel cold as you walk barefoot across the living room carpet in your cold house and then step onto the kitchen tile floor. This result is intriguing, since the carpet and tile floor are both at the same temperature. The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.\n\nSome materials conduct thermal energy faster than others. In general, good conductors of electricity (metals like copper, aluminum, gold, and silver) are also good heat conductors, whereas insulators of electricity (wood, plastic, and rubber) are poor heat conductors.\n\nThe (average) kinetic energy of a molecule in the hot body is higher than in the colder body. If two molecules collide, an energy transfer from the molecule with greater kinetic energy to the molecule with less kinetic energy occurs. The cumulative effect from all collisions results in a net flux of heat from the hot body to the colder body. The heat flux thus depends on the temperature difference ΔΤ=Τhot−Tcold. Therefore, you will get a more severe burn from boiling water than from hot tap water. Conversely, if the temperatures are the same, the net heat transfer rate falls to zero, and equilibrium is achieved. Owing to the fact that the number of collisions increases with increasing area, heat conduction depends on the cross-sectional area. If you touch a cold wall with your palm, your hand cools faster than if you just touch it with your fingertip.",
+              "valueHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd"
+            },
+            {
+              "id": "e9",
+              "pointer": "/prerequisites/2",
+              "role": "context",
+              "kind": "text",
+              "value": "解释同温度地毯与瓷砖触感不同的原因：在相同温度和相同时间区间内，因热传递速率不同导致瓷砖接触皮肤热损失更大、温度下降更大，且其他条件相同。",
+              "valueHash": "ddd265caebe0d2facdb2f53d103a3b1628e6181fcc7e1dfb2f150f1232b5ebc1"
+            },
+            {
+              "id": "e31",
+              "pointer": "/priorExposure/1/text",
+              "role": "prior_exposure",
+              "kind": "text",
+              "value": "地毯和瓷砖温度相同，但皮肤接触瓷砖时相同时间内热损失更大、温度下降更大。进一步，材料导热能力不同，金属等良导体比木材塑料等绝缘体传热快。瓷砖类致密材质导热优于地毯纤维，因此更快带走皮肤热量。",
+              "valueHash": "966b80071f0293f7b5d93534b7d58392cee9f93739c5cf9746afd07604bf0f12"
+            },
+            {
+              "id": "e35",
+              "pointer": "/priorExposure/3/text",
+              "role": "prior_exposure",
+              "kind": "text",
+              "value": "同温20°C的铜板与木板，用手指尖同样接触2秒。铜导热优于木且同温同时间接触。哪侧手指温度下降更多？",
+              "valueHash": "0c1065883e36dfd15c0c3c8c76563b076f0500da1e2e797868b7341447d62856"
+            },
+            {
+              "id": "e43",
+              "pointer": "/priorExposure/7/text",
+              "role": "prior_exposure",
+              "kind": "text",
+              "value": "{\"prompt\":\"同温20°C的铜板与木板，用手指尖同样接触2秒。铜导热优于木且同温同时间接触。哪侧手指温度下降更多？\",\"options\":[{\"id\":\"A\",\"text\":\"铜板侧下降更多\"},{\"id\":\"B\",\"text\":\"木板侧下降更多\"}],\"response\":\"A\",\"correct\":true,\"feedback\":\"正确：铜导热快，相同条件下热损失更大。\"}",
+              "valueHash": "f4b86bac413e559dd55761e9a38565fec67c283c4db27ed352bbfb08babd3d37"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [
+            {
+              "level": "U",
+              "code": "INDEPENDENT_CONDITIONS",
+              "detail": {
+                "kind": "conditions",
+                "status": "uncertain",
+                "affected": [
+                  "Q4"
+                ],
+                "reason": "The authored conclusion has a compatible counterexample or an unresolved necessary premise. 固定已知事实(同温25°C、5秒、金属降3°C>布垫降1°C)与明示假设，可相容补充'布垫接触压力远小于金属勺'之具体情况，使'其他条件相同'不成立而结论(金属导热更快为唯一原因)改变，该反例无法由给定事实/规则排除。",
+                "refs": [
+                  "e26",
+                  "e14",
+                  "e9",
+                  "e3"
+                ],
+                "challenge": {
+                  "status": "counterexample",
+                  "reason": "固定已知事实(同温25°C、5秒、金属降3°C>布垫降1°C)与明示假设，可相容补充'布垫接触压力远小于金属勺'之具体情况，使'其他条件相同'不成立而结论(金属导热更快为唯一原因)改变，该反例无法由给定事实/规则排除。",
+                  "refs": [
+                    "e14",
+                    "e9"
+                  ]
+                },
+                "witnesses": [
+                  {
+                    "id": "e26",
+                    "pointer": "/artifacts/1/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "观察显示同温同时间金属侧降温更多，依据热传导速率差异可诊断原因为金属导热更快。",
+                    "valueHash": "4c33e62185ac1f8f090ba5f027d743f463abef351a69426e9efb0162048fcc01"
+                  },
+                  {
+                    "id": "e14",
+                    "pointer": "/question/prompt",
+                    "role": "question",
+                    "kind": "text",
+                    "value": "同温25°C下，皮肤接触金属勺5秒后温度降3°C，接触布垫降1°C。哪种解释符合此观察？",
+                    "valueHash": "fab8e482e4998596820003cdf69821ddcddcff666e8dd444fa23c6586c9ad137"
+                  },
+                  {
+                    "id": "e9",
+                    "pointer": "/prerequisites/2",
+                    "role": "context",
+                    "kind": "text",
+                    "value": "解释同温度地毯与瓷砖触感不同的原因：在相同温度和相同时间区间内，因热传递速率不同导致瓷砖接触皮肤热损失更大、温度下降更大，且其他条件相同。",
+                    "valueHash": "ddd265caebe0d2facdb2f53d103a3b1628e6181fcc7e1dfb2f150f1232b5ebc1"
+                  },
+                  {
+                    "id": "e3",
+                    "pointer": "/sources/0/text",
+                    "role": "source",
+                    "kind": "text",
+                    "value": "Your feet feel cold as you walk barefoot across the living room carpet in your cold house and then step onto the kitchen tile floor. This result is intriguing, since the carpet and tile floor are both at the same temperature. The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.\n\nSome materials conduct thermal energy faster than others. In general, good conductors of electricity (metals like copper, aluminum, gold, and silver) are also good heat conductors, whereas insulators of electricity (wood, plastic, and rubber) are poor heat conductors.\n\nThe (average) kinetic energy of a molecule in the hot body is higher than in the colder body. If two molecules collide, an energy transfer from the molecule with greater kinetic energy to the molecule with less kinetic energy occurs. The cumulative effect from all collisions results in a net flux of heat from the hot body to the colder body. The heat flux thus depends on the temperature difference ΔΤ=Τhot−Tcold. Therefore, you will get a more severe burn from boiling water than from hot tap water. Conversely, if the temperatures are the same, the net heat transfer rate falls to zero, and equilibrium is achieved. Owing to the fact that the number of collisions increases with increasing area, heat conduction depends on the cross-sectional area. If you touch a cold wall with your palm, your hand cools faster than if you just touch it with your fingertip.",
+                    "valueHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd"
+                  }
+                ],
+                "proposed": {
+                  "kind": "conditions",
+                  "status": "uncertain",
+                  "affected": [
+                    "Q4"
+                  ],
+                  "reason": "作者解释(e26)由观察(同温同时间金属侧降温更多，e14)直接诊断原因为金属导热更快，但未明示'其他条件相同'这一来源(e9)要求的联合必要条件；题设未提供接触面积/压力等是否相同，支持条件不明，不能从结论倒推前提成立。",
+                  "refs": [
+                    "e26",
+                    "e14",
+                    "e9",
+                    "e3"
+                  ],
+                  "challenge": {
+                    "status": "counterexample",
+                    "reason": "固定已知事实(同温25°C、5秒、金属降3°C>布垫降1°C)与明示假设，可相容补充'布垫接触压力远小于金属勺'之具体情况，使'其他条件相同'不成立而结论(金属导热更快为唯一原因)改变，该反例无法由给定事实/规则排除。",
+                    "refs": [
+                      "e14",
+                      "e9"
+                    ]
+                  }
+                },
+                "reviewReasons": [
+                  "CONDITIONS_COUNTEREXAMPLE_REVIEW"
+                ]
+              }
+            },
+            {
+              "level": "U",
+              "code": "CURRENT_KEY",
+              "detail": {
+                "taskId": "current",
+                "status": "uncertain",
+                "reason": "作者指定选项为A文本'金属导热比布垫快，导致皮肤热损失更大'(e24)及解释(e26)；盲解(taskId current)同样选A并引e3/e9，但盲解称'除材料外接触条件相同，题目隐含'。当前题设(e14)未明示其他条件相同，而e9规则要求该条件才能诊断导热差异；存在相容反例使A未必正确，无法裁定作者键正确性，亦不能因盲解选择相同而升级为agrees。",
+                "refs": [
+                  "e24",
+                  "e26",
+                  "e14",
+                  "e9"
+                ],
+                "witnesses": [
+                  {
+                    "id": "e24",
+                    "pointer": "/artifacts/0/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "金属导热比布垫快，导致皮肤热损失更大",
+                    "valueHash": "f3b89d01dc10c9f9eb1f3ac0664deac1e9e9c1c49e5db042013bf0b28c0a0ad2"
+                  },
+                  {
+                    "id": "e26",
+                    "pointer": "/artifacts/1/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "观察显示同温同时间金属侧降温更多，依据热传导速率差异可诊断原因为金属导热更快。",
+                    "valueHash": "4c33e62185ac1f8f090ba5f027d743f463abef351a69426e9efb0162048fcc01"
+                  },
+                  {
+                    "id": "e14",
+                    "pointer": "/question/prompt",
+                    "role": "question",
+                    "kind": "text",
+                    "value": "同温25°C下，皮肤接触金属勺5秒后温度降3°C，接触布垫降1°C。哪种解释符合此观察？",
+                    "valueHash": "fab8e482e4998596820003cdf69821ddcddcff666e8dd444fa23c6586c9ad137"
+                  },
+                  {
+                    "id": "e9",
+                    "pointer": "/prerequisites/2",
+                    "role": "context",
+                    "kind": "text",
+                    "value": "解释同温度地毯与瓷砖触感不同的原因：在相同温度和相同时间区间内，因热传递速率不同导致瓷砖接触皮肤热损失更大、温度下降更大，且其他条件相同。",
+                    "valueHash": "ddd265caebe0d2facdb2f53d103a3b1628e6181fcc7e1dfb2f150f1232b5ebc1"
+                  }
+                ],
+                "reviewReasons": []
+              }
+            }
+          ],
+          "proposedLevel": 2,
+          "proposedReason": "当前题 e14 设同温25°C同时间5秒金属勺降3°C布垫降1°C，选项 e17(A) 为金属导热快致皮肤热损失更大，e23/e24 作者选定 A。盲解 current 解析选A且状态 resolved，键一致。前提充分：e3 指金属良导、绝缘体差，e9 解释同温同时间速率不同致降温差；priorExposure e31/e57/e59 提供金属快于绝缘体原理但未泄露本题具体答案（e35/e43 为铜板木板旧题不同），无 solution disclosure。题目有充分前提、可辩护答案集、独立于先前曝光，符合 Q4 的2分标准。",
+          "decidingConstraint": "INDEPENDENT_CONDITIONS"
+        }
+      ],
+      "reviewRequired": [
+        {
+          "dimension": "Q4",
+          "reason": "UNRESOLVED"
+        }
+      ]
+    },
+    "resultHash": "d34a357a4e55bcf3323c32baa693e1eb8d5acb124cc23e0df046a8ec72524720"
+  }
+}

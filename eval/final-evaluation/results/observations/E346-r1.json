@@ -1,0 +1,354 @@
+{
+  "task": {
+    "caseId": "E346",
+    "runId": "E346-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E346.json",
+    "inputHash": "4d15ad69f5f90308ace99331cb0165c1efeff65add932869e1930e26ef505d53",
+    "population": "controlled",
+    "sourceId": "F12"
+  },
+  "inputHash": "4d15ad69f5f90308ace99331cb0165c1efeff65add932869e1930e26ef505d53",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "solve-current": "b6f8ea482220a52586febd2a935b97c47d715374aec8652379994e618bd06ab4",
+      "correctness": "9b27aa608c11e38792cd1f61a37469dba1d1b0e0f90f579f8565f9f95b2dd976",
+      "artifact-audit": "9b27aa608c11e38792cd1f61a37469dba1d1b0e0f90f579f8565f9f95b2dd976",
+      "certification": "9b27aa608c11e38792cd1f61a37469dba1d1b0e0f90f579f8565f9f95b2dd976"
+    },
+    "stages": {
+      "solve-current": {
+        "status": "resolved",
+        "solution": "检出比例=40/50=80%（分母为真实裂纹片数50）。被标记者中真裂纹比例=40/(40+60)=40%（分母为被标记总数100）。分母不同：前者衡量从真裂纹中找出的能力，群体限定真裂纹；后者衡量标记结果的真实可靠性，群体为所有被标记木片（题设e14，分母区分见e3）。",
+        "witnesses": [
+          {
+            "id": "e14",
+            "pointer": "/question/prompt",
+            "role": "question",
+            "kind": "text",
+            "value": "一批500片木片中，50片真有裂纹，450片无裂纹。筛查标记了真裂纹中的40片，也误标无裂纹中的60片。求检出比例和被标记者中真裂纹比例，并说明为什么分母不同。",
+            "valueHash": "b58e67507e11ad8978c9d50eaa31830798f14a9c9f5c8dcdc36d626d11424bc8"
+          },
+          {
+            "id": "e3",
+            "pointer": "/sources/0/text",
+            "role": "source",
+            "kind": "text",
+            "value": "玩具工坊用一台筛查器寻找表面有裂纹的木片。这不是最终判定，机器标记后还要人工复查。为了练习分类计数，设有一千片已经人工核对真相的木片，其中一百片有裂纹，九百片没有裂纹。机器把有裂纹的一百片中的九十片标记出来，也把没有裂纹的九百片中的四十五片误标记了。\n整理这些信息时，可以画出四格：真有裂纹且被标记九十片；真有裂纹但未标记十片；无裂纹却被标记四十五片；无裂纹且未标记八百五十五片。四格合计一千片，分别加总行列能够检查是否漏计。同一片木片只能落入其中一格，不能因为两种描述就重复计数。\n“有裂纹的木片中有多少被找出”以真实有裂纹的一百片为分母，因此比例为九十除以一百，等于百分之九十。“被标记的木片中有多少真的有裂纹”则以全部被标记的一百三十五片为分母，因此为九十除以一百三十五，等于三分之二。两句话的条件不同，即使都出现“裂纹”和“标记”，也不能交换分母。\n假设机器在另一批木片中的上述检出比例与误标比例保持不变，但有裂纹木片的占比变低。举例说，一千片中只有二十片有裂纹，预计标记其中十八片；其余九百八十片按百分之五的误标比例，会误标四十九片。此时所有标记共六十七片，其中真正有裂纹十八片，占十八除以六十七，约百分之二十六点九。这里把给定比例直接作用于整批计数作为练习模型，不讨论随机波动。\n这说明机器“找出有裂纹物品的比例”保持相同，也不保证“一个标记结果有多可靠”保持相同。后者还依赖这批物品中有裂纹的基础比例。不能只看到百分之九十就宣称任意被标记木片都有百分之九十是真裂纹，也不能因有误标就说机器毫无用途。\n回答问题时先用一句话明确分母群体，再列对应分子；若现有材料只给机器检出比例，却没给误标情况或有裂纹占比，就可能无法计算标记结果中的真实占比。此时可说明需要哪些数据，并给出条件式表达。所有结论限定于题设检测规则及其稳定性假设，不能把一次验证无条件推广到新材料、新设备或新的操作流程。",
+            "valueHash": "f2f400674bd7889c87f6b67501fb0945c56396dd3c9d5fccf9110cd78642a53e"
+          }
+        ],
+        "reviewReasons": []
+      },
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "clear",
+            "affected": [],
+            "reason": "作者e3总结分母不同规则（真裂纹分母vs标记分母）及依赖基础比例结论，与e19当前题实例（40/50与40/100分母区分）一致；多条件未混淆，欠定结论正确。",
+            "refs": [
+              "e3",
+              "e19"
+            ],
+            "challenge": {
+              "status": "closed",
+              "reason": "针对e3断言尝试构造相容反例：保持检出/误标比例不变但基础比例同则标记可靠同，不推翻“不保证相同”；改变问题条件则超出原断言范围。给定四格定义下分母规则为定义性，由e3自身举例与公式排除反例。",
+              "refs": [
+                "e3",
+                "e19"
+              ]
+            },
+            "witnesses": [
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "玩具工坊用一台筛查器寻找表面有裂纹的木片。这不是最终判定，机器标记后还要人工复查。为了练习分类计数，设有一千片已经人工核对真相的木片，其中一百片有裂纹，九百片没有裂纹。机器把有裂纹的一百片中的九十片标记出来，也把没有裂纹的九百片中的四十五片误标记了。\n整理这些信息时，可以画出四格：真有裂纹且被标记九十片；真有裂纹但未标记十片；无裂纹却被标记四十五片；无裂纹且未标记八百五十五片。四格合计一千片，分别加总行列能够检查是否漏计。同一片木片只能落入其中一格，不能因为两种描述就重复计数。\n“有裂纹的木片中有多少被找出”以真实有裂纹的一百片为分母，因此比例为九十除以一百，等于百分之九十。“被标记的木片中有多少真的有裂纹”则以全部被标记的一百三十五片为分母，因此为九十除以一百三十五，等于三分之二。两句话的条件不同，即使都出现“裂纹”和“标记”，也不能交换分母。\n假设机器在另一批木片中的上述检出比例与误标比例保持不变，但有裂纹木片的占比变低。举例说，一千片中只有二十片有裂纹，预计标记其中十八片；其余九百八十片按百分之五的误标比例，会误标四十九片。此时所有标记共六十七片，其中真正有裂纹十八片，占十八除以六十七，约百分之二十六点九。这里把给定比例直接作用于整批计数作为练习模型，不讨论随机波动。\n这说明机器“找出有裂纹物品的比例”保持相同，也不保证“一个标记结果有多可靠”保持相同。后者还依赖这批物品中有裂纹的基础比例。不能只看到百分之九十就宣称任意被标记木片都有百分之九十是真裂纹，也不能因有误标就说机器毫无用途。\n回答问题时先用一句话明确分母群体，再列对应分子；若现有材料只给机器检出比例，却没给误标情况或有裂纹占比，就可能无法计算标记结果中的真实占比。此时可说明需要哪些数据，并给出条件式表达。所有结论限定于题设检测规则及其稳定性假设，不能把一次验证无条件推广到新材料、新设备或新的操作流程。",
+                "valueHash": "f2f400674bd7889c87f6b67501fb0945c56396dd3c9d5fccf9110cd78642a53e"
+              },
+              {
+                "id": "e19",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "本题作者参考解（未向学习者提前展示）：检出比例40/50=80%；全部标记100片，真裂纹比例40/100=40%。前者分母真实裂纹，后者分母机器标记。",
+                "valueHash": "287b84152caf761e10b977f63045cefa704282b24e736bfe09e988b4db2d0ee2"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "kind": "quantities",
+            "status": "clear",
+            "affected": [],
+            "reason": "独立重算e14输入：真裂纹50标记40=>40/50=80%；标记总40+60=100=>40/100=40%，与e19作者解及e3规则一致，数量级与单位正确。",
+            "refs": [
+              "e14",
+              "e19"
+            ],
+            "witnesses": [
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "一批500片木片中，50片真有裂纹，450片无裂纹。筛查标记了真裂纹中的40片，也误标无裂纹中的60片。求检出比例和被标记者中真裂纹比例，并说明为什么分母不同。",
+                "valueHash": "b58e67507e11ad8978c9d50eaa31830798f14a9c9f5c8dcdc36d626d11424bc8"
+              },
+              {
+                "id": "e19",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "本题作者参考解（未向学习者提前展示）：检出比例40/50=80%；全部标记100片，真裂纹比例40/100=40%。前者分母真实裂纹，后者分母机器标记。",
+                "valueHash": "287b84152caf761e10b977f63045cefa704282b24e736bfe09e988b4db2d0ee2"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ],
+        "keys": [
+          {
+            "taskId": "current",
+            "status": "agrees",
+            "reason": "作者键e19给出检出比例40/50=80%、被标记者真裂纹40/100=40%及分母区分；盲解current以e14输入独立得出相同数值与分母不同理由（真实裂纹群体vs所有被标记群体），完整含义一致，无保留疑问。",
+            "refs": [
+              "e19",
+              "e14",
+              "e3"
+            ],
+            "witnesses": [
+              {
+                "id": "e19",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "本题作者参考解（未向学习者提前展示）：检出比例40/50=80%；全部标记100片，真裂纹比例40/100=40%。前者分母真实裂纹，后者分母机器标记。",
+                "valueHash": "287b84152caf761e10b977f63045cefa704282b24e736bfe09e988b4db2d0ee2"
+              },
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "一批500片木片中，50片真有裂纹，450片无裂纹。筛查标记了真裂纹中的40片，也误标无裂纹中的60片。求检出比例和被标记者中真裂纹比例，并说明为什么分母不同。",
+                "valueHash": "b58e67507e11ad8978c9d50eaa31830798f14a9c9f5c8dcdc36d626d11424bc8"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "玩具工坊用一台筛查器寻找表面有裂纹的木片。这不是最终判定，机器标记后还要人工复查。为了练习分类计数，设有一千片已经人工核对真相的木片，其中一百片有裂纹，九百片没有裂纹。机器把有裂纹的一百片中的九十片标记出来，也把没有裂纹的九百片中的四十五片误标记了。\n整理这些信息时，可以画出四格：真有裂纹且被标记九十片；真有裂纹但未标记十片；无裂纹却被标记四十五片；无裂纹且未标记八百五十五片。四格合计一千片，分别加总行列能够检查是否漏计。同一片木片只能落入其中一格，不能因为两种描述就重复计数。\n“有裂纹的木片中有多少被找出”以真实有裂纹的一百片为分母，因此比例为九十除以一百，等于百分之九十。“被标记的木片中有多少真的有裂纹”则以全部被标记的一百三十五片为分母，因此为九十除以一百三十五，等于三分之二。两句话的条件不同，即使都出现“裂纹”和“标记”，也不能交换分母。\n假设机器在另一批木片中的上述检出比例与误标比例保持不变，但有裂纹木片的占比变低。举例说，一千片中只有二十片有裂纹，预计标记其中十八片；其余九百八十片按百分之五的误标比例，会误标四十九片。此时所有标记共六十七片，其中真正有裂纹十八片，占十八除以六十七，约百分之二十六点九。这里把给定比例直接作用于整批计数作为练习模型，不讨论随机波动。\n这说明机器“找出有裂纹物品的比例”保持相同，也不保证“一个标记结果有多可靠”保持相同。后者还依赖这批物品中有裂纹的基础比例。不能只看到百分之九十就宣称任意被标记木片都有百分之九十是真裂纹，也不能因有误标就说机器毫无用途。\n回答问题时先用一句话明确分母群体，再列对应分子；若现有材料只给机器检出比例，却没给误标情况或有裂纹占比，就可能无法计算标记结果中的真实占比。此时可说明需要哪些数据，并给出条件式表达。所有结论限定于题设检测规则及其稳定性假设，不能把一次验证无条件推广到新材料、新设备或新的操作流程。",
+                "valueHash": "f2f400674bd7889c87f6b67501fb0945c56396dd3c9d5fccf9110cd78642a53e"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 2,
+            "reason": "support artifact e21 supplies remediation: re-read source rules e3 (denominator distinction), list task conditions e14, check conclusion, and proposes usable next check (practice new similar question and verify conditions). This addresses evidenced gap in student answer e16 which wrongly equated marked true-crack ratio to 80% ignoring false marks. No invented diagnosis or wrong intervention.",
+            "refs": [
+              "e21",
+              "e16",
+              "e3",
+              "e14"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e21",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "先重新阅读来源里与这道题相关的规则，把题目条件列清，再检查结论。建议练一道同主题的新题，完成后核对条件。",
+                "valueHash": "4d9b4818aa1491288de36d3cf785ec2e7804231387da4c6670f21598747cfc02"
+              },
+              {
+                "id": "e16",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "机器找到40/50=80%的裂纹，所以被标记的木片也有80%是真的，不需要把误标60片放入分母。",
+                "valueHash": "675c6c5815dac9efca5eef0912a30dd522730c33f2be60bda1eef7a5b26db3c1"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "玩具工坊用一台筛查器寻找表面有裂纹的木片。这不是最终判定，机器标记后还要人工复查。为了练习分类计数，设有一千片已经人工核对真相的木片，其中一百片有裂纹，九百片没有裂纹。机器把有裂纹的一百片中的九十片标记出来，也把没有裂纹的九百片中的四十五片误标记了。\n整理这些信息时，可以画出四格：真有裂纹且被标记九十片；真有裂纹但未标记十片；无裂纹却被标记四十五片；无裂纹且未标记八百五十五片。四格合计一千片，分别加总行列能够检查是否漏计。同一片木片只能落入其中一格，不能因为两种描述就重复计数。\n“有裂纹的木片中有多少被找出”以真实有裂纹的一百片为分母，因此比例为九十除以一百，等于百分之九十。“被标记的木片中有多少真的有裂纹”则以全部被标记的一百三十五片为分母，因此为九十除以一百三十五，等于三分之二。两句话的条件不同，即使都出现“裂纹”和“标记”，也不能交换分母。\n假设机器在另一批木片中的上述检出比例与误标比例保持不变，但有裂纹木片的占比变低。举例说，一千片中只有二十片有裂纹，预计标记其中十八片；其余九百八十片按百分之五的误标比例，会误标四十九片。此时所有标记共六十七片，其中真正有裂纹十八片，占十八除以六十七，约百分之二十六点九。这里把给定比例直接作用于整批计数作为练习模型，不讨论随机波动。\n这说明机器“找出有裂纹物品的比例”保持相同，也不保证“一个标记结果有多可靠”保持相同。后者还依赖这批物品中有裂纹的基础比例。不能只看到百分之九十就宣称任意被标记木片都有百分之九十是真裂纹，也不能因有误标就说机器毫无用途。\n回答问题时先用一句话明确分母群体，再列对应分子；若现有材料只给机器检出比例，却没给误标情况或有裂纹占比，就可能无法计算标记结果中的真实占比。此时可说明需要哪些数据，并给出条件式表达。所有结论限定于题设检测规则及其稳定性假设，不能把一次验证无条件推广到新材料、新设备或新的操作流程。",
+                "valueHash": "f2f400674bd7889c87f6b67501fb0945c56396dd3c9d5fccf9110cd78642a53e"
+              },
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "一批500片木片中，50片真有裂纹，450片无裂纹。筛查标记了真裂纹中的40片，也误标无裂纹中的60片。求检出比例和被标记者中真裂纹比例，并说明为什么分母不同。",
+                "valueHash": "b58e67507e11ad8978c9d50eaa31830798f14a9c9f5c8dcdc36d626d11424bc8"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q6",
+            "status": "supported",
+            "reason": "Artifact e21 supplies remediation: re-read e3 denominator distinction, list e14 task conditions, check conclusion, and propose practicing similar question with condition check; this addresses evidenced gap in e16 (wrongly equated marked true-crack ratio to 80% ignoring false marks) and provides usable next check, meeting rubric Q6=2.",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e21",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "先重新阅读来源里与这道题相关的规则，把题目条件列清，再检查结论。建议练一道同主题的新题，完成后核对条件。",
+                "valueHash": "4d9b4818aa1491288de36d3cf785ec2e7804231387da4c6670f21598747cfc02"
+              },
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "一批500片木片中，50片真有裂纹，450片无裂纹。筛查标记了真裂纹中的40片，也误标无裂纹中的60片。求检出比例和被标记者中真裂纹比例，并说明为什么分母不同。",
+                "valueHash": "b58e67507e11ad8978c9d50eaa31830798f14a9c9f5c8dcdc36d626d11424bc8"
+              },
+              {
+                "id": "e16",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "机器找到40/50=80%的裂纹，所以被标记的木片也有80%是真的，不需要把误标60片放入分母。",
+                "valueHash": "675c6c5815dac9efca5eef0912a30dd522730c33f2be60bda1eef7a5b26db3c1"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "玩具工坊用一台筛查器寻找表面有裂纹的木片。这不是最终判定，机器标记后还要人工复查。为了练习分类计数，设有一千片已经人工核对真相的木片，其中一百片有裂纹，九百片没有裂纹。机器把有裂纹的一百片中的九十片标记出来，也把没有裂纹的九百片中的四十五片误标记了。\n整理这些信息时，可以画出四格：真有裂纹且被标记九十片；真有裂纹但未标记十片；无裂纹却被标记四十五片；无裂纹且未标记八百五十五片。四格合计一千片，分别加总行列能够检查是否漏计。同一片木片只能落入其中一格，不能因为两种描述就重复计数。\n“有裂纹的木片中有多少被找出”以真实有裂纹的一百片为分母，因此比例为九十除以一百，等于百分之九十。“被标记的木片中有多少真的有裂纹”则以全部被标记的一百三十五片为分母，因此为九十除以一百三十五，等于三分之二。两句话的条件不同，即使都出现“裂纹”和“标记”，也不能交换分母。\n假设机器在另一批木片中的上述检出比例与误标比例保持不变，但有裂纹木片的占比变低。举例说，一千片中只有二十片有裂纹，预计标记其中十八片；其余九百八十片按百分之五的误标比例，会误标四十九片。此时所有标记共六十七片，其中真正有裂纹十八片，占十八除以六十七，约百分之二十六点九。这里把给定比例直接作用于整批计数作为练习模型，不讨论随机波动。\n这说明机器“找出有裂纹物品的比例”保持相同，也不保证“一个标记结果有多可靠”保持相同。后者还依赖这批物品中有裂纹的基础比例。不能只看到百分之九十就宣称任意被标记木片都有百分之九十是真裂纹，也不能因有误标就说机器毫无用途。\n回答问题时先用一句话明确分母群体，再列对应分子；若现有材料只给机器检出比例，却没给误标情况或有裂纹占比，就可能无法计算标记结果中的真实占比。此时可说明需要哪些数据，并给出条件式表达。所有结论限定于题设检测规则及其稳定性假设，不能把一次验证无条件推广到新材料、新设备或新的操作流程。",
+                "valueHash": "f2f400674bd7889c87f6b67501fb0945c56396dd3c9d5fccf9110cd78642a53e"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q6",
+          "level": 2,
+          "reason": "support artifact e21 supplies remediation: re-read source rules e3 (denominator distinction), list task conditions e14, check conclusion, and proposes usable next check (practice new similar question and verify conditions). This addresses evidenced gap in student answer e16 which wrongly equated marked true-crack ratio to 80% ignoring false marks. No invented diagnosis or wrong intervention.",
+          "refs": [
+            "e21",
+            "e16",
+            "e3",
+            "e14"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e21",
+              "pointer": "/artifacts/1/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "先重新阅读来源里与这道题相关的规则，把题目条件列清，再检查结论。建议练一道同主题的新题，完成后核对条件。",
+              "valueHash": "4d9b4818aa1491288de36d3cf785ec2e7804231387da4c6670f21598747cfc02"
+            },
+            {
+              "id": "e16",
+              "pointer": "/answer",
+              "role": "student",
+              "kind": "text",
+              "value": "机器找到40/50=80%的裂纹，所以被标记的木片也有80%是真的，不需要把误标60片放入分母。",
+              "valueHash": "675c6c5815dac9efca5eef0912a30dd522730c33f2be60bda1eef7a5b26db3c1"
+            },
+            {
+              "id": "e3",
+              "pointer": "/sources/0/text",
+              "role": "source",
+              "kind": "text",
+              "value": "玩具工坊用一台筛查器寻找表面有裂纹的木片。这不是最终判定，机器标记后还要人工复查。为了练习分类计数，设有一千片已经人工核对真相的木片，其中一百片有裂纹，九百片没有裂纹。机器把有裂纹的一百片中的九十片标记出来，也把没有裂纹的九百片中的四十五片误标记了。\n整理这些信息时，可以画出四格：真有裂纹且被标记九十片；真有裂纹但未标记十片；无裂纹却被标记四十五片；无裂纹且未标记八百五十五片。四格合计一千片，分别加总行列能够检查是否漏计。同一片木片只能落入其中一格，不能因为两种描述就重复计数。\n“有裂纹的木片中有多少被找出”以真实有裂纹的一百片为分母，因此比例为九十除以一百，等于百分之九十。“被标记的木片中有多少真的有裂纹”则以全部被标记的一百三十五片为分母，因此为九十除以一百三十五，等于三分之二。两句话的条件不同，即使都出现“裂纹”和“标记”，也不能交换分母。\n假设机器在另一批木片中的上述检出比例与误标比例保持不变，但有裂纹木片的占比变低。举例说，一千片中只有二十片有裂纹，预计标记其中十八片；其余九百八十片按百分之五的误标比例，会误标四十九片。此时所有标记共六十七片，其中真正有裂纹十八片，占十八除以六十七，约百分之二十六点九。这里把给定比例直接作用于整批计数作为练习模型，不讨论随机波动。\n这说明机器“找出有裂纹物品的比例”保持相同，也不保证“一个标记结果有多可靠”保持相同。后者还依赖这批物品中有裂纹的基础比例。不能只看到百分之九十就宣称任意被标记木片都有百分之九十是真裂纹，也不能因有误标就说机器毫无用途。\n回答问题时先用一句话明确分母群体，再列对应分子；若现有材料只给机器检出比例，却没给误标情况或有裂纹占比，就可能无法计算标记结果中的真实占比。此时可说明需要哪些数据，并给出条件式表达。所有结论限定于题设检测规则及其稳定性假设，不能把一次验证无条件推广到新材料、新设备或新的操作流程。",
+              "valueHash": "f2f400674bd7889c87f6b67501fb0945c56396dd3c9d5fccf9110cd78642a53e"
+            },
+            {
+              "id": "e14",
+              "pointer": "/question/prompt",
+              "role": "question",
+              "kind": "text",
+              "value": "一批500片木片中，50片真有裂纹，450片无裂纹。筛查标记了真裂纹中的40片，也误标无裂纹中的60片。求检出比例和被标记者中真裂纹比例，并说明为什么分母不同。",
+              "valueHash": "b58e67507e11ad8978c9d50eaa31830798f14a9c9f5c8dcdc36d626d11424bc8"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [],
+          "proposedLevel": 2,
+          "proposedReason": "support artifact e21 supplies remediation: re-read source rules e3 (denominator distinction), list task conditions e14, check conclusion, and proposes usable next check (practice new similar question and verify conditions). This addresses evidenced gap in student answer e16 which wrongly equated marked true-crack ratio to 80% ignoring false marks. No invented diagnosis or wrong intervention."
+        }
+      ],
+      "reviewRequired": [],
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q6",
+            "status": "supported",
+            "reason": "Artifact e21 supplies remediation: re-read e3 denominator distinction, list e14 task conditions, check conclusion, and propose practicing similar question with condition check; this addresses evidenced gap in e16 (wrongly equated marked true-crack ratio to 80% ignoring false marks) and provides usable next check, meeting rubric Q6=2.",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e21",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "先重新阅读来源里与这道题相关的规则，把题目条件列清，再检查结论。建议练一道同主题的新题，完成后核对条件。",
+                "valueHash": "4d9b4818aa1491288de36d3cf785ec2e7804231387da4c6670f21598747cfc02"
+              },
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "一批500片木片中，50片真有裂纹，450片无裂纹。筛查标记了真裂纹中的40片，也误标无裂纹中的60片。求检出比例和被标记者中真裂纹比例，并说明为什么分母不同。",
+                "valueHash": "b58e67507e11ad8978c9d50eaa31830798f14a9c9f5c8dcdc36d626d11424bc8"
+              },
+              {
+                "id": "e16",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "机器找到40/50=80%的裂纹，所以被标记的木片也有80%是真的，不需要把误标60片放入分母。",
+                "valueHash": "675c6c5815dac9efca5eef0912a30dd522730c33f2be60bda1eef7a5b26db3c1"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "玩具工坊用一台筛查器寻找表面有裂纹的木片。这不是最终判定，机器标记后还要人工复查。为了练习分类计数，设有一千片已经人工核对真相的木片，其中一百片有裂纹，九百片没有裂纹。机器把有裂纹的一百片中的九十片标记出来，也把没有裂纹的九百片中的四十五片误标记了。\n整理这些信息时，可以画出四格：真有裂纹且被标记九十片；真有裂纹但未标记十片；无裂纹却被标记四十五片；无裂纹且未标记八百五十五片。四格合计一千片，分别加总行列能够检查是否漏计。同一片木片只能落入其中一格，不能因为两种描述就重复计数。\n“有裂纹的木片中有多少被找出”以真实有裂纹的一百片为分母，因此比例为九十除以一百，等于百分之九十。“被标记的木片中有多少真的有裂纹”则以全部被标记的一百三十五片为分母，因此为九十除以一百三十五，等于三分之二。两句话的条件不同，即使都出现“裂纹”和“标记”，也不能交换分母。\n假设机器在另一批木片中的上述检出比例与误标比例保持不变，但有裂纹木片的占比变低。举例说，一千片中只有二十片有裂纹，预计标记其中十八片；其余九百八十片按百分之五的误标比例，会误标四十九片。此时所有标记共六十七片，其中真正有裂纹十八片，占十八除以六十七，约百分之二十六点九。这里把给定比例直接作用于整批计数作为练习模型，不讨论随机波动。\n这说明机器“找出有裂纹物品的比例”保持相同，也不保证“一个标记结果有多可靠”保持相同。后者还依赖这批物品中有裂纹的基础比例。不能只看到百分之九十就宣称任意被标记木片都有百分之九十是真裂纹，也不能因有误标就说机器毫无用途。\n回答问题时先用一句话明确分母群体，再列对应分子；若现有材料只给机器检出比例，却没给误标情况或有裂纹占比，就可能无法计算标记结果中的真实占比。此时可说明需要哪些数据，并给出条件式表达。所有结论限定于题设检测规则及其稳定性假设，不能把一次验证无条件推广到新材料、新设备或新的操作流程。",
+                "valueHash": "f2f400674bd7889c87f6b67501fb0945c56396dd3c9d5fccf9110cd78642a53e"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "resultHash": "217287daacbf6fd80c998ad05bcae5776e1bcf197dffa36361fc27129f18077d"
+  }
+}

@@ -8,6 +8,8 @@
 | 先看真实界面与演示               | [演示与图集](DEMO.md)                                          |
 | 安装、启动、模型配置、数据位置   | [运行指南](SETUP.md)                                           |
 | 如何评价教学，哪些结果仍待验证   | [评估方法与状态](EVALUATION.md)                                |
+| 最终机器运行、独立模型比较与局限 | [结果报告](EVALUATION_RESULTS.md)                              |
+| 冻结评测样本、完整匿名结果与重算 | [评测材料](../eval/final-evaluation/README.md)                 |
 | 当前可运行的检查和公开证据       | [验证说明](VERIFICATION.md)、[评估脚本说明](../eval/README.md) |
 | 产品能力边界                     | [限制说明](LIMITATIONS.md)                                     |
 | 模块职责、状态与证据边界         | [架构](ARCHITECTURE.md)                                        |

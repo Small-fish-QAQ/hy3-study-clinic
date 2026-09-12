@@ -1,0 +1,822 @@
+{
+  "task": {
+    "caseId": "N-E04-teaching",
+    "runId": "N-E04-teaching-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-E04-teaching.json",
+    "inputHash": "db00b93cd227b8afc46a714aed49794dce6b9e15f293a8440d601dee0741863c",
+    "population": "natural",
+    "sourceId": "E04"
+  },
+  "inputHash": "db00b93cd227b8afc46a714aed49794dce6b9e15f293a8440d601dee0741863c",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "correctness": "862cb70ae4f93abdcd6d3e9a0fcd783d70a03210bee949c6a737857f68a3024d",
+      "artifact-audit": "862cb70ae4f93abdcd6d3e9a0fcd783d70a03210bee949c6a737857f68a3024d",
+      "certification": "862cb70ae4f93abdcd6d3e9a0fcd783d70a03210bee949c6a737857f68a3024d"
+    },
+    "stages": {
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "uncertain",
+            "affected": [
+              "Q1"
+            ],
+            "reason": "The authored conclusion has a compatible counterexample or an unresolved necessary premise. 相容反例：在e30下补充被试对抽象词形成心理图像，依e68触发视觉编码，但e52否定抽象词，证明原结论未建立；无原始事实排除。",
+            "refs": [
+              "e26",
+              "e30",
+              "e38",
+              "e52",
+              "e68"
+            ],
+            "challenge": {
+              "status": "counterexample",
+              "reason": "相容反例：在e30下补充被试对抽象词形成心理图像，依e68触发视觉编码，但e52否定抽象词，证明原结论未建立；无原始事实排除。",
+              "refs": [
+                "e30",
+                "e52",
+                "e68"
+              ]
+            },
+            "witnesses": [
+              {
+                "id": "e26",
+                "pointer": "/artifacts/6/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "记忆编码是把环境信息贴上标签的过程。语义编码处理词语及意义，如Bousfield实验中被试按含义分类回忆；视觉编码处理图像，具体词易引发心理图片；声学编码处理声音特别是词语发音，如儿歌韵律。高意象词可同时视觉与语义编码，形成更强记忆；抽象词缺乏视觉编码。这些机制取决于信息呈现方式，可单独或联合作用。",
+                "valueHash": "6e43bf7c0fd397c8bfc6e686c930a6a8dff07a6d7bb5f7eb19218f822f551a5f"
+              },
+              {
+                "id": "e30",
+                "pointer": "/artifacts/8/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "呈现词表：'铃铛、荣誉、铅笔、悲伤、苹果、尺度'。被试安静默读并自发形成图像，未听音。需判定哪些词获得视觉编码辅助。",
+                "valueHash": "f59148fc44d51d319f1fa3db64169ed41bf1c035fb774fa1cf54ba39fc91783f"
+              },
+              {
+                "id": "e38",
+                "pointer": "/artifacts/12/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "铃铛、铅笔、苹果获得视觉编码辅助",
+                "valueHash": "c0b567317e375057edb4764b74e96bce55871e130a030e0f4efb2d3be9398276"
+              },
+              {
+                "id": "e52",
+                "pointer": "/artifacts/19/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "具体高意象词在默读条件下获得视觉编码辅助，抽象词否。",
+                "valueHash": "dd7ddf2729b1eced121924ea0f30a76478adbef0eb461d9a0c357c732366bab7"
+              },
+              {
+                "id": "e68",
+                "pointer": "/artifacts/27/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "编码类型有清晰边界：视觉编码必须依赖心理图像的形成，若刺激仅为声音而未引发图像，则不属于视觉编码；声学编码可独立运作。教材中高意象词双重编码仅在默读或见文字时成立，听到词未必触发视觉。",
+                "valueHash": "cf17839117005e97a29278ae12cfb916b623b4ef4d3d8ca5e87e4b39ea44835a"
+              }
+            ],
+            "proposed": {
+              "kind": "conditions",
+              "status": "uncertain",
+              "affected": [
+                "Q1"
+              ],
+              "reason": "作者条件规则：具体高意象词默读成像获视觉辅助，抽象词否(e26,e52)。实例判定符合(e38)。反例挑战：固定e30事实(默读、自发形成图像、未听音)未限仅具体词成像；依e68视觉编码依赖图像，若抽象词也成像则可得视觉编码，与e52冲突。无给定事实排除相容反例，原结论未建立。",
+              "refs": [
+                "e26",
+                "e30",
+                "e38",
+                "e52",
+                "e68"
+              ],
+              "challenge": {
+                "status": "counterexample",
+                "reason": "相容反例：在e30下补充被试对抽象词形成心理图像，依e68触发视觉编码，但e52否定抽象词，证明原结论未建立；无原始事实排除。",
+                "refs": [
+                  "e30",
+                  "e52",
+                  "e68"
+                ]
+              }
+            },
+            "reviewReasons": [
+              "CONDITIONS_COUNTEREXAMPLE_REVIEW"
+            ]
+          },
+          {
+            "kind": "quantities",
+            "status": "not_applicable",
+            "affected": [],
+            "reason": "资料无数值、百分比、单位或公式推导断言，rates为空，产物仅含分类与条件讲解，无数量重算需求。",
+            "contextHash": "862cb70ae4f93abdcd6d3e9a0fcd783d70a03210bee949c6a737857f68a3024d",
+            "proposed": {
+              "kind": "quantities",
+              "status": "not_applicable",
+              "affected": [],
+              "reason": "资料无数值、百分比、单位或公式推导断言，rates为空，产物仅含分类与条件讲解，无数量重算需求。",
+              "refs": [
+                "e12"
+              ]
+            },
+            "reviewReasons": []
+          }
+        ],
+        "keys": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 2,
+            "reason": "核心作者断言（三种编码定义、Bousfield分类回忆、高意象词视觉+语义双重编码、视觉依赖图像、声学独立）均与来源e3一致；补充讲解（嗅觉例、注意力边界）正确且无发明引用或虚假声称，未改变机制。",
+            "refs": [
+              "e26",
+              "e3",
+              "e38",
+              "e68",
+              "e72",
+              "e76"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e26",
+                "pointer": "/artifacts/6/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "记忆编码是把环境信息贴上标签的过程。语义编码处理词语及意义，如Bousfield实验中被试按含义分类回忆；视觉编码处理图像，具体词易引发心理图片；声学编码处理声音特别是词语发音，如儿歌韵律。高意象词可同时视觉与语义编码，形成更强记忆；抽象词缺乏视觉编码。这些机制取决于信息呈现方式，可单独或联合作用。",
+                "valueHash": "6e43bf7c0fd397c8bfc6e686c930a6a8dff07a6d7bb5f7eb19218f822f551a5f"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "We get information into our brains through a process called encoding, which is the input of information into the memory system. Once we receive sensory information from the environment, our brains label or code it. We organize the information with other similar information and connect new concepts to existing concepts. Encoding information occurs through automatic processing and effortful processing.\n\nThere are three types of encoding. The encoding of words and their meaning is known as semantic encoding. It was first demonstrated by William Bousfield (1935) in an experiment in which he asked people to memorize words. The 60 words were actually divided into 4 categories of meaning, although the participants did not know this because the words were randomly presented. When they were asked to remember the words, they tended to recall them in categories, showing that they paid attention to the meanings of the words as they learned them.\n\nVisual encoding is the encoding of images, and acoustic encoding is the encoding of sounds, words in particular. To see how visual encoding works, read over this list of words: car, level, dog, truth, book, value. If you were asked later to recall the words from this list, which ones do you think you’d most likely remember? You would probably have an easier time recalling the words car, dog, and book, and a more difficult time recalling the words level, truth, and value. Why is this? Because you can recall images (mental pictures) more easily than words alone. When you read the words car, dog, and book you created images of these things in your mind. These are concrete, high-imagery words. On the other hand, abstract words like level, truth, and value are low-imagery words. High-imagery words are encoded both visually and semantically (Paivio, 1986), thus building a stronger memory.\n\nNow let’s turn our attention to acoustic encoding. You are driving in your car and a song comes on the radio that you haven’t heard in at least 10 years, but you sing along, recalling every word. In the United States, children often learn the alphabet through song, and they learn the number of days in each month through rhyme: “Thirty days hath September, / April, June, and November; / All the rest have thirty-one, / Save February, with twenty-eight days clear, / And twenty-nine each leap year.” These lessons are easy to remember because of acoustic encoding. We encode the sounds the words make. This is one of the reasons why much of what we teach young children is done through song, rhyme, and rhythm.",
+                "valueHash": "bf1b2eea6b7f20a856c4cfc2f378ff4216695c2cb1b009da66f5aca83f238b9f"
+              },
+              {
+                "id": "e38",
+                "pointer": "/artifacts/12/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "铃铛、铅笔、苹果获得视觉编码辅助",
+                "valueHash": "c0b567317e375057edb4764b74e96bce55871e130a030e0f4efb2d3be9398276"
+              },
+              {
+                "id": "e68",
+                "pointer": "/artifacts/27/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "编码类型有清晰边界：视觉编码必须依赖心理图像的形成，若刺激仅为声音而未引发图像，则不属于视觉编码；声学编码可独立运作。教材中高意象词双重编码仅在默读或见文字时成立，听到词未必触发视觉。",
+                "valueHash": "cf17839117005e97a29278ae12cfb916b623b4ef4d3d8ca5e87e4b39ea44835a"
+              },
+              {
+                "id": "e72",
+                "pointer": "/artifacts/29/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "编码始于环境感觉信息进入大脑。以嗅觉为例：人在花园接收花香这一感觉信息后，大脑自动记录气味特征（自动加工），随后努力将其标记为“玫瑰”并与已知植物概念联系（努力加工）。此过程显示接收刺激后贴标签可通过两条通道并行或顺序发生，自动加工无需刻意努力，努力加工则需主动归类。",
+                "valueHash": "6ae0aed311588994539dbb505a486df1547c96f740aaab4acab9e0e2c7ecb8d7"
+              },
+              {
+                "id": "e76",
+                "pointer": "/artifacts/31/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "编码边界需注意：自动加工虽常无意识发生，但并非所有感觉输入都必然成功编码。若注意力被占用，即使感觉信息到达，标签或编码也可能薄弱。努力加工则依赖可用认知资源。",
+                "valueHash": "1021af7e8b15f274858f59ebaf27aa5c3e4d16c825a6000bd0733c9c6a2c4683"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "dimension": "Q3",
+            "level": 2,
+            "reason": "具备先决条件的学习者可通过分段解释、词表案例workedProcess（起始态-规则-结果-反馈）、转移条件（录音播放）及明确边界对比（视觉须图像、声学可独立）连贯理解why/how与限制，无核心推导错误。",
+            "refs": [
+              "e25",
+              "e30",
+              "e38",
+              "e66",
+              "e68",
+              "e70"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e25",
+                "pointer": "/artifacts/6/id",
+                "role": "artifact",
+                "kind": "text",
+                "value": "deliveredLesson/segments/0/explanation",
+                "valueHash": "24728a4c27633a56dc11d65ecfb03b5525f2fa043a81f7318496d3b6aa4b9b5d"
+              },
+              {
+                "id": "e30",
+                "pointer": "/artifacts/8/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "呈现词表：'铃铛、荣誉、铅笔、悲伤、苹果、尺度'。被试安静默读并自发形成图像，未听音。需判定哪些词获得视觉编码辅助。",
+                "valueHash": "f59148fc44d51d319f1fa3db64169ed41bf1c035fb774fa1cf54ba39fc91783f"
+              },
+              {
+                "id": "e38",
+                "pointer": "/artifacts/12/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "铃铛、铅笔、苹果获得视觉编码辅助",
+                "valueHash": "c0b567317e375057edb4764b74e96bce55871e130a030e0f4efb2d3be9398276"
+              },
+              {
+                "id": "e66",
+                "pointer": "/artifacts/26/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "词表改为由录音播放且不提供图像，要求被试只关注发音韵律",
+                "valueHash": "c6a411e13b4d7ba4f549999b4245d264b9ebd450801b715d881e5b239f922666"
+              },
+              {
+                "id": "e68",
+                "pointer": "/artifacts/27/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "编码类型有清晰边界：视觉编码必须依赖心理图像的形成，若刺激仅为声音而未引发图像，则不属于视觉编码；声学编码可独立运作。教材中高意象词双重编码仅在默读或见文字时成立，听到词未必触发视觉。",
+                "valueHash": "cf17839117005e97a29278ae12cfb916b623b4ef4d3d8ca5e87e4b39ea44835a"
+              },
+              {
+                "id": "e70",
+                "pointer": "/artifacts/28/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "注意：广播新闻纯声音无图像时只有声学编码；若同时阅读文稿则可能叠加视觉编码。不可把任何词语呈现都默认为视觉编码。",
+                "valueHash": "5d5a0176e6f2a5a255cbe91cc2b0746ab9cecdb172d4143239ea63107d76833f"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q3",
+            "status": "uncertain",
+            "reason": "Q3=2认证称材料无核心推导错误，其supportFields含e26（断言抽象词缺乏视觉编码）等；issue check:conditions对同范围字段提出相容反例未排除，若反例成立则e26断言错，完整正向判断无法维持，故送U。",
+            "dependencies": [
+              {
+                "issueId": "check:conditions",
+                "relation": "depends",
+                "reason": "正向结论需e26等作者断言（抽象词否）正确，该事项在issue中状态uncertain未建立，故依赖其成立才能认证supported。",
+                "refs": [
+                  "e26",
+                  "e52",
+                  "e68"
+                ],
+                "witnesses": [
+                  {
+                    "id": "e26",
+                    "pointer": "/artifacts/6/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "记忆编码是把环境信息贴上标签的过程。语义编码处理词语及意义，如Bousfield实验中被试按含义分类回忆；视觉编码处理图像，具体词易引发心理图片；声学编码处理声音特别是词语发音，如儿歌韵律。高意象词可同时视觉与语义编码，形成更强记忆；抽象词缺乏视觉编码。这些机制取决于信息呈现方式，可单独或联合作用。",
+                    "valueHash": "6e43bf7c0fd397c8bfc6e686c930a6a8dff07a6d7bb5f7eb19218f822f551a5f"
+                  },
+                  {
+                    "id": "e52",
+                    "pointer": "/artifacts/19/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "具体高意象词在默读条件下获得视觉编码辅助，抽象词否。",
+                    "valueHash": "dd7ddf2729b1eced121924ea0f30a76478adbef0eb461d9a0c357c732366bab7"
+                  },
+                  {
+                    "id": "e68",
+                    "pointer": "/artifacts/27/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "编码类型有清晰边界：视觉编码必须依赖心理图像的形成，若刺激仅为声音而未引发图像，则不属于视觉编码；声学编码可独立运作。教材中高意象词双重编码仅在默读或见文字时成立，听到词未必触发视觉。",
+                    "valueHash": "cf17839117005e97a29278ae12cfb916b623b4ef4d3d8ca5e87e4b39ea44835a"
+                  }
+                ],
+                "reviewReasons": []
+              }
+            ],
+            "witnesses": [
+              {
+                "id": "e26",
+                "pointer": "/artifacts/6/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "记忆编码是把环境信息贴上标签的过程。语义编码处理词语及意义，如Bousfield实验中被试按含义分类回忆；视觉编码处理图像，具体词易引发心理图片；声学编码处理声音特别是词语发音，如儿歌韵律。高意象词可同时视觉与语义编码，形成更强记忆；抽象词缺乏视觉编码。这些机制取决于信息呈现方式，可单独或联合作用。",
+                "valueHash": "6e43bf7c0fd397c8bfc6e686c930a6a8dff07a6d7bb5f7eb19218f822f551a5f"
+              },
+              {
+                "id": "e38",
+                "pointer": "/artifacts/12/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "铃铛、铅笔、苹果获得视觉编码辅助",
+                "valueHash": "c0b567317e375057edb4764b74e96bce55871e130a030e0f4efb2d3be9398276"
+              },
+              {
+                "id": "e68",
+                "pointer": "/artifacts/27/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "编码类型有清晰边界：视觉编码必须依赖心理图像的形成，若刺激仅为声音而未引发图像，则不属于视觉编码；声学编码可独立运作。教材中高意象词双重编码仅在默读或见文字时成立，听到词未必触发视觉。",
+                "valueHash": "cf17839117005e97a29278ae12cfb916b623b4ef4d3d8ca5e87e4b39ea44835a"
+              }
+            ],
+            "proposed": {
+              "dimension": "Q3",
+              "status": "uncertain",
+              "reason": "Q3=2认证称材料无核心推导错误，其supportFields含e26（断言抽象词缺乏视觉编码）等；issue check:conditions对同范围字段提出相容反例未排除，若反例成立则e26断言错，完整正向判断无法维持，故送U。",
+              "refs": [
+                "e26",
+                "e38",
+                "e68"
+              ],
+              "dependencies": [
+                {
+                  "issueId": "check:conditions",
+                  "relation": "depends",
+                  "reason": "正向结论需e26等作者断言（抽象词否）正确，该事项在issue中状态uncertain未建立，故依赖其成立才能认证supported。",
+                  "refs": [
+                    "e26",
+                    "e52",
+                    "e68"
+                  ]
+                }
+              ]
+            },
+            "reviewReasons": [
+              "CERTIFICATION_DEPENDENCY_REVIEW"
+            ]
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q1",
+          "level": "U",
+          "reason": "The authored conclusion has a compatible counterexample or an unresolved necessary premise. 相容反例：在e30下补充被试对抽象词形成心理图像，依e68触发视觉编码，但e52否定抽象词，证明原结论未建立；无原始事实排除。",
+          "refs": [
+            "e26",
+            "e3",
+            "e38",
+            "e68",
+            "e72",
+            "e76"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e26",
+              "pointer": "/artifacts/6/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "记忆编码是把环境信息贴上标签的过程。语义编码处理词语及意义，如Bousfield实验中被试按含义分类回忆；视觉编码处理图像，具体词易引发心理图片；声学编码处理声音特别是词语发音，如儿歌韵律。高意象词可同时视觉与语义编码，形成更强记忆；抽象词缺乏视觉编码。这些机制取决于信息呈现方式，可单独或联合作用。",
+              "valueHash": "6e43bf7c0fd397c8bfc6e686c930a6a8dff07a6d7bb5f7eb19218f822f551a5f"
+            },
+            {
+              "id": "e3",
+              "pointer": "/sources/0/text",
+              "role": "source",
+              "kind": "text",
+              "value": "We get information into our brains through a process called encoding, which is the input of information into the memory system. Once we receive sensory information from the environment, our brains label or code it. We organize the information with other similar information and connect new concepts to existing concepts. Encoding information occurs through automatic processing and effortful processing.\n\nThere are three types of encoding. The encoding of words and their meaning is known as semantic encoding. It was first demonstrated by William Bousfield (1935) in an experiment in which he asked people to memorize words. The 60 words were actually divided into 4 categories of meaning, although the participants did not know this because the words were randomly presented. When they were asked to remember the words, they tended to recall them in categories, showing that they paid attention to the meanings of the words as they learned them.\n\nVisual encoding is the encoding of images, and acoustic encoding is the encoding of sounds, words in particular. To see how visual encoding works, read over this list of words: car, level, dog, truth, book, value. If you were asked later to recall the words from this list, which ones do you think you’d most likely remember? You would probably have an easier time recalling the words car, dog, and book, and a more difficult time recalling the words level, truth, and value. Why is this? Because you can recall images (mental pictures) more easily than words alone. When you read the words car, dog, and book you created images of these things in your mind. These are concrete, high-imagery words. On the other hand, abstract words like level, truth, and value are low-imagery words. High-imagery words are encoded both visually and semantically (Paivio, 1986), thus building a stronger memory.\n\nNow let’s turn our attention to acoustic encoding. You are driving in your car and a song comes on the radio that you haven’t heard in at least 10 years, but you sing along, recalling every word. In the United States, children often learn the alphabet through song, and they learn the number of days in each month through rhyme: “Thirty days hath September, / April, June, and November; / All the rest have thirty-one, / Save February, with twenty-eight days clear, / And twenty-nine each leap year.” These lessons are easy to remember because of acoustic encoding. We encode the sounds the words make. This is one of the reasons why much of what we teach young children is done through song, rhyme, and rhythm.",
+              "valueHash": "bf1b2eea6b7f20a856c4cfc2f378ff4216695c2cb1b009da66f5aca83f238b9f"
+            },
+            {
+              "id": "e38",
+              "pointer": "/artifacts/12/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "铃铛、铅笔、苹果获得视觉编码辅助",
+              "valueHash": "c0b567317e375057edb4764b74e96bce55871e130a030e0f4efb2d3be9398276"
+            },
+            {
+              "id": "e68",
+              "pointer": "/artifacts/27/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "编码类型有清晰边界：视觉编码必须依赖心理图像的形成，若刺激仅为声音而未引发图像，则不属于视觉编码；声学编码可独立运作。教材中高意象词双重编码仅在默读或见文字时成立，听到词未必触发视觉。",
+              "valueHash": "cf17839117005e97a29278ae12cfb916b623b4ef4d3d8ca5e87e4b39ea44835a"
+            },
+            {
+              "id": "e72",
+              "pointer": "/artifacts/29/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "编码始于环境感觉信息进入大脑。以嗅觉为例：人在花园接收花香这一感觉信息后，大脑自动记录气味特征（自动加工），随后努力将其标记为“玫瑰”并与已知植物概念联系（努力加工）。此过程显示接收刺激后贴标签可通过两条通道并行或顺序发生，自动加工无需刻意努力，努力加工则需主动归类。",
+              "valueHash": "6ae0aed311588994539dbb505a486df1547c96f740aaab4acab9e0e2c7ecb8d7"
+            },
+            {
+              "id": "e76",
+              "pointer": "/artifacts/31/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "编码边界需注意：自动加工虽常无意识发生，但并非所有感觉输入都必然成功编码。若注意力被占用，即使感觉信息到达，标签或编码也可能薄弱。努力加工则依赖可用认知资源。",
+              "valueHash": "1021af7e8b15f274858f59ebaf27aa5c3e4d16c825a6000bd0733c9c6a2c4683"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [
+            {
+              "level": "U",
+              "code": "INDEPENDENT_CONDITIONS",
+              "detail": {
+                "kind": "conditions",
+                "status": "uncertain",
+                "affected": [
+                  "Q1"
+                ],
+                "reason": "The authored conclusion has a compatible counterexample or an unresolved necessary premise. 相容反例：在e30下补充被试对抽象词形成心理图像，依e68触发视觉编码，但e52否定抽象词，证明原结论未建立；无原始事实排除。",
+                "refs": [
+                  "e26",
+                  "e30",
+                  "e38",
+                  "e52",
+                  "e68"
+                ],
+                "challenge": {
+                  "status": "counterexample",
+                  "reason": "相容反例：在e30下补充被试对抽象词形成心理图像，依e68触发视觉编码，但e52否定抽象词，证明原结论未建立；无原始事实排除。",
+                  "refs": [
+                    "e30",
+                    "e52",
+                    "e68"
+                  ]
+                },
+                "witnesses": [
+                  {
+                    "id": "e26",
+                    "pointer": "/artifacts/6/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "记忆编码是把环境信息贴上标签的过程。语义编码处理词语及意义，如Bousfield实验中被试按含义分类回忆；视觉编码处理图像，具体词易引发心理图片；声学编码处理声音特别是词语发音，如儿歌韵律。高意象词可同时视觉与语义编码，形成更强记忆；抽象词缺乏视觉编码。这些机制取决于信息呈现方式，可单独或联合作用。",
+                    "valueHash": "6e43bf7c0fd397c8bfc6e686c930a6a8dff07a6d7bb5f7eb19218f822f551a5f"
+                  },
+                  {
+                    "id": "e30",
+                    "pointer": "/artifacts/8/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "呈现词表：'铃铛、荣誉、铅笔、悲伤、苹果、尺度'。被试安静默读并自发形成图像，未听音。需判定哪些词获得视觉编码辅助。",
+                    "valueHash": "f59148fc44d51d319f1fa3db64169ed41bf1c035fb774fa1cf54ba39fc91783f"
+                  },
+                  {
+                    "id": "e38",
+                    "pointer": "/artifacts/12/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "铃铛、铅笔、苹果获得视觉编码辅助",
+                    "valueHash": "c0b567317e375057edb4764b74e96bce55871e130a030e0f4efb2d3be9398276"
+                  },
+                  {
+                    "id": "e52",
+                    "pointer": "/artifacts/19/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "具体高意象词在默读条件下获得视觉编码辅助，抽象词否。",
+                    "valueHash": "dd7ddf2729b1eced121924ea0f30a76478adbef0eb461d9a0c357c732366bab7"
+                  },
+                  {
+                    "id": "e68",
+                    "pointer": "/artifacts/27/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "编码类型有清晰边界：视觉编码必须依赖心理图像的形成，若刺激仅为声音而未引发图像，则不属于视觉编码；声学编码可独立运作。教材中高意象词双重编码仅在默读或见文字时成立，听到词未必触发视觉。",
+                    "valueHash": "cf17839117005e97a29278ae12cfb916b623b4ef4d3d8ca5e87e4b39ea44835a"
+                  }
+                ],
+                "proposed": {
+                  "kind": "conditions",
+                  "status": "uncertain",
+                  "affected": [
+                    "Q1"
+                  ],
+                  "reason": "作者条件规则：具体高意象词默读成像获视觉辅助，抽象词否(e26,e52)。实例判定符合(e38)。反例挑战：固定e30事实(默读、自发形成图像、未听音)未限仅具体词成像；依e68视觉编码依赖图像，若抽象词也成像则可得视觉编码，与e52冲突。无给定事实排除相容反例，原结论未建立。",
+                  "refs": [
+                    "e26",
+                    "e30",
+                    "e38",
+                    "e52",
+                    "e68"
+                  ],
+                  "challenge": {
+                    "status": "counterexample",
+                    "reason": "相容反例：在e30下补充被试对抽象词形成心理图像，依e68触发视觉编码，但e52否定抽象词，证明原结论未建立；无原始事实排除。",
+                    "refs": [
+                      "e30",
+                      "e52",
+                      "e68"
+                    ]
+                  }
+                },
+                "reviewReasons": [
+                  "CONDITIONS_COUNTEREXAMPLE_REVIEW"
+                ]
+              }
+            }
+          ],
+          "proposedLevel": 2,
+          "proposedReason": "核心作者断言（三种编码定义、Bousfield分类回忆、高意象词视觉+语义双重编码、视觉依赖图像、声学独立）均与来源e3一致；补充讲解（嗅觉例、注意力边界）正确且无发明引用或虚假声称，未改变机制。",
+          "decidingConstraint": "INDEPENDENT_CONDITIONS"
+        },
+        {
+          "dimension": "Q3",
+          "level": "U",
+          "reason": "Q3=2认证称材料无核心推导错误，其supportFields含e26（断言抽象词缺乏视觉编码）等；issue check:conditions对同范围字段提出相容反例未排除，若反例成立则e26断言错，完整正向判断无法维持，故送U。",
+          "refs": [
+            "e25",
+            "e30",
+            "e38",
+            "e66",
+            "e68",
+            "e70"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e25",
+              "pointer": "/artifacts/6/id",
+              "role": "artifact",
+              "kind": "text",
+              "value": "deliveredLesson/segments/0/explanation",
+              "valueHash": "24728a4c27633a56dc11d65ecfb03b5525f2fa043a81f7318496d3b6aa4b9b5d"
+            },
+            {
+              "id": "e30",
+              "pointer": "/artifacts/8/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "呈现词表：'铃铛、荣誉、铅笔、悲伤、苹果、尺度'。被试安静默读并自发形成图像，未听音。需判定哪些词获得视觉编码辅助。",
+              "valueHash": "f59148fc44d51d319f1fa3db64169ed41bf1c035fb774fa1cf54ba39fc91783f"
+            },
+            {
+              "id": "e38",
+              "pointer": "/artifacts/12/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "铃铛、铅笔、苹果获得视觉编码辅助",
+              "valueHash": "c0b567317e375057edb4764b74e96bce55871e130a030e0f4efb2d3be9398276"
+            },
+            {
+              "id": "e66",
+              "pointer": "/artifacts/26/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "词表改为由录音播放且不提供图像，要求被试只关注发音韵律",
+              "valueHash": "c6a411e13b4d7ba4f549999b4245d264b9ebd450801b715d881e5b239f922666"
+            },
+            {
+              "id": "e68",
+              "pointer": "/artifacts/27/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "编码类型有清晰边界：视觉编码必须依赖心理图像的形成，若刺激仅为声音而未引发图像，则不属于视觉编码；声学编码可独立运作。教材中高意象词双重编码仅在默读或见文字时成立，听到词未必触发视觉。",
+              "valueHash": "cf17839117005e97a29278ae12cfb916b623b4ef4d3d8ca5e87e4b39ea44835a"
+            },
+            {
+              "id": "e70",
+              "pointer": "/artifacts/28/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "注意：广播新闻纯声音无图像时只有声学编码；若同时阅读文稿则可能叠加视觉编码。不可把任何词语呈现都默认为视觉编码。",
+              "valueHash": "5d5a0176e6f2a5a255cbe91cc2b0746ab9cecdb172d4143239ea63107d76833f"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [
+            {
+              "level": "U",
+              "code": "CERTIFICATION_DEPENDENCY_REVIEW",
+              "detail": {
+                "dimension": "Q3",
+                "status": "uncertain",
+                "reason": "Q3=2认证称材料无核心推导错误，其supportFields含e26（断言抽象词缺乏视觉编码）等；issue check:conditions对同范围字段提出相容反例未排除，若反例成立则e26断言错，完整正向判断无法维持，故送U。",
+                "dependencies": [
+                  {
+                    "issueId": "check:conditions",
+                    "relation": "depends",
+                    "reason": "正向结论需e26等作者断言（抽象词否）正确，该事项在issue中状态uncertain未建立，故依赖其成立才能认证supported。",
+                    "refs": [
+                      "e26",
+                      "e52",
+                      "e68"
+                    ],
+                    "witnesses": [
+                      {
+                        "id": "e26",
+                        "pointer": "/artifacts/6/text",
+                        "role": "artifact",
+                        "kind": "text",
+                        "value": "记忆编码是把环境信息贴上标签的过程。语义编码处理词语及意义，如Bousfield实验中被试按含义分类回忆；视觉编码处理图像，具体词易引发心理图片；声学编码处理声音特别是词语发音，如儿歌韵律。高意象词可同时视觉与语义编码，形成更强记忆；抽象词缺乏视觉编码。这些机制取决于信息呈现方式，可单独或联合作用。",
+                        "valueHash": "6e43bf7c0fd397c8bfc6e686c930a6a8dff07a6d7bb5f7eb19218f822f551a5f"
+                      },
+                      {
+                        "id": "e52",
+                        "pointer": "/artifacts/19/text",
+                        "role": "artifact",
+                        "kind": "text",
+                        "value": "具体高意象词在默读条件下获得视觉编码辅助，抽象词否。",
+                        "valueHash": "dd7ddf2729b1eced121924ea0f30a76478adbef0eb461d9a0c357c732366bab7"
+                      },
+                      {
+                        "id": "e68",
+                        "pointer": "/artifacts/27/text",
+                        "role": "artifact",
+                        "kind": "text",
+                        "value": "编码类型有清晰边界：视觉编码必须依赖心理图像的形成，若刺激仅为声音而未引发图像，则不属于视觉编码；声学编码可独立运作。教材中高意象词双重编码仅在默读或见文字时成立，听到词未必触发视觉。",
+                        "valueHash": "cf17839117005e97a29278ae12cfb916b623b4ef4d3d8ca5e87e4b39ea44835a"
+                      }
+                    ],
+                    "reviewReasons": []
+                  }
+                ],
+                "witnesses": [
+                  {
+                    "id": "e26",
+                    "pointer": "/artifacts/6/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "记忆编码是把环境信息贴上标签的过程。语义编码处理词语及意义，如Bousfield实验中被试按含义分类回忆；视觉编码处理图像，具体词易引发心理图片；声学编码处理声音特别是词语发音，如儿歌韵律。高意象词可同时视觉与语义编码，形成更强记忆；抽象词缺乏视觉编码。这些机制取决于信息呈现方式，可单独或联合作用。",
+                    "valueHash": "6e43bf7c0fd397c8bfc6e686c930a6a8dff07a6d7bb5f7eb19218f822f551a5f"
+                  },
+                  {
+                    "id": "e38",
+                    "pointer": "/artifacts/12/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "铃铛、铅笔、苹果获得视觉编码辅助",
+                    "valueHash": "c0b567317e375057edb4764b74e96bce55871e130a030e0f4efb2d3be9398276"
+                  },
+                  {
+                    "id": "e68",
+                    "pointer": "/artifacts/27/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "编码类型有清晰边界：视觉编码必须依赖心理图像的形成，若刺激仅为声音而未引发图像，则不属于视觉编码；声学编码可独立运作。教材中高意象词双重编码仅在默读或见文字时成立，听到词未必触发视觉。",
+                    "valueHash": "cf17839117005e97a29278ae12cfb916b623b4ef4d3d8ca5e87e4b39ea44835a"
+                  }
+                ],
+                "proposed": {
+                  "dimension": "Q3",
+                  "status": "uncertain",
+                  "reason": "Q3=2认证称材料无核心推导错误，其supportFields含e26（断言抽象词缺乏视觉编码）等；issue check:conditions对同范围字段提出相容反例未排除，若反例成立则e26断言错，完整正向判断无法维持，故送U。",
+                  "refs": [
+                    "e26",
+                    "e38",
+                    "e68"
+                  ],
+                  "dependencies": [
+                    {
+                      "issueId": "check:conditions",
+                      "relation": "depends",
+                      "reason": "正向结论需e26等作者断言（抽象词否）正确，该事项在issue中状态uncertain未建立，故依赖其成立才能认证supported。",
+                      "refs": [
+                        "e26",
+                        "e52",
+                        "e68"
+                      ]
+                    }
+                  ]
+                },
+                "reviewReasons": [
+                  "CERTIFICATION_DEPENDENCY_REVIEW"
+                ]
+              }
+            }
+          ],
+          "proposedLevel": 2,
+          "proposedReason": "具备先决条件的学习者可通过分段解释、词表案例workedProcess（起始态-规则-结果-反馈）、转移条件（录音播放）及明确边界对比（视觉须图像、声学可独立）连贯理解why/how与限制，无核心推导错误。",
+          "decidingConstraint": "CERTIFICATION_DEPENDENCY_REVIEW"
+        }
+      ],
+      "reviewRequired": [
+        {
+          "dimension": "Q1",
+          "reason": "UNRESOLVED"
+        },
+        {
+          "dimension": "Q3",
+          "reason": "UNRESOLVED"
+        }
+      ],
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q3",
+            "status": "uncertain",
+            "reason": "Q3=2认证称材料无核心推导错误，其supportFields含e26（断言抽象词缺乏视觉编码）等；issue check:conditions对同范围字段提出相容反例未排除，若反例成立则e26断言错，完整正向判断无法维持，故送U。",
+            "dependencies": [
+              {
+                "issueId": "check:conditions",
+                "relation": "depends",
+                "reason": "正向结论需e26等作者断言（抽象词否）正确，该事项在issue中状态uncertain未建立，故依赖其成立才能认证supported。",
+                "refs": [
+                  "e26",
+                  "e52",
+                  "e68"
+                ],
+                "witnesses": [
+                  {
+                    "id": "e26",
+                    "pointer": "/artifacts/6/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "记忆编码是把环境信息贴上标签的过程。语义编码处理词语及意义，如Bousfield实验中被试按含义分类回忆；视觉编码处理图像，具体词易引发心理图片；声学编码处理声音特别是词语发音，如儿歌韵律。高意象词可同时视觉与语义编码，形成更强记忆；抽象词缺乏视觉编码。这些机制取决于信息呈现方式，可单独或联合作用。",
+                    "valueHash": "6e43bf7c0fd397c8bfc6e686c930a6a8dff07a6d7bb5f7eb19218f822f551a5f"
+                  },
+                  {
+                    "id": "e52",
+                    "pointer": "/artifacts/19/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "具体高意象词在默读条件下获得视觉编码辅助，抽象词否。",
+                    "valueHash": "dd7ddf2729b1eced121924ea0f30a76478adbef0eb461d9a0c357c732366bab7"
+                  },
+                  {
+                    "id": "e68",
+                    "pointer": "/artifacts/27/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "编码类型有清晰边界：视觉编码必须依赖心理图像的形成，若刺激仅为声音而未引发图像，则不属于视觉编码；声学编码可独立运作。教材中高意象词双重编码仅在默读或见文字时成立，听到词未必触发视觉。",
+                    "valueHash": "cf17839117005e97a29278ae12cfb916b623b4ef4d3d8ca5e87e4b39ea44835a"
+                  }
+                ],
+                "reviewReasons": []
+              }
+            ],
+            "witnesses": [
+              {
+                "id": "e26",
+                "pointer": "/artifacts/6/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "记忆编码是把环境信息贴上标签的过程。语义编码处理词语及意义，如Bousfield实验中被试按含义分类回忆；视觉编码处理图像，具体词易引发心理图片；声学编码处理声音特别是词语发音，如儿歌韵律。高意象词可同时视觉与语义编码，形成更强记忆；抽象词缺乏视觉编码。这些机制取决于信息呈现方式，可单独或联合作用。",
+                "valueHash": "6e43bf7c0fd397c8bfc6e686c930a6a8dff07a6d7bb5f7eb19218f822f551a5f"
+              },
+              {
+                "id": "e38",
+                "pointer": "/artifacts/12/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "铃铛、铅笔、苹果获得视觉编码辅助",
+                "valueHash": "c0b567317e375057edb4764b74e96bce55871e130a030e0f4efb2d3be9398276"
+              },
+              {
+                "id": "e68",
+                "pointer": "/artifacts/27/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "编码类型有清晰边界：视觉编码必须依赖心理图像的形成，若刺激仅为声音而未引发图像，则不属于视觉编码；声学编码可独立运作。教材中高意象词双重编码仅在默读或见文字时成立，听到词未必触发视觉。",
+                "valueHash": "cf17839117005e97a29278ae12cfb916b623b4ef4d3d8ca5e87e4b39ea44835a"
+              }
+            ],
+            "proposed": {
+              "dimension": "Q3",
+              "status": "uncertain",
+              "reason": "Q3=2认证称材料无核心推导错误，其supportFields含e26（断言抽象词缺乏视觉编码）等；issue check:conditions对同范围字段提出相容反例未排除，若反例成立则e26断言错，完整正向判断无法维持，故送U。",
+              "refs": [
+                "e26",
+                "e38",
+                "e68"
+              ],
+              "dependencies": [
+                {
+                  "issueId": "check:conditions",
+                  "relation": "depends",
+                  "reason": "正向结论需e26等作者断言（抽象词否）正确，该事项在issue中状态uncertain未建立，故依赖其成立才能认证supported。",
+                  "refs": [
+                    "e26",
+                    "e52",
+                    "e68"
+                  ]
+                }
+              ]
+            },
+            "reviewReasons": [
+              "CERTIFICATION_DEPENDENCY_REVIEW"
+            ]
+          }
+        ]
+      }
+    },
+    "resultHash": "0b8e1306d6f7bf4b642848727a53c003a2670c1e2555a87dfc3b7bc4b569a45b"
+  }
+}

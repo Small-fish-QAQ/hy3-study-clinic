@@ -1,0 +1,327 @@
+{
+  "task": {
+    "caseId": "N-F12-repair",
+    "runId": "N-F12-repair-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-F12-repair.json",
+    "inputHash": "3380d63583395437db9d419d3878e8701aac7c7ae998845e07cf23db97633890",
+    "population": "natural",
+    "sourceId": "F12"
+  },
+  "inputHash": "3380d63583395437db9d419d3878e8701aac7c7ae998845e07cf23db97633890",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "correctness": "a6a26f4b5b6b58ae0e8833f3955b089b60f33294af5822fb43eb4ad9b857b39b",
+      "artifact-audit": "a6a26f4b5b6b58ae0e8833f3955b089b60f33294af5822fb43eb4ad9b857b39b",
+      "certification": "a6a26f4b5b6b58ae0e8833f3955b089b60f33294af5822fb43eb4ad9b857b39b"
+    },
+    "stages": {
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "clear",
+            "affected": [],
+            "reason": "作者断言检出比例=真阳性数÷真实阳性总数（e31），并依题设e17的TP=36、检出率0.9反推真实总数=40；该条件式规则与源e3定义一致。尝试构造相容反例：固定e17事实TP=36、检出比例0.9，若真实总数≠40则检出比例必≠0.9，与给定事实矛盾，故原结论建立。",
+            "refs": [
+              "e17",
+              "e3",
+              "e31"
+            ],
+            "challenge": {
+              "status": "closed",
+              "reason": "给定e17明确TP=36、检出比例0.9，由定义（e3,e31）真实总数=36/0.9=40；任何相容情况若总数≠40则检出比例≠0.9，被已给事实排除。",
+              "refs": [
+                "e17",
+                "e3",
+                "e31"
+              ]
+            },
+            "witnesses": [
+              {
+                "id": "e17",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "某批2000片木片，机器标记了134片，其中人工确认36片真有裂纹。已知该机器真裂纹检出比例保持90%，无裂纹误标比例保持5%不变。造成当前标记构成（即真实裂纹木片总数）的最可能原因是？",
+                "valueHash": "c3c9239962cbd79ba3d6b3e65b4d6d76f6f05299ec07e32ffcd6761c074ab7bb"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "玩具工坊用一台筛查器寻找表面有裂纹的木片。这不是最终判定，机器标记后还要人工复查。为了练习分类计数，设有一千片已经人工核对真相的木片，其中一百片有裂纹，九百片没有裂纹。机器把有裂纹的一百片中的九十片标记出来，也把没有裂纹的九百片中的四十五片误标记了。\n整理这些信息时，可以画出四格：真有裂纹且被标记九十片；真有裂纹但未标记十片；无裂纹却被标记四十五片；无裂纹且未标记八百五十五片。四格合计一千片，分别加总行列能够检查是否漏计。同一片木片只能落入其中一格，不能因为两种描述就重复计数。\n“有裂纹的木片中有多少被找出”以真实有裂纹的一百片为分母，因此比例为九十除以一百，等于百分之九十。“被标记的木片中有多少真的有裂纹”则以全部被标记的一百三十五片为分母，因此为九十除以一百三十五，等于三分之二。两句话的条件不同，即使都出现“裂纹”和“标记”，也不能交换分母。\n假设机器在另一批木片中的上述检出比例与误标比例保持不变，但有裂纹木片的占比变低。举例说，一千片中只有二十片有裂纹，预计标记其中十八片；其余九百八十片按百分之五的误标比例，会误标四十九片。此时所有标记共六十七片，其中真正有裂纹十八片，占十八除以六十七，约百分之二十六点九。这里把给定比例直接作用于整批计数作为练习模型，不讨论随机波动。\n这说明机器“找出有裂纹物品的比例”保持相同，也不保证“一个标记结果有多可靠”保持相同。后者还依赖这批物品中有裂纹的基础比例。不能只看到百分之九十就宣称任意被标记木片都有百分之九十是真裂纹，也不能因有误标就说机器毫无用途。\n回答问题时先用一句话明确分母群体，再列对应分子；若现有材料只给机器检出比例，却没给误标情况或有裂纹占比，就可能无法计算标记结果中的真实占比。此时可说明需要哪些数据，并给出条件式表达。所有结论限定于题设检测规则及其稳定性假设，不能把一次验证无条件推广到新材料、新设备或新的操作流程。",
+                "valueHash": "f2f400674bd7889c87f6b67501fb0945c56396dd3c9d5fccf9110cd78642a53e"
+              },
+              {
+                "id": "e31",
+                "pointer": "/artifacts/7/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "在分类筛查中，检出比例的分母永远是‘真实阳性总数’，分子是‘被标记出的真阳性数’。当题目已经给出被人工确认的真阳性数（TP）和稳定的检出比例时，要求隐藏的真实基础率，就必须用除法反推：真实阳性总数 = TP ÷ 检出比例。之后可用误标比例和总片数算出预期假阳性与总标记数，与题给标记数对照验证自洽。若误用乘法或忽略分母方向，反推基数会直接矛盾于观测TP。",
+                "valueHash": "e723b6b2b39a20859f9c11ff3119a9bc469ca148aae7c611e8e56832d840f1f4"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "kind": "quantities",
+            "status": "clear",
+            "affected": [],
+            "reason": "独立重算e17：总数2000、标记134、TP=36、检出率0.9、误标率0.05。真实总数=36/0.9=40；FP=0.05*(2000-40)=98；预期标记=36+98=134，与题给一致。陶瓷示例e33：TP=9、检出率0.9⇒总数10；FP=0.1*(100-10)=9；标记=18，自洽。数量级与单位正确。",
+            "refs": [
+              "e17",
+              "e33",
+              "e39"
+            ],
+            "witnesses": [
+              {
+                "id": "e17",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "某批2000片木片，机器标记了134片，其中人工确认36片真有裂纹。已知该机器真裂纹检出比例保持90%，无裂纹误标比例保持5%不变。造成当前标记构成（即真实裂纹木片总数）的最可能原因是？",
+                "valueHash": "c3c9239962cbd79ba3d6b3e65b4d6d76f6f05299ec07e32ffcd6761c074ab7bb"
+              },
+              {
+                "id": "e33",
+                "pointer": "/artifacts/8/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "新案例：某批100片陶瓷，机器标记可疑件，人工确认其中9片真有缺损（TP=9）。已知机器真缺损检出比例保持90%不变，无缺损误标比例保持10%不变，总片数100。请推真实缺损总数并验证自洽。",
+                "valueHash": "7ff8f6ba57a3d3f33095c23b8c741477c0bfd300e6b6ea46b6fc04482f5f3d99"
+              },
+              {
+                "id": "e39",
+                "pointer": "/artifacts/11/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "用误标比例算假阳性：FP = 10% × (100-10) = 9片。",
+                "valueHash": "d93e0f099d06417f846fe899a79e8d66c7e8c374fd54fc8151f88c6b3b9fe202"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ],
+        "keys": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 2,
+            "reason": "诊断观察原题TP=36(e25)，正确指出缺口为未用检出比例反推真实裂纹总数36÷0.9=40(e27)；教学解释给出除法反推与用误标比例和总片数验证自洽(e31)；并提供新案例prompt要求推总数并验证自洽作为可用后续检查(e33)，符合2分标准：解决证据缺口并提供相关下一检查。",
+            "refs": [
+              "e25",
+              "e27",
+              "e31",
+              "e33"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e25",
+                "pointer": "/artifacts/4/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "你选择了‘真实裂纹木片共20片’这一选项。原题明确人工确认36片真有裂纹，即机器标记中的真阳性数（TP）为36。",
+                "valueHash": "cfdb417678afb3572ab6211a474effdc3e1c1599414acb9ba0e7c23fcac41bc1"
+              },
+              {
+                "id": "e27",
+                "pointer": "/artifacts/5/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "缺失的关键步骤是：利用‘检出比例 = 真阳性数 ÷ 真实裂纹总数’这一关系，用观测TP（36）除以检出率（90%）反推真实裂纹总数（36÷0.9=40）。你未建立该分母区分，也可能混淆了比例方向。",
+                "valueHash": "70e0b628de717aa7f5ad8b53187275415c494ada84c39114496edf9db1ff41cb"
+              },
+              {
+                "id": "e31",
+                "pointer": "/artifacts/7/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "在分类筛查中，检出比例的分母永远是‘真实阳性总数’，分子是‘被标记出的真阳性数’。当题目已经给出被人工确认的真阳性数（TP）和稳定的检出比例时，要求隐藏的真实基础率，就必须用除法反推：真实阳性总数 = TP ÷ 检出比例。之后可用误标比例和总片数算出预期假阳性与总标记数，与题给标记数对照验证自洽。若误用乘法或忽略分母方向，反推基数会直接矛盾于观测TP。",
+                "valueHash": "e723b6b2b39a20859f9c11ff3119a9bc469ca148aae7c611e8e56832d840f1f4"
+              },
+              {
+                "id": "e33",
+                "pointer": "/artifacts/8/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "新案例：某批100片陶瓷，机器标记可疑件，人工确认其中9片真有缺损（TP=9）。已知机器真缺损检出比例保持90%不变，无缺损误标比例保持10%不变，总片数100。请推真实缺损总数并验证自洽。",
+                "valueHash": "7ff8f6ba57a3d3f33095c23b8c741477c0bfd300e6b6ea46b6fc04482f5f3d99"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q6",
+            "status": "supported",
+            "reason": "候选Q6正向判断依赖的诊断观察(e25)、缺口反推36÷0.9=40(e27)、教学解释除法反推与验证(e31)及新案例后续检查(e33)均与findings一致；correctness检查确认反推与题设e17自洽，无未决依赖。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e25",
+                "pointer": "/artifacts/4/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "你选择了‘真实裂纹木片共20片’这一选项。原题明确人工确认36片真有裂纹，即机器标记中的真阳性数（TP）为36。",
+                "valueHash": "cfdb417678afb3572ab6211a474effdc3e1c1599414acb9ba0e7c23fcac41bc1"
+              },
+              {
+                "id": "e27",
+                "pointer": "/artifacts/5/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "缺失的关键步骤是：利用‘检出比例 = 真阳性数 ÷ 真实裂纹总数’这一关系，用观测TP（36）除以检出率（90%）反推真实裂纹总数（36÷0.9=40）。你未建立该分母区分，也可能混淆了比例方向。",
+                "valueHash": "70e0b628de717aa7f5ad8b53187275415c494ada84c39114496edf9db1ff41cb"
+              },
+              {
+                "id": "e31",
+                "pointer": "/artifacts/7/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "在分类筛查中，检出比例的分母永远是‘真实阳性总数’，分子是‘被标记出的真阳性数’。当题目已经给出被人工确认的真阳性数（TP）和稳定的检出比例时，要求隐藏的真实基础率，就必须用除法反推：真实阳性总数 = TP ÷ 检出比例。之后可用误标比例和总片数算出预期假阳性与总标记数，与题给标记数对照验证自洽。若误用乘法或忽略分母方向，反推基数会直接矛盾于观测TP。",
+                "valueHash": "e723b6b2b39a20859f9c11ff3119a9bc469ca148aae7c611e8e56832d840f1f4"
+              },
+              {
+                "id": "e33",
+                "pointer": "/artifacts/8/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "新案例：某批100片陶瓷，机器标记可疑件，人工确认其中9片真有缺损（TP=9）。已知机器真缺损检出比例保持90%不变，无缺损误标比例保持10%不变，总片数100。请推真实缺损总数并验证自洽。",
+                "valueHash": "7ff8f6ba57a3d3f33095c23b8c741477c0bfd300e6b6ea46b6fc04482f5f3d99"
+              },
+              {
+                "id": "e17",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "某批2000片木片，机器标记了134片，其中人工确认36片真有裂纹。已知该机器真裂纹检出比例保持90%，无裂纹误标比例保持5%不变。造成当前标记构成（即真实裂纹木片总数）的最可能原因是？",
+                "valueHash": "c3c9239962cbd79ba3d6b3e65b4d6d76f6f05299ec07e32ffcd6761c074ab7bb"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q6",
+          "level": 2,
+          "reason": "诊断观察原题TP=36(e25)，正确指出缺口为未用检出比例反推真实裂纹总数36÷0.9=40(e27)；教学解释给出除法反推与用误标比例和总片数验证自洽(e31)；并提供新案例prompt要求推总数并验证自洽作为可用后续检查(e33)，符合2分标准：解决证据缺口并提供相关下一检查。",
+          "refs": [
+            "e25",
+            "e27",
+            "e31",
+            "e33"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e25",
+              "pointer": "/artifacts/4/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "你选择了‘真实裂纹木片共20片’这一选项。原题明确人工确认36片真有裂纹，即机器标记中的真阳性数（TP）为36。",
+              "valueHash": "cfdb417678afb3572ab6211a474effdc3e1c1599414acb9ba0e7c23fcac41bc1"
+            },
+            {
+              "id": "e27",
+              "pointer": "/artifacts/5/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "缺失的关键步骤是：利用‘检出比例 = 真阳性数 ÷ 真实裂纹总数’这一关系，用观测TP（36）除以检出率（90%）反推真实裂纹总数（36÷0.9=40）。你未建立该分母区分，也可能混淆了比例方向。",
+              "valueHash": "70e0b628de717aa7f5ad8b53187275415c494ada84c39114496edf9db1ff41cb"
+            },
+            {
+              "id": "e31",
+              "pointer": "/artifacts/7/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "在分类筛查中，检出比例的分母永远是‘真实阳性总数’，分子是‘被标记出的真阳性数’。当题目已经给出被人工确认的真阳性数（TP）和稳定的检出比例时，要求隐藏的真实基础率，就必须用除法反推：真实阳性总数 = TP ÷ 检出比例。之后可用误标比例和总片数算出预期假阳性与总标记数，与题给标记数对照验证自洽。若误用乘法或忽略分母方向，反推基数会直接矛盾于观测TP。",
+              "valueHash": "e723b6b2b39a20859f9c11ff3119a9bc469ca148aae7c611e8e56832d840f1f4"
+            },
+            {
+              "id": "e33",
+              "pointer": "/artifacts/8/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "新案例：某批100片陶瓷，机器标记可疑件，人工确认其中9片真有缺损（TP=9）。已知机器真缺损检出比例保持90%不变，无缺损误标比例保持10%不变，总片数100。请推真实缺损总数并验证自洽。",
+              "valueHash": "7ff8f6ba57a3d3f33095c23b8c741477c0bfd300e6b6ea46b6fc04482f5f3d99"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [],
+          "proposedLevel": 2,
+          "proposedReason": "诊断观察原题TP=36(e25)，正确指出缺口为未用检出比例反推真实裂纹总数36÷0.9=40(e27)；教学解释给出除法反推与用误标比例和总片数验证自洽(e31)；并提供新案例prompt要求推总数并验证自洽作为可用后续检查(e33)，符合2分标准：解决证据缺口并提供相关下一检查。"
+        }
+      ],
+      "reviewRequired": [],
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q6",
+            "status": "supported",
+            "reason": "候选Q6正向判断依赖的诊断观察(e25)、缺口反推36÷0.9=40(e27)、教学解释除法反推与验证(e31)及新案例后续检查(e33)均与findings一致；correctness检查确认反推与题设e17自洽，无未决依赖。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e25",
+                "pointer": "/artifacts/4/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "你选择了‘真实裂纹木片共20片’这一选项。原题明确人工确认36片真有裂纹，即机器标记中的真阳性数（TP）为36。",
+                "valueHash": "cfdb417678afb3572ab6211a474effdc3e1c1599414acb9ba0e7c23fcac41bc1"
+              },
+              {
+                "id": "e27",
+                "pointer": "/artifacts/5/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "缺失的关键步骤是：利用‘检出比例 = 真阳性数 ÷ 真实裂纹总数’这一关系，用观测TP（36）除以检出率（90%）反推真实裂纹总数（36÷0.9=40）。你未建立该分母区分，也可能混淆了比例方向。",
+                "valueHash": "70e0b628de717aa7f5ad8b53187275415c494ada84c39114496edf9db1ff41cb"
+              },
+              {
+                "id": "e31",
+                "pointer": "/artifacts/7/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "在分类筛查中，检出比例的分母永远是‘真实阳性总数’，分子是‘被标记出的真阳性数’。当题目已经给出被人工确认的真阳性数（TP）和稳定的检出比例时，要求隐藏的真实基础率，就必须用除法反推：真实阳性总数 = TP ÷ 检出比例。之后可用误标比例和总片数算出预期假阳性与总标记数，与题给标记数对照验证自洽。若误用乘法或忽略分母方向，反推基数会直接矛盾于观测TP。",
+                "valueHash": "e723b6b2b39a20859f9c11ff3119a9bc469ca148aae7c611e8e56832d840f1f4"
+              },
+              {
+                "id": "e33",
+                "pointer": "/artifacts/8/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "新案例：某批100片陶瓷，机器标记可疑件，人工确认其中9片真有缺损（TP=9）。已知机器真缺损检出比例保持90%不变，无缺损误标比例保持10%不变，总片数100。请推真实缺损总数并验证自洽。",
+                "valueHash": "7ff8f6ba57a3d3f33095c23b8c741477c0bfd300e6b6ea46b6fc04482f5f3d99"
+              },
+              {
+                "id": "e17",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "某批2000片木片，机器标记了134片，其中人工确认36片真有裂纹。已知该机器真裂纹检出比例保持90%，无裂纹误标比例保持5%不变。造成当前标记构成（即真实裂纹木片总数）的最可能原因是？",
+                "valueHash": "c3c9239962cbd79ba3d6b3e65b4d6d76f6f05299ec07e32ffcd6761c074ab7bb"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "resultHash": "1231a489851b7b4688a95aee217c4155b2f4e20911082e6447381a3f57e10c52"
+  }
+}

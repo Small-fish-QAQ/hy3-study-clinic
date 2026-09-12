@@ -1,0 +1,294 @@
+{
+  "task": {
+    "caseId": "N-E01-retest",
+    "runId": "N-E01-retest-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-E01-retest.json",
+    "inputHash": "1b28c17474354a352309e99c30923c764d776547e266159b7c510ee32cad45d8",
+    "population": "natural",
+    "sourceId": "E01"
+  },
+  "inputHash": "1b28c17474354a352309e99c30923c764d776547e266159b7c510ee32cad45d8",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "prepare-context-current": "5ef0f0e84f58dd3da25999e4c1197937f9746c2579d0227b70bccb82408bc44e",
+      "solve-current": "80705098298da0d2372db0287e74e7ba0d6a4bde2e9a5379aadbfa0033a9cf72",
+      "correctness": "20bfbdb2f2e1e9ae9cb0e38b8434f56ed8480eae9b9e37ddd692246e8bf29c55",
+      "artifact-audit": "20bfbdb2f2e1e9ae9cb0e38b8434f56ed8480eae9b9e37ddd692246e8bf29c55"
+    },
+    "stages": {
+      "prepare-context-current": {
+        "contexts": [
+          {
+            "taskId": "current",
+            "status": "ready",
+            "reason": "情景事实见于 history h54 题干前半部，已截取至学生错误分析前的事实描述，分离完整且无选项或解答混入。",
+            "premises": [
+              {
+                "ref": "e109",
+                "quote": "两根金属棒E和F均置于恒温箱20°C，你用食指以相同压力接触3秒，皮肤初始31°C。测得E处皮肤降温2.5°C，F处降温0.6°C。",
+                "proposedRef": "h54",
+                "witness": {
+                  "id": "e109",
+                  "pointer": "/history/53/text",
+                  "role": "prior_exposure",
+                  "kind": "text",
+                  "value": "两根金属棒E和F均置于恒温箱20°C，你用食指以相同压力接触3秒，皮肤初始31°C。测得E处皮肤降温2.5°C，F处降温0.6°C。学生甲分析：‘因为E使皮肤降温更多，所以E的实际温度一定低于F，例如E为17°C、F为20°C。’ 在题设条件下，甲的推理中哪一步出现了原则错误？",
+                  "valueHash": "8e63fedc28f5cc2a8cd72fe3e87329da91d20114cbf6662853d2afdaa26d77e9"
+                }
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "solve-current": {
+        "status": "resolved",
+        "solution": "题设明确两棒均20°C且以相同压力接触3秒（e14,e23），同温同条件下皮肤降温差只能源于导热速率不同（e3）。甲以降温更多推断E实际温度更低，违背同温边界并混淆温度与热传递速率概念，其原则错误如选项A所述。B错因题设已给同压；C错因推理违背题设与热学原理。",
+        "witnesses": [
+          {
+            "id": "e3",
+            "pointer": "/sources/0/text",
+            "role": "source",
+            "kind": "text",
+            "value": "Your feet feel cold as you walk barefoot across the living room carpet in your cold house and then step onto the kitchen tile floor. This result is intriguing, since the carpet and tile floor are both at the same temperature. The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.\n\nSome materials conduct thermal energy faster than others. In general, good conductors of electricity (metals like copper, aluminum, gold, and silver) are also good heat conductors, whereas insulators of electricity (wood, plastic, and rubber) are poor heat conductors.\n\nThe (average) kinetic energy of a molecule in the hot body is higher than in the colder body. If two molecules collide, an energy transfer from the molecule with greater kinetic energy to the molecule with less kinetic energy occurs. The cumulative effect from all collisions results in a net flux of heat from the hot body to the colder body. The heat flux thus depends on the temperature difference ΔΤ=Τhot−Tcold. Therefore, you will get a more severe burn from boiling water than from hot tap water. Conversely, if the temperatures are the same, the net heat transfer rate falls to zero, and equilibrium is achieved. Owing to the fact that the number of collisions increases with increasing area, heat conduction depends on the cross-sectional area. If you touch a cold wall with your palm, your hand cools faster than if you just touch it with your fingertip.",
+            "valueHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd"
+          },
+          {
+            "id": "e14",
+            "pointer": "/question/prompt",
+            "role": "question",
+            "kind": "text",
+            "value": "两根金属棒E和F均置于恒温箱20°C，你用食指以相同压力接触3秒，皮肤初始31°C。测得E处皮肤降温2.5°C，F处降温0.6°C。学生甲分析：‘因为E使皮肤降温更多，所以E的实际温度一定低于F，例如E为17°C、F为20°C。’ 在题设条件下，甲的推理中哪一步出现了原则错误？",
+            "valueHash": "8e63fedc28f5cc2a8cd72fe3e87329da91d20114cbf6662853d2afdaa26d77e9"
+          },
+          {
+            "id": "e23",
+            "pointer": "/scenarioContext/0/text",
+            "role": "context",
+            "kind": "text",
+            "value": "两根金属棒E和F均置于恒温箱20°C，你用食指以相同压力接触3秒，皮肤初始31°C。测得E处皮肤降温2.5°C，F处降温0.6°C。",
+            "valueHash": "4afbf1073a5cbfffc5394bedc9141b1bc125097b1e0fcced577704802314f799"
+          }
+        ],
+        "reviewReasons": []
+      },
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "clear",
+            "affected": [],
+            "reason": "产品断言（e24,e26）在题设同温（均20°C）、同接触条件（同压3秒、皮肤31°C）边界下，降温差只能说明导热速率更高而非温度更低。来源e3支持同温物体降温差源于热传递速率差。断言条件与题设实例一致，无混淆充分必要。",
+            "refs": [
+              "e14",
+              "e24",
+              "e26",
+              "e3",
+              "e145"
+            ],
+            "challenge": {
+              "status": "closed",
+              "reason": "给定事实明确两棒均20°C且相同压力接触3秒、皮肤初始31°C（e14,e145），无法补充相容的温度不同或接触条件不同情况；依据e3同温下热损失差由导热速率差解释，排除其他必要条件缺失，原结论成立。",
+              "refs": [
+                "e14",
+                "e145",
+                "e3"
+              ]
+            },
+            "witnesses": [
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "两根金属棒E和F均置于恒温箱20°C，你用食指以相同压力接触3秒，皮肤初始31°C。测得E处皮肤降温2.5°C，F处降温0.6°C。学生甲分析：‘因为E使皮肤降温更多，所以E的实际温度一定低于F，例如E为17°C、F为20°C。’ 在题设条件下，甲的推理中哪一步出现了原则错误？",
+                "valueHash": "8e63fedc28f5cc2a8cd72fe3e87329da91d20114cbf6662853d2afdaa26d77e9"
+              },
+              {
+                "id": "e24",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "甲错误地在同温边界内用温度差解释降温，正确应为：因两棒均20°C且接触条件相同，降温差只能说明E导热速率更高，而非E更冷。",
+                "valueHash": "bdae7bcf24672ae637c94d45ef7160f03a4477352d1060566fdaf2cecbfe0cd6"
+              },
+              {
+                "id": "e26",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "在E、F均20°C且接触条件相同的边界下，皮肤降温更多只能诊断材料导热速率更高，而不是温度更低。甲的推断违背了题设同温条件。",
+                "valueHash": "dc56004e6dda99a43c1bf5b3fb7317599537f2cee1ba0ce2e2a6ad881c1c8362"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "Your feet feel cold as you walk barefoot across the living room carpet in your cold house and then step onto the kitchen tile floor. This result is intriguing, since the carpet and tile floor are both at the same temperature. The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.\n\nSome materials conduct thermal energy faster than others. In general, good conductors of electricity (metals like copper, aluminum, gold, and silver) are also good heat conductors, whereas insulators of electricity (wood, plastic, and rubber) are poor heat conductors.\n\nThe (average) kinetic energy of a molecule in the hot body is higher than in the colder body. If two molecules collide, an energy transfer from the molecule with greater kinetic energy to the molecule with less kinetic energy occurs. The cumulative effect from all collisions results in a net flux of heat from the hot body to the colder body. The heat flux thus depends on the temperature difference ΔΤ=Τhot−Tcold. Therefore, you will get a more severe burn from boiling water than from hot tap water. Conversely, if the temperatures are the same, the net heat transfer rate falls to zero, and equilibrium is achieved. Owing to the fact that the number of collisions increases with increasing area, heat conduction depends on the cross-sectional area. If you touch a cold wall with your palm, your hand cools faster than if you just touch it with your fingertip.",
+                "valueHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd"
+              },
+              {
+                "id": "e145",
+                "pointer": "/scenarioContext/0/text",
+                "role": "context",
+                "kind": "text",
+                "value": "两根金属棒E和F均置于恒温箱20°C，你用食指以相同压力接触3秒，皮肤初始31°C。测得E处皮肤降温2.5°C，F处降温0.6°C。",
+                "valueHash": "4afbf1073a5cbfffc5394bedc9141b1bc125097b1e0fcced577704802314f799"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "kind": "quantities",
+            "status": "not_applicable",
+            "affected": [],
+            "reason": "产物仅做定性断言，未独立应用任何数值公式或单位换算，无数量推导需核验。",
+            "contextHash": "20bfbdb2f2e1e9ae9cb0e38b8434f56ed8480eae9b9e37ddd692246e8bf29c55",
+            "proposed": {
+              "kind": "quantities",
+              "status": "not_applicable",
+              "affected": [],
+              "reason": "产物仅做定性断言，未独立应用任何数值公式或单位换算，无数量推导需核验。",
+              "refs": [
+                "e24",
+                "e26"
+              ]
+            },
+            "reviewReasons": []
+          }
+        ],
+        "keys": [
+          {
+            "taskId": "current",
+            "status": "absent",
+            "reason": "当前题目e14及artifacts（e23,e24,e25,e26）未包含题目作者指定的正确答案键；/rubric与/answer均absent（e146,e147），产品自选选项A非作者键，故无当前键可比对。",
+            "refs": [
+              "e14",
+              "e23",
+              "e146",
+              "e147"
+            ],
+            "witnesses": [
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "两根金属棒E和F均置于恒温箱20°C，你用食指以相同压力接触3秒，皮肤初始31°C。测得E处皮肤降温2.5°C，F处降温0.6°C。学生甲分析：‘因为E使皮肤降温更多，所以E的实际温度一定低于F，例如E为17°C、F为20°C。’ 在题设条件下，甲的推理中哪一步出现了原则错误？",
+                "valueHash": "8e63fedc28f5cc2a8cd72fe3e87329da91d20114cbf6662853d2afdaa26d77e9"
+              },
+              {
+                "id": "e23",
+                "pointer": "/artifacts/0/id",
+                "role": "artifact",
+                "kind": "text",
+                "value": "current-retest-selected-option",
+                "valueHash": "e616e3a5f76ec84c63d9e263a7a81397d7adc717d7be2dac3334e0d0e5d653fc"
+              },
+              {
+                "id": "e146",
+                "pointer": "/rubric",
+                "role": "criterion",
+                "kind": "absent",
+                "value": null,
+                "valueHash": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+              },
+              {
+                "id": "e147",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "absent",
+                "value": null,
+                "valueHash": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q4",
+            "level": "U",
+            "reason": "The proposed judgment needs evidence review.",
+            "proposed": {
+              "dimension": "Q4",
+              "level": 1,
+              "reason": "题设前提充分（e14,e145,e3），盲解(current)确认正确选项A且产物e23/e26与之键一致，答案集可辩护。但prior_exposure中prior-53至prior-56已包含本题完整题干与所有选项文本，先前曝光题目本身导致本题作为retest缺乏适当独立性，仅可解但区分度弱。",
+              "refs": [
+                "e14",
+                "e145",
+                "e3",
+                "e23",
+                "prior-53",
+                "prior-54"
+              ],
+              "issue": "exposure",
+              "exposureEvidence": [
+                {
+                  "taskId": "current",
+                  "kind": "question_only",
+                  "ref": "prior-53",
+                  "quote": "两根金属棒E和F均置于恒温箱20°C...甲的推理中哪一步出现了原则错误？"
+                }
+              ]
+            },
+            "reviewReasons": [
+              "EXPOSED_SOLUTION_NOT_ESTABLISHED"
+            ]
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q4",
+          "level": "U",
+          "reason": "The proposed judgment needs evidence review.",
+          "proposed": {
+            "dimension": "Q4",
+            "level": 1,
+            "reason": "题设前提充分（e14,e145,e3），盲解(current)确认正确选项A且产物e23/e26与之键一致，答案集可辩护。但prior_exposure中prior-53至prior-56已包含本题完整题干与所有选项文本，先前曝光题目本身导致本题作为retest缺乏适当独立性，仅可解但区分度弱。",
+            "refs": [
+              "e14",
+              "e145",
+              "e3",
+              "e23",
+              "prior-53",
+              "prior-54"
+            ],
+            "issue": "exposure",
+            "exposureEvidence": [
+              {
+                "taskId": "current",
+                "kind": "question_only",
+                "ref": "prior-53",
+                "quote": "两根金属棒E和F均置于恒温箱20°C...甲的推理中哪一步出现了原则错误？"
+              }
+            ]
+          },
+          "reviewReasons": [
+            "EXPOSED_SOLUTION_NOT_ESTABLISHED"
+          ],
+          "constraints": [],
+          "proposedLevel": "U",
+          "proposedReason": "The proposed judgment needs evidence review."
+        }
+      ],
+      "reviewRequired": [
+        {
+          "dimension": "Q4",
+          "reason": "UNRESOLVED"
+        }
+      ]
+    },
+    "resultHash": "4b267591dc16cba80dfa9796b1ccfd3dc9c1f97ba9bf7180327a92380c17a319"
+  }
+}

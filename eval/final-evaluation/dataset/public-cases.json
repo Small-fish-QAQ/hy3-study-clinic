@@ -1,0 +1,885 @@
+[
+  {
+    "caseId": "case-64f871ac01cb95e8",
+    "frozenCaseId": "E044",
+    "sourceId": "F11",
+    "collection": "boundary",
+    "dimensions": [
+      "Q4"
+    ],
+    "surface": null,
+    "tripletId": null,
+    "file": "dataset/controlled-cases/E044.json",
+    "sha256": "2a35db4d146023f4ec29a647c6c2b7fc142beb25f103c77e59c28e7a9b2a1544",
+    "inputHash": "ef399e8aa0b5461d4b08e34afd4c68781fda869767320c56bc9f35d79e9609ce",
+    "observations": [
+      "results/observations/E044-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-ba7fa89d80555f2e",
+    "frozenCaseId": "E091",
+    "sourceId": "F12",
+    "collection": "boundary",
+    "dimensions": [
+      "Q4"
+    ],
+    "surface": null,
+    "tripletId": null,
+    "file": "dataset/controlled-cases/E091.json",
+    "sha256": "f43247a989617e73e47396962ae1a62bf879e7d2803186a42556055913f23c61",
+    "inputHash": "d84e56c73f66220fb8cdee2f52c120768c3769efc8e368931b2926ddf8b96dd5",
+    "observations": [
+      "results/observations/E091-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-8cf45c22201c74e2",
+    "frozenCaseId": "E299",
+    "sourceId": "F12",
+    "collection": "controlled",
+    "dimensions": [
+      "Q6"
+    ],
+    "surface": null,
+    "tripletId": "triplet-c7bada67f9fa89ab",
+    "file": "dataset/controlled-cases/E299.json",
+    "sha256": "601fa1a1b7e616e60ee7d3f255529513593db7dbc771713c9812326a4ea8ff1d",
+    "inputHash": "bc670d38a2b3289b1d6f6790e5966311c62b1ef3fdf97150d6763abd9ba15dfc",
+    "observations": [
+      "results/observations/E299-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-b2739070690d125c",
+    "frozenCaseId": "E346",
+    "sourceId": "F12",
+    "collection": "controlled",
+    "dimensions": [
+      "Q6"
+    ],
+    "surface": null,
+    "tripletId": "triplet-c7bada67f9fa89ab",
+    "file": "dataset/controlled-cases/E346.json",
+    "sha256": "8a6190195bc9ead50e5024ed4dedd1cd611fe39aff342a3d97ee55eecb52522a",
+    "inputHash": "4d15ad69f5f90308ace99331cb0165c1efeff65add932869e1930e26ef505d53",
+    "observations": [
+      "results/observations/E346-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-b248649507510689",
+    "frozenCaseId": "E393",
+    "sourceId": "F12",
+    "collection": "controlled",
+    "dimensions": [
+      "Q6"
+    ],
+    "surface": null,
+    "tripletId": "triplet-c7bada67f9fa89ab",
+    "file": "dataset/controlled-cases/E393.json",
+    "sha256": "22fc0c39a6106f8861e6f61e88fe90b88424d0539b2774b19f3c43a5095b52c6",
+    "inputHash": "38a460f82ed4ff36a74566bc5d0af3664bb4a15da17c8f380a03ab7613e95448",
+    "observations": [
+      "results/observations/E393-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-86a3f25ea6f012b6",
+    "frozenCaseId": "E460",
+    "sourceId": "F11",
+    "collection": "controlled",
+    "dimensions": [
+      "Q3"
+    ],
+    "surface": null,
+    "tripletId": "triplet-b6c7f7d93c672cf0",
+    "file": "dataset/controlled-cases/E460.json",
+    "sha256": "8e6adeee6b42421064cf54b51f3c0d70d209b8eef32ccfa3dc0c460127235cac",
+    "inputHash": "fee2ffa9a36d2da6578ffc5d0281f1e84212c7d699c7a8b76cb52ca9fffec7d3",
+    "observations": [
+      "results/observations/E460-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-5ca1034b2be58233",
+    "frozenCaseId": "E507",
+    "sourceId": "F11",
+    "collection": "controlled",
+    "dimensions": [
+      "Q3"
+    ],
+    "surface": null,
+    "tripletId": "triplet-b6c7f7d93c672cf0",
+    "file": "dataset/controlled-cases/E507.json",
+    "sha256": "38d6d8d32c51e5b45e0dc3f8ca681e5af4eea5793f5f36258c13c633e7a1bc47",
+    "inputHash": "ae6240554fae2de073e1f02e7a2730aea46dd388e99514ad62bbf754166220cd",
+    "observations": [
+      "results/observations/E507-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-402b28c7928cb7ac",
+    "frozenCaseId": "E554",
+    "sourceId": "F11",
+    "collection": "controlled",
+    "dimensions": [
+      "Q3"
+    ],
+    "surface": null,
+    "tripletId": "triplet-b6c7f7d93c672cf0",
+    "file": "dataset/controlled-cases/E554.json",
+    "sha256": "bfff3f968da56e2582aea8a0a5a366090a4f62866cfddd93141c4ba0e625f8e1",
+    "inputHash": "9e87358de6ebe5eb3ee661c38bf7c3a499ec7d0ee259b40fde874949f0cbb8e0",
+    "observations": [
+      "results/observations/E554-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-45355e4f1ebb0a01",
+    "frozenCaseId": "E601",
+    "sourceId": "F12",
+    "collection": "controlled",
+    "dimensions": [
+      "Q3"
+    ],
+    "surface": null,
+    "tripletId": "triplet-d56fe2ce07a0f921",
+    "file": "dataset/controlled-cases/E601.json",
+    "sha256": "e4507f3d3c3dddd473a995f2e2724adbe5acab3a5afaab0eec9e506f39f5dafb",
+    "inputHash": "72d8cb130c4b4dd3e2726bfd24ea575d97211ba3a469b763a927d2f4d12d48b5",
+    "observations": [
+      "results/observations/E601-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-72305ab3e50fa4d1",
+    "frozenCaseId": "E648",
+    "sourceId": "F12",
+    "collection": "controlled",
+    "dimensions": [
+      "Q3"
+    ],
+    "surface": null,
+    "tripletId": "triplet-d56fe2ce07a0f921",
+    "file": "dataset/controlled-cases/E648.json",
+    "sha256": "222394746aa41f213845386e1f3f31a9e2ef56e94425cfa946626c5f317c49f1",
+    "inputHash": "db1551052004ca35828adb374f329fdcf5c51ef7f0b86eb2b22c98ecd0444bc0",
+    "observations": [
+      "results/observations/E648-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-a3fea2ff38aa825f",
+    "frozenCaseId": "E695",
+    "sourceId": "F12",
+    "collection": "controlled",
+    "dimensions": [
+      "Q3"
+    ],
+    "surface": null,
+    "tripletId": "triplet-d56fe2ce07a0f921",
+    "file": "dataset/controlled-cases/E695.json",
+    "sha256": "4a05b68e6773af55b193a8e58eafd697926d51006dc709f6fb126ba9d44cbfd3",
+    "inputHash": "62e6e0caba101371846ed98c02af1af3424cf808dd14087b2d2983860c2ba06c",
+    "observations": [
+      "results/observations/E695-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-96d7696ea0103c44",
+    "frozenCaseId": "E732",
+    "sourceId": "F11",
+    "collection": "controlled",
+    "dimensions": [
+      "Q5"
+    ],
+    "surface": null,
+    "tripletId": "triplet-b3c23b170c7d728a",
+    "file": "dataset/controlled-cases/E732.json",
+    "sha256": "9dcc9a8ede53f27cc926b91f35b828675582fbb6ddfb24ba7d28546f4a151609",
+    "inputHash": "fb7313458bb7ade1e772497c87192680d8b6ac6a2243a679729ac38b30d014dc",
+    "observations": [
+      "results/observations/E732-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-61225212a9c5fde6",
+    "frozenCaseId": "E779",
+    "sourceId": "F11",
+    "collection": "controlled",
+    "dimensions": [
+      "Q5"
+    ],
+    "surface": null,
+    "tripletId": "triplet-b3c23b170c7d728a",
+    "file": "dataset/controlled-cases/E779.json",
+    "sha256": "0538e95d74d2aa9c2a09960ed598b447c71ffc43dfa6dda4d091f16281e35364",
+    "inputHash": "3bfa84fe3486c20b5366824ab7364875f27c0074358b1ef08de7ecf651830dc4",
+    "observations": [
+      "results/observations/E779-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-67b519731d2f14fc",
+    "frozenCaseId": "E826",
+    "sourceId": "F11",
+    "collection": "controlled",
+    "dimensions": [
+      "Q5"
+    ],
+    "surface": null,
+    "tripletId": "triplet-b3c23b170c7d728a",
+    "file": "dataset/controlled-cases/E826.json",
+    "sha256": "d73a63defbd86a2b1b7bf1b059d702c0eb741fb588c54197d8c0c65dfaa1d1cf",
+    "inputHash": "f63bcd01076bac596f25a6492ff58dabcd97da8eece7f2b1246fc6336a88ec9c",
+    "observations": [
+      "results/observations/E826-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-91a9aa10947a9505",
+    "frozenCaseId": "N-B-E01-curriculum",
+    "sourceId": "B-E01",
+    "collection": "natural",
+    "dimensions": [
+      "Q2"
+    ],
+    "surface": "curriculum",
+    "tripletId": null,
+    "file": "dataset/natural-cases/N-B-E01-curriculum.json",
+    "sha256": "57f8680fd90be79dc5d65841dc598d844c6a98c016ee516d4d7f61f08b8c01d9",
+    "inputHash": "b1fca7d53d2634654cd99daf9cbd09138b2031a3a40f7423cc4e5ed29cf83615",
+    "observations": [
+      "results/observations/N-B-E01-curriculum-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-fde05afdc9f01fe1",
+    "frozenCaseId": "N-B-E01-formal-question",
+    "sourceId": "B-E01",
+    "collection": "natural",
+    "dimensions": [
+      "Q4"
+    ],
+    "surface": "formal-question",
+    "tripletId": null,
+    "file": "dataset/natural-cases/N-B-E01-formal-question.json",
+    "sha256": "561e847cd0752749ee4893e2220ec4ed67a1e6a6c2dd35ec484fc6640ac756b3",
+    "inputHash": "6eaf3e0e31fc0a9ab0dc0259cdf53df1a1cdbf13c4f579e1be65ed206768c6a9",
+    "observations": [
+      "results/observations/N-B-E01-formal-question-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-9af8a658fc2dd07b",
+    "frozenCaseId": "N-B-E01-grading-negative",
+    "sourceId": "B-E01",
+    "collection": "natural",
+    "dimensions": [
+      "Q5"
+    ],
+    "surface": "grading-negative",
+    "tripletId": null,
+    "file": "dataset/natural-cases/N-B-E01-grading-negative.json",
+    "sha256": "9500024c7e5670a6cd550b9d671068d8477a6b56baba257ee0018b8745e46bae",
+    "inputHash": "db9feff30912c9dd835ce951cefa5e8be627870c630fb2f98fa2c4ba06c4f292",
+    "observations": [
+      "results/observations/N-B-E01-grading-negative-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-07b6d923e9760047",
+    "frozenCaseId": "N-B-E01-grading-positive",
+    "sourceId": "B-E01",
+    "collection": "natural",
+    "dimensions": [
+      "Q5"
+    ],
+    "surface": "grading-positive",
+    "tripletId": null,
+    "file": "dataset/natural-cases/N-B-E01-grading-positive.json",
+    "sha256": "9ac6211832d6c4c8f9e31545df04a1fcf65b7478921118ea13a5300fb77d456e",
+    "inputHash": "9d1359a6c80a15d2c346314336163ef6aa9f8a6d85d3ae9c642df6a70878bab8",
+    "observations": [
+      "results/observations/N-B-E01-grading-positive-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-3a753605ca322d32",
+    "frozenCaseId": "N-B-E01-practice",
+    "sourceId": "B-E01",
+    "collection": "natural",
+    "dimensions": [
+      "Q4"
+    ],
+    "surface": "practice",
+    "tripletId": null,
+    "file": "dataset/natural-cases/N-B-E01-practice.json",
+    "sha256": "d5c8ade47bc9542af47077c016b696e8934ee6ca834104d1c38800c3aa6866cc",
+    "inputHash": "beeb921efc5bc6ea6945536983f0b235e4e6ec80c09ddff63ef3b11247ff3ee3",
+    "observations": [
+      "results/observations/N-B-E01-practice-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-88b833673530dac4",
+    "frozenCaseId": "N-B-E01-repair",
+    "sourceId": "B-E01",
+    "collection": "natural",
+    "dimensions": [
+      "Q6"
+    ],
+    "surface": "repair",
+    "tripletId": null,
+    "file": "dataset/natural-cases/N-B-E01-repair.json",
+    "sha256": "ac4eed1fb0dc96136d5e858f01f7c463ca58ec533fc6f56e44e7bb55e48556d8",
+    "inputHash": "eca60be53bed70437b8c738a5493483a79155f92f387dac362804cdb1d569610",
+    "observations": [
+      "results/observations/N-B-E01-repair-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-36e9d2dcf69f1be9",
+    "frozenCaseId": "N-B-E01-retest",
+    "sourceId": "B-E01",
+    "collection": "natural",
+    "dimensions": [
+      "Q4"
+    ],
+    "surface": "retest",
+    "tripletId": null,
+    "file": "dataset/natural-cases/N-B-E01-retest.json",
+    "sha256": "b7ba05f851807c4e7e38ef3bd2db0ee9dad309d0777e311c2302f4680666f02f",
+    "inputHash": "9ef176af716c6690bacf35fa87485d7532d417a49f084dde0c6f52bb65404a9a",
+    "observations": [
+      "results/observations/N-B-E01-retest-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-19191398b44d9be3",
+    "frozenCaseId": "N-B-E01-teaching",
+    "sourceId": "B-E01",
+    "collection": "natural",
+    "dimensions": [
+      "Q1",
+      "Q3"
+    ],
+    "surface": "teaching",
+    "tripletId": null,
+    "file": "dataset/natural-cases/N-B-E01-teaching.json",
+    "sha256": "dfddb2aaa7bb751e6acf4c49ea87a58df109153e789c60e4d24c414207b037b5",
+    "inputHash": "c5151c5373f4ec68b736d20611fb343796bfcdbfa06e5059024330930d752a9c",
+    "observations": [
+      "results/observations/N-B-E01-teaching-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-0372422eb9181c40",
+    "frozenCaseId": "N-B-E01-tutor",
+    "sourceId": "B-E01",
+    "collection": "natural",
+    "dimensions": [
+      "Q1",
+      "Q3"
+    ],
+    "surface": "tutor",
+    "tripletId": null,
+    "file": "dataset/natural-cases/N-B-E01-tutor.json",
+    "sha256": "857715f4650cb656451b04b30f304b79404f4f025c301d4769bbdc2000995125",
+    "inputHash": "5efe7ca6047f975d05988280bdf87be35161f8158920f34895d43d1d2d0cebc1",
+    "observations": [
+      "results/observations/N-B-E01-tutor-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-94c4cab79b3a8608",
+    "frozenCaseId": "N-E01-curriculum",
+    "sourceId": "E01",
+    "collection": "natural",
+    "dimensions": [
+      "Q2"
+    ],
+    "surface": "curriculum",
+    "tripletId": null,
+    "file": "dataset/natural-cases/N-E01-curriculum.json",
+    "sha256": "edf373451273c234ff93d204bf0adeef3cbe517e6fd0432725c2ff43dd62b91a",
+    "inputHash": "25b13eb9a8bf9494e227e15312e20febfa6fd9eb709a482de0ff0ff7c9d41511",
+    "observations": [
+      "results/observations/N-E01-curriculum-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-c0dc5992789e1522",
+    "frozenCaseId": "N-E01-practice",
+    "sourceId": "E01",
+    "collection": "natural",
+    "dimensions": [
+      "Q4"
+    ],
+    "surface": "practice",
+    "tripletId": null,
+    "file": "dataset/natural-cases/N-E01-practice.json",
+    "sha256": "f636aa3ed0886eef5d3701468abe4714fb09ff56d4d6a1541c9e9266156cd7b9",
+    "inputHash": "1180a657521eae8c77860226c2bde3b270e1c40f1e67c87b3b5332981bdadb81",
+    "observations": [
+      "results/observations/N-E01-practice-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-6f847e193521ad23",
+    "frozenCaseId": "N-E01-repair",
+    "sourceId": "E01",
+    "collection": "natural",
+    "dimensions": [
+      "Q6"
+    ],
+    "surface": "repair",
+    "tripletId": null,
+    "file": "dataset/natural-cases/N-E01-repair.json",
+    "sha256": "c1a739c706e3d4b6420bd8273875122aaeeb262bc3105628aa5dd4bb519674eb",
+    "inputHash": "016fa40105045ed0dcbb6b87cfb1d228bfe438d038da356c207eec916653fca5",
+    "observations": [
+      "results/observations/N-E01-repair-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-1b4384d0a23597f6",
+    "frozenCaseId": "N-E01-retest",
+    "sourceId": "E01",
+    "collection": "natural",
+    "dimensions": [
+      "Q4"
+    ],
+    "surface": "retest",
+    "tripletId": null,
+    "file": "dataset/natural-cases/N-E01-retest.json",
+    "sha256": "30b23bd0c1a2d74be44cf607885443e4e190e3f570e4ba27a60a40777eb6dc93",
+    "inputHash": "1b28c17474354a352309e99c30923c764d776547e266159b7c510ee32cad45d8",
+    "observations": [
+      "results/observations/N-E01-retest-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-83bfed0a59514600",
+    "frozenCaseId": "N-E01-teaching",
+    "sourceId": "E01",
+    "collection": "natural",
+    "dimensions": [
+      "Q1",
+      "Q3"
+    ],
+    "surface": "teaching",
+    "tripletId": null,
+    "file": "dataset/natural-cases/N-E01-teaching.json",
+    "sha256": "c45505eaa7948ffb28334f4575eea5bb67da42a980faf75e7c0b3574d4b6c502",
+    "inputHash": "b3cd92b9bc7b4a153419baedaf896e3faf54b1fcb4bc421d201da490af00bfb3",
+    "observations": [
+      "results/observations/N-E01-teaching-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-df55bfb075eb41a0",
+    "frozenCaseId": "N-E01-tutor",
+    "sourceId": "E01",
+    "collection": "natural",
+    "dimensions": [
+      "Q1",
+      "Q3"
+    ],
+    "surface": "tutor",
+    "tripletId": null,
+    "file": "dataset/natural-cases/N-E01-tutor.json",
+    "sha256": "2a25c93dba76f7ea7cbc586a3ef780d25a07e5fdad38d97e876adc22070a7670",
+    "inputHash": "704abb3090e0422f5afe17f25f57fcd26a40458043e41b355ef4eb81d258fc9d",
+    "observations": [
+      "results/observations/N-E01-tutor-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-7d41509ac0e3d14a",
+    "frozenCaseId": "N-E02-curriculum",
+    "sourceId": "E02",
+    "collection": "natural",
+    "dimensions": [
+      "Q2"
+    ],
+    "surface": "curriculum",
+    "tripletId": null,
+    "file": "dataset/natural-cases/N-E02-curriculum.json",
+    "sha256": "19e72f7c041510db715466c5b749105996da9de17f06f38b7b598471775cd6de",
+    "inputHash": "8986463467244eb3ef7a3a8ef6f32ee29c760fde5b026743baa15bea01927426",
+    "observations": [
+      "results/observations/N-E02-curriculum-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-40ddb2c4a45daebb",
+    "frozenCaseId": "N-E02-practice",
+    "sourceId": "E02",
+    "collection": "natural",
+    "dimensions": [
+      "Q4"
+    ],
+    "surface": "practice",
+    "tripletId": null,
+    "file": "dataset/natural-cases/N-E02-practice.json",
+    "sha256": "a416ea5f87ab23478a2e36cb4b17c8f37f5f47d0b88c10adc025e406723e18b3",
+    "inputHash": "44b057609c990a9eb059e4f8e48682b2d80353dfc382b7e2c2597d1117e61155",
+    "observations": [
+      "results/observations/N-E02-practice-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-2c75c0ca343f1189",
+    "frozenCaseId": "N-E02-repair",
+    "sourceId": "E02",
+    "collection": "natural",
+    "dimensions": [
+      "Q6"
+    ],
+    "surface": "repair",
+    "tripletId": null,
+    "file": "dataset/natural-cases/N-E02-repair.json",
+    "sha256": "351dbd2d08d526ccdf350e1ba7aee05a65d9157e1b0cd4e0e4431e70e7d5a80b",
+    "inputHash": "3de3b445e3d09c30390a16745f40e961e4d2cfaac9124b7eb587df1cac86966f",
+    "observations": [
+      "results/observations/N-E02-repair-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-be2a0b2a20d32fed",
+    "frozenCaseId": "N-E02-retest",
+    "sourceId": "E02",
+    "collection": "natural",
+    "dimensions": [
+      "Q4"
+    ],
+    "surface": "retest",
+    "tripletId": null,
+    "file": "dataset/natural-cases/N-E02-retest.json",
+    "sha256": "3b064c88d0c57e6ed07d14923c1ceb71db791af3e78270c7e22333c1130cea63",
+    "inputHash": "3c2110825b1a9354a6df1da28ffc505d996218c4aae0e47096b1234655644ab3",
+    "observations": [
+      "results/observations/N-E02-retest-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-c7a20fce9226531d",
+    "frozenCaseId": "N-E02-teaching",
+    "sourceId": "E02",
+    "collection": "natural",
+    "dimensions": [
+      "Q1",
+      "Q3"
+    ],
+    "surface": "teaching",
+    "tripletId": null,
+    "file": "dataset/natural-cases/N-E02-teaching.json",
+    "sha256": "4179a4bed9dbb3e30b76857c1fcfc4108a7441bce9efb57096af3ef69055f862",
+    "inputHash": "afe67498d6c6fd5f7a9759df74a7bdce72f1678c29aacb724ef4169078c6af3b",
+    "observations": [
+      "results/observations/N-E02-teaching-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-5f4115d6d172564c",
+    "frozenCaseId": "N-E02-tutor",
+    "sourceId": "E02",
+    "collection": "natural",
+    "dimensions": [
+      "Q1",
+      "Q3"
+    ],
+    "surface": "tutor",
+    "tripletId": null,
+    "file": "dataset/natural-cases/N-E02-tutor.json",
+    "sha256": "c4568f08e9ebc30c53319066572de42a63454404c375ebf4aaa730e551c7a51c",
+    "inputHash": "5525c12e79db29eeb2f3dd8411d9b226871ed43221e30e5f63bf3b64dd0bc068",
+    "observations": [
+      "results/observations/N-E02-tutor-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-28294959992a37ab",
+    "frozenCaseId": "N-E04-curriculum",
+    "sourceId": "E04",
+    "collection": "natural",
+    "dimensions": [
+      "Q2"
+    ],
+    "surface": "curriculum",
+    "tripletId": null,
+    "file": "dataset/natural-cases/N-E04-curriculum.json",
+    "sha256": "13fd9765bc6435372feec30d83c32e48fc77da119c9c078ce4430eeca51a9b43",
+    "inputHash": "a3ffef2e79f58b1bf66db6d10603918274bb5326d5b3d7134b56ad1eed5219c7",
+    "observations": [
+      "results/observations/N-E04-curriculum-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-e390b215ab60333c",
+    "frozenCaseId": "N-E04-practice",
+    "sourceId": "E04",
+    "collection": "natural",
+    "dimensions": [
+      "Q4"
+    ],
+    "surface": "practice",
+    "tripletId": null,
+    "file": "dataset/natural-cases/N-E04-practice.json",
+    "sha256": "16d5750f6e97c49200511e9b6dd694168bef66ae65d875d0a25049d171d2e4ae",
+    "inputHash": "4a94ba648e69bea8fdc5f2a90a738148bb32292f0d10da906ea2da246cf3b922",
+    "observations": [
+      "results/observations/N-E04-practice-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-10934ee67d804260",
+    "frozenCaseId": "N-E04-repair",
+    "sourceId": "E04",
+    "collection": "natural",
+    "dimensions": [
+      "Q6"
+    ],
+    "surface": "repair",
+    "tripletId": null,
+    "file": "dataset/natural-cases/N-E04-repair.json",
+    "sha256": "00b6f7100cc3f59878e2e47254cf51f3ed34f5ca36b78120c7b2ad4a5285b442",
+    "inputHash": "c305f9941d4b5349ab2d9e818daf404a49b83469bd395d1fb973286192d5580c",
+    "observations": [
+      "results/observations/N-E04-repair-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-e6aa0d34b6f24e09",
+    "frozenCaseId": "N-E04-retest",
+    "sourceId": "E04",
+    "collection": "natural",
+    "dimensions": [
+      "Q4"
+    ],
+    "surface": "retest",
+    "tripletId": null,
+    "file": "dataset/natural-cases/N-E04-retest.json",
+    "sha256": "53d778bf61c9aa81ca6d8b1f6df8562dd4629b2d2937fc3ecd14557ff7d80bca",
+    "inputHash": "a52ebf465e3e02fa2ec4a7ff156c8f749df1082233ac97598c2ae83a2d16d80e",
+    "observations": [
+      "results/observations/N-E04-retest-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-772be9b23efb20f4",
+    "frozenCaseId": "N-E04-teaching",
+    "sourceId": "E04",
+    "collection": "natural",
+    "dimensions": [
+      "Q1",
+      "Q3"
+    ],
+    "surface": "teaching",
+    "tripletId": null,
+    "file": "dataset/natural-cases/N-E04-teaching.json",
+    "sha256": "d98756d15b999c2546b76126921e502be41a130d8a8a55c3cf0889410c10538b",
+    "inputHash": "db00b93cd227b8afc46a714aed49794dce6b9e15f293a8440d601dee0741863c",
+    "observations": [
+      "results/observations/N-E04-teaching-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-d9dc0c7c3e17f886",
+    "frozenCaseId": "N-E04-tutor",
+    "sourceId": "E04",
+    "collection": "natural",
+    "dimensions": [
+      "Q1",
+      "Q3"
+    ],
+    "surface": "tutor",
+    "tripletId": null,
+    "file": "dataset/natural-cases/N-E04-tutor.json",
+    "sha256": "5d82d9f4827f198dfa59a6fd09005c386d10eb5ada4840a01a1d2d9063fc427e",
+    "inputHash": "da041517c33f9af6bb9774ca37faa12faf55fc79c60227a055ea88322d4260a3",
+    "observations": [
+      "results/observations/N-E04-tutor-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-a9f0f45e108f3d52",
+    "frozenCaseId": "N-F11-curriculum",
+    "sourceId": "F11",
+    "collection": "natural",
+    "dimensions": [
+      "Q2"
+    ],
+    "surface": "curriculum",
+    "tripletId": null,
+    "file": "dataset/natural-cases/N-F11-curriculum.json",
+    "sha256": "bbf53f443a82f6b305dc9a8d563a83e35e9105487b3e2ae7b23485bf17164a34",
+    "inputHash": "63506e29d1d3a10682c244d139b9fbe9a0d0637f979f883f076bf7c266946923",
+    "observations": [
+      "results/observations/N-F11-curriculum-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-9d534d86541ecd49",
+    "frozenCaseId": "N-F11-practice",
+    "sourceId": "F11",
+    "collection": "natural",
+    "dimensions": [
+      "Q4"
+    ],
+    "surface": "practice",
+    "tripletId": null,
+    "file": "dataset/natural-cases/N-F11-practice.json",
+    "sha256": "40caf45b8fdc4da688a742133a60758c15d92497584dde4084198d9c8c9fa80e",
+    "inputHash": "b996bf4647fef3fd50e4992a43fd8ee4f6f4f45da3a5d9d26610920ed85286e9",
+    "observations": [
+      "results/observations/N-F11-practice-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-a9129689ddd846f4",
+    "frozenCaseId": "N-F11-teaching",
+    "sourceId": "F11",
+    "collection": "natural",
+    "dimensions": [
+      "Q1",
+      "Q3"
+    ],
+    "surface": "teaching",
+    "tripletId": null,
+    "file": "dataset/natural-cases/N-F11-teaching.json",
+    "sha256": "4fc3f08c7b89c6fb548a8efc3abb2e84946d706d9b0e44e78ed80502c0067984",
+    "inputHash": "c93c7ff95949c75c16edb5c64c7e8cfb092e561277b8b3be120f15ad82055972",
+    "observations": [
+      "results/observations/N-F11-teaching-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-b720c18fabb3ea7d",
+    "frozenCaseId": "N-F11-tutor",
+    "sourceId": "F11",
+    "collection": "natural",
+    "dimensions": [
+      "Q1",
+      "Q3"
+    ],
+    "surface": "tutor",
+    "tripletId": null,
+    "file": "dataset/natural-cases/N-F11-tutor.json",
+    "sha256": "486a1875bba233e306d5fd4c70e605e73e5ba4f5012d235d8a3308766f421f36",
+    "inputHash": "aa16ff37e1ef5b9316c370eae6ffeb8576e2848ba04b8417612d0f49889842b9",
+    "observations": [
+      "results/observations/N-F11-tutor-r1.json",
+      "results/observations/N-F11-tutor-r2.json",
+      "results/observations/N-F11-tutor-r3.json"
+    ]
+  },
+  {
+    "caseId": "case-1e26e7cd21ee3ae9",
+    "frozenCaseId": "N-F12-curriculum",
+    "sourceId": "F12",
+    "collection": "natural",
+    "dimensions": [
+      "Q2"
+    ],
+    "surface": "curriculum",
+    "tripletId": null,
+    "file": "dataset/natural-cases/N-F12-curriculum.json",
+    "sha256": "5786d3d5feb299c7e96288eb69cee9add673a27dfe2ae1a07601d0e4939e2481",
+    "inputHash": "462f2d767d9140448efe24b18c036b7da88259f66b27fd653d90ac8c704c7102",
+    "observations": [
+      "results/observations/N-F12-curriculum-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-22c010d9b2e10ace",
+    "frozenCaseId": "N-F12-practice",
+    "sourceId": "F12",
+    "collection": "natural",
+    "dimensions": [
+      "Q4"
+    ],
+    "surface": "practice",
+    "tripletId": null,
+    "file": "dataset/natural-cases/N-F12-practice.json",
+    "sha256": "ed580cdb96626f30292d3cc89a1ff07e4d4548918d23f319680d4612c9fa3ea9",
+    "inputHash": "098a4ad5dbf3ff8064f004263c48667d3dab0863f7cee75ead7b78adfd382186",
+    "observations": [
+      "results/observations/N-F12-practice-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-046cec24974a555f",
+    "frozenCaseId": "N-F12-repair",
+    "sourceId": "F12",
+    "collection": "natural",
+    "dimensions": [
+      "Q6"
+    ],
+    "surface": "repair",
+    "tripletId": null,
+    "file": "dataset/natural-cases/N-F12-repair.json",
+    "sha256": "4a65a86c7688e171ad4103376a2f574a7961da0ef8152ac8ceebf846d596585e",
+    "inputHash": "3380d63583395437db9d419d3878e8701aac7c7ae998845e07cf23db97633890",
+    "observations": [
+      "results/observations/N-F12-repair-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-bb2b70d32a79b574",
+    "frozenCaseId": "N-F12-retest",
+    "sourceId": "F12",
+    "collection": "natural",
+    "dimensions": [
+      "Q4"
+    ],
+    "surface": "retest",
+    "tripletId": null,
+    "file": "dataset/natural-cases/N-F12-retest.json",
+    "sha256": "65b29fdd198d2c2874970c3c413a69260cf2b7f2cff614efbc8cd01386882532",
+    "inputHash": "5d70d2938a733fe01f54152012b8969b3656859954a5041104a698c17999fcb2",
+    "observations": [
+      "results/observations/N-F12-retest-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-71cbc48089e90ba0",
+    "frozenCaseId": "N-F12-teaching",
+    "sourceId": "F12",
+    "collection": "natural",
+    "dimensions": [
+      "Q1",
+      "Q3"
+    ],
+    "surface": "teaching",
+    "tripletId": null,
+    "file": "dataset/natural-cases/N-F12-teaching.json",
+    "sha256": "6774031c4791ee1cd47bd32bd04194506c374d58270a792261d13361e10f59c4",
+    "inputHash": "7b4fb980d1fbc47ec7dacf77ca332191acf8ef08a59c7025e7812fe6294f0001",
+    "observations": [
+      "results/observations/N-F12-teaching-r1.json"
+    ]
+  },
+  {
+    "caseId": "case-1b0f611856a14425",
+    "frozenCaseId": "N-F12-tutor",
+    "sourceId": "F12",
+    "collection": "natural",
+    "dimensions": [
+      "Q1",
+      "Q3"
+    ],
+    "surface": "tutor",
+    "tripletId": null,
+    "file": "dataset/natural-cases/N-F12-tutor.json",
+    "sha256": "3926bd53dbdb959285e4f716751bb1472fedf1ffc7398c7408b152d4222a7c75",
+    "inputHash": "46227c6bb103af88747cf50b06fc7ff96840541d6e2950a4cf8f2b377628abfb",
+    "observations": [
+      "results/observations/N-F12-tutor-r1.json",
+      "results/observations/N-F12-tutor-r2.json",
+      "results/observations/N-F12-tutor-r3.json"
+    ]
+  }
+]

@@ -1,0 +1,230 @@
+{
+  "dimensions": [
+    "Q4"
+  ],
+  "evidence": {
+    "sources": [
+      {
+        "id": "B-E01",
+        "text": "Your feet feel cold as you walk barefoot across the living room carpet in your cold house and then step onto the kitchen tile floor. This result is intriguing, since the carpet and tile floor are both at the same temperature. The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.\n\nSome materials conduct thermal energy faster than others. In general, good conductors of electricity (metals like copper, aluminum, gold, and silver) are also good heat conductors, whereas insulators of electricity (wood, plastic, and rubber) are poor heat conductors.\n\nThe (average) kinetic energy of a molecule in the hot body is higher than in the colder body. If two molecules collide, an energy transfer from the molecule with greater kinetic energy to the molecule with less kinetic energy occurs. The cumulative effect from all collisions results in a net flux of heat from the hot body to the colder body. The heat flux thus depends on the temperature difference ΔΤ=Τhot−Tcold. Therefore, you will get a more severe burn from boiling water than from hot tap water. Conversely, if the temperatures are the same, the net heat transfer rate falls to zero, and equilibrium is achieved. Owing to the fact that the number of collisions increases with increasing area, heat conduction depends on the cross-sectional area. If you touch a cold wall with your palm, your hand cools faster than if you just touch it with your fingertip."
+      }
+    ],
+    "goals": [
+      "评价当前正式题目的可回答性、作者答案与独立性"
+    ],
+    "prerequisites": [
+      "知道温度与热传递是不同概念",
+      "能借助中文解释阅读简单英文科学教材",
+      "解释同温度地毯与瓷砖触感不同的原因：在相同温度和相同时间区间内，因热传递速率不同导致瓷砖接触皮肤热损失更大、温度下降更大，且其他条件相同。",
+      "识别热传递方向（从高温物体到低温物体）、热通量依赖温差ΔT=Thot−Tcold、以及温度相同时净热传递为零并达到热平衡。"
+    ],
+    "desiredDepth": "pass_oriented",
+    "authorityBoundaries": [
+      "本次评估只涉及所给来源、明确的教学范围和实际展示的产物；脚本作答用于检查工作流，不代表真实学习者。"
+    ],
+    "artifacts": [
+      {
+        "id": "formal-current-author-key",
+        "text": "The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles."
+      },
+      {
+        "id": "formal-current-author-explanation",
+        "text": "解析：虽然地毯和瓷砖温度相同，但瓷砖热传递速率更快，相同时间内皮肤接触瓷砖热损失更大、温度下降更大，因此感觉更冷。"
+      }
+    ],
+    "exposure": [
+      {
+        "id": "prior-0",
+        "text": "在比较物体冷热感前，应注意温度并非唯一因素。材料传递热能的快慢也会影响皮肤体验，这为我们后续分析同温差异奠定框架。"
+      },
+      {
+        "id": "prior-1",
+        "text": "地毯和瓷砖温度相同，但皮肤接触瓷砖时相同时间内热损失更大、温度下降更大。进一步，材料导热能力不同，金属等良导体比木材塑料等绝缘体传热快。瓷砖类致密材质导热优于地毯纤维，因此更快带走皮肤热量。"
+      },
+      {
+        "id": "prior-2",
+        "text": "除材料种类外，接触面积也影响热传导：面积越大分子碰撞越多，皮肤冷却越快。下面用一新案例检验预测能力。"
+      },
+      {
+        "id": "prior-3",
+        "text": "同温20°C的铜板与木板，用手指尖同样接触2秒。铜导热优于木且同温同时间接触。哪侧手指温度下降更多？"
+      },
+      {
+        "id": "prior-4",
+        "text": "铜板侧下降更多"
+      },
+      {
+        "id": "prior-5",
+        "text": "木板侧下降更多"
+      },
+      {
+        "id": "prior-6",
+        "text": "正确：铜导热快，相同条件下热损失更大。"
+      },
+      {
+        "id": "prior-7",
+        "text": "{\"prompt\":\"同温20°C的铜板与木板，用手指尖同样接触2秒。铜导热优于木且同温同时间接触。哪侧手指温度下降更多？\",\"options\":[{\"id\":\"A\",\"text\":\"铜板侧下降更多\"},{\"id\":\"B\",\"text\":\"木板侧下降更多\"}],\"response\":\"A\",\"correct\":true,\"feedback\":\"正确：铜导热快，相同条件下热损失更大。\"}"
+      },
+      {
+        "id": "prior-8",
+        "text": "热传递方向由温度高低决定：热量自发从高温物体流向低温物体。驱动热通量的正是温差ΔT=Thot−Tcold，差值越大，单位时间传递热量越多。当接触双方温度相同时，净热传递率为零，系统达到热平衡。例如，33°C的手接触20°C的玻璃杯，热从手流向杯；若手与杯同为25°C，则无净热流。这一规律与材料无关，材料只影响传导速率而非方向。"
+      },
+      {
+        "id": "prior-9",
+        "text": "铁块温度80°C，水温度20°C，两者接触。热传递方向？"
+      },
+      {
+        "id": "prior-10",
+        "text": "从铁块到水"
+      },
+      {
+        "id": "prior-11",
+        "text": "从水到铁块"
+      },
+      {
+        "id": "prior-12",
+        "text": "正确：铁块温度高，热由高温流向低温。"
+      },
+      {
+        "id": "prior-13",
+        "text": "{\"prompt\":\"铁块温度80°C，水温度20°C，两者接触。热传递方向？\",\"options\":[{\"id\":\"A\",\"text\":\"从铁块到水\"},{\"id\":\"B\",\"text\":\"从水到铁块\"}],\"response\":\"A\",\"correct\":true,\"feedback\":\"正确：铁块温度高，热由高温流向低温。\"}"
+      },
+      {
+        "id": "prior-14",
+        "text": "相同温度下触感差异源于材料导热速率不同：良导体在接触瞬间从皮肤带走更多热，使皮肤局部温度下降更大；当温差为零时该效应消失。"
+      },
+      {
+        "id": "prior-15",
+        "text": "错误：原观察中布垫降温更少，若布垫导热更快则应有相反结果。"
+      },
+      {
+        "id": "prior-16",
+        "text": "布垫导热比金属快，导致皮肤热损失更大"
+      },
+      {
+        "id": "prior-17",
+        "text": "请根据我刚才选择的答案，解释关键错误，并给我新的检验机会。"
+      },
+      {
+        "id": "prior-18",
+        "text": "你选择了“布垫导热比金属快，导致皮肤热损失更大”。原观察中金属勺侧皮肤5秒降3°C、布垫侧降1°C，降温更多的是金属侧，你的选项把导热更快归给了降温更少的布垫。"
+      },
+      {
+        "id": "prior-19",
+        "text": "未建立“同温同时间下皮肤降温越大，说明接触材料导热速率越快”这一因果方向；把皮肤热损失大小与材料导热快慢的对应关系弄反了。"
+      },
+      {
+        "id": "prior-20",
+        "text": "这是根据这次回答作出的判断；读题疏漏也可能导致同样的选择。"
+      },
+      {
+        "id": "prior-21",
+        "text": "当皮肤与物体温度相同、接触时间相同时，热量从较热的皮肤流向物体。材料导热速率越高，单位时间内从皮肤带走的热量越多，皮肤温度下降就越大。因此，观察哪一侧皮肤降温更多，就能诊断那一侧的物体导热更快，而不是更慢。"
+      },
+      {
+        "id": "prior-22",
+        "text": "新案例：夏日室内两物体均为20°C，小敏手指初始33°C。她同时用左右手食指分别接触玻璃片和泡沫板，4秒后左手指温降至31°C，右手指温降至32.5°C。请依据此观察判断哪种材料导热更快。"
+      },
+      {
+        "id": "prior-23",
+        "text": "1. 两物体初始温度相同（20°C），手指温度相同（33°C），接触时间相同（4秒），满足同温同时间前提。"
+      },
+      {
+        "id": "prior-24",
+        "text": "2. 左手接触玻璃片后降温2°C（33→31），右手接触泡沫板后降温1.5°C（33→32.5），玻璃片侧皮肤热损失更大。"
+      },
+      {
+        "id": "prior-25",
+        "text": "3. 皮肤热量流向物体，单位时间流失热量越多，说明物体从皮肤带走热量的速率越高。"
+      },
+      {
+        "id": "prior-26",
+        "text": "4. 带走热量速率高对应材料导热速率更高，因此玻璃片比泡沫板导热快。"
+      },
+      {
+        "id": "prior-27",
+        "text": "玻璃片导热比泡沫板快；该判断仅依据同温同时间下的皮肤降温差，不依赖其他未知属性。"
+      },
+      {
+        "id": "prior-28",
+        "text": "若采用你原选的错误规则——“皮肤降温少说明材料导热快”——套用上述案例会得到泡沫板更快的结论，但这与热传导机制矛盾：泡沫板实际隔热，降温应更小。错误规则在比较任何同温接触案例时都会颠倒因果。"
+      },
+      {
+        "id": "prior-29",
+        "text": "下表记录同温20°C下，皮肤初始34°C时接触木材与大理石5秒后的指温。\n材料 | 5秒后皮肤温\n木材 | 33.2°C\n大理石 | 31.8°C\n学生小A写道：“大理石侧皮肤只降到31.8°C，比木材的33.2°C更低，说明大理石导热慢，是不良导体。” 请诊断小A推理中的错误。"
+      },
+      {
+        "id": "prior-30",
+        "text": "小A把降温幅度与导热方向弄反了：大理石侧皮肤降了2.2°C多于木材0.8°C，降温大才说明大理石导热更快。"
+      },
+      {
+        "id": "prior-31",
+        "text": "小A正确，因为大理石最终皮肤温度更低，所以导热更慢。"
+      },
+      {
+        "id": "prior-32",
+        "text": "无法判断，因为题目未给出接触面积，面积差异可能解释一切。"
+      },
+      {
+        "id": "prior-33",
+        "text": "实验记录：皮肤接触材料M后5秒降温3°C，接触材料N后5秒降温1°C。研究者想据此得出“M比N导热快”的结论。必须补充哪个前提才能合法使用此推断？"
+      },
+      {
+        "id": "prior-34",
+        "text": "M与N初始温度相同，且均与皮肤存在温度差、接触时间一致。"
+      },
+      {
+        "id": "prior-35",
+        "text": "M的初始温度比N低很多，这样M才能带走更多热。"
+      },
+      {
+        "id": "prior-36",
+        "text": "皮肤接触M时的面积比接触N大三倍。"
+      },
+      {
+        "id": "prior-37",
+        "text": "热从高温处流向低温处，靠接触面分子相互碰撞传递动能。若其他条件不变，接触的横截面积越大，同一时间内参与碰撞的分子对数越多，总热流越大。例如，用整只手掌按在冷墙上比只用指尖按，手冷却更快。"
+      },
+      {
+        "id": "prior-38",
+        "text": "根据已有资料，碰撞次数随接触面积增加而增加，因此热传导取决于横截面积。具体现象是：若用掌心接触冷墙，手比只用指尖接触冷却更快。这说明面积是通过改变碰撞规模来影响导热速率的。"
+      },
+      {
+        "id": "prior-39",
+        "text": "在掌握面积效应后，可通过简单数值情形检验理解：相同材料、相同温差下，改变接触面积而其他条件锁定，预测皮肤冷却程度。"
+      },
+      {
+        "id": "prior-40",
+        "text": "两块相同金属片，温度均低于皮肤3℃，一片与皮肤接触面积为10 cm²，另一为2 cm²，其他条件相同，接触30秒后哪处皮肤温度下降更多？"
+      },
+      {
+        "id": "prior-41",
+        "text": "10 cm²接触处下降更多"
+      },
+      {
+        "id": "prior-42",
+        "text": "2 cm²接触处下降更多"
+      },
+      {
+        "id": "prior-43",
+        "text": "正确：面积大碰撞多，热流失更快。"
+      },
+      {
+        "id": "prior-44",
+        "text": "{\"prompt\":\"两块相同金属片，温度均低于皮肤3℃，一片与皮肤接触面积为10 cm²，另一为2 cm²，其他条件相同，接触30秒后哪处皮肤温度下降更多？\",\"options\":[{\"id\":\"A\",\"text\":\"10 cm²接触处下降更多\"},{\"id\":\"B\",\"text\":\"2 cm²接触处下降更多\"}],\"response\":\"A\",\"correct\":true,\"feedback\":\"正确：面积大碰撞多，热流失更快。\"}"
+      },
+      {
+        "id": "prior-45",
+        "text": "热传导依赖分子碰撞；横截面积增大在相同条件下增加碰撞对数，从而加快热流，但此效应仅在存在温差时显现。"
+      },
+      {
+        "id": "prior-46",
+        "text": "课程资料提到，相同温度的地毯和瓷砖触感不同是因为热传递速率不同，瓷砖导热更快导致皮肤热损失更大、温度下降更多；同时资料指出金属等良导体比木材等绝缘体传热快。\n\n举例（补充说明）：设想冬天户外同样气温的石凳和木凳，你用手掌去摸，石凳感觉更冰。这是因为石头导热优于木头，更快从手部带走热量，手部皮肤温度下降更快。这个例子的适用边界是：两者确实处于相同温度、直接接触皮肤且无隔热层；若戴手套或接触时间极长直至热平衡，差异会消失；若材料本身很小很薄，其温度会被手快速改变，前提“同温”便不成立了。"
+      }
+    ],
+    "question": {
+      "prompt": "在一个寒冷的房子里，你赤脚走过客厅地毯，然后踩到厨房瓷砖地板。地毯和瓷砖温度相同，但脚感不同。请解释这种不同触感的原因。",
+      "options": []
+    }
+  }
+}

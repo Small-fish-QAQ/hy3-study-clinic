@@ -1,0 +1,215 @@
+{
+  "dimensions": [
+    "Q4"
+  ],
+  "evidence": {
+    "sources": [
+      {
+        "id": "E01",
+        "text": "Your feet feel cold as you walk barefoot across the living room carpet in your cold house and then step onto the kitchen tile floor. This result is intriguing, since the carpet and tile floor are both at the same temperature. The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.\n\nSome materials conduct thermal energy faster than others. In general, good conductors of electricity (metals like copper, aluminum, gold, and silver) are also good heat conductors, whereas insulators of electricity (wood, plastic, and rubber) are poor heat conductors.\n\nThe (average) kinetic energy of a molecule in the hot body is higher than in the colder body. If two molecules collide, an energy transfer from the molecule with greater kinetic energy to the molecule with less kinetic energy occurs. The cumulative effect from all collisions results in a net flux of heat from the hot body to the colder body. The heat flux thus depends on the temperature difference ΔΤ=Τhot−Tcold. Therefore, you will get a more severe burn from boiling water than from hot tap water. Conversely, if the temperatures are the same, the net heat transfer rate falls to zero, and equilibrium is achieved. Owing to the fact that the number of collisions increases with increasing area, heat conduction depends on the cross-sectional area. If you touch a cold wall with your palm, your hand cools faster than if you just touch it with your fingertip."
+      }
+    ],
+    "goals": [
+      "在同温且其他接触条件相同的边界下，由皮肤降温观测诊断材料热传递速率差异"
+    ],
+    "prerequisites": [
+      "知道温度与热传递是不同概念",
+      "能借助中文解释阅读简单英文科学教材",
+      "Explain in Chinese why same-temperature carpet and tile feel different: because they have different rates of heat transfer (tile conducts faster from skin), causing greater heat loss and temperature drop on skin over the same time interval, while both floor materials are at the same temperature. Must retain the comparison boundary that temperatures are identical and other contact conditions are held same.",
+      "Explain and distinguish heat transfer direction, temperature difference, and thermal equilibrium: energy transfers from higher-kinetic-energy molecules to lower via collisions, cumulative effect yields net heat flux from hot to cold body; heat flux depends on temperature difference ΔT = T_hot - T_cold; if temperatures are same, net transfer rate is zero and equilibrium achieved."
+    ],
+    "desiredDepth": "working_fluency",
+    "authorityBoundaries": [
+      "本次评估只涉及所给来源、明确的教学范围和实际展示的产物；脚本作答用于检查工作流，不代表真实学习者。"
+    ],
+    "artifacts": [
+      {
+        "id": "current-author-selected-option",
+        "text": "A面板从皮肤带走热量的速率更高，导致更大热损失，尽管两面板同温"
+      },
+      {
+        "id": "current-author-explanation",
+        "text": "在同温且接触条件相同时，皮肤温度下降幅度反映材料从皮肤取热的速率；降温越大，速率越高。"
+      }
+    ],
+    "exposure": [
+      {
+        "id": "prior-0",
+        "text": "设想两种合成材料M1和M2均处于22°C，皮肤温度为32°C。热从皮肤流向材料，净热流大小由材料导热能力决定。若接触面积与时间相同，导热能力强的材料在单位时间内移走更多皮肤热量，使皮肤温度下降更明显。这说明同温物体间仍可有不同热传递速率，速率差导致触感差。"
+      },
+      {
+        "id": "prior-1",
+        "text": "根据资料，地毯和瓷砖同温但触感不同，是因为瓷砖从皮肤导热更快，相同时间内皮肤热损失更大、降温更多。热传导方向由温度差决定，同温时若皮肤高于地板则热从皮肤流向地板；地板材料只改变传递速率而非方向。"
+      },
+      {
+        "id": "prior-2",
+        "text": "已知热传导依赖接触面积：手掌接触冷墙比指尖接触冷却更快。下面用一新案例演练该机制。"
+      },
+      {
+        "id": "prior-3",
+        "text": "冷墙温度10°C，皮肤温度33°C。甲用整个手掌接触（面积100 cm²），乙用指尖接触（面积5 cm²），材料相同、接触时间3秒。尚未知谁皮肤降温更多。"
+      },
+      {
+        "id": "prior-4",
+        "text": "墙温10°C"
+      },
+      {
+        "id": "prior-5",
+        "text": "皮肤33°C"
+      },
+      {
+        "id": "prior-6",
+        "text": "甲面积100cm²"
+      },
+      {
+        "id": "prior-7",
+        "text": "乙面积5cm²"
+      },
+      {
+        "id": "prior-8",
+        "text": "时间3秒"
+      },
+      {
+        "id": "prior-9",
+        "text": "同材料"
+      },
+      {
+        "id": "prior-10",
+        "text": "基于上述冷墙案例事实与待定规则，哪种接触方式皮肤降温更多？"
+      },
+      {
+        "id": "prior-11",
+        "text": "甲用整个手掌接触降温更多"
+      },
+      {
+        "id": "prior-12",
+        "text": "乙用指尖接触降温更多"
+      },
+      {
+        "id": "prior-13",
+        "text": "两者降温相同"
+      },
+      {
+        "id": "prior-14",
+        "text": "甲手掌降温更多"
+      },
+      {
+        "id": "prior-15",
+        "text": "正确：面积大热流大，皮肤冷却更快"
+      },
+      {
+        "id": "prior-16",
+        "text": "面积作为热流正比因子，在ΔT和材料相同时决定降温幅度。"
+      },
+      {
+        "id": "prior-17",
+        "text": "若墙温升至与皮肤同温，再比较手掌与指尖接触，结果如何？"
+      },
+      {
+        "id": "prior-18",
+        "text": "甲手掌仍降温更多"
+      },
+      {
+        "id": "prior-19",
+        "text": "两者均无皮肤降温"
+      },
+      {
+        "id": "prior-20",
+        "text": "乙指尖降温更多"
+      },
+      {
+        "id": "prior-21",
+        "text": "墙温与皮肤温度相同（均为33°C）"
+      },
+      {
+        "id": "prior-22",
+        "text": "{\"prompt\":\"基于上述冷墙案例事实与待定规则，哪种接触方式皮肤降温更多？\",\"options\":[{\"id\":\"A\",\"text\":\"甲用整个手掌接触降温更多\"},{\"id\":\"B\",\"text\":\"乙用指尖接触降温更多\"},{\"id\":\"C\",\"text\":\"两者降温相同\"}],\"response\":\"A\",\"correct\":true,\"feedback\":\"正确：面积大热流大，皮肤冷却更快\",\"debrief\":\"面积作为热流正比因子，在ΔT和材料相同时决定降温幅度。\"}"
+      },
+      {
+        "id": "prior-23",
+        "text": "面积大者热流大，相同ΔT和时间内带走更多热，皮肤温降更大"
+      },
+      {
+        "id": "prior-24",
+        "text": "正确：ΔT=0热流为零，面积不影响净传热"
+      },
+      {
+        "id": "prior-25",
+        "text": "温差为零时热传递率整体为零，面积差异不再产生冷却差。"
+      },
+      {
+        "id": "prior-26",
+        "text": "{\"prompt\":\"若墙温升至与皮肤同温，再比较手掌与指尖接触，结果如何？\",\"options\":[{\"id\":\"A\",\"text\":\"甲手掌仍降温更多\"},{\"id\":\"B\",\"text\":\"两者均无皮肤降温\"},{\"id\":\"C\",\"text\":\"乙指尖降温更多\"}],\"response\":\"B\",\"correct\":true,\"feedback\":\"正确：ΔT=0热流为零，面积不影响净传热\",\"debrief\":\"温差为零时热传递率整体为零，面积差异不再产生冷却差。\"}"
+      },
+      {
+        "id": "prior-27",
+        "text": "回到地毯与瓷砖问题：两者同温且通常赤脚接触面积相近、时间相近，因此触感差异不能归因于面积或温度，只能归于导热速率。若某比较中面积或压力不同，则边界被破坏，结论需修正。"
+      },
+      {
+        "id": "prior-28",
+        "text": "若误将手掌与指尖的面积差异案例当作地毯瓷砖案例，会错认面积导致瓷砖更冷；但地毯瓷砖接触面积相同，该边界条件不成立。"
+      },
+      {
+        "id": "prior-29",
+        "text": "根据资料，高温物体分子平均动能更高，碰撞时能量从高能分子传向低能分子，累积形成从热物体到冷物体的净热流。净热流大小依赖温差ΔT=Thot-Tcold；若两物体温度相同，净传递率为零，达到热平衡。此机制说明热传递方向由温差决定，而非由材料本身单独决定。"
+      },
+      {
+        "id": "prior-30",
+        "text": "下面用一新案例演练平衡预测。两相同铜块A(90°C)与B(30°C)质量相同，置于绝热箱内接触。系统无外热交换，热从A流向B直至两体温度一致，此一致温度由能量守恒决定。"
+      },
+      {
+        "id": "prior-31",
+        "text": "两相同铜块质量相同、绝热接触，A90°C B30°C，充分时间后温度如何？"
+      },
+      {
+        "id": "prior-32",
+        "text": "两者均为60°C"
+      },
+      {
+        "id": "prior-33",
+        "text": "A70°C B50°C"
+      },
+      {
+        "id": "prior-34",
+        "text": "正确：等质量等材质绝热系统最终平衡于初温平均值"
+      },
+      {
+        "id": "prior-35",
+        "text": "{\"prompt\":\"两相同铜块质量相同、绝热接触，A90°C B30°C，充分时间后温度如何？\",\"options\":[{\"id\":\"A\",\"text\":\"两者均为60°C\"},{\"id\":\"B\",\"text\":\"A70°C B50°C\"}],\"response\":\"A\",\"correct\":true,\"feedback\":\"正确：等质量等材质绝热系统最终平衡于初温平均值\"}"
+      },
+      {
+        "id": "prior-36",
+        "text": "热平衡条件为净热流为零，但这不要求两物体微观碰撞停止，只是双向分子传递在统计上抵消。同温下若质量不同，总热含量可不同，但净传递仍为零。此边界提醒：判断平衡看净速率而非单一分子事件。"
+      },
+      {
+        "id": "prior-37",
+        "text": "若误将‘温度相同净热流为零’理解为‘没有任何能量传递发生’，会忽略微观双向碰撞机制；实际平等交换导致净零。另若比较总热量，同温不同质量物体热量不同，但触感与净流仍由温差主导。"
+      },
+      {
+        "id": "prior-38",
+        "text": "同温下触感差异来自材料热传递速率不同：速率高者在相同时间内从皮肤带走更多热，皮肤降温更大；若接触面积等条件变化，则还需考虑面积对热流的影响，但等同比较时那些条件应保持不变。"
+      },
+      {
+        "id": "prior-39",
+        "text": "课程资料里讲到，热传导依赖接触面积：相同温差下面积越大传热越多，比如冷墙用手掌比指尖冷却快（见《OpenStax：相同温度为什么触感不同》）。这便是当前冷墙案例的关键关系。\n举例：设想寒冬里一个均匀的0°C铁质扶手，你用食指尖轻触2秒， versus 用整只手掌包裹握2秒，材质与温差都相同。手掌接触面积大得多，从手带走的热量更多，因此手掌感觉冷得更快更厉害。这个例子换成了扶手和握持，不同于资料中的墙壁或地面。\n该例子的适用边界：它假设扶手温度一致、未戴隔热手套、接触时间短暂使扶手不会明显升温；若戴厚手套或握很久导致局部升温，面积带来的速率差就会被掩盖。"
+      }
+    ],
+    "question": {
+      "prompt": "两块地板面板A和B均处于25°C，赤脚以相同接触面积踩踏相同时间。皮肤传感器记录：4秒内A处皮肤降温2.0°C，B处降温0.5°C。下列哪一解释符合该观测？",
+      "options": [
+        {
+          "id": "teaching_brief_03a98019-8796-4edc-98e1-bc86c35a2976_practice_1_initial_A",
+          "text": "A面板从皮肤带走热量的速率更高，导致更大热损失，尽管两面板同温"
+        },
+        {
+          "id": "teaching_brief_03a98019-8796-4edc-98e1-bc86c35a2976_practice_1_initial_B",
+          "text": "A面板实际温度低于B面板（如20°C对25°C）"
+        },
+        {
+          "id": "teaching_brief_03a98019-8796-4edc-98e1-bc86c35a2976_practice_1_initial_C",
+          "text": "A面板接触面积更小，但其他条件相同"
+        }
+      ]
+    }
+  }
+}

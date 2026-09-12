@@ -8,3 +8,5 @@
 *.woff binary
 *.woff2 binary
 apps/server/src/testing/files/*.pdf binary
+# Preserve audited hashes of frozen evidence across Git checkouts.
+eval/final-evaluation/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

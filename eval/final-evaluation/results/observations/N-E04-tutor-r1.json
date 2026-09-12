@@ -1,0 +1,405 @@
+{
+  "task": {
+    "caseId": "N-E04-tutor",
+    "runId": "N-E04-tutor-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-E04-tutor.json",
+    "inputHash": "da041517c33f9af6bb9774ca37faa12faf55fc79c60227a055ea88322d4260a3",
+    "population": "natural",
+    "sourceId": "E04"
+  },
+  "inputHash": "da041517c33f9af6bb9774ca37faa12faf55fc79c60227a055ea88322d4260a3",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "correctness": "fbe5e724b473a548e73c74664c1c150f1b0ac853b8e86c09e18ae42818d9276a",
+      "artifact-audit": "fbe5e724b473a548e73c74664c1c150f1b0ac853b8e86c09e18ae42818d9276a",
+      "certification": "fbe5e724b473a548e73c74664c1c150f1b0ac853b8e86c09e18ae42818d9276a"
+    },
+    "stages": {
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "clear",
+            "affected": [],
+            "reason": "artifact(e16)以'大象'(具体高意象)与'勇敢'(抽象低意象)举例解释资料(e3)关键关系：高意象词视觉+语义双编码、抽象词缺乏视觉辅助，与资料断言一致；其补充边界（安静默读自发图像假设、听音频可能仅声学、陌生词图像模糊减弱优势、不涉及声学规则）为合法明示假设且正确。",
+            "refs": [
+              "e16",
+              "e3"
+            ],
+            "challenge": {
+              "status": "closed",
+              "reason": "作者例子固定假设'安静默读自发图像'，并主动明示听音频或词陌生时双重编码优势减弱/仅声学，排除超出假设的相容反例；资料(e3)高意象词双重编码断言在给定阅读语境下无冲突反例。",
+              "refs": [
+                "e16",
+                "e3"
+              ]
+            },
+            "witnesses": [
+              {
+                "id": "e16",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "课程资料中提到，高意象词会被同时以视觉和语义方式编码，从而建立更强记忆；而抽象低意象词缺乏视觉编码（原文指出 concrete, high-imagery words 被双重编码，abstract words 为低意象词）。\n\n举例：想象记忆“大象”和“勇敢”两个词。默读“大象”时，你脑中自然浮现灰色庞然大物形象，同时理解它指一种动物，于是视觉与语义双编码；而“勇敢”很难绘出具体画面，只靠含义记忆。这就直观展示了具体词获得视觉辅助、抽象词不获得的区别。\n\n此例子的适用边界：它假设学习者像补充案例那样安静默读并自发形成图像。若改为听音频而未鼓励想象，可能只触发声学编码；若具体词对读者过于陌生（如罕见动植物），心理图像模糊，双重编码优势也会减弱。此外，本例仅说明视觉与语义联合，不涉及声学编码规则。",
+                "valueHash": "c4fd6fe38bedc4e946e84496c22adf0adcff76165028ea838c0cc2b2a18e597d"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "We get information into our brains through a process called encoding, which is the input of information into the memory system. Once we receive sensory information from the environment, our brains label or code it. We organize the information with other similar information and connect new concepts to existing concepts. Encoding information occurs through automatic processing and effortful processing.\n\nThere are three types of encoding. The encoding of words and their meaning is known as semantic encoding. It was first demonstrated by William Bousfield (1935) in an experiment in which he asked people to memorize words. The 60 words were actually divided into 4 categories of meaning, although the participants did not know this because the words were randomly presented. When they were asked to remember the words, they tended to recall them in categories, showing that they paid attention to the meanings of the words as they learned them.\n\nVisual encoding is the encoding of images, and acoustic encoding is the encoding of sounds, words in particular. To see how visual encoding works, read over this list of words: car, level, dog, truth, book, value. If you were asked later to recall the words from this list, which ones do you think you’d most likely remember? You would probably have an easier time recalling the words car, dog, and book, and a more difficult time recalling the words level, truth, and value. Why is this? Because you can recall images (mental pictures) more easily than words alone. When you read the words car, dog, and book you created images of these things in your mind. These are concrete, high-imagery words. On the other hand, abstract words like level, truth, and value are low-imagery words. High-imagery words are encoded both visually and semantically (Paivio, 1986), thus building a stronger memory.\n\nNow let’s turn our attention to acoustic encoding. You are driving in your car and a song comes on the radio that you haven’t heard in at least 10 years, but you sing along, recalling every word. In the United States, children often learn the alphabet through song, and they learn the number of days in each month through rhyme: “Thirty days hath September, / April, June, and November; / All the rest have thirty-one, / Save February, with twenty-eight days clear, / And twenty-nine each leap year.” These lessons are easy to remember because of acoustic encoding. We encode the sounds the words make. This is one of the reasons why much of what we teach young children is done through song, rhyme, and rhythm.",
+                "valueHash": "bf1b2eea6b7f20a856c4cfc2f378ff4216695c2cb1b009da66f5aca83f238b9f"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "kind": "quantities",
+            "status": "not_applicable",
+            "affected": [],
+            "reason": "资料与产物均无数值公式、单位换算或数量推导要求，rates为空，无相关断言。",
+            "contextHash": "fbe5e724b473a548e73c74664c1c150f1b0ac853b8e86c09e18ae42818d9276a",
+            "proposed": {
+              "kind": "quantities",
+              "status": "not_applicable",
+              "affected": [],
+              "reason": "资料与产物均无数值公式、单位换算或数量推导要求，rates为空，无相关断言。",
+              "refs": [
+                "e1"
+              ]
+            },
+            "reviewReasons": []
+          }
+        ],
+        "keys": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 2,
+            "reason": "产物断言高意象词视觉语义双编码及抽象低意象词缺乏视觉编码，与e3高意象词双重编码和抽象词低意象分类一致；举例与边界无虚假引述或机制改变。",
+            "refs": [
+              "e16",
+              "e3"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e16",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "课程资料中提到，高意象词会被同时以视觉和语义方式编码，从而建立更强记忆；而抽象低意象词缺乏视觉编码（原文指出 concrete, high-imagery words 被双重编码，abstract words 为低意象词）。\n\n举例：想象记忆“大象”和“勇敢”两个词。默读“大象”时，你脑中自然浮现灰色庞然大物形象，同时理解它指一种动物，于是视觉与语义双编码；而“勇敢”很难绘出具体画面，只靠含义记忆。这就直观展示了具体词获得视觉辅助、抽象词不获得的区别。\n\n此例子的适用边界：它假设学习者像补充案例那样安静默读并自发形成图像。若改为听音频而未鼓励想象，可能只触发声学编码；若具体词对读者过于陌生（如罕见动植物），心理图像模糊，双重编码优势也会减弱。此外，本例仅说明视觉与语义联合，不涉及声学编码规则。",
+                "valueHash": "c4fd6fe38bedc4e946e84496c22adf0adcff76165028ea838c0cc2b2a18e597d"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "We get information into our brains through a process called encoding, which is the input of information into the memory system. Once we receive sensory information from the environment, our brains label or code it. We organize the information with other similar information and connect new concepts to existing concepts. Encoding information occurs through automatic processing and effortful processing.\n\nThere are three types of encoding. The encoding of words and their meaning is known as semantic encoding. It was first demonstrated by William Bousfield (1935) in an experiment in which he asked people to memorize words. The 60 words were actually divided into 4 categories of meaning, although the participants did not know this because the words were randomly presented. When they were asked to remember the words, they tended to recall them in categories, showing that they paid attention to the meanings of the words as they learned them.\n\nVisual encoding is the encoding of images, and acoustic encoding is the encoding of sounds, words in particular. To see how visual encoding works, read over this list of words: car, level, dog, truth, book, value. If you were asked later to recall the words from this list, which ones do you think you’d most likely remember? You would probably have an easier time recalling the words car, dog, and book, and a more difficult time recalling the words level, truth, and value. Why is this? Because you can recall images (mental pictures) more easily than words alone. When you read the words car, dog, and book you created images of these things in your mind. These are concrete, high-imagery words. On the other hand, abstract words like level, truth, and value are low-imagery words. High-imagery words are encoded both visually and semantically (Paivio, 1986), thus building a stronger memory.\n\nNow let’s turn our attention to acoustic encoding. You are driving in your car and a song comes on the radio that you haven’t heard in at least 10 years, but you sing along, recalling every word. In the United States, children often learn the alphabet through song, and they learn the number of days in each month through rhyme: “Thirty days hath September, / April, June, and November; / All the rest have thirty-one, / Save February, with twenty-eight days clear, / And twenty-nine each leap year.” These lessons are easy to remember because of acoustic encoding. We encode the sounds the words make. This is one of the reasons why much of what we teach young children is done through song, rhyme, and rhythm.",
+                "valueHash": "bf1b2eea6b7f20a856c4cfc2f378ff4216695c2cb1b009da66f5aca83f238b9f"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "dimension": "Q3",
+            "level": 2,
+            "reason": "具备先决条件(e7-e10)的学习者能跟随大象(具体双编码)与勇敢(抽象仅语义)例理解关键关系，边界说明默读假设、听音频可能转声学等，满足e5目标。",
+            "refs": [
+              "e16",
+              "e5",
+              "e9"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e16",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "课程资料中提到，高意象词会被同时以视觉和语义方式编码，从而建立更强记忆；而抽象低意象词缺乏视觉编码（原文指出 concrete, high-imagery words 被双重编码，abstract words 为低意象词）。\n\n举例：想象记忆“大象”和“勇敢”两个词。默读“大象”时，你脑中自然浮现灰色庞然大物形象，同时理解它指一种动物，于是视觉与语义双编码；而“勇敢”很难绘出具体画面，只靠含义记忆。这就直观展示了具体词获得视觉辅助、抽象词不获得的区别。\n\n此例子的适用边界：它假设学习者像补充案例那样安静默读并自发形成图像。若改为听音频而未鼓励想象，可能只触发声学编码；若具体词对读者过于陌生（如罕见动植物），心理图像模糊，双重编码优势也会减弱。此外，本例仅说明视觉与语义联合，不涉及声学编码规则。",
+                "valueHash": "c4fd6fe38bedc4e946e84496c22adf0adcff76165028ea838c0cc2b2a18e597d"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "请针对当前内容，用一个与资料不同但容易理解的例子解释关键关系，并说明例子的适用边界。",
+                "valueHash": "8554fd2a6af26f8cda0d4670bec8b7daaade91997a1e3a766c77f315dc970152"
+              },
+              {
+                "id": "e9",
+                "pointer": "/prerequisites/2",
+                "role": "context",
+                "kind": "text",
+                "value": "用中文识别并区分语义编码、视觉编码与声学编码的定义及差异（语义：词语及意义；视觉：图像；声学：声音尤其是词语发音）",
+                "valueHash": "0170417777b0f0888a1f8d68f21a233417d6f3e64a67f038acdfee57770763ec"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q1",
+            "status": "supported",
+            "reason": "产物(e16)断言高意象词视觉语义双编码及抽象低意象词缺乏视觉编码，与来源(e3)一致；举例与边界无虚假引述或机制改变，findings审计与正确性检查均确认。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e16",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "课程资料中提到，高意象词会被同时以视觉和语义方式编码，从而建立更强记忆；而抽象低意象词缺乏视觉编码（原文指出 concrete, high-imagery words 被双重编码，abstract words 为低意象词）。\n\n举例：想象记忆“大象”和“勇敢”两个词。默读“大象”时，你脑中自然浮现灰色庞然大物形象，同时理解它指一种动物，于是视觉与语义双编码；而“勇敢”很难绘出具体画面，只靠含义记忆。这就直观展示了具体词获得视觉辅助、抽象词不获得的区别。\n\n此例子的适用边界：它假设学习者像补充案例那样安静默读并自发形成图像。若改为听音频而未鼓励想象，可能只触发声学编码；若具体词对读者过于陌生（如罕见动植物），心理图像模糊，双重编码优势也会减弱。此外，本例仅说明视觉与语义联合，不涉及声学编码规则。",
+                "valueHash": "c4fd6fe38bedc4e946e84496c22adf0adcff76165028ea838c0cc2b2a18e597d"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "We get information into our brains through a process called encoding, which is the input of information into the memory system. Once we receive sensory information from the environment, our brains label or code it. We organize the information with other similar information and connect new concepts to existing concepts. Encoding information occurs through automatic processing and effortful processing.\n\nThere are three types of encoding. The encoding of words and their meaning is known as semantic encoding. It was first demonstrated by William Bousfield (1935) in an experiment in which he asked people to memorize words. The 60 words were actually divided into 4 categories of meaning, although the participants did not know this because the words were randomly presented. When they were asked to remember the words, they tended to recall them in categories, showing that they paid attention to the meanings of the words as they learned them.\n\nVisual encoding is the encoding of images, and acoustic encoding is the encoding of sounds, words in particular. To see how visual encoding works, read over this list of words: car, level, dog, truth, book, value. If you were asked later to recall the words from this list, which ones do you think you’d most likely remember? You would probably have an easier time recalling the words car, dog, and book, and a more difficult time recalling the words level, truth, and value. Why is this? Because you can recall images (mental pictures) more easily than words alone. When you read the words car, dog, and book you created images of these things in your mind. These are concrete, high-imagery words. On the other hand, abstract words like level, truth, and value are low-imagery words. High-imagery words are encoded both visually and semantically (Paivio, 1986), thus building a stronger memory.\n\nNow let’s turn our attention to acoustic encoding. You are driving in your car and a song comes on the radio that you haven’t heard in at least 10 years, but you sing along, recalling every word. In the United States, children often learn the alphabet through song, and they learn the number of days in each month through rhyme: “Thirty days hath September, / April, June, and November; / All the rest have thirty-one, / Save February, with twenty-eight days clear, / And twenty-nine each leap year.” These lessons are easy to remember because of acoustic encoding. We encode the sounds the words make. This is one of the reasons why much of what we teach young children is done through song, rhyme, and rhythm.",
+                "valueHash": "bf1b2eea6b7f20a856c4cfc2f378ff4216695c2cb1b009da66f5aca83f238b9f"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "dimension": "Q3",
+            "status": "supported",
+            "reason": "具备先决条件(e7-e10)的学习者能跟随(e16)大象与勇敢例理解关键关系，边界说明满足目标(e5)，findings一致无保留。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e16",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "课程资料中提到，高意象词会被同时以视觉和语义方式编码，从而建立更强记忆；而抽象低意象词缺乏视觉编码（原文指出 concrete, high-imagery words 被双重编码，abstract words 为低意象词）。\n\n举例：想象记忆“大象”和“勇敢”两个词。默读“大象”时，你脑中自然浮现灰色庞然大物形象，同时理解它指一种动物，于是视觉与语义双编码；而“勇敢”很难绘出具体画面，只靠含义记忆。这就直观展示了具体词获得视觉辅助、抽象词不获得的区别。\n\n此例子的适用边界：它假设学习者像补充案例那样安静默读并自发形成图像。若改为听音频而未鼓励想象，可能只触发声学编码；若具体词对读者过于陌生（如罕见动植物），心理图像模糊，双重编码优势也会减弱。此外，本例仅说明视觉与语义联合，不涉及声学编码规则。",
+                "valueHash": "c4fd6fe38bedc4e946e84496c22adf0adcff76165028ea838c0cc2b2a18e597d"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "请针对当前内容，用一个与资料不同但容易理解的例子解释关键关系，并说明例子的适用边界。",
+                "valueHash": "8554fd2a6af26f8cda0d4670bec8b7daaade91997a1e3a766c77f315dc970152"
+              },
+              {
+                "id": "e7",
+                "pointer": "/prerequisites/0",
+                "role": "context",
+                "kind": "text",
+                "value": "能够理解记忆编码与回忆的日常含义",
+                "valueHash": "98f266b3d1a9382b4ca259a709a371123eaa60cf2b9b29f19783c4c24d21c48c"
+              },
+              {
+                "id": "e8",
+                "pointer": "/prerequisites/1",
+                "role": "context",
+                "kind": "text",
+                "value": "不需要心理学专业背景",
+                "valueHash": "1327c01ff449eb43f5f309a2b19c856718f0d53085048e217c8f9f80bad20fad"
+              },
+              {
+                "id": "e9",
+                "pointer": "/prerequisites/2",
+                "role": "context",
+                "kind": "text",
+                "value": "用中文识别并区分语义编码、视觉编码与声学编码的定义及差异（语义：词语及意义；视觉：图像；声学：声音尤其是词语发音）",
+                "valueHash": "0170417777b0f0888a1f8d68f21a233417d6f3e64a67f038acdfee57770763ec"
+              },
+              {
+                "id": "e10",
+                "pointer": "/prerequisites/3",
+                "role": "context",
+                "kind": "text",
+                "value": "解释编码作为信息输入记忆系统的过程，包括接收感觉信息后大脑对其标记或编码并通过自动或努力加工",
+                "valueHash": "59ec620b5f728cf0555e0fb15694606f124adec946afa61842ba162efb2313e9"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q1",
+          "level": 2,
+          "reason": "产物断言高意象词视觉语义双编码及抽象低意象词缺乏视觉编码，与e3高意象词双重编码和抽象词低意象分类一致；举例与边界无虚假引述或机制改变。",
+          "refs": [
+            "e16",
+            "e3"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e16",
+              "pointer": "/artifacts/0/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "课程资料中提到，高意象词会被同时以视觉和语义方式编码，从而建立更强记忆；而抽象低意象词缺乏视觉编码（原文指出 concrete, high-imagery words 被双重编码，abstract words 为低意象词）。\n\n举例：想象记忆“大象”和“勇敢”两个词。默读“大象”时，你脑中自然浮现灰色庞然大物形象，同时理解它指一种动物，于是视觉与语义双编码；而“勇敢”很难绘出具体画面，只靠含义记忆。这就直观展示了具体词获得视觉辅助、抽象词不获得的区别。\n\n此例子的适用边界：它假设学习者像补充案例那样安静默读并自发形成图像。若改为听音频而未鼓励想象，可能只触发声学编码；若具体词对读者过于陌生（如罕见动植物），心理图像模糊，双重编码优势也会减弱。此外，本例仅说明视觉与语义联合，不涉及声学编码规则。",
+              "valueHash": "c4fd6fe38bedc4e946e84496c22adf0adcff76165028ea838c0cc2b2a18e597d"
+            },
+            {
+              "id": "e3",
+              "pointer": "/sources/0/text",
+              "role": "source",
+              "kind": "text",
+              "value": "We get information into our brains through a process called encoding, which is the input of information into the memory system. Once we receive sensory information from the environment, our brains label or code it. We organize the information with other similar information and connect new concepts to existing concepts. Encoding information occurs through automatic processing and effortful processing.\n\nThere are three types of encoding. The encoding of words and their meaning is known as semantic encoding. It was first demonstrated by William Bousfield (1935) in an experiment in which he asked people to memorize words. The 60 words were actually divided into 4 categories of meaning, although the participants did not know this because the words were randomly presented. When they were asked to remember the words, they tended to recall them in categories, showing that they paid attention to the meanings of the words as they learned them.\n\nVisual encoding is the encoding of images, and acoustic encoding is the encoding of sounds, words in particular. To see how visual encoding works, read over this list of words: car, level, dog, truth, book, value. If you were asked later to recall the words from this list, which ones do you think you’d most likely remember? You would probably have an easier time recalling the words car, dog, and book, and a more difficult time recalling the words level, truth, and value. Why is this? Because you can recall images (mental pictures) more easily than words alone. When you read the words car, dog, and book you created images of these things in your mind. These are concrete, high-imagery words. On the other hand, abstract words like level, truth, and value are low-imagery words. High-imagery words are encoded both visually and semantically (Paivio, 1986), thus building a stronger memory.\n\nNow let’s turn our attention to acoustic encoding. You are driving in your car and a song comes on the radio that you haven’t heard in at least 10 years, but you sing along, recalling every word. In the United States, children often learn the alphabet through song, and they learn the number of days in each month through rhyme: “Thirty days hath September, / April, June, and November; / All the rest have thirty-one, / Save February, with twenty-eight days clear, / And twenty-nine each leap year.” These lessons are easy to remember because of acoustic encoding. We encode the sounds the words make. This is one of the reasons why much of what we teach young children is done through song, rhyme, and rhythm.",
+              "valueHash": "bf1b2eea6b7f20a856c4cfc2f378ff4216695c2cb1b009da66f5aca83f238b9f"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [],
+          "proposedLevel": 2,
+          "proposedReason": "产物断言高意象词视觉语义双编码及抽象低意象词缺乏视觉编码，与e3高意象词双重编码和抽象词低意象分类一致；举例与边界无虚假引述或机制改变。"
+        },
+        {
+          "dimension": "Q3",
+          "level": 2,
+          "reason": "具备先决条件(e7-e10)的学习者能跟随大象(具体双编码)与勇敢(抽象仅语义)例理解关键关系，边界说明默读假设、听音频可能转声学等，满足e5目标。",
+          "refs": [
+            "e16",
+            "e5",
+            "e9"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e16",
+              "pointer": "/artifacts/0/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "课程资料中提到，高意象词会被同时以视觉和语义方式编码，从而建立更强记忆；而抽象低意象词缺乏视觉编码（原文指出 concrete, high-imagery words 被双重编码，abstract words 为低意象词）。\n\n举例：想象记忆“大象”和“勇敢”两个词。默读“大象”时，你脑中自然浮现灰色庞然大物形象，同时理解它指一种动物，于是视觉与语义双编码；而“勇敢”很难绘出具体画面，只靠含义记忆。这就直观展示了具体词获得视觉辅助、抽象词不获得的区别。\n\n此例子的适用边界：它假设学习者像补充案例那样安静默读并自发形成图像。若改为听音频而未鼓励想象，可能只触发声学编码；若具体词对读者过于陌生（如罕见动植物），心理图像模糊，双重编码优势也会减弱。此外，本例仅说明视觉与语义联合，不涉及声学编码规则。",
+              "valueHash": "c4fd6fe38bedc4e946e84496c22adf0adcff76165028ea838c0cc2b2a18e597d"
+            },
+            {
+              "id": "e5",
+              "pointer": "/goals/0",
+              "role": "goal",
+              "kind": "text",
+              "value": "请针对当前内容，用一个与资料不同但容易理解的例子解释关键关系，并说明例子的适用边界。",
+              "valueHash": "8554fd2a6af26f8cda0d4670bec8b7daaade91997a1e3a766c77f315dc970152"
+            },
+            {
+              "id": "e9",
+              "pointer": "/prerequisites/2",
+              "role": "context",
+              "kind": "text",
+              "value": "用中文识别并区分语义编码、视觉编码与声学编码的定义及差异（语义：词语及意义；视觉：图像；声学：声音尤其是词语发音）",
+              "valueHash": "0170417777b0f0888a1f8d68f21a233417d6f3e64a67f038acdfee57770763ec"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [],
+          "proposedLevel": 2,
+          "proposedReason": "具备先决条件(e7-e10)的学习者能跟随大象(具体双编码)与勇敢(抽象仅语义)例理解关键关系，边界说明默读假设、听音频可能转声学等，满足e5目标。"
+        }
+      ],
+      "reviewRequired": [],
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q1",
+            "status": "supported",
+            "reason": "产物(e16)断言高意象词视觉语义双编码及抽象低意象词缺乏视觉编码，与来源(e3)一致；举例与边界无虚假引述或机制改变，findings审计与正确性检查均确认。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e16",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "课程资料中提到，高意象词会被同时以视觉和语义方式编码，从而建立更强记忆；而抽象低意象词缺乏视觉编码（原文指出 concrete, high-imagery words 被双重编码，abstract words 为低意象词）。\n\n举例：想象记忆“大象”和“勇敢”两个词。默读“大象”时，你脑中自然浮现灰色庞然大物形象，同时理解它指一种动物，于是视觉与语义双编码；而“勇敢”很难绘出具体画面，只靠含义记忆。这就直观展示了具体词获得视觉辅助、抽象词不获得的区别。\n\n此例子的适用边界：它假设学习者像补充案例那样安静默读并自发形成图像。若改为听音频而未鼓励想象，可能只触发声学编码；若具体词对读者过于陌生（如罕见动植物），心理图像模糊，双重编码优势也会减弱。此外，本例仅说明视觉与语义联合，不涉及声学编码规则。",
+                "valueHash": "c4fd6fe38bedc4e946e84496c22adf0adcff76165028ea838c0cc2b2a18e597d"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "We get information into our brains through a process called encoding, which is the input of information into the memory system. Once we receive sensory information from the environment, our brains label or code it. We organize the information with other similar information and connect new concepts to existing concepts. Encoding information occurs through automatic processing and effortful processing.\n\nThere are three types of encoding. The encoding of words and their meaning is known as semantic encoding. It was first demonstrated by William Bousfield (1935) in an experiment in which he asked people to memorize words. The 60 words were actually divided into 4 categories of meaning, although the participants did not know this because the words were randomly presented. When they were asked to remember the words, they tended to recall them in categories, showing that they paid attention to the meanings of the words as they learned them.\n\nVisual encoding is the encoding of images, and acoustic encoding is the encoding of sounds, words in particular. To see how visual encoding works, read over this list of words: car, level, dog, truth, book, value. If you were asked later to recall the words from this list, which ones do you think you’d most likely remember? You would probably have an easier time recalling the words car, dog, and book, and a more difficult time recalling the words level, truth, and value. Why is this? Because you can recall images (mental pictures) more easily than words alone. When you read the words car, dog, and book you created images of these things in your mind. These are concrete, high-imagery words. On the other hand, abstract words like level, truth, and value are low-imagery words. High-imagery words are encoded both visually and semantically (Paivio, 1986), thus building a stronger memory.\n\nNow let’s turn our attention to acoustic encoding. You are driving in your car and a song comes on the radio that you haven’t heard in at least 10 years, but you sing along, recalling every word. In the United States, children often learn the alphabet through song, and they learn the number of days in each month through rhyme: “Thirty days hath September, / April, June, and November; / All the rest have thirty-one, / Save February, with twenty-eight days clear, / And twenty-nine each leap year.” These lessons are easy to remember because of acoustic encoding. We encode the sounds the words make. This is one of the reasons why much of what we teach young children is done through song, rhyme, and rhythm.",
+                "valueHash": "bf1b2eea6b7f20a856c4cfc2f378ff4216695c2cb1b009da66f5aca83f238b9f"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "dimension": "Q3",
+            "status": "supported",
+            "reason": "具备先决条件(e7-e10)的学习者能跟随(e16)大象与勇敢例理解关键关系，边界说明满足目标(e5)，findings一致无保留。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e16",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "课程资料中提到，高意象词会被同时以视觉和语义方式编码，从而建立更强记忆；而抽象低意象词缺乏视觉编码（原文指出 concrete, high-imagery words 被双重编码，abstract words 为低意象词）。\n\n举例：想象记忆“大象”和“勇敢”两个词。默读“大象”时，你脑中自然浮现灰色庞然大物形象，同时理解它指一种动物，于是视觉与语义双编码；而“勇敢”很难绘出具体画面，只靠含义记忆。这就直观展示了具体词获得视觉辅助、抽象词不获得的区别。\n\n此例子的适用边界：它假设学习者像补充案例那样安静默读并自发形成图像。若改为听音频而未鼓励想象，可能只触发声学编码；若具体词对读者过于陌生（如罕见动植物），心理图像模糊，双重编码优势也会减弱。此外，本例仅说明视觉与语义联合，不涉及声学编码规则。",
+                "valueHash": "c4fd6fe38bedc4e946e84496c22adf0adcff76165028ea838c0cc2b2a18e597d"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "请针对当前内容，用一个与资料不同但容易理解的例子解释关键关系，并说明例子的适用边界。",
+                "valueHash": "8554fd2a6af26f8cda0d4670bec8b7daaade91997a1e3a766c77f315dc970152"
+              },
+              {
+                "id": "e7",
+                "pointer": "/prerequisites/0",
+                "role": "context",
+                "kind": "text",
+                "value": "能够理解记忆编码与回忆的日常含义",
+                "valueHash": "98f266b3d1a9382b4ca259a709a371123eaa60cf2b9b29f19783c4c24d21c48c"
+              },
+              {
+                "id": "e8",
+                "pointer": "/prerequisites/1",
+                "role": "context",
+                "kind": "text",
+                "value": "不需要心理学专业背景",
+                "valueHash": "1327c01ff449eb43f5f309a2b19c856718f0d53085048e217c8f9f80bad20fad"
+              },
+              {
+                "id": "e9",
+                "pointer": "/prerequisites/2",
+                "role": "context",
+                "kind": "text",
+                "value": "用中文识别并区分语义编码、视觉编码与声学编码的定义及差异（语义：词语及意义；视觉：图像；声学：声音尤其是词语发音）",
+                "valueHash": "0170417777b0f0888a1f8d68f21a233417d6f3e64a67f038acdfee57770763ec"
+              },
+              {
+                "id": "e10",
+                "pointer": "/prerequisites/3",
+                "role": "context",
+                "kind": "text",
+                "value": "解释编码作为信息输入记忆系统的过程，包括接收感觉信息后大脑对其标记或编码并通过自动或努力加工",
+                "valueHash": "59ec620b5f728cf0555e0fb15694606f124adec946afa61842ba162efb2313e9"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "resultHash": "01bf17ec5995137e5ffe0972f980e5480279016a5f980fd1993378a1a720965c"
+  }
+}

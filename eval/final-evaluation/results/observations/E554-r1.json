@@ -1,0 +1,249 @@
+{
+  "task": {
+    "caseId": "E554",
+    "runId": "E554-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E554.json",
+    "inputHash": "9e87358de6ebe5eb3ee661c38bf7c3a499ec7d0ee259b40fde874949f0cbb8e0",
+    "population": "controlled",
+    "sourceId": "F11"
+  },
+  "inputHash": "9e87358de6ebe5eb3ee661c38bf7c3a499ec7d0ee259b40fde874949f0cbb8e0",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "correctness": "01a3bfb4f22fd38f06759222022658b6d34f2c51c1479d2cfb386bc2d57f902a",
+      "artifact-audit": "01a3bfb4f22fd38f06759222022658b6d34f2c51c1479d2cfb386bc2d57f902a"
+    },
+    "stages": {
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "defect",
+            "affected": [
+              "Q3"
+            ],
+            "reason": "Artifact (e15) claims two equations 2x+y=8 and 4x+2y=16 force unique x=8,y=0 without checking redundancy. Source e3 states second is twice first, same constraint, so non-unique (e.g., x=0,y=8). Claim false and given values violate first equation.",
+            "refs": [
+              "e15",
+              "e3"
+            ],
+            "challenge": {
+              "status": "counterexample",
+              "reason": "With the stated equations, x=0,y=8 satisfies both and is non-negative, contradicting unique x=8,y=0; x=8,y=0 fails 2x+y=8. Independent-equation necessity unmet, conclusion unsupported.",
+              "refs": [
+                "e15",
+                "e3"
+              ]
+            },
+            "witnesses": [
+              {
+                "id": "e15",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "2x+y=8与4x+2y=16是两条方程，所以一定唯一解x=8、y=0；无需代回或检查第二条是否重复。",
+                "valueHash": "2c5e9e11f5f374b013b346cd657ee12582ed8a136efadc58816316b4a4221e19"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "设计展板时，长条卡片每张宽二厘米，短条卡片每张宽一厘米。把长条张数记为x、短条张数记为y，若总宽度为八厘米，就有2x+y=8。这里先把x、y当作非负实数，表示也允许按比例裁切卡片；若题目后来要求整张，就必须另加非负整数条件。变量范围是题设的一部分，不能从生活习惯自行补上。\n仅有2x+y=8时，通常不唯一：x=0、y=8，或x=2、y=4都满足；在非负实数范围内还有更多组合。列举两个不同可行组合，就足以证明“唯一确定”不成立，但不能因此说所有任意组合都可行。每个候选仍须满足方程与非负约束。\n若再知道总张数为五，即x+y=5，把两个方程相减得到x=3，再代回得y=2。这个组合同时满足宽度八厘米、总张数五和非负条件，因此是合法解。两个方程相减只是一种方法，代入或合适的图示也可以；评判应看是否保持等价与验证完整，而不是必须照抄某一解法。\n第二条条件不一定提供新信息。如果新增4x+2y=16，它恰好是原方程每项乘二，所以仍表示同一限制，多解不会自动变成唯一解。如果新增4x+2y=18，则与原方程矛盾：原式乘二必须等于十六，不可能同时等于十八。在这种情况下，应报告无解并指出冲突，不应为了给出数值而悄悄修改题设。\n变量范围也会影响结果。例如x+y=1且x-y=0给出x=y=0.5。在允许比例裁切的非负实数模型里，这是一组合法解；若限定必须为整张卡片，则没有整数解。数学运算得到候选值之后，还须回到现实约定检验候选是否可用。\n处理约束问题可以先列清变量、单位与范围，再把每句话翻译成式子，然后判断信息是否独立、是否一致，最后代回所有条件。遇到数据不足时，给出两组可行解和需要补充的独立信息，通常比只写“不能算”更有帮助。遇到矛盾时，解释哪两条不能同时成立。这个单元不要求矩阵或专门术语，重点是理解条件如何缩小可能性集合。",
+                "valueHash": "3d467962cceddb9a766ded25aaa2f5d1c9767ee6b9307e50472157ea664b2422"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "kind": "quantities",
+            "status": "defect",
+            "affected": [
+              "Q3"
+            ],
+            "reason": "From given equations, 4x+2y=16 ≡ 2x+y=8. Solution set is 2x+y=8 (non-negative per e3). Artifact's x=8,y=0 gives 16≠8, core numerical error.",
+            "refs": [
+              "e15",
+              "e3"
+            ],
+            "witnesses": [
+              {
+                "id": "e15",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "2x+y=8与4x+2y=16是两条方程，所以一定唯一解x=8、y=0；无需代回或检查第二条是否重复。",
+                "valueHash": "2c5e9e11f5f374b013b346cd657ee12582ed8a136efadc58816316b4a4221e19"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "设计展板时，长条卡片每张宽二厘米，短条卡片每张宽一厘米。把长条张数记为x、短条张数记为y，若总宽度为八厘米，就有2x+y=8。这里先把x、y当作非负实数，表示也允许按比例裁切卡片；若题目后来要求整张，就必须另加非负整数条件。变量范围是题设的一部分，不能从生活习惯自行补上。\n仅有2x+y=8时，通常不唯一：x=0、y=8，或x=2、y=4都满足；在非负实数范围内还有更多组合。列举两个不同可行组合，就足以证明“唯一确定”不成立，但不能因此说所有任意组合都可行。每个候选仍须满足方程与非负约束。\n若再知道总张数为五，即x+y=5，把两个方程相减得到x=3，再代回得y=2。这个组合同时满足宽度八厘米、总张数五和非负条件，因此是合法解。两个方程相减只是一种方法，代入或合适的图示也可以；评判应看是否保持等价与验证完整，而不是必须照抄某一解法。\n第二条条件不一定提供新信息。如果新增4x+2y=16，它恰好是原方程每项乘二，所以仍表示同一限制，多解不会自动变成唯一解。如果新增4x+2y=18，则与原方程矛盾：原式乘二必须等于十六，不可能同时等于十八。在这种情况下，应报告无解并指出冲突，不应为了给出数值而悄悄修改题设。\n变量范围也会影响结果。例如x+y=1且x-y=0给出x=y=0.5。在允许比例裁切的非负实数模型里，这是一组合法解；若限定必须为整张卡片，则没有整数解。数学运算得到候选值之后，还须回到现实约定检验候选是否可用。\n处理约束问题可以先列清变量、单位与范围，再把每句话翻译成式子，然后判断信息是否独立、是否一致，最后代回所有条件。遇到数据不足时，给出两组可行解和需要补充的独立信息，通常比只写“不能算”更有帮助。遇到矛盾时，解释哪两条不能同时成立。这个单元不要求矩阵或专门术语，重点是理解条件如何缩小可能性集合。",
+                "valueHash": "3d467962cceddb9a766ded25aaa2f5d1c9767ee6b9307e50472157ea664b2422"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ],
+        "keys": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q3",
+            "level": 0,
+            "reason": "Artifact e15 claims 2x+y=8 and 4x+2y=16 give unique x=8,y=0 without checking redundancy. Source e3 states 4x+2y=16 is 2*(2x+y=8), same constraint so not unique; x=8,y=0 violates first equation (16≠8). Central derivation wrong and misleading, no boundary addressed.",
+            "refs": [
+              "e15",
+              "e3"
+            ],
+            "issue": "content",
+            "witnesses": [
+              {
+                "id": "e15",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "2x+y=8与4x+2y=16是两条方程，所以一定唯一解x=8、y=0；无需代回或检查第二条是否重复。",
+                "valueHash": "2c5e9e11f5f374b013b346cd657ee12582ed8a136efadc58816316b4a4221e19"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "设计展板时，长条卡片每张宽二厘米，短条卡片每张宽一厘米。把长条张数记为x、短条张数记为y，若总宽度为八厘米，就有2x+y=8。这里先把x、y当作非负实数，表示也允许按比例裁切卡片；若题目后来要求整张，就必须另加非负整数条件。变量范围是题设的一部分，不能从生活习惯自行补上。\n仅有2x+y=8时，通常不唯一：x=0、y=8，或x=2、y=4都满足；在非负实数范围内还有更多组合。列举两个不同可行组合，就足以证明“唯一确定”不成立，但不能因此说所有任意组合都可行。每个候选仍须满足方程与非负约束。\n若再知道总张数为五，即x+y=5，把两个方程相减得到x=3，再代回得y=2。这个组合同时满足宽度八厘米、总张数五和非负条件，因此是合法解。两个方程相减只是一种方法，代入或合适的图示也可以；评判应看是否保持等价与验证完整，而不是必须照抄某一解法。\n第二条条件不一定提供新信息。如果新增4x+2y=16，它恰好是原方程每项乘二，所以仍表示同一限制，多解不会自动变成唯一解。如果新增4x+2y=18，则与原方程矛盾：原式乘二必须等于十六，不可能同时等于十八。在这种情况下，应报告无解并指出冲突，不应为了给出数值而悄悄修改题设。\n变量范围也会影响结果。例如x+y=1且x-y=0给出x=y=0.5。在允许比例裁切的非负实数模型里，这是一组合法解；若限定必须为整张卡片，则没有整数解。数学运算得到候选值之后，还须回到现实约定检验候选是否可用。\n处理约束问题可以先列清变量、单位与范围，再把每句话翻译成式子，然后判断信息是否独立、是否一致，最后代回所有条件。遇到数据不足时，给出两组可行解和需要补充的独立信息，通常比只写“不能算”更有帮助。遇到矛盾时，解释哪两条不能同时成立。这个单元不要求矩阵或专门术语，重点是理解条件如何缩小可能性集合。",
+                "valueHash": "3d467962cceddb9a766ded25aaa2f5d1c9767ee6b9307e50472157ea664b2422"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q3",
+          "level": 0,
+          "reason": "Artifact (e15) claims two equations 2x+y=8 and 4x+2y=16 force unique x=8,y=0 without checking redundancy. Source e3 states second is twice first, same constraint, so non-unique (e.g., x=0,y=8). Claim false and given values violate first equation.",
+          "refs": [
+            "e15",
+            "e3"
+          ],
+          "issue": "content",
+          "witnesses": [
+            {
+              "id": "e15",
+              "pointer": "/artifacts/0/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "2x+y=8与4x+2y=16是两条方程，所以一定唯一解x=8、y=0；无需代回或检查第二条是否重复。",
+              "valueHash": "2c5e9e11f5f374b013b346cd657ee12582ed8a136efadc58816316b4a4221e19"
+            },
+            {
+              "id": "e3",
+              "pointer": "/sources/0/text",
+              "role": "source",
+              "kind": "text",
+              "value": "设计展板时，长条卡片每张宽二厘米，短条卡片每张宽一厘米。把长条张数记为x、短条张数记为y，若总宽度为八厘米，就有2x+y=8。这里先把x、y当作非负实数，表示也允许按比例裁切卡片；若题目后来要求整张，就必须另加非负整数条件。变量范围是题设的一部分，不能从生活习惯自行补上。\n仅有2x+y=8时，通常不唯一：x=0、y=8，或x=2、y=4都满足；在非负实数范围内还有更多组合。列举两个不同可行组合，就足以证明“唯一确定”不成立，但不能因此说所有任意组合都可行。每个候选仍须满足方程与非负约束。\n若再知道总张数为五，即x+y=5，把两个方程相减得到x=3，再代回得y=2。这个组合同时满足宽度八厘米、总张数五和非负条件，因此是合法解。两个方程相减只是一种方法，代入或合适的图示也可以；评判应看是否保持等价与验证完整，而不是必须照抄某一解法。\n第二条条件不一定提供新信息。如果新增4x+2y=16，它恰好是原方程每项乘二，所以仍表示同一限制，多解不会自动变成唯一解。如果新增4x+2y=18，则与原方程矛盾：原式乘二必须等于十六，不可能同时等于十八。在这种情况下，应报告无解并指出冲突，不应为了给出数值而悄悄修改题设。\n变量范围也会影响结果。例如x+y=1且x-y=0给出x=y=0.5。在允许比例裁切的非负实数模型里，这是一组合法解；若限定必须为整张卡片，则没有整数解。数学运算得到候选值之后，还须回到现实约定检验候选是否可用。\n处理约束问题可以先列清变量、单位与范围，再把每句话翻译成式子，然后判断信息是否独立、是否一致，最后代回所有条件。遇到数据不足时，给出两组可行解和需要补充的独立信息，通常比只写“不能算”更有帮助。遇到矛盾时，解释哪两条不能同时成立。这个单元不要求矩阵或专门术语，重点是理解条件如何缩小可能性集合。",
+              "valueHash": "3d467962cceddb9a766ded25aaa2f5d1c9767ee6b9307e50472157ea664b2422"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [
+            {
+              "level": 0,
+              "code": "INDEPENDENT_CONDITIONS",
+              "detail": {
+                "kind": "conditions",
+                "status": "defect",
+                "affected": [
+                  "Q3"
+                ],
+                "reason": "Artifact (e15) claims two equations 2x+y=8 and 4x+2y=16 force unique x=8,y=0 without checking redundancy. Source e3 states second is twice first, same constraint, so non-unique (e.g., x=0,y=8). Claim false and given values violate first equation.",
+                "refs": [
+                  "e15",
+                  "e3"
+                ],
+                "challenge": {
+                  "status": "counterexample",
+                  "reason": "With the stated equations, x=0,y=8 satisfies both and is non-negative, contradicting unique x=8,y=0; x=8,y=0 fails 2x+y=8. Independent-equation necessity unmet, conclusion unsupported.",
+                  "refs": [
+                    "e15",
+                    "e3"
+                  ]
+                },
+                "witnesses": [
+                  {
+                    "id": "e15",
+                    "pointer": "/artifacts/0/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "2x+y=8与4x+2y=16是两条方程，所以一定唯一解x=8、y=0；无需代回或检查第二条是否重复。",
+                    "valueHash": "2c5e9e11f5f374b013b346cd657ee12582ed8a136efadc58816316b4a4221e19"
+                  },
+                  {
+                    "id": "e3",
+                    "pointer": "/sources/0/text",
+                    "role": "source",
+                    "kind": "text",
+                    "value": "设计展板时，长条卡片每张宽二厘米，短条卡片每张宽一厘米。把长条张数记为x、短条张数记为y，若总宽度为八厘米，就有2x+y=8。这里先把x、y当作非负实数，表示也允许按比例裁切卡片；若题目后来要求整张，就必须另加非负整数条件。变量范围是题设的一部分，不能从生活习惯自行补上。\n仅有2x+y=8时，通常不唯一：x=0、y=8，或x=2、y=4都满足；在非负实数范围内还有更多组合。列举两个不同可行组合，就足以证明“唯一确定”不成立，但不能因此说所有任意组合都可行。每个候选仍须满足方程与非负约束。\n若再知道总张数为五，即x+y=5，把两个方程相减得到x=3，再代回得y=2。这个组合同时满足宽度八厘米、总张数五和非负条件，因此是合法解。两个方程相减只是一种方法，代入或合适的图示也可以；评判应看是否保持等价与验证完整，而不是必须照抄某一解法。\n第二条条件不一定提供新信息。如果新增4x+2y=16，它恰好是原方程每项乘二，所以仍表示同一限制，多解不会自动变成唯一解。如果新增4x+2y=18，则与原方程矛盾：原式乘二必须等于十六，不可能同时等于十八。在这种情况下，应报告无解并指出冲突，不应为了给出数值而悄悄修改题设。\n变量范围也会影响结果。例如x+y=1且x-y=0给出x=y=0.5。在允许比例裁切的非负实数模型里，这是一组合法解；若限定必须为整张卡片，则没有整数解。数学运算得到候选值之后，还须回到现实约定检验候选是否可用。\n处理约束问题可以先列清变量、单位与范围，再把每句话翻译成式子，然后判断信息是否独立、是否一致，最后代回所有条件。遇到数据不足时，给出两组可行解和需要补充的独立信息，通常比只写“不能算”更有帮助。遇到矛盾时，解释哪两条不能同时成立。这个单元不要求矩阵或专门术语，重点是理解条件如何缩小可能性集合。",
+                    "valueHash": "3d467962cceddb9a766ded25aaa2f5d1c9767ee6b9307e50472157ea664b2422"
+                  }
+                ],
+                "reviewReasons": []
+              }
+            },
+            {
+              "level": 0,
+              "code": "INDEPENDENT_QUANTITIES",
+              "detail": {
+                "kind": "quantities",
+                "status": "defect",
+                "affected": [
+                  "Q3"
+                ],
+                "reason": "From given equations, 4x+2y=16 ≡ 2x+y=8. Solution set is 2x+y=8 (non-negative per e3). Artifact's x=8,y=0 gives 16≠8, core numerical error.",
+                "refs": [
+                  "e15",
+                  "e3"
+                ],
+                "witnesses": [
+                  {
+                    "id": "e15",
+                    "pointer": "/artifacts/0/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "2x+y=8与4x+2y=16是两条方程，所以一定唯一解x=8、y=0；无需代回或检查第二条是否重复。",
+                    "valueHash": "2c5e9e11f5f374b013b346cd657ee12582ed8a136efadc58816316b4a4221e19"
+                  },
+                  {
+                    "id": "e3",
+                    "pointer": "/sources/0/text",
+                    "role": "source",
+                    "kind": "text",
+                    "value": "设计展板时，长条卡片每张宽二厘米，短条卡片每张宽一厘米。把长条张数记为x、短条张数记为y，若总宽度为八厘米，就有2x+y=8。这里先把x、y当作非负实数，表示也允许按比例裁切卡片；若题目后来要求整张，就必须另加非负整数条件。变量范围是题设的一部分，不能从生活习惯自行补上。\n仅有2x+y=8时，通常不唯一：x=0、y=8，或x=2、y=4都满足；在非负实数范围内还有更多组合。列举两个不同可行组合，就足以证明“唯一确定”不成立，但不能因此说所有任意组合都可行。每个候选仍须满足方程与非负约束。\n若再知道总张数为五，即x+y=5，把两个方程相减得到x=3，再代回得y=2。这个组合同时满足宽度八厘米、总张数五和非负条件，因此是合法解。两个方程相减只是一种方法，代入或合适的图示也可以；评判应看是否保持等价与验证完整，而不是必须照抄某一解法。\n第二条条件不一定提供新信息。如果新增4x+2y=16，它恰好是原方程每项乘二，所以仍表示同一限制，多解不会自动变成唯一解。如果新增4x+2y=18，则与原方程矛盾：原式乘二必须等于十六，不可能同时等于十八。在这种情况下，应报告无解并指出冲突，不应为了给出数值而悄悄修改题设。\n变量范围也会影响结果。例如x+y=1且x-y=0给出x=y=0.5。在允许比例裁切的非负实数模型里，这是一组合法解；若限定必须为整张卡片，则没有整数解。数学运算得到候选值之后，还须回到现实约定检验候选是否可用。\n处理约束问题可以先列清变量、单位与范围，再把每句话翻译成式子，然后判断信息是否独立、是否一致，最后代回所有条件。遇到数据不足时，给出两组可行解和需要补充的独立信息，通常比只写“不能算”更有帮助。遇到矛盾时，解释哪两条不能同时成立。这个单元不要求矩阵或专门术语，重点是理解条件如何缩小可能性集合。",
+                    "valueHash": "3d467962cceddb9a766ded25aaa2f5d1c9767ee6b9307e50472157ea664b2422"
+                  }
+                ],
+                "reviewReasons": []
+              }
+            }
+          ],
+          "proposedLevel": 0,
+          "proposedReason": "Artifact e15 claims 2x+y=8 and 4x+2y=16 give unique x=8,y=0 without checking redundancy. Source e3 states 4x+2y=16 is 2*(2x+y=8), same constraint so not unique; x=8,y=0 violates first equation (16≠8). Central derivation wrong and misleading, no boundary addressed.",
+          "decidingConstraint": "INDEPENDENT_CONDITIONS"
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "5ff8629a13ce9eacace8415846a9a819e8bdd48ded3b3ca73605d9f56d3457f7"
+  }
+}

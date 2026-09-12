@@ -1,0 +1,207 @@
+{
+  "dimensions": [
+    "Q4"
+  ],
+  "evidence": {
+    "sources": [
+      {
+        "id": "E02",
+        "text": "All living things require energy in one form or another. Energy is required by most complex metabolic pathways (often in the form of adenosine triphosphate, ATP), especially those responsible for building large molecules from smaller compounds, and life itself is an energy-driven process. Living organisms would not be able to assemble macromolecules (proteins, lipids, nucleic acids, and complex carbohydrates) from their monomeric subunits without a constant energy input.\n\nIt is important to understand how organisms acquire energy and how that energy is passed from one organism to another through food webs and their constituent food chains. Food webs illustrate how energy flows directionally through ecosystems, including how efficiently organisms acquire it, use it, and how much remains for use by other organisms of the food web.\n\nEnergy is acquired by living things in three ways: photosynthesis, chemosynthesis, and the consumption and digestion of other living or previously living organisms by heterotrophs.\n\nPhotosynthetic and chemosynthetic organisms are both grouped into a category known as autotrophs: organisms capable of synthesizing their own food (more specifically, capable of using inorganic carbon as a carbon source). Photosynthetic autotrophs (photoautotrophs) use sunlight as an energy source, whereas chemosynthetic autotrophs (chemoautotrophs) use inorganic molecules as an energy source. Autotrophs are critical for all ecosystems. Without these organisms, energy would not be available to other living organisms and life itself would not be possible."
+      }
+    ],
+    "goals": [
+      "从存活/死亡观测反推隐藏能量获取原因"
+    ],
+    "prerequisites": [
+      "知道生物需要能量",
+      "能区分有机物与无机物的一般含义",
+      "解释所有生物都需要能量，作为理解生态系统能量动态的基础。",
+      "解释食物网如何展示生态系统中能量的定向流动，包括生物获取和利用能量的效率以及剩余多少供其他食物网生物使用。"
+    ],
+    "desiredDepth": "working_fluency",
+    "authorityBoundaries": [
+      "本次评估只涉及所给来源、明确的教学范围和实际展示的产物；脚本作答用于检查工作流，不代表真实学习者。"
+    ],
+    "artifacts": [
+      {
+        "id": "current-author-selected-option",
+        "text": "物种N利用H2S进行化能合成获得能量，物种M因无有机物能量来源死亡"
+      },
+      {
+        "id": "current-author-explanation",
+        "text": "需结合‘所有生物需能量’与具体物种能量路径，从存活/死亡结果反推隐藏原因。"
+      }
+    ],
+    "exposure": [
+      {
+        "id": "prior-0",
+        "text": "生态系统中的生物不论形态如何，都需要能量驱动生命活动。能量可用于合成大分子、维持代谢。自养生物能利用无机源制造有机物，为异养生物提供能量基础。"
+      },
+      {
+        "id": "prior-1",
+        "text": "根据资料，恒定能量输入是组装大分子的必要条件。若无能量，生物无法从单体构建蛋白质、脂质等。这体现了能量供给与生命构建之间的因果机制。"
+      },
+      {
+        "id": "prior-2",
+        "text": "不同自养路径可共同决定异养生物能否获得能量。下面通过具体案例展示多条能量通路如何联合影响结果。"
+      },
+      {
+        "id": "prior-3",
+        "text": "生态箱A有阳光，存在无机分子H2S。内有藻（光合自养）和菌（化能合成自养）。引入异养动物Z，可摄食藻或菌。"
+      },
+      {
+        "id": "prior-4",
+        "text": "阳光"
+      },
+      {
+        "id": "prior-5",
+        "text": "H2S"
+      },
+      {
+        "id": "prior-6",
+        "text": "Z的摄食能力"
+      },
+      {
+        "id": "prior-7",
+        "text": "给定生态箱A中藻利用阳光、菌利用H2S，若移除阳光但保留H2S，异养动物Z（可摄食两者）的能量状况如何？"
+      },
+      {
+        "id": "prior-8",
+        "text": "Z仍能获得能量，因为菌通过H2S化能合成维持"
+      },
+      {
+        "id": "prior-9",
+        "text": "Z无法获得能量，因为光合停止且异养依赖光合"
+      },
+      {
+        "id": "prior-10",
+        "text": "Z只能靠储存ATP无限生存"
+      },
+      {
+        "id": "prior-11",
+        "text": "Z仍能获得能量"
+      },
+      {
+        "id": "prior-12",
+        "text": "正确：菌路径独立供能"
+      },
+      {
+        "id": "prior-13",
+        "text": "多自养路径联合，一条失效不影响整体供能"
+      },
+      {
+        "id": "prior-14",
+        "text": "在仅允许藻且移除阳光的条件下，Z的能量状况？"
+      },
+      {
+        "id": "prior-15",
+        "text": "Z仍能获能，因菌路径维持"
+      },
+      {
+        "id": "prior-16",
+        "text": "Z无法获能，因唯一自养源失效"
+      },
+      {
+        "id": "prior-17",
+        "text": "Z靠化能合成直接获能"
+      },
+      {
+        "id": "prior-18",
+        "text": "若生态箱规定仅允许一种自养生物且当前选定藻，移除阳光"
+      },
+      {
+        "id": "prior-19",
+        "text": "{\"prompt\":\"给定生态箱A中藻利用阳光、菌利用H2S，若移除阳光但保留H2S，异养动物Z（可摄食两者）的能量状况如何？\",\"options\":[{\"id\":\"A\",\"text\":\"Z仍能获得能量，因为菌通过H2S化能合成维持\"},{\"id\":\"B\",\"text\":\"Z无法获得能量，因为光合停止且异养依赖光合\"},{\"id\":\"C\",\"text\":\"Z只能靠储存ATP无限生存\"}],\"response\":\"A\",\"correct\":true,\"feedback\":\"正确：菌路径独立供能\",\"debrief\":\"多自养路径联合，一条失效不影响整体供能\"}"
+      },
+      {
+        "id": "prior-20",
+        "text": "只要至少一条自养路径可用，异养者便能获得能量"
+      },
+      {
+        "id": "prior-21",
+        "text": "对：单一路径断绝"
+      },
+      {
+        "id": "prior-22",
+        "text": "当仅剩路径被切断，异养失去来源，体现路径约束"
+      },
+      {
+        "id": "prior-23",
+        "text": "{\"prompt\":\"在仅允许藻且移除阳光的条件下，Z的能量状况？\",\"options\":[{\"id\":\"A\",\"text\":\"Z仍能获能，因菌路径维持\"},{\"id\":\"B\",\"text\":\"Z无法获能，因唯一自养源失效\"},{\"id\":\"C\",\"text\":\"Z靠化能合成直接获能\"}],\"response\":\"B\",\"correct\":true,\"feedback\":\"对：单一路径断绝\",\"debrief\":\"当仅剩路径被切断，异养失去来源，体现路径约束\"}"
+      },
+      {
+        "id": "prior-24",
+        "text": "需注意，‘所有生物都需要能量’针对的是活体生物。非生命实体如晶体不在此列；病毒虽具遗传物质但无独立代谢，常不被视为完整活体，其能量依赖宿主。这划定了陈述的边界。"
+      },
+      {
+        "id": "prior-25",
+        "text": "病毒不表现独立代谢，不自行获取能量，因此不属于该能量需求规律的适用对象；而细菌虽微小仍属活体，需能量。"
+      },
+      {
+        "id": "prior-26",
+        "text": "食物网展示生态系统中能量的定向流动：自养生物利用光或无机分子固定能量，成为异养生物的食物源。能量从自养者传向草食者再传向肉食者，每级传递因代谢消耗仅保留一部分（如10%），其余以热散失。这显示了流动方向及剩余可供更高营养级使用的能量规模。"
+      },
+      {
+        "id": "prior-27",
+        "text": "通过具体数值可追踪一次传递的剩余量。假设某箱仅一条链，明确各级效率，就能算出顶端获能。"
+      },
+      {
+        "id": "prior-28",
+        "text": "生态箱B：K固定500，L效率20%，M效率10%。仅有一种光合自养生物K，草食者L取食K，肉食者M取食L。完成传递后，M获得多少能量？"
+      },
+      {
+        "id": "prior-29",
+        "text": "10单位（500×20%×10%）"
+      },
+      {
+        "id": "prior-30",
+        "text": "100单位（500×20%，忽略M级）"
+      },
+      {
+        "id": "prior-31",
+        "text": "50单位（500×10%，忽略L级）"
+      },
+      {
+        "id": "prior-32",
+        "text": "正确：逐级效率相乘得10"
+      },
+      {
+        "id": "prior-33",
+        "text": "{\"prompt\":\"生态箱B：K固定500，L效率20%，M效率10%。仅有一种光合自养生物K，草食者L取食K，肉食者M取食L。完成传递后，M获得多少能量？\",\"options\":[{\"id\":\"A\",\"text\":\"10单位（500×20%×10%）\"},{\"id\":\"B\",\"text\":\"100单位（500×20%，忽略M级）\"},{\"id\":\"C\",\"text\":\"50单位（500×10%，忽略L级）\"}],\"response\":\"A\",\"correct\":true,\"feedback\":\"正确：逐级效率相乘得10\"}"
+      },
+      {
+        "id": "prior-34",
+        "text": "食物网描述的定向能量流动限于生物节点之间。阳光、无机分子等非生物能源是输入起点，却不作为网内节点；若误将非生物装置视为食物网环节，会混淆边界。"
+      },
+      {
+        "id": "prior-35",
+        "text": "阳光本身不是食物网中的生物节点，能量从阳光到自养生物是系统外输入；而自养生物到异养生物才是网内定向流动。非生物太阳能板直接向动物供能不计入食物网能量流动。"
+      },
+      {
+        "id": "prior-36",
+        "text": "所有活体生物都需能量，可通过光合、化能合成或摄食获取；自养者把无机能转为有机能，支撑食物网。当观测矛盾时，先查边界。"
+      },
+      {
+        "id": "prior-37",
+        "text": "课程资料指出，光合与化能合成自养生物能利用无机源制造有机物，是所有生态系统中异养生物能量可用的关键（见课程资料自养生物相关摘录）。当前案例表明，不同自养路径可共同决定异养能量状况：移除阳光但保留H2S，异养动物Z仍可通过化能合成菌获得能量。\n\n举例（补充说明）：想象一个农场有太阳能水泵和柴油发电机两种独立灌溉动力，作物（类似异养消费者）依赖水存活；若连日阴天太阳能停摆，发电机仍可提供水流，作物不因单一源头中断而枯萎。这个日常例子直观对应“多条能量通路冗余支持”的关系。\n\n该例子适用边界：它只帮助理解结构上的多源支持，但不涉及真实自养生物的无机碳固定、ATP参与大分子组装等生化因果，也不能替代食物网中能量流动效率与方向的分析。实际生态判断还需看异养生物是否具备摄食对应自养者的能力。"
+      }
+    ],
+    "question": {
+      "prompt": "实验舱X完全黑暗，且未输入任何死亡或活体有机物。舱内初始放入物种M（异养，靠摄食有机物）和物种N（化能合成自养，利用H2S无机分子）。舱内提供H2S。30天后观测：物种M全部死亡，物种N存活并繁殖。根据所有生物都需要能量且能量获取方式为光合、化能合成或异养摄食，哪项解释最契合该观测？",
+      "options": [
+        {
+          "id": "teaching_brief_392e90c8-67f7-4dd2-9c0a-b30ae54e25ea_practice_1_initial_A",
+          "text": "物种N利用H2S进行化能合成获得能量，物种M因无有机物能量来源死亡"
+        },
+        {
+          "id": "teaching_brief_392e90c8-67f7-4dd2-9c0a-b30ae54e25ea_practice_1_initial_B",
+          "text": "物种N通过残存微弱光线光合获得能量，物种M因无有机物死亡"
+        },
+        {
+          "id": "teaching_brief_392e90c8-67f7-4dd2-9c0a-b30ae54e25ea_practice_1_initial_C",
+          "text": "物种M和N都靠舱内未知有机物存活，但M竞争失败死亡"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "identities": {
+    "productCommit": "0b23459adb7d82758f5d0df4192648d28faed0e0",
+    "evaluator": {
+      "version": "studyeval-v1.5-micro-closure",
+      "candidateHash": "e088e986a5c968febcaf51f99511258fd452759b935fd454327f61dcaa38dfdb",
+      "runtimeTreeHash": "969ab9c3615ed383a70b9acae850cb3cb3fb1e7ea4e834e9deb17784ccd32058"
+    },
+    "adapterVersion": "final-evaluation-adapter-2026-09-12-wire-v2",
+    "protocolHash": "6904436cf2715f30153c5639de6a9a5bf57decee181f52aeaee3aabfe7c6266c",
+    "benchmarkHash": "5308e6cafbf952d01c537774dedaae445a1f06030055db97cb6c56c8c8bf0a2f",
+    "sourceHash": "7cdf138b7c88d9cde40c0b9104e201a6d97980b1b4ca5df4dfaf352b821e868e",
+    "scheduleHash": "f006ba4da631a25753a99b315e9ae6200088de2f34ceec4790d6946e8479cb2e"
+  },
+  "provider": {
+    "model": "hy3",
+    "endpointHost": "tokenhub.tencentmaas.com",
+    "endpointIdentityHash": "55d8daa779c2677950284ca29b3592b00ba33aa642800c819b5a63f23675965d",
+    "credentialsIncluded": false
+  },
+  "originalExport": {
+    "name": "public-export-final-v6",
+    "manifestSha256": "aece7b0c0d555ebfea04bd200514740b8ac67441ab30ccc0f7586bc96e75dea0",
+    "fileCount": 559
+  },
+  "originalRowsSha256": "c2f541aa9d31793d627ac1aa4ad56226f621aa5c05ca5ab9fdcb337d6e9c22cd",
+  "originalReplaySha256": "3e14574e3740ded89efb09942fedf18ddca552c44fce806b7955a2a87b5fe3d7",
+  "replay": {
+    "networkDisabled": true,
+    "observationRows": 279,
+    "identity": {
+      "candidateHash": "e088e986a5c968febcaf51f99511258fd452759b935fd454327f61dcaa38dfdb",
+      "runtimeTreeHash": "969ab9c3615ed383a70b9acae850cb3cb3fb1e7ea4e834e9deb17784ccd32058",
+      "productCommit": "0b23459adb7d82758f5d0df4192648d28faed0e0",
+      "scheduleHash": "f006ba4da631a25753a99b315e9ae6200088de2f34ceec4790d6946e8479cb2e",
+      "provider": {
+        "model": "hy3",
+        "endpointHost": "tokenhub.tencentmaas.com",
+        "endpointIdentityHash": "55d8daa779c2677950284ca29b3592b00ba33aa642800c819b5a63f23675965d",
+        "credentialSource": "complete_environment_or_dotenv"
+      },
+      "nodeVersion": "v24.14.1",
+      "nodeExecutableHash": "58e74bf02fc5bbacc41dcb8bef089961cd5bddd37830b87784e4fc624d145d1f"
+    }
+  },
+  "custody": {
+    "final": {
+      "starts": 847,
+      "terminals": 847,
+      "pending": 0,
+      "ledgerSha256": "6015a5815eedca5637e2affd029347645886729cf91dcf4117e0666983f04b70"
+    },
+    "final-product": {
+      "starts": 380,
+      "terminals": 380,
+      "pending": 0,
+      "ledgerSha256": "bee07e816aa959252be37e62635835f173d727eb1de8abd24fc0c0e8919a0c41"
+    }
+  },
+  "privateReleaseMappingSha256": "8705e9821045746387d43d57707f36f9161919d03fd4752fb1d1bdf39a7d0fba",
+  "localPublicationAudit": "All 327 stored dimension rows checked against 279 observations; all 74 packet machine answers checked against frozen dimensions; 553 v6 manifest files and 8 frozen runtime modules checked; raw returned usage checked against response hashes. No evaluator or model execution in this publication pass."
+}

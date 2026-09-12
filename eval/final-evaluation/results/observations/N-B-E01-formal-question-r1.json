@@ -1,0 +1,383 @@
+{
+  "task": {
+    "caseId": "N-B-E01-formal-question",
+    "runId": "N-B-E01-formal-question-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-B-E01-formal-question.json",
+    "inputHash": "6eaf3e0e31fc0a9ab0dc0259cdf53df1a1cdbf13c4f579e1be65ed206768c6a9",
+    "population": "natural",
+    "sourceId": "B-E01"
+  },
+  "inputHash": "6eaf3e0e31fc0a9ab0dc0259cdf53df1a1cdbf13c4f579e1be65ed206768c6a9",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "prepare-context-current": "b760ae259192547c05cfce02f2b15b976c8ec9fa2d2d7567867f569ac43138a2",
+      "solve-current": "67dcbc7da6265e5e2b9c6b5495f9ec1aba1a84505bc50c59542579c62bca7b3e",
+      "correctness": "2a81f72d49fba1d35610de1d6698148635348557521a9459e07770ca26eb8f04",
+      "artifact-audit": "2a81f72d49fba1d35610de1d6698148635348557521a9459e07770ca26eb8f04"
+    },
+    "stages": {
+      "prepare-context-current": {
+        "contexts": [
+          {
+            "taskId": "current",
+            "status": "ready",
+            "reason": "题干自身包含完整情景事实（寒冷房子、赤脚、客厅地毯、厨房瓷砖、同温、脚感不同），无需依赖history字段即可分离；未混入解答或选项。",
+            "premises": [],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "solve-current": {
+        "status": "resolved",
+        "solution": "题目可独立求解：地毯与瓷砖同温，但瓷砖热传导速率更快，相同接触时间内皮肤向瓷砖热损失更大，局部温降更明显，故脚感更冷。依据 e3 对现象的解释及 e9 先决条件，无需作者答案。",
+        "witnesses": [
+          {
+            "id": "e3",
+            "pointer": "/sources/0/text",
+            "role": "source",
+            "kind": "text",
+            "value": "Your feet feel cold as you walk barefoot across the living room carpet in your cold house and then step onto the kitchen tile floor. This result is intriguing, since the carpet and tile floor are both at the same temperature. The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.\n\nSome materials conduct thermal energy faster than others. In general, good conductors of electricity (metals like copper, aluminum, gold, and silver) are also good heat conductors, whereas insulators of electricity (wood, plastic, and rubber) are poor heat conductors.\n\nThe (average) kinetic energy of a molecule in the hot body is higher than in the colder body. If two molecules collide, an energy transfer from the molecule with greater kinetic energy to the molecule with less kinetic energy occurs. The cumulative effect from all collisions results in a net flux of heat from the hot body to the colder body. The heat flux thus depends on the temperature difference ΔΤ=Τhot−Tcold. Therefore, you will get a more severe burn from boiling water than from hot tap water. Conversely, if the temperatures are the same, the net heat transfer rate falls to zero, and equilibrium is achieved. Owing to the fact that the number of collisions increases with increasing area, heat conduction depends on the cross-sectional area. If you touch a cold wall with your palm, your hand cools faster than if you just touch it with your fingertip.",
+            "valueHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd"
+          },
+          {
+            "id": "e14",
+            "pointer": "/question/prompt",
+            "role": "question",
+            "kind": "text",
+            "value": "在一个寒冷的房子里，你赤脚走过客厅地毯，然后踩到厨房瓷砖地板。地毯和瓷砖温度相同，但脚感不同。请解释这种不同触感的原因。",
+            "valueHash": "60c4fa29e47606601cfb6a7cfa56f393064eb5188bf6c0fa90eae83e713cfd38"
+          },
+          {
+            "id": "e9",
+            "pointer": "/prerequisites/2",
+            "role": "context",
+            "kind": "text",
+            "value": "解释同温度地毯与瓷砖触感不同的原因：在相同温度和相同时间区间内，因热传递速率不同导致瓷砖接触皮肤热损失更大、温度下降更大，且其他条件相同。",
+            "valueHash": "ddd265caebe0d2facdb2f53d103a3b1628e6181fcc7e1dfb2f150f1232b5ebc1"
+          }
+        ],
+        "reviewReasons": []
+      },
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "uncertain",
+            "affected": [
+              "Q4"
+            ],
+            "reason": "The authored conclusion has a compatible counterexample or an unresolved necessary premise. 固定事实：地毯瓷砖同温(e14)、脚感不同；键明示假设相同时间区间(e18)。补充相容情况：接触面积不同（如脚趾踩瓷砖、全脚踩地毯），依据e3面积效应规则，地毯总热损失可能更大而使触感相反，使作者结论改变。无给定事实排除此反例。",
+            "refs": [
+              "e18",
+              "e20",
+              "e9",
+              "e14"
+            ],
+            "challenge": {
+              "status": "counterexample",
+              "reason": "固定事实：地毯瓷砖同温(e14)、脚感不同；键明示假设相同时间区间(e18)。补充相容情况：接触面积不同（如脚趾踩瓷砖、全脚踩地毯），依据e3面积效应规则，地毯总热损失可能更大而使触感相反，使作者结论改变。无给定事实排除此反例。",
+              "refs": [
+                "e18",
+                "e14",
+                "e3"
+              ]
+            },
+            "witnesses": [
+              {
+                "id": "e18",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.",
+                "valueHash": "2fb1384c6a10575b6d0df4da73f502153bde0156f1c1afa0feae4ec3cd004c35"
+              },
+              {
+                "id": "e20",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "解析：虽然地毯和瓷砖温度相同，但瓷砖热传递速率更快，相同时间内皮肤接触瓷砖热损失更大、温度下降更大，因此感觉更冷。",
+                "valueHash": "7f8eb8d1827ca171db7924d05cbceec3eb5fd0cd272895a44a14af2e27cdad96"
+              },
+              {
+                "id": "e9",
+                "pointer": "/prerequisites/2",
+                "role": "context",
+                "kind": "text",
+                "value": "解释同温度地毯与瓷砖触感不同的原因：在相同温度和相同时间区间内，因热传递速率不同导致瓷砖接触皮肤热损失更大、温度下降更大，且其他条件相同。",
+                "valueHash": "ddd265caebe0d2facdb2f53d103a3b1628e6181fcc7e1dfb2f150f1232b5ebc1"
+              },
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "在一个寒冷的房子里，你赤脚走过客厅地毯，然后踩到厨房瓷砖地板。地毯和瓷砖温度相同，但脚感不同。请解释这种不同触感的原因。",
+                "valueHash": "60c4fa29e47606601cfb6a7cfa56f393064eb5188bf6c0fa90eae83e713cfd38"
+              }
+            ],
+            "proposed": {
+              "kind": "conditions",
+              "status": "uncertain",
+              "affected": [
+                "Q4"
+              ],
+              "reason": "作者键e18与解析e20断言同温、相同时间内瓷砖热损失更大温降更大导致触感不同，但未在键内明示接触面积等其它条件相同；先决e9提及其他条件相同但非键内明示假设。支持条件不明，适用性结论应uncertain。",
+              "refs": [
+                "e18",
+                "e20",
+                "e9",
+                "e14"
+              ],
+              "challenge": {
+                "status": "counterexample",
+                "reason": "固定事实：地毯瓷砖同温(e14)、脚感不同；键明示假设相同时间区间(e18)。补充相容情况：接触面积不同（如脚趾踩瓷砖、全脚踩地毯），依据e3面积效应规则，地毯总热损失可能更大而使触感相反，使作者结论改变。无给定事实排除此反例。",
+                "refs": [
+                  "e18",
+                  "e14",
+                  "e3"
+                ]
+              }
+            },
+            "reviewReasons": [
+              "CONDITIONS_COUNTEREXAMPLE_REVIEW"
+            ]
+          },
+          {
+            "kind": "quantities",
+            "status": "not_applicable",
+            "affected": [],
+            "reason": "当前产物无数值、百分比或单位换算推导，rates为空，仅定性描述热损失与温降，无独立重算必要。",
+            "contextHash": "2a81f72d49fba1d35610de1d6698148635348557521a9459e07770ca26eb8f04",
+            "proposed": {
+              "kind": "quantities",
+              "status": "not_applicable",
+              "affected": [],
+              "reason": "当前产物无数值、百分比或单位换算推导，rates为空，仅定性描述热损失与温降，无独立重算必要。",
+              "refs": [
+                "e18",
+                "e20"
+              ]
+            },
+            "reviewReasons": []
+          }
+        ],
+        "keys": [
+          {
+            "taskId": "current",
+            "status": "agrees",
+            "reason": "作者指定键e18及解析e20给出原因：同温同时间瓷砖热传递速率更快致皮肤热损失更大温降更大故感觉更冷。盲解current依据e3/e9独立得出相同因果：同温同时间瓷砖导热快热损失大温降大脚感更冷，含义与边界一致，无保留疑问或冲突。",
+            "refs": [
+              "e18",
+              "e20",
+              "e14",
+              "e9"
+            ],
+            "witnesses": [
+              {
+                "id": "e18",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.",
+                "valueHash": "2fb1384c6a10575b6d0df4da73f502153bde0156f1c1afa0feae4ec3cd004c35"
+              },
+              {
+                "id": "e20",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "解析：虽然地毯和瓷砖温度相同，但瓷砖热传递速率更快，相同时间内皮肤接触瓷砖热损失更大、温度下降更大，因此感觉更冷。",
+                "valueHash": "7f8eb8d1827ca171db7924d05cbceec3eb5fd0cd272895a44a14af2e27cdad96"
+              },
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "在一个寒冷的房子里，你赤脚走过客厅地毯，然后踩到厨房瓷砖地板。地毯和瓷砖温度相同，但脚感不同。请解释这种不同触感的原因。",
+                "valueHash": "60c4fa29e47606601cfb6a7cfa56f393064eb5188bf6c0fa90eae83e713cfd38"
+              },
+              {
+                "id": "e9",
+                "pointer": "/prerequisites/2",
+                "role": "context",
+                "kind": "text",
+                "value": "解释同温度地毯与瓷砖触感不同的原因：在相同温度和相同时间区间内，因热传递速率不同导致瓷砖接触皮肤热损失更大、温度下降更大，且其他条件相同。",
+                "valueHash": "ddd265caebe0d2facdb2f53d103a3b1628e6181fcc7e1dfb2f150f1232b5ebc1"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q4",
+            "level": "U",
+            "reason": "The proposed judgment needs evidence review.",
+            "proposed": {
+              "dimension": "Q4",
+              "level": 0,
+              "reason": "题目(e14)有源e3及先决e9提供充分前提，作者键e18与盲解(current)一致：同温下瓷砖热传递速率快致皮肤热损失大温降大，答案正确。但priorExposure中prior-1(e25)已向学习者完整展示本题解答推理与结论（地毯瓷砖同温但瓷砖热损失更大、导热优），构成solution disclosure，破坏独立性，符合Q4零分条件。",
+              "refs": [
+                "e14",
+                "e18",
+                "e25",
+                "e3"
+              ],
+              "issue": "exposure",
+              "exposureEvidence": [
+                {
+                  "taskId": "current",
+                  "kind": "worked_reasoning",
+                  "ref": "prior-1",
+                  "quote": "地毯和瓷砖温度相同，但皮肤接触瓷砖时相同时间内热损失更大、温度下降更大。进一步，材料导热能力不同，金属等良导体比木材塑料等绝缘体传热快。"
+                }
+              ]
+            },
+            "reviewReasons": [
+              "EXPOSED_SOLUTION_NOT_ESTABLISHED"
+            ]
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q4",
+          "level": "U",
+          "reason": "The authored conclusion has a compatible counterexample or an unresolved necessary premise. 固定事实：地毯瓷砖同温(e14)、脚感不同；键明示假设相同时间区间(e18)。补充相容情况：接触面积不同（如脚趾踩瓷砖、全脚踩地毯），依据e3面积效应规则，地毯总热损失可能更大而使触感相反，使作者结论改变。无给定事实排除此反例。",
+          "proposed": {
+            "dimension": "Q4",
+            "level": 0,
+            "reason": "题目(e14)有源e3及先决e9提供充分前提，作者键e18与盲解(current)一致：同温下瓷砖热传递速率快致皮肤热损失大温降大，答案正确。但priorExposure中prior-1(e25)已向学习者完整展示本题解答推理与结论（地毯瓷砖同温但瓷砖热损失更大、导热优），构成solution disclosure，破坏独立性，符合Q4零分条件。",
+            "refs": [
+              "e14",
+              "e18",
+              "e25",
+              "e3"
+            ],
+            "issue": "exposure",
+            "exposureEvidence": [
+              {
+                "taskId": "current",
+                "kind": "worked_reasoning",
+                "ref": "prior-1",
+                "quote": "地毯和瓷砖温度相同，但皮肤接触瓷砖时相同时间内热损失更大、温度下降更大。进一步，材料导热能力不同，金属等良导体比木材塑料等绝缘体传热快。"
+              }
+            ]
+          },
+          "reviewReasons": [
+            "EXPOSED_SOLUTION_NOT_ESTABLISHED"
+          ],
+          "constraints": [
+            {
+              "level": "U",
+              "code": "INDEPENDENT_CONDITIONS",
+              "detail": {
+                "kind": "conditions",
+                "status": "uncertain",
+                "affected": [
+                  "Q4"
+                ],
+                "reason": "The authored conclusion has a compatible counterexample or an unresolved necessary premise. 固定事实：地毯瓷砖同温(e14)、脚感不同；键明示假设相同时间区间(e18)。补充相容情况：接触面积不同（如脚趾踩瓷砖、全脚踩地毯），依据e3面积效应规则，地毯总热损失可能更大而使触感相反，使作者结论改变。无给定事实排除此反例。",
+                "refs": [
+                  "e18",
+                  "e20",
+                  "e9",
+                  "e14"
+                ],
+                "challenge": {
+                  "status": "counterexample",
+                  "reason": "固定事实：地毯瓷砖同温(e14)、脚感不同；键明示假设相同时间区间(e18)。补充相容情况：接触面积不同（如脚趾踩瓷砖、全脚踩地毯），依据e3面积效应规则，地毯总热损失可能更大而使触感相反，使作者结论改变。无给定事实排除此反例。",
+                  "refs": [
+                    "e18",
+                    "e14",
+                    "e3"
+                  ]
+                },
+                "witnesses": [
+                  {
+                    "id": "e18",
+                    "pointer": "/artifacts/0/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.",
+                    "valueHash": "2fb1384c6a10575b6d0df4da73f502153bde0156f1c1afa0feae4ec3cd004c35"
+                  },
+                  {
+                    "id": "e20",
+                    "pointer": "/artifacts/1/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "解析：虽然地毯和瓷砖温度相同，但瓷砖热传递速率更快，相同时间内皮肤接触瓷砖热损失更大、温度下降更大，因此感觉更冷。",
+                    "valueHash": "7f8eb8d1827ca171db7924d05cbceec3eb5fd0cd272895a44a14af2e27cdad96"
+                  },
+                  {
+                    "id": "e9",
+                    "pointer": "/prerequisites/2",
+                    "role": "context",
+                    "kind": "text",
+                    "value": "解释同温度地毯与瓷砖触感不同的原因：在相同温度和相同时间区间内，因热传递速率不同导致瓷砖接触皮肤热损失更大、温度下降更大，且其他条件相同。",
+                    "valueHash": "ddd265caebe0d2facdb2f53d103a3b1628e6181fcc7e1dfb2f150f1232b5ebc1"
+                  },
+                  {
+                    "id": "e14",
+                    "pointer": "/question/prompt",
+                    "role": "question",
+                    "kind": "text",
+                    "value": "在一个寒冷的房子里，你赤脚走过客厅地毯，然后踩到厨房瓷砖地板。地毯和瓷砖温度相同，但脚感不同。请解释这种不同触感的原因。",
+                    "valueHash": "60c4fa29e47606601cfb6a7cfa56f393064eb5188bf6c0fa90eae83e713cfd38"
+                  }
+                ],
+                "proposed": {
+                  "kind": "conditions",
+                  "status": "uncertain",
+                  "affected": [
+                    "Q4"
+                  ],
+                  "reason": "作者键e18与解析e20断言同温、相同时间内瓷砖热损失更大温降更大导致触感不同，但未在键内明示接触面积等其它条件相同；先决e9提及其他条件相同但非键内明示假设。支持条件不明，适用性结论应uncertain。",
+                  "refs": [
+                    "e18",
+                    "e20",
+                    "e9",
+                    "e14"
+                  ],
+                  "challenge": {
+                    "status": "counterexample",
+                    "reason": "固定事实：地毯瓷砖同温(e14)、脚感不同；键明示假设相同时间区间(e18)。补充相容情况：接触面积不同（如脚趾踩瓷砖、全脚踩地毯），依据e3面积效应规则，地毯总热损失可能更大而使触感相反，使作者结论改变。无给定事实排除此反例。",
+                    "refs": [
+                      "e18",
+                      "e14",
+                      "e3"
+                    ]
+                  }
+                },
+                "reviewReasons": [
+                  "CONDITIONS_COUNTEREXAMPLE_REVIEW"
+                ]
+              }
+            }
+          ],
+          "proposedLevel": "U",
+          "proposedReason": "The proposed judgment needs evidence review.",
+          "decidingConstraint": "INDEPENDENT_CONDITIONS"
+        }
+      ],
+      "reviewRequired": [
+        {
+          "dimension": "Q4",
+          "reason": "UNRESOLVED"
+        }
+      ]
+    },
+    "resultHash": "d78d92d7905541de43a309f8478174519098d3e018faac8d723fbc2280927e77"
+  }
+}

@@ -1,0 +1,195 @@
+{
+  "dimensions": [
+    "Q4"
+  ],
+  "evidence": {
+    "sources": [
+      {
+        "id": "E04",
+        "text": "We get information into our brains through a process called encoding, which is the input of information into the memory system. Once we receive sensory information from the environment, our brains label or code it. We organize the information with other similar information and connect new concepts to existing concepts. Encoding information occurs through automatic processing and effortful processing.\n\nThere are three types of encoding. The encoding of words and their meaning is known as semantic encoding. It was first demonstrated by William Bousfield (1935) in an experiment in which he asked people to memorize words. The 60 words were actually divided into 4 categories of meaning, although the participants did not know this because the words were randomly presented. When they were asked to remember the words, they tended to recall them in categories, showing that they paid attention to the meanings of the words as they learned them.\n\nVisual encoding is the encoding of images, and acoustic encoding is the encoding of sounds, words in particular. To see how visual encoding works, read over this list of words: car, level, dog, truth, book, value. If you were asked later to recall the words from this list, which ones do you think you’d most likely remember? You would probably have an easier time recalling the words car, dog, and book, and a more difficult time recalling the words level, truth, and value. Why is this? Because you can recall images (mental pictures) more easily than words alone. When you read the words car, dog, and book you created images of these things in your mind. These are concrete, high-imagery words. On the other hand, abstract words like level, truth, and value are low-imagery words. High-imagery words are encoded both visually and semantically (Paivio, 1986), thus building a stronger memory.\n\nNow let’s turn our attention to acoustic encoding. You are driving in your car and a song comes on the radio that you haven’t heard in at least 10 years, but you sing along, recalling every word. In the United States, children often learn the alphabet through song, and they learn the number of days in each month through rhyme: “Thirty days hath September, / April, June, and November; / All the rest have thirty-one, / Save February, with twenty-eight days clear, / And twenty-nine each leap year.” These lessons are easy to remember because of acoustic encoding. We encode the sounds the words make. This is one of the reasons why much of what we teach young children is done through song, rhyme, and rhythm."
+      }
+    ],
+    "goals": [
+      "识别并区分三种编码在真实回忆差异中的隐藏成因"
+    ],
+    "prerequisites": [
+      "能够理解记忆编码与回忆的日常含义",
+      "不需要心理学专业背景",
+      "用中文识别并区分语义编码、视觉编码与声学编码的定义及差异（语义：词语及意义；视觉：图像；声学：声音尤其是词语发音）",
+      "解释编码作为信息输入记忆系统的过程，包括接收感觉信息后大脑对其标记或编码并通过自动或努力加工"
+    ],
+    "desiredDepth": "working_fluency",
+    "authorityBoundaries": [
+      "本次评估只涉及所给来源、明确的教学范围和实际展示的产物；脚本作答用于检查工作流，不代表真实学习者。"
+    ],
+    "artifacts": [
+      {
+        "id": "current-author-selected-option",
+        "text": "锤子、鸟、树作为具体高意象词引发了视觉与语义双重编码，真理、平等、概念因抽象缺乏视觉编码故记忆较弱"
+      },
+      {
+        "id": "current-author-explanation",
+        "text": "教材表明具体高意象词被视觉与语义共同编码，抽象词缺少视觉编码，从而回忆率不同。"
+      }
+    ],
+    "exposure": [
+      {
+        "id": "prior-0",
+        "text": "记忆编码是把环境信息贴上标签的过程。语义编码处理词语及意义，如Bousfield实验中被试按含义分类回忆；视觉编码处理图像，具体词易引发心理图片；声学编码处理声音特别是词语发音，如儿歌韵律。高意象词可同时视觉与语义编码，形成更强记忆；抽象词缺乏视觉编码。这些机制取决于信息呈现方式，可单独或联合作用。"
+      },
+      {
+        "id": "prior-1",
+        "text": "通过新词表案例看视觉编码如何与语义编码联合作用。先分类意象水平，再应用双重编码规则，可预测哪些词获得视觉辅助。"
+      },
+      {
+        "id": "prior-2",
+        "text": "呈现词表：'铃铛、荣誉、铅笔、悲伤、苹果、尺度'。被试安静默读并自发形成图像，未听音。需判定哪些词获得视觉编码辅助。"
+      },
+      {
+        "id": "prior-3",
+        "text": "词表六词"
+      },
+      {
+        "id": "prior-4",
+        "text": "默读且形成图像条件"
+      },
+      {
+        "id": "prior-5",
+        "text": "高意象词视觉+语义编码规则"
+      },
+      {
+        "id": "prior-6",
+        "text": "根据上述分类与规则，哪些词在记忆中获得了视觉编码辅助？"
+      },
+      {
+        "id": "prior-7",
+        "text": "铃铛、铅笔、苹果"
+      },
+      {
+        "id": "prior-8",
+        "text": "荣誉、悲伤、尺度"
+      },
+      {
+        "id": "prior-9",
+        "text": "全部六个词"
+      },
+      {
+        "id": "prior-10",
+        "text": "铃铛、铅笔、苹果获得视觉编码辅助"
+      },
+      {
+        "id": "prior-11",
+        "text": "正确：三者为具体高意象词，默读成像触发视觉+语义编码。"
+      },
+      {
+        "id": "prior-12",
+        "text": "具体高意象词在默读条件下获得视觉编码辅助，抽象词否。"
+      },
+      {
+        "id": "prior-13",
+        "text": "此时哪些词主要依赖声学编码而非视觉编码？"
+      },
+      {
+        "id": "prior-14",
+        "text": "全部六个词（声学编码）"
+      },
+      {
+        "id": "prior-15",
+        "text": "仅抽象词"
+      },
+      {
+        "id": "prior-16",
+        "text": "词表改为由录音播放且不提供图像，要求被试只关注发音韵律"
+      },
+      {
+        "id": "prior-17",
+        "text": "{\"prompt\":\"根据上述分类与规则，哪些词在记忆中获得了视觉编码辅助？\",\"options\":[{\"id\":\"A\",\"text\":\"铃铛、铅笔、苹果\"},{\"id\":\"B\",\"text\":\"荣誉、悲伤、尺度\"},{\"id\":\"C\",\"text\":\"全部六个词\"}],\"response\":\"A\",\"correct\":true,\"feedback\":\"正确：三者为具体高意象词，默读成像触发视觉+语义编码。\",\"debrief\":\"具体高意象词在默读条件下获得视觉编码辅助，抽象词否。\"}"
+      },
+      {
+        "id": "prior-18",
+        "text": "仅具体高意象词在默读成像条件下触发视觉通道，与教材机制一致"
+      },
+      {
+        "id": "prior-19",
+        "text": "正确：听觉通道使所有词通过声音编码，视觉未参与。"
+      },
+      {
+        "id": "prior-20",
+        "text": "移除视觉通道后，声学编码统御全部词，打破原双重编码边界。"
+      },
+      {
+        "id": "prior-21",
+        "text": "{\"prompt\":\"此时哪些词主要依赖声学编码而非视觉编码？\",\"options\":[{\"id\":\"A\",\"text\":\"铃铛、铅笔、苹果\"},{\"id\":\"B\",\"text\":\"全部六个词（声学编码）\"},{\"id\":\"C\",\"text\":\"仅抽象词\"}],\"response\":\"B\",\"correct\":true,\"feedback\":\"正确：听觉通道使所有词通过声音编码，视觉未参与。\",\"debrief\":\"移除视觉通道后，声学编码统御全部词，打破原双重编码边界。\"}"
+      },
+      {
+        "id": "prior-22",
+        "text": "编码类型有清晰边界：视觉编码必须依赖心理图像的形成，若刺激仅为声音而未引发图像，则不属于视觉编码；声学编码可独立运作。教材中高意象词双重编码仅在默读或见文字时成立，听到词未必触发视觉。"
+      },
+      {
+        "id": "prior-23",
+        "text": "注意：广播新闻纯声音无图像时只有声学编码；若同时阅读文稿则可能叠加视觉编码。不可把任何词语呈现都默认为视觉编码。"
+      },
+      {
+        "id": "prior-24",
+        "text": "编码始于环境感觉信息进入大脑。以嗅觉为例：人在花园接收花香这一感觉信息后，大脑自动记录气味特征（自动加工），随后努力将其标记为“玫瑰”并与已知植物概念联系（努力加工）。此过程显示接收刺激后贴标签可通过两条通道并行或顺序发生，自动加工无需刻意努力，努力加工则需主动归类。"
+      },
+      {
+        "id": "prior-25",
+        "text": "声学编码在韵律呈现时效果更强。下面用独立案例看预测。"
+      },
+      {
+        "id": "prior-26",
+        "text": "两组幼儿学习月份天数：甲组通过儿歌《三十天》韵律演唱，乙组由成人随机朗读相同词句无韵律。预期哪组记忆成绩更高？"
+      },
+      {
+        "id": "prior-27",
+        "text": "甲组（儿歌韵律声学编码辅助）"
+      },
+      {
+        "id": "prior-28",
+        "text": "乙组（随机朗读无韵律）"
+      },
+      {
+        "id": "prior-29",
+        "text": "正确：韵律触发声学编码，符合教材儿歌易记机制。"
+      },
+      {
+        "id": "prior-30",
+        "text": "{\"prompt\":\"两组幼儿学习月份天数：甲组通过儿歌《三十天》韵律演唱，乙组由成人随机朗读相同词句无韵律。预期哪组记忆成绩更高？\",\"options\":[{\"id\":\"A\",\"text\":\"甲组（儿歌韵律声学编码辅助）\"},{\"id\":\"B\",\"text\":\"乙组（随机朗读无韵律）\"}],\"response\":\"A\",\"correct\":true,\"feedback\":\"正确：韵律触发声学编码，符合教材儿歌易记机制。\"}"
+      },
+      {
+        "id": "prior-31",
+        "text": "编码边界需注意：自动加工虽常无意识发生，但并非所有感觉输入都必然成功编码。若注意力被占用，即使感觉信息到达，标签或编码也可能薄弱。努力加工则依赖可用认知资源。"
+      },
+      {
+        "id": "prior-32",
+        "text": "注意：在嘈杂街道边走边聊天时，对路牌颜色的自动编码可能失效，需回头努力注视才完成视觉标签；不可认为任何呈现的感觉必被编码。"
+      },
+      {
+        "id": "prior-33",
+        "text": "三种编码按感官通道与符号性质区分：语义重意义，视觉重图像，声学重声音；具体词常双重编码，抽象词缺视觉。"
+      },
+      {
+        "id": "prior-34",
+        "text": "课程资料中提到，高意象词会被同时以视觉和语义方式编码，从而建立更强记忆；而抽象低意象词缺乏视觉编码（原文指出 concrete, high-imagery words 被双重编码，abstract words 为低意象词）。\n\n举例：想象记忆“大象”和“勇敢”两个词。默读“大象”时，你脑中自然浮现灰色庞然大物形象，同时理解它指一种动物，于是视觉与语义双编码；而“勇敢”很难绘出具体画面，只靠含义记忆。这就直观展示了具体词获得视觉辅助、抽象词不获得的区别。\n\n此例子的适用边界：它假设学习者像补充案例那样安静默读并自发形成图像。若改为听音频而未鼓励想象，可能只触发声学编码；若具体词对读者过于陌生（如罕见动植物），心理图像模糊，双重编码优势也会减弱。此外，本例仅说明视觉与语义联合，不涉及声学编码规则。"
+      }
+    ],
+    "question": {
+      "prompt": "被试阅读一组词：'锤子、真理、鸟、平等、树、概念'。随后意外回忆测试中，被试轻松记起'锤子、鸟、树'，较难记起'真理、平等、概念'。基于教材中的编码机制，这一回忆差异最可能是由什么导致的？",
+      "options": [
+        {
+          "id": "teaching_brief_f4ba4235-0373-4491-a996-850e0557a856_practice_1_initial_A",
+          "text": "锤子、鸟、树作为具体高意象词引发了视觉与语义双重编码，真理、平等、概念因抽象缺乏视觉编码故记忆较弱"
+        },
+        {
+          "id": "teaching_brief_f4ba4235-0373-4491-a996-850e0557a856_practice_1_initial_B",
+          "text": "所有词均通过声学编码，因发音节奏差异导致锤子、鸟、树更易回忆"
+        },
+        {
+          "id": "teaching_brief_f4ba4235-0373-4491-a996-850e0557a856_practice_1_initial_C",
+          "text": "所有词仅通过语义编码，因类别归属明显性差异导致具体词易回忆"
+        }
+      ]
+    }
+  }
+}

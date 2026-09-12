@@ -1,0 +1,313 @@
+{
+  "task": {
+    "caseId": "N-E02-retest",
+    "runId": "N-E02-retest-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-E02-retest.json",
+    "inputHash": "3c2110825b1a9354a6df1da28ffc505d996218c4aae0e47096b1234655644ab3",
+    "population": "natural",
+    "sourceId": "E02"
+  },
+  "inputHash": "3c2110825b1a9354a6df1da28ffc505d996218c4aae0e47096b1234655644ab3",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "prepare-context-current": "7ba4e5f12479fdd59f75267de97b752887bf89c11716222d0d2e126c12f42fc2",
+      "solve-current": "bcfc4fcd48c81b5df236e4c555ac41adb84522cb399839d710421c0d1e727ac5",
+      "correctness": "30e3c9bb7463908545b171b4620b557a071a0377a43a6d16c877f7f1bf5b1c76",
+      "artifact-audit": "30e3c9bb7463908545b171b4620b557a071a0377a43a6d16c877f7f1bf5b1c76"
+    },
+    "stages": {
+      "prepare-context-current": {
+        "contexts": [
+          {
+            "taskId": "current",
+            "status": "ready",
+            "reason": "题干 history h51 直接给出实验舱Z客观设定，事实与学习者推理混合但可截取前半事实原文，无指代不明或答案泄漏，情景可完整分离。",
+            "premises": [
+              {
+                "ref": "e103",
+                "quote": "实验舱Z完全黑暗，无有机物输入。放入物种A（异养，摄食有机物）和物种B（化能合成自养，利用Fe²⁺）。舱内提供Fe²⁺。30天后A死亡，B存活。",
+                "proposedRef": "h51",
+                "witness": {
+                  "id": "e103",
+                  "pointer": "/history/50/text",
+                  "role": "prior_exposure",
+                  "kind": "text",
+                  "value": "实验舱Z完全黑暗，无有机物输入。放入物种A（异养，摄食有机物）和物种B（化能合成自养，利用Fe²⁺）。舱内提供Fe²⁺。30天后A死亡，B存活。某学习者提出推理：步骤1：黑暗环境使光合不可能，故任何自养生物无法获能。步骤2：B是自养，因此B应死亡，但观测B存活，说明步骤1错。步骤3：B实际利用Fe²⁺化能合成获能，A因无有机物死亡。以下哪项诊断最准确？",
+                  "valueHash": "f123887140f1fed16addb3c9b99347c61185b2bde2aeb1acc252807db6c95a84"
+                }
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "solve-current": {
+        "status": "resolved",
+        "solution": "依据e3，自养生物包括化能合成型，其能量来源为无机分子而非光；黑暗仅使光合不可能，B作为化能合成自养利用Fe²⁺获能存活，故学习者步骤1‘任何自养无法获能’错误，选项A诊断准确。B称观测有误、C称舱内无能量均违背e3与题设。",
+        "witnesses": [
+          {
+            "id": "e3",
+            "pointer": "/sources/0/text",
+            "role": "source",
+            "kind": "text",
+            "value": "All living things require energy in one form or another. Energy is required by most complex metabolic pathways (often in the form of adenosine triphosphate, ATP), especially those responsible for building large molecules from smaller compounds, and life itself is an energy-driven process. Living organisms would not be able to assemble macromolecules (proteins, lipids, nucleic acids, and complex carbohydrates) from their monomeric subunits without a constant energy input.\n\nIt is important to understand how organisms acquire energy and how that energy is passed from one organism to another through food webs and their constituent food chains. Food webs illustrate how energy flows directionally through ecosystems, including how efficiently organisms acquire it, use it, and how much remains for use by other organisms of the food web.\n\nEnergy is acquired by living things in three ways: photosynthesis, chemosynthesis, and the consumption and digestion of other living or previously living organisms by heterotrophs.\n\nPhotosynthetic and chemosynthetic organisms are both grouped into a category known as autotrophs: organisms capable of synthesizing their own food (more specifically, capable of using inorganic carbon as a carbon source). Photosynthetic autotrophs (photoautotrophs) use sunlight as an energy source, whereas chemosynthetic autotrophs (chemoautotrophs) use inorganic molecules as an energy source. Autotrophs are critical for all ecosystems. Without these organisms, energy would not be available to other living organisms and life itself would not be possible.",
+            "valueHash": "6bfef5addb7581a7a5154aa3f44613f99aea8cec06cb8fcd5a7616deee504d45"
+          },
+          {
+            "id": "e14",
+            "pointer": "/question/prompt",
+            "role": "question",
+            "kind": "text",
+            "value": "实验舱Z完全黑暗，无有机物输入。放入物种A（异养，摄食有机物）和物种B（化能合成自养，利用Fe²⁺）。舱内提供Fe²⁺。30天后A死亡，B存活。某学习者提出推理：步骤1：黑暗环境使光合不可能，故任何自养生物无法获能。步骤2：B是自养，因此B应死亡，但观测B存活，说明步骤1错。步骤3：B实际利用Fe²⁺化能合成获能，A因无有机物死亡。以下哪项诊断最准确？",
+            "valueHash": "f123887140f1fed16addb3c9b99347c61185b2bde2aeb1acc252807db6c95a84"
+          },
+          {
+            "id": "e17",
+            "pointer": "/question/options/0/text",
+            "role": "question",
+            "kind": "text",
+            "value": "步骤1错误，因为化能合成不依赖光，自养生物仍可能获能",
+            "valueHash": "b7109a7c7330298397b7f02c78426ef4a0b3bedabeba3760ea0bfd8bc7033fc4"
+          }
+        ],
+        "reviewReasons": []
+      },
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "clear",
+            "affected": [],
+            "reason": "作者产物选定选项A（e24）并解释（e26）：步骤1错因化能合成不依赖光、自养仍可能获能，B存活因其化能路径匹配Fe²⁺。题设事实（e14,e139）固定B为化能合成自养利用Fe²⁺、黑暗下存活；来源e3明确化能合成自养利用无机分子而非光。断言与给定事实规则一致，无混淆条件或泛化错误。",
+            "refs": [
+              "e14",
+              "e17",
+              "e24",
+              "e26",
+              "e3",
+              "e139"
+            ],
+            "challenge": {
+              "status": "closed",
+              "reason": "固定题设事实：黑暗、无有机物、有Fe²⁺、B是化能合成自养且存活。任何使'步骤1正确（任何自养无法获能）'的反例均要求B不自养或不能获能，与已给属性及观测不相容，被给定事实排除。",
+              "refs": [
+                "e14",
+                "e139",
+                "e3"
+              ]
+            },
+            "witnesses": [
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "实验舱Z完全黑暗，无有机物输入。放入物种A（异养，摄食有机物）和物种B（化能合成自养，利用Fe²⁺）。舱内提供Fe²⁺。30天后A死亡，B存活。某学习者提出推理：步骤1：黑暗环境使光合不可能，故任何自养生物无法获能。步骤2：B是自养，因此B应死亡，但观测B存活，说明步骤1错。步骤3：B实际利用Fe²⁺化能合成获能，A因无有机物死亡。以下哪项诊断最准确？",
+                "valueHash": "f123887140f1fed16addb3c9b99347c61185b2bde2aeb1acc252807db6c95a84"
+              },
+              {
+                "id": "e17",
+                "pointer": "/question/options/0/text",
+                "role": "question",
+                "kind": "text",
+                "value": "步骤1错误，因为化能合成不依赖光，自养生物仍可能获能",
+                "valueHash": "b7109a7c7330298397b7f02c78426ef4a0b3bedabeba3760ea0bfd8bc7033fc4"
+              },
+              {
+                "id": "e24",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "步骤1错误，因为化能合成不依赖光，自养生物仍可能获能",
+                "valueHash": "b7109a7c7330298397b7f02c78426ef4a0b3bedabeba3760ea0bfd8bc7033fc4"
+              },
+              {
+                "id": "e26",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "正确诊断需识别黑暗仅排除光合，不排斥化能合成；B存活因其化能路径匹配Fe²⁺，步骤1错在泛化自养必光合。",
+                "valueHash": "1d7f436dd06fa16b130272158a72fc5bb8c9d129cbeb2f219e1c1775ed7b8916"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "All living things require energy in one form or another. Energy is required by most complex metabolic pathways (often in the form of adenosine triphosphate, ATP), especially those responsible for building large molecules from smaller compounds, and life itself is an energy-driven process. Living organisms would not be able to assemble macromolecules (proteins, lipids, nucleic acids, and complex carbohydrates) from their monomeric subunits without a constant energy input.\n\nIt is important to understand how organisms acquire energy and how that energy is passed from one organism to another through food webs and their constituent food chains. Food webs illustrate how energy flows directionally through ecosystems, including how efficiently organisms acquire it, use it, and how much remains for use by other organisms of the food web.\n\nEnergy is acquired by living things in three ways: photosynthesis, chemosynthesis, and the consumption and digestion of other living or previously living organisms by heterotrophs.\n\nPhotosynthetic and chemosynthetic organisms are both grouped into a category known as autotrophs: organisms capable of synthesizing their own food (more specifically, capable of using inorganic carbon as a carbon source). Photosynthetic autotrophs (photoautotrophs) use sunlight as an energy source, whereas chemosynthetic autotrophs (chemoautotrophs) use inorganic molecules as an energy source. Autotrophs are critical for all ecosystems. Without these organisms, energy would not be available to other living organisms and life itself would not be possible.",
+                "valueHash": "6bfef5addb7581a7a5154aa3f44613f99aea8cec06cb8fcd5a7616deee504d45"
+              },
+              {
+                "id": "e139",
+                "pointer": "/scenarioContext/0/text",
+                "role": "context",
+                "kind": "text",
+                "value": "实验舱Z完全黑暗，无有机物输入。放入物种A（异养，摄食有机物）和物种B（化能合成自养，利用Fe²⁺）。舱内提供Fe²⁺。30天后A死亡，B存活。",
+                "valueHash": "51f7f9fa346749a6f5db18c21090f874858df688440c3e66a3dd51d7cab9bd7f"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "kind": "quantities",
+            "status": "not_applicable",
+            "affected": [],
+            "reason": "当前题目（e14）及产物（e24,e26）无数值、百分比或单位演算断言；rates中数值仅关联priorExposure别题（如e85），非本任务范围。",
+            "contextHash": "30e3c9bb7463908545b171b4620b557a071a0377a43a6d16c877f7f1bf5b1c76",
+            "proposed": {
+              "kind": "quantities",
+              "status": "not_applicable",
+              "affected": [],
+              "reason": "当前题目（e14）及产物（e24,e26）无数值、百分比或单位演算断言；rates中数值仅关联priorExposure别题（如e85），非本任务范围。",
+              "refs": [
+                "e14",
+                "e24",
+                "e26"
+              ]
+            },
+            "reviewReasons": []
+          }
+        ],
+        "keys": [
+          {
+            "taskId": "current",
+            "status": "agrees",
+            "reason": "当前作者指定答案见于artifact selected-option（e24）即选项A文本（e17），解释（e26）指明黑暗仅排除光合、B化能路径匹配Fe²⁺故步骤1错。盲解（blindSolutions current）同样依据e3与题设得出选项A准确，理由完全一致：化能合成不依赖光使自养可能获能，步骤1泛化错误。无保留疑问，完整答案含义吻合。",
+            "refs": [
+              "e14",
+              "e17",
+              "e24",
+              "e26",
+              "e3"
+            ],
+            "witnesses": [
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "实验舱Z完全黑暗，无有机物输入。放入物种A（异养，摄食有机物）和物种B（化能合成自养，利用Fe²⁺）。舱内提供Fe²⁺。30天后A死亡，B存活。某学习者提出推理：步骤1：黑暗环境使光合不可能，故任何自养生物无法获能。步骤2：B是自养，因此B应死亡，但观测B存活，说明步骤1错。步骤3：B实际利用Fe²⁺化能合成获能，A因无有机物死亡。以下哪项诊断最准确？",
+                "valueHash": "f123887140f1fed16addb3c9b99347c61185b2bde2aeb1acc252807db6c95a84"
+              },
+              {
+                "id": "e17",
+                "pointer": "/question/options/0/text",
+                "role": "question",
+                "kind": "text",
+                "value": "步骤1错误，因为化能合成不依赖光，自养生物仍可能获能",
+                "valueHash": "b7109a7c7330298397b7f02c78426ef4a0b3bedabeba3760ea0bfd8bc7033fc4"
+              },
+              {
+                "id": "e24",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "步骤1错误，因为化能合成不依赖光，自养生物仍可能获能",
+                "valueHash": "b7109a7c7330298397b7f02c78426ef4a0b3bedabeba3760ea0bfd8bc7033fc4"
+              },
+              {
+                "id": "e26",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "正确诊断需识别黑暗仅排除光合，不排斥化能合成；B存活因其化能路径匹配Fe²⁺，步骤1错在泛化自养必光合。",
+                "valueHash": "1d7f436dd06fa16b130272158a72fc5bb8c9d129cbeb2f219e1c1775ed7b8916"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "All living things require energy in one form or another. Energy is required by most complex metabolic pathways (often in the form of adenosine triphosphate, ATP), especially those responsible for building large molecules from smaller compounds, and life itself is an energy-driven process. Living organisms would not be able to assemble macromolecules (proteins, lipids, nucleic acids, and complex carbohydrates) from their monomeric subunits without a constant energy input.\n\nIt is important to understand how organisms acquire energy and how that energy is passed from one organism to another through food webs and their constituent food chains. Food webs illustrate how energy flows directionally through ecosystems, including how efficiently organisms acquire it, use it, and how much remains for use by other organisms of the food web.\n\nEnergy is acquired by living things in three ways: photosynthesis, chemosynthesis, and the consumption and digestion of other living or previously living organisms by heterotrophs.\n\nPhotosynthetic and chemosynthetic organisms are both grouped into a category known as autotrophs: organisms capable of synthesizing their own food (more specifically, capable of using inorganic carbon as a carbon source). Photosynthetic autotrophs (photoautotrophs) use sunlight as an energy source, whereas chemosynthetic autotrophs (chemoautotrophs) use inorganic molecules as an energy source. Autotrophs are critical for all ecosystems. Without these organisms, energy would not be available to other living organisms and life itself would not be possible.",
+                "valueHash": "6bfef5addb7581a7a5154aa3f44613f99aea8cec06cb8fcd5a7616deee504d45"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q4",
+            "level": "U",
+            "reason": "The proposed judgment needs evidence review.",
+            "proposed": {
+              "dimension": "Q4",
+              "level": 1,
+              "reason": "题目e14结合e139情景与e3源定义具备充分前提；盲解blindSolutions确认选项A（e17）为可辩护答案键，无错误键或缺失前提。但priorExposure中prior-50(e129)已包含完全相同的本题题干与选项，构成对当前retest的question_only先前曝光，违背了目标e5‘新的问题独立检验’所需的适当独立性，使重测区分度弱化，故未达2分标准。",
+              "refs": [
+                "e14",
+                "e139",
+                "e3",
+                "e17",
+                "prior-50",
+                "blindSolutions"
+              ],
+              "issue": "exposure",
+              "exposureEvidence": [
+                {
+                  "taskId": "current",
+                  "kind": "question_only",
+                  "ref": "prior-50",
+                  "quote": "实验舱Z完全黑暗，无有机物输入。放入物种A（异养，摄食有机物）和物种B（化能合成自养，利用Fe²⁺）。舱内提供Fe²⁺。30天后A死亡，B存活。某学习者提出推理：…以下哪项诊断最准确？"
+                }
+              ]
+            },
+            "reviewReasons": [
+              "EXPOSED_SOLUTION_NOT_ESTABLISHED"
+            ]
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q4",
+          "level": "U",
+          "reason": "The proposed judgment needs evidence review.",
+          "proposed": {
+            "dimension": "Q4",
+            "level": 1,
+            "reason": "题目e14结合e139情景与e3源定义具备充分前提；盲解blindSolutions确认选项A（e17）为可辩护答案键，无错误键或缺失前提。但priorExposure中prior-50(e129)已包含完全相同的本题题干与选项，构成对当前retest的question_only先前曝光，违背了目标e5‘新的问题独立检验’所需的适当独立性，使重测区分度弱化，故未达2分标准。",
+            "refs": [
+              "e14",
+              "e139",
+              "e3",
+              "e17",
+              "prior-50",
+              "blindSolutions"
+            ],
+            "issue": "exposure",
+            "exposureEvidence": [
+              {
+                "taskId": "current",
+                "kind": "question_only",
+                "ref": "prior-50",
+                "quote": "实验舱Z完全黑暗，无有机物输入。放入物种A（异养，摄食有机物）和物种B（化能合成自养，利用Fe²⁺）。舱内提供Fe²⁺。30天后A死亡，B存活。某学习者提出推理：…以下哪项诊断最准确？"
+              }
+            ]
+          },
+          "reviewReasons": [
+            "EXPOSED_SOLUTION_NOT_ESTABLISHED"
+          ],
+          "constraints": [],
+          "proposedLevel": "U",
+          "proposedReason": "The proposed judgment needs evidence review."
+        }
+      ],
+      "reviewRequired": [
+        {
+          "dimension": "Q4",
+          "reason": "UNRESOLVED"
+        }
+      ]
+    },
+    "resultHash": "8b7489c100e2e91abad12f36320e074a1b191e7cece513ed0e0f6a5038b186dc"
+  }
+}

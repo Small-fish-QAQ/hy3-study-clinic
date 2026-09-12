@@ -1,0 +1,55 @@
+{
+  "dimensions": [
+    "Q5"
+  ],
+  "evidence": {
+    "sources": [
+      {
+        "id": "B-E01",
+        "text": "Your feet feel cold as you walk barefoot across the living room carpet in your cold house and then step onto the kitchen tile floor. This result is intriguing, since the carpet and tile floor are both at the same temperature. The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.\n\nSome materials conduct thermal energy faster than others. In general, good conductors of electricity (metals like copper, aluminum, gold, and silver) are also good heat conductors, whereas insulators of electricity (wood, plastic, and rubber) are poor heat conductors.\n\nThe (average) kinetic energy of a molecule in the hot body is higher than in the colder body. If two molecules collide, an energy transfer from the molecule with greater kinetic energy to the molecule with less kinetic energy occurs. The cumulative effect from all collisions results in a net flux of heat from the hot body to the colder body. The heat flux thus depends on the temperature difference ΔΤ=Τhot−Tcold. Therefore, you will get a more severe burn from boiling water than from hot tap water. Conversely, if the temperatures are the same, the net heat transfer rate falls to zero, and equilibrium is achieved. Owing to the fact that the number of collisions increases with increasing area, heat conduction depends on the cross-sectional area. If you touch a cold wall with your palm, your hand cools faster than if you just touch it with your fingertip."
+      }
+    ],
+    "goals": [
+      "评价本题的逐项评分与实际证据后果"
+    ],
+    "prerequisites": [
+      "知道温度与热传递是不同概念",
+      "能借助中文解释阅读简单英文科学教材",
+      "解释同温度地毯与瓷砖触感不同的原因：在相同温度和相同时间区间内，因热传递速率不同导致瓷砖接触皮肤热损失更大、温度下降更大，且其他条件相同。",
+      "识别热传递方向（从高温物体到低温物体）、热通量依赖温差ΔT=Thot−Tcold、以及温度相同时净热传递为零并达到热平衡。"
+    ],
+    "desiredDepth": "pass_oriented",
+    "authorityBoundaries": [
+      "本次评估只涉及所给来源、明确的教学范围和实际展示的产物；脚本作答用于检查工作流，不代表真实学习者。"
+    ],
+    "artifacts": [
+      {
+        "id": "product-feedback",
+        "text": "你已经展示了这项关键能力。"
+      }
+    ],
+    "exposure": [],
+    "question": {
+      "prompt": "在一个寒冷的房子里，你赤脚走过客厅地毯，然后踩到厨房瓷砖地板。地毯和瓷砖温度相同，但脚感不同。请解释这种不同触感的原因。",
+      "options": []
+    },
+    "rubric": [
+      {
+        "id": "criterion_182c7e6b-ceaa-4df7-86b0-cd144ebe5a61",
+        "text": "The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.",
+        "required": true
+      }
+    ],
+    "answer": "地毯和瓷砖可以具有相同温度，但从皮肤带走热量的速率不同，所以脚的温度下降和冷感不同。一般而言金属导热较快，木材、塑料和橡胶导热较差。大量分子相互作用的总效果是热从较热处流向较冷处，净热流与温差有关；温度相同时净热传递为零。其他条件相同，接触面积较大使导热更快，因此手掌接触冷墙通常比指尖冷得更快。",
+    "productJudgment": {
+      "criteria": [
+        {
+          "id": "criterion_182c7e6b-ceaa-4df7-86b0-cd144ebe5a61",
+          "result": "met"
+        }
+      ],
+      "feedback": "你已经展示了这项关键能力。",
+      "consequence": "granted"
+    }
+  }
+}

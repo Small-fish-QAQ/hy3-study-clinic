@@ -1,0 +1,284 @@
+{
+  "task": {
+    "caseId": "N-B-E01-repair",
+    "runId": "N-B-E01-repair-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-B-E01-repair.json",
+    "inputHash": "eca60be53bed70437b8c738a5493483a79155f92f387dac362804cdb1d569610",
+    "population": "natural",
+    "sourceId": "B-E01"
+  },
+  "inputHash": "eca60be53bed70437b8c738a5493483a79155f92f387dac362804cdb1d569610",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "correctness": "b0ccaaab35516f44666b83fbbd2a0c9180592a8beb370db79078194f572516ae",
+      "artifact-audit": "b0ccaaab35516f44666b83fbbd2a0c9180592a8beb370db79078194f572516ae"
+    },
+    "stages": {
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "defect",
+            "affected": [
+              "Q6"
+            ],
+            "reason": "artifact7(e31)总结条件'皮肤与物体温度相同、接触时间相同'下热量从较热皮肤流向物体且降温多侧导热快；但来源e3明确同温净热传递为零，e31自身矛盾。其新案例e35前提实为物体同温(20°C)皮肤33°C，不满足所述条件。作者将'物体同温'误述为'皮肤与物体同温'，导致规则前提错误。",
+            "refs": [
+              "e31",
+              "e3",
+              "e35"
+            ],
+            "challenge": {
+              "status": "counterexample",
+              "reason": "固定e31明示假设皮肤与物体温度相同，补充两者均33°C、时间同，依e3同温净热传递为零，皮肤降温均0，结论'降温多侧导热快'改变为不可诊断。",
+              "refs": [
+                "e31",
+                "e3"
+              ]
+            },
+            "witnesses": [
+              {
+                "id": "e31",
+                "pointer": "/artifacts/7/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "当皮肤与物体温度相同、接触时间相同时，热量从较热的皮肤流向物体。材料导热速率越高，单位时间内从皮肤带走的热量越多，皮肤温度下降就越大。因此，观察哪一侧皮肤降温更多，就能诊断那一侧的物体导热更快，而不是更慢。",
+                "valueHash": "5da57fc1920a8e6fc2b3591169225a50c77ade44fc69b06d534b84d577aca8db"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "Your feet feel cold as you walk barefoot across the living room carpet in your cold house and then step onto the kitchen tile floor. This result is intriguing, since the carpet and tile floor are both at the same temperature. The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.\n\nSome materials conduct thermal energy faster than others. In general, good conductors of electricity (metals like copper, aluminum, gold, and silver) are also good heat conductors, whereas insulators of electricity (wood, plastic, and rubber) are poor heat conductors.\n\nThe (average) kinetic energy of a molecule in the hot body is higher than in the colder body. If two molecules collide, an energy transfer from the molecule with greater kinetic energy to the molecule with less kinetic energy occurs. The cumulative effect from all collisions results in a net flux of heat from the hot body to the colder body. The heat flux thus depends on the temperature difference ΔΤ=Τhot−Tcold. Therefore, you will get a more severe burn from boiling water than from hot tap water. Conversely, if the temperatures are the same, the net heat transfer rate falls to zero, and equilibrium is achieved. Owing to the fact that the number of collisions increases with increasing area, heat conduction depends on the cross-sectional area. If you touch a cold wall with your palm, your hand cools faster than if you just touch it with your fingertip.",
+                "valueHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd"
+              },
+              {
+                "id": "e35",
+                "pointer": "/artifacts/9/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "1. 两物体初始温度相同（20°C），手指温度相同（33°C），接触时间相同（4秒），满足同温同时间前提。",
+                "valueHash": "24d8b4f8bfa044ec2c5ced5fc2bb4795ffe7545a90f6288b803153747944bcc5"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "kind": "quantities",
+            "status": "clear",
+            "affected": [],
+            "reason": "独立重算e37: 手指初温33°C，左至31°C降2°C，右至32.5°C降1.5°C，正确；失败题e17观测值直接给定无推导错。无单位公式误用。",
+            "refs": [
+              "e17",
+              "e37"
+            ],
+            "witnesses": [
+              {
+                "id": "e17",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "同温25°C下，皮肤接触金属勺5秒后温度降3°C，接触布垫降1°C。哪种解释符合此观察？",
+                "valueHash": "fab8e482e4998596820003cdf69821ddcddcff666e8dd444fa23c6586c9ad137"
+              },
+              {
+                "id": "e37",
+                "pointer": "/artifacts/10/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "2. 左手接触玻璃片后降温2°C（33→31），右手接触泡沫板后降温1.5°C（33→32.5），玻璃片侧皮肤热损失更大。",
+                "valueHash": "58b141b96ade36f9959c8a8f84c0d8875e59e58e4a9a4f68e322ddd388ee4f33"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ],
+        "keys": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 2,
+            "reason": "产物诊断(e25,e27)准确指出学生将同温同时间下皮肤降温大小与材料导热快慢因果弄反，补救解释(e31)正确阐述导热快则降温大，并提供新案例(e33-e43)作为可用相关下一检查，符合2分标准：support addresses evidenced gap and provides usable relevant next check。无实质错误。",
+            "refs": [
+              "e25",
+              "e27",
+              "e31",
+              "e33",
+              "e43"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e25",
+                "pointer": "/artifacts/4/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "你选择了“布垫导热比金属快，导致皮肤热损失更大”。原观察中金属勺侧皮肤5秒降3°C、布垫侧降1°C，降温更多的是金属侧，你的选项把导热更快归给了降温更少的布垫。",
+                "valueHash": "937879a4073cbdd8475d07090a860d0fec15218c865c94054da85869c748e5fa"
+              },
+              {
+                "id": "e27",
+                "pointer": "/artifacts/5/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "未建立“同温同时间下皮肤降温越大，说明接触材料导热速率越快”这一因果方向；把皮肤热损失大小与材料导热快慢的对应关系弄反了。",
+                "valueHash": "40d070b08ad631aded1145dc21148142c720727f1441e1c7179e2b9dcb0b48df"
+              },
+              {
+                "id": "e31",
+                "pointer": "/artifacts/7/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "当皮肤与物体温度相同、接触时间相同时，热量从较热的皮肤流向物体。材料导热速率越高，单位时间内从皮肤带走的热量越多，皮肤温度下降就越大。因此，观察哪一侧皮肤降温更多，就能诊断那一侧的物体导热更快，而不是更慢。",
+                "valueHash": "5da57fc1920a8e6fc2b3591169225a50c77ade44fc69b06d534b84d577aca8db"
+              },
+              {
+                "id": "e33",
+                "pointer": "/artifacts/8/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "新案例：夏日室内两物体均为20°C，小敏手指初始33°C。她同时用左右手食指分别接触玻璃片和泡沫板，4秒后左手指温降至31°C，右手指温降至32.5°C。请依据此观察判断哪种材料导热更快。",
+                "valueHash": "2822beec6283c9a504eeb77f25abf17dbecf65774e720190f64b5d1ed5f55814"
+              },
+              {
+                "id": "e43",
+                "pointer": "/artifacts/13/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "玻璃片导热比泡沫板快；该判断仅依据同温同时间下的皮肤降温差，不依赖其他未知属性。",
+                "valueHash": "95af6bd1bdf80f90db3a24d53507f222d06c6811e3ccafa69b540a4b0de53dd2"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q6",
+          "level": 0,
+          "reason": "artifact7(e31)总结条件'皮肤与物体温度相同、接触时间相同'下热量从较热皮肤流向物体且降温多侧导热快；但来源e3明确同温净热传递为零，e31自身矛盾。其新案例e35前提实为物体同温(20°C)皮肤33°C，不满足所述条件。作者将'物体同温'误述为'皮肤与物体同温'，导致规则前提错误。",
+          "refs": [
+            "e25",
+            "e27",
+            "e31",
+            "e33",
+            "e43"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e25",
+              "pointer": "/artifacts/4/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "你选择了“布垫导热比金属快，导致皮肤热损失更大”。原观察中金属勺侧皮肤5秒降3°C、布垫侧降1°C，降温更多的是金属侧，你的选项把导热更快归给了降温更少的布垫。",
+              "valueHash": "937879a4073cbdd8475d07090a860d0fec15218c865c94054da85869c748e5fa"
+            },
+            {
+              "id": "e27",
+              "pointer": "/artifacts/5/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "未建立“同温同时间下皮肤降温越大，说明接触材料导热速率越快”这一因果方向；把皮肤热损失大小与材料导热快慢的对应关系弄反了。",
+              "valueHash": "40d070b08ad631aded1145dc21148142c720727f1441e1c7179e2b9dcb0b48df"
+            },
+            {
+              "id": "e31",
+              "pointer": "/artifacts/7/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "当皮肤与物体温度相同、接触时间相同时，热量从较热的皮肤流向物体。材料导热速率越高，单位时间内从皮肤带走的热量越多，皮肤温度下降就越大。因此，观察哪一侧皮肤降温更多，就能诊断那一侧的物体导热更快，而不是更慢。",
+              "valueHash": "5da57fc1920a8e6fc2b3591169225a50c77ade44fc69b06d534b84d577aca8db"
+            },
+            {
+              "id": "e33",
+              "pointer": "/artifacts/8/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "新案例：夏日室内两物体均为20°C，小敏手指初始33°C。她同时用左右手食指分别接触玻璃片和泡沫板，4秒后左手指温降至31°C，右手指温降至32.5°C。请依据此观察判断哪种材料导热更快。",
+              "valueHash": "2822beec6283c9a504eeb77f25abf17dbecf65774e720190f64b5d1ed5f55814"
+            },
+            {
+              "id": "e43",
+              "pointer": "/artifacts/13/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "玻璃片导热比泡沫板快；该判断仅依据同温同时间下的皮肤降温差，不依赖其他未知属性。",
+              "valueHash": "95af6bd1bdf80f90db3a24d53507f222d06c6811e3ccafa69b540a4b0de53dd2"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [
+            {
+              "level": 0,
+              "code": "INDEPENDENT_CONDITIONS",
+              "detail": {
+                "kind": "conditions",
+                "status": "defect",
+                "affected": [
+                  "Q6"
+                ],
+                "reason": "artifact7(e31)总结条件'皮肤与物体温度相同、接触时间相同'下热量从较热皮肤流向物体且降温多侧导热快；但来源e3明确同温净热传递为零，e31自身矛盾。其新案例e35前提实为物体同温(20°C)皮肤33°C，不满足所述条件。作者将'物体同温'误述为'皮肤与物体同温'，导致规则前提错误。",
+                "refs": [
+                  "e31",
+                  "e3",
+                  "e35"
+                ],
+                "challenge": {
+                  "status": "counterexample",
+                  "reason": "固定e31明示假设皮肤与物体温度相同，补充两者均33°C、时间同，依e3同温净热传递为零，皮肤降温均0，结论'降温多侧导热快'改变为不可诊断。",
+                  "refs": [
+                    "e31",
+                    "e3"
+                  ]
+                },
+                "witnesses": [
+                  {
+                    "id": "e31",
+                    "pointer": "/artifacts/7/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "当皮肤与物体温度相同、接触时间相同时，热量从较热的皮肤流向物体。材料导热速率越高，单位时间内从皮肤带走的热量越多，皮肤温度下降就越大。因此，观察哪一侧皮肤降温更多，就能诊断那一侧的物体导热更快，而不是更慢。",
+                    "valueHash": "5da57fc1920a8e6fc2b3591169225a50c77ade44fc69b06d534b84d577aca8db"
+                  },
+                  {
+                    "id": "e3",
+                    "pointer": "/sources/0/text",
+                    "role": "source",
+                    "kind": "text",
+                    "value": "Your feet feel cold as you walk barefoot across the living room carpet in your cold house and then step onto the kitchen tile floor. This result is intriguing, since the carpet and tile floor are both at the same temperature. The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.\n\nSome materials conduct thermal energy faster than others. In general, good conductors of electricity (metals like copper, aluminum, gold, and silver) are also good heat conductors, whereas insulators of electricity (wood, plastic, and rubber) are poor heat conductors.\n\nThe (average) kinetic energy of a molecule in the hot body is higher than in the colder body. If two molecules collide, an energy transfer from the molecule with greater kinetic energy to the molecule with less kinetic energy occurs. The cumulative effect from all collisions results in a net flux of heat from the hot body to the colder body. The heat flux thus depends on the temperature difference ΔΤ=Τhot−Tcold. Therefore, you will get a more severe burn from boiling water than from hot tap water. Conversely, if the temperatures are the same, the net heat transfer rate falls to zero, and equilibrium is achieved. Owing to the fact that the number of collisions increases with increasing area, heat conduction depends on the cross-sectional area. If you touch a cold wall with your palm, your hand cools faster than if you just touch it with your fingertip.",
+                    "valueHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd"
+                  },
+                  {
+                    "id": "e35",
+                    "pointer": "/artifacts/9/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "1. 两物体初始温度相同（20°C），手指温度相同（33°C），接触时间相同（4秒），满足同温同时间前提。",
+                    "valueHash": "24d8b4f8bfa044ec2c5ced5fc2bb4795ffe7545a90f6288b803153747944bcc5"
+                  }
+                ],
+                "reviewReasons": []
+              }
+            }
+          ],
+          "proposedLevel": 2,
+          "proposedReason": "产物诊断(e25,e27)准确指出学生将同温同时间下皮肤降温大小与材料导热快慢因果弄反，补救解释(e31)正确阐述导热快则降温大，并提供新案例(e33-e43)作为可用相关下一检查，符合2分标准：support addresses evidenced gap and provides usable relevant next check。无实质错误。",
+          "decidingConstraint": "INDEPENDENT_CONDITIONS"
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "edd1d7d791305712c71b23990ce58d1ff0de23f3d8a7a86c46c3033a9d8c4edc"
+  }
+}

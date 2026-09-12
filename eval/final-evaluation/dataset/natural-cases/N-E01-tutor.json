@@ -1,0 +1,34 @@
+{
+  "dimensions": [
+    "Q1",
+    "Q3"
+  ],
+  "evidence": {
+    "sources": [
+      {
+        "id": "E01",
+        "text": "Your feet feel cold as you walk barefoot across the living room carpet in your cold house and then step onto the kitchen tile floor. This result is intriguing, since the carpet and tile floor are both at the same temperature. The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.\n\nSome materials conduct thermal energy faster than others. In general, good conductors of electricity (metals like copper, aluminum, gold, and silver) are also good heat conductors, whereas insulators of electricity (wood, plastic, and rubber) are poor heat conductors.\n\nThe (average) kinetic energy of a molecule in the hot body is higher than in the colder body. If two molecules collide, an energy transfer from the molecule with greater kinetic energy to the molecule with less kinetic energy occurs. The cumulative effect from all collisions results in a net flux of heat from the hot body to the colder body. The heat flux thus depends on the temperature difference ΔΤ=Τhot−Tcold. Therefore, you will get a more severe burn from boiling water than from hot tap water. Conversely, if the temperatures are the same, the net heat transfer rate falls to zero, and equilibrium is achieved. Owing to the fact that the number of collisions increases with increasing area, heat conduction depends on the cross-sectional area. If you touch a cold wall with your palm, your hand cools faster than if you just touch it with your fingertip."
+      }
+    ],
+    "goals": [
+      "请针对当前内容，用一个与资料不同但容易理解的例子解释关键关系，并说明例子的适用边界。"
+    ],
+    "prerequisites": [
+      "知道温度与热传递是不同概念",
+      "能借助中文解释阅读简单英文科学教材",
+      "Explain in Chinese why same-temperature carpet and tile feel different: because they have different rates of heat transfer (tile conducts faster from skin), causing greater heat loss and temperature drop on skin over the same time interval, while both floor materials are at the same temperature. Must retain the comparison boundary that temperatures are identical and other contact conditions are held same.",
+      "Explain and distinguish heat transfer direction, temperature difference, and thermal equilibrium: energy transfers from higher-kinetic-energy molecules to lower via collisions, cumulative effect yields net heat flux from hot to cold body; heat flux depends on temperature difference ΔT = T_hot - T_cold; if temperatures are same, net transfer rate is zero and equilibrium achieved."
+    ],
+    "desiredDepth": "working_fluency",
+    "authorityBoundaries": [
+      "本次评估只涉及所给来源、明确的教学范围和实际展示的产物；脚本作答用于检查工作流，不代表真实学习者。"
+    ],
+    "artifacts": [
+      {
+        "id": "tutor-reply",
+        "text": "课程资料里讲到，热传导依赖接触面积：相同温差下面积越大传热越多，比如冷墙用手掌比指尖冷却快（见《OpenStax：相同温度为什么触感不同》）。这便是当前冷墙案例的关键关系。\n举例：设想寒冬里一个均匀的0°C铁质扶手，你用食指尖轻触2秒， versus 用整只手掌包裹握2秒，材质与温差都相同。手掌接触面积大得多，从手带走的热量更多，因此手掌感觉冷得更快更厉害。这个例子换成了扶手和握持，不同于资料中的墙壁或地面。\n该例子的适用边界：它假设扶手温度一致、未戴隔热手套、接触时间短暂使扶手不会明显升温；若戴厚手套或握很久导致局部升温，面积带来的速率差就会被掩盖。"
+      }
+    ],
+    "exposure": []
+  }
+}

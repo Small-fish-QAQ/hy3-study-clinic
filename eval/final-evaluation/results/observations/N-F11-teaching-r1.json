@@ -1,0 +1,509 @@
+{
+  "task": {
+    "caseId": "N-F11-teaching",
+    "runId": "N-F11-teaching-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-F11-teaching.json",
+    "inputHash": "c93c7ff95949c75c16edb5c64c7e8cfb092e561277b8b3be120f15ad82055972",
+    "population": "natural",
+    "sourceId": "F11"
+  },
+  "inputHash": "c93c7ff95949c75c16edb5c64c7e8cfb092e561277b8b3be120f15ad82055972",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "correctness": "0b47054113ee3a02a475dbcf534f7c0065980e6e046c147ebb967265f2ad2e71",
+      "artifact-audit": "0b47054113ee3a02a475dbcf534f7c0065980e6e046c147ebb967265f2ad2e71"
+    },
+    "stages": {
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "defect",
+            "affected": [
+              "Q1"
+            ],
+            "reason": "Segment4 workedProcess startingState/inputs only provide 5u+2v=10 and non-negative real domain (e77,e79,e81), but result u=2,v=0 (e83) is justified by whyResultFollows citing unlisted condition u+v=2 (e85). The lesson itself states one equation yields multiple feasible combos (e75). Thus the artifact presents a unique solution not supported by its own listed constraints, misrepresenting solution-set type.",
+            "refs": [
+              "e77",
+              "e79",
+              "e81",
+              "e83",
+              "e85",
+              "e75"
+            ],
+            "challenge": {
+              "status": "counterexample",
+              "reason": "With only fixed premises 5u+2v=10, u,v≥0 real, the compatible case u=0,v=5 satisfies all given constraints yet negates the concluded result u=2,v=0, proving the conclusion unestablished from stated inputs.",
+              "refs": [
+                "e77",
+                "e79",
+                "e81",
+                "e83"
+              ]
+            },
+            "witnesses": [
+              {
+                "id": "e77",
+                "pointer": "/artifacts/31/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "大包u张、小包v张，域为非负实数，总重约束5u+2v=10",
+                "valueHash": "24aa3a60404b96d578c70e3755993da794fb0182a6169ae424ba440bf78a20d2"
+              },
+              {
+                "id": "e79",
+                "pointer": "/artifacts/32/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "5u+2v=10",
+                "valueHash": "0ef677831e618574120b92dcc5927f0009e82f9a4e40764322aaaa3ff8376cfa"
+              },
+              {
+                "id": "e81",
+                "pointer": "/artifacts/33/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "域非负实数",
+                "valueHash": "b0ee359169f17c1532c655e8ea499a00e8cb376a7e68cbcb3a5e463c13b1d86f"
+              },
+              {
+                "id": "e83",
+                "pointer": "/artifacts/34/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "u=2,v=0",
+                "valueHash": "a76890b85ea3a2dcfa5a7dbe9c33620a35109fe8d51663ae4ea300573af3dd65"
+              },
+              {
+                "id": "e85",
+                "pointer": "/artifacts/35/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "u+v=2与5u+2v=10联立得唯一解且落域",
+                "valueHash": "1d16738f925e74a045214f6136cd8dcdeeab9b81f3f0709bc8dfcec49e579a04"
+              },
+              {
+                "id": "e75",
+                "pointer": "/artifacts/30/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "设计新增条件需独立且相容。例如大包重5千克、小包重2千克，总重10千克，记大包u、小包v为非负实数，有5u+2v=10。仅此式时，u=0,v=5与u=2,v=0都可行，解不唯一。下面逐步体会添加独立等式的效果。",
+                "valueHash": "53e03a00f83757977f8f30620027468f40163ef64ef2deb53dd02c06e14041e5"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "kind": "quantities",
+            "status": "clear",
+            "affected": [],
+            "reason": "Recomputed independently: pine case 2p+3m=18 & p+m=8 => p=6,m=2 (e33,e35,e39); budget transfer 4p+2m=24 & p+m=8 => p=4,m=4 (e59,e67); weight case 5u+2v=10 & u+v=2 => u=2,v=0 (e79,e85); width transfer 3x+y=8 & x+y=3 => x=2.5,y=0.5 (e103,e111); integer domain enumeration for 4m+n=6 correct (e113). All magnitudes and units consistent, no derivation error.",
+            "refs": [
+              "e33",
+              "e35",
+              "e39",
+              "e59",
+              "e67",
+              "e79",
+              "e85",
+              "e103",
+              "e111",
+              "e113"
+            ],
+            "witnesses": [
+              {
+                "id": "e33",
+                "pointer": "/artifacts/9/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "2p+3m=18",
+                "valueHash": "5082fdba06d7eca6ff6507592654d7b759164770bae78b734b2d3a6339262954"
+              },
+              {
+                "id": "e35",
+                "pointer": "/artifacts/10/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "p+m=8",
+                "valueHash": "20eded71bce52c1573a55822131fb3498ef1a6f97a2542a6771e6ea478e13c03"
+              },
+              {
+                "id": "e39",
+                "pointer": "/artifacts/12/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "p=6,m=2",
+                "valueHash": "2c87166e208a5b2535fe4b581d03c598716acf85650333a794edb267b1d55c25"
+              },
+              {
+                "id": "e59",
+                "pointer": "/artifacts/22/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "p=4,m=4（由4p+2m=24与p+m=8得）",
+                "valueHash": "53566bbe99121ac21714e2dac6840794e878cc8ba7319a0be12f48be1ef1a400"
+              },
+              {
+                "id": "e67",
+                "pointer": "/artifacts/26/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "原面积条件作废，改为预算：松树每棵4元、枫树2元，总预算24元，总棵数仍8，域非负整数。",
+                "valueHash": "f0f97c179636c9af11301bb7e3fd790b4bc708a6fd3b4737312c13657b352f3a"
+              },
+              {
+                "id": "e79",
+                "pointer": "/artifacts/32/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "5u+2v=10",
+                "valueHash": "0ef677831e618574120b92dcc5927f0009e82f9a4e40764322aaaa3ff8376cfa"
+              },
+              {
+                "id": "e85",
+                "pointer": "/artifacts/35/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "u+v=2与5u+2v=10联立得唯一解且落域",
+                "valueHash": "1d16738f925e74a045214f6136cd8dcdeeab9b81f3f0709bc8dfcec49e579a04"
+              },
+              {
+                "id": "e103",
+                "pointer": "/artifacts/44/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "x=2.5,y=0.5（由3x+y=8与x+y=3得）",
+                "valueHash": "40588b848e7af4c9425c253e5cfab39000b6837f57af64262e097a3274dba3f6"
+              },
+              {
+                "id": "e111",
+                "pointer": "/artifacts/48/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "原总重条件作废，改为宽度：宽卡3宽、窄卡1宽，总宽8，域非负实数，新增总张数3。",
+                "valueHash": "e4afe64660264b6571946337667f66f57b290afa8367141e1bb08011ae69f613"
+              },
+              {
+                "id": "e113",
+                "pointer": "/artifacts/49/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "解的可行性还受变量域边界控制。即使代数得出候选值，若域从非负实数改为非负整数，原候选可能越界。设每板长贴纸长4单位、短贴纸长1单位，总长为6单位，记长板m、短板n为非负实数则有4m+n=6，得m=1.5,n=0等；若题设明确要求整张，则m,n必须非负整数，此时4m+n=6仅有m=1,n=2（m=0时n=6；m=1时n=2；m≥2时n负）。代数候选若含小数便不可行，须回到现实约定检验。",
+                "valueHash": "938a721dcdd86bfe3386a9244062f6c7d497fe616a22c07252b318a8b460ff84"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ],
+        "keys": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 1,
+            "reason": "作者断言在段5（e113）称4m+n=6整数域仅有m=1,n=2，但同句括号列出m=0,n=6，构成局部非必要断言缺陷；核心转化与域边界方法仍由源e3支持，未改变机制或发明引用。",
+            "refs": [
+              "e113",
+              "e3"
+            ],
+            "issue": "content",
+            "witnesses": [
+              {
+                "id": "e113",
+                "pointer": "/artifacts/49/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "解的可行性还受变量域边界控制。即使代数得出候选值，若域从非负实数改为非负整数，原候选可能越界。设每板长贴纸长4单位、短贴纸长1单位，总长为6单位，记长板m、短板n为非负实数则有4m+n=6，得m=1.5,n=0等；若题设明确要求整张，则m,n必须非负整数，此时4m+n=6仅有m=1,n=2（m=0时n=6；m=1时n=2；m≥2时n负）。代数候选若含小数便不可行，须回到现实约定检验。",
+                "valueHash": "938a721dcdd86bfe3386a9244062f6c7d497fe616a22c07252b318a8b460ff84"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "设计展板时，长条卡片每张宽二厘米，短条卡片每张宽一厘米。把长条张数记为x、短条张数记为y，若总宽度为八厘米，就有2x+y=8。这里先把x、y当作非负实数，表示也允许按比例裁切卡片；若题目后来要求整张，就必须另加非负整数条件。变量范围是题设的一部分，不能从生活习惯自行补上。\n仅有2x+y=8时，通常不唯一：x=0、y=8，或x=2、y=4都满足；在非负实数范围内还有更多组合。列举两个不同可行组合，就足以证明“唯一确定”不成立，但不能因此说所有任意组合都可行。每个候选仍须满足方程与非负约束。\n若再知道总张数为五，即x+y=5，把两个方程相减得到x=3，再代回得y=2。这个组合同时满足宽度八厘米、总张数五和非负条件，因此是合法解。两个方程相减只是一种方法，代入或合适的图示也可以；评判应看是否保持等价与验证完整，而不是必须照抄某一解法。\n第二条条件不一定提供新信息。如果新增4x+2y=16，它恰好是原方程每项乘二，所以仍表示同一限制，多解不会自动变成唯一解。如果新增4x+2y=18，则与原方程矛盾：原式乘二必须等于十六，不可能同时等于十八。在这种情况下，应报告无解并指出冲突，不应为了给出数值而悄悄修改题设。\n变量范围也会影响结果。例如x+y=1且x-y=0给出x=y=0.5。在允许比例裁切的非负实数模型里，这是一组合法解；若限定必须为整张卡片，则没有整数解。数学运算得到候选值之后，还须回到现实约定检验候选是否可用。\n处理约束问题可以先列清变量、单位与范围，再把每句话翻译成式子，然后判断信息是否独立、是否一致，最后代回所有条件。遇到数据不足时，给出两组可行解和需要补充的独立信息，通常比只写“不能算”更有帮助。遇到矛盾时，解释哪两条不能同时成立。这个单元不要求矩阵或专门术语，重点是理解条件如何缩小可能性集合。",
+                "valueHash": "3d467962cceddb9a766ded25aaa2f5d1c9767ee6b9307e50472157ea664b2422"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "dimension": "Q3",
+            "level": 2,
+            "reason": "具备前提（简单方程、代入检验、非负数）的学习者能跟随变量定义、逐句译式、独立性检验与域边界（如e27、e29、e113），示例展示解集合类型与整数/实数边界，整体可用，局部矛盾不影响主流程。",
+            "refs": [
+              "e27",
+              "e113"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e27",
+                "pointer": "/artifacts/6/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "处理配比文字时，先写明变量代表什么、单位与允许范围（如非负实数或非负整数），再把每句话转成等式或不等式。例如规划两种布料：每卷宽4米与2米，总宽16米，记a,b为卷数，域为非负整数（整卷），则4a+2b=16。这一步不求解，只建立约束集。后续检查这些式子是否互相独立：若一条是另一条的倍数，则未新增信息；若数值冲突则无解。该模型让我们看清哪些自由度仍存。",
+                "valueHash": "bfd31e45affd782da893a200fb9e37c67b856e28826c7e6c5f116554543219f7"
+              },
+              {
+                "id": "e113",
+                "pointer": "/artifacts/49/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "解的可行性还受变量域边界控制。即使代数得出候选值，若域从非负实数改为非负整数，原候选可能越界。设每板长贴纸长4单位、短贴纸长1单位，总长为6单位，记长板m、短板n为非负实数则有4m+n=6，得m=1.5,n=0等；若题设明确要求整张，则m,n必须非负整数，此时4m+n=6仅有m=1,n=2（m=0时n=6；m=1时n=2；m≥2时n负）。代数候选若含小数便不可行，须回到现实约定检验。",
+                "valueHash": "938a721dcdd86bfe3386a9244062f6c7d497fe616a22c07252b318a8b460ff84"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q1",
+          "level": 0,
+          "reason": "Segment4 workedProcess startingState/inputs only provide 5u+2v=10 and non-negative real domain (e77,e79,e81), but result u=2,v=0 (e83) is justified by whyResultFollows citing unlisted condition u+v=2 (e85). The lesson itself states one equation yields multiple feasible combos (e75). Thus the artifact presents a unique solution not supported by its own listed constraints, misrepresenting solution-set type.",
+          "refs": [
+            "e113",
+            "e3"
+          ],
+          "issue": "content",
+          "witnesses": [
+            {
+              "id": "e113",
+              "pointer": "/artifacts/49/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "解的可行性还受变量域边界控制。即使代数得出候选值，若域从非负实数改为非负整数，原候选可能越界。设每板长贴纸长4单位、短贴纸长1单位，总长为6单位，记长板m、短板n为非负实数则有4m+n=6，得m=1.5,n=0等；若题设明确要求整张，则m,n必须非负整数，此时4m+n=6仅有m=1,n=2（m=0时n=6；m=1时n=2；m≥2时n负）。代数候选若含小数便不可行，须回到现实约定检验。",
+              "valueHash": "938a721dcdd86bfe3386a9244062f6c7d497fe616a22c07252b318a8b460ff84"
+            },
+            {
+              "id": "e3",
+              "pointer": "/sources/0/text",
+              "role": "source",
+              "kind": "text",
+              "value": "设计展板时，长条卡片每张宽二厘米，短条卡片每张宽一厘米。把长条张数记为x、短条张数记为y，若总宽度为八厘米，就有2x+y=8。这里先把x、y当作非负实数，表示也允许按比例裁切卡片；若题目后来要求整张，就必须另加非负整数条件。变量范围是题设的一部分，不能从生活习惯自行补上。\n仅有2x+y=8时，通常不唯一：x=0、y=8，或x=2、y=4都满足；在非负实数范围内还有更多组合。列举两个不同可行组合，就足以证明“唯一确定”不成立，但不能因此说所有任意组合都可行。每个候选仍须满足方程与非负约束。\n若再知道总张数为五，即x+y=5，把两个方程相减得到x=3，再代回得y=2。这个组合同时满足宽度八厘米、总张数五和非负条件，因此是合法解。两个方程相减只是一种方法，代入或合适的图示也可以；评判应看是否保持等价与验证完整，而不是必须照抄某一解法。\n第二条条件不一定提供新信息。如果新增4x+2y=16，它恰好是原方程每项乘二，所以仍表示同一限制，多解不会自动变成唯一解。如果新增4x+2y=18，则与原方程矛盾：原式乘二必须等于十六，不可能同时等于十八。在这种情况下，应报告无解并指出冲突，不应为了给出数值而悄悄修改题设。\n变量范围也会影响结果。例如x+y=1且x-y=0给出x=y=0.5。在允许比例裁切的非负实数模型里，这是一组合法解；若限定必须为整张卡片，则没有整数解。数学运算得到候选值之后，还须回到现实约定检验候选是否可用。\n处理约束问题可以先列清变量、单位与范围，再把每句话翻译成式子，然后判断信息是否独立、是否一致，最后代回所有条件。遇到数据不足时，给出两组可行解和需要补充的独立信息，通常比只写“不能算”更有帮助。遇到矛盾时，解释哪两条不能同时成立。这个单元不要求矩阵或专门术语，重点是理解条件如何缩小可能性集合。",
+              "valueHash": "3d467962cceddb9a766ded25aaa2f5d1c9767ee6b9307e50472157ea664b2422"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [
+            {
+              "level": 0,
+              "code": "INDEPENDENT_CONDITIONS",
+              "detail": {
+                "kind": "conditions",
+                "status": "defect",
+                "affected": [
+                  "Q1"
+                ],
+                "reason": "Segment4 workedProcess startingState/inputs only provide 5u+2v=10 and non-negative real domain (e77,e79,e81), but result u=2,v=0 (e83) is justified by whyResultFollows citing unlisted condition u+v=2 (e85). The lesson itself states one equation yields multiple feasible combos (e75). Thus the artifact presents a unique solution not supported by its own listed constraints, misrepresenting solution-set type.",
+                "refs": [
+                  "e77",
+                  "e79",
+                  "e81",
+                  "e83",
+                  "e85",
+                  "e75"
+                ],
+                "challenge": {
+                  "status": "counterexample",
+                  "reason": "With only fixed premises 5u+2v=10, u,v≥0 real, the compatible case u=0,v=5 satisfies all given constraints yet negates the concluded result u=2,v=0, proving the conclusion unestablished from stated inputs.",
+                  "refs": [
+                    "e77",
+                    "e79",
+                    "e81",
+                    "e83"
+                  ]
+                },
+                "witnesses": [
+                  {
+                    "id": "e77",
+                    "pointer": "/artifacts/31/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "大包u张、小包v张，域为非负实数，总重约束5u+2v=10",
+                    "valueHash": "24aa3a60404b96d578c70e3755993da794fb0182a6169ae424ba440bf78a20d2"
+                  },
+                  {
+                    "id": "e79",
+                    "pointer": "/artifacts/32/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "5u+2v=10",
+                    "valueHash": "0ef677831e618574120b92dcc5927f0009e82f9a4e40764322aaaa3ff8376cfa"
+                  },
+                  {
+                    "id": "e81",
+                    "pointer": "/artifacts/33/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "域非负实数",
+                    "valueHash": "b0ee359169f17c1532c655e8ea499a00e8cb376a7e68cbcb3a5e463c13b1d86f"
+                  },
+                  {
+                    "id": "e83",
+                    "pointer": "/artifacts/34/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "u=2,v=0",
+                    "valueHash": "a76890b85ea3a2dcfa5a7dbe9c33620a35109fe8d51663ae4ea300573af3dd65"
+                  },
+                  {
+                    "id": "e85",
+                    "pointer": "/artifacts/35/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "u+v=2与5u+2v=10联立得唯一解且落域",
+                    "valueHash": "1d16738f925e74a045214f6136cd8dcdeeab9b81f3f0709bc8dfcec49e579a04"
+                  },
+                  {
+                    "id": "e75",
+                    "pointer": "/artifacts/30/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "设计新增条件需独立且相容。例如大包重5千克、小包重2千克，总重10千克，记大包u、小包v为非负实数，有5u+2v=10。仅此式时，u=0,v=5与u=2,v=0都可行，解不唯一。下面逐步体会添加独立等式的效果。",
+                    "valueHash": "53e03a00f83757977f8f30620027468f40163ef64ef2deb53dd02c06e14041e5"
+                  }
+                ],
+                "reviewReasons": []
+              }
+            }
+          ],
+          "proposedLevel": 1,
+          "proposedReason": "作者断言在段5（e113）称4m+n=6整数域仅有m=1,n=2，但同句括号列出m=0,n=6，构成局部非必要断言缺陷；核心转化与域边界方法仍由源e3支持，未改变机制或发明引用。",
+          "decidingConstraint": "INDEPENDENT_CONDITIONS"
+        },
+        {
+          "dimension": "Q3",
+          "level": "U",
+          "reason": "A material authored rule/calculation is contradicted; its effect on this explanation needs review. Segment4 workedProcess startingState/inputs only provide 5u+2v=10 and non-negative real domain (e77,e79,e81), but result u=2,v=0 (e83) is justified by whyResultFollows citing unlisted condition u+v=2 (e85). The lesson itself states one equation yields multiple feasible combos (e75). Thus the artifact presents a unique solution not supported by its own listed constraints, misrepresenting solution-set type.",
+          "refs": [
+            "e27",
+            "e113"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e27",
+              "pointer": "/artifacts/6/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "处理配比文字时，先写明变量代表什么、单位与允许范围（如非负实数或非负整数），再把每句话转成等式或不等式。例如规划两种布料：每卷宽4米与2米，总宽16米，记a,b为卷数，域为非负整数（整卷），则4a+2b=16。这一步不求解，只建立约束集。后续检查这些式子是否互相独立：若一条是另一条的倍数，则未新增信息；若数值冲突则无解。该模型让我们看清哪些自由度仍存。",
+              "valueHash": "bfd31e45affd782da893a200fb9e37c67b856e28826c7e6c5f116554543219f7"
+            },
+            {
+              "id": "e113",
+              "pointer": "/artifacts/49/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "解的可行性还受变量域边界控制。即使代数得出候选值，若域从非负实数改为非负整数，原候选可能越界。设每板长贴纸长4单位、短贴纸长1单位，总长为6单位，记长板m、短板n为非负实数则有4m+n=6，得m=1.5,n=0等；若题设明确要求整张，则m,n必须非负整数，此时4m+n=6仅有m=1,n=2（m=0时n=6；m=1时n=2；m≥2时n负）。代数候选若含小数便不可行，须回到现实约定检验。",
+              "valueHash": "938a721dcdd86bfe3386a9244062f6c7d497fe616a22c07252b318a8b460ff84"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [
+            {
+              "level": "U",
+              "code": "EXPLANATION_IMPACT_REVIEW",
+              "detail": {
+                "kind": "conditions",
+                "status": "defect",
+                "affected": [
+                  "Q1"
+                ],
+                "reason": "A material authored rule/calculation is contradicted; its effect on this explanation needs review. Segment4 workedProcess startingState/inputs only provide 5u+2v=10 and non-negative real domain (e77,e79,e81), but result u=2,v=0 (e83) is justified by whyResultFollows citing unlisted condition u+v=2 (e85). The lesson itself states one equation yields multiple feasible combos (e75). Thus the artifact presents a unique solution not supported by its own listed constraints, misrepresenting solution-set type.",
+                "refs": [
+                  "e77",
+                  "e79",
+                  "e81",
+                  "e83",
+                  "e85",
+                  "e75"
+                ],
+                "challenge": {
+                  "status": "counterexample",
+                  "reason": "With only fixed premises 5u+2v=10, u,v≥0 real, the compatible case u=0,v=5 satisfies all given constraints yet negates the concluded result u=2,v=0, proving the conclusion unestablished from stated inputs.",
+                  "refs": [
+                    "e77",
+                    "e79",
+                    "e81",
+                    "e83"
+                  ]
+                },
+                "witnesses": [
+                  {
+                    "id": "e77",
+                    "pointer": "/artifacts/31/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "大包u张、小包v张，域为非负实数，总重约束5u+2v=10",
+                    "valueHash": "24aa3a60404b96d578c70e3755993da794fb0182a6169ae424ba440bf78a20d2"
+                  },
+                  {
+                    "id": "e79",
+                    "pointer": "/artifacts/32/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "5u+2v=10",
+                    "valueHash": "0ef677831e618574120b92dcc5927f0009e82f9a4e40764322aaaa3ff8376cfa"
+                  },
+                  {
+                    "id": "e81",
+                    "pointer": "/artifacts/33/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "域非负实数",
+                    "valueHash": "b0ee359169f17c1532c655e8ea499a00e8cb376a7e68cbcb3a5e463c13b1d86f"
+                  },
+                  {
+                    "id": "e83",
+                    "pointer": "/artifacts/34/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "u=2,v=0",
+                    "valueHash": "a76890b85ea3a2dcfa5a7dbe9c33620a35109fe8d51663ae4ea300573af3dd65"
+                  },
+                  {
+                    "id": "e85",
+                    "pointer": "/artifacts/35/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "u+v=2与5u+2v=10联立得唯一解且落域",
+                    "valueHash": "1d16738f925e74a045214f6136cd8dcdeeab9b81f3f0709bc8dfcec49e579a04"
+                  },
+                  {
+                    "id": "e75",
+                    "pointer": "/artifacts/30/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "设计新增条件需独立且相容。例如大包重5千克、小包重2千克，总重10千克，记大包u、小包v为非负实数，有5u+2v=10。仅此式时，u=0,v=5与u=2,v=0都可行，解不唯一。下面逐步体会添加独立等式的效果。",
+                    "valueHash": "53e03a00f83757977f8f30620027468f40163ef64ef2deb53dd02c06e14041e5"
+                  }
+                ],
+                "reviewReasons": []
+              }
+            }
+          ],
+          "proposedLevel": 2,
+          "proposedReason": "具备前提（简单方程、代入检验、非负数）的学习者能跟随变量定义、逐句译式、独立性检验与域边界（如e27、e29、e113），示例展示解集合类型与整数/实数边界，整体可用，局部矛盾不影响主流程。",
+          "decidingConstraint": "EXPLANATION_IMPACT_REVIEW"
+        }
+      ],
+      "reviewRequired": [
+        {
+          "dimension": "Q3",
+          "reason": "UNRESOLVED"
+        }
+      ]
+    },
+    "resultHash": "cecba7930ab4fea9c220fa6a594096016ccfa6f913aba02e884d1d401d900ad0"
+  }
+}

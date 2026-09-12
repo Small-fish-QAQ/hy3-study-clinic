@@ -1,0 +1,407 @@
+{
+  "task": {
+    "caseId": "N-E04-repair",
+    "runId": "N-E04-repair-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-E04-repair.json",
+    "inputHash": "c305f9941d4b5349ab2d9e818daf404a49b83469bd395d1fb973286192d5580c",
+    "population": "natural",
+    "sourceId": "E04"
+  },
+  "inputHash": "c305f9941d4b5349ab2d9e818daf404a49b83469bd395d1fb973286192d5580c",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "correctness": "67f49aae8f7f1aa24e139a94ba55cf7297200a70d440d2bca00e1a6f75ccfac6",
+      "artifact-audit": "67f49aae8f7f1aa24e139a94ba55cf7297200a70d440d2bca00e1a6f75ccfac6"
+    },
+    "stages": {
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "uncertain",
+            "affected": [
+              "Q6"
+            ],
+            "reason": "The authored conclusion has a compatible counterexample or an unresolved necessary premise. 固定e17事实（阅读词表、具体词易回忆），补充同时播放发音，与'阅读'相容。依e3声学编码需声音，此时声学可触发，产品e25'未提供声音'及e31'阅读矛盾声音'不成立，原结论未建立。",
+            "refs": [
+              "e3",
+              "e17",
+              "e25",
+              "e27",
+              "e31"
+            ],
+            "challenge": {
+              "status": "counterexample",
+              "reason": "固定e17事实（阅读词表、具体词易回忆），补充同时播放发音，与'阅读'相容。依e3声学编码需声音，此时声学可触发，产品e25'未提供声音'及e31'阅读矛盾声音'不成立，原结论未建立。",
+              "refs": [
+                "e17",
+                "e3",
+                "e25",
+                "e31"
+              ]
+            },
+            "witnesses": [
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "We get information into our brains through a process called encoding, which is the input of information into the memory system. Once we receive sensory information from the environment, our brains label or code it. We organize the information with other similar information and connect new concepts to existing concepts. Encoding information occurs through automatic processing and effortful processing.\n\nThere are three types of encoding. The encoding of words and their meaning is known as semantic encoding. It was first demonstrated by William Bousfield (1935) in an experiment in which he asked people to memorize words. The 60 words were actually divided into 4 categories of meaning, although the participants did not know this because the words were randomly presented. When they were asked to remember the words, they tended to recall them in categories, showing that they paid attention to the meanings of the words as they learned them.\n\nVisual encoding is the encoding of images, and acoustic encoding is the encoding of sounds, words in particular. To see how visual encoding works, read over this list of words: car, level, dog, truth, book, value. If you were asked later to recall the words from this list, which ones do you think you’d most likely remember? You would probably have an easier time recalling the words car, dog, and book, and a more difficult time recalling the words level, truth, and value. Why is this? Because you can recall images (mental pictures) more easily than words alone. When you read the words car, dog, and book you created images of these things in your mind. These are concrete, high-imagery words. On the other hand, abstract words like level, truth, and value are low-imagery words. High-imagery words are encoded both visually and semantically (Paivio, 1986), thus building a stronger memory.\n\nNow let’s turn our attention to acoustic encoding. You are driving in your car and a song comes on the radio that you haven’t heard in at least 10 years, but you sing along, recalling every word. In the United States, children often learn the alphabet through song, and they learn the number of days in each month through rhyme: “Thirty days hath September, / April, June, and November; / All the rest have thirty-one, / Save February, with twenty-eight days clear, / And twenty-nine each leap year.” These lessons are easy to remember because of acoustic encoding. We encode the sounds the words make. This is one of the reasons why much of what we teach young children is done through song, rhyme, and rhythm.",
+                "valueHash": "bf1b2eea6b7f20a856c4cfc2f378ff4216695c2cb1b009da66f5aca83f238b9f"
+              },
+              {
+                "id": "e17",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "被试阅读一组词：'锤子、真理、鸟、平等、树、概念'。随后意外回忆测试中，被试轻松记起'锤子、鸟、树'，较难记起'真理、平等、概念'。基于教材中的编码机制，这一回忆差异最可能是由什么导致的？",
+                "valueHash": "e108c6d5510c63851f64c37acb1d7af50a846be2e2483903219e63a7a155dc04"
+              },
+              {
+                "id": "e25",
+                "pointer": "/artifacts/4/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "你选择了“所有词均通过声学编码，因发音节奏差异导致锤子、鸟、树更易回忆”。在原案例中，题目明确说“被试阅读一组词”，即文字视觉呈现，未提供声音。",
+                "valueHash": "8ab27271063469b217c546c494192fb1f0b5ba21ef6232566f57b34ca7452c06"
+              },
+              {
+                "id": "e27",
+                "pointer": "/artifacts/5/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "你未区分编码的触发条件：视觉编码需要具体高意象词在默读或见文字时形成心理图像，而声学编码需要声音呈现。你误将声学编码套用于阅读场景，且忽略了具体词因高意象获得视觉与语义双重编码这一规则。",
+                "valueHash": "c32c5fa21ab1b92b682b8ee92727929e3576d9705a8ea48511da5016e8ad18e5"
+              },
+              {
+                "id": "e31",
+                "pointer": "/artifacts/7/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "教材指出，编码类型取决于信息进入感官的通道。阅读文字时，具体高意象词（锤子、鸟、树）易引发心理图片，从而被视觉与语义双重编码，记忆更强；抽象词（真理、平等、概念）缺乏视觉图像，仅语义编码。声学编码只在听到发音时主导。你的选项假设了声音通道，与原题“阅读”矛盾，因此错失了隐藏成因。",
+                "valueHash": "7552e580522fa8fb0d7bc2bac1a8da7ae6709f72b2d36363f9e4bdcc7aea6c22"
+              }
+            ],
+            "proposed": {
+              "kind": "conditions",
+              "status": "uncertain",
+              "affected": [
+                "Q6"
+              ],
+              "reason": "产品e27/e31总结规则（视觉编码需高意象词见文字成图，声学需声音呈现）与教材e3一致；但e25/e31将原题e17'阅读'等同于'未提供声音'并断言矛盾，原题e17仅述被试阅读词表未明示排除声音。构造相容反例（阅读同时听音）可使声学编码触发，原诊断'声学编码未主导'未建立，适用性前提证据不足。",
+              "refs": [
+                "e3",
+                "e17",
+                "e25",
+                "e27",
+                "e31"
+              ],
+              "challenge": {
+                "status": "counterexample",
+                "reason": "固定e17事实（阅读词表、具体词易回忆），补充同时播放发音，与'阅读'相容。依e3声学编码需声音，此时声学可触发，产品e25'未提供声音'及e31'阅读矛盾声音'不成立，原结论未建立。",
+                "refs": [
+                  "e17",
+                  "e3",
+                  "e25",
+                  "e31"
+                ]
+              }
+            },
+            "reviewReasons": [
+              "CONDITIONS_COUNTEREXAMPLE_REVIEW"
+            ]
+          },
+          {
+            "kind": "quantities",
+            "status": "not_applicable",
+            "affected": [],
+            "reason": "包内无数值、百分比、单位转换或演算断言，rates为空，artifacts仅含文字诊断与示例。",
+            "contextHash": "67f49aae8f7f1aa24e139a94ba55cf7297200a70d440d2bca00e1a6f75ccfac6",
+            "proposed": {
+              "kind": "quantities",
+              "status": "not_applicable",
+              "affected": [],
+              "reason": "包内无数值、百分比、单位转换或演算断言，rates为空，artifacts仅含文字诊断与示例。",
+              "refs": [
+                "e15"
+              ]
+            },
+            "reviewReasons": []
+          }
+        ],
+        "keys": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 2,
+            "reason": "产品针对学生错误答案(e19)给出观察(e25)指出阅读无声音，诊断差距(e27)为误用声学编码且忽略视觉双重编码，补救解释(e31)正确依据来源(e3)区分通道与高意象词规则，并提供新检验机会(e33)作为可用后续检查，符合Q6的2分标准：支持解决证据差距并提供相关下一检查。",
+            "refs": [
+              "e19",
+              "e25",
+              "e27",
+              "e31",
+              "e33",
+              "e3",
+              "e5"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e19",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "所有词均通过声学编码，因发音节奏差异导致锤子、鸟、树更易回忆",
+                "valueHash": "0e873fc048d57d4099ea85905fbd841e8630e65378f2fe57c6b3e4ba6db00be9"
+              },
+              {
+                "id": "e25",
+                "pointer": "/artifacts/4/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "你选择了“所有词均通过声学编码，因发音节奏差异导致锤子、鸟、树更易回忆”。在原案例中，题目明确说“被试阅读一组词”，即文字视觉呈现，未提供声音。",
+                "valueHash": "8ab27271063469b217c546c494192fb1f0b5ba21ef6232566f57b34ca7452c06"
+              },
+              {
+                "id": "e27",
+                "pointer": "/artifacts/5/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "你未区分编码的触发条件：视觉编码需要具体高意象词在默读或见文字时形成心理图像，而声学编码需要声音呈现。你误将声学编码套用于阅读场景，且忽略了具体词因高意象获得视觉与语义双重编码这一规则。",
+                "valueHash": "c32c5fa21ab1b92b682b8ee92727929e3576d9705a8ea48511da5016e8ad18e5"
+              },
+              {
+                "id": "e31",
+                "pointer": "/artifacts/7/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "教材指出，编码类型取决于信息进入感官的通道。阅读文字时，具体高意象词（锤子、鸟、树）易引发心理图片，从而被视觉与语义双重编码，记忆更强；抽象词（真理、平等、概念）缺乏视觉图像，仅语义编码。声学编码只在听到发音时主导。你的选项假设了声音通道，与原题“阅读”矛盾，因此错失了隐藏成因。",
+                "valueHash": "7552e580522fa8fb0d7bc2bac1a8da7ae6709f72b2d36363f9e4bdcc7aea6c22"
+              },
+              {
+                "id": "e33",
+                "pointer": "/artifacts/8/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "呈现词表“吉他、正义、玫瑰、速度、地图、自由”，被试安静默读并自发形成图像，未听音。请依据编码规则判定回忆差异的隐藏成因。",
+                "valueHash": "25d10a4ec918a2ee50b316777b694e26e83df6b5c997b86ff9fd6f00b8bfc720"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "We get information into our brains through a process called encoding, which is the input of information into the memory system. Once we receive sensory information from the environment, our brains label or code it. We organize the information with other similar information and connect new concepts to existing concepts. Encoding information occurs through automatic processing and effortful processing.\n\nThere are three types of encoding. The encoding of words and their meaning is known as semantic encoding. It was first demonstrated by William Bousfield (1935) in an experiment in which he asked people to memorize words. The 60 words were actually divided into 4 categories of meaning, although the participants did not know this because the words were randomly presented. When they were asked to remember the words, they tended to recall them in categories, showing that they paid attention to the meanings of the words as they learned them.\n\nVisual encoding is the encoding of images, and acoustic encoding is the encoding of sounds, words in particular. To see how visual encoding works, read over this list of words: car, level, dog, truth, book, value. If you were asked later to recall the words from this list, which ones do you think you’d most likely remember? You would probably have an easier time recalling the words car, dog, and book, and a more difficult time recalling the words level, truth, and value. Why is this? Because you can recall images (mental pictures) more easily than words alone. When you read the words car, dog, and book you created images of these things in your mind. These are concrete, high-imagery words. On the other hand, abstract words like level, truth, and value are low-imagery words. High-imagery words are encoded both visually and semantically (Paivio, 1986), thus building a stronger memory.\n\nNow let’s turn our attention to acoustic encoding. You are driving in your car and a song comes on the radio that you haven’t heard in at least 10 years, but you sing along, recalling every word. In the United States, children often learn the alphabet through song, and they learn the number of days in each month through rhyme: “Thirty days hath September, / April, June, and November; / All the rest have thirty-one, / Save February, with twenty-eight days clear, / And twenty-nine each leap year.” These lessons are easy to remember because of acoustic encoding. We encode the sounds the words make. This is one of the reasons why much of what we teach young children is done through song, rhyme, and rhythm.",
+                "valueHash": "bf1b2eea6b7f20a856c4cfc2f378ff4216695c2cb1b009da66f5aca83f238b9f"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "针对这次实际错误给出有依据的诊断、补救解释和后续检查",
+                "valueHash": "97c31c23326d599b83dcbf2a6116a9bd65ec2ed417f3dc4f1c57274a10d5fc02"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q6",
+          "level": "U",
+          "reason": "The authored conclusion has a compatible counterexample or an unresolved necessary premise. 固定e17事实（阅读词表、具体词易回忆），补充同时播放发音，与'阅读'相容。依e3声学编码需声音，此时声学可触发，产品e25'未提供声音'及e31'阅读矛盾声音'不成立，原结论未建立。",
+          "refs": [
+            "e19",
+            "e25",
+            "e27",
+            "e31",
+            "e33",
+            "e3",
+            "e5"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e19",
+              "pointer": "/artifacts/1/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "所有词均通过声学编码，因发音节奏差异导致锤子、鸟、树更易回忆",
+              "valueHash": "0e873fc048d57d4099ea85905fbd841e8630e65378f2fe57c6b3e4ba6db00be9"
+            },
+            {
+              "id": "e25",
+              "pointer": "/artifacts/4/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "你选择了“所有词均通过声学编码，因发音节奏差异导致锤子、鸟、树更易回忆”。在原案例中，题目明确说“被试阅读一组词”，即文字视觉呈现，未提供声音。",
+              "valueHash": "8ab27271063469b217c546c494192fb1f0b5ba21ef6232566f57b34ca7452c06"
+            },
+            {
+              "id": "e27",
+              "pointer": "/artifacts/5/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "你未区分编码的触发条件：视觉编码需要具体高意象词在默读或见文字时形成心理图像，而声学编码需要声音呈现。你误将声学编码套用于阅读场景，且忽略了具体词因高意象获得视觉与语义双重编码这一规则。",
+              "valueHash": "c32c5fa21ab1b92b682b8ee92727929e3576d9705a8ea48511da5016e8ad18e5"
+            },
+            {
+              "id": "e31",
+              "pointer": "/artifacts/7/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "教材指出，编码类型取决于信息进入感官的通道。阅读文字时，具体高意象词（锤子、鸟、树）易引发心理图片，从而被视觉与语义双重编码，记忆更强；抽象词（真理、平等、概念）缺乏视觉图像，仅语义编码。声学编码只在听到发音时主导。你的选项假设了声音通道，与原题“阅读”矛盾，因此错失了隐藏成因。",
+              "valueHash": "7552e580522fa8fb0d7bc2bac1a8da7ae6709f72b2d36363f9e4bdcc7aea6c22"
+            },
+            {
+              "id": "e33",
+              "pointer": "/artifacts/8/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "呈现词表“吉他、正义、玫瑰、速度、地图、自由”，被试安静默读并自发形成图像，未听音。请依据编码规则判定回忆差异的隐藏成因。",
+              "valueHash": "25d10a4ec918a2ee50b316777b694e26e83df6b5c997b86ff9fd6f00b8bfc720"
+            },
+            {
+              "id": "e3",
+              "pointer": "/sources/0/text",
+              "role": "source",
+              "kind": "text",
+              "value": "We get information into our brains through a process called encoding, which is the input of information into the memory system. Once we receive sensory information from the environment, our brains label or code it. We organize the information with other similar information and connect new concepts to existing concepts. Encoding information occurs through automatic processing and effortful processing.\n\nThere are three types of encoding. The encoding of words and their meaning is known as semantic encoding. It was first demonstrated by William Bousfield (1935) in an experiment in which he asked people to memorize words. The 60 words were actually divided into 4 categories of meaning, although the participants did not know this because the words were randomly presented. When they were asked to remember the words, they tended to recall them in categories, showing that they paid attention to the meanings of the words as they learned them.\n\nVisual encoding is the encoding of images, and acoustic encoding is the encoding of sounds, words in particular. To see how visual encoding works, read over this list of words: car, level, dog, truth, book, value. If you were asked later to recall the words from this list, which ones do you think you’d most likely remember? You would probably have an easier time recalling the words car, dog, and book, and a more difficult time recalling the words level, truth, and value. Why is this? Because you can recall images (mental pictures) more easily than words alone. When you read the words car, dog, and book you created images of these things in your mind. These are concrete, high-imagery words. On the other hand, abstract words like level, truth, and value are low-imagery words. High-imagery words are encoded both visually and semantically (Paivio, 1986), thus building a stronger memory.\n\nNow let’s turn our attention to acoustic encoding. You are driving in your car and a song comes on the radio that you haven’t heard in at least 10 years, but you sing along, recalling every word. In the United States, children often learn the alphabet through song, and they learn the number of days in each month through rhyme: “Thirty days hath September, / April, June, and November; / All the rest have thirty-one, / Save February, with twenty-eight days clear, / And twenty-nine each leap year.” These lessons are easy to remember because of acoustic encoding. We encode the sounds the words make. This is one of the reasons why much of what we teach young children is done through song, rhyme, and rhythm.",
+              "valueHash": "bf1b2eea6b7f20a856c4cfc2f378ff4216695c2cb1b009da66f5aca83f238b9f"
+            },
+            {
+              "id": "e5",
+              "pointer": "/goals/0",
+              "role": "goal",
+              "kind": "text",
+              "value": "针对这次实际错误给出有依据的诊断、补救解释和后续检查",
+              "valueHash": "97c31c23326d599b83dcbf2a6116a9bd65ec2ed417f3dc4f1c57274a10d5fc02"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [
+            {
+              "level": "U",
+              "code": "INDEPENDENT_CONDITIONS",
+              "detail": {
+                "kind": "conditions",
+                "status": "uncertain",
+                "affected": [
+                  "Q6"
+                ],
+                "reason": "The authored conclusion has a compatible counterexample or an unresolved necessary premise. 固定e17事实（阅读词表、具体词易回忆），补充同时播放发音，与'阅读'相容。依e3声学编码需声音，此时声学可触发，产品e25'未提供声音'及e31'阅读矛盾声音'不成立，原结论未建立。",
+                "refs": [
+                  "e3",
+                  "e17",
+                  "e25",
+                  "e27",
+                  "e31"
+                ],
+                "challenge": {
+                  "status": "counterexample",
+                  "reason": "固定e17事实（阅读词表、具体词易回忆），补充同时播放发音，与'阅读'相容。依e3声学编码需声音，此时声学可触发，产品e25'未提供声音'及e31'阅读矛盾声音'不成立，原结论未建立。",
+                  "refs": [
+                    "e17",
+                    "e3",
+                    "e25",
+                    "e31"
+                  ]
+                },
+                "witnesses": [
+                  {
+                    "id": "e3",
+                    "pointer": "/sources/0/text",
+                    "role": "source",
+                    "kind": "text",
+                    "value": "We get information into our brains through a process called encoding, which is the input of information into the memory system. Once we receive sensory information from the environment, our brains label or code it. We organize the information with other similar information and connect new concepts to existing concepts. Encoding information occurs through automatic processing and effortful processing.\n\nThere are three types of encoding. The encoding of words and their meaning is known as semantic encoding. It was first demonstrated by William Bousfield (1935) in an experiment in which he asked people to memorize words. The 60 words were actually divided into 4 categories of meaning, although the participants did not know this because the words were randomly presented. When they were asked to remember the words, they tended to recall them in categories, showing that they paid attention to the meanings of the words as they learned them.\n\nVisual encoding is the encoding of images, and acoustic encoding is the encoding of sounds, words in particular. To see how visual encoding works, read over this list of words: car, level, dog, truth, book, value. If you were asked later to recall the words from this list, which ones do you think you’d most likely remember? You would probably have an easier time recalling the words car, dog, and book, and a more difficult time recalling the words level, truth, and value. Why is this? Because you can recall images (mental pictures) more easily than words alone. When you read the words car, dog, and book you created images of these things in your mind. These are concrete, high-imagery words. On the other hand, abstract words like level, truth, and value are low-imagery words. High-imagery words are encoded both visually and semantically (Paivio, 1986), thus building a stronger memory.\n\nNow let’s turn our attention to acoustic encoding. You are driving in your car and a song comes on the radio that you haven’t heard in at least 10 years, but you sing along, recalling every word. In the United States, children often learn the alphabet through song, and they learn the number of days in each month through rhyme: “Thirty days hath September, / April, June, and November; / All the rest have thirty-one, / Save February, with twenty-eight days clear, / And twenty-nine each leap year.” These lessons are easy to remember because of acoustic encoding. We encode the sounds the words make. This is one of the reasons why much of what we teach young children is done through song, rhyme, and rhythm.",
+                    "valueHash": "bf1b2eea6b7f20a856c4cfc2f378ff4216695c2cb1b009da66f5aca83f238b9f"
+                  },
+                  {
+                    "id": "e17",
+                    "pointer": "/artifacts/0/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "被试阅读一组词：'锤子、真理、鸟、平等、树、概念'。随后意外回忆测试中，被试轻松记起'锤子、鸟、树'，较难记起'真理、平等、概念'。基于教材中的编码机制，这一回忆差异最可能是由什么导致的？",
+                    "valueHash": "e108c6d5510c63851f64c37acb1d7af50a846be2e2483903219e63a7a155dc04"
+                  },
+                  {
+                    "id": "e25",
+                    "pointer": "/artifacts/4/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "你选择了“所有词均通过声学编码，因发音节奏差异导致锤子、鸟、树更易回忆”。在原案例中，题目明确说“被试阅读一组词”，即文字视觉呈现，未提供声音。",
+                    "valueHash": "8ab27271063469b217c546c494192fb1f0b5ba21ef6232566f57b34ca7452c06"
+                  },
+                  {
+                    "id": "e27",
+                    "pointer": "/artifacts/5/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "你未区分编码的触发条件：视觉编码需要具体高意象词在默读或见文字时形成心理图像，而声学编码需要声音呈现。你误将声学编码套用于阅读场景，且忽略了具体词因高意象获得视觉与语义双重编码这一规则。",
+                    "valueHash": "c32c5fa21ab1b92b682b8ee92727929e3576d9705a8ea48511da5016e8ad18e5"
+                  },
+                  {
+                    "id": "e31",
+                    "pointer": "/artifacts/7/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "教材指出，编码类型取决于信息进入感官的通道。阅读文字时，具体高意象词（锤子、鸟、树）易引发心理图片，从而被视觉与语义双重编码，记忆更强；抽象词（真理、平等、概念）缺乏视觉图像，仅语义编码。声学编码只在听到发音时主导。你的选项假设了声音通道，与原题“阅读”矛盾，因此错失了隐藏成因。",
+                    "valueHash": "7552e580522fa8fb0d7bc2bac1a8da7ae6709f72b2d36363f9e4bdcc7aea6c22"
+                  }
+                ],
+                "proposed": {
+                  "kind": "conditions",
+                  "status": "uncertain",
+                  "affected": [
+                    "Q6"
+                  ],
+                  "reason": "产品e27/e31总结规则（视觉编码需高意象词见文字成图，声学需声音呈现）与教材e3一致；但e25/e31将原题e17'阅读'等同于'未提供声音'并断言矛盾，原题e17仅述被试阅读词表未明示排除声音。构造相容反例（阅读同时听音）可使声学编码触发，原诊断'声学编码未主导'未建立，适用性前提证据不足。",
+                  "refs": [
+                    "e3",
+                    "e17",
+                    "e25",
+                    "e27",
+                    "e31"
+                  ],
+                  "challenge": {
+                    "status": "counterexample",
+                    "reason": "固定e17事实（阅读词表、具体词易回忆），补充同时播放发音，与'阅读'相容。依e3声学编码需声音，此时声学可触发，产品e25'未提供声音'及e31'阅读矛盾声音'不成立，原结论未建立。",
+                    "refs": [
+                      "e17",
+                      "e3",
+                      "e25",
+                      "e31"
+                    ]
+                  }
+                },
+                "reviewReasons": [
+                  "CONDITIONS_COUNTEREXAMPLE_REVIEW"
+                ]
+              }
+            }
+          ],
+          "proposedLevel": 2,
+          "proposedReason": "产品针对学生错误答案(e19)给出观察(e25)指出阅读无声音，诊断差距(e27)为误用声学编码且忽略视觉双重编码，补救解释(e31)正确依据来源(e3)区分通道与高意象词规则，并提供新检验机会(e33)作为可用后续检查，符合Q6的2分标准：支持解决证据差距并提供相关下一检查。",
+          "decidingConstraint": "INDEPENDENT_CONDITIONS"
+        }
+      ],
+      "reviewRequired": [
+        {
+          "dimension": "Q6",
+          "reason": "UNRESOLVED"
+        }
+      ]
+    },
+    "resultHash": "883fae729575eb5b53ac044e40e2243e0a5d6b6ad448730a8a50f46bd6fa4352"
+  }
+}

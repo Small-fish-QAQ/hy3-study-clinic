@@ -1,0 +1,486 @@
+{
+  "task": {
+    "caseId": "N-B-E01-tutor",
+    "runId": "N-B-E01-tutor-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-B-E01-tutor.json",
+    "inputHash": "5efe7ca6047f975d05988280bdf87be35161f8158920f34895d43d1d2d0cebc1",
+    "population": "natural",
+    "sourceId": "B-E01"
+  },
+  "inputHash": "5efe7ca6047f975d05988280bdf87be35161f8158920f34895d43d1d2d0cebc1",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "correctness": "de5a263220e290dffceae6add3f2e0c9ffdd2f7b080d2c6c98f59685b692d4bd",
+      "artifact-audit": "de5a263220e290dffceae6add3f2e0c9ffdd2f7b080d2c6c98f59685b692d4bd",
+      "certification": "de5a263220e290dffceae6add3f2e0c9ffdd2f7b080d2c6c98f59685b692d4bd"
+    },
+    "stages": {
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "clear",
+            "affected": [],
+            "reason": "作者以石凳木凳例解释同温不同导热率致触感差异，明确边界：同温、直接接触无隔热层，并断言'从手部带走热量'隐含手温高于材料。与资料e3/e9条件（同温、热损失更大、其他相同）一致；实例满足所总结联合条件，未混淆充分必要。",
+            "refs": [
+              "e16",
+              "e3",
+              "e9"
+            ],
+            "challenge": {
+              "status": "closed",
+              "reason": "尝试构造相容反例：同温、直接接触无隔热、石头导热优，但手温等于材料温则无热流，与作者'带走热量'断言不相容；保持带走热量则物理规则支持石凳更冰，反例被给定事实排除。",
+              "refs": [
+                "e16"
+              ]
+            },
+            "witnesses": [
+              {
+                "id": "e16",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "课程资料提到，相同温度的地毯和瓷砖触感不同是因为热传递速率不同，瓷砖导热更快导致皮肤热损失更大、温度下降更多；同时资料指出金属等良导体比木材等绝缘体传热快。\n\n举例（补充说明）：设想冬天户外同样气温的石凳和木凳，你用手掌去摸，石凳感觉更冰。这是因为石头导热优于木头，更快从手部带走热量，手部皮肤温度下降更快。这个例子的适用边界是：两者确实处于相同温度、直接接触皮肤且无隔热层；若戴手套或接触时间极长直至热平衡，差异会消失；若材料本身很小很薄，其温度会被手快速改变，前提“同温”便不成立了。",
+                "valueHash": "73b78a7d3755386a8d408ea49262796c73d7a38b1adc84649a276a10bb1f72a1"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "Your feet feel cold as you walk barefoot across the living room carpet in your cold house and then step onto the kitchen tile floor. This result is intriguing, since the carpet and tile floor are both at the same temperature. The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.\n\nSome materials conduct thermal energy faster than others. In general, good conductors of electricity (metals like copper, aluminum, gold, and silver) are also good heat conductors, whereas insulators of electricity (wood, plastic, and rubber) are poor heat conductors.\n\nThe (average) kinetic energy of a molecule in the hot body is higher than in the colder body. If two molecules collide, an energy transfer from the molecule with greater kinetic energy to the molecule with less kinetic energy occurs. The cumulative effect from all collisions results in a net flux of heat from the hot body to the colder body. The heat flux thus depends on the temperature difference ΔΤ=Τhot−Tcold. Therefore, you will get a more severe burn from boiling water than from hot tap water. Conversely, if the temperatures are the same, the net heat transfer rate falls to zero, and equilibrium is achieved. Owing to the fact that the number of collisions increases with increasing area, heat conduction depends on the cross-sectional area. If you touch a cold wall with your palm, your hand cools faster than if you just touch it with your fingertip.",
+                "valueHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd"
+              },
+              {
+                "id": "e9",
+                "pointer": "/prerequisites/2",
+                "role": "context",
+                "kind": "text",
+                "value": "解释同温度地毯与瓷砖触感不同的原因：在相同温度和相同时间区间内，因热传递速率不同导致瓷砖接触皮肤热损失更大、温度下降更大，且其他条件相同。",
+                "valueHash": "ddd265caebe0d2facdb2f53d103a3b1628e6181fcc7e1dfb2f150f1232b5ebc1"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "kind": "quantities",
+            "status": "not_applicable",
+            "affected": [],
+            "reason": "产物与资料均无具体数值、百分比或单位演算断言，仅定性描述热通量依赖ΔT，无重算必要。",
+            "contextHash": "de5a263220e290dffceae6add3f2e0c9ffdd2f7b080d2c6c98f59685b692d4bd",
+            "proposed": {
+              "kind": "quantities",
+              "status": "not_applicable",
+              "affected": [],
+              "reason": "产物与资料均无具体数值、百分比或单位演算断言，仅定性描述热通量依赖ΔT，无重算必要。",
+              "refs": [
+                "e3",
+                "e16"
+              ]
+            },
+            "reviewReasons": []
+          }
+        ],
+        "keys": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 2,
+            "reason": "产物(e16)正确总结资料(e3,e9)中同温触感差异机制，自举石凳木凳例子符合导热率差异原理且无虚假断言，边界说明同温、直接接触、热平衡及小薄材料前提不成立均正确有资料支持(e3)，必要断言与限制均获支持。",
+            "refs": [
+              "e16",
+              "e3",
+              "e5",
+              "e9"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e16",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "课程资料提到，相同温度的地毯和瓷砖触感不同是因为热传递速率不同，瓷砖导热更快导致皮肤热损失更大、温度下降更多；同时资料指出金属等良导体比木材等绝缘体传热快。\n\n举例（补充说明）：设想冬天户外同样气温的石凳和木凳，你用手掌去摸，石凳感觉更冰。这是因为石头导热优于木头，更快从手部带走热量，手部皮肤温度下降更快。这个例子的适用边界是：两者确实处于相同温度、直接接触皮肤且无隔热层；若戴手套或接触时间极长直至热平衡，差异会消失；若材料本身很小很薄，其温度会被手快速改变，前提“同温”便不成立了。",
+                "valueHash": "73b78a7d3755386a8d408ea49262796c73d7a38b1adc84649a276a10bb1f72a1"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "Your feet feel cold as you walk barefoot across the living room carpet in your cold house and then step onto the kitchen tile floor. This result is intriguing, since the carpet and tile floor are both at the same temperature. The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.\n\nSome materials conduct thermal energy faster than others. In general, good conductors of electricity (metals like copper, aluminum, gold, and silver) are also good heat conductors, whereas insulators of electricity (wood, plastic, and rubber) are poor heat conductors.\n\nThe (average) kinetic energy of a molecule in the hot body is higher than in the colder body. If two molecules collide, an energy transfer from the molecule with greater kinetic energy to the molecule with less kinetic energy occurs. The cumulative effect from all collisions results in a net flux of heat from the hot body to the colder body. The heat flux thus depends on the temperature difference ΔΤ=Τhot−Tcold. Therefore, you will get a more severe burn from boiling water than from hot tap water. Conversely, if the temperatures are the same, the net heat transfer rate falls to zero, and equilibrium is achieved. Owing to the fact that the number of collisions increases with increasing area, heat conduction depends on the cross-sectional area. If you touch a cold wall with your palm, your hand cools faster than if you just touch it with your fingertip.",
+                "valueHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "请针对当前内容，用一个与资料不同但容易理解的例子解释关键关系，并说明例子的适用边界。",
+                "valueHash": "8554fd2a6af26f8cda0d4670bec8b7daaade91997a1e3a766c77f315dc970152"
+              },
+              {
+                "id": "e9",
+                "pointer": "/prerequisites/2",
+                "role": "context",
+                "kind": "text",
+                "value": "解释同温度地毯与瓷砖触感不同的原因：在相同温度和相同时间区间内，因热传递速率不同导致瓷砖接触皮肤热损失更大、温度下降更大，且其他条件相同。",
+                "valueHash": "ddd265caebe0d2facdb2f53d103a3b1628e6181fcc7e1dfb2f150f1232b5ebc1"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "dimension": "Q3",
+            "level": 2,
+            "reason": "目标(e5)要求不同例子及边界，产物(e16)以石凳木凳解释导热速率导致皮肤温降差异，具备先决条件(e7,e9,e10)的学习者能跟随，边界相关且正确，无中心推导错误。",
+            "refs": [
+              "e16",
+              "e5",
+              "e7",
+              "e9",
+              "e10"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e16",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "课程资料提到，相同温度的地毯和瓷砖触感不同是因为热传递速率不同，瓷砖导热更快导致皮肤热损失更大、温度下降更多；同时资料指出金属等良导体比木材等绝缘体传热快。\n\n举例（补充说明）：设想冬天户外同样气温的石凳和木凳，你用手掌去摸，石凳感觉更冰。这是因为石头导热优于木头，更快从手部带走热量，手部皮肤温度下降更快。这个例子的适用边界是：两者确实处于相同温度、直接接触皮肤且无隔热层；若戴手套或接触时间极长直至热平衡，差异会消失；若材料本身很小很薄，其温度会被手快速改变，前提“同温”便不成立了。",
+                "valueHash": "73b78a7d3755386a8d408ea49262796c73d7a38b1adc84649a276a10bb1f72a1"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "请针对当前内容，用一个与资料不同但容易理解的例子解释关键关系，并说明例子的适用边界。",
+                "valueHash": "8554fd2a6af26f8cda0d4670bec8b7daaade91997a1e3a766c77f315dc970152"
+              },
+              {
+                "id": "e7",
+                "pointer": "/prerequisites/0",
+                "role": "context",
+                "kind": "text",
+                "value": "知道温度与热传递是不同概念",
+                "valueHash": "be9897bf4972f90e022866216c9cc412a49357ac372d5d78cf4d1c9d9597efc0"
+              },
+              {
+                "id": "e9",
+                "pointer": "/prerequisites/2",
+                "role": "context",
+                "kind": "text",
+                "value": "解释同温度地毯与瓷砖触感不同的原因：在相同温度和相同时间区间内，因热传递速率不同导致瓷砖接触皮肤热损失更大、温度下降更大，且其他条件相同。",
+                "valueHash": "ddd265caebe0d2facdb2f53d103a3b1628e6181fcc7e1dfb2f150f1232b5ebc1"
+              },
+              {
+                "id": "e10",
+                "pointer": "/prerequisites/3",
+                "role": "context",
+                "kind": "text",
+                "value": "识别热传递方向（从高温物体到低温物体）、热通量依赖温差ΔT=Thot−Tcold、以及温度相同时净热传递为零并达到热平衡。",
+                "valueHash": "d2abdcbfb53efcda9392588264fdce04be1d70ffd3a1163b4fbfe7040f7f1e8c"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q1",
+            "status": "supported",
+            "reason": "产物(e16)总结同温触感差异机制与资料(e3,e9)一致，自举石凳木凳例子符合导热原理且边界说明正确，findings审计与条件检查均无未解异议，正向判断依赖已建立前提。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e16",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "课程资料提到，相同温度的地毯和瓷砖触感不同是因为热传递速率不同，瓷砖导热更快导致皮肤热损失更大、温度下降更多；同时资料指出金属等良导体比木材等绝缘体传热快。\n\n举例（补充说明）：设想冬天户外同样气温的石凳和木凳，你用手掌去摸，石凳感觉更冰。这是因为石头导热优于木头，更快从手部带走热量，手部皮肤温度下降更快。这个例子的适用边界是：两者确实处于相同温度、直接接触皮肤且无隔热层；若戴手套或接触时间极长直至热平衡，差异会消失；若材料本身很小很薄，其温度会被手快速改变，前提“同温”便不成立了。",
+                "valueHash": "73b78a7d3755386a8d408ea49262796c73d7a38b1adc84649a276a10bb1f72a1"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "Your feet feel cold as you walk barefoot across the living room carpet in your cold house and then step onto the kitchen tile floor. This result is intriguing, since the carpet and tile floor are both at the same temperature. The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.\n\nSome materials conduct thermal energy faster than others. In general, good conductors of electricity (metals like copper, aluminum, gold, and silver) are also good heat conductors, whereas insulators of electricity (wood, plastic, and rubber) are poor heat conductors.\n\nThe (average) kinetic energy of a molecule in the hot body is higher than in the colder body. If two molecules collide, an energy transfer from the molecule with greater kinetic energy to the molecule with less kinetic energy occurs. The cumulative effect from all collisions results in a net flux of heat from the hot body to the colder body. The heat flux thus depends on the temperature difference ΔΤ=Τhot−Tcold. Therefore, you will get a more severe burn from boiling water than from hot tap water. Conversely, if the temperatures are the same, the net heat transfer rate falls to zero, and equilibrium is achieved. Owing to the fact that the number of collisions increases with increasing area, heat conduction depends on the cross-sectional area. If you touch a cold wall with your palm, your hand cools faster than if you just touch it with your fingertip.",
+                "valueHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd"
+              },
+              {
+                "id": "e9",
+                "pointer": "/prerequisites/2",
+                "role": "context",
+                "kind": "text",
+                "value": "解释同温度地毯与瓷砖触感不同的原因：在相同温度和相同时间区间内，因热传递速率不同导致瓷砖接触皮肤热损失更大、温度下降更大，且其他条件相同。",
+                "valueHash": "ddd265caebe0d2facdb2f53d103a3b1628e6181fcc7e1dfb2f150f1232b5ebc1"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "dimension": "Q3",
+            "status": "supported",
+            "reason": "目标(e5)要求不同例子及边界，产物(e16)提供石凳木凳解释且先决条件(e7,e9,e10)学习者可跟随，边界相关正确，findings无质疑，正向判断完整。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e16",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "课程资料提到，相同温度的地毯和瓷砖触感不同是因为热传递速率不同，瓷砖导热更快导致皮肤热损失更大、温度下降更多；同时资料指出金属等良导体比木材等绝缘体传热快。\n\n举例（补充说明）：设想冬天户外同样气温的石凳和木凳，你用手掌去摸，石凳感觉更冰。这是因为石头导热优于木头，更快从手部带走热量，手部皮肤温度下降更快。这个例子的适用边界是：两者确实处于相同温度、直接接触皮肤且无隔热层；若戴手套或接触时间极长直至热平衡，差异会消失；若材料本身很小很薄，其温度会被手快速改变，前提“同温”便不成立了。",
+                "valueHash": "73b78a7d3755386a8d408ea49262796c73d7a38b1adc84649a276a10bb1f72a1"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "请针对当前内容，用一个与资料不同但容易理解的例子解释关键关系，并说明例子的适用边界。",
+                "valueHash": "8554fd2a6af26f8cda0d4670bec8b7daaade91997a1e3a766c77f315dc970152"
+              },
+              {
+                "id": "e7",
+                "pointer": "/prerequisites/0",
+                "role": "context",
+                "kind": "text",
+                "value": "知道温度与热传递是不同概念",
+                "valueHash": "be9897bf4972f90e022866216c9cc412a49357ac372d5d78cf4d1c9d9597efc0"
+              },
+              {
+                "id": "e9",
+                "pointer": "/prerequisites/2",
+                "role": "context",
+                "kind": "text",
+                "value": "解释同温度地毯与瓷砖触感不同的原因：在相同温度和相同时间区间内，因热传递速率不同导致瓷砖接触皮肤热损失更大、温度下降更大，且其他条件相同。",
+                "valueHash": "ddd265caebe0d2facdb2f53d103a3b1628e6181fcc7e1dfb2f150f1232b5ebc1"
+              },
+              {
+                "id": "e10",
+                "pointer": "/prerequisites/3",
+                "role": "context",
+                "kind": "text",
+                "value": "识别热传递方向（从高温物体到低温物体）、热通量依赖温差ΔT=Thot−Tcold、以及温度相同时净热传递为零并达到热平衡。",
+                "valueHash": "d2abdcbfb53efcda9392588264fdce04be1d70ffd3a1163b4fbfe7040f7f1e8c"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q1",
+          "level": 2,
+          "reason": "产物(e16)正确总结资料(e3,e9)中同温触感差异机制，自举石凳木凳例子符合导热率差异原理且无虚假断言，边界说明同温、直接接触、热平衡及小薄材料前提不成立均正确有资料支持(e3)，必要断言与限制均获支持。",
+          "refs": [
+            "e16",
+            "e3",
+            "e5",
+            "e9"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e16",
+              "pointer": "/artifacts/0/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "课程资料提到，相同温度的地毯和瓷砖触感不同是因为热传递速率不同，瓷砖导热更快导致皮肤热损失更大、温度下降更多；同时资料指出金属等良导体比木材等绝缘体传热快。\n\n举例（补充说明）：设想冬天户外同样气温的石凳和木凳，你用手掌去摸，石凳感觉更冰。这是因为石头导热优于木头，更快从手部带走热量，手部皮肤温度下降更快。这个例子的适用边界是：两者确实处于相同温度、直接接触皮肤且无隔热层；若戴手套或接触时间极长直至热平衡，差异会消失；若材料本身很小很薄，其温度会被手快速改变，前提“同温”便不成立了。",
+              "valueHash": "73b78a7d3755386a8d408ea49262796c73d7a38b1adc84649a276a10bb1f72a1"
+            },
+            {
+              "id": "e3",
+              "pointer": "/sources/0/text",
+              "role": "source",
+              "kind": "text",
+              "value": "Your feet feel cold as you walk barefoot across the living room carpet in your cold house and then step onto the kitchen tile floor. This result is intriguing, since the carpet and tile floor are both at the same temperature. The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.\n\nSome materials conduct thermal energy faster than others. In general, good conductors of electricity (metals like copper, aluminum, gold, and silver) are also good heat conductors, whereas insulators of electricity (wood, plastic, and rubber) are poor heat conductors.\n\nThe (average) kinetic energy of a molecule in the hot body is higher than in the colder body. If two molecules collide, an energy transfer from the molecule with greater kinetic energy to the molecule with less kinetic energy occurs. The cumulative effect from all collisions results in a net flux of heat from the hot body to the colder body. The heat flux thus depends on the temperature difference ΔΤ=Τhot−Tcold. Therefore, you will get a more severe burn from boiling water than from hot tap water. Conversely, if the temperatures are the same, the net heat transfer rate falls to zero, and equilibrium is achieved. Owing to the fact that the number of collisions increases with increasing area, heat conduction depends on the cross-sectional area. If you touch a cold wall with your palm, your hand cools faster than if you just touch it with your fingertip.",
+              "valueHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd"
+            },
+            {
+              "id": "e5",
+              "pointer": "/goals/0",
+              "role": "goal",
+              "kind": "text",
+              "value": "请针对当前内容，用一个与资料不同但容易理解的例子解释关键关系，并说明例子的适用边界。",
+              "valueHash": "8554fd2a6af26f8cda0d4670bec8b7daaade91997a1e3a766c77f315dc970152"
+            },
+            {
+              "id": "e9",
+              "pointer": "/prerequisites/2",
+              "role": "context",
+              "kind": "text",
+              "value": "解释同温度地毯与瓷砖触感不同的原因：在相同温度和相同时间区间内，因热传递速率不同导致瓷砖接触皮肤热损失更大、温度下降更大，且其他条件相同。",
+              "valueHash": "ddd265caebe0d2facdb2f53d103a3b1628e6181fcc7e1dfb2f150f1232b5ebc1"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [],
+          "proposedLevel": 2,
+          "proposedReason": "产物(e16)正确总结资料(e3,e9)中同温触感差异机制，自举石凳木凳例子符合导热率差异原理且无虚假断言，边界说明同温、直接接触、热平衡及小薄材料前提不成立均正确有资料支持(e3)，必要断言与限制均获支持。"
+        },
+        {
+          "dimension": "Q3",
+          "level": 2,
+          "reason": "目标(e5)要求不同例子及边界，产物(e16)以石凳木凳解释导热速率导致皮肤温降差异，具备先决条件(e7,e9,e10)的学习者能跟随，边界相关且正确，无中心推导错误。",
+          "refs": [
+            "e16",
+            "e5",
+            "e7",
+            "e9",
+            "e10"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e16",
+              "pointer": "/artifacts/0/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "课程资料提到，相同温度的地毯和瓷砖触感不同是因为热传递速率不同，瓷砖导热更快导致皮肤热损失更大、温度下降更多；同时资料指出金属等良导体比木材等绝缘体传热快。\n\n举例（补充说明）：设想冬天户外同样气温的石凳和木凳，你用手掌去摸，石凳感觉更冰。这是因为石头导热优于木头，更快从手部带走热量，手部皮肤温度下降更快。这个例子的适用边界是：两者确实处于相同温度、直接接触皮肤且无隔热层；若戴手套或接触时间极长直至热平衡，差异会消失；若材料本身很小很薄，其温度会被手快速改变，前提“同温”便不成立了。",
+              "valueHash": "73b78a7d3755386a8d408ea49262796c73d7a38b1adc84649a276a10bb1f72a1"
+            },
+            {
+              "id": "e5",
+              "pointer": "/goals/0",
+              "role": "goal",
+              "kind": "text",
+              "value": "请针对当前内容，用一个与资料不同但容易理解的例子解释关键关系，并说明例子的适用边界。",
+              "valueHash": "8554fd2a6af26f8cda0d4670bec8b7daaade91997a1e3a766c77f315dc970152"
+            },
+            {
+              "id": "e7",
+              "pointer": "/prerequisites/0",
+              "role": "context",
+              "kind": "text",
+              "value": "知道温度与热传递是不同概念",
+              "valueHash": "be9897bf4972f90e022866216c9cc412a49357ac372d5d78cf4d1c9d9597efc0"
+            },
+            {
+              "id": "e9",
+              "pointer": "/prerequisites/2",
+              "role": "context",
+              "kind": "text",
+              "value": "解释同温度地毯与瓷砖触感不同的原因：在相同温度和相同时间区间内，因热传递速率不同导致瓷砖接触皮肤热损失更大、温度下降更大，且其他条件相同。",
+              "valueHash": "ddd265caebe0d2facdb2f53d103a3b1628e6181fcc7e1dfb2f150f1232b5ebc1"
+            },
+            {
+              "id": "e10",
+              "pointer": "/prerequisites/3",
+              "role": "context",
+              "kind": "text",
+              "value": "识别热传递方向（从高温物体到低温物体）、热通量依赖温差ΔT=Thot−Tcold、以及温度相同时净热传递为零并达到热平衡。",
+              "valueHash": "d2abdcbfb53efcda9392588264fdce04be1d70ffd3a1163b4fbfe7040f7f1e8c"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [],
+          "proposedLevel": 2,
+          "proposedReason": "目标(e5)要求不同例子及边界，产物(e16)以石凳木凳解释导热速率导致皮肤温降差异，具备先决条件(e7,e9,e10)的学习者能跟随，边界相关且正确，无中心推导错误。"
+        }
+      ],
+      "reviewRequired": [],
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q1",
+            "status": "supported",
+            "reason": "产物(e16)总结同温触感差异机制与资料(e3,e9)一致，自举石凳木凳例子符合导热原理且边界说明正确，findings审计与条件检查均无未解异议，正向判断依赖已建立前提。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e16",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "课程资料提到，相同温度的地毯和瓷砖触感不同是因为热传递速率不同，瓷砖导热更快导致皮肤热损失更大、温度下降更多；同时资料指出金属等良导体比木材等绝缘体传热快。\n\n举例（补充说明）：设想冬天户外同样气温的石凳和木凳，你用手掌去摸，石凳感觉更冰。这是因为石头导热优于木头，更快从手部带走热量，手部皮肤温度下降更快。这个例子的适用边界是：两者确实处于相同温度、直接接触皮肤且无隔热层；若戴手套或接触时间极长直至热平衡，差异会消失；若材料本身很小很薄，其温度会被手快速改变，前提“同温”便不成立了。",
+                "valueHash": "73b78a7d3755386a8d408ea49262796c73d7a38b1adc84649a276a10bb1f72a1"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "Your feet feel cold as you walk barefoot across the living room carpet in your cold house and then step onto the kitchen tile floor. This result is intriguing, since the carpet and tile floor are both at the same temperature. The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.\n\nSome materials conduct thermal energy faster than others. In general, good conductors of electricity (metals like copper, aluminum, gold, and silver) are also good heat conductors, whereas insulators of electricity (wood, plastic, and rubber) are poor heat conductors.\n\nThe (average) kinetic energy of a molecule in the hot body is higher than in the colder body. If two molecules collide, an energy transfer from the molecule with greater kinetic energy to the molecule with less kinetic energy occurs. The cumulative effect from all collisions results in a net flux of heat from the hot body to the colder body. The heat flux thus depends on the temperature difference ΔΤ=Τhot−Tcold. Therefore, you will get a more severe burn from boiling water than from hot tap water. Conversely, if the temperatures are the same, the net heat transfer rate falls to zero, and equilibrium is achieved. Owing to the fact that the number of collisions increases with increasing area, heat conduction depends on the cross-sectional area. If you touch a cold wall with your palm, your hand cools faster than if you just touch it with your fingertip.",
+                "valueHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd"
+              },
+              {
+                "id": "e9",
+                "pointer": "/prerequisites/2",
+                "role": "context",
+                "kind": "text",
+                "value": "解释同温度地毯与瓷砖触感不同的原因：在相同温度和相同时间区间内，因热传递速率不同导致瓷砖接触皮肤热损失更大、温度下降更大，且其他条件相同。",
+                "valueHash": "ddd265caebe0d2facdb2f53d103a3b1628e6181fcc7e1dfb2f150f1232b5ebc1"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "dimension": "Q3",
+            "status": "supported",
+            "reason": "目标(e5)要求不同例子及边界，产物(e16)提供石凳木凳解释且先决条件(e7,e9,e10)学习者可跟随，边界相关正确，findings无质疑，正向判断完整。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e16",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "课程资料提到，相同温度的地毯和瓷砖触感不同是因为热传递速率不同，瓷砖导热更快导致皮肤热损失更大、温度下降更多；同时资料指出金属等良导体比木材等绝缘体传热快。\n\n举例（补充说明）：设想冬天户外同样气温的石凳和木凳，你用手掌去摸，石凳感觉更冰。这是因为石头导热优于木头，更快从手部带走热量，手部皮肤温度下降更快。这个例子的适用边界是：两者确实处于相同温度、直接接触皮肤且无隔热层；若戴手套或接触时间极长直至热平衡，差异会消失；若材料本身很小很薄，其温度会被手快速改变，前提“同温”便不成立了。",
+                "valueHash": "73b78a7d3755386a8d408ea49262796c73d7a38b1adc84649a276a10bb1f72a1"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "请针对当前内容，用一个与资料不同但容易理解的例子解释关键关系，并说明例子的适用边界。",
+                "valueHash": "8554fd2a6af26f8cda0d4670bec8b7daaade91997a1e3a766c77f315dc970152"
+              },
+              {
+                "id": "e7",
+                "pointer": "/prerequisites/0",
+                "role": "context",
+                "kind": "text",
+                "value": "知道温度与热传递是不同概念",
+                "valueHash": "be9897bf4972f90e022866216c9cc412a49357ac372d5d78cf4d1c9d9597efc0"
+              },
+              {
+                "id": "e9",
+                "pointer": "/prerequisites/2",
+                "role": "context",
+                "kind": "text",
+                "value": "解释同温度地毯与瓷砖触感不同的原因：在相同温度和相同时间区间内，因热传递速率不同导致瓷砖接触皮肤热损失更大、温度下降更大，且其他条件相同。",
+                "valueHash": "ddd265caebe0d2facdb2f53d103a3b1628e6181fcc7e1dfb2f150f1232b5ebc1"
+              },
+              {
+                "id": "e10",
+                "pointer": "/prerequisites/3",
+                "role": "context",
+                "kind": "text",
+                "value": "识别热传递方向（从高温物体到低温物体）、热通量依赖温差ΔT=Thot−Tcold、以及温度相同时净热传递为零并达到热平衡。",
+                "valueHash": "d2abdcbfb53efcda9392588264fdce04be1d70ffd3a1163b4fbfe7040f7f1e8c"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "resultHash": "6c0be3b77ff6fa2d7b0f130a6d941489631abc73eccf81df60b423288756a25d"
+  }
+}

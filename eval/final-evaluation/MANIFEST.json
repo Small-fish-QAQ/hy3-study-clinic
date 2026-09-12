@@ -1,0 +1,692 @@
+{
+  "schemaVersion": 1,
+  "status": "INTERIM_FINAL_EVIDENCE_HUMAN_VALIDATION_PENDING",
+  "authoritativeExport": "public-export-final-v6",
+  "files": [
+    {
+      "path": "CONSTRUCTION.md",
+      "bytes": 7804,
+      "sha256": "755089d53232e2192180dd0f29303499e25d4be58d6a6a8279189521df663bca"
+    },
+    {
+      "path": "dataset/controlled-cases/E044.json",
+      "bytes": 3316,
+      "sha256": "2a35db4d146023f4ec29a647c6c2b7fc142beb25f103c77e59c28e7a9b2a1544"
+    },
+    {
+      "path": "dataset/controlled-cases/E091.json",
+      "bytes": 3667,
+      "sha256": "f43247a989617e73e47396962ae1a62bf879e7d2803186a42556055913f23c61"
+    },
+    {
+      "path": "dataset/controlled-cases/E299.json",
+      "bytes": 4129,
+      "sha256": "601fa1a1b7e616e60ee7d3f255529513593db7dbc771713c9812326a4ea8ff1d"
+    },
+    {
+      "path": "dataset/controlled-cases/E346.json",
+      "bytes": 3940,
+      "sha256": "8a6190195bc9ead50e5024ed4dedd1cd611fe39aff342a3d97ee55eecb52522a"
+    },
+    {
+      "path": "dataset/controlled-cases/E393.json",
+      "bytes": 3946,
+      "sha256": "22fc0c39a6106f8861e6f61e88fe90b88424d0539b2774b19f3c43a5095b52c6"
+    },
+    {
+      "path": "dataset/controlled-cases/E460.json",
+      "bytes": 3126,
+      "sha256": "8e6adeee6b42421064cf54b51f3c0d70d209b8eef32ccfa3dc0c460127235cac"
+    },
+    {
+      "path": "dataset/controlled-cases/E507.json",
+      "bytes": 3023,
+      "sha256": "38d6d8d32c51e5b45e0dc3f8ca681e5af4eea5793f5f36258c13c633e7a1bc47"
+    },
+    {
+      "path": "dataset/controlled-cases/E554.json",
+      "bytes": 2930,
+      "sha256": "bfff3f968da56e2582aea8a0a5a366090a4f62866cfddd93141c4ba0e625f8e1"
+    },
+    {
+      "path": "dataset/controlled-cases/E601.json",
+      "bytes": 3430,
+      "sha256": "e4507f3d3c3dddd473a995f2e2724adbe5acab3a5afaab0eec9e506f39f5dafb"
+    },
+    {
+      "path": "dataset/controlled-cases/E648.json",
+      "bytes": 3264,
+      "sha256": "222394746aa41f213845386e1f3f31a9e2ef56e94425cfa946626c5f317c49f1"
+    },
+    {
+      "path": "dataset/controlled-cases/E695.json",
+      "bytes": 3188,
+      "sha256": "4a05b68e6773af55b193a8e58eafd697926d51006dc709f6fb126ba9d44cbfd3"
+    },
+    {
+      "path": "dataset/controlled-cases/E732.json",
+      "bytes": 4291,
+      "sha256": "9dcc9a8ede53f27cc926b91f35b828675582fbb6ddfb24ba7d28546f4a151609"
+    },
+    {
+      "path": "dataset/controlled-cases/E779.json",
+      "bytes": 4251,
+      "sha256": "0538e95d74d2aa9c2a09960ed598b447c71ffc43dfa6dda4d091f16281e35364"
+    },
+    {
+      "path": "dataset/controlled-cases/E826.json",
+      "bytes": 4259,
+      "sha256": "d73a63defbd86a2b1b7bf1b059d702c0eb741fb588c54197d8c0c65dfaa1d1cf"
+    },
+    {
+      "path": "dataset/coverage.json",
+      "bytes": 976,
+      "sha256": "91984ef3b395c8ef9f91e97dcd8cc382f1064effb229b250449694bd582930d7"
+    },
+    {
+      "path": "dataset/external-sources/E01.json",
+      "bytes": 6822,
+      "sha256": "77c337a5b8136ee64b72209f98a25ed413d9d3fdf2e9c4e5dfd96427b1a09618"
+    },
+    {
+      "path": "dataset/external-sources/E02.json",
+      "bytes": 7183,
+      "sha256": "90625cfa532bbaa0421ad03af185f9aa7edf3605a872bf50ef642f296be5c26f"
+    },
+    {
+      "path": "dataset/external-sources/E03.json",
+      "bytes": 8268,
+      "sha256": "b97d1a4d70d57eaa7ec09ea07fcd3d72469c712dfedef56681091cb9c620130a"
+    },
+    {
+      "path": "dataset/external-sources/E04.json",
+      "bytes": 8172,
+      "sha256": "2ae3d18b45cb887ca6a3798cd344a374760a861eaa05bd3641d9d808a664ac48"
+    },
+    {
+      "path": "dataset/external-sources/manifest.json",
+      "bytes": 1624,
+      "sha256": "1c929759bdb91227358747eab3c3a1f66e4d22a67d6b45257efb787b874a7d0d"
+    },
+    {
+      "path": "dataset/natural-cases/N-B-E01-curriculum.json",
+      "bytes": 6490,
+      "sha256": "57f8680fd90be79dc5d65841dc598d844c6a98c016ee516d4d7f61f08b8c01d9"
+    },
+    {
+      "path": "dataset/natural-cases/N-B-E01-formal-question.json",
+      "bytes": 14186,
+      "sha256": "561e847cd0752749ee4893e2220ec4ed67a1e6a6c2dd35ec484fc6640ac756b3"
+    },
+    {
+      "path": "dataset/natural-cases/N-B-E01-grading-negative.json",
+      "bytes": 3796,
+      "sha256": "9500024c7e5670a6cd550b9d671068d8477a6b56baba257ee0018b8745e46bae"
+    },
+    {
+      "path": "dataset/natural-cases/N-B-E01-grading-positive.json",
+      "bytes": 4109,
+      "sha256": "9ac6211832d6c4c8f9e31545df04a1fcf65b7478921118ea13a5300fb77d456e"
+    },
+    {
+      "path": "dataset/natural-cases/N-B-E01-practice.json",
+      "bytes": 7761,
+      "sha256": "d5c8ade47bc9542af47077c016b696e8934ee6ca834104d1c38800c3aa6866cc"
+    },
+    {
+      "path": "dataset/natural-cases/N-B-E01-repair.json",
+      "bytes": 6361,
+      "sha256": "ac4eed1fb0dc96136d5e858f01f7c463ca58ec533fc6f56e44e7bb55e48556d8"
+    },
+    {
+      "path": "dataset/natural-cases/N-B-E01-retest.json",
+      "bytes": 11971,
+      "sha256": "b7ba05f851807c4e7e38ef3bd2db0ee9dad309d0777e311c2302f4680666f02f"
+    },
+    {
+      "path": "dataset/natural-cases/N-B-E01-teaching.json",
+      "bytes": 5198,
+      "sha256": "dfddb2aaa7bb751e6acf4c49ea87a58df109153e789c60e4d24c414207b037b5"
+    },
+    {
+      "path": "dataset/natural-cases/N-B-E01-tutor.json",
+      "bytes": 3516,
+      "sha256": "857715f4650cb656451b04b30f304b79404f4f025c301d4769bbdc2000995125"
+    },
+    {
+      "path": "dataset/natural-cases/N-E01-curriculum.json",
+      "bytes": 6765,
+      "sha256": "edf373451273c234ff93d204bf0adeef3cbe517e6fd0432725c2ff43dd62b91a"
+    },
+    {
+      "path": "dataset/natural-cases/N-E01-practice.json",
+      "bytes": 12655,
+      "sha256": "f636aa3ed0886eef5d3701468abe4714fb09ff56d4d6a1541c9e9266156cd7b9"
+    },
+    {
+      "path": "dataset/natural-cases/N-E01-repair.json",
+      "bytes": 7426,
+      "sha256": "c1a739c706e3d4b6420bd8273875122aaeeb262bc3105628aa5dd4bb519674eb"
+    },
+    {
+      "path": "dataset/natural-cases/N-E01-retest.json",
+      "bytes": 17401,
+      "sha256": "30b23bd0c1a2d74be44cf607885443e4e190e3f570e4ba27a60a40777eb6dc93"
+    },
+    {
+      "path": "dataset/natural-cases/N-E01-teaching.json",
+      "bytes": 11026,
+      "sha256": "c45505eaa7948ffb28334f4575eea5bb67da42a980faf75e7c0b3574d4b6c502"
+    },
+    {
+      "path": "dataset/natural-cases/N-E01-tutor.json",
+      "bytes": 4003,
+      "sha256": "2a25c93dba76f7ea7cbc586a3ef780d25a07e5fdad38d97e876adc22070a7670"
+    },
+    {
+      "path": "dataset/natural-cases/N-E02-curriculum.json",
+      "bytes": 7150,
+      "sha256": "19e72f7c041510db715466c5b749105996da9de17f06f38b7b598471775cd6de"
+    },
+    {
+      "path": "dataset/natural-cases/N-E02-practice.json",
+      "bytes": 12090,
+      "sha256": "a416ea5f87ab23478a2e36cb4b17c8f37f5f47d0b88c10adc025e406723e18b3"
+    },
+    {
+      "path": "dataset/natural-cases/N-E02-repair.json",
+      "bytes": 6730,
+      "sha256": "351dbd2d08d526ccdf350e1ba7aee05a65d9157e1b0cd4e0e4431e70e7d5a80b"
+    },
+    {
+      "path": "dataset/natural-cases/N-E02-retest.json",
+      "bytes": 16192,
+      "sha256": "3b064c88d0c57e6ed07d14923c1ceb71db791af3e78270c7e22333c1130cea63"
+    },
+    {
+      "path": "dataset/natural-cases/N-E02-teaching.json",
+      "bytes": 9539,
+      "sha256": "4179a4bed9dbb3e30b76857c1fcfc4108a7441bce9efb57096af3ef69055f862"
+    },
+    {
+      "path": "dataset/natural-cases/N-E02-tutor.json",
+      "bytes": 3628,
+      "sha256": "c4568f08e9ebc30c53319066572de42a63454404c375ebf4aaa730e551c7a51c"
+    },
+    {
+      "path": "dataset/natural-cases/N-E04-curriculum.json",
+      "bytes": 9099,
+      "sha256": "13fd9765bc6435372feec30d83c32e48fc77da119c9c078ce4430eeca51a9b43"
+    },
+    {
+      "path": "dataset/natural-cases/N-E04-practice.json",
+      "bytes": 12998,
+      "sha256": "16d5750f6e97c49200511e9b6dd694168bef66ae65d875d0a25049d171d2e4ae"
+    },
+    {
+      "path": "dataset/natural-cases/N-E04-repair.json",
+      "bytes": 7540,
+      "sha256": "00b6f7100cc3f59878e2e47254cf51f3ed34f5ca36b78120c7b2ad4a5285b442"
+    },
+    {
+      "path": "dataset/natural-cases/N-E04-retest.json",
+      "bytes": 17108,
+      "sha256": "53d778bf61c9aa81ca6d8b1f6df8562dd4629b2d2937fc3ecd14557ff7d80bca"
+    },
+    {
+      "path": "dataset/natural-cases/N-E04-teaching.json",
+      "bytes": 10856,
+      "sha256": "d98756d15b999c2546b76126921e502be41a130d8a8a55c3cf0889410c10538b"
+    },
+    {
+      "path": "dataset/natural-cases/N-E04-tutor.json",
+      "bytes": 4631,
+      "sha256": "5d82d9f4827f198dfa59a6fd09005c386d10eb5ada4840a01a1d2d9063fc427e"
+    },
+    {
+      "path": "dataset/natural-cases/N-F11-curriculum.json",
+      "bytes": 6123,
+      "sha256": "bbf53f443a82f6b305dc9a8d563a83e35e9105487b3e2ae7b23485bf17164a34"
+    },
+    {
+      "path": "dataset/natural-cases/N-F11-practice.json",
+      "bytes": 15019,
+      "sha256": "40caf45b8fdc4da688a742133a60758c15d92497584dde4084198d9c8c9fa80e"
+    },
+    {
+      "path": "dataset/natural-cases/N-F11-teaching.json",
+      "bytes": 14271,
+      "sha256": "4fc3f08c7b89c6fb548a8efc3abb2e84946d706d9b0e44e78ed80502c0067984"
+    },
+    {
+      "path": "dataset/natural-cases/N-F11-tutor.json",
+      "bytes": 4738,
+      "sha256": "486a1875bba233e306d5fd4c70e605e73e5ba4f5012d235d8a3308766f421f36"
+    },
+    {
+      "path": "dataset/natural-cases/N-F12-curriculum.json",
+      "bytes": 5933,
+      "sha256": "5786d3d5feb299c7e96288eb69cee9add673a27dfe2ae1a07601d0e4939e2481"
+    },
+    {
+      "path": "dataset/natural-cases/N-F12-practice.json",
+      "bytes": 13150,
+      "sha256": "ed580cdb96626f30292d3cc89a1ff07e4d4548918d23f319680d4612c9fa3ea9"
+    },
+    {
+      "path": "dataset/natural-cases/N-F12-repair.json",
+      "bytes": 7478,
+      "sha256": "4a65a86c7688e171ad4103376a2f574a7961da0ef8152ac8ceebf846d596585e"
+    },
+    {
+      "path": "dataset/natural-cases/N-F12-retest.json",
+      "bytes": 17083,
+      "sha256": "65b29fdd198d2c2874970c3c413a69260cf2b7f2cff614efbc8cd01386882532"
+    },
+    {
+      "path": "dataset/natural-cases/N-F12-teaching.json",
+      "bytes": 11163,
+      "sha256": "6774031c4791ee1cd47bd32bd04194506c374d58270a792261d13361e10f59c4"
+    },
+    {
+      "path": "dataset/natural-cases/N-F12-tutor.json",
+      "bytes": 4847,
+      "sha256": "3926bd53dbdb959285e4f716751bb1472fedf1ffc7398c7408b152d4222a7c75"
+    },
+    {
+      "path": "dataset/public-cases.json",
+      "bytes": 28162,
+      "sha256": "e1900e3edb899d7d3048be8c43f5f6521422f0fd6c1d0b835655748c8c2dc6b8"
+    },
+    {
+      "path": "dataset/sources/F11.json",
+      "bytes": 3044,
+      "sha256": "de3fa40491a02f03aede11c0e430122aa79161a309ac40c80cbd1cf567c3c2ec"
+    },
+    {
+      "path": "dataset/sources/F12.json",
+      "bytes": 3310,
+      "sha256": "3f500756314ba82fbd3adbb54181f90d368fef5b53e7b75dbe90cc1453da4d6f"
+    },
+    {
+      "path": "method/original-freeze.json",
+      "bytes": 6802,
+      "sha256": "54f34c42666080d8353890940c0f1bff42d7349967a49f0ea9a75a41ed74fbf0"
+    },
+    {
+      "path": "method/src/contracts.mjs",
+      "bytes": 20333,
+      "sha256": "1669056c837c8d5a0a28c9cdbf8043d0c886f6b080921f257ae57e5e59942d94"
+    },
+    {
+      "path": "method/src/evaluator.mjs",
+      "bytes": 4320,
+      "sha256": "68a18ddf11d810beb8da2f0ab434aab2555408e3c3ab8ffc23634daaacaacfcd"
+    },
+    {
+      "path": "method/src/packet.mjs",
+      "bytes": 4967,
+      "sha256": "c750ca2c410418401e4fba43e5e39c195b05a95b000b1419c84b6cafd894e68b"
+    },
+    {
+      "path": "method/src/prompts.mjs",
+      "bytes": 15900,
+      "sha256": "0d529e438dabc66cc42b1e411d00a5839bb78023b1b09f4599720165e52af738"
+    },
+    {
+      "path": "method/src/provider.mjs",
+      "bytes": 8310,
+      "sha256": "b0648dc53ed0d8a6c72af5bf1703ca1a9154a2fcbf06295ddb7798370d7f0582"
+    },
+    {
+      "path": "method/src/rubric.mjs",
+      "bytes": 1988,
+      "sha256": "700758223cef038b884082e7e640bfec094a45f0133d0b11b3fb324ddd4c61b7"
+    },
+    {
+      "path": "method/src/storage.mjs",
+      "bytes": 2842,
+      "sha256": "cde707ebc75d7902de38c601fa5e46bc9de8c9d49b3056bd18d2f3a86a618bbf"
+    },
+    {
+      "path": "method/src/util.mjs",
+      "bytes": 1618,
+      "sha256": "18c8ccc33d8cf381dd1bc6d55cbe8772b3c90721858cc9c71f906c1b66809d69"
+    },
+    {
+      "path": "PROTOCOL.md",
+      "bytes": 6274,
+      "sha256": "cdc329e601ebfbdc3c486dc72381043bf4248cad258b311f93b5d287156299c8"
+    },
+    {
+      "path": "README.md",
+      "bytes": 7062,
+      "sha256": "ec061ab248763a72387c12224685c2611b8abae51e9a228d6348b6aa2e63a50a"
+    },
+    {
+      "path": "results/call-accounting.json",
+      "bytes": 572910,
+      "sha256": "ee4e93b9f9c730b9e92b69af2f3ed2ab50dfd5d189027a5ad4fbb01c367040de"
+    },
+    {
+      "path": "results/course-availability.json",
+      "bytes": 7082,
+      "sha256": "89ccdfc29ec92942c6594c331ca70fc63a1623381a5f965d1f8f0b8e64e8759e"
+    },
+    {
+      "path": "results/frozen-receipts.json",
+      "bytes": 3054,
+      "sha256": "6ba3c3016d5c0f5b3264419556553d81371fa603ca04b4e5c470bc9d92996d8e"
+    },
+    {
+      "path": "results/machine-rows.csv",
+      "bytes": 28855,
+      "sha256": "b374a80f82d95fb93d10751d17137d6af369996b1e4c5a1d1731e69b91e1d087"
+    },
+    {
+      "path": "results/machine-rows.json",
+      "bytes": 107773,
+      "sha256": "04a6511557aa57b2471ea7f649c04e7038268642ca4de1832005ebda1d9baa7c"
+    },
+    {
+      "path": "results/machine-summary.json",
+      "bytes": 5890,
+      "sha256": "aa999929c6c6530f68a5cb3e531992cc3d64354a077e36d5ed6438c0a192ee28"
+    },
+    {
+      "path": "results/model-review.json",
+      "bytes": 2952,
+      "sha256": "611a763ba687d7410307f43dee010b5f49b1a57521af186e71d13a627938ff44"
+    },
+    {
+      "path": "results/natural-missing.json",
+      "bytes": 10423,
+      "sha256": "6ce6a52672dfa0522a82c0d0853a2240469b5b0e258045d8cb07d18dde25ddfc"
+    },
+    {
+      "path": "results/observations/E044-r1.json",
+      "bytes": 28175,
+      "sha256": "fc114acd0ab8144f87b1ec5966c07f7f1ad2c546bb2722f6c08d274f7f5badf9"
+    },
+    {
+      "path": "results/observations/E091-r1.json",
+      "bytes": 23210,
+      "sha256": "3ee9452c8a18af5c2a9ee5007e82d56eb6600da92980d7ae74b6845c4f1f877c"
+    },
+    {
+      "path": "results/observations/E299-r1.json",
+      "bytes": 21778,
+      "sha256": "c62eb408b7c907590a13c39d655c62c79f4b449c347c686395c9872c36a7db3e"
+    },
+    {
+      "path": "results/observations/E346-r1.json",
+      "bytes": 34060,
+      "sha256": "96c213a0d8506254ef0473689ba7c131af2bc27978e7c54eae3ba31e07801dd0"
+    },
+    {
+      "path": "results/observations/E393-r1.json",
+      "bytes": 31882,
+      "sha256": "073339de616df73fa2691ad140ed70567bbf3273a7cbe2d5adf32776a966d7b7"
+    },
+    {
+      "path": "results/observations/E460-r1.json",
+      "bytes": 27082,
+      "sha256": "9d76c717697594edb29a88856b11c2cec921ba4ce1d652f2064f703501ac9ec6"
+    },
+    {
+      "path": "results/observations/E507-r1.json",
+      "bytes": 24638,
+      "sha256": "5d62330a5a1cc28bbb05b2e4b7b253ae96ac4f202925d72bc9f3bf0974b95e3c"
+    },
+    {
+      "path": "results/observations/E554-r1.json",
+      "bytes": 22963,
+      "sha256": "559c33236f20db631328272b24909f16b528b8a00a65016f0c3ee5efe4c6e960"
+    },
+    {
+      "path": "results/observations/E601-r1.json",
+      "bytes": 30213,
+      "sha256": "3ba919a24d126675f6ed8574d1f3d658196516365dacdfa3a25e35e567002c60"
+    },
+    {
+      "path": "results/observations/E648-r1.json",
+      "bytes": 17800,
+      "sha256": "cbda8e23a60d032c4d930c24453767fe27e4c26bcc10509c2bc5a913059ef0cd"
+    },
+    {
+      "path": "results/observations/E695-r1.json",
+      "bytes": 19373,
+      "sha256": "48649257724900a98a24dab9807af3624913804f5804f0a75ab54c7ef6b4cf0c"
+    },
+    {
+      "path": "results/observations/E732-r1.json",
+      "bytes": 52046,
+      "sha256": "5b5feeb4e6876a7e1c1e66f0d59682a81c65430b4106a6050072d3f74ee99be2"
+    },
+    {
+      "path": "results/observations/E779-r1.json",
+      "bytes": 50072,
+      "sha256": "a36ba51cf02bc89b6a577a247db446b85705da00b5a9cfbddf36ae4856b52e81"
+    },
+    {
+      "path": "results/observations/E826-r1.json",
+      "bytes": 44238,
+      "sha256": "b9b2a31bf88acdb917fbec56c1aa673d86a03ae345a4e03b9a7f9de088464d30"
+    },
+    {
+      "path": "results/observations/N-B-E01-curriculum-r1.json",
+      "bytes": 20464,
+      "sha256": "1942d3381b68f9434bc4cb0c914b0c83fd25c61a8e2e17a518789df1e15b4956"
+    },
+    {
+      "path": "results/observations/N-B-E01-formal-question-r1.json",
+      "bytes": 21319,
+      "sha256": "1e8f6c81b7c51d149d727120edcdd59239e600f96086bdfa8a59648c7924036f"
+    },
+    {
+      "path": "results/observations/N-B-E01-grading-negative-r1.json",
+      "bytes": 38371,
+      "sha256": "5cf0072cab7f0515f02429187523c1bb86e56ac6cc85c130eb534ef499480735"
+    },
+    {
+      "path": "results/observations/N-B-E01-grading-positive-r1.json",
+      "bytes": 46534,
+      "sha256": "30dc727baf1241f5d98db2fb8507bf4ab6ff06b383c3064c5d40243eca039344"
+    },
+    {
+      "path": "results/observations/N-B-E01-practice-r1.json",
+      "bytes": 36903,
+      "sha256": "ecd13ec6dab63a7ebb895e1a0b6b32fb4954cb59d6feee0e082fa3cc94f1e340"
+    },
+    {
+      "path": "results/observations/N-B-E01-repair-r1.json",
+      "bytes": 17867,
+      "sha256": "1850a0acb95606cb37e6864d0f25606f976704b1230e63ff82e14c737fb76947"
+    },
+    {
+      "path": "results/observations/N-B-E01-retest-r1.json",
+      "bytes": 5609,
+      "sha256": "68ee0f3fa9684209ba5b8caf07a15d25d3fcef71305473f6401e6933cf207166"
+    },
+    {
+      "path": "results/observations/N-B-E01-teaching-r1.json",
+      "bytes": 39481,
+      "sha256": "1a877dd4a5f4ee5f8d2420d7cba7233a495478f4427eaac40ddc58c2927ce3c7"
+    },
+    {
+      "path": "results/observations/N-B-E01-tutor-r1.json",
+      "bytes": 36763,
+      "sha256": "0d3ed0d07c9170c7ff566f9d378e8eba378b6fc901f5749f4bed1461574c8424"
+    },
+    {
+      "path": "results/observations/N-E01-curriculum-r1.json",
+      "bytes": 43626,
+      "sha256": "61f09adc652c0515bc96a76062d0bea275e9796cbe7d86c614bee0a88abfab55"
+    },
+    {
+      "path": "results/observations/N-E01-practice-r1.json",
+      "bytes": 1584,
+      "sha256": "3710757eade72dce4e0aad61fe0c775f8843ab8f31fa8bac8596eec3d19a3063"
+    },
+    {
+      "path": "results/observations/N-E01-repair-r1.json",
+      "bytes": 22851,
+      "sha256": "f09a2882156776607fac85c5285e1c8c40e602a418858cf2609f8b6daf1762da"
+    },
+    {
+      "path": "results/observations/N-E01-retest-r1.json",
+      "bytes": 16715,
+      "sha256": "8105bad95ee05e6eef049fbe7065712a6f27b0c61bc7545e4d3c2d9f8cf72f61"
+    },
+    {
+      "path": "results/observations/N-E01-teaching-r1.json",
+      "bytes": 47104,
+      "sha256": "233fca174924c955b838b4931427f6110b4aa5fd9f3a076de64733e108d6e2e8"
+    },
+    {
+      "path": "results/observations/N-E01-tutor-r1.json",
+      "bytes": 47599,
+      "sha256": "eb766cec8831ebf6bbfdfaf1bf7dbc603f184b2532686508b739849db36c721a"
+    },
+    {
+      "path": "results/observations/N-E02-curriculum-r1.json",
+      "bytes": 18668,
+      "sha256": "9552d4ac848fa084afc473a1c56da37cf7fdac624a5ca0dc6afd9a370f9c5013"
+    },
+    {
+      "path": "results/observations/N-E02-practice-r1.json",
+      "bytes": 32382,
+      "sha256": "24daac1dcea36a8da87e836ca73c7a8012ee7f35798b7d665d4ef4834aa2693a"
+    },
+    {
+      "path": "results/observations/N-E02-repair-r1.json",
+      "bytes": 28349,
+      "sha256": "e526128bc570fff47d0da288aded53adcffd9246a3c0feb63531f88dcd23a234"
+    },
+    {
+      "path": "results/observations/N-E02-retest-r1.json",
+      "bytes": 20592,
+      "sha256": "78ca97991b55090ac2022e1b0ec60bd35755237fa15d8288c0580df80fd43662"
+    },
+    {
+      "path": "results/observations/N-E02-teaching-r1.json",
+      "bytes": 50202,
+      "sha256": "1edbcfbf6418f10c940e9f19d4eedefa9342777b79068cb9e27fbe70e0617218"
+    },
+    {
+      "path": "results/observations/N-E02-tutor-r1.json",
+      "bytes": 38013,
+      "sha256": "5f58288a53eeab8deabdbb3643b18df4e1f66a7a4e37b0dc0f69c0244c2b062b"
+    },
+    {
+      "path": "results/observations/N-E04-curriculum-r1.json",
+      "bytes": 40159,
+      "sha256": "e8419094e5974ae6a294d3d7e3cc44ef5c7f9d2e96c371de444b6cd437867e4f"
+    },
+    {
+      "path": "results/observations/N-E04-practice-r1.json",
+      "bytes": 39635,
+      "sha256": "aae6aa161f120adde0777b227d29b9ffd05b9f2459e6990cdc9090a177c102cd"
+    },
+    {
+      "path": "results/observations/N-E04-repair-r1.json",
+      "bytes": 31727,
+      "sha256": "10bfbb0acd31d0dd0e57c466dcc1947a55a10445188cb0888a322055b9c1fbd6"
+    },
+    {
+      "path": "results/observations/N-E04-retest-r1.json",
+      "bytes": 32850,
+      "sha256": "67a048d144fa082fb51c5c5aeb526f5be4252dc8ed20258e262d7b61ecd1f28e"
+    },
+    {
+      "path": "results/observations/N-E04-teaching-r1.json",
+      "bytes": 49225,
+      "sha256": "a44536ca9833cd1c2b4333b3b9b7b25164460656355d5a1d73ee585de2e4218a"
+    },
+    {
+      "path": "results/observations/N-E04-tutor-r1.json",
+      "bytes": 38642,
+      "sha256": "25cd1145634b21ab8506aac7046d183450aaa9e245fa267921a0030f23cb6ffd"
+    },
+    {
+      "path": "results/observations/N-F11-curriculum-r1.json",
+      "bytes": 39970,
+      "sha256": "d9f74690637a0910bb20c8bc49944b82ab75a9f83b56836269da5ed9ec9679ac"
+    },
+    {
+      "path": "results/observations/N-F11-practice-r1.json",
+      "bytes": 37327,
+      "sha256": "4f3b698ecfc6c89227ecd5da9708e055c6cebfc35eb9976daa43667311c202f3"
+    },
+    {
+      "path": "results/observations/N-F11-teaching-r1.json",
+      "bytes": 30152,
+      "sha256": "a6731ab12506811ae22adcbabe40f1139e5df02e3172aadcddf0daceaa2a0ebd"
+    },
+    {
+      "path": "results/observations/N-F11-tutor-r1.json",
+      "bytes": 32915,
+      "sha256": "182622373d7cfe65640bebd56a273136f78d025fe9ef8b5da268a8d5628f2255"
+    },
+    {
+      "path": "results/observations/N-F11-tutor-r2.json",
+      "bytes": 25718,
+      "sha256": "c928497217723b2dd5c233a4d39066c2b78a69c24eadb334ff9dfb12f28f8eef"
+    },
+    {
+      "path": "results/observations/N-F11-tutor-r3.json",
+      "bytes": 48404,
+      "sha256": "a428c444fc072ad9f80fdd34e85a2caa0fd2cca077fb0804cadafc9ca2d8cd8e"
+    },
+    {
+      "path": "results/observations/N-F12-curriculum-r1.json",
+      "bytes": 16665,
+      "sha256": "09be02c046043b18b14e3849c335ea451b91198e4f909260149d893f1023a502"
+    },
+    {
+      "path": "results/observations/N-F12-practice-r1.json",
+      "bytes": 43384,
+      "sha256": "fb49f501fd9bd1780ed0ed7c4a4e6fad115c7438fa753f3b61b61e8975685000"
+    },
+    {
+      "path": "results/observations/N-F12-repair-r1.json",
+      "bytes": 21693,
+      "sha256": "5d9f7dabf5e4905cbbff80beeb4046aae0b88eda58f0380e6ea9de42e7788086"
+    },
+    {
+      "path": "results/observations/N-F12-retest-r1.json",
+      "bytes": 29416,
+      "sha256": "c8d882ffb491d9afcc80e2f555cc0283daeb1d80f61c63f44659736a2245c293"
+    },
+    {
+      "path": "results/observations/N-F12-teaching-r1.json",
+      "bytes": 1023,
+      "sha256": "096f8238410791b8cd348c62a9168045fa59053bc115895eaedda0fc62f4798f"
+    },
+    {
+      "path": "results/observations/N-F12-tutor-r1.json",
+      "bytes": 11798,
+      "sha256": "5380f5802f732faf0908239945b962d1b3095077af8868b175b5b8d78b4df537"
+    },
+    {
+      "path": "results/observations/N-F12-tutor-r2.json",
+      "bytes": 27534,
+      "sha256": "674e218302a00f89391fbdf76e296329f0e22fbbb695d91dcdb9350010ab4533"
+    },
+    {
+      "path": "results/observations/N-F12-tutor-r3.json",
+      "bytes": 43427,
+      "sha256": "c6384cc83b0a12acfecea9ea9209f3f9ed1b78786f0a6b62e7ad16f0ec2864d3"
+    },
+    {
+      "path": "results/product-summary.json",
+      "bytes": 779,
+      "sha256": "889adc170e5ba1915586c5870ceb6db4fd0284d0f256fe5a5c9d7ea2bc62f08b"
+    },
+    {
+      "path": "scripts/verify-publication.mjs",
+      "bytes": 12496,
+      "sha256": "510cf7ac409c2dda13bca9e9ce4ab875ac8b786c4fd0de02526a61ece2937ea5"
+    }
+  ]
+}

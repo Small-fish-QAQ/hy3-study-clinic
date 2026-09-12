@@ -1,0 +1,72 @@
+{
+  "dimensions": [
+    "Q1",
+    "Q3"
+  ],
+  "evidence": {
+    "sources": [
+      {
+        "id": "B-E01",
+        "text": "Your feet feel cold as you walk barefoot across the living room carpet in your cold house and then step onto the kitchen tile floor. This result is intriguing, since the carpet and tile floor are both at the same temperature. The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.\n\nSome materials conduct thermal energy faster than others. In general, good conductors of electricity (metals like copper, aluminum, gold, and silver) are also good heat conductors, whereas insulators of electricity (wood, plastic, and rubber) are poor heat conductors.\n\nThe (average) kinetic energy of a molecule in the hot body is higher than in the colder body. If two molecules collide, an energy transfer from the molecule with greater kinetic energy to the molecule with less kinetic energy occurs. The cumulative effect from all collisions results in a net flux of heat from the hot body to the colder body. The heat flux thus depends on the temperature difference ΔΤ=Τhot−Tcold. Therefore, you will get a more severe burn from boiling water than from hot tap water. Conversely, if the temperatures are the same, the net heat transfer rate falls to zero, and equilibrium is achieved. Owing to the fact that the number of collisions increases with increasing area, heat conduction depends on the cross-sectional area. If you touch a cold wall with your palm, your hand cools faster than if you just touch it with your fingertip."
+      }
+    ],
+    "goals": [
+      "评价本次实际讲解的内容：同温地毯与瓷砖触感差异及热传导影响因素"
+    ],
+    "prerequisites": [
+      "知道温度与热传递是不同概念",
+      "能借助中文解释阅读简单英文科学教材"
+    ],
+    "desiredDepth": "pass_oriented",
+    "authorityBoundaries": [
+      "本次评估只涉及所给来源、明确的教学范围和实际展示的产物；脚本作答用于检查工作流，不代表真实学习者。"
+    ],
+    "artifacts": [
+      {
+        "id": "deliveredLesson/objective/title",
+        "text": "同温地毯与瓷砖触感差异及热传导影响因素"
+      },
+      {
+        "id": "deliveredLesson/objective/whyNow",
+        "text": "赤脚从卧室地毯走到厨房瓷砖，两者温度相同，但瓷砖感觉更冷；这需要解释。"
+      },
+      {
+        "id": "deliveredLesson/objective/outcomes/0/title",
+        "text": "解释同温度地毯与瓷砖触感不同的原因"
+      },
+      {
+        "id": "deliveredLesson/objective/outcomes/0/description",
+        "text": "解释同温度地毯与瓷砖触感不同的原因：在相同温度和相同时间区间内，因热传递速率不同导致瓷砖接触皮肤热损失更大、温度下降更大，且其他条件相同。"
+      },
+      {
+        "id": "deliveredLesson/objective/outcomes/1/title",
+        "text": "识别热传递方向、温差驱动热通量及同温热平衡"
+      },
+      {
+        "id": "deliveredLesson/objective/outcomes/1/description",
+        "text": "识别热传递方向（从高温物体到低温物体）、热通量依赖温差ΔT=Thot−Tcold、以及温度相同时净热传递为零并达到热平衡。"
+      },
+      {
+        "id": "deliveredLesson/segments/0/explanation",
+        "text": "在比较物体冷热感前，应注意温度并非唯一因素。材料传递热能的快慢也会影响皮肤体验，这为我们后续分析同温差异奠定框架。"
+      },
+      {
+        "id": "deliveredLesson/segments/1/explanation",
+        "text": "地毯和瓷砖温度相同，但皮肤接触瓷砖时相同时间内热损失更大、温度下降更大。进一步，材料导热能力不同，金属等良导体比木材塑料等绝缘体传热快。瓷砖类致密材质导热优于地毯纤维，因此更快带走皮肤热量。"
+      },
+      {
+        "id": "deliveredLesson/segments/2/explanation",
+        "text": "除材料种类外，接触面积也影响热传导：面积越大分子碰撞越多，皮肤冷却越快。下面用一新案例检验预测能力。"
+      },
+      {
+        "id": "deliveredLesson/segments/3/explanation",
+        "text": "热传递方向由温度高低决定：热量自发从高温物体流向低温物体。驱动热通量的正是温差ΔT=Thot−Tcold，差值越大，单位时间传递热量越多。当接触双方温度相同时，净热传递率为零，系统达到热平衡。例如，33°C的手接触20°C的玻璃杯，热从手流向杯；若手与杯同为25°C，则无净热流。这一规律与材料无关，材料只影响传导速率而非方向。"
+      },
+      {
+        "id": "deliveredLesson/summary/text",
+        "text": "相同温度下触感差异源于材料导热速率不同：良导体在接触瞬间从皮肤带走更多热，使皮肤局部温度下降更大；当温差为零时该效应消失。"
+      }
+    ],
+    "exposure": []
+  }
+}

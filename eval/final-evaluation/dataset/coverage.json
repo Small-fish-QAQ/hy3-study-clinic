@@ -1,0 +1,28 @@
+{
+  "frozenCases": 209,
+  "controlled": 72,
+  "adversarial": 24,
+  "boundary": 12,
+  "natural": 101,
+  "primaryDimensionJudgments": 239,
+  "observations": 279,
+  "allDimensionRows": 327,
+  "sourceRoots": 16,
+  "originalChineseRoots": 12,
+  "externalEnglishBookRoots": 4,
+  "naturalOpportunities": 180,
+  "availableNaturalRecords": 101,
+  "unavailableNaturalOpportunities": 79,
+  "publicCases": 51,
+  "publicCasesByCollection": {
+    "boundary": 2,
+    "controlled": 12,
+    "natural": 37
+  },
+  "publicObservations": 55,
+  "publicDimensionRows": 71,
+  "publicSourceRoots": 6,
+  "embargoedCases": 158,
+  "embargoedSourceRoots": 10,
+  "policy": "Embargo every input, output, label-to-content link and derivative in any source family represented in the ongoing human packets. Selection uses packet/source membership only, never scores. Full anonymous row outcomes remain public. Original IDs and private mapping are withheld for embargoed records."
+}

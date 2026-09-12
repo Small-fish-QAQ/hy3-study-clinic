@@ -1,0 +1,34 @@
+{
+  "dimensions": [
+    "Q1",
+    "Q3"
+  ],
+  "evidence": {
+    "sources": [
+      {
+        "id": "E04",
+        "text": "We get information into our brains through a process called encoding, which is the input of information into the memory system. Once we receive sensory information from the environment, our brains label or code it. We organize the information with other similar information and connect new concepts to existing concepts. Encoding information occurs through automatic processing and effortful processing.\n\nThere are three types of encoding. The encoding of words and their meaning is known as semantic encoding. It was first demonstrated by William Bousfield (1935) in an experiment in which he asked people to memorize words. The 60 words were actually divided into 4 categories of meaning, although the participants did not know this because the words were randomly presented. When they were asked to remember the words, they tended to recall them in categories, showing that they paid attention to the meanings of the words as they learned them.\n\nVisual encoding is the encoding of images, and acoustic encoding is the encoding of sounds, words in particular. To see how visual encoding works, read over this list of words: car, level, dog, truth, book, value. If you were asked later to recall the words from this list, which ones do you think you’d most likely remember? You would probably have an easier time recalling the words car, dog, and book, and a more difficult time recalling the words level, truth, and value. Why is this? Because you can recall images (mental pictures) more easily than words alone. When you read the words car, dog, and book you created images of these things in your mind. These are concrete, high-imagery words. On the other hand, abstract words like level, truth, and value are low-imagery words. High-imagery words are encoded both visually and semantically (Paivio, 1986), thus building a stronger memory.\n\nNow let’s turn our attention to acoustic encoding. You are driving in your car and a song comes on the radio that you haven’t heard in at least 10 years, but you sing along, recalling every word. In the United States, children often learn the alphabet through song, and they learn the number of days in each month through rhyme: “Thirty days hath September, / April, June, and November; / All the rest have thirty-one, / Save February, with twenty-eight days clear, / And twenty-nine each leap year.” These lessons are easy to remember because of acoustic encoding. We encode the sounds the words make. This is one of the reasons why much of what we teach young children is done through song, rhyme, and rhythm."
+      }
+    ],
+    "goals": [
+      "请针对当前内容，用一个与资料不同但容易理解的例子解释关键关系，并说明例子的适用边界。"
+    ],
+    "prerequisites": [
+      "能够理解记忆编码与回忆的日常含义",
+      "不需要心理学专业背景",
+      "用中文识别并区分语义编码、视觉编码与声学编码的定义及差异（语义：词语及意义；视觉：图像；声学：声音尤其是词语发音）",
+      "解释编码作为信息输入记忆系统的过程，包括接收感觉信息后大脑对其标记或编码并通过自动或努力加工"
+    ],
+    "desiredDepth": "working_fluency",
+    "authorityBoundaries": [
+      "本次评估只涉及所给来源、明确的教学范围和实际展示的产物；脚本作答用于检查工作流，不代表真实学习者。"
+    ],
+    "artifacts": [
+      {
+        "id": "tutor-reply",
+        "text": "课程资料中提到，高意象词会被同时以视觉和语义方式编码，从而建立更强记忆；而抽象低意象词缺乏视觉编码（原文指出 concrete, high-imagery words 被双重编码，abstract words 为低意象词）。\n\n举例：想象记忆“大象”和“勇敢”两个词。默读“大象”时，你脑中自然浮现灰色庞然大物形象，同时理解它指一种动物，于是视觉与语义双编码；而“勇敢”很难绘出具体画面，只靠含义记忆。这就直观展示了具体词获得视觉辅助、抽象词不获得的区别。\n\n此例子的适用边界：它假设学习者像补充案例那样安静默读并自发形成图像。若改为听音频而未鼓励想象，可能只触发声学编码；若具体词对读者过于陌生（如罕见动植物），心理图像模糊，双重编码优势也会减弱。此外，本例仅说明视觉与语义联合，不涉及声学编码规则。"
+      }
+    ],
+    "exposure": []
+  }
+}

@@ -1,0 +1,433 @@
+{
+  "task": {
+    "caseId": "N-E04-practice",
+    "runId": "N-E04-practice-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-E04-practice.json",
+    "inputHash": "4a94ba648e69bea8fdc5f2a90a738148bb32292f0d10da906ea2da246cf3b922",
+    "population": "natural",
+    "sourceId": "E04"
+  },
+  "inputHash": "4a94ba648e69bea8fdc5f2a90a738148bb32292f0d10da906ea2da246cf3b922",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "prepare-context-current": "32e9c1bca629c7013b1480db50d38a1d8c57540acd7170e4cb16664c81ecd3c2",
+      "solve-current": "cda443772181da2970ab48a54c92d90924163226a2b4fd1e4ba2905dcf4d0dd1",
+      "correctness": "a780fb351c87a8197cb05bc8070babacd1ec956fe8fe4f5fe283f822073bb096",
+      "artifact-audit": "a780fb351c87a8197cb05bc8070babacd1ec956fe8fe4f5fe283f822073bb096",
+      "certification": "a780fb351c87a8197cb05bc8070babacd1ec956fe8fe4f5fe283f822073bb096"
+    },
+    "stages": {
+      "prepare-context-current": {
+        "contexts": [
+          {
+            "taskId": "current",
+            "status": "ready",
+            "reason": "题干逐字给出被试阅读词表'锤子、真理、鸟、平等、树、概念'及意外回忆中具体词易忆、抽象词难忆的行为与参数，sources(E04)提供编码机制通用规则，history中无本题词表相关事实，情景自足可分离",
+            "premises": [],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "solve-current": {
+        "status": "resolved",
+        "solution": "依据来源e3的编码机制：具体高意象词（锤子、鸟、树）引发视觉与语义双重编码，抽象低意象词（真理、平等、概念）缺乏视觉编码故记忆较弱，与选项A一致。必要前提：题目词的具体/抽象属性类比e3中car/dog/book与level/truth/value。可接受解法：直接应用Paivio双重编码理论解释回忆差异。",
+        "witnesses": [
+          {
+            "id": "e3",
+            "pointer": "/sources/0/text",
+            "role": "source",
+            "kind": "text",
+            "value": "We get information into our brains through a process called encoding, which is the input of information into the memory system. Once we receive sensory information from the environment, our brains label or code it. We organize the information with other similar information and connect new concepts to existing concepts. Encoding information occurs through automatic processing and effortful processing.\n\nThere are three types of encoding. The encoding of words and their meaning is known as semantic encoding. It was first demonstrated by William Bousfield (1935) in an experiment in which he asked people to memorize words. The 60 words were actually divided into 4 categories of meaning, although the participants did not know this because the words were randomly presented. When they were asked to remember the words, they tended to recall them in categories, showing that they paid attention to the meanings of the words as they learned them.\n\nVisual encoding is the encoding of images, and acoustic encoding is the encoding of sounds, words in particular. To see how visual encoding works, read over this list of words: car, level, dog, truth, book, value. If you were asked later to recall the words from this list, which ones do you think you’d most likely remember? You would probably have an easier time recalling the words car, dog, and book, and a more difficult time recalling the words level, truth, and value. Why is this? Because you can recall images (mental pictures) more easily than words alone. When you read the words car, dog, and book you created images of these things in your mind. These are concrete, high-imagery words. On the other hand, abstract words like level, truth, and value are low-imagery words. High-imagery words are encoded both visually and semantically (Paivio, 1986), thus building a stronger memory.\n\nNow let’s turn our attention to acoustic encoding. You are driving in your car and a song comes on the radio that you haven’t heard in at least 10 years, but you sing along, recalling every word. In the United States, children often learn the alphabet through song, and they learn the number of days in each month through rhyme: “Thirty days hath September, / April, June, and November; / All the rest have thirty-one, / Save February, with twenty-eight days clear, / And twenty-nine each leap year.” These lessons are easy to remember because of acoustic encoding. We encode the sounds the words make. This is one of the reasons why much of what we teach young children is done through song, rhyme, and rhythm.",
+            "valueHash": "bf1b2eea6b7f20a856c4cfc2f378ff4216695c2cb1b009da66f5aca83f238b9f"
+          },
+          {
+            "id": "e14",
+            "pointer": "/question/prompt",
+            "role": "question",
+            "kind": "text",
+            "value": "被试阅读一组词：'锤子、真理、鸟、平等、树、概念'。随后意外回忆测试中，被试轻松记起'锤子、鸟、树'，较难记起'真理、平等、概念'。基于教材中的编码机制，这一回忆差异最可能是由什么导致的？",
+            "valueHash": "e108c6d5510c63851f64c37acb1d7af50a846be2e2483903219e63a7a155dc04"
+          }
+        ],
+        "reviewReasons": []
+      },
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "clear",
+            "affected": [],
+            "reason": "作者断言(e24,e26)基于教材e3机制：具体高意象词(锤子、鸟、树类比car/dog/book)阅读时引发视觉+语义双重编码，抽象词(真理、平等、概念类比level/truth/value)缺乏视觉编码导致回忆差异。题目事实e14为被试阅读词表且回忆差异符合该机制，条件映射一致，无混淆充分必要。",
+            "refs": [
+              "e3",
+              "e14",
+              "e24",
+              "e26"
+            ],
+            "challenge": {
+              "status": "closed",
+              "reason": "构造相容反例：被试阅读但具体词未形成心理图像，则视觉编码可能缺失使作者因果不成立。但教材e3明示'When you read the words car, dog, and book you created images...'将阅读具体词与创建图像绑定，题目e14给定'阅读'未声明异常分心，故该反例被教材规则排除，原结论机制建立。",
+              "refs": [
+                "e3",
+                "e14"
+              ]
+            },
+            "witnesses": [
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "We get information into our brains through a process called encoding, which is the input of information into the memory system. Once we receive sensory information from the environment, our brains label or code it. We organize the information with other similar information and connect new concepts to existing concepts. Encoding information occurs through automatic processing and effortful processing.\n\nThere are three types of encoding. The encoding of words and their meaning is known as semantic encoding. It was first demonstrated by William Bousfield (1935) in an experiment in which he asked people to memorize words. The 60 words were actually divided into 4 categories of meaning, although the participants did not know this because the words were randomly presented. When they were asked to remember the words, they tended to recall them in categories, showing that they paid attention to the meanings of the words as they learned them.\n\nVisual encoding is the encoding of images, and acoustic encoding is the encoding of sounds, words in particular. To see how visual encoding works, read over this list of words: car, level, dog, truth, book, value. If you were asked later to recall the words from this list, which ones do you think you’d most likely remember? You would probably have an easier time recalling the words car, dog, and book, and a more difficult time recalling the words level, truth, and value. Why is this? Because you can recall images (mental pictures) more easily than words alone. When you read the words car, dog, and book you created images of these things in your mind. These are concrete, high-imagery words. On the other hand, abstract words like level, truth, and value are low-imagery words. High-imagery words are encoded both visually and semantically (Paivio, 1986), thus building a stronger memory.\n\nNow let’s turn our attention to acoustic encoding. You are driving in your car and a song comes on the radio that you haven’t heard in at least 10 years, but you sing along, recalling every word. In the United States, children often learn the alphabet through song, and they learn the number of days in each month through rhyme: “Thirty days hath September, / April, June, and November; / All the rest have thirty-one, / Save February, with twenty-eight days clear, / And twenty-nine each leap year.” These lessons are easy to remember because of acoustic encoding. We encode the sounds the words make. This is one of the reasons why much of what we teach young children is done through song, rhyme, and rhythm.",
+                "valueHash": "bf1b2eea6b7f20a856c4cfc2f378ff4216695c2cb1b009da66f5aca83f238b9f"
+              },
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "被试阅读一组词：'锤子、真理、鸟、平等、树、概念'。随后意外回忆测试中，被试轻松记起'锤子、鸟、树'，较难记起'真理、平等、概念'。基于教材中的编码机制，这一回忆差异最可能是由什么导致的？",
+                "valueHash": "e108c6d5510c63851f64c37acb1d7af50a846be2e2483903219e63a7a155dc04"
+              },
+              {
+                "id": "e24",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "锤子、鸟、树作为具体高意象词引发了视觉与语义双重编码，真理、平等、概念因抽象缺乏视觉编码故记忆较弱",
+                "valueHash": "355510945807dc59054b4e1efcf7196020aeb72afd9eee712b26e8b6be0a8b09"
+              },
+              {
+                "id": "e26",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "教材表明具体高意象词被视觉与语义共同编码，抽象词缺少视觉编码，从而回忆率不同。",
+                "valueHash": "946c35ad6c746d688b18a36c80f1fb6d2fb9ab747f700be7a72bdcb189a897ee"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "kind": "quantities",
+            "status": "not_applicable",
+            "affected": [],
+            "reason": "本题无数值、百分比、单位或数量级推导，仅涉及编码机制定性判断，无量化断言需重算。",
+            "contextHash": "a780fb351c87a8197cb05bc8070babacd1ec956fe8fe4f5fe283f822073bb096",
+            "proposed": {
+              "kind": "quantities",
+              "status": "not_applicable",
+              "affected": [],
+              "reason": "本题无数值、百分比、单位或数量级推导，仅涉及编码机制定性判断，无量化断言需重算。",
+              "refs": [
+                "e14",
+                "e24",
+                "e26"
+              ]
+            },
+            "reviewReasons": []
+          }
+        ],
+        "keys": [
+          {
+            "taskId": "current",
+            "status": "agrees",
+            "reason": "作者指定答案(e24选项A文本)及解释e26与盲解(current)均依据e3双重编码机制，将题目词正确分类具体/抽象并归因视觉编码缺失，完整理由一致且无保留疑问，故agrees。",
+            "refs": [
+              "e3",
+              "e14",
+              "e24",
+              "e26"
+            ],
+            "witnesses": [
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "We get information into our brains through a process called encoding, which is the input of information into the memory system. Once we receive sensory information from the environment, our brains label or code it. We organize the information with other similar information and connect new concepts to existing concepts. Encoding information occurs through automatic processing and effortful processing.\n\nThere are three types of encoding. The encoding of words and their meaning is known as semantic encoding. It was first demonstrated by William Bousfield (1935) in an experiment in which he asked people to memorize words. The 60 words were actually divided into 4 categories of meaning, although the participants did not know this because the words were randomly presented. When they were asked to remember the words, they tended to recall them in categories, showing that they paid attention to the meanings of the words as they learned them.\n\nVisual encoding is the encoding of images, and acoustic encoding is the encoding of sounds, words in particular. To see how visual encoding works, read over this list of words: car, level, dog, truth, book, value. If you were asked later to recall the words from this list, which ones do you think you’d most likely remember? You would probably have an easier time recalling the words car, dog, and book, and a more difficult time recalling the words level, truth, and value. Why is this? Because you can recall images (mental pictures) more easily than words alone. When you read the words car, dog, and book you created images of these things in your mind. These are concrete, high-imagery words. On the other hand, abstract words like level, truth, and value are low-imagery words. High-imagery words are encoded both visually and semantically (Paivio, 1986), thus building a stronger memory.\n\nNow let’s turn our attention to acoustic encoding. You are driving in your car and a song comes on the radio that you haven’t heard in at least 10 years, but you sing along, recalling every word. In the United States, children often learn the alphabet through song, and they learn the number of days in each month through rhyme: “Thirty days hath September, / April, June, and November; / All the rest have thirty-one, / Save February, with twenty-eight days clear, / And twenty-nine each leap year.” These lessons are easy to remember because of acoustic encoding. We encode the sounds the words make. This is one of the reasons why much of what we teach young children is done through song, rhyme, and rhythm.",
+                "valueHash": "bf1b2eea6b7f20a856c4cfc2f378ff4216695c2cb1b009da66f5aca83f238b9f"
+              },
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "被试阅读一组词：'锤子、真理、鸟、平等、树、概念'。随后意外回忆测试中，被试轻松记起'锤子、鸟、树'，较难记起'真理、平等、概念'。基于教材中的编码机制，这一回忆差异最可能是由什么导致的？",
+                "valueHash": "e108c6d5510c63851f64c37acb1d7af50a846be2e2483903219e63a7a155dc04"
+              },
+              {
+                "id": "e24",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "锤子、鸟、树作为具体高意象词引发了视觉与语义双重编码，真理、平等、概念因抽象缺乏视觉编码故记忆较弱",
+                "valueHash": "355510945807dc59054b4e1efcf7196020aeb72afd9eee712b26e8b6be0a8b09"
+              },
+              {
+                "id": "e26",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "教材表明具体高意象词被视觉与语义共同编码，抽象词缺少视觉编码，从而回忆率不同。",
+                "valueHash": "946c35ad6c746d688b18a36c80f1fb6d2fb9ab747f700be7a72bdcb189a897ee"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q4",
+            "level": 2,
+            "reason": "当前题目(e14)给出新词表与回忆差异现象，明确要求基于教材(e3)编码机制解释；选项A(e17)正确表述具体高意象词双重编码、抽象词缺视觉编码，与盲解一致，B/C为合理干扰。priorExposure(e27)含通用规则与异词表案例(如e32铃铛等)，但未透露本题词表的解答或推理，任务独立性适当。题目前提充足(词性常识可辨)，答案集可辩护，无泄题或强制模糊键。",
+            "refs": [
+              "e14",
+              "e17",
+              "e3",
+              "e27",
+              "e32"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "被试阅读一组词：'锤子、真理、鸟、平等、树、概念'。随后意外回忆测试中，被试轻松记起'锤子、鸟、树'，较难记起'真理、平等、概念'。基于教材中的编码机制，这一回忆差异最可能是由什么导致的？",
+                "valueHash": "e108c6d5510c63851f64c37acb1d7af50a846be2e2483903219e63a7a155dc04"
+              },
+              {
+                "id": "e17",
+                "pointer": "/question/options/0/text",
+                "role": "question",
+                "kind": "text",
+                "value": "锤子、鸟、树作为具体高意象词引发了视觉与语义双重编码，真理、平等、概念因抽象缺乏视觉编码故记忆较弱",
+                "valueHash": "355510945807dc59054b4e1efcf7196020aeb72afd9eee712b26e8b6be0a8b09"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "We get information into our brains through a process called encoding, which is the input of information into the memory system. Once we receive sensory information from the environment, our brains label or code it. We organize the information with other similar information and connect new concepts to existing concepts. Encoding information occurs through automatic processing and effortful processing.\n\nThere are three types of encoding. The encoding of words and their meaning is known as semantic encoding. It was first demonstrated by William Bousfield (1935) in an experiment in which he asked people to memorize words. The 60 words were actually divided into 4 categories of meaning, although the participants did not know this because the words were randomly presented. When they were asked to remember the words, they tended to recall them in categories, showing that they paid attention to the meanings of the words as they learned them.\n\nVisual encoding is the encoding of images, and acoustic encoding is the encoding of sounds, words in particular. To see how visual encoding works, read over this list of words: car, level, dog, truth, book, value. If you were asked later to recall the words from this list, which ones do you think you’d most likely remember? You would probably have an easier time recalling the words car, dog, and book, and a more difficult time recalling the words level, truth, and value. Why is this? Because you can recall images (mental pictures) more easily than words alone. When you read the words car, dog, and book you created images of these things in your mind. These are concrete, high-imagery words. On the other hand, abstract words like level, truth, and value are low-imagery words. High-imagery words are encoded both visually and semantically (Paivio, 1986), thus building a stronger memory.\n\nNow let’s turn our attention to acoustic encoding. You are driving in your car and a song comes on the radio that you haven’t heard in at least 10 years, but you sing along, recalling every word. In the United States, children often learn the alphabet through song, and they learn the number of days in each month through rhyme: “Thirty days hath September, / April, June, and November; / All the rest have thirty-one, / Save February, with twenty-eight days clear, / And twenty-nine each leap year.” These lessons are easy to remember because of acoustic encoding. We encode the sounds the words make. This is one of the reasons why much of what we teach young children is done through song, rhyme, and rhythm.",
+                "valueHash": "bf1b2eea6b7f20a856c4cfc2f378ff4216695c2cb1b009da66f5aca83f238b9f"
+              },
+              {
+                "id": "e27",
+                "pointer": "/priorExposure",
+                "role": "prior_exposure",
+                "kind": "array_length",
+                "value": 35,
+                "valueHash": "9f14025af0065b30e47e23ebb3b491d39ae8ed17d33739e5ff3827ffb3634953"
+              },
+              {
+                "id": "e32",
+                "pointer": "/priorExposure/2/id",
+                "role": "prior_exposure",
+                "kind": "text",
+                "value": "prior-2",
+                "valueHash": "9f57a1ed195cd2b250a23797f74bba2258ba928923e2265ae371190e01769088"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q4",
+            "status": "supported",
+            "reason": "Q4正向判断（评估质量2）获findings一致支持：题目e14给出新词表与回忆差异，选项A(e17)正确表述具体高意象词双重编码、抽象词缺视觉编码，与作者断言e24/e26及盲解（基于e3）一致；priorExposure(e27)含通用规则未透漏本题解答，任务独立性、前提充足性与答案可辩护性均已建立，无未决依赖。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "被试阅读一组词：'锤子、真理、鸟、平等、树、概念'。随后意外回忆测试中，被试轻松记起'锤子、鸟、树'，较难记起'真理、平等、概念'。基于教材中的编码机制，这一回忆差异最可能是由什么导致的？",
+                "valueHash": "e108c6d5510c63851f64c37acb1d7af50a846be2e2483903219e63a7a155dc04"
+              },
+              {
+                "id": "e17",
+                "pointer": "/question/options/0/text",
+                "role": "question",
+                "kind": "text",
+                "value": "锤子、鸟、树作为具体高意象词引发了视觉与语义双重编码，真理、平等、概念因抽象缺乏视觉编码故记忆较弱",
+                "valueHash": "355510945807dc59054b4e1efcf7196020aeb72afd9eee712b26e8b6be0a8b09"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "We get information into our brains through a process called encoding, which is the input of information into the memory system. Once we receive sensory information from the environment, our brains label or code it. We organize the information with other similar information and connect new concepts to existing concepts. Encoding information occurs through automatic processing and effortful processing.\n\nThere are three types of encoding. The encoding of words and their meaning is known as semantic encoding. It was first demonstrated by William Bousfield (1935) in an experiment in which he asked people to memorize words. The 60 words were actually divided into 4 categories of meaning, although the participants did not know this because the words were randomly presented. When they were asked to remember the words, they tended to recall them in categories, showing that they paid attention to the meanings of the words as they learned them.\n\nVisual encoding is the encoding of images, and acoustic encoding is the encoding of sounds, words in particular. To see how visual encoding works, read over this list of words: car, level, dog, truth, book, value. If you were asked later to recall the words from this list, which ones do you think you’d most likely remember? You would probably have an easier time recalling the words car, dog, and book, and a more difficult time recalling the words level, truth, and value. Why is this? Because you can recall images (mental pictures) more easily than words alone. When you read the words car, dog, and book you created images of these things in your mind. These are concrete, high-imagery words. On the other hand, abstract words like level, truth, and value are low-imagery words. High-imagery words are encoded both visually and semantically (Paivio, 1986), thus building a stronger memory.\n\nNow let’s turn our attention to acoustic encoding. You are driving in your car and a song comes on the radio that you haven’t heard in at least 10 years, but you sing along, recalling every word. In the United States, children often learn the alphabet through song, and they learn the number of days in each month through rhyme: “Thirty days hath September, / April, June, and November; / All the rest have thirty-one, / Save February, with twenty-eight days clear, / And twenty-nine each leap year.” These lessons are easy to remember because of acoustic encoding. We encode the sounds the words make. This is one of the reasons why much of what we teach young children is done through song, rhyme, and rhythm.",
+                "valueHash": "bf1b2eea6b7f20a856c4cfc2f378ff4216695c2cb1b009da66f5aca83f238b9f"
+              },
+              {
+                "id": "e24",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "锤子、鸟、树作为具体高意象词引发了视觉与语义双重编码，真理、平等、概念因抽象缺乏视觉编码故记忆较弱",
+                "valueHash": "355510945807dc59054b4e1efcf7196020aeb72afd9eee712b26e8b6be0a8b09"
+              },
+              {
+                "id": "e26",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "教材表明具体高意象词被视觉与语义共同编码，抽象词缺少视觉编码，从而回忆率不同。",
+                "valueHash": "946c35ad6c746d688b18a36c80f1fb6d2fb9ab747f700be7a72bdcb189a897ee"
+              },
+              {
+                "id": "e27",
+                "pointer": "/priorExposure",
+                "role": "prior_exposure",
+                "kind": "array_length",
+                "value": 35,
+                "valueHash": "9f14025af0065b30e47e23ebb3b491d39ae8ed17d33739e5ff3827ffb3634953"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q4",
+          "level": 2,
+          "reason": "当前题目(e14)给出新词表与回忆差异现象，明确要求基于教材(e3)编码机制解释；选项A(e17)正确表述具体高意象词双重编码、抽象词缺视觉编码，与盲解一致，B/C为合理干扰。priorExposure(e27)含通用规则与异词表案例(如e32铃铛等)，但未透露本题词表的解答或推理，任务独立性适当。题目前提充足(词性常识可辨)，答案集可辩护，无泄题或强制模糊键。",
+          "refs": [
+            "e14",
+            "e17",
+            "e3",
+            "e27",
+            "e32"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e14",
+              "pointer": "/question/prompt",
+              "role": "question",
+              "kind": "text",
+              "value": "被试阅读一组词：'锤子、真理、鸟、平等、树、概念'。随后意外回忆测试中，被试轻松记起'锤子、鸟、树'，较难记起'真理、平等、概念'。基于教材中的编码机制，这一回忆差异最可能是由什么导致的？",
+              "valueHash": "e108c6d5510c63851f64c37acb1d7af50a846be2e2483903219e63a7a155dc04"
+            },
+            {
+              "id": "e17",
+              "pointer": "/question/options/0/text",
+              "role": "question",
+              "kind": "text",
+              "value": "锤子、鸟、树作为具体高意象词引发了视觉与语义双重编码，真理、平等、概念因抽象缺乏视觉编码故记忆较弱",
+              "valueHash": "355510945807dc59054b4e1efcf7196020aeb72afd9eee712b26e8b6be0a8b09"
+            },
+            {
+              "id": "e3",
+              "pointer": "/sources/0/text",
+              "role": "source",
+              "kind": "text",
+              "value": "We get information into our brains through a process called encoding, which is the input of information into the memory system. Once we receive sensory information from the environment, our brains label or code it. We organize the information with other similar information and connect new concepts to existing concepts. Encoding information occurs through automatic processing and effortful processing.\n\nThere are three types of encoding. The encoding of words and their meaning is known as semantic encoding. It was first demonstrated by William Bousfield (1935) in an experiment in which he asked people to memorize words. The 60 words were actually divided into 4 categories of meaning, although the participants did not know this because the words were randomly presented. When they were asked to remember the words, they tended to recall them in categories, showing that they paid attention to the meanings of the words as they learned them.\n\nVisual encoding is the encoding of images, and acoustic encoding is the encoding of sounds, words in particular. To see how visual encoding works, read over this list of words: car, level, dog, truth, book, value. If you were asked later to recall the words from this list, which ones do you think you’d most likely remember? You would probably have an easier time recalling the words car, dog, and book, and a more difficult time recalling the words level, truth, and value. Why is this? Because you can recall images (mental pictures) more easily than words alone. When you read the words car, dog, and book you created images of these things in your mind. These are concrete, high-imagery words. On the other hand, abstract words like level, truth, and value are low-imagery words. High-imagery words are encoded both visually and semantically (Paivio, 1986), thus building a stronger memory.\n\nNow let’s turn our attention to acoustic encoding. You are driving in your car and a song comes on the radio that you haven’t heard in at least 10 years, but you sing along, recalling every word. In the United States, children often learn the alphabet through song, and they learn the number of days in each month through rhyme: “Thirty days hath September, / April, June, and November; / All the rest have thirty-one, / Save February, with twenty-eight days clear, / And twenty-nine each leap year.” These lessons are easy to remember because of acoustic encoding. We encode the sounds the words make. This is one of the reasons why much of what we teach young children is done through song, rhyme, and rhythm.",
+              "valueHash": "bf1b2eea6b7f20a856c4cfc2f378ff4216695c2cb1b009da66f5aca83f238b9f"
+            },
+            {
+              "id": "e27",
+              "pointer": "/priorExposure",
+              "role": "prior_exposure",
+              "kind": "array_length",
+              "value": 35,
+              "valueHash": "9f14025af0065b30e47e23ebb3b491d39ae8ed17d33739e5ff3827ffb3634953"
+            },
+            {
+              "id": "e32",
+              "pointer": "/priorExposure/2/id",
+              "role": "prior_exposure",
+              "kind": "text",
+              "value": "prior-2",
+              "valueHash": "9f57a1ed195cd2b250a23797f74bba2258ba928923e2265ae371190e01769088"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [],
+          "proposedLevel": 2,
+          "proposedReason": "当前题目(e14)给出新词表与回忆差异现象，明确要求基于教材(e3)编码机制解释；选项A(e17)正确表述具体高意象词双重编码、抽象词缺视觉编码，与盲解一致，B/C为合理干扰。priorExposure(e27)含通用规则与异词表案例(如e32铃铛等)，但未透露本题词表的解答或推理，任务独立性适当。题目前提充足(词性常识可辨)，答案集可辩护，无泄题或强制模糊键。"
+        }
+      ],
+      "reviewRequired": [],
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q4",
+            "status": "supported",
+            "reason": "Q4正向判断（评估质量2）获findings一致支持：题目e14给出新词表与回忆差异，选项A(e17)正确表述具体高意象词双重编码、抽象词缺视觉编码，与作者断言e24/e26及盲解（基于e3）一致；priorExposure(e27)含通用规则未透漏本题解答，任务独立性、前提充足性与答案可辩护性均已建立，无未决依赖。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "被试阅读一组词：'锤子、真理、鸟、平等、树、概念'。随后意外回忆测试中，被试轻松记起'锤子、鸟、树'，较难记起'真理、平等、概念'。基于教材中的编码机制，这一回忆差异最可能是由什么导致的？",
+                "valueHash": "e108c6d5510c63851f64c37acb1d7af50a846be2e2483903219e63a7a155dc04"
+              },
+              {
+                "id": "e17",
+                "pointer": "/question/options/0/text",
+                "role": "question",
+                "kind": "text",
+                "value": "锤子、鸟、树作为具体高意象词引发了视觉与语义双重编码，真理、平等、概念因抽象缺乏视觉编码故记忆较弱",
+                "valueHash": "355510945807dc59054b4e1efcf7196020aeb72afd9eee712b26e8b6be0a8b09"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "We get information into our brains through a process called encoding, which is the input of information into the memory system. Once we receive sensory information from the environment, our brains label or code it. We organize the information with other similar information and connect new concepts to existing concepts. Encoding information occurs through automatic processing and effortful processing.\n\nThere are three types of encoding. The encoding of words and their meaning is known as semantic encoding. It was first demonstrated by William Bousfield (1935) in an experiment in which he asked people to memorize words. The 60 words were actually divided into 4 categories of meaning, although the participants did not know this because the words were randomly presented. When they were asked to remember the words, they tended to recall them in categories, showing that they paid attention to the meanings of the words as they learned them.\n\nVisual encoding is the encoding of images, and acoustic encoding is the encoding of sounds, words in particular. To see how visual encoding works, read over this list of words: car, level, dog, truth, book, value. If you were asked later to recall the words from this list, which ones do you think you’d most likely remember? You would probably have an easier time recalling the words car, dog, and book, and a more difficult time recalling the words level, truth, and value. Why is this? Because you can recall images (mental pictures) more easily than words alone. When you read the words car, dog, and book you created images of these things in your mind. These are concrete, high-imagery words. On the other hand, abstract words like level, truth, and value are low-imagery words. High-imagery words are encoded both visually and semantically (Paivio, 1986), thus building a stronger memory.\n\nNow let’s turn our attention to acoustic encoding. You are driving in your car and a song comes on the radio that you haven’t heard in at least 10 years, but you sing along, recalling every word. In the United States, children often learn the alphabet through song, and they learn the number of days in each month through rhyme: “Thirty days hath September, / April, June, and November; / All the rest have thirty-one, / Save February, with twenty-eight days clear, / And twenty-nine each leap year.” These lessons are easy to remember because of acoustic encoding. We encode the sounds the words make. This is one of the reasons why much of what we teach young children is done through song, rhyme, and rhythm.",
+                "valueHash": "bf1b2eea6b7f20a856c4cfc2f378ff4216695c2cb1b009da66f5aca83f238b9f"
+              },
+              {
+                "id": "e24",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "锤子、鸟、树作为具体高意象词引发了视觉与语义双重编码，真理、平等、概念因抽象缺乏视觉编码故记忆较弱",
+                "valueHash": "355510945807dc59054b4e1efcf7196020aeb72afd9eee712b26e8b6be0a8b09"
+              },
+              {
+                "id": "e26",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "教材表明具体高意象词被视觉与语义共同编码，抽象词缺少视觉编码，从而回忆率不同。",
+                "valueHash": "946c35ad6c746d688b18a36c80f1fb6d2fb9ab747f700be7a72bdcb189a897ee"
+              },
+              {
+                "id": "e27",
+                "pointer": "/priorExposure",
+                "role": "prior_exposure",
+                "kind": "array_length",
+                "value": 35,
+                "valueHash": "9f14025af0065b30e47e23ebb3b491d39ae8ed17d33739e5ff3827ffb3634953"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "resultHash": "c457e1aa5d78a0ccd3e79b687ba83d6d2310694ed82152b6c6b91b01aeff3ee2"
+  }
+}

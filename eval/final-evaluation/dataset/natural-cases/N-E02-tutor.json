@@ -1,0 +1,34 @@
+{
+  "dimensions": [
+    "Q1",
+    "Q3"
+  ],
+  "evidence": {
+    "sources": [
+      {
+        "id": "E02",
+        "text": "All living things require energy in one form or another. Energy is required by most complex metabolic pathways (often in the form of adenosine triphosphate, ATP), especially those responsible for building large molecules from smaller compounds, and life itself is an energy-driven process. Living organisms would not be able to assemble macromolecules (proteins, lipids, nucleic acids, and complex carbohydrates) from their monomeric subunits without a constant energy input.\n\nIt is important to understand how organisms acquire energy and how that energy is passed from one organism to another through food webs and their constituent food chains. Food webs illustrate how energy flows directionally through ecosystems, including how efficiently organisms acquire it, use it, and how much remains for use by other organisms of the food web.\n\nEnergy is acquired by living things in three ways: photosynthesis, chemosynthesis, and the consumption and digestion of other living or previously living organisms by heterotrophs.\n\nPhotosynthetic and chemosynthetic organisms are both grouped into a category known as autotrophs: organisms capable of synthesizing their own food (more specifically, capable of using inorganic carbon as a carbon source). Photosynthetic autotrophs (photoautotrophs) use sunlight as an energy source, whereas chemosynthetic autotrophs (chemoautotrophs) use inorganic molecules as an energy source. Autotrophs are critical for all ecosystems. Without these organisms, energy would not be available to other living organisms and life itself would not be possible."
+      }
+    ],
+    "goals": [
+      "请针对当前内容，用一个与资料不同但容易理解的例子解释关键关系，并说明例子的适用边界。"
+    ],
+    "prerequisites": [
+      "知道生物需要能量",
+      "能区分有机物与无机物的一般含义",
+      "解释所有生物都需要能量，作为理解生态系统能量动态的基础。",
+      "解释食物网如何展示生态系统中能量的定向流动，包括生物获取和利用能量的效率以及剩余多少供其他食物网生物使用。"
+    ],
+    "desiredDepth": "working_fluency",
+    "authorityBoundaries": [
+      "本次评估只涉及所给来源、明确的教学范围和实际展示的产物；脚本作答用于检查工作流，不代表真实学习者。"
+    ],
+    "artifacts": [
+      {
+        "id": "tutor-reply",
+        "text": "课程资料指出，光合与化能合成自养生物能利用无机源制造有机物，是所有生态系统中异养生物能量可用的关键（见课程资料自养生物相关摘录）。当前案例表明，不同自养路径可共同决定异养能量状况：移除阳光但保留H2S，异养动物Z仍可通过化能合成菌获得能量。\n\n举例（补充说明）：想象一个农场有太阳能水泵和柴油发电机两种独立灌溉动力，作物（类似异养消费者）依赖水存活；若连日阴天太阳能停摆，发电机仍可提供水流，作物不因单一源头中断而枯萎。这个日常例子直观对应“多条能量通路冗余支持”的关系。\n\n该例子适用边界：它只帮助理解结构上的多源支持，但不涉及真实自养生物的无机碳固定、ATP参与大分子组装等生化因果，也不能替代食物网中能量流动效率与方向的分析。实际生态判断还需看异养生物是否具备摄食对应自养者的能力。"
+      }
+    ],
+    "exposure": []
+  }
+}

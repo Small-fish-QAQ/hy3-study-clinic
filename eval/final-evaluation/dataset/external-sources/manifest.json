@@ -1,0 +1,42 @@
+{
+  "createdAt": "2026-09-11T18:56:01.730Z",
+  "selection": "Four distinct publisher book roots; prospective content/scope selection, prior to any model output or evaluator result. Separate from 12 authored roots and excluded from friend packets.",
+  "sources": [
+    {
+      "sourceId": "E01",
+      "bookTitle": "College Physics 2e",
+      "chars": 1608,
+      "textHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd",
+      "sourceCommit": "145a70454855e9376f02e8dc554841474b7bd2be",
+      "license": "CC BY 4.0",
+      "sourceFile": "benchmark/external-sources/E01.json"
+    },
+    {
+      "sourceId": "E02",
+      "bookTitle": "Biology 2e",
+      "chars": 1584,
+      "textHash": "6bfef5addb7581a7a5154aa3f44613f99aea8cec06cb8fcd5a7616deee504d45",
+      "sourceCommit": "df426da94c36cf3a8c3bfd79d28e2e33406debfb",
+      "license": "CC BY 4.0",
+      "sourceFile": "benchmark/external-sources/E02.json"
+    },
+    {
+      "sourceId": "E03",
+      "bookTitle": "Introductory Statistics 2e",
+      "chars": 1855,
+      "textHash": "d472be8e4d1e92054873fa9ae01fc466643fca58c527774d10170357a96d3f79",
+      "sourceCommit": "77ae6260c6dc0903baf7a6dc748feb69f8a85122",
+      "license": "CC BY 4.0",
+      "sourceFile": "benchmark/external-sources/E03.json"
+    },
+    {
+      "sourceId": "E04",
+      "bookTitle": "Psychology 2e",
+      "chars": 2557,
+      "textHash": "bf1b2eea6b7f20a856c4cfc2f378ff4216695c2cb1b009da66f5aca83f238b9f",
+      "sourceCommit": "398f50856ca1df97b58cb778659212a1df572bbd",
+      "license": "CC BY 4.0",
+      "sourceFile": "benchmark/external-sources/E04.json"
+    }
+  ]
+}

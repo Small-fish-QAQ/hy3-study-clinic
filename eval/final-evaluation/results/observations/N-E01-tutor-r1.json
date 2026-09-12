@@ -1,0 +1,616 @@
+{
+  "task": {
+    "caseId": "N-E01-tutor",
+    "runId": "N-E01-tutor-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-E01-tutor.json",
+    "inputHash": "704abb3090e0422f5afe17f25f57fcd26a40458043e41b355ef4eb81d258fc9d",
+    "population": "natural",
+    "sourceId": "E01"
+  },
+  "inputHash": "704abb3090e0422f5afe17f25f57fcd26a40458043e41b355ef4eb81d258fc9d",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "correctness": "ba850488d18d90f97056f74644ee688ab7710654d9ad93c85ce1a9bfea2bfe6f",
+      "artifact-audit": "ba850488d18d90f97056f74644ee688ab7710654d9ad93c85ce1a9bfea2bfe6f",
+      "certification": "ba850488d18d90f97056f74644ee688ab7710654d9ad93c85ce1a9bfea2bfe6f"
+    },
+    "stages": {
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "uncertain",
+            "affected": [
+              "Q1"
+            ],
+            "reason": "The authored conclusion has a compatible counterexample or an unresolved necessary premise. 据e3绝缘体/金属导热不同，设同温差大面积橡胶与小面积铜触肤，面积大传热少，与资料相容且未被e16排除，原结论未建立。",
+            "refs": [
+              "e3",
+              "e16"
+            ],
+            "challenge": {
+              "status": "counterexample",
+              "reason": "据e3绝缘体/金属导热不同，设同温差大面积橡胶与小面积铜触肤，面积大传热少，与资料相容且未被e16排除，原结论未建立。",
+              "refs": [
+                "e3",
+                "e16"
+              ]
+            },
+            "witnesses": [
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "Your feet feel cold as you walk barefoot across the living room carpet in your cold house and then step onto the kitchen tile floor. This result is intriguing, since the carpet and tile floor are both at the same temperature. The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.\n\nSome materials conduct thermal energy faster than others. In general, good conductors of electricity (metals like copper, aluminum, gold, and silver) are also good heat conductors, whereas insulators of electricity (wood, plastic, and rubber) are poor heat conductors.\n\nThe (average) kinetic energy of a molecule in the hot body is higher than in the colder body. If two molecules collide, an energy transfer from the molecule with greater kinetic energy to the molecule with less kinetic energy occurs. The cumulative effect from all collisions results in a net flux of heat from the hot body to the colder body. The heat flux thus depends on the temperature difference ΔΤ=Τhot−Tcold. Therefore, you will get a more severe burn from boiling water than from hot tap water. Conversely, if the temperatures are the same, the net heat transfer rate falls to zero, and equilibrium is achieved. Owing to the fact that the number of collisions increases with increasing area, heat conduction depends on the cross-sectional area. If you touch a cold wall with your palm, your hand cools faster than if you just touch it with your fingertip.",
+                "valueHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd"
+              },
+              {
+                "id": "e16",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "课程资料里讲到，热传导依赖接触面积：相同温差下面积越大传热越多，比如冷墙用手掌比指尖冷却快（见《OpenStax：相同温度为什么触感不同》）。这便是当前冷墙案例的关键关系。\n举例：设想寒冬里一个均匀的0°C铁质扶手，你用食指尖轻触2秒， versus 用整只手掌包裹握2秒，材质与温差都相同。手掌接触面积大得多，从手带走的热量更多，因此手掌感觉冷得更快更厉害。这个例子换成了扶手和握持，不同于资料中的墙壁或地面。\n该例子的适用边界：它假设扶手温度一致、未戴隔热手套、接触时间短暂使扶手不会明显升温；若戴厚手套或握很久导致局部升温，面积带来的速率差就会被掩盖。",
+                "valueHash": "f3db6bd8d7dfae8cc432850276fff5cccdce4ed1858711f9a498661847c48dc7"
+              }
+            ],
+            "proposed": {
+              "kind": "conditions",
+              "status": "uncertain",
+              "affected": [
+                "Q1"
+              ],
+              "reason": "e16总结资料关键关系为'热传导依赖接触面积：相同温差下面积越大传热越多'，其例(冷墙/扶手)隐含同材质，但e3明示材料导热差异，可构造同温差跨材质反例使结论改变，作者未给定材质相同条件，适用性不明。",
+              "refs": [
+                "e3",
+                "e16"
+              ],
+              "challenge": {
+                "status": "counterexample",
+                "reason": "据e3绝缘体/金属导热不同，设同温差大面积橡胶与小面积铜触肤，面积大传热少，与资料相容且未被e16排除，原结论未建立。",
+                "refs": [
+                  "e3",
+                  "e16"
+                ]
+              }
+            },
+            "reviewReasons": [
+              "CONDITIONS_COUNTEREXAMPLE_REVIEW"
+            ]
+          },
+          {
+            "kind": "quantities",
+            "status": "not_applicable",
+            "affected": [],
+            "reason": "e16及e3无数值演算、单位或百分比断言，rates空，无重算需求。",
+            "contextHash": "ba850488d18d90f97056f74644ee688ab7710654d9ad93c85ce1a9bfea2bfe6f",
+            "proposed": {
+              "kind": "quantities",
+              "status": "not_applicable",
+              "affected": [],
+              "reason": "e16及e3无数值演算、单位或百分比断言，rates空，无重算需求。",
+              "refs": [
+                "e16"
+              ]
+            },
+            "reviewReasons": []
+          }
+        ],
+        "keys": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 0,
+            "reason": "Artifact e16 断言'见《OpenStax：相同温度为什么触感不同》'，但 facts e2/e3 显示来源 id 为 E01 且文本无该标题，属 invented citation/support，触发 Q1 的0分标准（虚构引用）。核心机制主张虽被 e3 支持，但虚构引用本身构成实质缺陷。",
+            "refs": [
+              "e16",
+              "e2",
+              "e3"
+            ],
+            "issue": "content",
+            "witnesses": [
+              {
+                "id": "e16",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "课程资料里讲到，热传导依赖接触面积：相同温差下面积越大传热越多，比如冷墙用手掌比指尖冷却快（见《OpenStax：相同温度为什么触感不同》）。这便是当前冷墙案例的关键关系。\n举例：设想寒冬里一个均匀的0°C铁质扶手，你用食指尖轻触2秒， versus 用整只手掌包裹握2秒，材质与温差都相同。手掌接触面积大得多，从手带走的热量更多，因此手掌感觉冷得更快更厉害。这个例子换成了扶手和握持，不同于资料中的墙壁或地面。\n该例子的适用边界：它假设扶手温度一致、未戴隔热手套、接触时间短暂使扶手不会明显升温；若戴厚手套或握很久导致局部升温，面积带来的速率差就会被掩盖。",
+                "valueHash": "f3db6bd8d7dfae8cc432850276fff5cccdce4ed1858711f9a498661847c48dc7"
+              },
+              {
+                "id": "e2",
+                "pointer": "/sources/0/id",
+                "role": "source",
+                "kind": "text",
+                "value": "E01",
+                "valueHash": "e7e7dd241b31082d328fe29439a320dac14696e5f2b7c9f42c745ba274555d8b"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "Your feet feel cold as you walk barefoot across the living room carpet in your cold house and then step onto the kitchen tile floor. This result is intriguing, since the carpet and tile floor are both at the same temperature. The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.\n\nSome materials conduct thermal energy faster than others. In general, good conductors of electricity (metals like copper, aluminum, gold, and silver) are also good heat conductors, whereas insulators of electricity (wood, plastic, and rubber) are poor heat conductors.\n\nThe (average) kinetic energy of a molecule in the hot body is higher than in the colder body. If two molecules collide, an energy transfer from the molecule with greater kinetic energy to the molecule with less kinetic energy occurs. The cumulative effect from all collisions results in a net flux of heat from the hot body to the colder body. The heat flux thus depends on the temperature difference ΔΤ=Τhot−Tcold. Therefore, you will get a more severe burn from boiling water than from hot tap water. Conversely, if the temperatures are the same, the net heat transfer rate falls to zero, and equilibrium is achieved. Owing to the fact that the number of collisions increases with increasing area, heat conduction depends on the cross-sectional area. If you touch a cold wall with your palm, your hand cools faster than if you just touch it with your fingertip.",
+                "valueHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "dimension": "Q3",
+            "level": 2,
+            "reason": "e16 用0°C铁扶手指尖轻触与手掌包裹对比，保持温差材质时间相同仅面积不同，正确解释热传导依赖面积；边界说明温度一致、未戴隔热手套、短暂接触避免升温，符合 e3 机制与 e9 前提，学习者可跟随。满足 Q3 的2分。",
+            "refs": [
+              "e16",
+              "e3",
+              "e9"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e16",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "课程资料里讲到，热传导依赖接触面积：相同温差下面积越大传热越多，比如冷墙用手掌比指尖冷却快（见《OpenStax：相同温度为什么触感不同》）。这便是当前冷墙案例的关键关系。\n举例：设想寒冬里一个均匀的0°C铁质扶手，你用食指尖轻触2秒， versus 用整只手掌包裹握2秒，材质与温差都相同。手掌接触面积大得多，从手带走的热量更多，因此手掌感觉冷得更快更厉害。这个例子换成了扶手和握持，不同于资料中的墙壁或地面。\n该例子的适用边界：它假设扶手温度一致、未戴隔热手套、接触时间短暂使扶手不会明显升温；若戴厚手套或握很久导致局部升温，面积带来的速率差就会被掩盖。",
+                "valueHash": "f3db6bd8d7dfae8cc432850276fff5cccdce4ed1858711f9a498661847c48dc7"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "Your feet feel cold as you walk barefoot across the living room carpet in your cold house and then step onto the kitchen tile floor. This result is intriguing, since the carpet and tile floor are both at the same temperature. The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.\n\nSome materials conduct thermal energy faster than others. In general, good conductors of electricity (metals like copper, aluminum, gold, and silver) are also good heat conductors, whereas insulators of electricity (wood, plastic, and rubber) are poor heat conductors.\n\nThe (average) kinetic energy of a molecule in the hot body is higher than in the colder body. If two molecules collide, an energy transfer from the molecule with greater kinetic energy to the molecule with less kinetic energy occurs. The cumulative effect from all collisions results in a net flux of heat from the hot body to the colder body. The heat flux thus depends on the temperature difference ΔΤ=Τhot−Tcold. Therefore, you will get a more severe burn from boiling water than from hot tap water. Conversely, if the temperatures are the same, the net heat transfer rate falls to zero, and equilibrium is achieved. Owing to the fact that the number of collisions increases with increasing area, heat conduction depends on the cross-sectional area. If you touch a cold wall with your palm, your hand cools faster than if you just touch it with your fingertip.",
+                "valueHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd"
+              },
+              {
+                "id": "e9",
+                "pointer": "/prerequisites/2",
+                "role": "context",
+                "kind": "text",
+                "value": "Explain in Chinese why same-temperature carpet and tile feel different: because they have different rates of heat transfer (tile conducts faster from skin), causing greater heat loss and temperature drop on skin over the same time interval, while both floor materials are at the same temperature. Must retain the comparison boundary that temperatures are identical and other contact conditions are held same.",
+                "valueHash": "0ba31e046c494f947547e52347cb2562449ab46618eef512f6a5b1277af8176f"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q3",
+            "status": "uncertain",
+            "reason": "Sole support field e16 is questioned by open conditions counterexample and invented-citation defect; same field cannot be declared independent, so positive Q3 level 2 cannot be certified.",
+            "dependencies": [
+              {
+                "issueId": "check:conditions",
+                "relation": "uncertain",
+                "reason": "e16 general area claim lacks material-same condition; Q3 judgment from same text may depend on unresolved premise, independence not proven.",
+                "refs": [
+                  "e16"
+                ],
+                "witnesses": [
+                  {
+                    "id": "e16",
+                    "pointer": "/artifacts/0/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "课程资料里讲到，热传导依赖接触面积：相同温差下面积越大传热越多，比如冷墙用手掌比指尖冷却快（见《OpenStax：相同温度为什么触感不同》）。这便是当前冷墙案例的关键关系。\n举例：设想寒冬里一个均匀的0°C铁质扶手，你用食指尖轻触2秒， versus 用整只手掌包裹握2秒，材质与温差都相同。手掌接触面积大得多，从手带走的热量更多，因此手掌感觉冷得更快更厉害。这个例子换成了扶手和握持，不同于资料中的墙壁或地面。\n该例子的适用边界：它假设扶手温度一致、未戴隔热手套、接触时间短暂使扶手不会明显升温；若戴厚手套或握很久导致局部升温，面积带来的速率差就会被掩盖。",
+                    "valueHash": "f3db6bd8d7dfae8cc432850276fff5cccdce4ed1858711f9a498661847c48dc7"
+                  }
+                ],
+                "reviewReasons": []
+              },
+              {
+                "issueId": "audit:Q1",
+                "relation": "uncertain",
+                "reason": "e16 contains invented citation within same supported field; cannot show Q3 complete judgment holds if defect unknown/true.",
+                "refs": [
+                  "e16"
+                ],
+                "witnesses": [
+                  {
+                    "id": "e16",
+                    "pointer": "/artifacts/0/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "课程资料里讲到，热传导依赖接触面积：相同温差下面积越大传热越多，比如冷墙用手掌比指尖冷却快（见《OpenStax：相同温度为什么触感不同》）。这便是当前冷墙案例的关键关系。\n举例：设想寒冬里一个均匀的0°C铁质扶手，你用食指尖轻触2秒， versus 用整只手掌包裹握2秒，材质与温差都相同。手掌接触面积大得多，从手带走的热量更多，因此手掌感觉冷得更快更厉害。这个例子换成了扶手和握持，不同于资料中的墙壁或地面。\n该例子的适用边界：它假设扶手温度一致、未戴隔热手套、接触时间短暂使扶手不会明显升温；若戴厚手套或握很久导致局部升温，面积带来的速率差就会被掩盖。",
+                    "valueHash": "f3db6bd8d7dfae8cc432850276fff5cccdce4ed1858711f9a498661847c48dc7"
+                  }
+                ],
+                "reviewReasons": []
+              }
+            ],
+            "witnesses": [
+              {
+                "id": "e16",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "课程资料里讲到，热传导依赖接触面积：相同温差下面积越大传热越多，比如冷墙用手掌比指尖冷却快（见《OpenStax：相同温度为什么触感不同》）。这便是当前冷墙案例的关键关系。\n举例：设想寒冬里一个均匀的0°C铁质扶手，你用食指尖轻触2秒， versus 用整只手掌包裹握2秒，材质与温差都相同。手掌接触面积大得多，从手带走的热量更多，因此手掌感觉冷得更快更厉害。这个例子换成了扶手和握持，不同于资料中的墙壁或地面。\n该例子的适用边界：它假设扶手温度一致、未戴隔热手套、接触时间短暂使扶手不会明显升温；若戴厚手套或握很久导致局部升温，面积带来的速率差就会被掩盖。",
+                "valueHash": "f3db6bd8d7dfae8cc432850276fff5cccdce4ed1858711f9a498661847c48dc7"
+              }
+            ],
+            "proposed": {
+              "dimension": "Q3",
+              "status": "uncertain",
+              "reason": "Sole support field e16 is questioned by open conditions counterexample and invented-citation defect; same field cannot be declared independent, so positive Q3 level 2 cannot be certified.",
+              "refs": [
+                "e16"
+              ],
+              "dependencies": [
+                {
+                  "issueId": "check:conditions",
+                  "relation": "uncertain",
+                  "reason": "e16 general area claim lacks material-same condition; Q3 judgment from same text may depend on unresolved premise, independence not proven.",
+                  "refs": [
+                    "e16"
+                  ]
+                },
+                {
+                  "issueId": "audit:Q1",
+                  "relation": "uncertain",
+                  "reason": "e16 contains invented citation within same supported field; cannot show Q3 complete judgment holds if defect unknown/true.",
+                  "refs": [
+                    "e16"
+                  ]
+                }
+              ]
+            },
+            "reviewReasons": [
+              "CERTIFICATION_DEPENDENCY_REVIEW"
+            ]
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q1",
+          "level": 0,
+          "reason": "Artifact e16 断言'见《OpenStax：相同温度为什么触感不同》'，但 facts e2/e3 显示来源 id 为 E01 且文本无该标题，属 invented citation/support，触发 Q1 的0分标准（虚构引用）。核心机制主张虽被 e3 支持，但虚构引用本身构成实质缺陷。",
+          "refs": [
+            "e16",
+            "e2",
+            "e3"
+          ],
+          "issue": "content",
+          "witnesses": [
+            {
+              "id": "e16",
+              "pointer": "/artifacts/0/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "课程资料里讲到，热传导依赖接触面积：相同温差下面积越大传热越多，比如冷墙用手掌比指尖冷却快（见《OpenStax：相同温度为什么触感不同》）。这便是当前冷墙案例的关键关系。\n举例：设想寒冬里一个均匀的0°C铁质扶手，你用食指尖轻触2秒， versus 用整只手掌包裹握2秒，材质与温差都相同。手掌接触面积大得多，从手带走的热量更多，因此手掌感觉冷得更快更厉害。这个例子换成了扶手和握持，不同于资料中的墙壁或地面。\n该例子的适用边界：它假设扶手温度一致、未戴隔热手套、接触时间短暂使扶手不会明显升温；若戴厚手套或握很久导致局部升温，面积带来的速率差就会被掩盖。",
+              "valueHash": "f3db6bd8d7dfae8cc432850276fff5cccdce4ed1858711f9a498661847c48dc7"
+            },
+            {
+              "id": "e2",
+              "pointer": "/sources/0/id",
+              "role": "source",
+              "kind": "text",
+              "value": "E01",
+              "valueHash": "e7e7dd241b31082d328fe29439a320dac14696e5f2b7c9f42c745ba274555d8b"
+            },
+            {
+              "id": "e3",
+              "pointer": "/sources/0/text",
+              "role": "source",
+              "kind": "text",
+              "value": "Your feet feel cold as you walk barefoot across the living room carpet in your cold house and then step onto the kitchen tile floor. This result is intriguing, since the carpet and tile floor are both at the same temperature. The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.\n\nSome materials conduct thermal energy faster than others. In general, good conductors of electricity (metals like copper, aluminum, gold, and silver) are also good heat conductors, whereas insulators of electricity (wood, plastic, and rubber) are poor heat conductors.\n\nThe (average) kinetic energy of a molecule in the hot body is higher than in the colder body. If two molecules collide, an energy transfer from the molecule with greater kinetic energy to the molecule with less kinetic energy occurs. The cumulative effect from all collisions results in a net flux of heat from the hot body to the colder body. The heat flux thus depends on the temperature difference ΔΤ=Τhot−Tcold. Therefore, you will get a more severe burn from boiling water than from hot tap water. Conversely, if the temperatures are the same, the net heat transfer rate falls to zero, and equilibrium is achieved. Owing to the fact that the number of collisions increases with increasing area, heat conduction depends on the cross-sectional area. If you touch a cold wall with your palm, your hand cools faster than if you just touch it with your fingertip.",
+              "valueHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [
+            {
+              "level": "U",
+              "code": "INDEPENDENT_CONDITIONS",
+              "detail": {
+                "kind": "conditions",
+                "status": "uncertain",
+                "affected": [
+                  "Q1"
+                ],
+                "reason": "The authored conclusion has a compatible counterexample or an unresolved necessary premise. 据e3绝缘体/金属导热不同，设同温差大面积橡胶与小面积铜触肤，面积大传热少，与资料相容且未被e16排除，原结论未建立。",
+                "refs": [
+                  "e3",
+                  "e16"
+                ],
+                "challenge": {
+                  "status": "counterexample",
+                  "reason": "据e3绝缘体/金属导热不同，设同温差大面积橡胶与小面积铜触肤，面积大传热少，与资料相容且未被e16排除，原结论未建立。",
+                  "refs": [
+                    "e3",
+                    "e16"
+                  ]
+                },
+                "witnesses": [
+                  {
+                    "id": "e3",
+                    "pointer": "/sources/0/text",
+                    "role": "source",
+                    "kind": "text",
+                    "value": "Your feet feel cold as you walk barefoot across the living room carpet in your cold house and then step onto the kitchen tile floor. This result is intriguing, since the carpet and tile floor are both at the same temperature. The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.\n\nSome materials conduct thermal energy faster than others. In general, good conductors of electricity (metals like copper, aluminum, gold, and silver) are also good heat conductors, whereas insulators of electricity (wood, plastic, and rubber) are poor heat conductors.\n\nThe (average) kinetic energy of a molecule in the hot body is higher than in the colder body. If two molecules collide, an energy transfer from the molecule with greater kinetic energy to the molecule with less kinetic energy occurs. The cumulative effect from all collisions results in a net flux of heat from the hot body to the colder body. The heat flux thus depends on the temperature difference ΔΤ=Τhot−Tcold. Therefore, you will get a more severe burn from boiling water than from hot tap water. Conversely, if the temperatures are the same, the net heat transfer rate falls to zero, and equilibrium is achieved. Owing to the fact that the number of collisions increases with increasing area, heat conduction depends on the cross-sectional area. If you touch a cold wall with your palm, your hand cools faster than if you just touch it with your fingertip.",
+                    "valueHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd"
+                  },
+                  {
+                    "id": "e16",
+                    "pointer": "/artifacts/0/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "课程资料里讲到，热传导依赖接触面积：相同温差下面积越大传热越多，比如冷墙用手掌比指尖冷却快（见《OpenStax：相同温度为什么触感不同》）。这便是当前冷墙案例的关键关系。\n举例：设想寒冬里一个均匀的0°C铁质扶手，你用食指尖轻触2秒， versus 用整只手掌包裹握2秒，材质与温差都相同。手掌接触面积大得多，从手带走的热量更多，因此手掌感觉冷得更快更厉害。这个例子换成了扶手和握持，不同于资料中的墙壁或地面。\n该例子的适用边界：它假设扶手温度一致、未戴隔热手套、接触时间短暂使扶手不会明显升温；若戴厚手套或握很久导致局部升温，面积带来的速率差就会被掩盖。",
+                    "valueHash": "f3db6bd8d7dfae8cc432850276fff5cccdce4ed1858711f9a498661847c48dc7"
+                  }
+                ],
+                "proposed": {
+                  "kind": "conditions",
+                  "status": "uncertain",
+                  "affected": [
+                    "Q1"
+                  ],
+                  "reason": "e16总结资料关键关系为'热传导依赖接触面积：相同温差下面积越大传热越多'，其例(冷墙/扶手)隐含同材质，但e3明示材料导热差异，可构造同温差跨材质反例使结论改变，作者未给定材质相同条件，适用性不明。",
+                  "refs": [
+                    "e3",
+                    "e16"
+                  ],
+                  "challenge": {
+                    "status": "counterexample",
+                    "reason": "据e3绝缘体/金属导热不同，设同温差大面积橡胶与小面积铜触肤，面积大传热少，与资料相容且未被e16排除，原结论未建立。",
+                    "refs": [
+                      "e3",
+                      "e16"
+                    ]
+                  }
+                },
+                "reviewReasons": [
+                  "CONDITIONS_COUNTEREXAMPLE_REVIEW"
+                ]
+              }
+            }
+          ],
+          "proposedLevel": 0,
+          "proposedReason": "Artifact e16 断言'见《OpenStax：相同温度为什么触感不同》'，但 facts e2/e3 显示来源 id 为 E01 且文本无该标题，属 invented citation/support，触发 Q1 的0分标准（虚构引用）。核心机制主张虽被 e3 支持，但虚构引用本身构成实质缺陷。"
+        },
+        {
+          "dimension": "Q3",
+          "level": "U",
+          "reason": "Sole support field e16 is questioned by open conditions counterexample and invented-citation defect; same field cannot be declared independent, so positive Q3 level 2 cannot be certified.",
+          "refs": [
+            "e16",
+            "e3",
+            "e9"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e16",
+              "pointer": "/artifacts/0/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "课程资料里讲到，热传导依赖接触面积：相同温差下面积越大传热越多，比如冷墙用手掌比指尖冷却快（见《OpenStax：相同温度为什么触感不同》）。这便是当前冷墙案例的关键关系。\n举例：设想寒冬里一个均匀的0°C铁质扶手，你用食指尖轻触2秒， versus 用整只手掌包裹握2秒，材质与温差都相同。手掌接触面积大得多，从手带走的热量更多，因此手掌感觉冷得更快更厉害。这个例子换成了扶手和握持，不同于资料中的墙壁或地面。\n该例子的适用边界：它假设扶手温度一致、未戴隔热手套、接触时间短暂使扶手不会明显升温；若戴厚手套或握很久导致局部升温，面积带来的速率差就会被掩盖。",
+              "valueHash": "f3db6bd8d7dfae8cc432850276fff5cccdce4ed1858711f9a498661847c48dc7"
+            },
+            {
+              "id": "e3",
+              "pointer": "/sources/0/text",
+              "role": "source",
+              "kind": "text",
+              "value": "Your feet feel cold as you walk barefoot across the living room carpet in your cold house and then step onto the kitchen tile floor. This result is intriguing, since the carpet and tile floor are both at the same temperature. The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.\n\nSome materials conduct thermal energy faster than others. In general, good conductors of electricity (metals like copper, aluminum, gold, and silver) are also good heat conductors, whereas insulators of electricity (wood, plastic, and rubber) are poor heat conductors.\n\nThe (average) kinetic energy of a molecule in the hot body is higher than in the colder body. If two molecules collide, an energy transfer from the molecule with greater kinetic energy to the molecule with less kinetic energy occurs. The cumulative effect from all collisions results in a net flux of heat from the hot body to the colder body. The heat flux thus depends on the temperature difference ΔΤ=Τhot−Tcold. Therefore, you will get a more severe burn from boiling water than from hot tap water. Conversely, if the temperatures are the same, the net heat transfer rate falls to zero, and equilibrium is achieved. Owing to the fact that the number of collisions increases with increasing area, heat conduction depends on the cross-sectional area. If you touch a cold wall with your palm, your hand cools faster than if you just touch it with your fingertip.",
+              "valueHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd"
+            },
+            {
+              "id": "e9",
+              "pointer": "/prerequisites/2",
+              "role": "context",
+              "kind": "text",
+              "value": "Explain in Chinese why same-temperature carpet and tile feel different: because they have different rates of heat transfer (tile conducts faster from skin), causing greater heat loss and temperature drop on skin over the same time interval, while both floor materials are at the same temperature. Must retain the comparison boundary that temperatures are identical and other contact conditions are held same.",
+              "valueHash": "0ba31e046c494f947547e52347cb2562449ab46618eef512f6a5b1277af8176f"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [
+            {
+              "level": "U",
+              "code": "CERTIFICATION_DEPENDENCY_REVIEW",
+              "detail": {
+                "dimension": "Q3",
+                "status": "uncertain",
+                "reason": "Sole support field e16 is questioned by open conditions counterexample and invented-citation defect; same field cannot be declared independent, so positive Q3 level 2 cannot be certified.",
+                "dependencies": [
+                  {
+                    "issueId": "check:conditions",
+                    "relation": "uncertain",
+                    "reason": "e16 general area claim lacks material-same condition; Q3 judgment from same text may depend on unresolved premise, independence not proven.",
+                    "refs": [
+                      "e16"
+                    ],
+                    "witnesses": [
+                      {
+                        "id": "e16",
+                        "pointer": "/artifacts/0/text",
+                        "role": "artifact",
+                        "kind": "text",
+                        "value": "课程资料里讲到，热传导依赖接触面积：相同温差下面积越大传热越多，比如冷墙用手掌比指尖冷却快（见《OpenStax：相同温度为什么触感不同》）。这便是当前冷墙案例的关键关系。\n举例：设想寒冬里一个均匀的0°C铁质扶手，你用食指尖轻触2秒， versus 用整只手掌包裹握2秒，材质与温差都相同。手掌接触面积大得多，从手带走的热量更多，因此手掌感觉冷得更快更厉害。这个例子换成了扶手和握持，不同于资料中的墙壁或地面。\n该例子的适用边界：它假设扶手温度一致、未戴隔热手套、接触时间短暂使扶手不会明显升温；若戴厚手套或握很久导致局部升温，面积带来的速率差就会被掩盖。",
+                        "valueHash": "f3db6bd8d7dfae8cc432850276fff5cccdce4ed1858711f9a498661847c48dc7"
+                      }
+                    ],
+                    "reviewReasons": []
+                  },
+                  {
+                    "issueId": "audit:Q1",
+                    "relation": "uncertain",
+                    "reason": "e16 contains invented citation within same supported field; cannot show Q3 complete judgment holds if defect unknown/true.",
+                    "refs": [
+                      "e16"
+                    ],
+                    "witnesses": [
+                      {
+                        "id": "e16",
+                        "pointer": "/artifacts/0/text",
+                        "role": "artifact",
+                        "kind": "text",
+                        "value": "课程资料里讲到，热传导依赖接触面积：相同温差下面积越大传热越多，比如冷墙用手掌比指尖冷却快（见《OpenStax：相同温度为什么触感不同》）。这便是当前冷墙案例的关键关系。\n举例：设想寒冬里一个均匀的0°C铁质扶手，你用食指尖轻触2秒， versus 用整只手掌包裹握2秒，材质与温差都相同。手掌接触面积大得多，从手带走的热量更多，因此手掌感觉冷得更快更厉害。这个例子换成了扶手和握持，不同于资料中的墙壁或地面。\n该例子的适用边界：它假设扶手温度一致、未戴隔热手套、接触时间短暂使扶手不会明显升温；若戴厚手套或握很久导致局部升温，面积带来的速率差就会被掩盖。",
+                        "valueHash": "f3db6bd8d7dfae8cc432850276fff5cccdce4ed1858711f9a498661847c48dc7"
+                      }
+                    ],
+                    "reviewReasons": []
+                  }
+                ],
+                "witnesses": [
+                  {
+                    "id": "e16",
+                    "pointer": "/artifacts/0/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "课程资料里讲到，热传导依赖接触面积：相同温差下面积越大传热越多，比如冷墙用手掌比指尖冷却快（见《OpenStax：相同温度为什么触感不同》）。这便是当前冷墙案例的关键关系。\n举例：设想寒冬里一个均匀的0°C铁质扶手，你用食指尖轻触2秒， versus 用整只手掌包裹握2秒，材质与温差都相同。手掌接触面积大得多，从手带走的热量更多，因此手掌感觉冷得更快更厉害。这个例子换成了扶手和握持，不同于资料中的墙壁或地面。\n该例子的适用边界：它假设扶手温度一致、未戴隔热手套、接触时间短暂使扶手不会明显升温；若戴厚手套或握很久导致局部升温，面积带来的速率差就会被掩盖。",
+                    "valueHash": "f3db6bd8d7dfae8cc432850276fff5cccdce4ed1858711f9a498661847c48dc7"
+                  }
+                ],
+                "proposed": {
+                  "dimension": "Q3",
+                  "status": "uncertain",
+                  "reason": "Sole support field e16 is questioned by open conditions counterexample and invented-citation defect; same field cannot be declared independent, so positive Q3 level 2 cannot be certified.",
+                  "refs": [
+                    "e16"
+                  ],
+                  "dependencies": [
+                    {
+                      "issueId": "check:conditions",
+                      "relation": "uncertain",
+                      "reason": "e16 general area claim lacks material-same condition; Q3 judgment from same text may depend on unresolved premise, independence not proven.",
+                      "refs": [
+                        "e16"
+                      ]
+                    },
+                    {
+                      "issueId": "audit:Q1",
+                      "relation": "uncertain",
+                      "reason": "e16 contains invented citation within same supported field; cannot show Q3 complete judgment holds if defect unknown/true.",
+                      "refs": [
+                        "e16"
+                      ]
+                    }
+                  ]
+                },
+                "reviewReasons": [
+                  "CERTIFICATION_DEPENDENCY_REVIEW"
+                ]
+              }
+            }
+          ],
+          "proposedLevel": 2,
+          "proposedReason": "e16 用0°C铁扶手指尖轻触与手掌包裹对比，保持温差材质时间相同仅面积不同，正确解释热传导依赖面积；边界说明温度一致、未戴隔热手套、短暂接触避免升温，符合 e3 机制与 e9 前提，学习者可跟随。满足 Q3 的2分。",
+          "decidingConstraint": "CERTIFICATION_DEPENDENCY_REVIEW"
+        }
+      ],
+      "reviewRequired": [
+        {
+          "dimension": "Q1",
+          "reason": "RESOLVED_DEFECT_WITH_OTHER_UNCERTAINTY"
+        },
+        {
+          "dimension": "Q3",
+          "reason": "UNRESOLVED"
+        }
+      ],
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q3",
+            "status": "uncertain",
+            "reason": "Sole support field e16 is questioned by open conditions counterexample and invented-citation defect; same field cannot be declared independent, so positive Q3 level 2 cannot be certified.",
+            "dependencies": [
+              {
+                "issueId": "check:conditions",
+                "relation": "uncertain",
+                "reason": "e16 general area claim lacks material-same condition; Q3 judgment from same text may depend on unresolved premise, independence not proven.",
+                "refs": [
+                  "e16"
+                ],
+                "witnesses": [
+                  {
+                    "id": "e16",
+                    "pointer": "/artifacts/0/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "课程资料里讲到，热传导依赖接触面积：相同温差下面积越大传热越多，比如冷墙用手掌比指尖冷却快（见《OpenStax：相同温度为什么触感不同》）。这便是当前冷墙案例的关键关系。\n举例：设想寒冬里一个均匀的0°C铁质扶手，你用食指尖轻触2秒， versus 用整只手掌包裹握2秒，材质与温差都相同。手掌接触面积大得多，从手带走的热量更多，因此手掌感觉冷得更快更厉害。这个例子换成了扶手和握持，不同于资料中的墙壁或地面。\n该例子的适用边界：它假设扶手温度一致、未戴隔热手套、接触时间短暂使扶手不会明显升温；若戴厚手套或握很久导致局部升温，面积带来的速率差就会被掩盖。",
+                    "valueHash": "f3db6bd8d7dfae8cc432850276fff5cccdce4ed1858711f9a498661847c48dc7"
+                  }
+                ],
+                "reviewReasons": []
+              },
+              {
+                "issueId": "audit:Q1",
+                "relation": "uncertain",
+                "reason": "e16 contains invented citation within same supported field; cannot show Q3 complete judgment holds if defect unknown/true.",
+                "refs": [
+                  "e16"
+                ],
+                "witnesses": [
+                  {
+                    "id": "e16",
+                    "pointer": "/artifacts/0/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "课程资料里讲到，热传导依赖接触面积：相同温差下面积越大传热越多，比如冷墙用手掌比指尖冷却快（见《OpenStax：相同温度为什么触感不同》）。这便是当前冷墙案例的关键关系。\n举例：设想寒冬里一个均匀的0°C铁质扶手，你用食指尖轻触2秒， versus 用整只手掌包裹握2秒，材质与温差都相同。手掌接触面积大得多，从手带走的热量更多，因此手掌感觉冷得更快更厉害。这个例子换成了扶手和握持，不同于资料中的墙壁或地面。\n该例子的适用边界：它假设扶手温度一致、未戴隔热手套、接触时间短暂使扶手不会明显升温；若戴厚手套或握很久导致局部升温，面积带来的速率差就会被掩盖。",
+                    "valueHash": "f3db6bd8d7dfae8cc432850276fff5cccdce4ed1858711f9a498661847c48dc7"
+                  }
+                ],
+                "reviewReasons": []
+              }
+            ],
+            "witnesses": [
+              {
+                "id": "e16",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "课程资料里讲到，热传导依赖接触面积：相同温差下面积越大传热越多，比如冷墙用手掌比指尖冷却快（见《OpenStax：相同温度为什么触感不同》）。这便是当前冷墙案例的关键关系。\n举例：设想寒冬里一个均匀的0°C铁质扶手，你用食指尖轻触2秒， versus 用整只手掌包裹握2秒，材质与温差都相同。手掌接触面积大得多，从手带走的热量更多，因此手掌感觉冷得更快更厉害。这个例子换成了扶手和握持，不同于资料中的墙壁或地面。\n该例子的适用边界：它假设扶手温度一致、未戴隔热手套、接触时间短暂使扶手不会明显升温；若戴厚手套或握很久导致局部升温，面积带来的速率差就会被掩盖。",
+                "valueHash": "f3db6bd8d7dfae8cc432850276fff5cccdce4ed1858711f9a498661847c48dc7"
+              }
+            ],
+            "proposed": {
+              "dimension": "Q3",
+              "status": "uncertain",
+              "reason": "Sole support field e16 is questioned by open conditions counterexample and invented-citation defect; same field cannot be declared independent, so positive Q3 level 2 cannot be certified.",
+              "refs": [
+                "e16"
+              ],
+              "dependencies": [
+                {
+                  "issueId": "check:conditions",
+                  "relation": "uncertain",
+                  "reason": "e16 general area claim lacks material-same condition; Q3 judgment from same text may depend on unresolved premise, independence not proven.",
+                  "refs": [
+                    "e16"
+                  ]
+                },
+                {
+                  "issueId": "audit:Q1",
+                  "relation": "uncertain",
+                  "reason": "e16 contains invented citation within same supported field; cannot show Q3 complete judgment holds if defect unknown/true.",
+                  "refs": [
+                    "e16"
+                  ]
+                }
+              ]
+            },
+            "reviewReasons": [
+              "CERTIFICATION_DEPENDENCY_REVIEW"
+            ]
+          }
+        ]
+      }
+    },
+    "resultHash": "b69ad0a6ee63b20bd84b22ff00d1137288ab2e79f6dd7e9ff12eed862b48edcb"
+  }
+}
