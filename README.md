@@ -7,7 +7,7 @@ A Hy3-powered learning agent that turns your materials into a course, with guide
 [![CI](https://github.com/Small-fish-QAQ/hy3-study-clinic/actions/workflows/ci.yml/badge.svg)](https://github.com/Small-fish-QAQ/hy3-study-clinic/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 
-[截图导览](docs/DEMO.md) · [快速运行](#快速运行) · [最终评估结果](docs/EVALUATION_RESULTS.md) · [评测样本与复现](eval/final-evaluation/README.md)
+[截图导览](docs/DEMO.md) · [快速运行](#快速运行) · [最终评估结果](docs/EVALUATION_RESULTS.md) · [评测样本与复现](eval/final-evaluation/README.md) · [Task 1 验收入口](#task-1-验收入口)
 
 ### ▶ 1 分 50 秒演示
 
@@ -83,6 +83,21 @@ npm run dev
 要体验真实 Hy3，将 [`.env.example`](.env.example) 复制为 `.env`，配置 `LLM_PROVIDER=hy3`、`HY3_BASE_URL`、`HY3_API_KEY` 和 `HY3_MODEL`，并设置 `VISUAL_PROVIDER=disabled`。重启服务，在设置页核对实际生效的模型；已保存的设置优先于环境配置。
 
 完整的 Windows / macOS / Linux 步骤、端口、数据位置、配置优先级与常见问题见 **[运行指南](docs/SETUP.md)**。
+
+## Task 1 验收入口
+
+按官方实战任务 1 的交付项定位现有材料。判别力与一致性为必需验证；一致性可用人工标注或重复评估验证，对抗性为鼓励项。
+
+| 官方交付项                 | 仓库入口                                                                                                                                                                                                                                                                                         |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 应用侧与开源项目           | [目标用户与场景](#为谁解决什么问题) · [Hy3 的必要性与职责](#为什么需要-hy3) · [应用源码](apps/) · [运行环境与 Hy3 配置](docs/SETUP.md) · [配置样例](.env.example)                                                                                                                                |
+| 评估方法设计               | [六维操作标准](docs/EVALUATION.md#六个操作维度) · [设计依据与流程](docs/EVALUATION.md#语义判断与本地计算) · [冻结评估实现](eval/final-evaluation/method/src/evaluator.mjs)                                                                                                                       |
+| 评测样本                   | [来源与构造](eval/final-evaluation/CONSTRUCTION.md) · [覆盖、难例与反例](eval/final-evaluation/CONSTRUCTION.md#frozen-population) · [完整数据集索引](eval/final-evaluation/dataset/public-cases.json)                                                                                            |
+| 有效性验证：判别力、一致性 | [三档与成对判别](docs/EVIDENCE_DIAGNOSTICS.md#24-个受控三元组未严格排序的-19-组是什么) · [重复波动](docs/EVIDENCE_DIAGNOSTICS.md#重复实验2944-之外的-15-组) · [人工标注与一致性](docs/HUMAN_VALIDATION.md)                                                                                       |
+| 对抗性验证（鼓励项）       | [对抗样本构造](eval/final-evaluation/CONSTRUCTION.md#what-the-controls-change) · [检测结果](docs/EVALUATION_RESULTS.md#判别力对抗性与重复一致性)                                                                                                                                                 |
+| 完整评测与复现             | [实验协议](eval/final-evaluation/PROTOCOL.md) · [完整结果表](eval/final-evaluation/results/complete-results.csv) · [全部材料](eval/final-evaluation/README.md) · [只读复核脚本](eval/final-evaluation/scripts/) · [复核步骤](eval/final-evaluation/README.md#reproduce-the-published-statistics) |
+| 分析报告                   | [场景选择与解决方案](docs/PROJECT_PROPOSAL.md) · [典型 case 归因](docs/EVALUATION_RESULTS.md#可直接核查的典型案例与失败归因) · [失败模式与能力边界](docs/LIMITATIONS.md)                                                                                                                         |
+| 2 分钟以内 demo            | [1 分 50 秒视频与观看路线](docs/DEMO.md)                                                                                                                                                                                                                                                         |
 
 ## 评估与已验证的范围
 
