@@ -2,7 +2,7 @@
 
 **把自己的资料，变成一门有讲解、有练习、有补救、能追溯学习证据的课程。**
 
-A Hy3-powered learning agent that turns your materials into a course, with guided study, targeted repair, and traceable assessment evidence.
+A Hy3-powered learning system that turns your materials into a course, with guided study, targeted repair, formal assessment, and traceable learning evidence.
 
 [![CI](https://github.com/Small-fish-QAQ/hy3-study-clinic/actions/workflows/ci.yml/badge.svg)](https://github.com/Small-fish-QAQ/hy3-study-clinic/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
