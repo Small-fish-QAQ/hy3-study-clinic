@@ -4,15 +4,11 @@
 
 Study Clinic is a local React/Vite application backed by Fastify and SQLite. Hy3 proposes semantic content. Local services validate proposals, persist accepted versions, and own changes to learning state.
 
-```mermaid
-flowchart TD
-    UI[React learning workspace] --> API[Fastify API]
-    API --> Services[Course and learning services]
-    Services --> Provider[Hy3 or offline FakeProvider]
-    Provider --> Gates[Schema, source and domain checks]
-    Gates --> DB[(SQLite repositories)]
-    DB --> UI
-```
+[![Study Clinic: an accepted course, guided learning, gated formal evidence and persistent learner state](media/architecture/study-clinic-architecture.svg)](media/architecture/study-clinic-architecture.svg)
+
+H marks Hy3 semantic work; L marks local authority. Dual badges include both responsibilities, such as authored Practice content and local answer checks. The deterministic SVG uses the product's vector logo and links its 24 elements to implementation at frozen product/documentation snapshot [`a589d8b`](https://github.com/Small-fish-QAQ/hy3-study-clinic/commit/a589d8bdca7f8e04928d1a00deb0708094ab98fb). Open or download the SVG to inspect its source links and structured metadata.
+
+Implementation anchors: [local course compilation](https://github.com/Small-fish-QAQ/hy3-study-clinic/blob/a589d8bdca7f8e04928d1a00deb0708094ab98fb/apps/server/src/services/acceptedCoursePlan.ts#L14) · [bounded Tutor replies](https://github.com/Small-fish-QAQ/hy3-study-clinic/blob/a589d8bdca7f8e04928d1a00deb0708094ab98fb/apps/server/src/services/studySessions.ts#L840) · [evidence and reconciliation](https://github.com/Small-fish-QAQ/hy3-study-clinic/blob/a589d8bdca7f8e04928d1a00deb0708094ab98fb/apps/server/src/services/formalAssessments.ts#L666) · [fresh Formal Repair verification](https://github.com/Small-fish-QAQ/hy3-study-clinic/blob/a589d8bdca7f8e04928d1a00deb0708094ab98fb/apps/server/src/services/courseActionLaunch.ts#L1226) · [mastery policy](https://github.com/Small-fish-QAQ/hy3-study-clinic/blob/a589d8bdca7f8e04928d1a00deb0708094ab98fb/packages/shared/src/domain/formalProgression.ts#L441).
 
 The browser does not call Hy3 directly. Credentials, unrevealed answer keys and private grading contracts remain server-side. Runtime schemas shared by client and server describe accepted transport data.
 
@@ -66,22 +62,28 @@ Details: [Post-Practice recovery](PRACTICE_RECOVERY.md).
 ## Formal evidence and mastery
 
 ```text
-accepted objective + current source/scoring authority
+eligible objective + current source / construct / scoring authority
                  ↓
-immutable assessment → attempt → append-only grade
+candidate → local admission → immutable assessment
                  ↓
-local Formal Evidence gate → progression reconciliation
+independent attempt → criterion judgment + local score
                  ↓
-completion policy / Repair / due Review
+local Evidence Gate → supported evidence → progression reconciliation
+                 ↓
+durable-mastery policy / separate due-review scheduling
 ```
 
 Formal eligibility depends on independently supported capabilities and scoring criteria. Hy3 judges short-answer criterion satisfaction, while local code computes scores and applies required-criterion, source, version and route rules. A grade and its progression reconciliation are separate records, so a failed projection can be retried without another model grade.
+
+Partial evidence does not grant formal progress. Formal Repair prepares fresh verification for the same target and re-enters candidate admission; it must pass both Admission Gate and Evidence Gate again.
 
 Evidence support also separates semantic observations from local decisions: Hy3 classifies candidate relations and support groups without seeing which candidates are currently bound. Given the same offered candidate universe, changing only that private binding leaves provider input unchanged. Local code derives coverage, binding match, mis-binding and contradiction, then rechecks accepted artifacts at consequential boundaries. These checks do not prove semantic entailment.
 
 Teaching-only objectives stay teaching-only when Formal authority is unavailable. Selecting a deeper course cannot manufacture a scoring basis. The supported construct ceiling and general calculation/design/evaluation limits are described in [LIMITATIONS.md](LIMITATIONS.md).
 
 Deep-transfer plans add a unit-transfer task after an eligible objective's checkpoint. Source criteria and four performance requirements are checked separately. Durable mastery additionally requires diversity, sufficient demand and delayed unseen evidence; a synthesis route label does not raise an objective's supported construct. FSRS review scheduling is separate from mastery.
+
+Knowledge Map is a read-only projection of accepted course structure, the validated concept graph and learner records. It is not a source of curriculum or evidence authority.
 
 Details: [Deep-transfer completion](DEEP_TRANSFER.md).
 
@@ -101,4 +103,4 @@ The workflow can be repeated offline without an API key. This does not promise b
 
 An optional visual-description adapter is retained in code. Its outputs are advisory and cannot enter Formal Evidence, grading or mastery. The submitted language workflow and evaluation configuration keep `VISUAL_PROVIDER=disabled`; it is not a second submitted model path.
 
-Runtime safeguards and the existing structural runners are implementation evidence. The separate [StudyEval protocol](EVALUATION.md) describes quality judgments and evaluator validation still requiring final public evidence. Neither successful tests nor a positive model review establishes measured learning effectiveness.
+Runtime safeguards and the existing structural runners are implementation evidence. The separate [StudyEval protocol](EVALUATION.md) describes quality judgments and evaluator validation; the [final public results](EVALUATION_RESULTS.md) include completed machine evaluation, independent model review and human annotation. Neither successful tests nor a positive model review establishes measured learning effectiveness.

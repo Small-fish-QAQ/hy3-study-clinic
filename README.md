@@ -7,7 +7,7 @@ A Hy3-powered learning system that turns your materials into a course, with guid
 [![CI](https://github.com/Small-fish-QAQ/hy3-study-clinic/actions/workflows/ci.yml/badge.svg)](https://github.com/Small-fish-QAQ/hy3-study-clinic/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 
-[截图导览](docs/DEMO.md) · [快速运行](#快速运行) · [最终评估结果](docs/EVALUATION_RESULTS.md) · [评测样本与复现](eval/final-evaluation/README.md) · [Task 1 验收入口](#task-1-验收入口)
+[截图导览](docs/DEMO.md) · [系统架构](#系统架构) · [快速运行](#快速运行) · [最终评估结果](docs/EVALUATION_RESULTS.md) · [评测样本与复现](eval/final-evaluation/README.md) · [Task 1 验收入口](#task-1-验收入口)
 
 ### ▶ 1 分 50 秒演示
 
@@ -43,6 +43,12 @@ Study Clinic 将这些动作放进同一门持续保存的课程。**Hy3 负责�
 | [![针对把个人自述推广为全体需求的错误，解释缺失的判断步骤](docs/media/screenshots/11-repair-explanation.webp)](docs/media/screenshots/11-repair-explanation.webp) | [![课程进度显示已完成的讲解练习，同时明确正式通过证据仍为零](docs/media/screenshots/15-progress-without-false-mastery.webp)](docs/media/screenshots/15-progress-without-false-mastery.webp) |
 
 从课程资料、结构到新情境复测的更多画面，见[完整截图导览](docs/DEMO.md#截图导览)。
+
+## 系统架构
+
+[![Study Clinic 系统架构：资料与课程、学习与补救、受门控的正式证据，以及持续保存的学习状态](docs/media/architecture/study-clinic-architecture.svg)](docs/media/architecture/study-clinic-architecture.svg)
+
+_H 表示 Hy3 语义工作，L 表示本地权威；双标记表示两者协作。点击图片查看矢量原图，职责与源码依据见[架构说明](docs/ARCHITECTURE.md)。_
 
 ## 为什么需要 Hy3
 
