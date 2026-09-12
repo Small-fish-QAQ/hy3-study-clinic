@@ -1,0 +1,91 @@
+{
+  "dimensions": [
+    "Q6"
+  ],
+  "evidence": {
+    "sources": [
+      {
+        "id": "F09",
+        "text": "讨论两个人合作完成一项工作时，先约定“整项工作”为一份。若小岚单独整理一批卡片需要六小时，且全过程速度恒定，那么每小时完成六分之一份；小禾单独需要三小时，每小时完成三分之一份。时间的单位是小时，速度的单位是份每小时，两者不能直接相加成同一种量。\n在以下明确假设下，两人的工作速度可以相加：卡片能够任意分开处理，两人的工作互不重复，合作不会改变各自速度，也没有额外等待或交接开销。此时合速度为六分之一加三分之一，即二分之一份每小时，整份工作需要一除以二分之一，等于两小时。直接把六小时和三小时相加得到九小时，或者取平均得到四点五小时，都没有表示合作每小时完成多少工作。\n若两人不是同时开始，应分时段计算。例如小禾先做一小时，完成三分之一份，还剩三分之二份；随后两人按前述假设共同做，速度仍为二分之一份每小时，剩余时间为三分之二除以二分之一。除以二分之一等于乘二，所以得到三分之四小时，即一又三分之一小时。加上最初一小时，总时长为二又三分之一小时。写分数时要特别检查除法的方向，不能只凭“合作更快”的趋势认可数值。\n为避免口语分数混淆，上面的核心算式可以直接写成：(2/3)÷(1/2)=4/3小时，总计1+4/3=7/3小时。完成量应再验算：第一小时完成1/3，后面4/3小时以1/2的速度完成2/3，两段合计正好一份。把结果代回原始工作量，是发现倒数错误的有效方法。\n这些公式依赖模型条件。若工作只有一台必需设备，两人无法同时操作；或两人都检查同一张卡片导致重复工作，就不能直接使用独立速度相加。题目只给单独用时而未说明合作方式时，应先指出所需假设，再给条件式结果。现实合作可能有额外收益，也可能有协调损失，单独速度不足以确定所有情况。\n回答此类问题时依次写清总工作量、各段速度、各段完成量和最终时间。不要混淆某个人工作了多久与整个任务从开始到结束经过多久。即使最后数值相同，单位与过程仍决定解释是否可靠。"
+      }
+    ],
+    "goals": [
+      "针对这次实际错误给出有依据的诊断、补救解释和后续检查"
+    ],
+    "prerequisites": [
+      "分数",
+      "乘除法",
+      "小时与分钟换算",
+      "Explain that total work is defined as one unit, represent personal speed as units per hour (e.g., fractions of the unit), and distinguish completion time (hours) from work speed (units/hour) as different quantities that cannot be directly added or averaged.",
+      "Apply the explicit independent additive assumption to calculate cooperative completion time: sum individual speeds to get combined speed, compute total time as workload divided by combined speed for simultaneous start; for staggered start, compute segmented completion amounts and times; follow steps of stating total workload, segment speeds, segment completed amounts, final time; verify by substituting back that total completed equals one unit."
+    ],
+    "desiredDepth": "working_fluency",
+    "authorityBoundaries": [
+      "本次评估只涉及所给来源、明确的教学范围和实际展示的产物；脚本作答用于检查工作流，不代表真实学习者。"
+    ],
+    "artifacts": [
+      {
+        "id": "actual-failed-question",
+        "text": "整项工作记为1份。甲单独做需4小时，乙单独做需4小时。若按‘两人速度可加’的假设，合速度为1/4+1/4=1/2份每小时，完成需2小时。但实际两人同时开工却用了4小时完成。下列哪种具体情况能解释该观测？"
+      },
+      {
+        "id": "actual-repair/selectedAnswer",
+        "text": "合速度为1/2份每小时，应在2小时完成，因此4小时是计时错误。"
+      },
+      {
+        "id": "actual-repair/feedback",
+        "text": "错误：若假设成立则结果必为2小时，但题目要求从干预结果推断隐藏原因，而非否认观测。"
+      },
+      {
+        "id": "actual-repair/learnerNote",
+        "text": "请根据我刚才选择的答案，解释关键错误，并给我新的检验机会。"
+      },
+      {
+        "id": "actual-repair/diagnosis/observation",
+        "text": "你选择了“合速度为1/2份每小时，应在2小时完成，因此4小时是计时错误”这一选项（即原题中把实测时长归为计时错误的解释）。"
+      },
+      {
+        "id": "actual-repair/diagnosis/gap",
+        "text": "具体缺失的区分是：“单独用时已知”只给出个人速度，合作速度能否直接相加依赖隐藏边界（如设备唯一、无人闲置）；当实测合作时长与速度相加预测矛盾时，正确路径是推断使速度不可加的约束，而非否认观测。你误将“若速度可加则预测2小时”当作必须成立的结论，忽略了题目要求从结果反推原因。"
+      },
+      {
+        "id": "actual-repair/diagnosis/uncertainty",
+        "text": "这是根据这次回答作出的判断；读题疏漏也可能导致同样的选择。"
+      },
+      {
+        "id": "actual-repair/teaching/explanation",
+        "text": "先对比错误规则与正确规则。错误规则：先假设两人速度可加算出预测时长，若实测不同，就认为测量或计时出错。正确规则：工作量固定为1份时，个人速度=1/单独时长；但合速度等于个人速度之和，仅在可任意分拆、互不重复、无设备冲突等条件下成立。当实测同时开工时长明显偏离预测（如等于某一单人时长），说明隐藏约束使另一人未贡献，速度不可加，应从观测推断该约束。因果上，题目给的“甲4h乙4h”只说明各自速度均为1/4，并未保证合作无冲突；实际4h完成等于单人时长，根因是另一人零产出，而非钟坏了。"
+      },
+      {
+        "id": "actual-repair/teaching/workedExample/prompt",
+        "text": "整项工作记为1份。丙单独做需3小时，丁单独做需6小时。若按“两人速度可加”的假设，合速度为1/3+1/6=1/2份每小时，预测合作需2小时。但实际两人同时开工却用了6小时完成。请推理哪种具体情况能解释该观测（需说明为何速度不可加）。"
+      },
+      {
+        "id": "actual-repair/teaching/workedExample/steps/0",
+        "text": "固定工作量1份，丙速度=1/3份/时，丁速度=1/6份/时；单独用时已给出个人速度。"
+      },
+      {
+        "id": "actual-repair/teaching/workedExample/steps/1",
+        "text": "在可任意分拆、无冲突等假设下，合速度=1/3+1/6=1/2，预测时长=1÷1/2=2小时。"
+      },
+      {
+        "id": "actual-repair/teaching/workedExample/steps/2",
+        "text": "实测6小时等于丁单独时长，说明丙在合作中未完成任何有效份额，即合速度实际仅为1/6，而非1/2。"
+      },
+      {
+        "id": "actual-repair/teaching/workedExample/steps/3",
+        "text": "推断隐藏约束：例如两人必须共用一台唯一校验软件，丙不会操作，只能丁独立完成全部1份，耗时6小时。"
+      },
+      {
+        "id": "actual-repair/teaching/workedExample/conclusion",
+        "text": "实测偏离速度相加预测时，应寻找使速度不可加的隐藏约束来解释，而不是否定实测。"
+      },
+      {
+        "id": "actual-repair/teaching/contrast",
+        "text": "若误用错误规则，会声称“预测2小时，实测6小时肯定是计时器故障”；但在题目语境中，观测是给定事实，选项需提供使速度不可加的具体情境。错误规则在“确实发生计时错误”的极端场景中可能碰巧成立，但原题未提供任何计时不可靠的线索，因此它无法解释给出的合作条件缺失类观测，反而掩盖了工作量与速度区分的核心。"
+      }
+    ],
+    "exposure": [],
+    "answer": "合速度为1/2份每小时，应在2小时完成，因此4小时是计时错误。"
+  }
+}

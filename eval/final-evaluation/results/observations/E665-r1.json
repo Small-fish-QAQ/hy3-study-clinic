@@ -1,0 +1,309 @@
+{
+  "task": {
+    "caseId": "E665",
+    "runId": "E665-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E665.json",
+    "inputHash": "c02b371809a2d6c29863067cdca0ae4b9fcc9045e0ab411f66a3d825b6adc579",
+    "population": "boundary",
+    "sourceId": "F03"
+  },
+  "inputHash": "c02b371809a2d6c29863067cdca0ae4b9fcc9045e0ab411f66a3d825b6adc579",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "solve-current": "419e596b88f545384f8c07c3252453d08fa9aa32bb76511d44a5911ee52ba202",
+      "correctness": "87fac64e6352ded331b02005355c896e1195e11602ceefba49e3f7324be27867",
+      "artifact-audit": "87fac64e6352ded331b02005355c896e1195e11602ceefba49e3f7324be27867",
+      "certification": "87fac64e6352ded331b02005355c896e1195e11602ceefba49e3f7324be27867"
+    },
+    "stages": {
+      "solve-current": {
+        "status": "resolved",
+        "solution": "不能确定差异的唯一原因，甚至不能确立因果。题设仅给两组平均分差异且未说明随机分组、练习时间或初始水平（e14）；依 e3 观察差异无随机无控制不能断因果，存在混杂。下一步最需核对的设计信息：分组是否随机或存在选择偏差、两组的练习任务/时间/环境是否一致、基线阅读水平是否可比、其他潜在混杂（如睡眠、家庭安排）是否被记录或控制。问“能否确定/缺什么”的欠定说明本身即 resolved 正确解。",
+        "witnesses": [
+          {
+            "id": "e14",
+            "pointer": "/question/prompt",
+            "role": "question",
+            "kind": "text",
+            "value": "以下是新的独立情境，来源中的示例数字不作为本题未明示的数据。调查只给两组平均分差异，未说明是否随机分组、练习时间或初始水平。能否确定差异的唯一原因？给出下一步最需要核对的设计信息。",
+            "valueHash": "6e6b519d1ddde825537676f3130979fe490e7021bbe3e4eb32ceecd8887290da"
+          },
+          {
+            "id": "e3",
+            "pointer": "/sources/0/text",
+            "role": "source",
+            "kind": "text",
+            "value": "学校想了解早餐与上午阅读表现的关系，于是请一个班的学生自行记录一周早餐情况，并完成同一套阅读练习。记录显示，经常吃早餐的学生平均答对八题，较少吃早餐的学生平均答对六题。这里观察到了两个组的差异，但没有随机决定谁吃早餐，也没有控制其他生活安排，因此不能仅凭这项记录断定早餐造成了两题的提高。\n一种与结果相容的解释是睡眠习惯不同：睡得规律的学生可能既容易按时吃早餐，也更容易在上午集中注意力。另一种解释是家庭安排同时影响早餐和阅读练习时间。这些都是可检验的替代解释，不是已经证明发生的事实。指出混杂的意思是原因果结论尚未建立，不是反过来证明早餐完全无效。观察数据仍然有价值，例如提示值得进一步调查的关系。\n若要改进研究，可以先明确希望比较的因素和测量方式。在伦理和现实条件允许的普通活动研究中，随机分配某个可操作安排能够减少分组选择的影响。对早餐问题也可以增加睡眠、平时阅读水平等记录，或用更合适的前后比较设计；但测量了若干变量不等于排除了所有差异。研究设计越接近只改变目标因素，因果解释通常越有依据；具体能支持到什么范围，还取决于实际执行和数据。\n一个简单的课堂演示可以用两种纸面提示卡而不用改变饮食。把参加者随机分到甲、乙两组，两组做相同难度、相同时间的任务，唯一计划中的差别是是否获得提示卡。若甲组还多得到十分钟，结果就无法单独归因于提示卡。随机分组是一项设计措施，不会自动修复实施时又加入的差别；必须同时检查实际比较条件。\n评价论证可以分三层。第一层只陈述本次样本发生了什么，例如两个组的平均答对数不同。第二层讨论可能解释，清楚标为假说。第三层判断某种因果主张是否被设计和结果支持。把第一层直接改写成第三层，往往会遗漏关键前提。还要留意样本范围：一个班的一周记录不能直接代表所有年龄、所有学校或长期效果。\n遇到“这项调查证明了什么”的问题，不必在“绝对有效”和“完全无效”之间硬选。可以写出观察到的差异、尚未排除的替代解释，以及下一步应补充的比较。这样的回答既尊重证据，也给出可操作的后续行动。它不是回避判断，而是在区分已经建立的结论与仍待检验的主张。",
+            "valueHash": "944a460c4eccfdbd61d456dc9fc3969b0ed10c585ea05e87ccfe3e9b93549680"
+          }
+        ],
+        "reviewReasons": []
+      },
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "clear",
+            "affected": [],
+            "reason": "作者参考解 e18 基于题设 e14（只给差异未说明随机、练习时间或初始水平）得出不能确定唯一原因并需核对，与 e3 一般原则一致；题设未提供关键信息，欠定结论正确，无充分条件/必要条件混淆。",
+            "refs": [
+              "e14",
+              "e18",
+              "e3"
+            ],
+            "challenge": {
+              "status": "closed",
+              "reason": "题设 e14 明确未说明随机分组等，与任何真实情况相容但均不改变“基于所给信息不能确定”的结论，故相容反例被给定事实排除。",
+              "refs": [
+                "e14",
+                "e18"
+              ]
+            },
+            "witnesses": [
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "以下是新的独立情境，来源中的示例数字不作为本题未明示的数据。调查只给两组平均分差异，未说明是否随机分组、练习时间或初始水平。能否确定差异的唯一原因？给出下一步最需要核对的设计信息。",
+                "valueHash": "6e6b519d1ddde825537676f3130979fe490e7021bbe3e4eb32ceecd8887290da"
+              },
+              {
+                "id": "e18",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "本题作者参考解（未向学习者提前展示）：不能确定唯一原因；应核对分组方式、初始水平、实际练习时间等是否可比。",
+                "valueHash": "5ac269fb263a4bbb12ec4c144368310e4513167853715e34cb43cc74fb5ba379"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "学校想了解早餐与上午阅读表现的关系，于是请一个班的学生自行记录一周早餐情况，并完成同一套阅读练习。记录显示，经常吃早餐的学生平均答对八题，较少吃早餐的学生平均答对六题。这里观察到了两个组的差异，但没有随机决定谁吃早餐，也没有控制其他生活安排，因此不能仅凭这项记录断定早餐造成了两题的提高。\n一种与结果相容的解释是睡眠习惯不同：睡得规律的学生可能既容易按时吃早餐，也更容易在上午集中注意力。另一种解释是家庭安排同时影响早餐和阅读练习时间。这些都是可检验的替代解释，不是已经证明发生的事实。指出混杂的意思是原因果结论尚未建立，不是反过来证明早餐完全无效。观察数据仍然有价值，例如提示值得进一步调查的关系。\n若要改进研究，可以先明确希望比较的因素和测量方式。在伦理和现实条件允许的普通活动研究中，随机分配某个可操作安排能够减少分组选择的影响。对早餐问题也可以增加睡眠、平时阅读水平等记录，或用更合适的前后比较设计；但测量了若干变量不等于排除了所有差异。研究设计越接近只改变目标因素，因果解释通常越有依据；具体能支持到什么范围，还取决于实际执行和数据。\n一个简单的课堂演示可以用两种纸面提示卡而不用改变饮食。把参加者随机分到甲、乙两组，两组做相同难度、相同时间的任务，唯一计划中的差别是是否获得提示卡。若甲组还多得到十分钟，结果就无法单独归因于提示卡。随机分组是一项设计措施，不会自动修复实施时又加入的差别；必须同时检查实际比较条件。\n评价论证可以分三层。第一层只陈述本次样本发生了什么，例如两个组的平均答对数不同。第二层讨论可能解释，清楚标为假说。第三层判断某种因果主张是否被设计和结果支持。把第一层直接改写成第三层，往往会遗漏关键前提。还要留意样本范围：一个班的一周记录不能直接代表所有年龄、所有学校或长期效果。\n遇到“这项调查证明了什么”的问题，不必在“绝对有效”和“完全无效”之间硬选。可以写出观察到的差异、尚未排除的替代解释，以及下一步应补充的比较。这样的回答既尊重证据，也给出可操作的后续行动。它不是回避判断，而是在区分已经建立的结论与仍待检验的主张。",
+                "valueHash": "944a460c4eccfdbd61d456dc9fc3969b0ed10c585ea05e87ccfe3e9b93549680"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "kind": "quantities",
+            "status": "not_applicable",
+            "affected": [],
+            "reason": "本题及作者参考解无数值演算或单位绑定断言，rates 为空。",
+            "contextHash": "87fac64e6352ded331b02005355c896e1195e11602ceefba49e3f7324be27867",
+            "proposed": {
+              "kind": "quantities",
+              "status": "not_applicable",
+              "affected": [],
+              "reason": "本题及作者参考解无数值演算或单位绑定断言，rates 为空。",
+              "refs": [
+                "e14",
+                "e18"
+              ]
+            },
+            "reviewReasons": []
+          }
+        ],
+        "keys": [
+          {
+            "taskId": "current",
+            "status": "agrees",
+            "reason": "作者键 e18 给出欠定结论“不能确定唯一原因；应核对分组方式、初始水平、实际练习时间等是否可比”；盲解 current 同样基于题设 e14 未说明这些信息而得出不能确定并列出核对项（分组随机、练习时间环境、基线水平、其他混杂），含义与适用边界一致，无冲突或保留疑问。",
+            "refs": [
+              "e18",
+              "e14"
+            ],
+            "witnesses": [
+              {
+                "id": "e18",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "本题作者参考解（未向学习者提前展示）：不能确定唯一原因；应核对分组方式、初始水平、实际练习时间等是否可比。",
+                "valueHash": "5ac269fb263a4bbb12ec4c144368310e4513167853715e34cb43cc74fb5ba379"
+              },
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "以下是新的独立情境，来源中的示例数字不作为本题未明示的数据。调查只给两组平均分差异，未说明是否随机分组、练习时间或初始水平。能否确定差异的唯一原因？给出下一步最需要核对的设计信息。",
+                "valueHash": "6e6b519d1ddde825537676f3130979fe490e7021bbe3e4eb32ceecd8887290da"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q4",
+            "level": 2,
+            "reason": "题目e14给出新独立情境与明确提问（只给差异未说明随机等），前提充分；盲解与作者参考解e18（标明未向学习者展示）一致，答案集可辩护；priorExposure e19为空，无先前曝光，评估者持键不算泄露，独立性满足。",
+            "refs": [
+              "e14",
+              "e18",
+              "e19"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "以下是新的独立情境，来源中的示例数字不作为本题未明示的数据。调查只给两组平均分差异，未说明是否随机分组、练习时间或初始水平。能否确定差异的唯一原因？给出下一步最需要核对的设计信息。",
+                "valueHash": "6e6b519d1ddde825537676f3130979fe490e7021bbe3e4eb32ceecd8887290da"
+              },
+              {
+                "id": "e18",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "本题作者参考解（未向学习者提前展示）：不能确定唯一原因；应核对分组方式、初始水平、实际练习时间等是否可比。",
+                "valueHash": "5ac269fb263a4bbb12ec4c144368310e4513167853715e34cb43cc74fb5ba379"
+              },
+              {
+                "id": "e19",
+                "pointer": "/priorExposure",
+                "role": "prior_exposure",
+                "kind": "array_length",
+                "value": 0,
+                "valueHash": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q4",
+            "status": "supported",
+            "reason": "题设e14给出仅差异未说明随机等的新独立情境与明确提问，前提充分；作者参考解e18（标明未展示）与盲解结论一致，答案集可辩护；e19无先前曝光，评估者持键不属泄露，独立性满足，各阶段findings无保留异议。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "以下是新的独立情境，来源中的示例数字不作为本题未明示的数据。调查只给两组平均分差异，未说明是否随机分组、练习时间或初始水平。能否确定差异的唯一原因？给出下一步最需要核对的设计信息。",
+                "valueHash": "6e6b519d1ddde825537676f3130979fe490e7021bbe3e4eb32ceecd8887290da"
+              },
+              {
+                "id": "e18",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "本题作者参考解（未向学习者提前展示）：不能确定唯一原因；应核对分组方式、初始水平、实际练习时间等是否可比。",
+                "valueHash": "5ac269fb263a4bbb12ec4c144368310e4513167853715e34cb43cc74fb5ba379"
+              },
+              {
+                "id": "e19",
+                "pointer": "/priorExposure",
+                "role": "prior_exposure",
+                "kind": "array_length",
+                "value": 0,
+                "valueHash": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q4",
+          "level": 2,
+          "reason": "题目e14给出新独立情境与明确提问（只给差异未说明随机等），前提充分；盲解与作者参考解e18（标明未向学习者展示）一致，答案集可辩护；priorExposure e19为空，无先前曝光，评估者持键不算泄露，独立性满足。",
+          "refs": [
+            "e14",
+            "e18",
+            "e19"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e14",
+              "pointer": "/question/prompt",
+              "role": "question",
+              "kind": "text",
+              "value": "以下是新的独立情境，来源中的示例数字不作为本题未明示的数据。调查只给两组平均分差异，未说明是否随机分组、练习时间或初始水平。能否确定差异的唯一原因？给出下一步最需要核对的设计信息。",
+              "valueHash": "6e6b519d1ddde825537676f3130979fe490e7021bbe3e4eb32ceecd8887290da"
+            },
+            {
+              "id": "e18",
+              "pointer": "/artifacts/0/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "本题作者参考解（未向学习者提前展示）：不能确定唯一原因；应核对分组方式、初始水平、实际练习时间等是否可比。",
+              "valueHash": "5ac269fb263a4bbb12ec4c144368310e4513167853715e34cb43cc74fb5ba379"
+            },
+            {
+              "id": "e19",
+              "pointer": "/priorExposure",
+              "role": "prior_exposure",
+              "kind": "array_length",
+              "value": 0,
+              "valueHash": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [],
+          "proposedLevel": 2,
+          "proposedReason": "题目e14给出新独立情境与明确提问（只给差异未说明随机等），前提充分；盲解与作者参考解e18（标明未向学习者展示）一致，答案集可辩护；priorExposure e19为空，无先前曝光，评估者持键不算泄露，独立性满足。"
+        }
+      ],
+      "reviewRequired": [],
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q4",
+            "status": "supported",
+            "reason": "题设e14给出仅差异未说明随机等的新独立情境与明确提问，前提充分；作者参考解e18（标明未展示）与盲解结论一致，答案集可辩护；e19无先前曝光，评估者持键不属泄露，独立性满足，各阶段findings无保留异议。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "以下是新的独立情境，来源中的示例数字不作为本题未明示的数据。调查只给两组平均分差异，未说明是否随机分组、练习时间或初始水平。能否确定差异的唯一原因？给出下一步最需要核对的设计信息。",
+                "valueHash": "6e6b519d1ddde825537676f3130979fe490e7021bbe3e4eb32ceecd8887290da"
+              },
+              {
+                "id": "e18",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "本题作者参考解（未向学习者提前展示）：不能确定唯一原因；应核对分组方式、初始水平、实际练习时间等是否可比。",
+                "valueHash": "5ac269fb263a4bbb12ec4c144368310e4513167853715e34cb43cc74fb5ba379"
+              },
+              {
+                "id": "e19",
+                "pointer": "/priorExposure",
+                "role": "prior_exposure",
+                "kind": "array_length",
+                "value": 0,
+                "valueHash": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "resultHash": "64e7b081b1e8121580f48de26bbde00629985dc580171e220d564ca7263af2c0"
+  }
+}

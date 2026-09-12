@@ -1,0 +1,85 @@
+{
+  "sourceId": "E02",
+  "title": "OpenStax：生态系统中的能量来源",
+  "domain": "biology_ecosystem_energy",
+  "prerequisites": [
+    "知道生物需要能量",
+    "能区分有机物与无机物的一般含义"
+  ],
+  "goals": [
+    "用中文解释食物网描述的能量流动",
+    "区分光合作用、化能合成和异养摄食的能量获取方式",
+    "说明自养生物在生态系统中的作用，避免把所有生态系统都解释为直接依赖阳光"
+  ],
+  "intendedDepth": "working_fluency",
+  "text": "All living things require energy in one form or another. Energy is required by most complex metabolic pathways (often in the form of adenosine triphosphate, ATP), especially those responsible for building large molecules from smaller compounds, and life itself is an energy-driven process. Living organisms would not be able to assemble macromolecules (proteins, lipids, nucleic acids, and complex carbohydrates) from their monomeric subunits without a constant energy input.\n\nIt is important to understand how organisms acquire energy and how that energy is passed from one organism to another through food webs and their constituent food chains. Food webs illustrate how energy flows directionally through ecosystems, including how efficiently organisms acquire it, use it, and how much remains for use by other organisms of the food web.\n\nEnergy is acquired by living things in three ways: photosynthesis, chemosynthesis, and the consumption and digestion of other living or previously living organisms by heterotrophs.\n\nPhotosynthetic and chemosynthetic organisms are both grouped into a category known as autotrophs: organisms capable of synthesizing their own food (more specifically, capable of using inorganic carbon as a carbon source). Photosynthetic autotrophs (photoautotrophs) use sunlight as an energy source, whereas chemosynthetic autotrophs (chemoautotrophs) use inorganic molecules as an energy source. Autotrophs are critical for all ecosystems. Without these organisms, energy would not be available to other living organisms and life itself would not be possible.",
+  "formalFit": {
+    "eligible": true,
+    "rationale": "来源明确支持概念解释；具体 Formal 准入仍由生产应用依据当前目标和权限决定。"
+  },
+  "formalGoodAnswer": "生物需要持续的能量输入来维持代谢，并从较小的组分建立大分子。食物网及食物链描述能量如何从一种生物流向另一种生物，以及利用后还剩多少供其他生物使用。能量获取包括光合作用、化能合成、以及异养生物摄食和消化其他生物或其遗存。自养生物能够以无机碳为碳源合成自己的食物，其中光合自养者利用阳光，化能自养者利用无机分子提供的能量。因此不能把一切生态系统的能量来源都简化为直接吸收阳光。",
+  "formalInsufficientAnswer": "我只根据结果作判断，不需要解释资料中的关系、定义或适用条件。",
+  "provenance": {
+    "kind": "external_textbook_excerpt",
+    "publisher": "OpenStax, Rice University",
+    "bookTitle": "Biology 2e",
+    "section": "46.2 Energy Flow through Ecosystems",
+    "sourceLanguage": "en",
+    "teachingLanguage": "zh-CN",
+    "canonicalUrl": "https://raw.githubusercontent.com/openstax/osbooks-biology-bundle/df426da94c36cf3a8c3bfd79d28e2e33406debfb/modules/m66702/index.cnxml",
+    "currentReadablePageUrl": "https://openstax.org/books/biology-2e/pages/46-2-energy-flow-through-ecosystems",
+    "retrievedAt": "2026-09-11T18:52:37.451Z",
+    "sourceRepository": "https://github.com/openstax/osbooks-biology-bundle",
+    "sourceCommit": "df426da94c36cf3a8c3bfd79d28e2e33406debfb",
+    "sourceCommitDate": "2025-12-25T07:07:32Z",
+    "documentUuid": "a095764b-dd69-4f89-a4c5-537842828d19",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+    "licenseEvidenceUrl": "https://raw.githubusercontent.com/openstax/osbooks-biology-bundle/df426da94c36cf3a8c3bfd79d28e2e33406debfb/LICENSE",
+    "collectionLicenseEvidenceUrl": "https://raw.githubusercontent.com/openstax/osbooks-biology-bundle/df426da94c36cf3a8c3bfd79d28e2e33406debfb/collections/biology-2e.collection.xml",
+    "attribution": "Excerpted from OpenStax, Biology 2e, 46.2 Energy Flow through Ecosystems, source revision df426da94c36cf3a8c3bfd79d28e2e33406debfb, licensed CC BY 4.0. Whitespace normalized; selected paragraphs or exact sentence spans; no substantive paraphrase. Chinese goals and scripted answer controls authored for this evaluation.",
+    "modifications": "Extracted XML textContent, collapsed runs of whitespace to one space, selected specified full paragraphs/exact sentence spans, and joined with blank lines. Equations, figure-dependent references and omitted surrounding material are outside excerpt scope.",
+    "currentPageLicenseNotice": "Live HTML retrieved in 2026 displays CC BY-NC-SA 4.0. The evaluation excerpt is sourced from the separately retrieved, pinned pre-2026 CC BY 4.0 publisher repository revision; the live page is contextual provenance, not the license grant for this excerpt.",
+    "rawCnxmlSha256": "d597021c8848903ac147073e19039cf9509cd2624c166d2b2c89a82fdcf5ec94",
+    "rawHtmlSha256": "9ea740de09dd25bd247309cac76dff1824f64014277b525a98a941bc419aa9ae",
+    "licenseSha256": "0ff174546cbe3dd1287da231f9796618ac2f6e6595b2d11f567b2c9790f64868",
+    "collectionSha256": "f8c88f82e4b248f5560b0ac66b4faf35f8889e4c596a712f6d657bdbf8a84eb7",
+    "extractionSpans": [
+      {
+        "paragraphId": "fs-idp14175904",
+        "normalizedStart": 0,
+        "normalizedEnd": 475,
+        "paragraphSha256": "3ba14ba7545ff5c43b8d4fad90005d974100ad20c49281333c2ddf62535ecdfc",
+        "excerptSha256": "3ba14ba7545ff5c43b8d4fad90005d974100ad20c49281333c2ddf62535ecdfc"
+      },
+      {
+        "paragraphId": "fs-idp182465488",
+        "normalizedStart": 0,
+        "normalizedEnd": 363,
+        "paragraphSha256": "b916e096c4557be49cf0e78f4eab97d40b36f958eca61053d539497ec422a0e0",
+        "excerptSha256": "b916e096c4557be49cf0e78f4eab97d40b36f958eca61053d539497ec422a0e0"
+      },
+      {
+        "paragraphId": "fs-idp6583872",
+        "normalizedStart": 0,
+        "normalizedEnd": 180,
+        "paragraphSha256": "ba35657afddf9a63b416de90a2a56443ec3a2526953c27adc477ff96d40fda35",
+        "excerptSha256": "ba35657afddf9a63b416de90a2a56443ec3a2526953c27adc477ff96d40fda35"
+      },
+      {
+        "paragraphId": "fs-idp7243392",
+        "normalizedStart": 0,
+        "normalizedEnd": 560,
+        "paragraphSha256": "3c195908542569a2d21a478ede6dcb84503b1452a2c841f42ed9dc2661aaf70a",
+        "excerptSha256": "3c195908542569a2d21a478ede6dcb84503b1452a2c841f42ed9dc2661aaf70a"
+      }
+    ],
+    "limitations": [
+      "Excerpt covers energy acquisition and autotrophs only; quantitative trophic efficiencies and ecological pyramids are outside the registered target.",
+      "Original textbook scientific generalizations are not independently validated by this experiment."
+    ],
+    "humanPacketEligible": false
+  },
+  "textHash": "6bfef5addb7581a7a5154aa3f44613f99aea8cec06cb8fcd5a7616deee504d45",
+  "triggerPracticeRepair": true
+}

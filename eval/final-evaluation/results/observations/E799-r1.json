@@ -1,0 +1,326 @@
+{
+  "task": {
+    "caseId": "E799",
+    "runId": "E799-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E799.json",
+    "inputHash": "da087a787eac649ac914a5af9f24a83efd0be1b28a4f76a15983cca49a2134a5",
+    "population": "controlled",
+    "sourceId": "F06"
+  },
+  "inputHash": "da087a787eac649ac914a5af9f24a83efd0be1b28a4f76a15983cca49a2134a5",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "correctness": "20a5ed3acee9d4cdbb772254eddd10190d0eb14a2d45cf9fbfe3a173e8af1efb",
+      "artifact-audit": "20a5ed3acee9d4cdbb772254eddd10190d0eb14a2d45cf9fbfe3a173e8af1efb",
+      "certification": "20a5ed3acee9d4cdbb772254eddd10190d0eb14a2d45cf9fbfe3a173e8af1efb"
+    },
+    "stages": {
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "clear",
+            "affected": [],
+            "reason": "Artifact e17 states mean=sum/count, median=sort then middle; examples 1,2,2,3,12 mean4 median2 and modified 12->22 mean6 median2; typical experience can view median; cumulative use mean*count; one stat not full dist; merge unequal groups consider counts. Consistent with source e3 rules, no false condition asserted.",
+            "refs": [
+              "e17",
+              "e3"
+            ],
+            "challenge": {
+              "status": "closed",
+              "reason": "Artifact assertions are qualified and tied to odd-count instances; necessary reminders (consider counts) cannot be counterexampled. Source e3 confirms.",
+              "refs": [
+                "e17",
+                "e3"
+              ]
+            },
+            "witnesses": [
+              {
+                "id": "e17",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "平均数是总和除以条数，中位数先排序再取中间位置。对1、2、2、3、12，平均4，中位数2；把12改成22则平均6、中位数2。典型体验可看中位数，累计时间可用平均数乘条数。一个指标不能恢复全分布。合并人数不同的两组时，要记得考虑每组人数。",
+                "valueHash": "64ba48fd6db0f8683840ffba9ef5ae07a0a6a1765e1f681e6ab892ee6a156500"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "服务台记录了一组等待时间，想向居民说明排队体验。平均数的计算方法是把所有等待时间相加，再除以记录条数。中位数则先把时间从小到大排列；条数为奇数时取最中间一个，条数为偶数时取中间两个数的平均。它们都可以描述数据，但强调的方面不同，不存在离开问题就永远最好的一个指标。\n例如五位居民的等待时间依次为一、二、二、三、十二分钟。总和为二十分钟，平均数为四分钟；排序后中间一个数是二，所以中位数为二分钟。十二分钟的记录把平均数向上拉，但没有改变位于中间的二。说“平均等待四分钟”不意味着每个人都等了四分钟，也不意味着有一半人恰好等四分钟。说“中位数二分钟”也不意味着最长等待只有二分钟。\n若把最长那次十二分钟改成二十二分钟，其余四次不变，总和增加十分钟，平均数增加两分钟，变为六分钟；中位数仍是二分钟。这个例子说明单个很大的数能够明显影响平均数。但不能由此说中位数不受任何数据变化影响：若中间位置的数据或排序结构改变，中位数也可能改变。\n向公众介绍“典型一次等待”时，可以同时报告中位数和范围；计算整个服务台累计占用的等待分钟数时，平均数乘记录条数可以恢复总和，中位数一般不能这样使用。选择指标取决于所要回答的问题。若两天的平均数相同，不能断言两天每位居民的体验相同；它们可能有不同的最短、最长与分布形状。\n合并两天数据时，还要考虑记录条数。第一天四条记录的平均数为三分钟，第二天两条记录的平均数为九分钟。总等待时间为四乘三加二乘九，共三十分钟；总记录数六条，合并平均数为五分钟。直接平均三和九得到六分钟，相当于把两天当成同样大小的组，未反映实际记录人数。本单元的“每次等待”都按一条记录计，不讨论同一个人多次到访是否应另行去重。\n写解释时建议附上必要运算和指标名称，并把数据范围与结论范围对齐。样本只有几次记录时，可以描述这几次，不宜保证未来总是如此。数据缺了几条，或“等待”的起止定义发生变化，也会改变比较意义；这些条件应在计算前先说明。",
+                "valueHash": "a43f09ae51e1a19e3e4fe7ef6283f10eab5bf8c071e52a5d86e3c347cdbc2311"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "kind": "quantities",
+            "status": "clear",
+            "affected": [],
+            "reason": "Independent recompute from e17 inputs: 1,2,2,3,12 sum20/5=4 mean, median2; 1,2,2,3,22 sum30/5=6 mean, median2. Matches artifact. No unit issues.",
+            "refs": [
+              "e17",
+              "e3"
+            ],
+            "witnesses": [
+              {
+                "id": "e17",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "平均数是总和除以条数，中位数先排序再取中间位置。对1、2、2、3、12，平均4，中位数2；把12改成22则平均6、中位数2。典型体验可看中位数，累计时间可用平均数乘条数。一个指标不能恢复全分布。合并人数不同的两组时，要记得考虑每组人数。",
+                "valueHash": "64ba48fd6db0f8683840ffba9ef5ae07a0a6a1765e1f681e6ab892ee6a156500"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "服务台记录了一组等待时间，想向居民说明排队体验。平均数的计算方法是把所有等待时间相加，再除以记录条数。中位数则先把时间从小到大排列；条数为奇数时取最中间一个，条数为偶数时取中间两个数的平均。它们都可以描述数据，但强调的方面不同，不存在离开问题就永远最好的一个指标。\n例如五位居民的等待时间依次为一、二、二、三、十二分钟。总和为二十分钟，平均数为四分钟；排序后中间一个数是二，所以中位数为二分钟。十二分钟的记录把平均数向上拉，但没有改变位于中间的二。说“平均等待四分钟”不意味着每个人都等了四分钟，也不意味着有一半人恰好等四分钟。说“中位数二分钟”也不意味着最长等待只有二分钟。\n若把最长那次十二分钟改成二十二分钟，其余四次不变，总和增加十分钟，平均数增加两分钟，变为六分钟；中位数仍是二分钟。这个例子说明单个很大的数能够明显影响平均数。但不能由此说中位数不受任何数据变化影响：若中间位置的数据或排序结构改变，中位数也可能改变。\n向公众介绍“典型一次等待”时，可以同时报告中位数和范围；计算整个服务台累计占用的等待分钟数时，平均数乘记录条数可以恢复总和，中位数一般不能这样使用。选择指标取决于所要回答的问题。若两天的平均数相同，不能断言两天每位居民的体验相同；它们可能有不同的最短、最长与分布形状。\n合并两天数据时，还要考虑记录条数。第一天四条记录的平均数为三分钟，第二天两条记录的平均数为九分钟。总等待时间为四乘三加二乘九，共三十分钟；总记录数六条，合并平均数为五分钟。直接平均三和九得到六分钟，相当于把两天当成同样大小的组，未反映实际记录人数。本单元的“每次等待”都按一条记录计，不讨论同一个人多次到访是否应另行去重。\n写解释时建议附上必要运算和指标名称，并把数据范围与结论范围对齐。样本只有几次记录时，可以描述这几次，不宜保证未来总是如此。数据缺了几条，或“等待”的起止定义发生变化，也会改变比较意义；这些条件应在计算前先说明。",
+                "valueHash": "a43f09ae51e1a19e3e4fe7ef6283f10eab5bf8c071e52a5d86e3c347cdbc2311"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ],
+        "keys": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 2,
+            "reason": "Artifact e17 correctly states mean/median calculation with example (1,2,2,3,12 avg4 med2; 12->22 avg6 med2) fulfilling essential goal e5; shows large value changes mean but not median, treating e6; advises median for typical experience, mean*count for cumulative time, and notes one statistic cannot recover full distribution, fulfilling e7. All declared essential goals e5,e6,e7 have faithful usable treatment. Secondary e8 is briefly mentioned but level2 depends only on essential goals. No distortion or disappearance.",
+            "refs": [
+              "e17",
+              "e5",
+              "e6",
+              "e7",
+              "e3"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e17",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "平均数是总和除以条数，中位数先排序再取中间位置。对1、2、2、3、12，平均4，中位数2；把12改成22则平均6、中位数2。典型体验可看中位数，累计时间可用平均数乘条数。一个指标不能恢复全分布。合并人数不同的两组时，要记得考虑每组人数。",
+                "valueHash": "64ba48fd6db0f8683840ffba9ef5ae07a0a6a1765e1f681e6ab892ee6a156500"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "正确计算平均数和中位数",
+                "valueHash": "1b2009f0ac308e95b499485132f567842850dd56fabe70c0539e46aee4be87d9"
+              },
+              {
+                "id": "e6",
+                "pointer": "/goals/1",
+                "role": "goal",
+                "kind": "text",
+                "value": "解释异常大值对两种指标的不同影响",
+                "valueHash": "cf035966053e78b93aaa1416ac63c9b166c8179903d63b20ad42bb4fdd69cade"
+              },
+              {
+                "id": "e7",
+                "pointer": "/goals/2",
+                "role": "goal",
+                "kind": "text",
+                "value": "根据问题选择指标并避免从单个指标推断全部分布",
+                "valueHash": "6c81063bc1178e9654fbc1007fbd52a5384101cd27c9cc188eb1751c121aad14"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "服务台记录了一组等待时间，想向居民说明排队体验。平均数的计算方法是把所有等待时间相加，再除以记录条数。中位数则先把时间从小到大排列；条数为奇数时取最中间一个，条数为偶数时取中间两个数的平均。它们都可以描述数据，但强调的方面不同，不存在离开问题就永远最好的一个指标。\n例如五位居民的等待时间依次为一、二、二、三、十二分钟。总和为二十分钟，平均数为四分钟；排序后中间一个数是二，所以中位数为二分钟。十二分钟的记录把平均数向上拉，但没有改变位于中间的二。说“平均等待四分钟”不意味着每个人都等了四分钟，也不意味着有一半人恰好等四分钟。说“中位数二分钟”也不意味着最长等待只有二分钟。\n若把最长那次十二分钟改成二十二分钟，其余四次不变，总和增加十分钟，平均数增加两分钟，变为六分钟；中位数仍是二分钟。这个例子说明单个很大的数能够明显影响平均数。但不能由此说中位数不受任何数据变化影响：若中间位置的数据或排序结构改变，中位数也可能改变。\n向公众介绍“典型一次等待”时，可以同时报告中位数和范围；计算整个服务台累计占用的等待分钟数时，平均数乘记录条数可以恢复总和，中位数一般不能这样使用。选择指标取决于所要回答的问题。若两天的平均数相同，不能断言两天每位居民的体验相同；它们可能有不同的最短、最长与分布形状。\n合并两天数据时，还要考虑记录条数。第一天四条记录的平均数为三分钟，第二天两条记录的平均数为九分钟。总等待时间为四乘三加二乘九，共三十分钟；总记录数六条，合并平均数为五分钟。直接平均三和九得到六分钟，相当于把两天当成同样大小的组，未反映实际记录人数。本单元的“每次等待”都按一条记录计，不讨论同一个人多次到访是否应另行去重。\n写解释时建议附上必要运算和指标名称，并把数据范围与结论范围对齐。样本只有几次记录时，可以描述这几次，不宜保证未来总是如此。数据缺了几条，或“等待”的起止定义发生变化，也会改变比较意义；这些条件应在计算前先说明。",
+                "valueHash": "a43f09ae51e1a19e3e4fe7ef6283f10eab5bf8c071e52a5d86e3c347cdbc2311"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q2",
+            "status": "supported",
+            "reason": "Artifact e17 faithfully computes mean/median for given examples and explains large-value effect and indicator choice per essential goals e5,e6,e7; consistent with source e3 and findings, no unresolved dependency.",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e17",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "平均数是总和除以条数，中位数先排序再取中间位置。对1、2、2、3、12，平均4，中位数2；把12改成22则平均6、中位数2。典型体验可看中位数，累计时间可用平均数乘条数。一个指标不能恢复全分布。合并人数不同的两组时，要记得考虑每组人数。",
+                "valueHash": "64ba48fd6db0f8683840ffba9ef5ae07a0a6a1765e1f681e6ab892ee6a156500"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "正确计算平均数和中位数",
+                "valueHash": "1b2009f0ac308e95b499485132f567842850dd56fabe70c0539e46aee4be87d9"
+              },
+              {
+                "id": "e6",
+                "pointer": "/goals/1",
+                "role": "goal",
+                "kind": "text",
+                "value": "解释异常大值对两种指标的不同影响",
+                "valueHash": "cf035966053e78b93aaa1416ac63c9b166c8179903d63b20ad42bb4fdd69cade"
+              },
+              {
+                "id": "e7",
+                "pointer": "/goals/2",
+                "role": "goal",
+                "kind": "text",
+                "value": "根据问题选择指标并避免从单个指标推断全部分布",
+                "valueHash": "6c81063bc1178e9654fbc1007fbd52a5384101cd27c9cc188eb1751c121aad14"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "服务台记录了一组等待时间，想向居民说明排队体验。平均数的计算方法是把所有等待时间相加，再除以记录条数。中位数则先把时间从小到大排列；条数为奇数时取最中间一个，条数为偶数时取中间两个数的平均。它们都可以描述数据，但强调的方面不同，不存在离开问题就永远最好的一个指标。\n例如五位居民的等待时间依次为一、二、二、三、十二分钟。总和为二十分钟，平均数为四分钟；排序后中间一个数是二，所以中位数为二分钟。十二分钟的记录把平均数向上拉，但没有改变位于中间的二。说“平均等待四分钟”不意味着每个人都等了四分钟，也不意味着有一半人恰好等四分钟。说“中位数二分钟”也不意味着最长等待只有二分钟。\n若把最长那次十二分钟改成二十二分钟，其余四次不变，总和增加十分钟，平均数增加两分钟，变为六分钟；中位数仍是二分钟。这个例子说明单个很大的数能够明显影响平均数。但不能由此说中位数不受任何数据变化影响：若中间位置的数据或排序结构改变，中位数也可能改变。\n向公众介绍“典型一次等待”时，可以同时报告中位数和范围；计算整个服务台累计占用的等待分钟数时，平均数乘记录条数可以恢复总和，中位数一般不能这样使用。选择指标取决于所要回答的问题。若两天的平均数相同，不能断言两天每位居民的体验相同；它们可能有不同的最短、最长与分布形状。\n合并两天数据时，还要考虑记录条数。第一天四条记录的平均数为三分钟，第二天两条记录的平均数为九分钟。总等待时间为四乘三加二乘九，共三十分钟；总记录数六条，合并平均数为五分钟。直接平均三和九得到六分钟，相当于把两天当成同样大小的组，未反映实际记录人数。本单元的“每次等待”都按一条记录计，不讨论同一个人多次到访是否应另行去重。\n写解释时建议附上必要运算和指标名称，并把数据范围与结论范围对齐。样本只有几次记录时，可以描述这几次，不宜保证未来总是如此。数据缺了几条，或“等待”的起止定义发生变化，也会改变比较意义；这些条件应在计算前先说明。",
+                "valueHash": "a43f09ae51e1a19e3e4fe7ef6283f10eab5bf8c071e52a5d86e3c347cdbc2311"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q2",
+          "level": 2,
+          "reason": "Artifact e17 correctly states mean/median calculation with example (1,2,2,3,12 avg4 med2; 12->22 avg6 med2) fulfilling essential goal e5; shows large value changes mean but not median, treating e6; advises median for typical experience, mean*count for cumulative time, and notes one statistic cannot recover full distribution, fulfilling e7. All declared essential goals e5,e6,e7 have faithful usable treatment. Secondary e8 is briefly mentioned but level2 depends only on essential goals. No distortion or disappearance.",
+          "refs": [
+            "e17",
+            "e5",
+            "e6",
+            "e7",
+            "e3"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e17",
+              "pointer": "/artifacts/0/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "平均数是总和除以条数，中位数先排序再取中间位置。对1、2、2、3、12，平均4，中位数2；把12改成22则平均6、中位数2。典型体验可看中位数，累计时间可用平均数乘条数。一个指标不能恢复全分布。合并人数不同的两组时，要记得考虑每组人数。",
+              "valueHash": "64ba48fd6db0f8683840ffba9ef5ae07a0a6a1765e1f681e6ab892ee6a156500"
+            },
+            {
+              "id": "e5",
+              "pointer": "/goals/0",
+              "role": "goal",
+              "kind": "text",
+              "value": "正确计算平均数和中位数",
+              "valueHash": "1b2009f0ac308e95b499485132f567842850dd56fabe70c0539e46aee4be87d9"
+            },
+            {
+              "id": "e6",
+              "pointer": "/goals/1",
+              "role": "goal",
+              "kind": "text",
+              "value": "解释异常大值对两种指标的不同影响",
+              "valueHash": "cf035966053e78b93aaa1416ac63c9b166c8179903d63b20ad42bb4fdd69cade"
+            },
+            {
+              "id": "e7",
+              "pointer": "/goals/2",
+              "role": "goal",
+              "kind": "text",
+              "value": "根据问题选择指标并避免从单个指标推断全部分布",
+              "valueHash": "6c81063bc1178e9654fbc1007fbd52a5384101cd27c9cc188eb1751c121aad14"
+            },
+            {
+              "id": "e3",
+              "pointer": "/sources/0/text",
+              "role": "source",
+              "kind": "text",
+              "value": "服务台记录了一组等待时间，想向居民说明排队体验。平均数的计算方法是把所有等待时间相加，再除以记录条数。中位数则先把时间从小到大排列；条数为奇数时取最中间一个，条数为偶数时取中间两个数的平均。它们都可以描述数据，但强调的方面不同，不存在离开问题就永远最好的一个指标。\n例如五位居民的等待时间依次为一、二、二、三、十二分钟。总和为二十分钟，平均数为四分钟；排序后中间一个数是二，所以中位数为二分钟。十二分钟的记录把平均数向上拉，但没有改变位于中间的二。说“平均等待四分钟”不意味着每个人都等了四分钟，也不意味着有一半人恰好等四分钟。说“中位数二分钟”也不意味着最长等待只有二分钟。\n若把最长那次十二分钟改成二十二分钟，其余四次不变，总和增加十分钟，平均数增加两分钟，变为六分钟；中位数仍是二分钟。这个例子说明单个很大的数能够明显影响平均数。但不能由此说中位数不受任何数据变化影响：若中间位置的数据或排序结构改变，中位数也可能改变。\n向公众介绍“典型一次等待”时，可以同时报告中位数和范围；计算整个服务台累计占用的等待分钟数时，平均数乘记录条数可以恢复总和，中位数一般不能这样使用。选择指标取决于所要回答的问题。若两天的平均数相同，不能断言两天每位居民的体验相同；它们可能有不同的最短、最长与分布形状。\n合并两天数据时，还要考虑记录条数。第一天四条记录的平均数为三分钟，第二天两条记录的平均数为九分钟。总等待时间为四乘三加二乘九，共三十分钟；总记录数六条，合并平均数为五分钟。直接平均三和九得到六分钟，相当于把两天当成同样大小的组，未反映实际记录人数。本单元的“每次等待”都按一条记录计，不讨论同一个人多次到访是否应另行去重。\n写解释时建议附上必要运算和指标名称，并把数据范围与结论范围对齐。样本只有几次记录时，可以描述这几次，不宜保证未来总是如此。数据缺了几条，或“等待”的起止定义发生变化，也会改变比较意义；这些条件应在计算前先说明。",
+              "valueHash": "a43f09ae51e1a19e3e4fe7ef6283f10eab5bf8c071e52a5d86e3c347cdbc2311"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [],
+          "proposedLevel": 2,
+          "proposedReason": "Artifact e17 correctly states mean/median calculation with example (1,2,2,3,12 avg4 med2; 12->22 avg6 med2) fulfilling essential goal e5; shows large value changes mean but not median, treating e6; advises median for typical experience, mean*count for cumulative time, and notes one statistic cannot recover full distribution, fulfilling e7. All declared essential goals e5,e6,e7 have faithful usable treatment. Secondary e8 is briefly mentioned but level2 depends only on essential goals. No distortion or disappearance."
+        }
+      ],
+      "reviewRequired": [],
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q2",
+            "status": "supported",
+            "reason": "Artifact e17 faithfully computes mean/median for given examples and explains large-value effect and indicator choice per essential goals e5,e6,e7; consistent with source e3 and findings, no unresolved dependency.",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e17",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "平均数是总和除以条数，中位数先排序再取中间位置。对1、2、2、3、12，平均4，中位数2；把12改成22则平均6、中位数2。典型体验可看中位数，累计时间可用平均数乘条数。一个指标不能恢复全分布。合并人数不同的两组时，要记得考虑每组人数。",
+                "valueHash": "64ba48fd6db0f8683840ffba9ef5ae07a0a6a1765e1f681e6ab892ee6a156500"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "正确计算平均数和中位数",
+                "valueHash": "1b2009f0ac308e95b499485132f567842850dd56fabe70c0539e46aee4be87d9"
+              },
+              {
+                "id": "e6",
+                "pointer": "/goals/1",
+                "role": "goal",
+                "kind": "text",
+                "value": "解释异常大值对两种指标的不同影响",
+                "valueHash": "cf035966053e78b93aaa1416ac63c9b166c8179903d63b20ad42bb4fdd69cade"
+              },
+              {
+                "id": "e7",
+                "pointer": "/goals/2",
+                "role": "goal",
+                "kind": "text",
+                "value": "根据问题选择指标并避免从单个指标推断全部分布",
+                "valueHash": "6c81063bc1178e9654fbc1007fbd52a5384101cd27c9cc188eb1751c121aad14"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "服务台记录了一组等待时间，想向居民说明排队体验。平均数的计算方法是把所有等待时间相加，再除以记录条数。中位数则先把时间从小到大排列；条数为奇数时取最中间一个，条数为偶数时取中间两个数的平均。它们都可以描述数据，但强调的方面不同，不存在离开问题就永远最好的一个指标。\n例如五位居民的等待时间依次为一、二、二、三、十二分钟。总和为二十分钟，平均数为四分钟；排序后中间一个数是二，所以中位数为二分钟。十二分钟的记录把平均数向上拉，但没有改变位于中间的二。说“平均等待四分钟”不意味着每个人都等了四分钟，也不意味着有一半人恰好等四分钟。说“中位数二分钟”也不意味着最长等待只有二分钟。\n若把最长那次十二分钟改成二十二分钟，其余四次不变，总和增加十分钟，平均数增加两分钟，变为六分钟；中位数仍是二分钟。这个例子说明单个很大的数能够明显影响平均数。但不能由此说中位数不受任何数据变化影响：若中间位置的数据或排序结构改变，中位数也可能改变。\n向公众介绍“典型一次等待”时，可以同时报告中位数和范围；计算整个服务台累计占用的等待分钟数时，平均数乘记录条数可以恢复总和，中位数一般不能这样使用。选择指标取决于所要回答的问题。若两天的平均数相同，不能断言两天每位居民的体验相同；它们可能有不同的最短、最长与分布形状。\n合并两天数据时，还要考虑记录条数。第一天四条记录的平均数为三分钟，第二天两条记录的平均数为九分钟。总等待时间为四乘三加二乘九，共三十分钟；总记录数六条，合并平均数为五分钟。直接平均三和九得到六分钟，相当于把两天当成同样大小的组，未反映实际记录人数。本单元的“每次等待”都按一条记录计，不讨论同一个人多次到访是否应另行去重。\n写解释时建议附上必要运算和指标名称，并把数据范围与结论范围对齐。样本只有几次记录时，可以描述这几次，不宜保证未来总是如此。数据缺了几条，或“等待”的起止定义发生变化，也会改变比较意义；这些条件应在计算前先说明。",
+                "valueHash": "a43f09ae51e1a19e3e4fe7ef6283f10eab5bf8c071e52a5d86e3c347cdbc2311"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "resultHash": "11025d09bd4da63ee2aa9843d27a67d35268b33a4d007dc09a077047ad23b630"
+  }
+}

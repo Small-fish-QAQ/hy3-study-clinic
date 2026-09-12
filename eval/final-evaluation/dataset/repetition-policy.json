@@ -1,0 +1,140 @@
+{
+  "fixedCaseIds": [
+    "E047",
+    "E141",
+    "E611",
+    "E705",
+    "E178",
+    "E272",
+    "E742",
+    "E836",
+    "E309",
+    "E403",
+    "E873",
+    "E967",
+    "E440",
+    "E628",
+    "E816",
+    "E007",
+    "E195",
+    "E383",
+    "E571",
+    "E618",
+    "E665",
+    "E712",
+    "E759",
+    "E806"
+  ],
+  "naturalSlots": [
+    {
+      "sourceId": "F01",
+      "surface": "tutor",
+      "fallbacks": [
+        "teaching",
+        "curriculum"
+      ],
+      "policy": "first available registered surface; retain missing if none"
+    },
+    {
+      "sourceId": "F02",
+      "surface": "tutor",
+      "fallbacks": [
+        "teaching",
+        "curriculum"
+      ],
+      "policy": "first available registered surface; retain missing if none"
+    },
+    {
+      "sourceId": "F03",
+      "surface": "tutor",
+      "fallbacks": [
+        "teaching",
+        "curriculum"
+      ],
+      "policy": "first available registered surface; retain missing if none"
+    },
+    {
+      "sourceId": "F04",
+      "surface": "tutor",
+      "fallbacks": [
+        "teaching",
+        "curriculum"
+      ],
+      "policy": "first available registered surface; retain missing if none"
+    },
+    {
+      "sourceId": "F05",
+      "surface": "tutor",
+      "fallbacks": [
+        "teaching",
+        "curriculum"
+      ],
+      "policy": "first available registered surface; retain missing if none"
+    },
+    {
+      "sourceId": "F06",
+      "surface": "tutor",
+      "fallbacks": [
+        "teaching",
+        "curriculum"
+      ],
+      "policy": "first available registered surface; retain missing if none"
+    },
+    {
+      "sourceId": "F07",
+      "surface": "tutor",
+      "fallbacks": [
+        "teaching",
+        "curriculum"
+      ],
+      "policy": "first available registered surface; retain missing if none"
+    },
+    {
+      "sourceId": "F08",
+      "surface": "tutor",
+      "fallbacks": [
+        "teaching",
+        "curriculum"
+      ],
+      "policy": "first available registered surface; retain missing if none"
+    },
+    {
+      "sourceId": "F09",
+      "surface": "tutor",
+      "fallbacks": [
+        "teaching",
+        "curriculum"
+      ],
+      "policy": "first available registered surface; retain missing if none"
+    },
+    {
+      "sourceId": "F10",
+      "surface": "tutor",
+      "fallbacks": [
+        "teaching",
+        "curriculum"
+      ],
+      "policy": "first available registered surface; retain missing if none"
+    },
+    {
+      "sourceId": "F11",
+      "surface": "tutor",
+      "fallbacks": [
+        "teaching",
+        "curriculum"
+      ],
+      "policy": "first available registered surface; retain missing if none"
+    },
+    {
+      "sourceId": "F12",
+      "surface": "tutor",
+      "fallbacks": [
+        "teaching",
+        "curriculum"
+      ],
+      "policy": "first available registered surface; retain missing if none"
+    }
+  ],
+  "replicates": 3,
+  "independence": "new physical observations of identical frozen input; same provider, not independent human truth"
+}

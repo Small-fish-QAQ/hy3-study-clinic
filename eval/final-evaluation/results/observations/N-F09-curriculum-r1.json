@@ -1,0 +1,249 @@
+{
+  "task": {
+    "caseId": "N-F09-curriculum",
+    "runId": "N-F09-curriculum-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-F09-curriculum.json",
+    "inputHash": "4b9c9a3db64933fcc1f634023ea3c1a0b1bcdfffbc62ab5f1ee478b52eca83c0",
+    "population": "natural",
+    "sourceId": "F09"
+  },
+  "inputHash": "4b9c9a3db64933fcc1f634023ea3c1a0b1bcdfffbc62ab5f1ee478b52eca83c0",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "correctness": "e9ad9a3f5c3cb620577ff5d8f80ca57fc2ee761be4627597e8a882645ab1b652",
+      "artifact-audit": "e9ad9a3f5c3cb620577ff5d8f80ca57fc2ee761be4627597e8a882645ab1b652"
+    },
+    "stages": {
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "uncertain",
+            "affected": [
+              "Q2"
+            ],
+            "reason": "The counterexample check is not established.",
+            "proposed": {
+              "kind": "conditions",
+              "status": "clear",
+              "affected": [],
+              "reason": "作者(e3)明示四联合假设下速度可相加，给出同时开始(2h)与非同时分段(7/3h)实例，并指条件变化失效；产品目标(e20)重述区分量纲、条件式计算与评估，无充分/必要混淆。条件式结论按假设检查成立。",
+              "refs": [
+                "e3",
+                "e20"
+              ],
+              "challenge": {
+                "status": "closed",
+                "reason": "构造相容反例：固定单独速度与四假设，补非同时开始可使2h结论变；但e3已明确非同时需分段规则，排除该反例。",
+                "refs": [
+                  "e3"
+                ]
+              }
+            },
+            "reviewReasons": [
+              "CONDITIONS_CHALLENGE_UNGROUNDED"
+            ]
+          },
+          {
+            "kind": "quantities",
+            "status": "clear",
+            "affected": [],
+            "reason": "从原始输入(6h,3h,1份)重算：速1/6+1/3=1/2份/h，同时2h；分段先1h剩2/3，除1/2得4/3h，总7/3h，验算合1份。单位与除法正确，无数值错误。",
+            "refs": [
+              "e3",
+              "e20"
+            ],
+            "witnesses": [
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "讨论两个人合作完成一项工作时，先约定“整项工作”为一份。若小岚单独整理一批卡片需要六小时，且全过程速度恒定，那么每小时完成六分之一份；小禾单独需要三小时，每小时完成三分之一份。时间的单位是小时，速度的单位是份每小时，两者不能直接相加成同一种量。\n在以下明确假设下，两人的工作速度可以相加：卡片能够任意分开处理，两人的工作互不重复，合作不会改变各自速度，也没有额外等待或交接开销。此时合速度为六分之一加三分之一，即二分之一份每小时，整份工作需要一除以二分之一，等于两小时。直接把六小时和三小时相加得到九小时，或者取平均得到四点五小时，都没有表示合作每小时完成多少工作。\n若两人不是同时开始，应分时段计算。例如小禾先做一小时，完成三分之一份，还剩三分之二份；随后两人按前述假设共同做，速度仍为二分之一份每小时，剩余时间为三分之二除以二分之一。除以二分之一等于乘二，所以得到三分之四小时，即一又三分之一小时。加上最初一小时，总时长为二又三分之一小时。写分数时要特别检查除法的方向，不能只凭“合作更快”的趋势认可数值。\n为避免口语分数混淆，上面的核心算式可以直接写成：(2/3)÷(1/2)=4/3小时，总计1+4/3=7/3小时。完成量应再验算：第一小时完成1/3，后面4/3小时以1/2的速度完成2/3，两段合计正好一份。把结果代回原始工作量，是发现倒数错误的有效方法。\n这些公式依赖模型条件。若工作只有一台必需设备，两人无法同时操作；或两人都检查同一张卡片导致重复工作，就不能直接使用独立速度相加。题目只给单独用时而未说明合作方式时，应先指出所需假设，再给条件式结果。现实合作可能有额外收益，也可能有协调损失，单独速度不足以确定所有情况。\n回答此类问题时依次写清总工作量、各段速度、各段完成量和最终时间。不要混淆某个人工作了多久与整个任务从开始到结束经过多久。即使最后数值相同，单位与过程仍决定解释是否可靠。",
+                "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+              },
+              {
+                "id": "e20",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "[{\"id\":\"obj_7d113060-d968-45b2-b686-3bcbd15a4bab\",\"title\":\"解释工作量单位化与速度区分\",\"description\":\"Explain that total work is defined as one unit, represent personal speed as units per hour (e.g., fractions of the unit), and distinguish completion time (hours) from work speed (units/hour) as different quantities that cannot be directly added or averaged.\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_576ebf65-f11a-441f-aaa8-0539940020a0\",\"ta_5a79829a-3e22-438a-8cda-9cd26af634b1\"],\"authorityClaimIds\":[\"tac_28f76524-d553-43d3-9fa2-6f5746fbf7d3\",\"tac_3910f125-e5c4-468c-a87f-a02fd9541956\",\"tac_c2f5344b-d80b-4aac-8cce-37170569fc81\",\"tac_9f5f1e3a-532a-4766-8cd6-9a4824ee2a76\",\"tac_a1ec9a82-9265-4e32-bfc6-86bc8765d1dd\",\"tac_f2805327-6fee-46a9-a46c-e5d06e49e1c2\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E2, E9, E11 provides formal_sufficient envelope supporting explain construct, matching independently authorized Formal path.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"explain\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_0563a09c\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_0563a09c\"]},{\"id\":\"obj_972f627a-848d-4854-91e7-60bba430ccbd\",\"title\":\"应用独立相加假设计算合作时间\",\"description\":\"Apply the explicit independent additive assumption to calculate cooperative completion time: sum individual speeds to get combined speed, compute total time as workload divided by combined speed for simultaneous start; for staggered start, compute segmented completion amounts and times; follow steps of stating total workload, segment speeds, segment completed amounts, final time; verify by substituting back that total completed equals one unit.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_576ebf65-f11a-441f-aaa8-0539940020a0\",\"ta_5a79829a-3e22-438a-8cda-9cd26af634b1\"],\"authorityClaimIds\":[\"tac_46d46212-7079-4ef3-979b-aaa4af27b72e\",\"tac_da2d919d-2c0f-4338-b9b5-38de364fe78e\",\"tac_e88d292f-c472-49b7-965c-141808fec568\",\"tac_2b2687dd-6aed-4893-a88e-1d3ee8208367\",\"tac_7e54dbf8-d9b4-4a90-8e06-74d9218a2f72\",\"tac_89a01c74-489e-4e83-90b2-c01c22ebfdd2\"],\"priority\":\"high\",\"priorityRationale\":\"Apply construct lacks formal evidence support in offered envelopes (only identify/explain available); retained as high priority central teaching obligation per policy, non-credit.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_0563a09c\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_c5adbc7b-dc36-4b58-85f4-e4c86db16f35\",\"title\":\"评估速度相加条件变化的有效性\",\"description\":\"Evaluate whether direct addition of independent speeds remains valid when conditions change (e.g., single required device, duplicate work), and when only individual times are given without stated cooperation mode, state required assumptions and give conditional result; recognize real cooperation may have extra gains or coordination losses.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"Evaluate is teaching-only construct; material genuinely teaches condition evaluation, assigned high priority central teaching obligation.\",\"formalAssessmentConstruct\":\"evaluate\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]}]",
+                "valueHash": "02de5852f955602700f6f512231dddf2337b2ef9fb4f9a2609670e58fc8cdaaa"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ],
+        "keys": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 2,
+            "reason": "Artifact title (e18) and objectives (e20) declare sampled scope covering all three goals (e5-e7): obj_7d corresponds to goal0 with formal_sufficient authority envelope; obj_972 corresponds to goal1 with explicit teaching-only boundary rationale (non-credit, lacks formal evidence); obj_c5 corresponds to goal2 as teaching-only construct. No essential goal disappears or is distorted; at least two essential goals have justified teaching-only boundary or faithful treatment in supplied coverage.",
+            "refs": [
+              "e18",
+              "e20",
+              "e5",
+              "e6",
+              "e7"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e18",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "工作量单位化、合作速度计算与条件有效性评估",
+                "valueHash": "7c86c62de67bbce3f8ef4a6a91e2262d3d9d6162fb6a479483555b72d7f25118"
+              },
+              {
+                "id": "e20",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "[{\"id\":\"obj_7d113060-d968-45b2-b686-3bcbd15a4bab\",\"title\":\"解释工作量单位化与速度区分\",\"description\":\"Explain that total work is defined as one unit, represent personal speed as units per hour (e.g., fractions of the unit), and distinguish completion time (hours) from work speed (units/hour) as different quantities that cannot be directly added or averaged.\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_576ebf65-f11a-441f-aaa8-0539940020a0\",\"ta_5a79829a-3e22-438a-8cda-9cd26af634b1\"],\"authorityClaimIds\":[\"tac_28f76524-d553-43d3-9fa2-6f5746fbf7d3\",\"tac_3910f125-e5c4-468c-a87f-a02fd9541956\",\"tac_c2f5344b-d80b-4aac-8cce-37170569fc81\",\"tac_9f5f1e3a-532a-4766-8cd6-9a4824ee2a76\",\"tac_a1ec9a82-9265-4e32-bfc6-86bc8765d1dd\",\"tac_f2805327-6fee-46a9-a46c-e5d06e49e1c2\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E2, E9, E11 provides formal_sufficient envelope supporting explain construct, matching independently authorized Formal path.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"explain\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_0563a09c\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_0563a09c\"]},{\"id\":\"obj_972f627a-848d-4854-91e7-60bba430ccbd\",\"title\":\"应用独立相加假设计算合作时间\",\"description\":\"Apply the explicit independent additive assumption to calculate cooperative completion time: sum individual speeds to get combined speed, compute total time as workload divided by combined speed for simultaneous start; for staggered start, compute segmented completion amounts and times; follow steps of stating total workload, segment speeds, segment completed amounts, final time; verify by substituting back that total completed equals one unit.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_576ebf65-f11a-441f-aaa8-0539940020a0\",\"ta_5a79829a-3e22-438a-8cda-9cd26af634b1\"],\"authorityClaimIds\":[\"tac_46d46212-7079-4ef3-979b-aaa4af27b72e\",\"tac_da2d919d-2c0f-4338-b9b5-38de364fe78e\",\"tac_e88d292f-c472-49b7-965c-141808fec568\",\"tac_2b2687dd-6aed-4893-a88e-1d3ee8208367\",\"tac_7e54dbf8-d9b4-4a90-8e06-74d9218a2f72\",\"tac_89a01c74-489e-4e83-90b2-c01c22ebfdd2\"],\"priority\":\"high\",\"priorityRationale\":\"Apply construct lacks formal evidence support in offered envelopes (only identify/explain available); retained as high priority central teaching obligation per policy, non-credit.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_0563a09c\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_c5adbc7b-dc36-4b58-85f4-e4c86db16f35\",\"title\":\"评估速度相加条件变化的有效性\",\"description\":\"Evaluate whether direct addition of independent speeds remains valid when conditions change (e.g., single required device, duplicate work), and when only individual times are given without stated cooperation mode, state required assumptions and give conditional result; recognize real cooperation may have extra gains or coordination losses.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"Evaluate is teaching-only construct; material genuinely teaches condition evaluation, assigned high priority central teaching obligation.\",\"formalAssessmentConstruct\":\"evaluate\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]}]",
+                "valueHash": "02de5852f955602700f6f512231dddf2337b2ef9fb4f9a2609670e58fc8cdaaa"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "区分工作速度与完成时间",
+                "valueHash": "e61d179c6c03e65e7b63287c8b65f8b009c73f5781cb7ae2f7f74ce63c68c49c"
+              },
+              {
+                "id": "e6",
+                "pointer": "/goals/1",
+                "role": "goal",
+                "kind": "text",
+                "value": "在明确独立可加假设下计算合作用时",
+                "valueHash": "3d768de746e8e224b893b5fcbf4418face187b4000b6f3e78cc3152964db8a18"
+              },
+              {
+                "id": "e7",
+                "pointer": "/goals/2",
+                "role": "goal",
+                "kind": "text",
+                "value": "条件改变时检验效率相加是否仍成立",
+                "valueHash": "5b889e463beb802e26dbec3de51d6211cd1548912fa5fb9b27215d30fcf26b96"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q2",
+          "level": "U",
+          "reason": "The counterexample check is not established.",
+          "refs": [
+            "e18",
+            "e20",
+            "e5",
+            "e6",
+            "e7"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e18",
+              "pointer": "/artifacts/0/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "工作量单位化、合作速度计算与条件有效性评估",
+              "valueHash": "7c86c62de67bbce3f8ef4a6a91e2262d3d9d6162fb6a479483555b72d7f25118"
+            },
+            {
+              "id": "e20",
+              "pointer": "/artifacts/1/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "[{\"id\":\"obj_7d113060-d968-45b2-b686-3bcbd15a4bab\",\"title\":\"解释工作量单位化与速度区分\",\"description\":\"Explain that total work is defined as one unit, represent personal speed as units per hour (e.g., fractions of the unit), and distinguish completion time (hours) from work speed (units/hour) as different quantities that cannot be directly added or averaged.\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_576ebf65-f11a-441f-aaa8-0539940020a0\",\"ta_5a79829a-3e22-438a-8cda-9cd26af634b1\"],\"authorityClaimIds\":[\"tac_28f76524-d553-43d3-9fa2-6f5746fbf7d3\",\"tac_3910f125-e5c4-468c-a87f-a02fd9541956\",\"tac_c2f5344b-d80b-4aac-8cce-37170569fc81\",\"tac_9f5f1e3a-532a-4766-8cd6-9a4824ee2a76\",\"tac_a1ec9a82-9265-4e32-bfc6-86bc8765d1dd\",\"tac_f2805327-6fee-46a9-a46c-e5d06e49e1c2\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E2, E9, E11 provides formal_sufficient envelope supporting explain construct, matching independently authorized Formal path.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"explain\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_0563a09c\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_0563a09c\"]},{\"id\":\"obj_972f627a-848d-4854-91e7-60bba430ccbd\",\"title\":\"应用独立相加假设计算合作时间\",\"description\":\"Apply the explicit independent additive assumption to calculate cooperative completion time: sum individual speeds to get combined speed, compute total time as workload divided by combined speed for simultaneous start; for staggered start, compute segmented completion amounts and times; follow steps of stating total workload, segment speeds, segment completed amounts, final time; verify by substituting back that total completed equals one unit.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_576ebf65-f11a-441f-aaa8-0539940020a0\",\"ta_5a79829a-3e22-438a-8cda-9cd26af634b1\"],\"authorityClaimIds\":[\"tac_46d46212-7079-4ef3-979b-aaa4af27b72e\",\"tac_da2d919d-2c0f-4338-b9b5-38de364fe78e\",\"tac_e88d292f-c472-49b7-965c-141808fec568\",\"tac_2b2687dd-6aed-4893-a88e-1d3ee8208367\",\"tac_7e54dbf8-d9b4-4a90-8e06-74d9218a2f72\",\"tac_89a01c74-489e-4e83-90b2-c01c22ebfdd2\"],\"priority\":\"high\",\"priorityRationale\":\"Apply construct lacks formal evidence support in offered envelopes (only identify/explain available); retained as high priority central teaching obligation per policy, non-credit.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_0563a09c\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_c5adbc7b-dc36-4b58-85f4-e4c86db16f35\",\"title\":\"评估速度相加条件变化的有效性\",\"description\":\"Evaluate whether direct addition of independent speeds remains valid when conditions change (e.g., single required device, duplicate work), and when only individual times are given without stated cooperation mode, state required assumptions and give conditional result; recognize real cooperation may have extra gains or coordination losses.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"Evaluate is teaching-only construct; material genuinely teaches condition evaluation, assigned high priority central teaching obligation.\",\"formalAssessmentConstruct\":\"evaluate\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]}]",
+              "valueHash": "02de5852f955602700f6f512231dddf2337b2ef9fb4f9a2609670e58fc8cdaaa"
+            },
+            {
+              "id": "e5",
+              "pointer": "/goals/0",
+              "role": "goal",
+              "kind": "text",
+              "value": "区分工作速度与完成时间",
+              "valueHash": "e61d179c6c03e65e7b63287c8b65f8b009c73f5781cb7ae2f7f74ce63c68c49c"
+            },
+            {
+              "id": "e6",
+              "pointer": "/goals/1",
+              "role": "goal",
+              "kind": "text",
+              "value": "在明确独立可加假设下计算合作用时",
+              "valueHash": "3d768de746e8e224b893b5fcbf4418face187b4000b6f3e78cc3152964db8a18"
+            },
+            {
+              "id": "e7",
+              "pointer": "/goals/2",
+              "role": "goal",
+              "kind": "text",
+              "value": "条件改变时检验效率相加是否仍成立",
+              "valueHash": "5b889e463beb802e26dbec3de51d6211cd1548912fa5fb9b27215d30fcf26b96"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [
+            {
+              "level": "U",
+              "code": "INDEPENDENT_CONDITIONS",
+              "detail": {
+                "kind": "conditions",
+                "status": "uncertain",
+                "affected": [
+                  "Q2"
+                ],
+                "reason": "The counterexample check is not established.",
+                "proposed": {
+                  "kind": "conditions",
+                  "status": "clear",
+                  "affected": [],
+                  "reason": "作者(e3)明示四联合假设下速度可相加，给出同时开始(2h)与非同时分段(7/3h)实例，并指条件变化失效；产品目标(e20)重述区分量纲、条件式计算与评估，无充分/必要混淆。条件式结论按假设检查成立。",
+                  "refs": [
+                    "e3",
+                    "e20"
+                  ],
+                  "challenge": {
+                    "status": "closed",
+                    "reason": "构造相容反例：固定单独速度与四假设，补非同时开始可使2h结论变；但e3已明确非同时需分段规则，排除该反例。",
+                    "refs": [
+                      "e3"
+                    ]
+                  }
+                },
+                "reviewReasons": [
+                  "CONDITIONS_CHALLENGE_UNGROUNDED"
+                ]
+              }
+            }
+          ],
+          "proposedLevel": 2,
+          "proposedReason": "Artifact title (e18) and objectives (e20) declare sampled scope covering all three goals (e5-e7): obj_7d corresponds to goal0 with formal_sufficient authority envelope; obj_972 corresponds to goal1 with explicit teaching-only boundary rationale (non-credit, lacks formal evidence); obj_c5 corresponds to goal2 as teaching-only construct. No essential goal disappears or is distorted; at least two essential goals have justified teaching-only boundary or faithful treatment in supplied coverage.",
+          "decidingConstraint": "INDEPENDENT_CONDITIONS"
+        }
+      ],
+      "reviewRequired": [
+        {
+          "dimension": "Q2",
+          "reason": "UNRESOLVED"
+        }
+      ]
+    },
+    "resultHash": "163dd6b2a833fa8faa5fea31320fcc27e073043c88b284c8627c6feb262bf329"
+  }
+}

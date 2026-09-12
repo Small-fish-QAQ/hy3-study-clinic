@@ -1,0 +1,342 @@
+{
+  "task": {
+    "caseId": "E658",
+    "runId": "E658-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E658.json",
+    "inputHash": "07fa108a650e1ccbcbd3dfcd13915bffcb5d1d9464320760a4ea5542d2c8ea6f",
+    "population": "controlled",
+    "sourceId": "F05"
+  },
+  "inputHash": "07fa108a650e1ccbcbd3dfcd13915bffcb5d1d9464320760a4ea5542d2c8ea6f",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "correctness": "73d84038d97616caee753ad07b9b40732ce49d0a1dfd485969ff6e3cdc15509f",
+      "artifact-audit": "73d84038d97616caee753ad07b9b40732ce49d0a1dfd485969ff6e3cdc15509f",
+      "certification": "73d84038d97616caee753ad07b9b40732ce49d0a1dfd485969ff6e3cdc15509f"
+    },
+    "stages": {
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "clear",
+            "affected": [],
+            "reason": "Artifact e17 states: given reading r and known error bound e, closed interval [r-e,r+e]; instance 7.2±0.1 cm -> [7.1,7.3] cm matches source e3 model. Non-overlap with [7.5,7.7] guarantees shorter, overlap cannot guarantee order, consistent with e3. Assertions explicitly assume known e and closed bounds; no missing necessary condition in stated rules.",
+            "refs": [
+              "e17",
+              "e3"
+            ],
+            "challenge": {
+              "status": "closed",
+              "reason": "For 'with [7.5,7.7] guarantees shorter': fixed intervals甲[7.1,7.3] and乙[7.5,7.7] cm; any compatible case preserving these bounds has 7.3<7.5 strictly, so no counterexample can reverse conclusion. Overlap claim correctly denies guaranteed order from bounds alone.",
+              "refs": [
+                "e17",
+                "e3"
+              ]
+            },
+            "witnesses": [
+              {
+                "id": "e17",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "读数r、已知误差上界e给出闭区间[r-e,r+e]。7.2±0.1厘米对应[7.1,7.3]。与[7.5,7.7]比较可保证更短，与重叠区间比较不能保证顺序。刻度细不等于准确；读数应写清单位和给定误差。重复测量时也要留意共同偏差。",
+                "valueHash": "9f85ff5b494d6fb3aa0a5fc03f7b2cba0075759e5a444afa89829072dffa4a9b"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "测量结果是带有方法和限制的信息。尺子上最小刻度为一毫米，意味着使用者能够按这种刻度记录长度，但这不保证每次读数与真实长度的差都小于一毫米。尺子本身是否校准、起点是否对齐、观察角度是否合适，都会影响结果。因此“显示的小数位多”与“结果一定更准确”不是同一件事。\n为了练习推理，本单元采用一个明确的简化模型：某次测量的读数为r厘米，且已知真实长度与读数的差的绝对值不超过e厘米，则真实长度在r减e到r加e的闭区间内，两个端点都包括。这里的误差上界必须来自题目给定或可靠校准，不能只凭尺子刻度自行宣布。假设读数为十二点四厘米，误差上界为零点二厘米，那么真实长度可能在十二点二至十二点六厘米之间。\n比较两件物品时，应比较它们允许的区间，而不是只看中心读数。若甲在十二点二至十二点六厘米，乙在十二点八至十三点二厘米，甲的最大值仍小于乙的最小值，因此可断定甲更短。若乙的区间改为十二点五至十二点九厘米，两个区间重叠，就不能由这些界限保证甲更短。甲可能比乙短，也可能略长；这不是说两件物品实际等长，而是证据不足以确定顺序。\n重复测量也需要区分误差类型。如果每次起点都固定偏移零点三厘米，多测几次再取平均不一定消除这个共同偏差。多次独立的小幅随机波动与每次同向的系统偏差不同。没有额外模型时，不能把“测了十次”直接翻译成“准确程度提高十倍”。本单元只使用给定的区间界限，不要求统计学公式。\n记录结果时，可以把读数、单位、误差上界和使用条件写在一起，例如“在此校准条件下，读数为十二点四厘米，误差不超过零点二厘米”。这样下一位读者知道能推出什么，也知道不能推出什么。把数值写成十二点四零零零厘米不会凭空增加新证据。\n遇到信息缺失的题，应具体说明缺了什么：是误差上界、共同起点还是单位？能算的部分仍可先算，例如把已知区间列出来，再说明另一个区间无法建立。一个好的测量解释既提供可执行的计算，也尊重给定方法的可信范围。",
+                "valueHash": "04ede0e2b943c283408af13f15e429c4d3f550318ac34096022b20c8a80a02fc"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "kind": "quantities",
+            "status": "clear",
+            "affected": [],
+            "reason": "Independent recompute: r=7.2 cm, e=0.1 cm => r-e=7.1 cm, r+e=7.3 cm, interval [7.1,7.3] cm correct. Comparison 7.3 cm < 7.5 cm confirms non-overlap. Units consistent (cm), no rates given. Matches e17 and e3 formula.",
+            "refs": [
+              "e17",
+              "e3"
+            ],
+            "witnesses": [
+              {
+                "id": "e17",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "读数r、已知误差上界e给出闭区间[r-e,r+e]。7.2±0.1厘米对应[7.1,7.3]。与[7.5,7.7]比较可保证更短，与重叠区间比较不能保证顺序。刻度细不等于准确；读数应写清单位和给定误差。重复测量时也要留意共同偏差。",
+                "valueHash": "9f85ff5b494d6fb3aa0a5fc03f7b2cba0075759e5a444afa89829072dffa4a9b"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "测量结果是带有方法和限制的信息。尺子上最小刻度为一毫米，意味着使用者能够按这种刻度记录长度，但这不保证每次读数与真实长度的差都小于一毫米。尺子本身是否校准、起点是否对齐、观察角度是否合适，都会影响结果。因此“显示的小数位多”与“结果一定更准确”不是同一件事。\n为了练习推理，本单元采用一个明确的简化模型：某次测量的读数为r厘米，且已知真实长度与读数的差的绝对值不超过e厘米，则真实长度在r减e到r加e的闭区间内，两个端点都包括。这里的误差上界必须来自题目给定或可靠校准，不能只凭尺子刻度自行宣布。假设读数为十二点四厘米，误差上界为零点二厘米，那么真实长度可能在十二点二至十二点六厘米之间。\n比较两件物品时，应比较它们允许的区间，而不是只看中心读数。若甲在十二点二至十二点六厘米，乙在十二点八至十三点二厘米，甲的最大值仍小于乙的最小值，因此可断定甲更短。若乙的区间改为十二点五至十二点九厘米，两个区间重叠，就不能由这些界限保证甲更短。甲可能比乙短，也可能略长；这不是说两件物品实际等长，而是证据不足以确定顺序。\n重复测量也需要区分误差类型。如果每次起点都固定偏移零点三厘米，多测几次再取平均不一定消除这个共同偏差。多次独立的小幅随机波动与每次同向的系统偏差不同。没有额外模型时，不能把“测了十次”直接翻译成“准确程度提高十倍”。本单元只使用给定的区间界限，不要求统计学公式。\n记录结果时，可以把读数、单位、误差上界和使用条件写在一起，例如“在此校准条件下，读数为十二点四厘米，误差不超过零点二厘米”。这样下一位读者知道能推出什么，也知道不能推出什么。把数值写成十二点四零零零厘米不会凭空增加新证据。\n遇到信息缺失的题，应具体说明缺了什么：是误差上界、共同起点还是单位？能算的部分仍可先算，例如把已知区间列出来，再说明另一个区间无法建立。一个好的测量解释既提供可执行的计算，也尊重给定方法的可信范围。",
+                "valueHash": "04ede0e2b943c283408af13f15e429c4d3f550318ac34096022b20c8a80a02fc"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ],
+        "keys": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 2,
+            "reason": "Artifact e17 faithfully treats essential goals: e5 (刻度细不等于准确), e6 (r±e闭区间示例), e7 (非重叠可保证更短、重叠不能保证顺序), consistent with source e3. Secondary e8 briefly noted. No essential goal disappears or distorted.",
+            "refs": [
+              "e17",
+              "e5",
+              "e6",
+              "e7",
+              "e3"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e17",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "读数r、已知误差上界e给出闭区间[r-e,r+e]。7.2±0.1厘米对应[7.1,7.3]。与[7.5,7.7]比较可保证更短，与重叠区间比较不能保证顺序。刻度细不等于准确；读数应写清单位和给定误差。重复测量时也要留意共同偏差。",
+                "valueHash": "9f85ff5b494d6fb3aa0a5fc03f7b2cba0075759e5a444afa89829072dffa4a9b"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "区分读数分辨率与真实准确程度",
+                "valueHash": "974f091625a397eadb261006f5285e9c63c7ca6b839e6bdbb8c41f4bfff75e27"
+              },
+              {
+                "id": "e6",
+                "pointer": "/goals/1",
+                "role": "goal",
+                "kind": "text",
+                "value": "使用给定误差界限形成区间",
+                "valueHash": "b948cbdb264205a71c39bbf43fca64b81f119fd6bce83afbff737e5a078063b3"
+              },
+              {
+                "id": "e7",
+                "pointer": "/goals/2",
+                "role": "goal",
+                "kind": "text",
+                "value": "判断多个测量区间是否支持大小关系",
+                "valueHash": "a63a83b2364923d8e078ddf815b65a88e03ab9e5b2b372710e75e020c2056d1a"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "测量结果是带有方法和限制的信息。尺子上最小刻度为一毫米，意味着使用者能够按这种刻度记录长度，但这不保证每次读数与真实长度的差都小于一毫米。尺子本身是否校准、起点是否对齐、观察角度是否合适，都会影响结果。因此“显示的小数位多”与“结果一定更准确”不是同一件事。\n为了练习推理，本单元采用一个明确的简化模型：某次测量的读数为r厘米，且已知真实长度与读数的差的绝对值不超过e厘米，则真实长度在r减e到r加e的闭区间内，两个端点都包括。这里的误差上界必须来自题目给定或可靠校准，不能只凭尺子刻度自行宣布。假设读数为十二点四厘米，误差上界为零点二厘米，那么真实长度可能在十二点二至十二点六厘米之间。\n比较两件物品时，应比较它们允许的区间，而不是只看中心读数。若甲在十二点二至十二点六厘米，乙在十二点八至十三点二厘米，甲的最大值仍小于乙的最小值，因此可断定甲更短。若乙的区间改为十二点五至十二点九厘米，两个区间重叠，就不能由这些界限保证甲更短。甲可能比乙短，也可能略长；这不是说两件物品实际等长，而是证据不足以确定顺序。\n重复测量也需要区分误差类型。如果每次起点都固定偏移零点三厘米，多测几次再取平均不一定消除这个共同偏差。多次独立的小幅随机波动与每次同向的系统偏差不同。没有额外模型时，不能把“测了十次”直接翻译成“准确程度提高十倍”。本单元只使用给定的区间界限，不要求统计学公式。\n记录结果时，可以把读数、单位、误差上界和使用条件写在一起，例如“在此校准条件下，读数为十二点四厘米，误差不超过零点二厘米”。这样下一位读者知道能推出什么，也知道不能推出什么。把数值写成十二点四零零零厘米不会凭空增加新证据。\n遇到信息缺失的题，应具体说明缺了什么：是误差上界、共同起点还是单位？能算的部分仍可先算，例如把已知区间列出来，再说明另一个区间无法建立。一个好的测量解释既提供可执行的计算，也尊重给定方法的可信范围。",
+                "valueHash": "04ede0e2b943c283408af13f15e429c4d3f550318ac34096022b20c8a80a02fc"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q2",
+            "status": "supported",
+            "reason": "Artifact e17 faithfully presents closed-interval model and covers goals e5-e8 consistent with source e3; findings audit and correctness checks are clear with no unresolved dependency or异议.",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e17",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "读数r、已知误差上界e给出闭区间[r-e,r+e]。7.2±0.1厘米对应[7.1,7.3]。与[7.5,7.7]比较可保证更短，与重叠区间比较不能保证顺序。刻度细不等于准确；读数应写清单位和给定误差。重复测量时也要留意共同偏差。",
+                "valueHash": "9f85ff5b494d6fb3aa0a5fc03f7b2cba0075759e5a444afa89829072dffa4a9b"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "测量结果是带有方法和限制的信息。尺子上最小刻度为一毫米，意味着使用者能够按这种刻度记录长度，但这不保证每次读数与真实长度的差都小于一毫米。尺子本身是否校准、起点是否对齐、观察角度是否合适，都会影响结果。因此“显示的小数位多”与“结果一定更准确”不是同一件事。\n为了练习推理，本单元采用一个明确的简化模型：某次测量的读数为r厘米，且已知真实长度与读数的差的绝对值不超过e厘米，则真实长度在r减e到r加e的闭区间内，两个端点都包括。这里的误差上界必须来自题目给定或可靠校准，不能只凭尺子刻度自行宣布。假设读数为十二点四厘米，误差上界为零点二厘米，那么真实长度可能在十二点二至十二点六厘米之间。\n比较两件物品时，应比较它们允许的区间，而不是只看中心读数。若甲在十二点二至十二点六厘米，乙在十二点八至十三点二厘米，甲的最大值仍小于乙的最小值，因此可断定甲更短。若乙的区间改为十二点五至十二点九厘米，两个区间重叠，就不能由这些界限保证甲更短。甲可能比乙短，也可能略长；这不是说两件物品实际等长，而是证据不足以确定顺序。\n重复测量也需要区分误差类型。如果每次起点都固定偏移零点三厘米，多测几次再取平均不一定消除这个共同偏差。多次独立的小幅随机波动与每次同向的系统偏差不同。没有额外模型时，不能把“测了十次”直接翻译成“准确程度提高十倍”。本单元只使用给定的区间界限，不要求统计学公式。\n记录结果时，可以把读数、单位、误差上界和使用条件写在一起，例如“在此校准条件下，读数为十二点四厘米，误差不超过零点二厘米”。这样下一位读者知道能推出什么，也知道不能推出什么。把数值写成十二点四零零零厘米不会凭空增加新证据。\n遇到信息缺失的题，应具体说明缺了什么：是误差上界、共同起点还是单位？能算的部分仍可先算，例如把已知区间列出来，再说明另一个区间无法建立。一个好的测量解释既提供可执行的计算，也尊重给定方法的可信范围。",
+                "valueHash": "04ede0e2b943c283408af13f15e429c4d3f550318ac34096022b20c8a80a02fc"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "区分读数分辨率与真实准确程度",
+                "valueHash": "974f091625a397eadb261006f5285e9c63c7ca6b839e6bdbb8c41f4bfff75e27"
+              },
+              {
+                "id": "e6",
+                "pointer": "/goals/1",
+                "role": "goal",
+                "kind": "text",
+                "value": "使用给定误差界限形成区间",
+                "valueHash": "b948cbdb264205a71c39bbf43fca64b81f119fd6bce83afbff737e5a078063b3"
+              },
+              {
+                "id": "e7",
+                "pointer": "/goals/2",
+                "role": "goal",
+                "kind": "text",
+                "value": "判断多个测量区间是否支持大小关系",
+                "valueHash": "a63a83b2364923d8e078ddf815b65a88e03ab9e5b2b372710e75e020c2056d1a"
+              },
+              {
+                "id": "e8",
+                "pointer": "/goals/3",
+                "role": "goal",
+                "kind": "text",
+                "value": "次要延伸：说明重复平均不能自动消除共同方向的偏差。",
+                "valueHash": "714460aff55596ab6a2b0d42615a21b9c5be82487f745a68d7ee18049f26f951"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q2",
+          "level": 2,
+          "reason": "Artifact e17 faithfully treats essential goals: e5 (刻度细不等于准确), e6 (r±e闭区间示例), e7 (非重叠可保证更短、重叠不能保证顺序), consistent with source e3. Secondary e8 briefly noted. No essential goal disappears or distorted.",
+          "refs": [
+            "e17",
+            "e5",
+            "e6",
+            "e7",
+            "e3"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e17",
+              "pointer": "/artifacts/0/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "读数r、已知误差上界e给出闭区间[r-e,r+e]。7.2±0.1厘米对应[7.1,7.3]。与[7.5,7.7]比较可保证更短，与重叠区间比较不能保证顺序。刻度细不等于准确；读数应写清单位和给定误差。重复测量时也要留意共同偏差。",
+              "valueHash": "9f85ff5b494d6fb3aa0a5fc03f7b2cba0075759e5a444afa89829072dffa4a9b"
+            },
+            {
+              "id": "e5",
+              "pointer": "/goals/0",
+              "role": "goal",
+              "kind": "text",
+              "value": "区分读数分辨率与真实准确程度",
+              "valueHash": "974f091625a397eadb261006f5285e9c63c7ca6b839e6bdbb8c41f4bfff75e27"
+            },
+            {
+              "id": "e6",
+              "pointer": "/goals/1",
+              "role": "goal",
+              "kind": "text",
+              "value": "使用给定误差界限形成区间",
+              "valueHash": "b948cbdb264205a71c39bbf43fca64b81f119fd6bce83afbff737e5a078063b3"
+            },
+            {
+              "id": "e7",
+              "pointer": "/goals/2",
+              "role": "goal",
+              "kind": "text",
+              "value": "判断多个测量区间是否支持大小关系",
+              "valueHash": "a63a83b2364923d8e078ddf815b65a88e03ab9e5b2b372710e75e020c2056d1a"
+            },
+            {
+              "id": "e3",
+              "pointer": "/sources/0/text",
+              "role": "source",
+              "kind": "text",
+              "value": "测量结果是带有方法和限制的信息。尺子上最小刻度为一毫米，意味着使用者能够按这种刻度记录长度，但这不保证每次读数与真实长度的差都小于一毫米。尺子本身是否校准、起点是否对齐、观察角度是否合适，都会影响结果。因此“显示的小数位多”与“结果一定更准确”不是同一件事。\n为了练习推理，本单元采用一个明确的简化模型：某次测量的读数为r厘米，且已知真实长度与读数的差的绝对值不超过e厘米，则真实长度在r减e到r加e的闭区间内，两个端点都包括。这里的误差上界必须来自题目给定或可靠校准，不能只凭尺子刻度自行宣布。假设读数为十二点四厘米，误差上界为零点二厘米，那么真实长度可能在十二点二至十二点六厘米之间。\n比较两件物品时，应比较它们允许的区间，而不是只看中心读数。若甲在十二点二至十二点六厘米，乙在十二点八至十三点二厘米，甲的最大值仍小于乙的最小值，因此可断定甲更短。若乙的区间改为十二点五至十二点九厘米，两个区间重叠，就不能由这些界限保证甲更短。甲可能比乙短，也可能略长；这不是说两件物品实际等长，而是证据不足以确定顺序。\n重复测量也需要区分误差类型。如果每次起点都固定偏移零点三厘米，多测几次再取平均不一定消除这个共同偏差。多次独立的小幅随机波动与每次同向的系统偏差不同。没有额外模型时，不能把“测了十次”直接翻译成“准确程度提高十倍”。本单元只使用给定的区间界限，不要求统计学公式。\n记录结果时，可以把读数、单位、误差上界和使用条件写在一起，例如“在此校准条件下，读数为十二点四厘米，误差不超过零点二厘米”。这样下一位读者知道能推出什么，也知道不能推出什么。把数值写成十二点四零零零厘米不会凭空增加新证据。\n遇到信息缺失的题，应具体说明缺了什么：是误差上界、共同起点还是单位？能算的部分仍可先算，例如把已知区间列出来，再说明另一个区间无法建立。一个好的测量解释既提供可执行的计算，也尊重给定方法的可信范围。",
+              "valueHash": "04ede0e2b943c283408af13f15e429c4d3f550318ac34096022b20c8a80a02fc"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [],
+          "proposedLevel": 2,
+          "proposedReason": "Artifact e17 faithfully treats essential goals: e5 (刻度细不等于准确), e6 (r±e闭区间示例), e7 (非重叠可保证更短、重叠不能保证顺序), consistent with source e3. Secondary e8 briefly noted. No essential goal disappears or distorted."
+        }
+      ],
+      "reviewRequired": [],
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q2",
+            "status": "supported",
+            "reason": "Artifact e17 faithfully presents closed-interval model and covers goals e5-e8 consistent with source e3; findings audit and correctness checks are clear with no unresolved dependency or异议.",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e17",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "读数r、已知误差上界e给出闭区间[r-e,r+e]。7.2±0.1厘米对应[7.1,7.3]。与[7.5,7.7]比较可保证更短，与重叠区间比较不能保证顺序。刻度细不等于准确；读数应写清单位和给定误差。重复测量时也要留意共同偏差。",
+                "valueHash": "9f85ff5b494d6fb3aa0a5fc03f7b2cba0075759e5a444afa89829072dffa4a9b"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "测量结果是带有方法和限制的信息。尺子上最小刻度为一毫米，意味着使用者能够按这种刻度记录长度，但这不保证每次读数与真实长度的差都小于一毫米。尺子本身是否校准、起点是否对齐、观察角度是否合适，都会影响结果。因此“显示的小数位多”与“结果一定更准确”不是同一件事。\n为了练习推理，本单元采用一个明确的简化模型：某次测量的读数为r厘米，且已知真实长度与读数的差的绝对值不超过e厘米，则真实长度在r减e到r加e的闭区间内，两个端点都包括。这里的误差上界必须来自题目给定或可靠校准，不能只凭尺子刻度自行宣布。假设读数为十二点四厘米，误差上界为零点二厘米，那么真实长度可能在十二点二至十二点六厘米之间。\n比较两件物品时，应比较它们允许的区间，而不是只看中心读数。若甲在十二点二至十二点六厘米，乙在十二点八至十三点二厘米，甲的最大值仍小于乙的最小值，因此可断定甲更短。若乙的区间改为十二点五至十二点九厘米，两个区间重叠，就不能由这些界限保证甲更短。甲可能比乙短，也可能略长；这不是说两件物品实际等长，而是证据不足以确定顺序。\n重复测量也需要区分误差类型。如果每次起点都固定偏移零点三厘米，多测几次再取平均不一定消除这个共同偏差。多次独立的小幅随机波动与每次同向的系统偏差不同。没有额外模型时，不能把“测了十次”直接翻译成“准确程度提高十倍”。本单元只使用给定的区间界限，不要求统计学公式。\n记录结果时，可以把读数、单位、误差上界和使用条件写在一起，例如“在此校准条件下，读数为十二点四厘米，误差不超过零点二厘米”。这样下一位读者知道能推出什么，也知道不能推出什么。把数值写成十二点四零零零厘米不会凭空增加新证据。\n遇到信息缺失的题，应具体说明缺了什么：是误差上界、共同起点还是单位？能算的部分仍可先算，例如把已知区间列出来，再说明另一个区间无法建立。一个好的测量解释既提供可执行的计算，也尊重给定方法的可信范围。",
+                "valueHash": "04ede0e2b943c283408af13f15e429c4d3f550318ac34096022b20c8a80a02fc"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "区分读数分辨率与真实准确程度",
+                "valueHash": "974f091625a397eadb261006f5285e9c63c7ca6b839e6bdbb8c41f4bfff75e27"
+              },
+              {
+                "id": "e6",
+                "pointer": "/goals/1",
+                "role": "goal",
+                "kind": "text",
+                "value": "使用给定误差界限形成区间",
+                "valueHash": "b948cbdb264205a71c39bbf43fca64b81f119fd6bce83afbff737e5a078063b3"
+              },
+              {
+                "id": "e7",
+                "pointer": "/goals/2",
+                "role": "goal",
+                "kind": "text",
+                "value": "判断多个测量区间是否支持大小关系",
+                "valueHash": "a63a83b2364923d8e078ddf815b65a88e03ab9e5b2b372710e75e020c2056d1a"
+              },
+              {
+                "id": "e8",
+                "pointer": "/goals/3",
+                "role": "goal",
+                "kind": "text",
+                "value": "次要延伸：说明重复平均不能自动消除共同方向的偏差。",
+                "valueHash": "714460aff55596ab6a2b0d42615a21b9c5be82487f745a68d7ee18049f26f951"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "resultHash": "a315392f14b4e8afb0f91100b10ba8c70c8f95137e521cb0300322ea81c996f5"
+  }
+}

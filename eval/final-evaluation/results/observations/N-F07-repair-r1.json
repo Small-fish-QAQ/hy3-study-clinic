@@ -1,0 +1,446 @@
+{
+  "task": {
+    "caseId": "N-F07-repair",
+    "runId": "N-F07-repair-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-F07-repair.json",
+    "inputHash": "486fd5ba4508be85aa95544004e599ebcfe7f1f97864633570decbcee6eddcbe",
+    "population": "natural",
+    "sourceId": "F07"
+  },
+  "inputHash": "486fd5ba4508be85aa95544004e599ebcfe7f1f97864633570decbcee6eddcbe",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "correctness": "db9fa4417f0d889539d56ec9dc3f3079f116ee8a742fee8ae610eb3e1e76cd5c",
+      "artifact-audit": "db9fa4417f0d889539d56ec9dc3f3079f116ee8a742fee8ae610eb3e1e76cd5c",
+      "certification": "db9fa4417f0d889539d56ec9dc3f3079f116ee8a742fee8ae610eb3e1e76cd5c"
+    },
+    "stages": {
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "clear",
+            "affected": [],
+            "reason": "产品断言合法单一归因须保持其他条件一致，多变量同时改变则拒绝单一归因（e31）。实例中甲盒加水+南窗、乙盒无水+北柜，光照同时改变（e17,e25），结论拒绝水为唯一因素，与来源规则（e3）一致。补充讲解与类比（e33-e43）正确识别同时改变变量并拒绝单一归因，未混淆充分/必要条件。",
+            "refs": [
+              "e17",
+              "e21",
+              "e25",
+              "e31",
+              "e3",
+              "e33",
+              "e43"
+            ],
+            "challenge": {
+              "status": "closed",
+              "reason": "固定事实为水与光照同时不同；补充光照对发芽实际无影响仍属未控制变量，方法论上不能排除混淆，由e3,e31规则排除相容反例，结论不变。",
+              "refs": [
+                "e3",
+                "e31"
+              ]
+            },
+            "witnesses": [
+              {
+                "id": "e17",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "甲盒（加水+南窗）8/10发芽，乙盒（无水+北柜）1/10发芽；两盒种子同批、各十粒、同观察七天。最合理的是：",
+                "valueHash": "41856c01c937d3a8dd67c84bbf4c425a1330d4302b2bd730093d9382b5a2f9d7"
+              },
+              {
+                "id": "e21",
+                "pointer": "/artifacts/2/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "错误：虽然目的为测水，但实际光照也不同，不能排除光的影响。",
+                "valueHash": "5728f397ceb7ffb52673bf625703937382d41d46bdcde62041f7a5bc385a10e7"
+              },
+              {
+                "id": "e25",
+                "pointer": "/artifacts/4/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "你选择了“水是导致甲盒多发芽的唯一因素，因为实验目的为测水”。在原案例中，甲盒加水且放在南窗，乙盒无水且放在北柜，两盒同批种子各十粒、同观察七天。实际同时改变了水（加vs无）和光照（南窗vs北柜），你却依据实验目的为测水，把发芽差异单独归因为水。",
+                "valueHash": "e0a5ec110adc43a446394b1715eedf74a6105cbcb8de2c31b940e1ee3e4d4a49"
+              },
+              {
+                "id": "e31",
+                "pointer": "/artifacts/7/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "错误规则是：实验目的想测哪个因素，就可以把结果差异唯一归因为该因素，即使其他条件也变了。正确规则是：要合法地将差异归因于单一因素，必须保持其他有关条件一致；若观察中发现多个变量同时改变（如水与光照），你应拒绝单一归因，直到控制其他变量。因果上，因为甲盒和乙盒在水之外光照也不同，发芽数差异可能来自水、光或两者交互；目的不能消除已发生的混淆，所以你不能把发芽多单独算给水。",
+                "valueHash": "42828fbfe6d2bbd18bfce7fc0a69f53d2053abb460b81889f101cff540b5a0b3"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "课堂把同一批种子分到两个透明盒中，想比较有水和无水时的发芽情况。为了使比较有意义，应尽量让其他有关条件一致，例如种子数量、来源、温度、光照、观察天数与发芽判定方式。若有水盒放在温暖窗台、无水盒放在冷暗柜里，即使结果不同，也无法把差异单独归因于水，因为温度和光照同时改变了。\n这里把“发芽”操作性地定义为观察到胚根伸出种皮，便于不同记录者使用同一标准。这个定义是本实验的观察规则，不是所有生物过程的完整描述。记录者应按事先约定的时间观察全部种子，而不是只挑成功的那几颗展示。没有发芽的种子也必须计入，才能知道发芽比例。\n设两盒各十粒同批种子，均在同温同光处放置七天。甲盒保持适量湿润，乙盒保持干燥。甲有八粒达到上述标准，乙有一粒。可以说在这批种子和这些条件下，湿润组观察到的发芽比例更高。仅凭这一次观察，还不能断言所有种类的种子只要加水都会发芽；种子活性、温度及其他条件仍可能重要。也不能说乙盒绝对没有任何水分，因为“保持干燥”是操作描述，并未测出零水分。\n重复实验可以帮助检查结果是否稳定，但重复的对象、条件与方法需要记录。把同一张照片复制三次不是三次独立实验。同一盒内种子也共享环境，不能总把它们当成互不影响的完整重复。入门练习无需复杂统计检验，只要能说明为什么重复有用、哪些信息仍然有限。\n好的后续实验应对应目前的疑问。如果怀疑温度造成差异，就应在同一温度下只改变湿润条件，或设计清楚的组合比较；不能一边改变温度，一边换种子品种，再把结果归因于某一个因素。若希望研究“水太多是否也影响发芽”，可以在其他条件一致时增加不同水量组，事先说明每组的水量与观察标准。\n解释实验时，把计划、执行、观察和结论分开写。计划相同不代表执行真的相同，需核对记录；观察不同不自动证明唯一原因。允许结果不支持原假说，并据此修改下一步问题，正是实验学习的一部分。对证据保留限制，不妨碍学生提出清楚、可检验的预测。",
+                "valueHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648"
+              },
+              {
+                "id": "e33",
+                "pointer": "/artifacts/8/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "设想你有两块同品种菜地，A块施了有机肥且每天日照5小时，B块未施肥且每天日照2小时，其他条件（浇水、土壤）相同。一段时间后A块蔬菜平均高度明显大于B块。能否直接说“肥料是导致A块长得更高的唯一原因”？",
+                "valueHash": "ce1880692b611137c2bb1c4fd0f3604accaf9efbce45c5bc2bfa7c3c7736c240"
+              },
+              {
+                "id": "e43",
+                "pointer": "/artifacts/13/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "当多个条件同时改变时，不能把结果差异单独归因为其中一个因素，即使你原本关心那个因素。",
+                "valueHash": "9724a45ea45ced447f7872529e60b5e79aaf9a23c34833ad1eca87d3cd1bf8d1"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "kind": "quantities",
+            "status": "not_applicable",
+            "affected": [],
+            "reason": "产物仅复述观察计数（甲8/10、乙1/10，各十粒七天）未做独立公式/单位重算或数值推导断言，无数量演算需核验。",
+            "contextHash": "db9fa4417f0d889539d56ec9dc3f3079f116ee8a742fee8ae610eb3e1e76cd5c",
+            "proposed": {
+              "kind": "quantities",
+              "status": "not_applicable",
+              "affected": [],
+              "reason": "产物仅复述观察计数（甲8/10、乙1/10，各十粒七天）未做独立公式/单位重算或数值推导断言，无数量演算需核验。",
+              "refs": [
+                "e17",
+                "e3"
+              ]
+            },
+            "reviewReasons": []
+          }
+        ],
+        "keys": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 1,
+            "reason": "产品基于原案例混淆变量（e17）给出了正确诊断（e25,e27）与补救教学（e31,e32-e43），覆盖了 evidenced gap；但 learnerNote（e23）要求新检验机会，artifacts 列表（e15）无 nextCheck 结构，未提供 usable relevant next check，故未达2级。",
+            "refs": [
+              "e5",
+              "e15",
+              "e17",
+              "e23",
+              "e25",
+              "e27",
+              "e31",
+              "e32"
+            ],
+            "issue": "content",
+            "witnesses": [
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "针对这次实际错误给出有依据的诊断、补救解释和后续检查",
+                "valueHash": "97c31c23326d599b83dcbf2a6116a9bd65ec2ed417f3dc4f1c57274a10d5fc02"
+              },
+              {
+                "id": "e15",
+                "pointer": "/artifacts",
+                "role": "artifact",
+                "kind": "array_length",
+                "value": 15,
+                "valueHash": "e629fa6598d732768f7c726b4b621285f9c3b85303900aa912017db7617d8bdb"
+              },
+              {
+                "id": "e17",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "甲盒（加水+南窗）8/10发芽，乙盒（无水+北柜）1/10发芽；两盒种子同批、各十粒、同观察七天。最合理的是：",
+                "valueHash": "41856c01c937d3a8dd67c84bbf4c425a1330d4302b2bd730093d9382b5a2f9d7"
+              },
+              {
+                "id": "e23",
+                "pointer": "/artifacts/3/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "请根据我刚才选择的答案，解释关键错误，并给我新的检验机会。",
+                "valueHash": "4d25188570c4ce872bbf87a9236d4d669cf2ffbe18909057d26656fc2d46bba8"
+              },
+              {
+                "id": "e25",
+                "pointer": "/artifacts/4/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "你选择了“水是导致甲盒多发芽的唯一因素，因为实验目的为测水”。在原案例中，甲盒加水且放在南窗，乙盒无水且放在北柜，两盒同批种子各十粒、同观察七天。实际同时改变了水（加vs无）和光照（南窗vs北柜），你却依据实验目的为测水，把发芽差异单独归因为水。",
+                "valueHash": "e0a5ec110adc43a446394b1715eedf74a6105cbcb8de2c31b940e1ee3e4d4a49"
+              },
+              {
+                "id": "e27",
+                "pointer": "/artifacts/5/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "具体缺失的区别是：在对照比较中，若多个条件同时改变，不能仅因实验目的想测某一因素，就忽略其他实际改变的变量（如光照）而做单一归因。需要识别同时改变的变量并拒绝单一归因。",
+                "valueHash": "1306b420ef10d82e33a8b6bad3651ea04a6c3c7ec614c534c15987b805e4173b"
+              },
+              {
+                "id": "e31",
+                "pointer": "/artifacts/7/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "错误规则是：实验目的想测哪个因素，就可以把结果差异唯一归因为该因素，即使其他条件也变了。正确规则是：要合法地将差异归因于单一因素，必须保持其他有关条件一致；若观察中发现多个变量同时改变（如水与光照），你应拒绝单一归因，直到控制其他变量。因果上，因为甲盒和乙盒在水之外光照也不同，发芽数差异可能来自水、光或两者交互；目的不能消除已发生的混淆，所以你不能把发芽多单独算给水。",
+                "valueHash": "42828fbfe6d2bbd18bfce7fc0a69f53d2053abb460b81889f101cff540b5a0b3"
+              },
+              {
+                "id": "e32",
+                "pointer": "/artifacts/8/id",
+                "role": "artifact",
+                "kind": "text",
+                "value": "actual-repair/teaching/workedExample/prompt",
+                "valueHash": "a2bbb015e4c1249c39984baea5ec20e41e92a17f0ad26c17e0dbb4075c5126f7"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q6",
+            "status": "supported",
+            "reason": "候选Q6评1级：产品就e17混淆变量给出了正确诊断(e25,e27)与补救教学(e31,e32-e43)，覆盖evidenced gap；e23要求新检验机会但e15 artifacts列表无nextCheck结构，故未达2级。该结论与findings.audit(level1)及correctness(status clear)一致，无未决异议或依赖。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e17",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "甲盒（加水+南窗）8/10发芽，乙盒（无水+北柜）1/10发芽；两盒种子同批、各十粒、同观察七天。最合理的是：",
+                "valueHash": "41856c01c937d3a8dd67c84bbf4c425a1330d4302b2bd730093d9382b5a2f9d7"
+              },
+              {
+                "id": "e25",
+                "pointer": "/artifacts/4/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "你选择了“水是导致甲盒多发芽的唯一因素，因为实验目的为测水”。在原案例中，甲盒加水且放在南窗，乙盒无水且放在北柜，两盒同批种子各十粒、同观察七天。实际同时改变了水（加vs无）和光照（南窗vs北柜），你却依据实验目的为测水，把发芽差异单独归因为水。",
+                "valueHash": "e0a5ec110adc43a446394b1715eedf74a6105cbcb8de2c31b940e1ee3e4d4a49"
+              },
+              {
+                "id": "e27",
+                "pointer": "/artifacts/5/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "具体缺失的区别是：在对照比较中，若多个条件同时改变，不能仅因实验目的想测某一因素，就忽略其他实际改变的变量（如光照）而做单一归因。需要识别同时改变的变量并拒绝单一归因。",
+                "valueHash": "1306b420ef10d82e33a8b6bad3651ea04a6c3c7ec614c534c15987b805e4173b"
+              },
+              {
+                "id": "e31",
+                "pointer": "/artifacts/7/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "错误规则是：实验目的想测哪个因素，就可以把结果差异唯一归因为该因素，即使其他条件也变了。正确规则是：要合法地将差异归因于单一因素，必须保持其他有关条件一致；若观察中发现多个变量同时改变（如水与光照），你应拒绝单一归因，直到控制其他变量。因果上，因为甲盒和乙盒在水之外光照也不同，发芽数差异可能来自水、光或两者交互；目的不能消除已发生的混淆，所以你不能把发芽多单独算给水。",
+                "valueHash": "42828fbfe6d2bbd18bfce7fc0a69f53d2053abb460b81889f101cff540b5a0b3"
+              },
+              {
+                "id": "e15",
+                "pointer": "/artifacts",
+                "role": "artifact",
+                "kind": "array_length",
+                "value": 15,
+                "valueHash": "e629fa6598d732768f7c726b4b621285f9c3b85303900aa912017db7617d8bdb"
+              },
+              {
+                "id": "e23",
+                "pointer": "/artifacts/3/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "请根据我刚才选择的答案，解释关键错误，并给我新的检验机会。",
+                "valueHash": "4d25188570c4ce872bbf87a9236d4d669cf2ffbe18909057d26656fc2d46bba8"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "课堂把同一批种子分到两个透明盒中，想比较有水和无水时的发芽情况。为了使比较有意义，应尽量让其他有关条件一致，例如种子数量、来源、温度、光照、观察天数与发芽判定方式。若有水盒放在温暖窗台、无水盒放在冷暗柜里，即使结果不同，也无法把差异单独归因于水，因为温度和光照同时改变了。\n这里把“发芽”操作性地定义为观察到胚根伸出种皮，便于不同记录者使用同一标准。这个定义是本实验的观察规则，不是所有生物过程的完整描述。记录者应按事先约定的时间观察全部种子，而不是只挑成功的那几颗展示。没有发芽的种子也必须计入，才能知道发芽比例。\n设两盒各十粒同批种子，均在同温同光处放置七天。甲盒保持适量湿润，乙盒保持干燥。甲有八粒达到上述标准，乙有一粒。可以说在这批种子和这些条件下，湿润组观察到的发芽比例更高。仅凭这一次观察，还不能断言所有种类的种子只要加水都会发芽；种子活性、温度及其他条件仍可能重要。也不能说乙盒绝对没有任何水分，因为“保持干燥”是操作描述，并未测出零水分。\n重复实验可以帮助检查结果是否稳定，但重复的对象、条件与方法需要记录。把同一张照片复制三次不是三次独立实验。同一盒内种子也共享环境，不能总把它们当成互不影响的完整重复。入门练习无需复杂统计检验，只要能说明为什么重复有用、哪些信息仍然有限。\n好的后续实验应对应目前的疑问。如果怀疑温度造成差异，就应在同一温度下只改变湿润条件，或设计清楚的组合比较；不能一边改变温度，一边换种子品种，再把结果归因于某一个因素。若希望研究“水太多是否也影响发芽”，可以在其他条件一致时增加不同水量组，事先说明每组的水量与观察标准。\n解释实验时，把计划、执行、观察和结论分开写。计划相同不代表执行真的相同，需核对记录；观察不同不自动证明唯一原因。允许结果不支持原假说，并据此修改下一步问题，正是实验学习的一部分。对证据保留限制，不妨碍学生提出清楚、可检验的预测。",
+                "valueHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q6",
+          "level": 1,
+          "reason": "产品基于原案例混淆变量（e17）给出了正确诊断（e25,e27）与补救教学（e31,e32-e43），覆盖了 evidenced gap；但 learnerNote（e23）要求新检验机会，artifacts 列表（e15）无 nextCheck 结构，未提供 usable relevant next check，故未达2级。",
+          "refs": [
+            "e5",
+            "e15",
+            "e17",
+            "e23",
+            "e25",
+            "e27",
+            "e31",
+            "e32"
+          ],
+          "issue": "content",
+          "witnesses": [
+            {
+              "id": "e5",
+              "pointer": "/goals/0",
+              "role": "goal",
+              "kind": "text",
+              "value": "针对这次实际错误给出有依据的诊断、补救解释和后续检查",
+              "valueHash": "97c31c23326d599b83dcbf2a6116a9bd65ec2ed417f3dc4f1c57274a10d5fc02"
+            },
+            {
+              "id": "e15",
+              "pointer": "/artifacts",
+              "role": "artifact",
+              "kind": "array_length",
+              "value": 15,
+              "valueHash": "e629fa6598d732768f7c726b4b621285f9c3b85303900aa912017db7617d8bdb"
+            },
+            {
+              "id": "e17",
+              "pointer": "/artifacts/0/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "甲盒（加水+南窗）8/10发芽，乙盒（无水+北柜）1/10发芽；两盒种子同批、各十粒、同观察七天。最合理的是：",
+              "valueHash": "41856c01c937d3a8dd67c84bbf4c425a1330d4302b2bd730093d9382b5a2f9d7"
+            },
+            {
+              "id": "e23",
+              "pointer": "/artifacts/3/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "请根据我刚才选择的答案，解释关键错误，并给我新的检验机会。",
+              "valueHash": "4d25188570c4ce872bbf87a9236d4d669cf2ffbe18909057d26656fc2d46bba8"
+            },
+            {
+              "id": "e25",
+              "pointer": "/artifacts/4/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "你选择了“水是导致甲盒多发芽的唯一因素，因为实验目的为测水”。在原案例中，甲盒加水且放在南窗，乙盒无水且放在北柜，两盒同批种子各十粒、同观察七天。实际同时改变了水（加vs无）和光照（南窗vs北柜），你却依据实验目的为测水，把发芽差异单独归因为水。",
+              "valueHash": "e0a5ec110adc43a446394b1715eedf74a6105cbcb8de2c31b940e1ee3e4d4a49"
+            },
+            {
+              "id": "e27",
+              "pointer": "/artifacts/5/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "具体缺失的区别是：在对照比较中，若多个条件同时改变，不能仅因实验目的想测某一因素，就忽略其他实际改变的变量（如光照）而做单一归因。需要识别同时改变的变量并拒绝单一归因。",
+              "valueHash": "1306b420ef10d82e33a8b6bad3651ea04a6c3c7ec614c534c15987b805e4173b"
+            },
+            {
+              "id": "e31",
+              "pointer": "/artifacts/7/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "错误规则是：实验目的想测哪个因素，就可以把结果差异唯一归因为该因素，即使其他条件也变了。正确规则是：要合法地将差异归因于单一因素，必须保持其他有关条件一致；若观察中发现多个变量同时改变（如水与光照），你应拒绝单一归因，直到控制其他变量。因果上，因为甲盒和乙盒在水之外光照也不同，发芽数差异可能来自水、光或两者交互；目的不能消除已发生的混淆，所以你不能把发芽多单独算给水。",
+              "valueHash": "42828fbfe6d2bbd18bfce7fc0a69f53d2053abb460b81889f101cff540b5a0b3"
+            },
+            {
+              "id": "e32",
+              "pointer": "/artifacts/8/id",
+              "role": "artifact",
+              "kind": "text",
+              "value": "actual-repair/teaching/workedExample/prompt",
+              "valueHash": "a2bbb015e4c1249c39984baea5ec20e41e92a17f0ad26c17e0dbb4075c5126f7"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [],
+          "proposedLevel": 1,
+          "proposedReason": "产品基于原案例混淆变量（e17）给出了正确诊断（e25,e27）与补救教学（e31,e32-e43），覆盖了 evidenced gap；但 learnerNote（e23）要求新检验机会，artifacts 列表（e15）无 nextCheck 结构，未提供 usable relevant next check，故未达2级。"
+        }
+      ],
+      "reviewRequired": [],
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q6",
+            "status": "supported",
+            "reason": "候选Q6评1级：产品就e17混淆变量给出了正确诊断(e25,e27)与补救教学(e31,e32-e43)，覆盖evidenced gap；e23要求新检验机会但e15 artifacts列表无nextCheck结构，故未达2级。该结论与findings.audit(level1)及correctness(status clear)一致，无未决异议或依赖。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e17",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "甲盒（加水+南窗）8/10发芽，乙盒（无水+北柜）1/10发芽；两盒种子同批、各十粒、同观察七天。最合理的是：",
+                "valueHash": "41856c01c937d3a8dd67c84bbf4c425a1330d4302b2bd730093d9382b5a2f9d7"
+              },
+              {
+                "id": "e25",
+                "pointer": "/artifacts/4/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "你选择了“水是导致甲盒多发芽的唯一因素，因为实验目的为测水”。在原案例中，甲盒加水且放在南窗，乙盒无水且放在北柜，两盒同批种子各十粒、同观察七天。实际同时改变了水（加vs无）和光照（南窗vs北柜），你却依据实验目的为测水，把发芽差异单独归因为水。",
+                "valueHash": "e0a5ec110adc43a446394b1715eedf74a6105cbcb8de2c31b940e1ee3e4d4a49"
+              },
+              {
+                "id": "e27",
+                "pointer": "/artifacts/5/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "具体缺失的区别是：在对照比较中，若多个条件同时改变，不能仅因实验目的想测某一因素，就忽略其他实际改变的变量（如光照）而做单一归因。需要识别同时改变的变量并拒绝单一归因。",
+                "valueHash": "1306b420ef10d82e33a8b6bad3651ea04a6c3c7ec614c534c15987b805e4173b"
+              },
+              {
+                "id": "e31",
+                "pointer": "/artifacts/7/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "错误规则是：实验目的想测哪个因素，就可以把结果差异唯一归因为该因素，即使其他条件也变了。正确规则是：要合法地将差异归因于单一因素，必须保持其他有关条件一致；若观察中发现多个变量同时改变（如水与光照），你应拒绝单一归因，直到控制其他变量。因果上，因为甲盒和乙盒在水之外光照也不同，发芽数差异可能来自水、光或两者交互；目的不能消除已发生的混淆，所以你不能把发芽多单独算给水。",
+                "valueHash": "42828fbfe6d2bbd18bfce7fc0a69f53d2053abb460b81889f101cff540b5a0b3"
+              },
+              {
+                "id": "e15",
+                "pointer": "/artifacts",
+                "role": "artifact",
+                "kind": "array_length",
+                "value": 15,
+                "valueHash": "e629fa6598d732768f7c726b4b621285f9c3b85303900aa912017db7617d8bdb"
+              },
+              {
+                "id": "e23",
+                "pointer": "/artifacts/3/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "请根据我刚才选择的答案，解释关键错误，并给我新的检验机会。",
+                "valueHash": "4d25188570c4ce872bbf87a9236d4d669cf2ffbe18909057d26656fc2d46bba8"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "课堂把同一批种子分到两个透明盒中，想比较有水和无水时的发芽情况。为了使比较有意义，应尽量让其他有关条件一致，例如种子数量、来源、温度、光照、观察天数与发芽判定方式。若有水盒放在温暖窗台、无水盒放在冷暗柜里，即使结果不同，也无法把差异单独归因于水，因为温度和光照同时改变了。\n这里把“发芽”操作性地定义为观察到胚根伸出种皮，便于不同记录者使用同一标准。这个定义是本实验的观察规则，不是所有生物过程的完整描述。记录者应按事先约定的时间观察全部种子，而不是只挑成功的那几颗展示。没有发芽的种子也必须计入，才能知道发芽比例。\n设两盒各十粒同批种子，均在同温同光处放置七天。甲盒保持适量湿润，乙盒保持干燥。甲有八粒达到上述标准，乙有一粒。可以说在这批种子和这些条件下，湿润组观察到的发芽比例更高。仅凭这一次观察，还不能断言所有种类的种子只要加水都会发芽；种子活性、温度及其他条件仍可能重要。也不能说乙盒绝对没有任何水分，因为“保持干燥”是操作描述，并未测出零水分。\n重复实验可以帮助检查结果是否稳定，但重复的对象、条件与方法需要记录。把同一张照片复制三次不是三次独立实验。同一盒内种子也共享环境，不能总把它们当成互不影响的完整重复。入门练习无需复杂统计检验，只要能说明为什么重复有用、哪些信息仍然有限。\n好的后续实验应对应目前的疑问。如果怀疑温度造成差异，就应在同一温度下只改变湿润条件，或设计清楚的组合比较；不能一边改变温度，一边换种子品种，再把结果归因于某一个因素。若希望研究“水太多是否也影响发芽”，可以在其他条件一致时增加不同水量组，事先说明每组的水量与观察标准。\n解释实验时，把计划、执行、观察和结论分开写。计划相同不代表执行真的相同，需核对记录；观察不同不自动证明唯一原因。允许结果不支持原假说，并据此修改下一步问题，正是实验学习的一部分。对证据保留限制，不妨碍学生提出清楚、可检验的预测。",
+                "valueHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "resultHash": "e0a88bad2e456d5a7d0bec187b265decde1a4e7031fd95864ccc7af1387abe00"
+  }
+}

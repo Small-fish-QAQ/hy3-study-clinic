@@ -1,0 +1,845 @@
+{
+  "task": {
+    "caseId": "N-F02-teaching",
+    "runId": "N-F02-teaching-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-F02-teaching.json",
+    "inputHash": "5fc6a16fa62ae5d0773ba6d7ce0e3e9e2baa9084fe15526258a8c1ec9668ba2e",
+    "population": "natural",
+    "sourceId": "F02"
+  },
+  "inputHash": "5fc6a16fa62ae5d0773ba6d7ce0e3e9e2baa9084fe15526258a8c1ec9668ba2e",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "correctness": "08ded98393c59426877d79920c665711a0cbdc1fd3014b8b3741c7a4609a302d",
+      "artifact-audit": "08ded98393c59426877d79920c665711a0cbdc1fd3014b8b3741c7a4609a302d",
+      "certification": "08ded98393c59426877d79920c665711a0cbdc1fd3014b8b3741c7a4609a302d"
+    },
+    "stages": {
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "clear",
+            "affected": [],
+            "reason": "作者断言规则：固定金额与百分比仅在特定基数巧合相等(e20,e26)；连续变动逐步以当前价为基(e24,e28,e34)；反向恢复用差额/当前基(e24,e34,e46);相对增长率原比例为0时分母零不可用(e30,e32);默认无额外限制或先读条件(e24,e72,e74)。逐一对照实例均符合，无混淆充分必要。",
+            "refs": [
+              "e20",
+              "e24",
+              "e26",
+              "e28",
+              "e30",
+              "e32",
+              "e34",
+              "e46",
+              "e72",
+              "e74"
+            ],
+            "challenge": {
+              "status": "closed",
+              "reason": "尝试构造相容反例：对固定金额与百分比巧合规则，补充标价100元时减20与降20%金额等，但数学上唯一基数成立，排除多基数巧合；对连续以当前价为基规则，若如transfer明确改变基数条件(e70)则结论变但作者已条件化并正确处理，原始无限制假设下反例被明示假设排除。",
+              "refs": [
+                "e20",
+                "e26",
+                "e70"
+              ]
+            },
+            "witnesses": [
+              {
+                "id": "e20",
+                "pointer": "/artifacts/3/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "Identify the base to which a percentage change attaches (e.g., pre-discount original price), recognize that percentage and absolute amount are different quantities requiring the base for conversion, and note that fixed amount versus percentage can coincide only by chance at a specific base.",
+                "valueHash": "0338639fd8488ae8711ff17a0594fd94c8da4dd47b28876dab60d74855d52174"
+              },
+              {
+                "id": "e24",
+                "pointer": "/artifacts/5/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "Apply consecutive percentage price change calculations by using the current price as base each step, compute the reverse required percentage from target difference over current base without mechanically swapping equal decrease/increase, and respect the assumption of no extra restrictions (shipping, thresholds, rounding, order) or read conditions first if present.",
+                "valueHash": "f366f1c31de2a6539d8cf96dbc2e51c0014d6f862f031eafd0e49112e7e59d2d"
+              },
+              {
+                "id": "e26",
+                "pointer": "/artifacts/6/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "设想一件外套标价150元，广告写“降价20%”。这一步把原价150元当作100%，保留80%，所以计算150×0.8=120元。减少的30元是绝对金额，而“20%”是相对于基数的比例；两者量纲不同，只有在知道基数后才能互相换算。若换一件标价不同的商品，同比例产生的金额会变化，但固定减额不会。",
+                "valueHash": "e78d441dd06909246c3556ea9b73f57eed209d931f61508b7f915e31b88c493c"
+              },
+              {
+                "id": "e28",
+                "pointer": "/artifacts/7/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "连续百分比变化必须逐步以当前价格为基数。例如原价200元，先降25%得到150元；再提高25%时，基数是150元而非200元。这样两步之后价格不是原价。下面用具体案例检验预测。",
+                "valueHash": "468427812d5f6d82ce73581fdca9f482c473f0ab30d7cb62911dbec264a52014"
+              },
+              {
+                "id": "e30",
+                "pointer": "/artifacts/8/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "当百分比用来描述比例自身的变化时，需注意相对增长率公式的边界。若原比例为0，则“差额除以原比例”的分母为零，无法计算相对增长率；此时只能报告绝对增加量或百分点。清晰说明边界比强行给出比例更可靠。",
+                "valueHash": "5c56bc93b019ee0b953af6804cf2c37981955dcc8528e02d4701807a558fd5c4"
+              },
+              {
+                "id": "e32",
+                "pointer": "/artifacts/9/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "报名率从40%升至50%，可说增加10个百分点，相对增长25%；但若报名率从0%升至5%，相对增长率公式分母为零不可用，只能说增加5个百分点或具体人数，而不能算“增长无穷大比例”。",
+                "valueHash": "c84fe0284d3d9f7c2be8082d6892b21a707c314e7e223d2b0049324d3e8f8606"
+              },
+              {
+                "id": "e34",
+                "pointer": "/artifacts/10/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "连续变动后若要反推恢复所需比例，必须以变动后的当前价为基数，用目标差额除以当前价。例如某书原价90元，先打八折到72元；若想从72元涨回90元，差额18元，18÷72=0.25，需提价25%，而非20%的机械互换。下面用新案例检验。",
+                "valueHash": "d04ceafd5e8ce99f1880606ab48c8b04835e78596ce3d5d58832160871bb7ce1"
+              },
+              {
+                "id": "e46",
+                "pointer": "/artifacts/16/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "已知当前价72元，目标恢复90元。所需提价幅度是多少？",
+                "valueHash": "c9f32011d7fcf75ec99ef48e4f549648eb04e919370f1814f8af3ae1b7dc4827"
+              },
+              {
+                "id": "e72",
+                "pointer": "/artifacts/29/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "本单元计算默认无运费、满减门槛、四舍五入或顺序特殊限制。若现实广告附带此类条件，应先读清再算，否则基数或最终价会被额外改变。清楚边界比强行套用比例更可靠。",
+                "valueHash": "fa51732eba87810673db05c06ed16ff8a2c9467cf9ae73be7ffa00b4dbafaf44"
+              },
+              {
+                "id": "e74",
+                "pointer": "/artifacts/30/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "原价90元降20%至72元，若无额外限制，恢复需提价25%；若广告另附“满80元包邮，否则加收5元运费”，则72元恢复时实际支付受运费影响，但百分比基数仍为72。对比可知，读清条件优先于计算，不能把无限制假设套用到有门槛情形。",
+                "valueHash": "5aee3d8fb5322c23b8d043e37b2f8c4b2e51c8ae55adeb077f95992e5caa4bcb"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "kind": "quantities",
+            "status": "clear",
+            "affected": [],
+            "reason": "独立重算：e26:150*(1-0.2)=120减30；e28:200*0.75=150基正确；e32:0.5-0.4=0.1(10pp),0.1/0.4=0.25(25%)；e34/e36:90*0.8=72,18/72=0.25；e58 changed:18/90=0.2；均与rates decimal一致，无推导错误。",
+            "refs": [
+              "e26",
+              "e28",
+              "e32",
+              "e34",
+              "e36",
+              "e42",
+              "e48",
+              "e62",
+              "e66"
+            ],
+            "witnesses": [
+              {
+                "id": "e26",
+                "pointer": "/artifacts/6/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "设想一件外套标价150元，广告写“降价20%”。这一步把原价150元当作100%，保留80%，所以计算150×0.8=120元。减少的30元是绝对金额，而“20%”是相对于基数的比例；两者量纲不同，只有在知道基数后才能互相换算。若换一件标价不同的商品，同比例产生的金额会变化，但固定减额不会。",
+                "valueHash": "e78d441dd06909246c3556ea9b73f57eed209d931f61508b7f915e31b88c493c"
+              },
+              {
+                "id": "e28",
+                "pointer": "/artifacts/7/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "连续百分比变化必须逐步以当前价格为基数。例如原价200元，先降25%得到150元；再提高25%时，基数是150元而非200元。这样两步之后价格不是原价。下面用具体案例检验预测。",
+                "valueHash": "468427812d5f6d82ce73581fdca9f482c473f0ab30d7cb62911dbec264a52014"
+              },
+              {
+                "id": "e32",
+                "pointer": "/artifacts/9/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "报名率从40%升至50%，可说增加10个百分点，相对增长25%；但若报名率从0%升至5%，相对增长率公式分母为零不可用，只能说增加5个百分点或具体人数，而不能算“增长无穷大比例”。",
+                "valueHash": "c84fe0284d3d9f7c2be8082d6892b21a707c314e7e223d2b0049324d3e8f8606"
+              },
+              {
+                "id": "e34",
+                "pointer": "/artifacts/10/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "连续变动后若要反推恢复所需比例，必须以变动后的当前价为基数，用目标差额除以当前价。例如某书原价90元，先打八折到72元；若想从72元涨回90元，差额18元，18÷72=0.25，需提价25%，而非20%的机械互换。下面用新案例检验。",
+                "valueHash": "d04ceafd5e8ce99f1880606ab48c8b04835e78596ce3d5d58832160871bb7ce1"
+              },
+              {
+                "id": "e36",
+                "pointer": "/artifacts/11/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "原价90元，先降价20%至72元，现需涨回90元。",
+                "valueHash": "782537b213614dd2993f6e64a0c436396f5d658c04fdf12cba9f68cfd6a99f28"
+              },
+              {
+                "id": "e42",
+                "pointer": "/artifacts/14/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "25%",
+                "valueHash": "72da55d317fd997b93138b8646a2238e806a4c4566d1e854277b5a583d8aef23"
+              },
+              {
+                "id": "e48",
+                "pointer": "/artifacts/17/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "25%（(90-72)/72=0.25）",
+                "valueHash": "87b3a4becc48f445d0836880e116a32a3de2216435cf28d38e3d09de234eef4d"
+              },
+              {
+                "id": "e62",
+                "pointer": "/artifacts/24/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "20%（基于原价90元：18/90）",
+                "valueHash": "80484ed4a9ea1e535d4f8779cd60cfa1055ef186093a1b604b21a678f9b660be"
+              },
+              {
+                "id": "e66",
+                "pointer": "/artifacts/26/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "正确：规则改变后基数变为90，差额18占其20%。",
+                "valueHash": "474059718776837aeb96348c2e11d1c830521f97c67e863c1edb6002fe9992f5"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ],
+        "keys": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 2,
+            "reason": "产品所有作者断言（基数识别、连续变化逐步当前基数、反向恢复用差额/当前基数、固定额与比例巧合、百分点vs相对增长率及零基率边界、无额外限制假设）均与来源e3一致，无虚假声明或发明引用；transfer中改变基数规则经e70明确标注为假设条件，未缺失条件或篡改核心机制。",
+            "refs": [
+              "e3",
+              "e14",
+              "e26",
+              "e28",
+              "e30",
+              "e34",
+              "e66",
+              "e72"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "价格变化中的百分比总要依附一个基数。“降低百分之二十”通常以变化前价格为基数，意味着保留原价的百分之八十。假设原价是一百元，降价后为一百乘零点八，即八十元。这里减少了二十元，但“二十元”和“百分之二十”不是同一种量；只有同时知道基数，才能在金额与比例之间换算。\n连续变化必须按每一步的当前价格计算。例如先降百分之二十，再在降后价格上提高百分之二十，第二步增加的是八十元的百分之二十，即十六元，最后为九十六元，并没有回到一百元。两个百分比相等，基数却不同。可以把全过程写成“原价乘零点八再乘一点二”。若希望八十元恢复到一百元，需要增加二十元，而二十除以八十等于零点二五，所以应提高百分之二十五。反向问题应从目标差额与当前基数出发，不能机械地把降幅换成同样的涨幅。\n比较方案时也要留意固定金额与比例的区别。原价一百元时，减二十元和打八折都得到八十元；原价五十元时，减二十元得到三十元，打八折得到四十元。一次数值碰巧相等并不证明两种规则始终相同。本单元假定没有运费、满减门槛、四舍五入或叠加顺序的特殊限制；若现实广告存在这些条件，应先读清条件，再计算。\n百分比还可以用来描述某个比例自身的变化。若一项活动报名率由百分之四十变成百分之五十，增加了十个百分点；相对于原来的百分之四十，则增长了百分之二十五，因为十除以四十等于四分之一。“百分点”是两个百分率直接相减的差，“相对增长率”则把差再除以原比例。二者回答不同问题，不应省略名称后混为一个数。\n解释计算时，建议先写“这一步把什么当作百分之百”，再列算式，最后做方向检查。降价再涨价后的结果是否符合基数变化？某个提高幅度是相对于原价还是现价？如果只报告“增长百分之十”而不交代基数，读者可能无法复算。原比例为零时，也不能照搬差额除以原比例的相对增长率公式，因为分母为零；仍可以报告增加了多少元、多少人或多少个百分点。清楚说明边界，比强行给出一个不存在的比例更可靠。",
+                "valueHash": "eed51cb255d5d0e12ca505b4c60926d142df7cf81a0f73781aba0593d2870361"
+              },
+              {
+                "id": "e14",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "折扣前后基数识别与连续百分比计算及解释",
+                "valueHash": "d929661716dda29714264f6d9021a4c54a42304dc29610dfd8984f865d72dae0"
+              },
+              {
+                "id": "e26",
+                "pointer": "/artifacts/6/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "设想一件外套标价150元，广告写“降价20%”。这一步把原价150元当作100%，保留80%，所以计算150×0.8=120元。减少的30元是绝对金额，而“20%”是相对于基数的比例；两者量纲不同，只有在知道基数后才能互相换算。若换一件标价不同的商品，同比例产生的金额会变化，但固定减额不会。",
+                "valueHash": "e78d441dd06909246c3556ea9b73f57eed209d931f61508b7f915e31b88c493c"
+              },
+              {
+                "id": "e28",
+                "pointer": "/artifacts/7/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "连续百分比变化必须逐步以当前价格为基数。例如原价200元，先降25%得到150元；再提高25%时，基数是150元而非200元。这样两步之后价格不是原价。下面用具体案例检验预测。",
+                "valueHash": "468427812d5f6d82ce73581fdca9f482c473f0ab30d7cb62911dbec264a52014"
+              },
+              {
+                "id": "e30",
+                "pointer": "/artifacts/8/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "当百分比用来描述比例自身的变化时，需注意相对增长率公式的边界。若原比例为0，则“差额除以原比例”的分母为零，无法计算相对增长率；此时只能报告绝对增加量或百分点。清晰说明边界比强行给出比例更可靠。",
+                "valueHash": "5c56bc93b019ee0b953af6804cf2c37981955dcc8528e02d4701807a558fd5c4"
+              },
+              {
+                "id": "e34",
+                "pointer": "/artifacts/10/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "连续变动后若要反推恢复所需比例，必须以变动后的当前价为基数，用目标差额除以当前价。例如某书原价90元，先打八折到72元；若想从72元涨回90元，差额18元，18÷72=0.25，需提价25%，而非20%的机械互换。下面用新案例检验。",
+                "valueHash": "d04ceafd5e8ce99f1880606ab48c8b04835e78596ce3d5d58832160871bb7ce1"
+              },
+              {
+                "id": "e66",
+                "pointer": "/artifacts/26/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "正确：规则改变后基数变为90，差额18占其20%。",
+                "valueHash": "474059718776837aeb96348c2e11d1c830521f97c67e863c1edb6002fe9992f5"
+              },
+              {
+                "id": "e72",
+                "pointer": "/artifacts/29/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "本单元计算默认无运费、满减门槛、四舍五入或顺序特殊限制。若现实广告附带此类条件，应先读清再算，否则基数或最终价会被额外改变。清楚边界比强行套用比例更可靠。",
+                "valueHash": "fa51732eba87810673db05c06ed16ff8a2c9467cf9ae73be7ffa00b4dbafaf44"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "dimension": "Q3",
+            "level": 2,
+            "reason": "具备前提（e7小数乘除、e8百分数含义）的学习者能跟随具体数值步骤与“把什么当100%”的说明，推导连贯，并涵盖相关边界（零基率分母零、条件变更、无限制假设），无中心错误、循环或无关内容；局部示范符合目标e5。",
+            "refs": [
+              "e7",
+              "e8",
+              "e26",
+              "e28",
+              "e30",
+              "e34",
+              "e72"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e7",
+                "pointer": "/prerequisites/0",
+                "role": "context",
+                "kind": "text",
+                "value": "小数乘除",
+                "valueHash": "12d2daf28a68b4149174d76f42b2052644d3cfe57bcd26e0b056fe2baae9f13d"
+              },
+              {
+                "id": "e8",
+                "pointer": "/prerequisites/1",
+                "role": "context",
+                "kind": "text",
+                "value": "百分数的含义",
+                "valueHash": "9a1425b2f90142806131c45a6ee8625dfb735c5c90dbc2d55821a78df4e2a085"
+              },
+              {
+                "id": "e26",
+                "pointer": "/artifacts/6/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "设想一件外套标价150元，广告写“降价20%”。这一步把原价150元当作100%，保留80%，所以计算150×0.8=120元。减少的30元是绝对金额，而“20%”是相对于基数的比例；两者量纲不同，只有在知道基数后才能互相换算。若换一件标价不同的商品，同比例产生的金额会变化，但固定减额不会。",
+                "valueHash": "e78d441dd06909246c3556ea9b73f57eed209d931f61508b7f915e31b88c493c"
+              },
+              {
+                "id": "e28",
+                "pointer": "/artifacts/7/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "连续百分比变化必须逐步以当前价格为基数。例如原价200元，先降25%得到150元；再提高25%时，基数是150元而非200元。这样两步之后价格不是原价。下面用具体案例检验预测。",
+                "valueHash": "468427812d5f6d82ce73581fdca9f482c473f0ab30d7cb62911dbec264a52014"
+              },
+              {
+                "id": "e30",
+                "pointer": "/artifacts/8/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "当百分比用来描述比例自身的变化时，需注意相对增长率公式的边界。若原比例为0，则“差额除以原比例”的分母为零，无法计算相对增长率；此时只能报告绝对增加量或百分点。清晰说明边界比强行给出比例更可靠。",
+                "valueHash": "5c56bc93b019ee0b953af6804cf2c37981955dcc8528e02d4701807a558fd5c4"
+              },
+              {
+                "id": "e34",
+                "pointer": "/artifacts/10/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "连续变动后若要反推恢复所需比例，必须以变动后的当前价为基数，用目标差额除以当前价。例如某书原价90元，先打八折到72元；若想从72元涨回90元，差额18元，18÷72=0.25，需提价25%，而非20%的机械互换。下面用新案例检验。",
+                "valueHash": "d04ceafd5e8ce99f1880606ab48c8b04835e78596ce3d5d58832160871bb7ce1"
+              },
+              {
+                "id": "e72",
+                "pointer": "/artifacts/29/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "本单元计算默认无运费、满减门槛、四舍五入或顺序特殊限制。若现实广告附带此类条件，应先读清再算，否则基数或最终价会被额外改变。清楚边界比强行套用比例更可靠。",
+                "valueHash": "fa51732eba87810673db05c06ed16ff8a2c9467cf9ae73be7ffa00b4dbafaf44"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q1",
+            "status": "supported",
+            "reason": "作者断言（基数识别、连续当前基、反向恢复、固定额巧合、百分点边界、无限制）与e3一致；transfer改变基数经e70明确假设，未篡改机制。findings审计与正确性均clear，候选理由与之一致。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "价格变化中的百分比总要依附一个基数。“降低百分之二十”通常以变化前价格为基数，意味着保留原价的百分之八十。假设原价是一百元，降价后为一百乘零点八，即八十元。这里减少了二十元，但“二十元”和“百分之二十”不是同一种量；只有同时知道基数，才能在金额与比例之间换算。\n连续变化必须按每一步的当前价格计算。例如先降百分之二十，再在降后价格上提高百分之二十，第二步增加的是八十元的百分之二十，即十六元，最后为九十六元，并没有回到一百元。两个百分比相等，基数却不同。可以把全过程写成“原价乘零点八再乘一点二”。若希望八十元恢复到一百元，需要增加二十元，而二十除以八十等于零点二五，所以应提高百分之二十五。反向问题应从目标差额与当前基数出发，不能机械地把降幅换成同样的涨幅。\n比较方案时也要留意固定金额与比例的区别。原价一百元时，减二十元和打八折都得到八十元；原价五十元时，减二十元得到三十元，打八折得到四十元。一次数值碰巧相等并不证明两种规则始终相同。本单元假定没有运费、满减门槛、四舍五入或叠加顺序的特殊限制；若现实广告存在这些条件，应先读清条件，再计算。\n百分比还可以用来描述某个比例自身的变化。若一项活动报名率由百分之四十变成百分之五十，增加了十个百分点；相对于原来的百分之四十，则增长了百分之二十五，因为十除以四十等于四分之一。“百分点”是两个百分率直接相减的差，“相对增长率”则把差再除以原比例。二者回答不同问题，不应省略名称后混为一个数。\n解释计算时，建议先写“这一步把什么当作百分之百”，再列算式，最后做方向检查。降价再涨价后的结果是否符合基数变化？某个提高幅度是相对于原价还是现价？如果只报告“增长百分之十”而不交代基数，读者可能无法复算。原比例为零时，也不能照搬差额除以原比例的相对增长率公式，因为分母为零；仍可以报告增加了多少元、多少人或多少个百分点。清楚说明边界，比强行给出一个不存在的比例更可靠。",
+                "valueHash": "eed51cb255d5d0e12ca505b4c60926d142df7cf81a0f73781aba0593d2870361"
+              },
+              {
+                "id": "e14",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "折扣前后基数识别与连续百分比计算及解释",
+                "valueHash": "d929661716dda29714264f6d9021a4c54a42304dc29610dfd8984f865d72dae0"
+              },
+              {
+                "id": "e26",
+                "pointer": "/artifacts/6/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "设想一件外套标价150元，广告写“降价20%”。这一步把原价150元当作100%，保留80%，所以计算150×0.8=120元。减少的30元是绝对金额，而“20%”是相对于基数的比例；两者量纲不同，只有在知道基数后才能互相换算。若换一件标价不同的商品，同比例产生的金额会变化，但固定减额不会。",
+                "valueHash": "e78d441dd06909246c3556ea9b73f57eed209d931f61508b7f915e31b88c493c"
+              },
+              {
+                "id": "e28",
+                "pointer": "/artifacts/7/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "连续百分比变化必须逐步以当前价格为基数。例如原价200元，先降25%得到150元；再提高25%时，基数是150元而非200元。这样两步之后价格不是原价。下面用具体案例检验预测。",
+                "valueHash": "468427812d5f6d82ce73581fdca9f482c473f0ab30d7cb62911dbec264a52014"
+              },
+              {
+                "id": "e34",
+                "pointer": "/artifacts/10/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "连续变动后若要反推恢复所需比例，必须以变动后的当前价为基数，用目标差额除以当前价。例如某书原价90元，先打八折到72元；若想从72元涨回90元，差额18元，18÷72=0.25，需提价25%，而非20%的机械互换。下面用新案例检验。",
+                "valueHash": "d04ceafd5e8ce99f1880606ab48c8b04835e78596ce3d5d58832160871bb7ce1"
+              },
+              {
+                "id": "e70",
+                "pointer": "/artifacts/28/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "恢复提价基数按原价90元，而非当前价",
+                "valueHash": "a1ac7ce165963d0eda8030a4aabc850fbf155ac815d5cebb4629a4c6f122a96d"
+              },
+              {
+                "id": "e72",
+                "pointer": "/artifacts/29/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "本单元计算默认无运费、满减门槛、四舍五入或顺序特殊限制。若现实广告附带此类条件，应先读清再算，否则基数或最终价会被额外改变。清楚边界比强行套用比例更可靠。",
+                "valueHash": "fa51732eba87810673db05c06ed16ff8a2c9467cf9ae73be7ffa00b4dbafaf44"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "dimension": "Q3",
+            "status": "supported",
+            "reason": "前提e7,e8满足时，具体数值步骤与“把什么当100%”说明连贯，覆盖零基率(e30)及条件边界(e72)，无中心错误；findings审计支持且无异议。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "评价本次实际讲解的内容：折扣前后基数识别与连续百分比计算及解释",
+                "valueHash": "099eed480bd210e24b5e97556b5b0419205fc1ca55468b81d02cf93a2d726df2"
+              },
+              {
+                "id": "e7",
+                "pointer": "/prerequisites/0",
+                "role": "context",
+                "kind": "text",
+                "value": "小数乘除",
+                "valueHash": "12d2daf28a68b4149174d76f42b2052644d3cfe57bcd26e0b056fe2baae9f13d"
+              },
+              {
+                "id": "e8",
+                "pointer": "/prerequisites/1",
+                "role": "context",
+                "kind": "text",
+                "value": "百分数的含义",
+                "valueHash": "9a1425b2f90142806131c45a6ee8625dfb735c5c90dbc2d55821a78df4e2a085"
+              },
+              {
+                "id": "e26",
+                "pointer": "/artifacts/6/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "设想一件外套标价150元，广告写“降价20%”。这一步把原价150元当作100%，保留80%，所以计算150×0.8=120元。减少的30元是绝对金额，而“20%”是相对于基数的比例；两者量纲不同，只有在知道基数后才能互相换算。若换一件标价不同的商品，同比例产生的金额会变化，但固定减额不会。",
+                "valueHash": "e78d441dd06909246c3556ea9b73f57eed209d931f61508b7f915e31b88c493c"
+              },
+              {
+                "id": "e28",
+                "pointer": "/artifacts/7/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "连续百分比变化必须逐步以当前价格为基数。例如原价200元，先降25%得到150元；再提高25%时，基数是150元而非200元。这样两步之后价格不是原价。下面用具体案例检验预测。",
+                "valueHash": "468427812d5f6d82ce73581fdca9f482c473f0ab30d7cb62911dbec264a52014"
+              },
+              {
+                "id": "e30",
+                "pointer": "/artifacts/8/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "当百分比用来描述比例自身的变化时，需注意相对增长率公式的边界。若原比例为0，则“差额除以原比例”的分母为零，无法计算相对增长率；此时只能报告绝对增加量或百分点。清晰说明边界比强行给出比例更可靠。",
+                "valueHash": "5c56bc93b019ee0b953af6804cf2c37981955dcc8528e02d4701807a558fd5c4"
+              },
+              {
+                "id": "e34",
+                "pointer": "/artifacts/10/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "连续变动后若要反推恢复所需比例，必须以变动后的当前价为基数，用目标差额除以当前价。例如某书原价90元，先打八折到72元；若想从72元涨回90元，差额18元，18÷72=0.25，需提价25%，而非20%的机械互换。下面用新案例检验。",
+                "valueHash": "d04ceafd5e8ce99f1880606ab48c8b04835e78596ce3d5d58832160871bb7ce1"
+              },
+              {
+                "id": "e72",
+                "pointer": "/artifacts/29/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "本单元计算默认无运费、满减门槛、四舍五入或顺序特殊限制。若现实广告附带此类条件，应先读清再算，否则基数或最终价会被额外改变。清楚边界比强行套用比例更可靠。",
+                "valueHash": "fa51732eba87810673db05c06ed16ff8a2c9467cf9ae73be7ffa00b4dbafaf44"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q1",
+          "level": 2,
+          "reason": "产品所有作者断言（基数识别、连续变化逐步当前基数、反向恢复用差额/当前基数、固定额与比例巧合、百分点vs相对增长率及零基率边界、无额外限制假设）均与来源e3一致，无虚假声明或发明引用；transfer中改变基数规则经e70明确标注为假设条件，未缺失条件或篡改核心机制。",
+          "refs": [
+            "e3",
+            "e14",
+            "e26",
+            "e28",
+            "e30",
+            "e34",
+            "e66",
+            "e72"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e3",
+              "pointer": "/sources/0/text",
+              "role": "source",
+              "kind": "text",
+              "value": "价格变化中的百分比总要依附一个基数。“降低百分之二十”通常以变化前价格为基数，意味着保留原价的百分之八十。假设原价是一百元，降价后为一百乘零点八，即八十元。这里减少了二十元，但“二十元”和“百分之二十”不是同一种量；只有同时知道基数，才能在金额与比例之间换算。\n连续变化必须按每一步的当前价格计算。例如先降百分之二十，再在降后价格上提高百分之二十，第二步增加的是八十元的百分之二十，即十六元，最后为九十六元，并没有回到一百元。两个百分比相等，基数却不同。可以把全过程写成“原价乘零点八再乘一点二”。若希望八十元恢复到一百元，需要增加二十元，而二十除以八十等于零点二五，所以应提高百分之二十五。反向问题应从目标差额与当前基数出发，不能机械地把降幅换成同样的涨幅。\n比较方案时也要留意固定金额与比例的区别。原价一百元时，减二十元和打八折都得到八十元；原价五十元时，减二十元得到三十元，打八折得到四十元。一次数值碰巧相等并不证明两种规则始终相同。本单元假定没有运费、满减门槛、四舍五入或叠加顺序的特殊限制；若现实广告存在这些条件，应先读清条件，再计算。\n百分比还可以用来描述某个比例自身的变化。若一项活动报名率由百分之四十变成百分之五十，增加了十个百分点；相对于原来的百分之四十，则增长了百分之二十五，因为十除以四十等于四分之一。“百分点”是两个百分率直接相减的差，“相对增长率”则把差再除以原比例。二者回答不同问题，不应省略名称后混为一个数。\n解释计算时，建议先写“这一步把什么当作百分之百”，再列算式，最后做方向检查。降价再涨价后的结果是否符合基数变化？某个提高幅度是相对于原价还是现价？如果只报告“增长百分之十”而不交代基数，读者可能无法复算。原比例为零时，也不能照搬差额除以原比例的相对增长率公式，因为分母为零；仍可以报告增加了多少元、多少人或多少个百分点。清楚说明边界，比强行给出一个不存在的比例更可靠。",
+              "valueHash": "eed51cb255d5d0e12ca505b4c60926d142df7cf81a0f73781aba0593d2870361"
+            },
+            {
+              "id": "e14",
+              "pointer": "/artifacts/0/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "折扣前后基数识别与连续百分比计算及解释",
+              "valueHash": "d929661716dda29714264f6d9021a4c54a42304dc29610dfd8984f865d72dae0"
+            },
+            {
+              "id": "e26",
+              "pointer": "/artifacts/6/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "设想一件外套标价150元，广告写“降价20%”。这一步把原价150元当作100%，保留80%，所以计算150×0.8=120元。减少的30元是绝对金额，而“20%”是相对于基数的比例；两者量纲不同，只有在知道基数后才能互相换算。若换一件标价不同的商品，同比例产生的金额会变化，但固定减额不会。",
+              "valueHash": "e78d441dd06909246c3556ea9b73f57eed209d931f61508b7f915e31b88c493c"
+            },
+            {
+              "id": "e28",
+              "pointer": "/artifacts/7/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "连续百分比变化必须逐步以当前价格为基数。例如原价200元，先降25%得到150元；再提高25%时，基数是150元而非200元。这样两步之后价格不是原价。下面用具体案例检验预测。",
+              "valueHash": "468427812d5f6d82ce73581fdca9f482c473f0ab30d7cb62911dbec264a52014"
+            },
+            {
+              "id": "e30",
+              "pointer": "/artifacts/8/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "当百分比用来描述比例自身的变化时，需注意相对增长率公式的边界。若原比例为0，则“差额除以原比例”的分母为零，无法计算相对增长率；此时只能报告绝对增加量或百分点。清晰说明边界比强行给出比例更可靠。",
+              "valueHash": "5c56bc93b019ee0b953af6804cf2c37981955dcc8528e02d4701807a558fd5c4"
+            },
+            {
+              "id": "e34",
+              "pointer": "/artifacts/10/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "连续变动后若要反推恢复所需比例，必须以变动后的当前价为基数，用目标差额除以当前价。例如某书原价90元，先打八折到72元；若想从72元涨回90元，差额18元，18÷72=0.25，需提价25%，而非20%的机械互换。下面用新案例检验。",
+              "valueHash": "d04ceafd5e8ce99f1880606ab48c8b04835e78596ce3d5d58832160871bb7ce1"
+            },
+            {
+              "id": "e66",
+              "pointer": "/artifacts/26/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "正确：规则改变后基数变为90，差额18占其20%。",
+              "valueHash": "474059718776837aeb96348c2e11d1c830521f97c67e863c1edb6002fe9992f5"
+            },
+            {
+              "id": "e72",
+              "pointer": "/artifacts/29/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "本单元计算默认无运费、满减门槛、四舍五入或顺序特殊限制。若现实广告附带此类条件，应先读清再算，否则基数或最终价会被额外改变。清楚边界比强行套用比例更可靠。",
+              "valueHash": "fa51732eba87810673db05c06ed16ff8a2c9467cf9ae73be7ffa00b4dbafaf44"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [],
+          "proposedLevel": 2,
+          "proposedReason": "产品所有作者断言（基数识别、连续变化逐步当前基数、反向恢复用差额/当前基数、固定额与比例巧合、百分点vs相对增长率及零基率边界、无额外限制假设）均与来源e3一致，无虚假声明或发明引用；transfer中改变基数规则经e70明确标注为假设条件，未缺失条件或篡改核心机制。"
+        },
+        {
+          "dimension": "Q3",
+          "level": 2,
+          "reason": "具备前提（e7小数乘除、e8百分数含义）的学习者能跟随具体数值步骤与“把什么当100%”的说明，推导连贯，并涵盖相关边界（零基率分母零、条件变更、无限制假设），无中心错误、循环或无关内容；局部示范符合目标e5。",
+          "refs": [
+            "e7",
+            "e8",
+            "e26",
+            "e28",
+            "e30",
+            "e34",
+            "e72"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e7",
+              "pointer": "/prerequisites/0",
+              "role": "context",
+              "kind": "text",
+              "value": "小数乘除",
+              "valueHash": "12d2daf28a68b4149174d76f42b2052644d3cfe57bcd26e0b056fe2baae9f13d"
+            },
+            {
+              "id": "e8",
+              "pointer": "/prerequisites/1",
+              "role": "context",
+              "kind": "text",
+              "value": "百分数的含义",
+              "valueHash": "9a1425b2f90142806131c45a6ee8625dfb735c5c90dbc2d55821a78df4e2a085"
+            },
+            {
+              "id": "e26",
+              "pointer": "/artifacts/6/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "设想一件外套标价150元，广告写“降价20%”。这一步把原价150元当作100%，保留80%，所以计算150×0.8=120元。减少的30元是绝对金额，而“20%”是相对于基数的比例；两者量纲不同，只有在知道基数后才能互相换算。若换一件标价不同的商品，同比例产生的金额会变化，但固定减额不会。",
+              "valueHash": "e78d441dd06909246c3556ea9b73f57eed209d931f61508b7f915e31b88c493c"
+            },
+            {
+              "id": "e28",
+              "pointer": "/artifacts/7/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "连续百分比变化必须逐步以当前价格为基数。例如原价200元，先降25%得到150元；再提高25%时，基数是150元而非200元。这样两步之后价格不是原价。下面用具体案例检验预测。",
+              "valueHash": "468427812d5f6d82ce73581fdca9f482c473f0ab30d7cb62911dbec264a52014"
+            },
+            {
+              "id": "e30",
+              "pointer": "/artifacts/8/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "当百分比用来描述比例自身的变化时，需注意相对增长率公式的边界。若原比例为0，则“差额除以原比例”的分母为零，无法计算相对增长率；此时只能报告绝对增加量或百分点。清晰说明边界比强行给出比例更可靠。",
+              "valueHash": "5c56bc93b019ee0b953af6804cf2c37981955dcc8528e02d4701807a558fd5c4"
+            },
+            {
+              "id": "e34",
+              "pointer": "/artifacts/10/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "连续变动后若要反推恢复所需比例，必须以变动后的当前价为基数，用目标差额除以当前价。例如某书原价90元，先打八折到72元；若想从72元涨回90元，差额18元，18÷72=0.25，需提价25%，而非20%的机械互换。下面用新案例检验。",
+              "valueHash": "d04ceafd5e8ce99f1880606ab48c8b04835e78596ce3d5d58832160871bb7ce1"
+            },
+            {
+              "id": "e72",
+              "pointer": "/artifacts/29/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "本单元计算默认无运费、满减门槛、四舍五入或顺序特殊限制。若现实广告附带此类条件，应先读清再算，否则基数或最终价会被额外改变。清楚边界比强行套用比例更可靠。",
+              "valueHash": "fa51732eba87810673db05c06ed16ff8a2c9467cf9ae73be7ffa00b4dbafaf44"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [],
+          "proposedLevel": 2,
+          "proposedReason": "具备前提（e7小数乘除、e8百分数含义）的学习者能跟随具体数值步骤与“把什么当100%”的说明，推导连贯，并涵盖相关边界（零基率分母零、条件变更、无限制假设），无中心错误、循环或无关内容；局部示范符合目标e5。"
+        }
+      ],
+      "reviewRequired": [],
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q1",
+            "status": "supported",
+            "reason": "作者断言（基数识别、连续当前基、反向恢复、固定额巧合、百分点边界、无限制）与e3一致；transfer改变基数经e70明确假设，未篡改机制。findings审计与正确性均clear，候选理由与之一致。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "价格变化中的百分比总要依附一个基数。“降低百分之二十”通常以变化前价格为基数，意味着保留原价的百分之八十。假设原价是一百元，降价后为一百乘零点八，即八十元。这里减少了二十元，但“二十元”和“百分之二十”不是同一种量；只有同时知道基数，才能在金额与比例之间换算。\n连续变化必须按每一步的当前价格计算。例如先降百分之二十，再在降后价格上提高百分之二十，第二步增加的是八十元的百分之二十，即十六元，最后为九十六元，并没有回到一百元。两个百分比相等，基数却不同。可以把全过程写成“原价乘零点八再乘一点二”。若希望八十元恢复到一百元，需要增加二十元，而二十除以八十等于零点二五，所以应提高百分之二十五。反向问题应从目标差额与当前基数出发，不能机械地把降幅换成同样的涨幅。\n比较方案时也要留意固定金额与比例的区别。原价一百元时，减二十元和打八折都得到八十元；原价五十元时，减二十元得到三十元，打八折得到四十元。一次数值碰巧相等并不证明两种规则始终相同。本单元假定没有运费、满减门槛、四舍五入或叠加顺序的特殊限制；若现实广告存在这些条件，应先读清条件，再计算。\n百分比还可以用来描述某个比例自身的变化。若一项活动报名率由百分之四十变成百分之五十，增加了十个百分点；相对于原来的百分之四十，则增长了百分之二十五，因为十除以四十等于四分之一。“百分点”是两个百分率直接相减的差，“相对增长率”则把差再除以原比例。二者回答不同问题，不应省略名称后混为一个数。\n解释计算时，建议先写“这一步把什么当作百分之百”，再列算式，最后做方向检查。降价再涨价后的结果是否符合基数变化？某个提高幅度是相对于原价还是现价？如果只报告“增长百分之十”而不交代基数，读者可能无法复算。原比例为零时，也不能照搬差额除以原比例的相对增长率公式，因为分母为零；仍可以报告增加了多少元、多少人或多少个百分点。清楚说明边界，比强行给出一个不存在的比例更可靠。",
+                "valueHash": "eed51cb255d5d0e12ca505b4c60926d142df7cf81a0f73781aba0593d2870361"
+              },
+              {
+                "id": "e14",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "折扣前后基数识别与连续百分比计算及解释",
+                "valueHash": "d929661716dda29714264f6d9021a4c54a42304dc29610dfd8984f865d72dae0"
+              },
+              {
+                "id": "e26",
+                "pointer": "/artifacts/6/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "设想一件外套标价150元，广告写“降价20%”。这一步把原价150元当作100%，保留80%，所以计算150×0.8=120元。减少的30元是绝对金额，而“20%”是相对于基数的比例；两者量纲不同，只有在知道基数后才能互相换算。若换一件标价不同的商品，同比例产生的金额会变化，但固定减额不会。",
+                "valueHash": "e78d441dd06909246c3556ea9b73f57eed209d931f61508b7f915e31b88c493c"
+              },
+              {
+                "id": "e28",
+                "pointer": "/artifacts/7/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "连续百分比变化必须逐步以当前价格为基数。例如原价200元，先降25%得到150元；再提高25%时，基数是150元而非200元。这样两步之后价格不是原价。下面用具体案例检验预测。",
+                "valueHash": "468427812d5f6d82ce73581fdca9f482c473f0ab30d7cb62911dbec264a52014"
+              },
+              {
+                "id": "e34",
+                "pointer": "/artifacts/10/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "连续变动后若要反推恢复所需比例，必须以变动后的当前价为基数，用目标差额除以当前价。例如某书原价90元，先打八折到72元；若想从72元涨回90元，差额18元，18÷72=0.25，需提价25%，而非20%的机械互换。下面用新案例检验。",
+                "valueHash": "d04ceafd5e8ce99f1880606ab48c8b04835e78596ce3d5d58832160871bb7ce1"
+              },
+              {
+                "id": "e70",
+                "pointer": "/artifacts/28/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "恢复提价基数按原价90元，而非当前价",
+                "valueHash": "a1ac7ce165963d0eda8030a4aabc850fbf155ac815d5cebb4629a4c6f122a96d"
+              },
+              {
+                "id": "e72",
+                "pointer": "/artifacts/29/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "本单元计算默认无运费、满减门槛、四舍五入或顺序特殊限制。若现实广告附带此类条件，应先读清再算，否则基数或最终价会被额外改变。清楚边界比强行套用比例更可靠。",
+                "valueHash": "fa51732eba87810673db05c06ed16ff8a2c9467cf9ae73be7ffa00b4dbafaf44"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "dimension": "Q3",
+            "status": "supported",
+            "reason": "前提e7,e8满足时，具体数值步骤与“把什么当100%”说明连贯，覆盖零基率(e30)及条件边界(e72)，无中心错误；findings审计支持且无异议。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "评价本次实际讲解的内容：折扣前后基数识别与连续百分比计算及解释",
+                "valueHash": "099eed480bd210e24b5e97556b5b0419205fc1ca55468b81d02cf93a2d726df2"
+              },
+              {
+                "id": "e7",
+                "pointer": "/prerequisites/0",
+                "role": "context",
+                "kind": "text",
+                "value": "小数乘除",
+                "valueHash": "12d2daf28a68b4149174d76f42b2052644d3cfe57bcd26e0b056fe2baae9f13d"
+              },
+              {
+                "id": "e8",
+                "pointer": "/prerequisites/1",
+                "role": "context",
+                "kind": "text",
+                "value": "百分数的含义",
+                "valueHash": "9a1425b2f90142806131c45a6ee8625dfb735c5c90dbc2d55821a78df4e2a085"
+              },
+              {
+                "id": "e26",
+                "pointer": "/artifacts/6/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "设想一件外套标价150元，广告写“降价20%”。这一步把原价150元当作100%，保留80%，所以计算150×0.8=120元。减少的30元是绝对金额，而“20%”是相对于基数的比例；两者量纲不同，只有在知道基数后才能互相换算。若换一件标价不同的商品，同比例产生的金额会变化，但固定减额不会。",
+                "valueHash": "e78d441dd06909246c3556ea9b73f57eed209d931f61508b7f915e31b88c493c"
+              },
+              {
+                "id": "e28",
+                "pointer": "/artifacts/7/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "连续百分比变化必须逐步以当前价格为基数。例如原价200元，先降25%得到150元；再提高25%时，基数是150元而非200元。这样两步之后价格不是原价。下面用具体案例检验预测。",
+                "valueHash": "468427812d5f6d82ce73581fdca9f482c473f0ab30d7cb62911dbec264a52014"
+              },
+              {
+                "id": "e30",
+                "pointer": "/artifacts/8/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "当百分比用来描述比例自身的变化时，需注意相对增长率公式的边界。若原比例为0，则“差额除以原比例”的分母为零，无法计算相对增长率；此时只能报告绝对增加量或百分点。清晰说明边界比强行给出比例更可靠。",
+                "valueHash": "5c56bc93b019ee0b953af6804cf2c37981955dcc8528e02d4701807a558fd5c4"
+              },
+              {
+                "id": "e34",
+                "pointer": "/artifacts/10/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "连续变动后若要反推恢复所需比例，必须以变动后的当前价为基数，用目标差额除以当前价。例如某书原价90元，先打八折到72元；若想从72元涨回90元，差额18元，18÷72=0.25，需提价25%，而非20%的机械互换。下面用新案例检验。",
+                "valueHash": "d04ceafd5e8ce99f1880606ab48c8b04835e78596ce3d5d58832160871bb7ce1"
+              },
+              {
+                "id": "e72",
+                "pointer": "/artifacts/29/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "本单元计算默认无运费、满减门槛、四舍五入或顺序特殊限制。若现实广告附带此类条件，应先读清再算，否则基数或最终价会被额外改变。清楚边界比强行套用比例更可靠。",
+                "valueHash": "fa51732eba87810673db05c06ed16ff8a2c9467cf9ae73be7ffa00b4dbafaf44"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "resultHash": "f532d01670cd7f40d5b0d268c8c313f68b55af8eeca0684bc236a3322f8bdf48"
+  }
+}

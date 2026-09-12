@@ -1,0 +1,330 @@
+{
+  "sourceCount": 12,
+  "originalSourceFamilies": 12,
+  "friendAccessible": [
+    "F01",
+    "F02",
+    "F03",
+    "F04",
+    "F05",
+    "F06",
+    "F07",
+    "F08",
+    "F09",
+    "F10"
+  ],
+  "sources": [
+    {
+      "sourceId": "F01",
+      "title": "读懂一份书屋周报",
+      "domain": "reading_and_summary",
+      "intendedDepth": "working_fluency",
+      "textCharacters": 835,
+      "textHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4",
+      "provenance": {
+        "kind": "original_authored",
+        "author": "Codex benchmark constructor",
+        "authoredOn": "2026-09-12",
+        "externalConceptualReferences": [],
+        "note": "为本次最终评测原创的中文封闭教材；数据与情境为教学构造，不是外部事实报告。"
+      },
+      "caseIds": [
+        "E047",
+        "E094",
+        "E141",
+        "E742",
+        "E789",
+        "E836",
+        "E440",
+        "E628",
+        "E816",
+        "E007",
+        "E195",
+        "E383",
+        "E571"
+      ]
+    },
+    {
+      "sourceId": "F02",
+      "title": "折扣前后，谁是比较基数",
+      "domain": "proportions",
+      "intendedDepth": "working_fluency",
+      "textCharacters": 804,
+      "textHash": "eed51cb255d5d0e12ca505b4c60926d142df7cf81a0f73781aba0593d2870361",
+      "provenance": {
+        "kind": "original_authored",
+        "author": "Codex benchmark constructor",
+        "authoredOn": "2026-09-12",
+        "externalConceptualReferences": [],
+        "note": "为本次最终评测原创的中文封闭教材；数据与情境为教学构造，不是外部事实报告。"
+      },
+      "caseIds": [
+        "E188",
+        "E235",
+        "E282",
+        "E309",
+        "E356",
+        "E403",
+        "E487",
+        "E675",
+        "E863",
+        "E054",
+        "E618"
+      ]
+    },
+    {
+      "sourceId": "F03",
+      "title": "早餐调查能说明什么",
+      "domain": "causal_argument",
+      "intendedDepth": "working_fluency",
+      "textCharacters": 878,
+      "textHash": "944a460c4eccfdbd61d456dc9fc3969b0ed10c585ea05e87ccfe3e9b93549680",
+      "provenance": {
+        "kind": "original_authored",
+        "author": "Codex benchmark constructor",
+        "authoredOn": "2026-09-12",
+        "externalConceptualReferences": [],
+        "note": "为本次最终评测原创的中文封闭教材；数据与情境为教学构造，不是外部事实报告。"
+      },
+      "caseIds": [
+        "E329",
+        "E376",
+        "E423",
+        "E873",
+        "E920",
+        "E967",
+        "E534",
+        "E722",
+        "E910",
+        "E101",
+        "E665"
+      ]
+    },
+    {
+      "sourceId": "F04",
+      "title": "看懂一张没有画出的柱形图",
+      "domain": "data_reading",
+      "intendedDepth": "working_fluency",
+      "textCharacters": 810,
+      "textHash": "d285228b9962482d5b8d81456178a4eb5cad39d02c75d3a204457e6093fff0ba",
+      "provenance": {
+        "kind": "original_authored",
+        "author": "Codex benchmark constructor",
+        "authoredOn": "2026-09-12",
+        "externalConceptualReferences": [],
+        "note": "为本次最终评测原创的中文封闭教材；数据与情境为教学构造，不是外部事实报告。"
+      },
+      "caseIds": [
+        "E470",
+        "E517",
+        "E564",
+        "E581",
+        "E769",
+        "E957",
+        "E148",
+        "E712"
+      ]
+    },
+    {
+      "sourceId": "F05",
+      "title": "两种尺子与读数的可信范围",
+      "domain": "measurement",
+      "intendedDepth": "working_fluency",
+      "textCharacters": 798,
+      "textHash": "04ede0e2b943c283408af13f15e429c4d3f550318ac34096022b20c8a80a02fc",
+      "provenance": {
+        "kind": "original_authored",
+        "author": "Codex benchmark constructor",
+        "authoredOn": "2026-09-12",
+        "externalConceptualReferences": [],
+        "note": "为本次最终评测原创的中文封闭教材；数据与情境为教学构造，不是外部事实报告。"
+      },
+      "caseIds": [
+        "E611",
+        "E658",
+        "E705",
+        "E883",
+        "E930",
+        "E977",
+        "E242",
+        "E430",
+        "E759"
+      ]
+    },
+    {
+      "sourceId": "F06",
+      "title": "平均等待时间与典型体验",
+      "domain": "descriptive_statistics",
+      "intendedDepth": "working_fluency",
+      "textCharacters": 816,
+      "textHash": "a43f09ae51e1a19e3e4fe7ef6283f10eab5bf8c071e52a5d86e3c347cdbc2311",
+      "provenance": {
+        "kind": "original_authored",
+        "author": "Codex benchmark constructor",
+        "authoredOn": "2026-09-12",
+        "externalConceptualReferences": [],
+        "note": "为本次最终评测原创的中文封闭教材；数据与情境为教学构造，不是外部事实报告。"
+      },
+      "caseIds": [
+        "E752",
+        "E799",
+        "E846",
+        "E450",
+        "E497",
+        "E544",
+        "E806"
+      ]
+    },
+    {
+      "sourceId": "F07",
+      "title": "种子对照实验的条件",
+      "domain": "basic_science",
+      "intendedDepth": "working_fluency",
+      "textCharacters": 796,
+      "textHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648",
+      "provenance": {
+        "kind": "original_authored",
+        "author": "Codex benchmark constructor",
+        "authoredOn": "2026-09-12",
+        "externalConceptualReferences": [],
+        "note": "为本次最终评测原创的中文封闭教材；数据与情境为教学构造，不是外部事实报告。"
+      },
+      "caseIds": [
+        "E893",
+        "E940",
+        "E987",
+        "E017",
+        "E064",
+        "E111",
+        "E853"
+      ]
+    },
+    {
+      "sourceId": "F08",
+      "title": "印章卡片的逻辑",
+      "domain": "basic_logic",
+      "intendedDepth": "working_fluency",
+      "textCharacters": 768,
+      "textHash": "132c532360b4bc6ac5b2aa8886b4b3bf89c500f85d4e1be08595f9a669823289",
+      "provenance": {
+        "kind": "original_authored",
+        "author": "Codex benchmark constructor",
+        "authoredOn": "2026-09-12",
+        "externalConceptualReferences": [],
+        "note": "为本次最终评测原创的中文封闭教材；数据与情境为教学构造，不是外部事实报告。"
+      },
+      "caseIds": [
+        "E037",
+        "E084",
+        "E131",
+        "E158",
+        "E205",
+        "E252",
+        "E900"
+      ]
+    },
+    {
+      "sourceId": "F09",
+      "title": "轮流做家务的工作量",
+      "domain": "rates_and_units",
+      "intendedDepth": "working_fluency",
+      "textCharacters": 803,
+      "textHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051",
+      "provenance": {
+        "kind": "original_authored",
+        "author": "Codex benchmark constructor",
+        "authoredOn": "2026-09-12",
+        "externalConceptualReferences": [],
+        "note": "为本次最终评测原创的中文封闭教材；数据与情境为教学构造，不是外部事实报告。"
+      },
+      "caseIds": [
+        "E178",
+        "E225",
+        "E272",
+        "E027",
+        "E074",
+        "E121",
+        "E289",
+        "E477",
+        "E947"
+      ]
+    },
+    {
+      "sourceId": "F10",
+      "title": "先晾干再装袋的工序",
+      "domain": "everyday_procedure",
+      "intendedDepth": "working_fluency",
+      "textCharacters": 814,
+      "textHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932",
+      "provenance": {
+        "kind": "original_authored",
+        "author": "Codex benchmark constructor",
+        "authoredOn": "2026-09-12",
+        "externalConceptualReferences": [],
+        "note": "为本次最终评测原创的中文封闭教材；数据与情境为教学构造，不是外部事实报告。"
+      },
+      "caseIds": [
+        "E319",
+        "E366",
+        "E413",
+        "E168",
+        "E215",
+        "E262",
+        "E591",
+        "E638",
+        "E685",
+        "E336",
+        "E524",
+        "E994"
+      ]
+    },
+    {
+      "sourceId": "F11",
+      "title": "一条配比线与两条配比线",
+      "domain": "linear_constraints",
+      "intendedDepth": "deep_transfer",
+      "textCharacters": 761,
+      "textHash": "3d467962cceddb9a766ded25aaa2f5d1c9767ee6b9307e50472157ea664b2422",
+      "provenance": {
+        "kind": "original_authored",
+        "author": "Codex benchmark constructor",
+        "authoredOn": "2026-09-12",
+        "externalConceptualReferences": [],
+        "note": "为本次最终评测原创的中文封闭教材；数据与情境为教学构造，不是外部事实报告。"
+      },
+      "caseIds": [
+        "E460",
+        "E507",
+        "E554",
+        "E732",
+        "E779",
+        "E826",
+        "E044"
+      ]
+    },
+    {
+      "sourceId": "F12",
+      "title": "一次检测，两种整体",
+      "domain": "classification_metrics",
+      "intendedDepth": "deep_transfer",
+      "textCharacters": 797,
+      "textHash": "f2f400674bd7889c87f6b67501fb0945c56396dd3c9d5fccf9110cd78642a53e",
+      "provenance": {
+        "kind": "original_authored",
+        "author": "Codex benchmark constructor",
+        "authoredOn": "2026-09-12",
+        "externalConceptualReferences": [],
+        "note": "为本次最终评测原创的中文封闭教材；数据与情境为教学构造，不是外部事实报告。"
+      },
+      "caseIds": [
+        "E601",
+        "E648",
+        "E695",
+        "E299",
+        "E346",
+        "E393",
+        "E091"
+      ]
+    }
+  ]
+}

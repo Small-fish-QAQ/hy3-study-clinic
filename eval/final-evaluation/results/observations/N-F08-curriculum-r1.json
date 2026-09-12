@@ -1,0 +1,369 @@
+{
+  "task": {
+    "caseId": "N-F08-curriculum",
+    "runId": "N-F08-curriculum-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-F08-curriculum.json",
+    "inputHash": "201c3c17908200f0ddef8491ab13c3915bb9ff0db8f96ef584531cb840f76e48",
+    "population": "natural",
+    "sourceId": "F08"
+  },
+  "inputHash": "201c3c17908200f0ddef8491ab13c3915bb9ff0db8f96ef584531cb840f76e48",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "correctness": "a05e61ee34cf6f62afc15b36fd094f003a5ba5baed5e69e3bf051bd7e3fee8f6",
+      "artifact-audit": "a05e61ee34cf6f62afc15b36fd094f003a5ba5baed5e69e3bf051bd7e3fee8f6",
+      "certification": "a05e61ee34cf6f62afc15b36fd094f003a5ba5baed5e69e3bf051bd7e3fee8f6"
+    },
+    "stages": {
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "clear",
+            "affected": [
+              "Q2"
+            ],
+            "reason": "产品 artifacts/1 中四个 objective 描述准确反映 source e3 明示单向规则（星形→蓝，非必要条件）、逆否推断（非蓝→非星形）、反例（非星形蓝卡）、不允许组合（星形与非蓝互斥）及存在区分，未混淆充分/必要、单向/双向；Q2 评价提议课程对注册目标(e5-e7)保留与范围，obj 覆盖充分非必要区分、反例检验、有边界判断，无实质错误。",
+            "refs": [
+              "e3",
+              "e19",
+              "e5",
+              "e6",
+              "e7",
+              "e14"
+            ],
+            "challenge": {
+              "status": "closed",
+              "reason": "固定 e3 明示假设（单向规则无例外，星形→蓝，不限制非星形颜色，圆形蓝卡相容），尝试构造相容反例推翻 obj 结论：使'蓝色必然来自星形'需禁止非星形蓝，矛盾；使'非星形推非蓝成立'同样需限制非星形，矛盾；逆否否定（非蓝且星形）被规则排除。给定事实/规则排除所有使结论失败的相容情况。",
+              "refs": [
+                "e3",
+                "e19"
+              ]
+            },
+            "witnesses": [
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "桌上有一批卡片，每张卡都有形状标记和颜色标记。管理员给出规则：“凡带星形标记的卡片，背面都是蓝色。”为方便讨论，假定这条规则在当前卡片批次没有例外。它说明带星形足以推出背面蓝色，但没有说蓝色只能来自星形。因此，看见一张蓝色卡片时，还不能断定它正面一定有星形；圆形蓝色卡也与规则相容。\n可以把规则理解为一个不允许出现的组合：星形与非蓝色不能同时出现在同一张卡片上。星形蓝色、非星形蓝色、非星形非蓝色都没有被这条规则禁止。列出允许与不允许的组合，能帮助我们看清规则到底排除了什么，而不是凭语言感觉推断。\n若已知某卡背面不是蓝色，就能推出它不是星形。理由是：假如它是星形，规则要求它蓝色，与已经知道的非蓝色矛盾。这种推断保留了原规则的方向。相反，从“不是星形”推出“不是蓝色”不成立，因为规则没有限制非星形卡片的颜色。反例只需给出一张非星形蓝色卡，就足以说明这一推断不是必然的。\n如果规则改为“卡片带星形，当且仅当背面蓝色”，那么同时得到两个方向：星形推出蓝色，蓝色也推出星形。这比原来的单向规则更强。在读取题目时，不能自行把“如果”补成“当且仅当”。日常语言有时省略条件，但本单元只按明示规则判断，不猜测管理员的意图。\n还要区分“可以存在”和“已经存在”。一张圆形蓝色卡与单向规则相容，只能说明这种卡并未被禁止，不能证明盒子里实际至少有一张。若只知道“所有星形卡都蓝色”，甚至不能保证盒子里有星形卡；题目需要另外给出存在信息。“有些蓝色卡是圆形”与“所有蓝色卡是圆形”也不是同一范围。\n练习解释时，先写已有条件，再写所用方向，最后检验是否存在与已知事实相容、却使结论失败的卡片。若能找到这样的组合，结论就不是必然成立；若给定规则和事实排除了所有反例，才可以说必然。这个方法适用于分类与规则阅读，但不把封闭课堂规则直接当成现实事物的普遍规律。",
+                "valueHash": "132c532360b4bc6ac5b2aa8886b4b3bf89c500f85d4e1be08595f9a669823289"
+              },
+              {
+                "id": "e19",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "[{\"id\":\"obj_aa5d95b6-8489-407d-afdc-5454210c62cf\",\"title\":\"区分星形标记规则的单向充分性并识别反向推断谬误与存在区分\",\"description\":\"区分星形标记规则的单向充分性：识别带星形足以推出蓝色但蓝色不必然来自星形（充分条件非必要条件）。识别反向推断谬误：认识从“不是星形”推出“不是蓝色”不成立，因为规则未限制非星形颜色。区分“可以存在”与“已经存在”：规则相容仅说明未禁止，不能证明实际存在，需另给存在信息。\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_cfc13e62-d48a-40d6-8692-8534c6ae57d8\",\"ta_b709ec80-f80e-4667-9ae0-0047c5060a36\"],\"authorityClaimIds\":[\"tac_223bdb8e-614b-4731-8b33-3e3bb94665be\",\"tac_4d767047-4884-4479-b198-b6e4478d9be3\"],\"priority\":\"required\",\"priorityRationale\":\"Capability 1 exact evidence E1 supports identify with formal authority; grouped with related identify capabilities (E4,E6) under unit objective limit to preserve all coverage.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_ebd49014\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_ebd49014\"]},{\"id\":\"obj_70d716a3-d130-4ff6-a360-9ad321e010a6\",\"title\":\"应用逆否推断、有边界判断及必然性检验步骤\",\"description\":\"应用逆否推断：已知卡片背面不是蓝色，推出它不是星形，保留原规则方向。依据单向或双向规则做有边界判断：不把“如果”自行补成“当且仅当”，仅在明示方向内推断。应用检验步骤判断结论必然性：先写条件，再写方向，最后检验是否存在与事实相容却使结论失败的卡片；能找到则非必然，排除则必然。\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_cfc13e62-d48a-40d6-8692-8534c6ae57d8\",\"ta_b709ec80-f80e-4667-9ae0-0047c5060a36\"],\"authorityClaimIds\":[\"tac_a89833f1-df42-48d7-a131-1d4464968cd1\",\"tac_6babde87-7202-4647-bfe6-0897ed983541\"],\"priority\":\"high\",\"priorityRationale\":\"Central apply obligations from learning intent; evidence E3,E5,E7 lack formal apply authority but required for working fluency.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_ebd49014\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_8a8309d2-a8b2-47b4-b2d4-b287e9e86cba\",\"title\":\"构造反例检验逆向推断的必然性\",\"description\":\"构造反例检验逆向推断的必然性：给出非星形蓝色卡作为反例说明该推断非必然。\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"Teaching-only design construct central to contract intent; evidence E15 guides non-required practice.\",\"formalAssessmentConstruct\":\"design\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_a21d3fa5-4a86-40b1-88ad-9f5baf1cccde\",\"title\":\"将单向规则解释为不允许的组合\",\"description\":\"将单向规则解释为不允许的组合：星形与非蓝色不能同时出现，以看清排除什么而非凭语感。\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_cfc13e62-d48a-40d6-8692-8534c6ae57d8\",\"ta_b709ec80-f80e-4667-9ae0-0047c5060a36\"],\"authorityClaimIds\":[\"tac_aaab43ba-7e24-490b-a9c8-dad2494ce001\",\"tac_a4e6c3f9-9b12-42aa-bd39-1839acdc36d9\"],\"priority\":\"high\",\"priorityRationale\":\"Explanatory obligation per capability; evidence E2 formal only for identify but explain needed and taught in source.\",\"formalAssessmentConstruct\":\"explain\",\"authorityEnvelopeTier\":\"narrower_formal\",\"authoritySourceBlockIds\":[\"blk_0_ebd49014\"],\"formalEvidenceSourceBlockIds\":[]}]",
+                "valueHash": "52b77aad440de1f9a1504d7cc0f232cb25e1117f4abd8e6783542163d24205e4"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "区分充分条件与必要条件",
+                "valueHash": "1805ffe40f838b3737e5da1b3372111851e8c6488682205bcbef6ca16d9b82c1"
+              },
+              {
+                "id": "e6",
+                "pointer": "/goals/1",
+                "role": "goal",
+                "kind": "text",
+                "value": "构造反例检验逆向推断",
+                "valueHash": "4b676a6e97edc10f4d2d5b7c4c3496272ee0debe78c66fd3b2143654cf98767f"
+              },
+              {
+                "id": "e7",
+                "pointer": "/goals/2",
+                "role": "goal",
+                "kind": "text",
+                "value": "依据双向规则或单向规则做有边界的判断",
+                "valueHash": "9f04c7f97d911c7a53d18db7b5832d38a7ad28ee668d319ceaa9cb4ade0e0032"
+              },
+              {
+                "id": "e14",
+                "pointer": "/authorityBoundaries/1",
+                "role": "boundary",
+                "kind": "text",
+                "value": "Q2评价提议课程对所注册学习目标的保留和范围；不将尚未发生的教学交付或Formal准入当成已经完成。",
+                "valueHash": "fda6a582e8f32aff1fc754c529607badc828976824498d64a102c9649555f08d"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "kind": "quantities",
+            "status": "not_applicable",
+            "affected": [],
+            "reason": "包中无数值、百分比或单位推导断言，rates 为空数组，artifacts 仅含目标描述无数量计算，故无相关数量核验。",
+            "contextHash": "a05e61ee34cf6f62afc15b36fd094f003a5ba5baed5e69e3bf051bd7e3fee8f6",
+            "proposed": {
+              "kind": "quantities",
+              "status": "not_applicable",
+              "affected": [],
+              "reason": "包中无数值、百分比或单位推导断言，rates 为空数组，artifacts 仅含目标描述无数量计算，故无相关数量核验。",
+              "refs": [
+                "e15",
+                "e19"
+              ]
+            },
+            "reviewReasons": []
+          }
+        ],
+        "keys": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 2,
+            "reason": "产物 objectives (e19) 中 obj_aa5d95b6 覆盖 goal0 (e5) 区分充分条件与必要条件，忠实于源 e3 单向充分性讲解；obj_8a8309d2 覆盖 goal1 (e6) 构造反例，与 e3 非星形蓝色卡反例一致；obj_70d716a3 覆盖 goal2 (e7) 有边界判断，与 e3 不自行补成当且仅当一致。三个注册必要目标均有忠实可用处理，无消失、扭曲或静默削弱，满足 Q2 的 level 2 标准（不依赖未发生的 formal 准入）。",
+            "refs": [
+              "e19",
+              "e5",
+              "e6",
+              "e7",
+              "e3"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e19",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "[{\"id\":\"obj_aa5d95b6-8489-407d-afdc-5454210c62cf\",\"title\":\"区分星形标记规则的单向充分性并识别反向推断谬误与存在区分\",\"description\":\"区分星形标记规则的单向充分性：识别带星形足以推出蓝色但蓝色不必然来自星形（充分条件非必要条件）。识别反向推断谬误：认识从“不是星形”推出“不是蓝色”不成立，因为规则未限制非星形颜色。区分“可以存在”与“已经存在”：规则相容仅说明未禁止，不能证明实际存在，需另给存在信息。\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_cfc13e62-d48a-40d6-8692-8534c6ae57d8\",\"ta_b709ec80-f80e-4667-9ae0-0047c5060a36\"],\"authorityClaimIds\":[\"tac_223bdb8e-614b-4731-8b33-3e3bb94665be\",\"tac_4d767047-4884-4479-b198-b6e4478d9be3\"],\"priority\":\"required\",\"priorityRationale\":\"Capability 1 exact evidence E1 supports identify with formal authority; grouped with related identify capabilities (E4,E6) under unit objective limit to preserve all coverage.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_ebd49014\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_ebd49014\"]},{\"id\":\"obj_70d716a3-d130-4ff6-a360-9ad321e010a6\",\"title\":\"应用逆否推断、有边界判断及必然性检验步骤\",\"description\":\"应用逆否推断：已知卡片背面不是蓝色，推出它不是星形，保留原规则方向。依据单向或双向规则做有边界判断：不把“如果”自行补成“当且仅当”，仅在明示方向内推断。应用检验步骤判断结论必然性：先写条件，再写方向，最后检验是否存在与事实相容却使结论失败的卡片；能找到则非必然，排除则必然。\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_cfc13e62-d48a-40d6-8692-8534c6ae57d8\",\"ta_b709ec80-f80e-4667-9ae0-0047c5060a36\"],\"authorityClaimIds\":[\"tac_a89833f1-df42-48d7-a131-1d4464968cd1\",\"tac_6babde87-7202-4647-bfe6-0897ed983541\"],\"priority\":\"high\",\"priorityRationale\":\"Central apply obligations from learning intent; evidence E3,E5,E7 lack formal apply authority but required for working fluency.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_ebd49014\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_8a8309d2-a8b2-47b4-b2d4-b287e9e86cba\",\"title\":\"构造反例检验逆向推断的必然性\",\"description\":\"构造反例检验逆向推断的必然性：给出非星形蓝色卡作为反例说明该推断非必然。\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"Teaching-only design construct central to contract intent; evidence E15 guides non-required practice.\",\"formalAssessmentConstruct\":\"design\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_a21d3fa5-4a86-40b1-88ad-9f5baf1cccde\",\"title\":\"将单向规则解释为不允许的组合\",\"description\":\"将单向规则解释为不允许的组合：星形与非蓝色不能同时出现，以看清排除什么而非凭语感。\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_cfc13e62-d48a-40d6-8692-8534c6ae57d8\",\"ta_b709ec80-f80e-4667-9ae0-0047c5060a36\"],\"authorityClaimIds\":[\"tac_aaab43ba-7e24-490b-a9c8-dad2494ce001\",\"tac_a4e6c3f9-9b12-42aa-bd39-1839acdc36d9\"],\"priority\":\"high\",\"priorityRationale\":\"Explanatory obligation per capability; evidence E2 formal only for identify but explain needed and taught in source.\",\"formalAssessmentConstruct\":\"explain\",\"authorityEnvelopeTier\":\"narrower_formal\",\"authoritySourceBlockIds\":[\"blk_0_ebd49014\"],\"formalEvidenceSourceBlockIds\":[]}]",
+                "valueHash": "52b77aad440de1f9a1504d7cc0f232cb25e1117f4abd8e6783542163d24205e4"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "区分充分条件与必要条件",
+                "valueHash": "1805ffe40f838b3737e5da1b3372111851e8c6488682205bcbef6ca16d9b82c1"
+              },
+              {
+                "id": "e6",
+                "pointer": "/goals/1",
+                "role": "goal",
+                "kind": "text",
+                "value": "构造反例检验逆向推断",
+                "valueHash": "4b676a6e97edc10f4d2d5b7c4c3496272ee0debe78c66fd3b2143654cf98767f"
+              },
+              {
+                "id": "e7",
+                "pointer": "/goals/2",
+                "role": "goal",
+                "kind": "text",
+                "value": "依据双向规则或单向规则做有边界的判断",
+                "valueHash": "9f04c7f97d911c7a53d18db7b5832d38a7ad28ee668d319ceaa9cb4ade0e0032"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "桌上有一批卡片，每张卡都有形状标记和颜色标记。管理员给出规则：“凡带星形标记的卡片，背面都是蓝色。”为方便讨论，假定这条规则在当前卡片批次没有例外。它说明带星形足以推出背面蓝色，但没有说蓝色只能来自星形。因此，看见一张蓝色卡片时，还不能断定它正面一定有星形；圆形蓝色卡也与规则相容。\n可以把规则理解为一个不允许出现的组合：星形与非蓝色不能同时出现在同一张卡片上。星形蓝色、非星形蓝色、非星形非蓝色都没有被这条规则禁止。列出允许与不允许的组合，能帮助我们看清规则到底排除了什么，而不是凭语言感觉推断。\n若已知某卡背面不是蓝色，就能推出它不是星形。理由是：假如它是星形，规则要求它蓝色，与已经知道的非蓝色矛盾。这种推断保留了原规则的方向。相反，从“不是星形”推出“不是蓝色”不成立，因为规则没有限制非星形卡片的颜色。反例只需给出一张非星形蓝色卡，就足以说明这一推断不是必然的。\n如果规则改为“卡片带星形，当且仅当背面蓝色”，那么同时得到两个方向：星形推出蓝色，蓝色也推出星形。这比原来的单向规则更强。在读取题目时，不能自行把“如果”补成“当且仅当”。日常语言有时省略条件，但本单元只按明示规则判断，不猜测管理员的意图。\n还要区分“可以存在”和“已经存在”。一张圆形蓝色卡与单向规则相容，只能说明这种卡并未被禁止，不能证明盒子里实际至少有一张。若只知道“所有星形卡都蓝色”，甚至不能保证盒子里有星形卡；题目需要另外给出存在信息。“有些蓝色卡是圆形”与“所有蓝色卡是圆形”也不是同一范围。\n练习解释时，先写已有条件，再写所用方向，最后检验是否存在与已知事实相容、却使结论失败的卡片。若能找到这样的组合，结论就不是必然成立；若给定规则和事实排除了所有反例，才可以说必然。这个方法适用于分类与规则阅读，但不把封闭课堂规则直接当成现实事物的普遍规律。",
+                "valueHash": "132c532360b4bc6ac5b2aa8886b4b3bf89c500f85d4e1be08595f9a669823289"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q2",
+            "status": "supported",
+            "reason": "产物 objectives (e19) 中 obj_aa5d95b6/obj_8a8309d2/obj_70d716a3 分别忠实覆盖注册目标 e5/e6/e7，与源 e3 单向规则、反例、有边界判断一致，无目标消失或扭曲，满足 Q2 level2 且不依赖未发生 formal 准入 (e14)。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e19",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "[{\"id\":\"obj_aa5d95b6-8489-407d-afdc-5454210c62cf\",\"title\":\"区分星形标记规则的单向充分性并识别反向推断谬误与存在区分\",\"description\":\"区分星形标记规则的单向充分性：识别带星形足以推出蓝色但蓝色不必然来自星形（充分条件非必要条件）。识别反向推断谬误：认识从“不是星形”推出“不是蓝色”不成立，因为规则未限制非星形颜色。区分“可以存在”与“已经存在”：规则相容仅说明未禁止，不能证明实际存在，需另给存在信息。\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_cfc13e62-d48a-40d6-8692-8534c6ae57d8\",\"ta_b709ec80-f80e-4667-9ae0-0047c5060a36\"],\"authorityClaimIds\":[\"tac_223bdb8e-614b-4731-8b33-3e3bb94665be\",\"tac_4d767047-4884-4479-b198-b6e4478d9be3\"],\"priority\":\"required\",\"priorityRationale\":\"Capability 1 exact evidence E1 supports identify with formal authority; grouped with related identify capabilities (E4,E6) under unit objective limit to preserve all coverage.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_ebd49014\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_ebd49014\"]},{\"id\":\"obj_70d716a3-d130-4ff6-a360-9ad321e010a6\",\"title\":\"应用逆否推断、有边界判断及必然性检验步骤\",\"description\":\"应用逆否推断：已知卡片背面不是蓝色，推出它不是星形，保留原规则方向。依据单向或双向规则做有边界判断：不把“如果”自行补成“当且仅当”，仅在明示方向内推断。应用检验步骤判断结论必然性：先写条件，再写方向，最后检验是否存在与事实相容却使结论失败的卡片；能找到则非必然，排除则必然。\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_cfc13e62-d48a-40d6-8692-8534c6ae57d8\",\"ta_b709ec80-f80e-4667-9ae0-0047c5060a36\"],\"authorityClaimIds\":[\"tac_a89833f1-df42-48d7-a131-1d4464968cd1\",\"tac_6babde87-7202-4647-bfe6-0897ed983541\"],\"priority\":\"high\",\"priorityRationale\":\"Central apply obligations from learning intent; evidence E3,E5,E7 lack formal apply authority but required for working fluency.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_ebd49014\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_8a8309d2-a8b2-47b4-b2d4-b287e9e86cba\",\"title\":\"构造反例检验逆向推断的必然性\",\"description\":\"构造反例检验逆向推断的必然性：给出非星形蓝色卡作为反例说明该推断非必然。\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"Teaching-only design construct central to contract intent; evidence E15 guides non-required practice.\",\"formalAssessmentConstruct\":\"design\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_a21d3fa5-4a86-40b1-88ad-9f5baf1cccde\",\"title\":\"将单向规则解释为不允许的组合\",\"description\":\"将单向规则解释为不允许的组合：星形与非蓝色不能同时出现，以看清排除什么而非凭语感。\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_cfc13e62-d48a-40d6-8692-8534c6ae57d8\",\"ta_b709ec80-f80e-4667-9ae0-0047c5060a36\"],\"authorityClaimIds\":[\"tac_aaab43ba-7e24-490b-a9c8-dad2494ce001\",\"tac_a4e6c3f9-9b12-42aa-bd39-1839acdc36d9\"],\"priority\":\"high\",\"priorityRationale\":\"Explanatory obligation per capability; evidence E2 formal only for identify but explain needed and taught in source.\",\"formalAssessmentConstruct\":\"explain\",\"authorityEnvelopeTier\":\"narrower_formal\",\"authoritySourceBlockIds\":[\"blk_0_ebd49014\"],\"formalEvidenceSourceBlockIds\":[]}]",
+                "valueHash": "52b77aad440de1f9a1504d7cc0f232cb25e1117f4abd8e6783542163d24205e4"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "桌上有一批卡片，每张卡都有形状标记和颜色标记。管理员给出规则：“凡带星形标记的卡片，背面都是蓝色。”为方便讨论，假定这条规则在当前卡片批次没有例外。它说明带星形足以推出背面蓝色，但没有说蓝色只能来自星形。因此，看见一张蓝色卡片时，还不能断定它正面一定有星形；圆形蓝色卡也与规则相容。\n可以把规则理解为一个不允许出现的组合：星形与非蓝色不能同时出现在同一张卡片上。星形蓝色、非星形蓝色、非星形非蓝色都没有被这条规则禁止。列出允许与不允许的组合，能帮助我们看清规则到底排除了什么，而不是凭语言感觉推断。\n若已知某卡背面不是蓝色，就能推出它不是星形。理由是：假如它是星形，规则要求它蓝色，与已经知道的非蓝色矛盾。这种推断保留了原规则的方向。相反，从“不是星形”推出“不是蓝色”不成立，因为规则没有限制非星形卡片的颜色。反例只需给出一张非星形蓝色卡，就足以说明这一推断不是必然的。\n如果规则改为“卡片带星形，当且仅当背面蓝色”，那么同时得到两个方向：星形推出蓝色，蓝色也推出星形。这比原来的单向规则更强。在读取题目时，不能自行把“如果”补成“当且仅当”。日常语言有时省略条件，但本单元只按明示规则判断，不猜测管理员的意图。\n还要区分“可以存在”和“已经存在”。一张圆形蓝色卡与单向规则相容，只能说明这种卡并未被禁止，不能证明盒子里实际至少有一张。若只知道“所有星形卡都蓝色”，甚至不能保证盒子里有星形卡；题目需要另外给出存在信息。“有些蓝色卡是圆形”与“所有蓝色卡是圆形”也不是同一范围。\n练习解释时，先写已有条件，再写所用方向，最后检验是否存在与已知事实相容、却使结论失败的卡片。若能找到这样的组合，结论就不是必然成立；若给定规则和事实排除了所有反例，才可以说必然。这个方法适用于分类与规则阅读，但不把封闭课堂规则直接当成现实事物的普遍规律。",
+                "valueHash": "132c532360b4bc6ac5b2aa8886b4b3bf89c500f85d4e1be08595f9a669823289"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "区分充分条件与必要条件",
+                "valueHash": "1805ffe40f838b3737e5da1b3372111851e8c6488682205bcbef6ca16d9b82c1"
+              },
+              {
+                "id": "e6",
+                "pointer": "/goals/1",
+                "role": "goal",
+                "kind": "text",
+                "value": "构造反例检验逆向推断",
+                "valueHash": "4b676a6e97edc10f4d2d5b7c4c3496272ee0debe78c66fd3b2143654cf98767f"
+              },
+              {
+                "id": "e7",
+                "pointer": "/goals/2",
+                "role": "goal",
+                "kind": "text",
+                "value": "依据双向规则或单向规则做有边界的判断",
+                "valueHash": "9f04c7f97d911c7a53d18db7b5832d38a7ad28ee668d319ceaa9cb4ade0e0032"
+              },
+              {
+                "id": "e14",
+                "pointer": "/authorityBoundaries/1",
+                "role": "boundary",
+                "kind": "text",
+                "value": "Q2评价提议课程对所注册学习目标的保留和范围；不将尚未发生的教学交付或Formal准入当成已经完成。",
+                "valueHash": "fda6a582e8f32aff1fc754c529607badc828976824498d64a102c9649555f08d"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q2",
+          "level": 2,
+          "reason": "产物 objectives (e19) 中 obj_aa5d95b6 覆盖 goal0 (e5) 区分充分条件与必要条件，忠实于源 e3 单向充分性讲解；obj_8a8309d2 覆盖 goal1 (e6) 构造反例，与 e3 非星形蓝色卡反例一致；obj_70d716a3 覆盖 goal2 (e7) 有边界判断，与 e3 不自行补成当且仅当一致。三个注册必要目标均有忠实可用处理，无消失、扭曲或静默削弱，满足 Q2 的 level 2 标准（不依赖未发生的 formal 准入）。",
+          "refs": [
+            "e19",
+            "e5",
+            "e6",
+            "e7",
+            "e3"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e19",
+              "pointer": "/artifacts/1/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "[{\"id\":\"obj_aa5d95b6-8489-407d-afdc-5454210c62cf\",\"title\":\"区分星形标记规则的单向充分性并识别反向推断谬误与存在区分\",\"description\":\"区分星形标记规则的单向充分性：识别带星形足以推出蓝色但蓝色不必然来自星形（充分条件非必要条件）。识别反向推断谬误：认识从“不是星形”推出“不是蓝色”不成立，因为规则未限制非星形颜色。区分“可以存在”与“已经存在”：规则相容仅说明未禁止，不能证明实际存在，需另给存在信息。\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_cfc13e62-d48a-40d6-8692-8534c6ae57d8\",\"ta_b709ec80-f80e-4667-9ae0-0047c5060a36\"],\"authorityClaimIds\":[\"tac_223bdb8e-614b-4731-8b33-3e3bb94665be\",\"tac_4d767047-4884-4479-b198-b6e4478d9be3\"],\"priority\":\"required\",\"priorityRationale\":\"Capability 1 exact evidence E1 supports identify with formal authority; grouped with related identify capabilities (E4,E6) under unit objective limit to preserve all coverage.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_ebd49014\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_ebd49014\"]},{\"id\":\"obj_70d716a3-d130-4ff6-a360-9ad321e010a6\",\"title\":\"应用逆否推断、有边界判断及必然性检验步骤\",\"description\":\"应用逆否推断：已知卡片背面不是蓝色，推出它不是星形，保留原规则方向。依据单向或双向规则做有边界判断：不把“如果”自行补成“当且仅当”，仅在明示方向内推断。应用检验步骤判断结论必然性：先写条件，再写方向，最后检验是否存在与事实相容却使结论失败的卡片；能找到则非必然，排除则必然。\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_cfc13e62-d48a-40d6-8692-8534c6ae57d8\",\"ta_b709ec80-f80e-4667-9ae0-0047c5060a36\"],\"authorityClaimIds\":[\"tac_a89833f1-df42-48d7-a131-1d4464968cd1\",\"tac_6babde87-7202-4647-bfe6-0897ed983541\"],\"priority\":\"high\",\"priorityRationale\":\"Central apply obligations from learning intent; evidence E3,E5,E7 lack formal apply authority but required for working fluency.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_ebd49014\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_8a8309d2-a8b2-47b4-b2d4-b287e9e86cba\",\"title\":\"构造反例检验逆向推断的必然性\",\"description\":\"构造反例检验逆向推断的必然性：给出非星形蓝色卡作为反例说明该推断非必然。\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"Teaching-only design construct central to contract intent; evidence E15 guides non-required practice.\",\"formalAssessmentConstruct\":\"design\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_a21d3fa5-4a86-40b1-88ad-9f5baf1cccde\",\"title\":\"将单向规则解释为不允许的组合\",\"description\":\"将单向规则解释为不允许的组合：星形与非蓝色不能同时出现，以看清排除什么而非凭语感。\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_cfc13e62-d48a-40d6-8692-8534c6ae57d8\",\"ta_b709ec80-f80e-4667-9ae0-0047c5060a36\"],\"authorityClaimIds\":[\"tac_aaab43ba-7e24-490b-a9c8-dad2494ce001\",\"tac_a4e6c3f9-9b12-42aa-bd39-1839acdc36d9\"],\"priority\":\"high\",\"priorityRationale\":\"Explanatory obligation per capability; evidence E2 formal only for identify but explain needed and taught in source.\",\"formalAssessmentConstruct\":\"explain\",\"authorityEnvelopeTier\":\"narrower_formal\",\"authoritySourceBlockIds\":[\"blk_0_ebd49014\"],\"formalEvidenceSourceBlockIds\":[]}]",
+              "valueHash": "52b77aad440de1f9a1504d7cc0f232cb25e1117f4abd8e6783542163d24205e4"
+            },
+            {
+              "id": "e5",
+              "pointer": "/goals/0",
+              "role": "goal",
+              "kind": "text",
+              "value": "区分充分条件与必要条件",
+              "valueHash": "1805ffe40f838b3737e5da1b3372111851e8c6488682205bcbef6ca16d9b82c1"
+            },
+            {
+              "id": "e6",
+              "pointer": "/goals/1",
+              "role": "goal",
+              "kind": "text",
+              "value": "构造反例检验逆向推断",
+              "valueHash": "4b676a6e97edc10f4d2d5b7c4c3496272ee0debe78c66fd3b2143654cf98767f"
+            },
+            {
+              "id": "e7",
+              "pointer": "/goals/2",
+              "role": "goal",
+              "kind": "text",
+              "value": "依据双向规则或单向规则做有边界的判断",
+              "valueHash": "9f04c7f97d911c7a53d18db7b5832d38a7ad28ee668d319ceaa9cb4ade0e0032"
+            },
+            {
+              "id": "e3",
+              "pointer": "/sources/0/text",
+              "role": "source",
+              "kind": "text",
+              "value": "桌上有一批卡片，每张卡都有形状标记和颜色标记。管理员给出规则：“凡带星形标记的卡片，背面都是蓝色。”为方便讨论，假定这条规则在当前卡片批次没有例外。它说明带星形足以推出背面蓝色，但没有说蓝色只能来自星形。因此，看见一张蓝色卡片时，还不能断定它正面一定有星形；圆形蓝色卡也与规则相容。\n可以把规则理解为一个不允许出现的组合：星形与非蓝色不能同时出现在同一张卡片上。星形蓝色、非星形蓝色、非星形非蓝色都没有被这条规则禁止。列出允许与不允许的组合，能帮助我们看清规则到底排除了什么，而不是凭语言感觉推断。\n若已知某卡背面不是蓝色，就能推出它不是星形。理由是：假如它是星形，规则要求它蓝色，与已经知道的非蓝色矛盾。这种推断保留了原规则的方向。相反，从“不是星形”推出“不是蓝色”不成立，因为规则没有限制非星形卡片的颜色。反例只需给出一张非星形蓝色卡，就足以说明这一推断不是必然的。\n如果规则改为“卡片带星形，当且仅当背面蓝色”，那么同时得到两个方向：星形推出蓝色，蓝色也推出星形。这比原来的单向规则更强。在读取题目时，不能自行把“如果”补成“当且仅当”。日常语言有时省略条件，但本单元只按明示规则判断，不猜测管理员的意图。\n还要区分“可以存在”和“已经存在”。一张圆形蓝色卡与单向规则相容，只能说明这种卡并未被禁止，不能证明盒子里实际至少有一张。若只知道“所有星形卡都蓝色”，甚至不能保证盒子里有星形卡；题目需要另外给出存在信息。“有些蓝色卡是圆形”与“所有蓝色卡是圆形”也不是同一范围。\n练习解释时，先写已有条件，再写所用方向，最后检验是否存在与已知事实相容、却使结论失败的卡片。若能找到这样的组合，结论就不是必然成立；若给定规则和事实排除了所有反例，才可以说必然。这个方法适用于分类与规则阅读，但不把封闭课堂规则直接当成现实事物的普遍规律。",
+              "valueHash": "132c532360b4bc6ac5b2aa8886b4b3bf89c500f85d4e1be08595f9a669823289"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [],
+          "proposedLevel": 2,
+          "proposedReason": "产物 objectives (e19) 中 obj_aa5d95b6 覆盖 goal0 (e5) 区分充分条件与必要条件，忠实于源 e3 单向充分性讲解；obj_8a8309d2 覆盖 goal1 (e6) 构造反例，与 e3 非星形蓝色卡反例一致；obj_70d716a3 覆盖 goal2 (e7) 有边界判断，与 e3 不自行补成当且仅当一致。三个注册必要目标均有忠实可用处理，无消失、扭曲或静默削弱，满足 Q2 的 level 2 标准（不依赖未发生的 formal 准入）。"
+        }
+      ],
+      "reviewRequired": [],
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q2",
+            "status": "supported",
+            "reason": "产物 objectives (e19) 中 obj_aa5d95b6/obj_8a8309d2/obj_70d716a3 分别忠实覆盖注册目标 e5/e6/e7，与源 e3 单向规则、反例、有边界判断一致，无目标消失或扭曲，满足 Q2 level2 且不依赖未发生 formal 准入 (e14)。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e19",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "[{\"id\":\"obj_aa5d95b6-8489-407d-afdc-5454210c62cf\",\"title\":\"区分星形标记规则的单向充分性并识别反向推断谬误与存在区分\",\"description\":\"区分星形标记规则的单向充分性：识别带星形足以推出蓝色但蓝色不必然来自星形（充分条件非必要条件）。识别反向推断谬误：认识从“不是星形”推出“不是蓝色”不成立，因为规则未限制非星形颜色。区分“可以存在”与“已经存在”：规则相容仅说明未禁止，不能证明实际存在，需另给存在信息。\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_cfc13e62-d48a-40d6-8692-8534c6ae57d8\",\"ta_b709ec80-f80e-4667-9ae0-0047c5060a36\"],\"authorityClaimIds\":[\"tac_223bdb8e-614b-4731-8b33-3e3bb94665be\",\"tac_4d767047-4884-4479-b198-b6e4478d9be3\"],\"priority\":\"required\",\"priorityRationale\":\"Capability 1 exact evidence E1 supports identify with formal authority; grouped with related identify capabilities (E4,E6) under unit objective limit to preserve all coverage.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_ebd49014\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_ebd49014\"]},{\"id\":\"obj_70d716a3-d130-4ff6-a360-9ad321e010a6\",\"title\":\"应用逆否推断、有边界判断及必然性检验步骤\",\"description\":\"应用逆否推断：已知卡片背面不是蓝色，推出它不是星形，保留原规则方向。依据单向或双向规则做有边界判断：不把“如果”自行补成“当且仅当”，仅在明示方向内推断。应用检验步骤判断结论必然性：先写条件，再写方向，最后检验是否存在与事实相容却使结论失败的卡片；能找到则非必然，排除则必然。\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_cfc13e62-d48a-40d6-8692-8534c6ae57d8\",\"ta_b709ec80-f80e-4667-9ae0-0047c5060a36\"],\"authorityClaimIds\":[\"tac_a89833f1-df42-48d7-a131-1d4464968cd1\",\"tac_6babde87-7202-4647-bfe6-0897ed983541\"],\"priority\":\"high\",\"priorityRationale\":\"Central apply obligations from learning intent; evidence E3,E5,E7 lack formal apply authority but required for working fluency.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_ebd49014\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_8a8309d2-a8b2-47b4-b2d4-b287e9e86cba\",\"title\":\"构造反例检验逆向推断的必然性\",\"description\":\"构造反例检验逆向推断的必然性：给出非星形蓝色卡作为反例说明该推断非必然。\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"Teaching-only design construct central to contract intent; evidence E15 guides non-required practice.\",\"formalAssessmentConstruct\":\"design\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_a21d3fa5-4a86-40b1-88ad-9f5baf1cccde\",\"title\":\"将单向规则解释为不允许的组合\",\"description\":\"将单向规则解释为不允许的组合：星形与非蓝色不能同时出现，以看清排除什么而非凭语感。\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_cfc13e62-d48a-40d6-8692-8534c6ae57d8\",\"ta_b709ec80-f80e-4667-9ae0-0047c5060a36\"],\"authorityClaimIds\":[\"tac_aaab43ba-7e24-490b-a9c8-dad2494ce001\",\"tac_a4e6c3f9-9b12-42aa-bd39-1839acdc36d9\"],\"priority\":\"high\",\"priorityRationale\":\"Explanatory obligation per capability; evidence E2 formal only for identify but explain needed and taught in source.\",\"formalAssessmentConstruct\":\"explain\",\"authorityEnvelopeTier\":\"narrower_formal\",\"authoritySourceBlockIds\":[\"blk_0_ebd49014\"],\"formalEvidenceSourceBlockIds\":[]}]",
+                "valueHash": "52b77aad440de1f9a1504d7cc0f232cb25e1117f4abd8e6783542163d24205e4"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "桌上有一批卡片，每张卡都有形状标记和颜色标记。管理员给出规则：“凡带星形标记的卡片，背面都是蓝色。”为方便讨论，假定这条规则在当前卡片批次没有例外。它说明带星形足以推出背面蓝色，但没有说蓝色只能来自星形。因此，看见一张蓝色卡片时，还不能断定它正面一定有星形；圆形蓝色卡也与规则相容。\n可以把规则理解为一个不允许出现的组合：星形与非蓝色不能同时出现在同一张卡片上。星形蓝色、非星形蓝色、非星形非蓝色都没有被这条规则禁止。列出允许与不允许的组合，能帮助我们看清规则到底排除了什么，而不是凭语言感觉推断。\n若已知某卡背面不是蓝色，就能推出它不是星形。理由是：假如它是星形，规则要求它蓝色，与已经知道的非蓝色矛盾。这种推断保留了原规则的方向。相反，从“不是星形”推出“不是蓝色”不成立，因为规则没有限制非星形卡片的颜色。反例只需给出一张非星形蓝色卡，就足以说明这一推断不是必然的。\n如果规则改为“卡片带星形，当且仅当背面蓝色”，那么同时得到两个方向：星形推出蓝色，蓝色也推出星形。这比原来的单向规则更强。在读取题目时，不能自行把“如果”补成“当且仅当”。日常语言有时省略条件，但本单元只按明示规则判断，不猜测管理员的意图。\n还要区分“可以存在”和“已经存在”。一张圆形蓝色卡与单向规则相容，只能说明这种卡并未被禁止，不能证明盒子里实际至少有一张。若只知道“所有星形卡都蓝色”，甚至不能保证盒子里有星形卡；题目需要另外给出存在信息。“有些蓝色卡是圆形”与“所有蓝色卡是圆形”也不是同一范围。\n练习解释时，先写已有条件，再写所用方向，最后检验是否存在与已知事实相容、却使结论失败的卡片。若能找到这样的组合，结论就不是必然成立；若给定规则和事实排除了所有反例，才可以说必然。这个方法适用于分类与规则阅读，但不把封闭课堂规则直接当成现实事物的普遍规律。",
+                "valueHash": "132c532360b4bc6ac5b2aa8886b4b3bf89c500f85d4e1be08595f9a669823289"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "区分充分条件与必要条件",
+                "valueHash": "1805ffe40f838b3737e5da1b3372111851e8c6488682205bcbef6ca16d9b82c1"
+              },
+              {
+                "id": "e6",
+                "pointer": "/goals/1",
+                "role": "goal",
+                "kind": "text",
+                "value": "构造反例检验逆向推断",
+                "valueHash": "4b676a6e97edc10f4d2d5b7c4c3496272ee0debe78c66fd3b2143654cf98767f"
+              },
+              {
+                "id": "e7",
+                "pointer": "/goals/2",
+                "role": "goal",
+                "kind": "text",
+                "value": "依据双向规则或单向规则做有边界的判断",
+                "valueHash": "9f04c7f97d911c7a53d18db7b5832d38a7ad28ee668d319ceaa9cb4ade0e0032"
+              },
+              {
+                "id": "e14",
+                "pointer": "/authorityBoundaries/1",
+                "role": "boundary",
+                "kind": "text",
+                "value": "Q2评价提议课程对所注册学习目标的保留和范围；不将尚未发生的教学交付或Formal准入当成已经完成。",
+                "valueHash": "fda6a582e8f32aff1fc754c529607badc828976824498d64a102c9649555f08d"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "resultHash": "2d1c4abb1b2368301e4d66305a1a6dcb6f44c39d7c9dc42611c9e258bd3fae1b"
+  }
+}

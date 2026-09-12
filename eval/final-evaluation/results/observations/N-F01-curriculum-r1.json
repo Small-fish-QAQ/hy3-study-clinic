@@ -1,0 +1,232 @@
+{
+  "task": {
+    "caseId": "N-F01-curriculum",
+    "runId": "N-F01-curriculum-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-F01-curriculum.json",
+    "inputHash": "915055513d43a04a877aed23278a68d8d1ff8cd35b3600ef47867c2ad6392b2d",
+    "population": "natural",
+    "sourceId": "F01"
+  },
+  "inputHash": "915055513d43a04a877aed23278a68d8d1ff8cd35b3600ef47867c2ad6392b2d",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "correctness": "0d70f7ce95edc76560eb46a3231e21e6754f6330dffa10d00903b442b73f92b3",
+      "artifact-audit": "0d70f7ce95edc76560eb46a3231e21e6754f6330dffa10d00903b442b73f92b3"
+    },
+    "stages": {
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "uncertain",
+            "affected": [
+              "Q2"
+            ],
+            "reason": "The counterexample check is not established.",
+            "proposed": {
+              "kind": "conditions",
+              "status": "clear",
+              "affected": [
+                "Q2"
+              ],
+              "reason": "artifact objectives (e18/e19) 将源F01(e3)教学条件总结为目标：obj_1f08f5c4 保留“部分≠全体”“将讨论≠已决定”界限，与e3第一段一致；obj_3709083a 含“不把相关改写因果、不外推部分意见为全体、不把人次写作不同居民”等，对应e3中规则。源材料明确定义独立人数未给出(e3第三段)、无比较依据不能写因果(e3第四段)，artifact在锚定源内省略必要条件但未改变该源事实下的结论，属局部收窄而非实质错误，目标覆盖goals(e5-e7)且保留范围。",
+              "refs": [
+                "e18",
+                "e19",
+                "e3",
+                "e5",
+                "e6",
+                "e7"
+              ],
+              "challenge": {
+                "status": "closed",
+                "reason": "固定源事实：e3明确“同一个人来两次会被记两次”“没有统计其他时段”“独立人数没有给出”，教学点以“若…没有比较或其他依据”为前提。补充独立人数已知或存在比较依据的反例会直接矛盾已给事实，故被排除；原目标在锚定源中结论成立。",
+                "refs": [
+                  "e3"
+                ]
+              }
+            },
+            "reviewReasons": [
+              "CONDITIONS_CHALLENGE_UNGROUNDED"
+            ]
+          },
+          {
+            "kind": "quantities",
+            "status": "not_applicable",
+            "affected": [],
+            "reason": "待评artifact为课程目标定义(objectives)，无数值演算、单位转换或比率应用断言；Q2评价保留与范围，不涉及数量重算。",
+            "contextHash": "0d70f7ce95edc76560eb46a3231e21e6754f6330dffa10d00903b442b73f92b3",
+            "proposed": {
+              "kind": "quantities",
+              "status": "not_applicable",
+              "affected": [],
+              "reason": "待评artifact为课程目标定义(objectives)，无数值演算、单位转换或比率应用断言；Q2评价保留与范围，不涉及数量重算。",
+              "refs": [
+                "e18",
+                "e19"
+              ]
+            },
+            "reviewReasons": []
+          }
+        ],
+        "keys": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 2,
+            "reason": "产物 artifacts/objectives (e19) 定义 obj_1 覆盖 goal0 (e5) 区分事实/建议/未知及界限，描述忠实于来源 e3 的识别要求；obj_2 覆盖 goal1 (e6) 写保留限制的简短摘要与 goal2 (e7) 用原文支持避免因果改写，其描述的三步自检、限制与证据分离等与 e3 一致。声明范围内的三个目标均获保留且未扭曲或削弱，满足至少2个基本目标有忠实可用处理。",
+            "refs": [
+              "e19",
+              "e5",
+              "e6",
+              "e7"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e19",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "[{\"id\":\"obj_1f08f5c4-0032-4f61-b5be-3739ed41d358\",\"title\":\"识别句子为事实、意见、建议或未知及界限\",\"description\":\"识别句子为事实、意见、建议或未知，并注意“部分读者认为”不等于“全体读者同意”、“将讨论”不等于“已经决定”的界限\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_1183928e-453d-439e-a6ea-075180c5eaa9\",\"ta_6ef9eebc-c481-4495-a031-864445849fc8\"],\"authorityClaimIds\":[\"tac_b13825be-4287-45b4-9f78-ba13bc55ddfd\",\"tac_2e8d50c2-15ee-4975-92d8-646958bfe565\"],\"priority\":\"required\",\"priorityRationale\":\"证据E1自身信封支持identify正式构念，且为覆盖要求的核心识别能力\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_d3f9fdaf\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_d3f9fdaf\"]},{\"id\":\"obj_3709083a-b885-446f-ac18-65ddb882c881\",\"title\":\"应用三步自检写出忠实简短摘要\",\"description\":\"应用三步自检写出忠实简短摘要：标类、写清数字单位对象、回原文找依据；压缩修辞但不删改变结论的对象/时间/限制；面向未读者标明“已发生”和“待决定”；引用原文须真支持且证据与解释分开；不把相关改写因果、不外推部分意见为全体、不把人次写作不同居民\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"学习者合同要求应用写出摘要，但所列证据均无正式权威，保留apply教学优先级以覆盖核心应用能力而不降格为explain\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]}]",
+                "valueHash": "9fa95872287baa9564c010fe207c0f8f0a03af064a9fc524e86994a50c845c79"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "区分事实、建议与未确定信息",
+                "valueHash": "8d6e200be6eb9670df93c957bebaac15354cf2e4097bf4db6cfa3b5b526f4dd2"
+              },
+              {
+                "id": "e6",
+                "pointer": "/goals/1",
+                "role": "goal",
+                "kind": "text",
+                "value": "写出保留范围和限制的简短摘要",
+                "valueHash": "3ef3aa9e140319b1c8c0410461e6947f397de783c593a71766e570a9431013c6"
+              },
+              {
+                "id": "e7",
+                "pointer": "/goals/2",
+                "role": "goal",
+                "kind": "text",
+                "value": "用原文支持结论，避免把相关叙述改写成因果",
+                "valueHash": "f7f4ec4584949444e85ef6e999f7bb688bbc7907c8f78099d897d80d8d5c9760"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q2",
+          "level": "U",
+          "reason": "The counterexample check is not established.",
+          "refs": [
+            "e19",
+            "e5",
+            "e6",
+            "e7"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e19",
+              "pointer": "/artifacts/1/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "[{\"id\":\"obj_1f08f5c4-0032-4f61-b5be-3739ed41d358\",\"title\":\"识别句子为事实、意见、建议或未知及界限\",\"description\":\"识别句子为事实、意见、建议或未知，并注意“部分读者认为”不等于“全体读者同意”、“将讨论”不等于“已经决定”的界限\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_1183928e-453d-439e-a6ea-075180c5eaa9\",\"ta_6ef9eebc-c481-4495-a031-864445849fc8\"],\"authorityClaimIds\":[\"tac_b13825be-4287-45b4-9f78-ba13bc55ddfd\",\"tac_2e8d50c2-15ee-4975-92d8-646958bfe565\"],\"priority\":\"required\",\"priorityRationale\":\"证据E1自身信封支持identify正式构念，且为覆盖要求的核心识别能力\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_d3f9fdaf\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_d3f9fdaf\"]},{\"id\":\"obj_3709083a-b885-446f-ac18-65ddb882c881\",\"title\":\"应用三步自检写出忠实简短摘要\",\"description\":\"应用三步自检写出忠实简短摘要：标类、写清数字单位对象、回原文找依据；压缩修辞但不删改变结论的对象/时间/限制；面向未读者标明“已发生”和“待决定”；引用原文须真支持且证据与解释分开；不把相关改写因果、不外推部分意见为全体、不把人次写作不同居民\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"学习者合同要求应用写出摘要，但所列证据均无正式权威，保留apply教学优先级以覆盖核心应用能力而不降格为explain\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]}]",
+              "valueHash": "9fa95872287baa9564c010fe207c0f8f0a03af064a9fc524e86994a50c845c79"
+            },
+            {
+              "id": "e5",
+              "pointer": "/goals/0",
+              "role": "goal",
+              "kind": "text",
+              "value": "区分事实、建议与未确定信息",
+              "valueHash": "8d6e200be6eb9670df93c957bebaac15354cf2e4097bf4db6cfa3b5b526f4dd2"
+            },
+            {
+              "id": "e6",
+              "pointer": "/goals/1",
+              "role": "goal",
+              "kind": "text",
+              "value": "写出保留范围和限制的简短摘要",
+              "valueHash": "3ef3aa9e140319b1c8c0410461e6947f397de783c593a71766e570a9431013c6"
+            },
+            {
+              "id": "e7",
+              "pointer": "/goals/2",
+              "role": "goal",
+              "kind": "text",
+              "value": "用原文支持结论，避免把相关叙述改写成因果",
+              "valueHash": "f7f4ec4584949444e85ef6e999f7bb688bbc7907c8f78099d897d80d8d5c9760"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [
+            {
+              "level": "U",
+              "code": "INDEPENDENT_CONDITIONS",
+              "detail": {
+                "kind": "conditions",
+                "status": "uncertain",
+                "affected": [
+                  "Q2"
+                ],
+                "reason": "The counterexample check is not established.",
+                "proposed": {
+                  "kind": "conditions",
+                  "status": "clear",
+                  "affected": [
+                    "Q2"
+                  ],
+                  "reason": "artifact objectives (e18/e19) 将源F01(e3)教学条件总结为目标：obj_1f08f5c4 保留“部分≠全体”“将讨论≠已决定”界限，与e3第一段一致；obj_3709083a 含“不把相关改写因果、不外推部分意见为全体、不把人次写作不同居民”等，对应e3中规则。源材料明确定义独立人数未给出(e3第三段)、无比较依据不能写因果(e3第四段)，artifact在锚定源内省略必要条件但未改变该源事实下的结论，属局部收窄而非实质错误，目标覆盖goals(e5-e7)且保留范围。",
+                  "refs": [
+                    "e18",
+                    "e19",
+                    "e3",
+                    "e5",
+                    "e6",
+                    "e7"
+                  ],
+                  "challenge": {
+                    "status": "closed",
+                    "reason": "固定源事实：e3明确“同一个人来两次会被记两次”“没有统计其他时段”“独立人数没有给出”，教学点以“若…没有比较或其他依据”为前提。补充独立人数已知或存在比较依据的反例会直接矛盾已给事实，故被排除；原目标在锚定源中结论成立。",
+                    "refs": [
+                      "e3"
+                    ]
+                  }
+                },
+                "reviewReasons": [
+                  "CONDITIONS_CHALLENGE_UNGROUNDED"
+                ]
+              }
+            }
+          ],
+          "proposedLevel": 2,
+          "proposedReason": "产物 artifacts/objectives (e19) 定义 obj_1 覆盖 goal0 (e5) 区分事实/建议/未知及界限，描述忠实于来源 e3 的识别要求；obj_2 覆盖 goal1 (e6) 写保留限制的简短摘要与 goal2 (e7) 用原文支持避免因果改写，其描述的三步自检、限制与证据分离等与 e3 一致。声明范围内的三个目标均获保留且未扭曲或削弱，满足至少2个基本目标有忠实可用处理。",
+          "decidingConstraint": "INDEPENDENT_CONDITIONS"
+        }
+      ],
+      "reviewRequired": [
+        {
+          "dimension": "Q2",
+          "reason": "UNRESOLVED"
+        }
+      ]
+    },
+    "resultHash": "90db99e070ccdb62ff8e2d380595ee55a8f4e131956a29eb3bcf3538702bc9de"
+  }
+}

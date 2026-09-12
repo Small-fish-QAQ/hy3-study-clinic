@@ -1,0 +1,1657 @@
+{
+  "source": "runs/final/natural-registry.json",
+  "records": [
+    {
+      "caseId": "N-F01-curriculum",
+      "sourceId": "F01",
+      "collection": "natural",
+      "surface": "curriculum",
+      "path": "runs/final/cases/N-F01-curriculum.json",
+      "recordHash": "915055513d43a04a877aed23278a68d8d1ff8cd35b3600ef47867c2ad6392b2d",
+      "packetHash": "0d70f7ce95edc76560eb46a3231e21e6754f6330dffa10d00903b442b73f92b3",
+      "origin": {
+        "file": "runs/final-product/cases/F01/final.snapshot.json",
+        "table": "curriculum_versions",
+        "id": "curriculum_acd984ca-d957-49d5-ae28-efe5e7f22a18"
+      },
+      "exportPath": "dataset/natural-cases/N-F01-curriculum.json",
+      "recordSha256": "4620025745dab2d08c94e092d8f9180ace65d9922fec58511a772a802955076b"
+    },
+    {
+      "caseId": "N-F01-teaching",
+      "sourceId": "F01",
+      "collection": "natural",
+      "surface": "teaching",
+      "path": "runs/final/cases/N-F01-teaching.json",
+      "recordHash": "9980ad795e9af18095a9d060548474a1e51cd030869ed7eff9a78e5ae16e689b",
+      "packetHash": "958b7c40e8db7b93fb2be4e7eaef311daf9fb75b0e4d52ba201ad823778a7d6f",
+      "origin": {
+        "file": "runs/final-product/cases/F01/lesson-1-complete.json",
+        "field": "lesson",
+        "scope": "complete displayed first Lesson fields, no later unit"
+      },
+      "exportPath": "dataset/natural-cases/N-F01-teaching.json",
+      "recordSha256": "5b9b62b2911232bf50f29de3cebae52c8b580dfe483ed10527eea238cbf918eb"
+    },
+    {
+      "caseId": "N-F01-tutor",
+      "sourceId": "F01",
+      "collection": "natural",
+      "surface": "tutor",
+      "path": "runs/final/cases/N-F01-tutor.json",
+      "recordHash": "a03e021c3abfc0921f93c64381059ff54f10084a4e254b73ca45e64c55cb3e9e",
+      "packetHash": "6d654da4e362d78643cfee573331298b31d33ba39f4816128f559b7d8e4a3d3d",
+      "origin": {
+        "file": "runs/final-product/cases/F01/tutor.json",
+        "field": "exchanges",
+        "id": "study_exchange_175bc015-b063-4966-b3bd-31bfbc35661d"
+      },
+      "exportPath": "dataset/natural-cases/N-F01-tutor.json",
+      "recordSha256": "f1e08ce7f5f56ff252fa236ac745152ded0a3f87a78a43c25a03d7dae4335f34"
+    },
+    {
+      "caseId": "N-F01-practice",
+      "sourceId": "F01",
+      "collection": "natural",
+      "surface": "practice",
+      "path": "runs/final/cases/N-F01-practice.json",
+      "recordHash": "7f39a9f92a0b0843a4e00d3e41ec29ce772a9f91e066b8b24b75325e04696a91",
+      "packetHash": "2789bb9885ca6d2d59d296a04c1577fd1ad31a3edcef070d51ea39f67655af43",
+      "origin": {
+        "file": "runs/final-product/cases/F01/learner-actions.jsonl",
+        "index": 7,
+        "briefId": "teaching_brief_20de3fe0-9f51-4854-a5f1-b7f05571b4e4",
+        "surface": "initial"
+      },
+      "exportPath": "dataset/natural-cases/N-F01-practice.json",
+      "recordSha256": "0729520d7b57e4873cceaf9d4232a0e46c63af2ca1812a104127c36ecd94a8b3"
+    },
+    {
+      "caseId": "N-F01-repair",
+      "sourceId": "F01",
+      "collection": "natural",
+      "surface": "repair",
+      "path": "runs/final/cases/N-F01-repair.json",
+      "recordHash": "06dcaf39da496aef48fdf29611ad9e2844c3119ce67ed35a4d29127214f710ef",
+      "packetHash": "72baac8b381609b270e53f0561e862de00719759441bec5b9c691b99678d38e3",
+      "origin": {
+        "file": "runs/final-product/cases/F01/learner-actions.jsonl",
+        "index": 9,
+        "field": "preAnswerSurface.practice.recovery"
+      },
+      "exportPath": "dataset/natural-cases/N-F01-repair.json",
+      "recordSha256": "cb60a3c848634478c323c25020916140640a5797a9f84ef2d10055aef8d077ad"
+    },
+    {
+      "caseId": "N-F01-retest",
+      "sourceId": "F01",
+      "collection": "natural",
+      "surface": "retest",
+      "path": "runs/final/cases/N-F01-retest.json",
+      "recordHash": "3d4f662e3e7fe1cacd3a51bb729bc64f03ffd6cea6b4614f775356c5354e1e66",
+      "packetHash": "63a991b0f57cbc67dcaf3a5a6f015a2fb8d7464cadb01c4cc54947c32f0939b4",
+      "origin": {
+        "file": "runs/final-product/cases/F01/learner-actions.jsonl",
+        "index": 10,
+        "table": "lesson_execution_states",
+        "field": "practice_interactions.recovery.rounds[0].content.retest"
+      },
+      "exportPath": "dataset/natural-cases/N-F01-retest.json",
+      "recordSha256": "cdf033210cc4cb60082f2cf3f4d65689a6bb5d7d6182fdf812bf36bc7cbe762f"
+    },
+    {
+      "caseId": "N-F02-curriculum",
+      "sourceId": "F02",
+      "collection": "natural",
+      "surface": "curriculum",
+      "path": "runs/final/cases/N-F02-curriculum.json",
+      "recordHash": "c338e4621ce4a27904a8afff6182cbb9d07fef4f1c9678f0088a62197d110a5e",
+      "packetHash": "76d6078a784fea15ea51c046edc58bd0a26e2619f8c8c6fba8aa6967724cb2fa",
+      "origin": {
+        "file": "runs/final-product/cases/F02/final.snapshot.json",
+        "table": "curriculum_versions",
+        "id": "curriculum_49fedf1d-39e5-40dd-93d3-eb398baf3aa8"
+      },
+      "exportPath": "dataset/natural-cases/N-F02-curriculum.json",
+      "recordSha256": "2db58eb0b60170e6b31e87cf0d7b2ab765613242a3ac90055b6945647a66e39e"
+    },
+    {
+      "caseId": "N-F02-teaching",
+      "sourceId": "F02",
+      "collection": "natural",
+      "surface": "teaching",
+      "path": "runs/final/cases/N-F02-teaching.json",
+      "recordHash": "5fc6a16fa62ae5d0773ba6d7ce0e3e9e2baa9084fe15526258a8c1ec9668ba2e",
+      "packetHash": "08ded98393c59426877d79920c665711a0cbdc1fd3014b8b3741c7a4609a302d",
+      "origin": {
+        "file": "runs/final-product/cases/F02/lesson-1-complete.json",
+        "field": "lesson",
+        "scope": "complete displayed first Lesson fields, no later unit"
+      },
+      "exportPath": "dataset/natural-cases/N-F02-teaching.json",
+      "recordSha256": "b96aae32f268662dc491f8b2c692df173053493d3bb774b084b46eacdf0e75ba"
+    },
+    {
+      "caseId": "N-F02-tutor",
+      "sourceId": "F02",
+      "collection": "natural",
+      "surface": "tutor",
+      "path": "runs/final/cases/N-F02-tutor.json",
+      "recordHash": "03d50ecde50ddf9d85d9caf6ceb17427a247f4de31d09bd49f793bc33dc9fb65",
+      "packetHash": "bf64fdfc776c50e44c8baa14d2cb8902ee66e30f39e7780af0f57867422ff727",
+      "origin": {
+        "file": "runs/final-product/cases/F02/tutor.json",
+        "field": "exchanges",
+        "id": "study_exchange_eba3ea41-0cd5-4844-8e46-1ccc84e4fd94"
+      },
+      "exportPath": "dataset/natural-cases/N-F02-tutor.json",
+      "recordSha256": "2e3da2adb210afc6b6a052d322bfdc2d78b06aad2ad272a1a5a9c84c11cdcba6"
+    },
+    {
+      "caseId": "N-F02-practice",
+      "sourceId": "F02",
+      "collection": "natural",
+      "surface": "practice",
+      "path": "runs/final/cases/N-F02-practice.json",
+      "recordHash": "83e41837e890f703941ad28446f8ae1f61cce2fb89e17324f06c5086570d9413",
+      "packetHash": "64e1216107e9645df4fc45cc09eb3886d75dd673eb164d9fedcdd825f6c0c781",
+      "origin": {
+        "file": "runs/final-product/cases/F02/learner-actions.jsonl",
+        "index": 7,
+        "briefId": "teaching_brief_60c006a4-446a-44c7-961d-3d7109224657",
+        "surface": "initial"
+      },
+      "exportPath": "dataset/natural-cases/N-F02-practice.json",
+      "recordSha256": "1023ebc3835901d0e8f2e273619324cd5429bc7b4d40ad4b3ecc03905750cddf"
+    },
+    {
+      "caseId": "N-F02-repair",
+      "sourceId": "F02",
+      "collection": "natural",
+      "surface": "repair",
+      "path": "runs/final/cases/N-F02-repair.json",
+      "recordHash": "9916b55b1c49d3eec89ea0b32a67bcbb19db83594fec8af98192b01dce2e1bf1",
+      "packetHash": "611bdbc400de301c3d55de18964b9da916dda9ba0a58863bb46c93066eba8f3b",
+      "origin": {
+        "file": "runs/final-product/cases/F02/learner-actions.jsonl",
+        "index": 9,
+        "field": "preAnswerSurface.practice.recovery"
+      },
+      "exportPath": "dataset/natural-cases/N-F02-repair.json",
+      "recordSha256": "676386cd1ce99d819658ef74f29a231263809ca654004a8d54221b511a16ca16"
+    },
+    {
+      "caseId": "N-F02-retest",
+      "sourceId": "F02",
+      "collection": "natural",
+      "surface": "retest",
+      "path": "runs/final/cases/N-F02-retest.json",
+      "recordHash": "f270820eecf531e381ec7f2ebe46c6e091e1d78afe746bc667f05c162005ee95",
+      "packetHash": "64d779846a3b2e51504b3f0ebb39dfb42dc7d7c55d2e22351fed16ba1eb4544f",
+      "origin": {
+        "file": "runs/final-product/cases/F02/learner-actions.jsonl",
+        "index": 10,
+        "table": "lesson_execution_states",
+        "field": "practice_interactions.recovery.rounds[0].content.retest"
+      },
+      "exportPath": "dataset/natural-cases/N-F02-retest.json",
+      "recordSha256": "5314c9d5c4e6eef95aa57c96cfec7f9e1f8974fda18ce4326cb6030d4efb4f57"
+    },
+    {
+      "caseId": "N-F03-curriculum",
+      "sourceId": "F03",
+      "collection": "natural",
+      "surface": "curriculum",
+      "path": "runs/final/cases/N-F03-curriculum.json",
+      "recordHash": "e85d621dce1d62ed83e377de2701ca8ec8503c2ecf4d4d803b5fadde6529b1bf",
+      "packetHash": "22e9990c7d8b9163d0136dd49c0a90a5112ae7ef5d3778d87e76f917576bc02e",
+      "origin": {
+        "file": "runs/final-product/cases/F03/final.snapshot.json",
+        "table": "curriculum_versions",
+        "id": "curriculum_45af1548-cfd0-47b1-9b73-50286698628e"
+      },
+      "exportPath": "dataset/natural-cases/N-F03-curriculum.json",
+      "recordSha256": "b923a986daf0b76ea6b145f10dca7247af27c30fddf56c3e26c14609b19a7683"
+    },
+    {
+      "caseId": "N-F03-teaching",
+      "sourceId": "F03",
+      "collection": "natural",
+      "surface": "teaching",
+      "path": "runs/final/cases/N-F03-teaching.json",
+      "recordHash": "fcafa94d17f6a6c0729938234c0e56939eedb63cbda9aba6b310dd48fc41adfb",
+      "packetHash": "c767e9e231acdb61e674a78c76335b4799def929de1c97ababea3d96716ee097",
+      "origin": {
+        "file": "runs/final-product/cases/F03/lesson-1-complete.json",
+        "field": "lesson",
+        "scope": "complete displayed first Lesson fields, no later unit"
+      },
+      "exportPath": "dataset/natural-cases/N-F03-teaching.json",
+      "recordSha256": "44f1dd02fda193302f5d36b3bfad876e2a31aad9732d6e4bf9b30b38566c7f1b"
+    },
+    {
+      "caseId": "N-F03-tutor",
+      "sourceId": "F03",
+      "collection": "natural",
+      "surface": "tutor",
+      "path": "runs/final/cases/N-F03-tutor.json",
+      "recordHash": "278275b2f9f3d606ff2afde4dad0d40a93eb9aca4c40947e15619b0fdc9b9c57",
+      "packetHash": "e32e210fbb69805e81fa4570a0a743b111dc5e9ff6574d1e0de04f89676898fe",
+      "origin": {
+        "file": "runs/final-product/cases/F03/tutor.json",
+        "field": "exchanges",
+        "id": "study_exchange_6f88ed0c-d7c1-425b-9375-51f19182e4c1"
+      },
+      "exportPath": "dataset/natural-cases/N-F03-tutor.json",
+      "recordSha256": "cb86fbcbcdd70ba9247d644feec5ef3059abdd5b3d317db800da1c8eefb6a519"
+    },
+    {
+      "caseId": "N-F03-practice",
+      "sourceId": "F03",
+      "collection": "natural",
+      "surface": "practice",
+      "path": "runs/final/cases/N-F03-practice.json",
+      "recordHash": "8ca214abc2f18e1c85bcb0e1640c113c978c743206dbf2b036ee7cf932c7fefc",
+      "packetHash": "fdb56453c49689b982b88b375c86a7daae26294d6ad4a6bf7ee7e41c7afd1196",
+      "origin": {
+        "file": "runs/final-product/cases/F03/learner-actions.jsonl",
+        "index": 7,
+        "briefId": "teaching_brief_38348c09-7074-4e28-87c7-db4885362704",
+        "surface": "initial"
+      },
+      "exportPath": "dataset/natural-cases/N-F03-practice.json",
+      "recordSha256": "a244f61a2f3efb69a691a8e8f826b2bfe147874b27637c1539f9a35a39c57acc"
+    },
+    {
+      "caseId": "N-F03-repair",
+      "sourceId": "F03",
+      "collection": "natural",
+      "surface": "repair",
+      "path": "runs/final/cases/N-F03-repair.json",
+      "recordHash": "e8686acf60c468f92c81f40094eff887e12176c68c17c627fb7a944b8aed19fe",
+      "packetHash": "027014a4beb1be1a95842d3b5952ca0c69a7f9104b1095bac068cc473b13ab9b",
+      "origin": {
+        "file": "runs/final-product/cases/F03/learner-actions.jsonl",
+        "index": 9,
+        "field": "preAnswerSurface.practice.recovery"
+      },
+      "exportPath": "dataset/natural-cases/N-F03-repair.json",
+      "recordSha256": "4f6c84cc63a4d534694cc8dcdb23b75467f72679cd382fea84e8789d79c89a91"
+    },
+    {
+      "caseId": "N-F03-retest",
+      "sourceId": "F03",
+      "collection": "natural",
+      "surface": "retest",
+      "path": "runs/final/cases/N-F03-retest.json",
+      "recordHash": "4dd922f1b46b0c693d737d16bd4c0700b35d8b827c143335cf7c94176e688783",
+      "packetHash": "c41c2642ba58dcc2b2eaf085f17c6914cf56142b224d2433c8146ebcb7b4637c",
+      "origin": {
+        "file": "runs/final-product/cases/F03/learner-actions.jsonl",
+        "index": 10,
+        "table": "lesson_execution_states",
+        "field": "practice_interactions.recovery.rounds[0].content.retest"
+      },
+      "exportPath": "dataset/natural-cases/N-F03-retest.json",
+      "recordSha256": "0106ca8584fcf5cd825456d604206d7dd23b1e2a1575af4520117457586b2e76"
+    },
+    {
+      "caseId": "N-F04-curriculum",
+      "sourceId": "F04",
+      "collection": "natural",
+      "surface": "curriculum",
+      "path": "runs/final/cases/N-F04-curriculum.json",
+      "recordHash": "c3a65720a687035f8e3bdc86221ce3260bfaf694c38a573cb3db6ed100e51871",
+      "packetHash": "7afba13865e202b4339b01701371ae119d4137786828eced2e284d8ad05b96a7",
+      "origin": {
+        "file": "runs/final-product/cases/F04/final.snapshot.json",
+        "table": "curriculum_versions",
+        "id": "curriculum_49a74b01-c4f1-4270-bc42-2edfa6d370c6"
+      },
+      "exportPath": "dataset/natural-cases/N-F04-curriculum.json",
+      "recordSha256": "525fcf041c648fdfcce726526299bb28c7be6d442e8e1a63d32a04695223d1df"
+    },
+    {
+      "caseId": "N-F05-curriculum",
+      "sourceId": "F05",
+      "collection": "natural",
+      "surface": "curriculum",
+      "path": "runs/final/cases/N-F05-curriculum.json",
+      "recordHash": "6fd1db05e531ecb555b1ff9fe167beaf0ba18b607f796815551ba03eaf5d9c3c",
+      "packetHash": "3f2c748d1f92b246bcadd63373ab38779656f9b79127f2dd3483c7c0c0129484",
+      "origin": {
+        "file": "runs/final-product/cases/F05/final.snapshot.json",
+        "table": "curriculum_versions",
+        "id": "curriculum_f8a8b0cf-53a0-46aa-b6f1-cb3e7eda7c00"
+      },
+      "exportPath": "dataset/natural-cases/N-F05-curriculum.json",
+      "recordSha256": "2d75fcae9e933f489e16f00df7317f9731cd10980f6ee140723a9d97a0d310b7"
+    },
+    {
+      "caseId": "N-F05-teaching",
+      "sourceId": "F05",
+      "collection": "natural",
+      "surface": "teaching",
+      "path": "runs/final/cases/N-F05-teaching.json",
+      "recordHash": "389eed8370a765be0f289aa56886f604662f9fa627d460c43dcf1024780d602d",
+      "packetHash": "abe234b260ecc00be18acf1468ada03d04c696486dd0cbb38f12836cb62b0970",
+      "origin": {
+        "file": "runs/final-product/cases/F05/lesson-1-complete.json",
+        "field": "lesson",
+        "scope": "complete displayed first Lesson fields, no later unit"
+      },
+      "exportPath": "dataset/natural-cases/N-F05-teaching.json",
+      "recordSha256": "58662ffd5d2c92fdde5e2b5cfcd8cbe9973010686f602fde379a423b13e173f3"
+    },
+    {
+      "caseId": "N-F05-tutor",
+      "sourceId": "F05",
+      "collection": "natural",
+      "surface": "tutor",
+      "path": "runs/final/cases/N-F05-tutor.json",
+      "recordHash": "e5df30e0c13100ce17282c86e71282ac7f2558dd968c0773fcabc87b642ff096",
+      "packetHash": "efbf4f03bd695915f6138d352977fe7cabec7622c100df71e2975ebefb04af13",
+      "origin": {
+        "file": "runs/final-product/cases/F05/tutor.json",
+        "field": "exchanges",
+        "id": "study_exchange_35ff7056-eff7-46bf-9374-f8526b12e729"
+      },
+      "exportPath": "dataset/natural-cases/N-F05-tutor.json",
+      "recordSha256": "317bc572977e01db86f0d91bf618bbef247e982b5eae1595871ae0a99d4ad794"
+    },
+    {
+      "caseId": "N-F05-practice",
+      "sourceId": "F05",
+      "collection": "natural",
+      "surface": "practice",
+      "path": "runs/final/cases/N-F05-practice.json",
+      "recordHash": "08726de8b0923e5b5c1380d72dbedb92d4235f926b7dcd9d6d626f023ef1155f",
+      "packetHash": "bb355cb786c94d060b7cae7967c247f02322f7da3907208643530e3cb90a1e55",
+      "origin": {
+        "file": "runs/final-product/cases/F05/learner-actions.jsonl",
+        "index": 7,
+        "briefId": "teaching_brief_11aaaa65-d1ec-4788-a7fa-b702b4a0d5f3",
+        "surface": "initial"
+      },
+      "exportPath": "dataset/natural-cases/N-F05-practice.json",
+      "recordSha256": "947afe55066077d60a331e1defa3bd66f5a93336de99c17bf0fca7a2b8051b69"
+    },
+    {
+      "caseId": "N-F05-repair",
+      "sourceId": "F05",
+      "collection": "natural",
+      "surface": "repair",
+      "path": "runs/final/cases/N-F05-repair.json",
+      "recordHash": "dd32ac4d35b82ec51021fd066e04683f3b7d45d87095cc4f1cb71af9c24fc8f9",
+      "packetHash": "2b3155408267b8cd3b4fc8baefc72567a620dd84261b7b170367624baeded205",
+      "origin": {
+        "file": "runs/final-product/cases/F05/learner-actions.jsonl",
+        "index": 9,
+        "field": "preAnswerSurface.practice.recovery"
+      },
+      "exportPath": "dataset/natural-cases/N-F05-repair.json",
+      "recordSha256": "b043009e2d0e213872ea0079f0a4b2eb4bf2c3c9179d3f48b9bee402d51458b6"
+    },
+    {
+      "caseId": "N-F05-retest",
+      "sourceId": "F05",
+      "collection": "natural",
+      "surface": "retest",
+      "path": "runs/final/cases/N-F05-retest.json",
+      "recordHash": "1f9a0cf8b15ec98f37c19199fcf7ddb3d1ea0512c6c31968831ea92c4e820f09",
+      "packetHash": "f6c165cd521d6d93ffcd374d61d91b4ac6d2efb0bb4bbfc2aa4cd13878d3e876",
+      "origin": {
+        "file": "runs/final-product/cases/F05/learner-actions.jsonl",
+        "index": 10,
+        "table": "lesson_execution_states",
+        "field": "practice_interactions.recovery.rounds[0].content.retest"
+      },
+      "exportPath": "dataset/natural-cases/N-F05-retest.json",
+      "recordSha256": "eacde72d66bccaef6a63dbf16f6794701af8d24b7a15299e347c735b55786804"
+    },
+    {
+      "caseId": "N-F07-curriculum",
+      "sourceId": "F07",
+      "collection": "natural",
+      "surface": "curriculum",
+      "path": "runs/final/cases/N-F07-curriculum.json",
+      "recordHash": "51ce113863d829ac1ea758729853d1861632b32718635243e3216d38e5786518",
+      "packetHash": "d395a0b96d09617dc01e3f4a2fd3a2047b490785dd5c708c6253d84a999138ec",
+      "origin": {
+        "file": "runs/final-product/cases/F07/final.snapshot.json",
+        "table": "curriculum_versions",
+        "id": "curriculum_baa40bc6-f08c-46b3-b26c-6dd48d68901c"
+      },
+      "exportPath": "dataset/natural-cases/N-F07-curriculum.json",
+      "recordSha256": "e69d35ac9d7401e93f908850d04b720d176c9c269e733fb798679c9ba06d1a24"
+    },
+    {
+      "caseId": "N-F07-teaching",
+      "sourceId": "F07",
+      "collection": "natural",
+      "surface": "teaching",
+      "path": "runs/final/cases/N-F07-teaching.json",
+      "recordHash": "2c7df843ab28b1ff97ea85fd9758771cc93f3d4c46b072c0d03bf7d2a1aa6502",
+      "packetHash": "043d949cf2c12efbe7d93011d289d9cb09616dabcde58fca2780c9aeddee94b9",
+      "origin": {
+        "file": "runs/final-product/cases/F07/lesson-1-complete.json",
+        "field": "lesson",
+        "scope": "complete displayed first Lesson fields, no later unit"
+      },
+      "exportPath": "dataset/natural-cases/N-F07-teaching.json",
+      "recordSha256": "f0ad85fd9cac92511801d03ca19e9aadb82861a6fc3edab2f51516d65457faef"
+    },
+    {
+      "caseId": "N-F07-tutor",
+      "sourceId": "F07",
+      "collection": "natural",
+      "surface": "tutor",
+      "path": "runs/final/cases/N-F07-tutor.json",
+      "recordHash": "b37e7384d5f4ffa0c9382488ecc79d26019020396378d497e43a8577f960a101",
+      "packetHash": "d749de171d5c00ae28ac7d38a5930a10cdc7d6c40fb258193c3701aea08be5fe",
+      "origin": {
+        "file": "runs/final-product/cases/F07/tutor.json",
+        "field": "exchanges",
+        "id": "study_exchange_02a605c2-428b-4713-8171-872950ee1e1f"
+      },
+      "exportPath": "dataset/natural-cases/N-F07-tutor.json",
+      "recordSha256": "859f57779d0c31492369e6834f18a5f6158cada8baf5778029e8dffcbdc26317"
+    },
+    {
+      "caseId": "N-F07-practice",
+      "sourceId": "F07",
+      "collection": "natural",
+      "surface": "practice",
+      "path": "runs/final/cases/N-F07-practice.json",
+      "recordHash": "eb101fc00e358d7ad8d92597772d8726b27a63e6151ad24aef397cc7ebed4368",
+      "packetHash": "e3b8b3e8bbc97547be59f76611a2e13cd08dd741409bfa35fffa51134270e7bc",
+      "origin": {
+        "file": "runs/final-product/cases/F07/learner-actions.jsonl",
+        "index": 7,
+        "briefId": "teaching_brief_1a6fdf0a-b1e7-44d1-aa90-782d58a2c063",
+        "surface": "initial"
+      },
+      "exportPath": "dataset/natural-cases/N-F07-practice.json",
+      "recordSha256": "bed40d53b6acf4ce0f2ee2537a0babde24b5d892fef5e19d37391caa0e8112b5"
+    },
+    {
+      "caseId": "N-F07-repair",
+      "sourceId": "F07",
+      "collection": "natural",
+      "surface": "repair",
+      "path": "runs/final/cases/N-F07-repair.json",
+      "recordHash": "486fd5ba4508be85aa95544004e599ebcfe7f1f97864633570decbcee6eddcbe",
+      "packetHash": "db9fa4417f0d889539d56ec9dc3f3079f116ee8a742fee8ae610eb3e1e76cd5c",
+      "origin": {
+        "file": "runs/final-product/cases/F07/learner-actions.jsonl",
+        "index": 9,
+        "field": "preAnswerSurface.practice.recovery"
+      },
+      "exportPath": "dataset/natural-cases/N-F07-repair.json",
+      "recordSha256": "b529c7a54809d443573de9198d1b0bd66be03ad434b5bc9c7e68d3eba0c04fe4"
+    },
+    {
+      "caseId": "N-F07-retest",
+      "sourceId": "F07",
+      "collection": "natural",
+      "surface": "retest",
+      "path": "runs/final/cases/N-F07-retest.json",
+      "recordHash": "04e2d63686fba7b1fd9345305122df62ff3248e9797c7489df9f9519f0fe53a9",
+      "packetHash": "59bb99236830d6f736957f54e95ce1f687fc0995c2e89de7a4727cddb8b1bd5d",
+      "origin": {
+        "file": "runs/final-product/cases/F07/learner-actions.jsonl",
+        "index": 10,
+        "table": "lesson_execution_states",
+        "field": "practice_interactions.recovery.rounds[0].content.retest"
+      },
+      "exportPath": "dataset/natural-cases/N-F07-retest.json",
+      "recordSha256": "e27be7e08637547e04e1e3aca972db8f037d63bea8e9b41442d99e7d44875f2f"
+    },
+    {
+      "caseId": "N-F07-formal-question",
+      "sourceId": "F07",
+      "collection": "natural",
+      "surface": "formal-question",
+      "path": "runs/final/cases/N-F07-formal-question.json",
+      "recordHash": "672646141af6719541d16d2c1d4b61dd9f200cedd36192911464d9fa5908e2c2",
+      "packetHash": "ac92ea05a5a2a9730f7814c2603d013e08574701ec8812257f27dcf4d1ae710c",
+      "origin": {
+        "file": "runs/final-product/cases/F07/formal-1-version.json",
+        "table": "questions",
+        "questionId": "que_da5557ac-57e4-4488-a4b9-54375c400492"
+      },
+      "exportPath": "dataset/natural-cases/N-F07-formal-question.json",
+      "recordSha256": "3f141d2f7c3080324ff743f775b9b8cc9663ec35ef0949c58a5016bf38aec2d7"
+    },
+    {
+      "caseId": "N-F07-grading-positive",
+      "sourceId": "F07",
+      "collection": "natural",
+      "surface": "grading-positive",
+      "path": "runs/final/cases/N-F07-grading-positive.json",
+      "recordHash": "3bd968ea4e153c30d7a516c7e29b53a24ed928c09445a7e137561c8a3aba3431",
+      "packetHash": "afe06b15e7a58add9f0bbbe585f008893f84e64bef9bd01af87a75b804d6821e",
+      "origin": {
+        "file": "runs/final-product/cases/F07/formal-1-answer.json",
+        "assessmentVersionId": "assessment_version_9c775e05-cba7-4c67-8231-50e430588e38",
+        "itemId": "assessment_item_38d400bf-5d31-4077-a0af-5fe6ee731938",
+        "answerPolicy": "registered-source-grounded-answer"
+      },
+      "exportPath": "dataset/natural-cases/N-F07-grading-positive.json",
+      "recordSha256": "0dc87a8db9f40a18b535b6bdd09ca45c695404e61ec3b5e241b9574e4c43c68c"
+    },
+    {
+      "caseId": "N-F07-grading-negative",
+      "sourceId": "F07",
+      "collection": "natural",
+      "surface": "grading-negative",
+      "path": "runs/final/cases/N-F07-grading-negative.json",
+      "recordHash": "e7d2c7ef24f535d8ff0a643d5dca6a3bc1b7e7858f157738018d751c3369a589",
+      "packetHash": "a42239af8995672d4825c54131dbd86cbe46e5d889c1f40b9fc72ae7009f9830",
+      "origin": {
+        "file": "runs/final-product/cases/F07-negative-1/answer.json",
+        "assessmentVersionId": "assessment_version_9c775e05-cba7-4c67-8231-50e430588e38",
+        "itemId": "assessment_item_38d400bf-5d31-4077-a0af-5fe6ee731938",
+        "answerPolicy": "registered-insufficient-control"
+      },
+      "exportPath": "dataset/natural-cases/N-F07-grading-negative.json",
+      "recordSha256": "f3ced8cb0e947320346bbb95b3ff993466944f62e2dbe3f74b8cb2a5c3b213a7"
+    },
+    {
+      "caseId": "N-F08-curriculum",
+      "sourceId": "F08",
+      "collection": "natural",
+      "surface": "curriculum",
+      "path": "runs/final/cases/N-F08-curriculum.json",
+      "recordHash": "201c3c17908200f0ddef8491ab13c3915bb9ff0db8f96ef584531cb840f76e48",
+      "packetHash": "a05e61ee34cf6f62afc15b36fd094f003a5ba5baed5e69e3bf051bd7e3fee8f6",
+      "origin": {
+        "file": "runs/final-product/cases/F08/final.snapshot.json",
+        "table": "curriculum_versions",
+        "id": "curriculum_0332d805-c0c3-4a33-b969-9384830881c5"
+      },
+      "exportPath": "dataset/natural-cases/N-F08-curriculum.json",
+      "recordSha256": "3331b3b6e251056a6a5da9061816d2c7e4eb3aa4a2a1e589b51edb4099801a15"
+    },
+    {
+      "caseId": "N-F08-teaching",
+      "sourceId": "F08",
+      "collection": "natural",
+      "surface": "teaching",
+      "path": "runs/final/cases/N-F08-teaching.json",
+      "recordHash": "4352fdd749f4f1aa2628c82ac57687af1751ee2730a279cb7d445f386afef58d",
+      "packetHash": "c8165e3bbbf4ab076f70d35ea19abc8c76bdd0fc7329dadef2a0ce5b171ea7e4",
+      "origin": {
+        "file": "runs/final-product/cases/F08/lesson-1-complete.json",
+        "field": "lesson",
+        "scope": "complete displayed first Lesson fields, no later unit"
+      },
+      "exportPath": "dataset/natural-cases/N-F08-teaching.json",
+      "recordSha256": "2347e1107dfafc498ae38ebc0333603421757bdeac324184489134e633243d73"
+    },
+    {
+      "caseId": "N-F08-tutor",
+      "sourceId": "F08",
+      "collection": "natural",
+      "surface": "tutor",
+      "path": "runs/final/cases/N-F08-tutor.json",
+      "recordHash": "821be6a706b8d39de0de84d6d17b0fff2256a8e984214299069795eb546e598d",
+      "packetHash": "e5d99344f8a34ca620e54618dafc1da1a87833a37ea4ef2371973ff12e375fa2",
+      "origin": {
+        "file": "runs/final-product/cases/F08/tutor.json",
+        "field": "exchanges",
+        "id": "study_exchange_18a8319a-4a0a-46f5-852c-5117beefa9c6"
+      },
+      "exportPath": "dataset/natural-cases/N-F08-tutor.json",
+      "recordSha256": "e5ef29980eb941516f547b8e7338d0c0d648d6aeaf633b77992ab1870a566e2d"
+    },
+    {
+      "caseId": "N-F08-practice",
+      "sourceId": "F08",
+      "collection": "natural",
+      "surface": "practice",
+      "path": "runs/final/cases/N-F08-practice.json",
+      "recordHash": "2a298329ab79e32b3cf2da241b0a9afb63d52c127e32ac06f3ccd47a200a748a",
+      "packetHash": "397042c0cef6a013c09517d058c9392df2ca5312476a1a898d099bc2f91452e5",
+      "origin": {
+        "file": "runs/final-product/cases/F08/learner-actions.jsonl",
+        "index": 7,
+        "briefId": "teaching_brief_1136c454-e69c-4dcb-b90f-b54705c11ad6",
+        "surface": "initial"
+      },
+      "exportPath": "dataset/natural-cases/N-F08-practice.json",
+      "recordSha256": "62e5113826f389c8b0d36ef65d134b92343f0a9fe2f95104246cc76afac5979c"
+    },
+    {
+      "caseId": "N-F09-curriculum",
+      "sourceId": "F09",
+      "collection": "natural",
+      "surface": "curriculum",
+      "path": "runs/final/cases/N-F09-curriculum.json",
+      "recordHash": "4b9c9a3db64933fcc1f634023ea3c1a0b1bcdfffbc62ab5f1ee478b52eca83c0",
+      "packetHash": "e9ad9a3f5c3cb620577ff5d8f80ca57fc2ee761be4627597e8a882645ab1b652",
+      "origin": {
+        "file": "runs/final-product/cases/F09/final.snapshot.json",
+        "table": "curriculum_versions",
+        "id": "curriculum_c0858467-8748-451c-be41-c8b2d3bb0ca7"
+      },
+      "exportPath": "dataset/natural-cases/N-F09-curriculum.json",
+      "recordSha256": "4041d2a0ffe684241c2e812a443a3a0e62efa5d6b95511fe5740515981debf2d"
+    },
+    {
+      "caseId": "N-F09-teaching",
+      "sourceId": "F09",
+      "collection": "natural",
+      "surface": "teaching",
+      "path": "runs/final/cases/N-F09-teaching.json",
+      "recordHash": "c3e5ec4c13c6fcc27a3b55ad2c00aaf2f63c4db063bd1b8244c2d28dda9dcc2f",
+      "packetHash": "0d89e9edd39bf4f1e1207161f808b6ebb8c8c9630710aa47def5c537579fd6a3",
+      "origin": {
+        "file": "runs/final-product/cases/F09/lesson-1-complete.json",
+        "field": "lesson",
+        "scope": "complete displayed first Lesson fields, no later unit"
+      },
+      "exportPath": "dataset/natural-cases/N-F09-teaching.json",
+      "recordSha256": "63d78bf1daaf6425e057e60dfbd77894a551d0cae5061cbf1c5131465573fcab"
+    },
+    {
+      "caseId": "N-F09-tutor",
+      "sourceId": "F09",
+      "collection": "natural",
+      "surface": "tutor",
+      "path": "runs/final/cases/N-F09-tutor.json",
+      "recordHash": "22e4040cd3ffd8ec6a389198142f453e0b1f9e0e75515078b7926885ff55af39",
+      "packetHash": "3937d479e1f39ecaa1448f52e690a75468b8e03108e97585cefee5eed9b8b765",
+      "origin": {
+        "file": "runs/final-product/cases/F09/tutor.json",
+        "field": "exchanges",
+        "id": "study_exchange_3430f5ed-e1c3-4ba7-ae07-939f12e1efd5"
+      },
+      "exportPath": "dataset/natural-cases/N-F09-tutor.json",
+      "recordSha256": "287f60f9f027f285138b4c2eda7eb58ef4a47f9e2b660d7455ee1f000f406dbc"
+    },
+    {
+      "caseId": "N-F09-practice",
+      "sourceId": "F09",
+      "collection": "natural",
+      "surface": "practice",
+      "path": "runs/final/cases/N-F09-practice.json",
+      "recordHash": "683c7443f541c8934519c0b9be88a259efaf61954aa43599dfbbac9a958c9b16",
+      "packetHash": "dc65665bda3b9bb941721f1102c5cfdbab267ee408bc6dfff2efae012d834951",
+      "origin": {
+        "file": "runs/final-product/cases/F09/learner-actions.jsonl",
+        "index": 7,
+        "briefId": "teaching_brief_f3ead707-7568-4b9a-b11f-d7e952c959b5",
+        "surface": "initial"
+      },
+      "exportPath": "dataset/natural-cases/N-F09-practice.json",
+      "recordSha256": "3e1686734ae72b3efff26fe0658f17f97f280dee8ebd455993668df4f28c8989"
+    },
+    {
+      "caseId": "N-F09-repair",
+      "sourceId": "F09",
+      "collection": "natural",
+      "surface": "repair",
+      "path": "runs/final/cases/N-F09-repair.json",
+      "recordHash": "7abb634d0bd63774fd64de57023023c5314bf4246eb32cda191f482c87991ec5",
+      "packetHash": "7f09647fb80d91a58df4ad341bd115945dc7a3dc6b525e0a3566ab447ee4a05b",
+      "origin": {
+        "file": "runs/final-product/cases/F09/learner-actions.jsonl",
+        "index": 9,
+        "field": "preAnswerSurface.practice.recovery"
+      },
+      "exportPath": "dataset/natural-cases/N-F09-repair.json",
+      "recordSha256": "8a0d925355f37808d10ba64bd813466cd153260ec2b183071ed8a47f1f38afe1"
+    },
+    {
+      "caseId": "N-F09-retest",
+      "sourceId": "F09",
+      "collection": "natural",
+      "surface": "retest",
+      "path": "runs/final/cases/N-F09-retest.json",
+      "recordHash": "c8db90196f7eb2771db49fdbd5a66a6753415e6119b66aaad48a11094ab4eb4d",
+      "packetHash": "ea50fbb7555c9667ef137c7c58ef45f15558205fdbe985432a8e0ff5447760dd",
+      "origin": {
+        "file": "runs/final-product/cases/F09/learner-actions.jsonl",
+        "index": 10,
+        "table": "lesson_execution_states",
+        "field": "practice_interactions.recovery.rounds[0].content.retest"
+      },
+      "exportPath": "dataset/natural-cases/N-F09-retest.json",
+      "recordSha256": "329cc04234390021d95cff482526a8ed50637da262bf9477fa10d647341223fa"
+    },
+    {
+      "caseId": "N-F09-formal-question",
+      "sourceId": "F09",
+      "collection": "natural",
+      "surface": "formal-question",
+      "path": "runs/final/cases/N-F09-formal-question.json",
+      "recordHash": "4adedb58411899e9ec250e63432aaaa913f21d3885bfdb44c5fca54596e1df2b",
+      "packetHash": "0cb8d9ae97d020860b11bf9da67f22514aa7477db0ea767f46afec3fbb0e675f",
+      "origin": {
+        "file": "runs/final-product/cases/F09/formal-1-version.json",
+        "table": "questions",
+        "questionId": "que_ec9aa612-aaf2-49b1-9d1a-7fe4f368c7c8"
+      },
+      "exportPath": "dataset/natural-cases/N-F09-formal-question.json",
+      "recordSha256": "6d008b2b7570f20b56311f68a161d0948e7e343d0e6a4508a8998fb2a73b8d86"
+    },
+    {
+      "caseId": "N-F09-grading-positive",
+      "sourceId": "F09",
+      "collection": "natural",
+      "surface": "grading-positive",
+      "path": "runs/final/cases/N-F09-grading-positive.json",
+      "recordHash": "228cf0a9ed455ffba6597a636f1c9eedc35c1f813cbbf513bbc86c914218385c",
+      "packetHash": "f721008caf6fb3a4e308b059e830bd802a9bdefb0a7ec02e69449b6dd6405b13",
+      "origin": {
+        "file": "runs/final-product/cases/F09/formal-1-answer.json",
+        "assessmentVersionId": "assessment_version_1f9809c4-35bb-443b-89ce-c07470a08c14",
+        "itemId": "assessment_item_1de01600-1cea-40d0-a358-5b72716efb27",
+        "answerPolicy": "registered-source-grounded-answer"
+      },
+      "exportPath": "dataset/natural-cases/N-F09-grading-positive.json",
+      "recordSha256": "1dc3fe0aab13f1738bc49162dd5d97adb6444b1b1dbd5e98f0341beecc7d3b94"
+    },
+    {
+      "caseId": "N-F09-grading-negative",
+      "sourceId": "F09",
+      "collection": "natural",
+      "surface": "grading-negative",
+      "path": "runs/final/cases/N-F09-grading-negative.json",
+      "recordHash": "904bbd1ea183c97127b2d7f2da39527da86079ce7e8d62c55bc249e873aff395",
+      "packetHash": "1ef071983375019521929f3514c8d0c8de57b21f68207378b146a81d6cdd2e11",
+      "origin": {
+        "file": "runs/final-product/cases/F09-negative-1/answer.json",
+        "assessmentVersionId": "assessment_version_1f9809c4-35bb-443b-89ce-c07470a08c14",
+        "itemId": "assessment_item_1de01600-1cea-40d0-a358-5b72716efb27",
+        "answerPolicy": "registered-insufficient-control"
+      },
+      "exportPath": "dataset/natural-cases/N-F09-grading-negative.json",
+      "recordSha256": "11c44479ba4ec594fad4fc878188fec264e3c7db6c9fe4032a9ae249e5415226"
+    },
+    {
+      "caseId": "N-F10-curriculum",
+      "sourceId": "F10",
+      "collection": "natural",
+      "surface": "curriculum",
+      "path": "runs/final/cases/N-F10-curriculum.json",
+      "recordHash": "b05cfc5c0f5c71aa44896c5c22d0faf5979a5cc09bdf3979e4ff0c3ed46ff991",
+      "packetHash": "f02645a747203a54377a16636805e5eae33886b276bb10eeb6944286fbfb2aab",
+      "origin": {
+        "file": "runs/final-product/cases/F10/final.snapshot.json",
+        "table": "curriculum_versions",
+        "id": "curriculum_a1545afc-de87-48f5-aedf-8734c1906bf9"
+      },
+      "exportPath": "dataset/natural-cases/N-F10-curriculum.json",
+      "recordSha256": "d2b00b918dd7be1b0f064f44ca5a4b64fa9683e252c18926ff37b252d89c7fa4"
+    },
+    {
+      "caseId": "N-F11-curriculum",
+      "sourceId": "F11",
+      "collection": "natural",
+      "surface": "curriculum",
+      "path": "runs/final/cases/N-F11-curriculum.json",
+      "recordHash": "63506e29d1d3a10682c244d139b9fbe9a0d0637f979f883f076bf7c266946923",
+      "packetHash": "e9548e24b697867bfae6d6d2b591ca183f0ec5d8a9f46a5956d1fa8e7c03b15d",
+      "origin": {
+        "file": "runs/final-product/cases/F11/final.snapshot.json",
+        "table": "curriculum_versions",
+        "id": "curriculum_866f45b0-6732-46fb-8108-110614ad852d"
+      },
+      "exportPath": "dataset/natural-cases/N-F11-curriculum.json",
+      "recordSha256": "bbf53f443a82f6b305dc9a8d563a83e35e9105487b3e2ae7b23485bf17164a34"
+    },
+    {
+      "caseId": "N-F11-teaching",
+      "sourceId": "F11",
+      "collection": "natural",
+      "surface": "teaching",
+      "path": "runs/final/cases/N-F11-teaching.json",
+      "recordHash": "c93c7ff95949c75c16edb5c64c7e8cfb092e561277b8b3be120f15ad82055972",
+      "packetHash": "0b47054113ee3a02a475dbcf534f7c0065980e6e046c147ebb967265f2ad2e71",
+      "origin": {
+        "file": "runs/final-product/cases/F11/lesson-1-complete.json",
+        "field": "lesson",
+        "scope": "complete displayed first Lesson fields, no later unit"
+      },
+      "exportPath": "dataset/natural-cases/N-F11-teaching.json",
+      "recordSha256": "4fc3f08c7b89c6fb548a8efc3abb2e84946d706d9b0e44e78ed80502c0067984"
+    },
+    {
+      "caseId": "N-F11-tutor",
+      "sourceId": "F11",
+      "collection": "natural",
+      "surface": "tutor",
+      "path": "runs/final/cases/N-F11-tutor.json",
+      "recordHash": "aa16ff37e1ef5b9316c370eae6ffeb8576e2848ba04b8417612d0f49889842b9",
+      "packetHash": "aad6959279e8ca79de8ec158019ce4b0133262ecacf8b8b24998dd6fc12013e4",
+      "origin": {
+        "file": "runs/final-product/cases/F11/tutor.json",
+        "field": "exchanges",
+        "id": "study_exchange_8d096bf9-28f5-44d2-b32e-e5083380e3c7"
+      },
+      "exportPath": "dataset/natural-cases/N-F11-tutor.json",
+      "recordSha256": "486a1875bba233e306d5fd4c70e605e73e5ba4f5012d235d8a3308766f421f36"
+    },
+    {
+      "caseId": "N-F11-practice",
+      "sourceId": "F11",
+      "collection": "natural",
+      "surface": "practice",
+      "path": "runs/final/cases/N-F11-practice.json",
+      "recordHash": "b996bf4647fef3fd50e4992a43fd8ee4f6f4f45da3a5d9d26610920ed85286e9",
+      "packetHash": "f8bcb8cd0d83f9394a483a29930bc19b05d0a2673732cdf4216e331f7bf59bb3",
+      "origin": {
+        "file": "runs/final-product/cases/F11/learner-actions.jsonl",
+        "index": 8,
+        "briefId": "teaching_brief_db3881cc-aed6-417a-9fa5-f880e48d11e7",
+        "surface": "initial"
+      },
+      "exportPath": "dataset/natural-cases/N-F11-practice.json",
+      "recordSha256": "40caf45b8fdc4da688a742133a60758c15d92497584dde4084198d9c8c9fa80e"
+    },
+    {
+      "caseId": "N-F12-curriculum",
+      "sourceId": "F12",
+      "collection": "natural",
+      "surface": "curriculum",
+      "path": "runs/final/cases/N-F12-curriculum.json",
+      "recordHash": "462f2d767d9140448efe24b18c036b7da88259f66b27fd653d90ac8c704c7102",
+      "packetHash": "a854e9a0944f17c8b96039731408fe27125c869b6af898d5bad923fd4b7ce0f1",
+      "origin": {
+        "file": "runs/final-product/cases/F12/final.snapshot.json",
+        "table": "curriculum_versions",
+        "id": "curriculum_689d04af-e23e-4e26-b1c0-9ec4308ec7e8"
+      },
+      "exportPath": "dataset/natural-cases/N-F12-curriculum.json",
+      "recordSha256": "5786d3d5feb299c7e96288eb69cee9add673a27dfe2ae1a07601d0e4939e2481"
+    },
+    {
+      "caseId": "N-F12-teaching",
+      "sourceId": "F12",
+      "collection": "natural",
+      "surface": "teaching",
+      "path": "runs/final/cases/N-F12-teaching.json",
+      "recordHash": "7b4fb980d1fbc47ec7dacf77ca332191acf8ef08a59c7025e7812fe6294f0001",
+      "packetHash": "25257c1a542eb49eadfd0bb5b9d85dc6baf3e7a1fe71e980d785df73c740b2da",
+      "origin": {
+        "file": "runs/final-product/cases/F12/lesson-1-complete.json",
+        "field": "lesson",
+        "scope": "complete displayed first Lesson fields, no later unit"
+      },
+      "exportPath": "dataset/natural-cases/N-F12-teaching.json",
+      "recordSha256": "6774031c4791ee1cd47bd32bd04194506c374d58270a792261d13361e10f59c4"
+    },
+    {
+      "caseId": "N-F12-tutor",
+      "sourceId": "F12",
+      "collection": "natural",
+      "surface": "tutor",
+      "path": "runs/final/cases/N-F12-tutor.json",
+      "recordHash": "46227c6bb103af88747cf50b06fc7ff96840541d6e2950a4cf8f2b377628abfb",
+      "packetHash": "b645eb974a35377cd5c84dda9a07647cd0fb1f8652f37ee107b7e80a279f2bdb",
+      "origin": {
+        "file": "runs/final-product/cases/F12/tutor.json",
+        "field": "exchanges",
+        "id": "study_exchange_de37c92e-74a6-4223-b09e-49af81f00a00"
+      },
+      "exportPath": "dataset/natural-cases/N-F12-tutor.json",
+      "recordSha256": "3926bd53dbdb959285e4f716751bb1472fedf1ffc7398c7408b152d4222a7c75"
+    },
+    {
+      "caseId": "N-F12-practice",
+      "sourceId": "F12",
+      "collection": "natural",
+      "surface": "practice",
+      "path": "runs/final/cases/N-F12-practice.json",
+      "recordHash": "098a4ad5dbf3ff8064f004263c48667d3dab0863f7cee75ead7b78adfd382186",
+      "packetHash": "f71c061aa18c02706cbd8c4a00ea35046aac6264f8b79e91e9fcd1e40a9c59b0",
+      "origin": {
+        "file": "runs/final-product/cases/F12/learner-actions.jsonl",
+        "index": 7,
+        "briefId": "teaching_brief_e8f80f66-a7df-4fce-bc29-3ba6ac7920b6",
+        "surface": "initial"
+      },
+      "exportPath": "dataset/natural-cases/N-F12-practice.json",
+      "recordSha256": "ed580cdb96626f30292d3cc89a1ff07e4d4548918d23f319680d4612c9fa3ea9"
+    },
+    {
+      "caseId": "N-F12-repair",
+      "sourceId": "F12",
+      "collection": "natural",
+      "surface": "repair",
+      "path": "runs/final/cases/N-F12-repair.json",
+      "recordHash": "3380d63583395437db9d419d3878e8701aac7c7ae998845e07cf23db97633890",
+      "packetHash": "a6a26f4b5b6b58ae0e8833f3955b089b60f33294af5822fb43eb4ad9b857b39b",
+      "origin": {
+        "file": "runs/final-product/cases/F12/learner-actions.jsonl",
+        "index": 9,
+        "field": "preAnswerSurface.practice.recovery"
+      },
+      "exportPath": "dataset/natural-cases/N-F12-repair.json",
+      "recordSha256": "4a65a86c7688e171ad4103376a2f574a7961da0ef8152ac8ceebf846d596585e"
+    },
+    {
+      "caseId": "N-F12-retest",
+      "sourceId": "F12",
+      "collection": "natural",
+      "surface": "retest",
+      "path": "runs/final/cases/N-F12-retest.json",
+      "recordHash": "5d70d2938a733fe01f54152012b8969b3656859954a5041104a698c17999fcb2",
+      "packetHash": "f431e5baeca48a1ce145391985ea914fd51e2023ca969e0a6ab22eec7a9833ec",
+      "origin": {
+        "file": "runs/final-product/cases/F12/learner-actions.jsonl",
+        "index": 10,
+        "table": "lesson_execution_states",
+        "field": "practice_interactions.recovery.rounds[0].content.retest"
+      },
+      "exportPath": "dataset/natural-cases/N-F12-retest.json",
+      "recordSha256": "65b29fdd198d2c2874970c3c413a69260cf2b7f2cff614efbc8cd01386882532"
+    },
+    {
+      "caseId": "N-E01-curriculum",
+      "sourceId": "E01",
+      "collection": "natural",
+      "surface": "curriculum",
+      "path": "runs/final/cases/N-E01-curriculum.json",
+      "recordHash": "25b13eb9a8bf9494e227e15312e20febfa6fd9eb709a482de0ff0ff7c9d41511",
+      "packetHash": "ffdf9cc918dbc9bfad45799cca664444f1ee212b07ff9ee64af20dd979eb5add",
+      "origin": {
+        "file": "runs/final-product/cases/E01/final.snapshot.json",
+        "table": "curriculum_versions",
+        "id": "curriculum_60c66594-9d4f-4ff0-b9f8-6d0d58f8458e"
+      },
+      "exportPath": "dataset/natural-cases/N-E01-curriculum.json",
+      "recordSha256": "edf373451273c234ff93d204bf0adeef3cbe517e6fd0432725c2ff43dd62b91a"
+    },
+    {
+      "caseId": "N-E01-teaching",
+      "sourceId": "E01",
+      "collection": "natural",
+      "surface": "teaching",
+      "path": "runs/final/cases/N-E01-teaching.json",
+      "recordHash": "b3cd92b9bc7b4a153419baedaf896e3faf54b1fcb4bc421d201da490af00bfb3",
+      "packetHash": "3884c9a8c3ee0cc0f8f39fcef94673c516fe9576f4a20b6d1d4bef1a2633c407",
+      "origin": {
+        "file": "runs/final-product/cases/E01/lesson-1-complete.json",
+        "field": "lesson",
+        "scope": "complete displayed first Lesson fields, no later unit"
+      },
+      "exportPath": "dataset/natural-cases/N-E01-teaching.json",
+      "recordSha256": "c45505eaa7948ffb28334f4575eea5bb67da42a980faf75e7c0b3574d4b6c502"
+    },
+    {
+      "caseId": "N-E01-tutor",
+      "sourceId": "E01",
+      "collection": "natural",
+      "surface": "tutor",
+      "path": "runs/final/cases/N-E01-tutor.json",
+      "recordHash": "704abb3090e0422f5afe17f25f57fcd26a40458043e41b355ef4eb81d258fc9d",
+      "packetHash": "ba850488d18d90f97056f74644ee688ab7710654d9ad93c85ce1a9bfea2bfe6f",
+      "origin": {
+        "file": "runs/final-product/cases/E01/tutor.json",
+        "field": "exchanges",
+        "id": "study_exchange_6a252f11-933c-476d-a91c-c82d2410c263"
+      },
+      "exportPath": "dataset/natural-cases/N-E01-tutor.json",
+      "recordSha256": "2a25c93dba76f7ea7cbc586a3ef780d25a07e5fdad38d97e876adc22070a7670"
+    },
+    {
+      "caseId": "N-E01-practice",
+      "sourceId": "E01",
+      "collection": "natural",
+      "surface": "practice",
+      "path": "runs/final/cases/N-E01-practice.json",
+      "recordHash": "1180a657521eae8c77860226c2bde3b270e1c40f1e67c87b3b5332981bdadb81",
+      "packetHash": "91e4747e4bdbb943fb8cceb60a1a82deeaab6c6f40b315efdeeccb4e8da4caf8",
+      "origin": {
+        "file": "runs/final-product/cases/E01/learner-actions.jsonl",
+        "index": 7,
+        "briefId": "teaching_brief_03a98019-8796-4edc-98e1-bc86c35a2976",
+        "surface": "initial"
+      },
+      "exportPath": "dataset/natural-cases/N-E01-practice.json",
+      "recordSha256": "f636aa3ed0886eef5d3701468abe4714fb09ff56d4d6a1541c9e9266156cd7b9"
+    },
+    {
+      "caseId": "N-E01-repair",
+      "sourceId": "E01",
+      "collection": "natural",
+      "surface": "repair",
+      "path": "runs/final/cases/N-E01-repair.json",
+      "recordHash": "016fa40105045ed0dcbb6b87cfb1d228bfe438d038da356c207eec916653fca5",
+      "packetHash": "c8d14ed40c1ccf5c34726bc549f905772e7584feca42fb2a3b8b7920f759bdf2",
+      "origin": {
+        "file": "runs/final-product/cases/E01/learner-actions.jsonl",
+        "index": 9,
+        "field": "preAnswerSurface.practice.recovery"
+      },
+      "exportPath": "dataset/natural-cases/N-E01-repair.json",
+      "recordSha256": "c1a739c706e3d4b6420bd8273875122aaeeb262bc3105628aa5dd4bb519674eb"
+    },
+    {
+      "caseId": "N-E01-retest",
+      "sourceId": "E01",
+      "collection": "natural",
+      "surface": "retest",
+      "path": "runs/final/cases/N-E01-retest.json",
+      "recordHash": "1b28c17474354a352309e99c30923c764d776547e266159b7c510ee32cad45d8",
+      "packetHash": "c73ec6bd617795bba3ac97ef35f579a4d64c29b1898726335a746caab04aa93e",
+      "origin": {
+        "file": "runs/final-product/cases/E01/learner-actions.jsonl",
+        "index": 10,
+        "table": "lesson_execution_states",
+        "field": "practice_interactions.recovery.rounds[0].content.retest"
+      },
+      "exportPath": "dataset/natural-cases/N-E01-retest.json",
+      "recordSha256": "30b23bd0c1a2d74be44cf607885443e4e190e3f570e4ba27a60a40777eb6dc93"
+    },
+    {
+      "caseId": "N-E02-curriculum",
+      "sourceId": "E02",
+      "collection": "natural",
+      "surface": "curriculum",
+      "path": "runs/final/cases/N-E02-curriculum.json",
+      "recordHash": "8986463467244eb3ef7a3a8ef6f32ee29c760fde5b026743baa15bea01927426",
+      "packetHash": "74f09a90c20945f2ae3175969d75f33951c4e550ea1844015802dd04ab533e54",
+      "origin": {
+        "file": "runs/final-product/cases/E02/final.snapshot.json",
+        "table": "curriculum_versions",
+        "id": "curriculum_1fe53d72-a198-46a4-8f8b-41818af4915c"
+      },
+      "exportPath": "dataset/natural-cases/N-E02-curriculum.json",
+      "recordSha256": "19e72f7c041510db715466c5b749105996da9de17f06f38b7b598471775cd6de"
+    },
+    {
+      "caseId": "N-E02-teaching",
+      "sourceId": "E02",
+      "collection": "natural",
+      "surface": "teaching",
+      "path": "runs/final/cases/N-E02-teaching.json",
+      "recordHash": "afe67498d6c6fd5f7a9759df74a7bdce72f1678c29aacb724ef4169078c6af3b",
+      "packetHash": "2b4e257a7da78205320a5aace8ed234135fdbf8e1be00e9d5cdb22946005d792",
+      "origin": {
+        "file": "runs/final-product/cases/E02/lesson-1-complete.json",
+        "field": "lesson",
+        "scope": "complete displayed first Lesson fields, no later unit"
+      },
+      "exportPath": "dataset/natural-cases/N-E02-teaching.json",
+      "recordSha256": "4179a4bed9dbb3e30b76857c1fcfc4108a7441bce9efb57096af3ef69055f862"
+    },
+    {
+      "caseId": "N-E02-tutor",
+      "sourceId": "E02",
+      "collection": "natural",
+      "surface": "tutor",
+      "path": "runs/final/cases/N-E02-tutor.json",
+      "recordHash": "5525c12e79db29eeb2f3dd8411d9b226871ed43221e30e5f63bf3b64dd0bc068",
+      "packetHash": "652b1c57a0dd076316dbe8a40bfe76b3ec82f32a6cae5ad2660c30317a909b12",
+      "origin": {
+        "file": "runs/final-product/cases/E02/tutor.json",
+        "field": "exchanges",
+        "id": "study_exchange_e9852bd1-4097-4786-ad13-2a3cd0636dfd"
+      },
+      "exportPath": "dataset/natural-cases/N-E02-tutor.json",
+      "recordSha256": "c4568f08e9ebc30c53319066572de42a63454404c375ebf4aaa730e551c7a51c"
+    },
+    {
+      "caseId": "N-E02-practice",
+      "sourceId": "E02",
+      "collection": "natural",
+      "surface": "practice",
+      "path": "runs/final/cases/N-E02-practice.json",
+      "recordHash": "44b057609c990a9eb059e4f8e48682b2d80353dfc382b7e2c2597d1117e61155",
+      "packetHash": "2aaf985439a59b9d574d14e9434fc28605d8ef81297251e9e8e2214a17d8e1f4",
+      "origin": {
+        "file": "runs/final-product/cases/E02/learner-actions.jsonl",
+        "index": 7,
+        "briefId": "teaching_brief_392e90c8-67f7-4dd2-9c0a-b30ae54e25ea",
+        "surface": "initial"
+      },
+      "exportPath": "dataset/natural-cases/N-E02-practice.json",
+      "recordSha256": "a416ea5f87ab23478a2e36cb4b17c8f37f5f47d0b88c10adc025e406723e18b3"
+    },
+    {
+      "caseId": "N-E02-repair",
+      "sourceId": "E02",
+      "collection": "natural",
+      "surface": "repair",
+      "path": "runs/final/cases/N-E02-repair.json",
+      "recordHash": "3de3b445e3d09c30390a16745f40e961e4d2cfaac9124b7eb587df1cac86966f",
+      "packetHash": "9e4810680bf98e3c6067fd5a057d631152634292a9b4c60524fac3fa330a5336",
+      "origin": {
+        "file": "runs/final-product/cases/E02/learner-actions.jsonl",
+        "index": 9,
+        "field": "preAnswerSurface.practice.recovery"
+      },
+      "exportPath": "dataset/natural-cases/N-E02-repair.json",
+      "recordSha256": "351dbd2d08d526ccdf350e1ba7aee05a65d9157e1b0cd4e0e4431e70e7d5a80b"
+    },
+    {
+      "caseId": "N-E02-retest",
+      "sourceId": "E02",
+      "collection": "natural",
+      "surface": "retest",
+      "path": "runs/final/cases/N-E02-retest.json",
+      "recordHash": "3c2110825b1a9354a6df1da28ffc505d996218c4aae0e47096b1234655644ab3",
+      "packetHash": "9d4d9767534a1f09d457a62f30c24926c287e39c0d104fb02a8fc1c74097f974",
+      "origin": {
+        "file": "runs/final-product/cases/E02/learner-actions.jsonl",
+        "index": 10,
+        "table": "lesson_execution_states",
+        "field": "practice_interactions.recovery.rounds[0].content.retest"
+      },
+      "exportPath": "dataset/natural-cases/N-E02-retest.json",
+      "recordSha256": "3b064c88d0c57e6ed07d14923c1ceb71db791af3e78270c7e22333c1130cea63"
+    },
+    {
+      "caseId": "N-E04-curriculum",
+      "sourceId": "E04",
+      "collection": "natural",
+      "surface": "curriculum",
+      "path": "runs/final/cases/N-E04-curriculum.json",
+      "recordHash": "a3ffef2e79f58b1bf66db6d10603918274bb5326d5b3d7134b56ad1eed5219c7",
+      "packetHash": "051702bbf956cd865669e7cb00352725e6033600bc58844c9d2170aab5068d47",
+      "origin": {
+        "file": "runs/final-product/cases/E04/final.snapshot.json",
+        "table": "curriculum_versions",
+        "id": "curriculum_2f69b5d7-84af-4baf-8fd3-7e99702b9f34"
+      },
+      "exportPath": "dataset/natural-cases/N-E04-curriculum.json",
+      "recordSha256": "13fd9765bc6435372feec30d83c32e48fc77da119c9c078ce4430eeca51a9b43"
+    },
+    {
+      "caseId": "N-E04-teaching",
+      "sourceId": "E04",
+      "collection": "natural",
+      "surface": "teaching",
+      "path": "runs/final/cases/N-E04-teaching.json",
+      "recordHash": "db00b93cd227b8afc46a714aed49794dce6b9e15f293a8440d601dee0741863c",
+      "packetHash": "862cb70ae4f93abdcd6d3e9a0fcd783d70a03210bee949c6a737857f68a3024d",
+      "origin": {
+        "file": "runs/final-product/cases/E04/lesson-1-complete.json",
+        "field": "lesson",
+        "scope": "complete displayed first Lesson fields, no later unit"
+      },
+      "exportPath": "dataset/natural-cases/N-E04-teaching.json",
+      "recordSha256": "d98756d15b999c2546b76126921e502be41a130d8a8a55c3cf0889410c10538b"
+    },
+    {
+      "caseId": "N-E04-tutor",
+      "sourceId": "E04",
+      "collection": "natural",
+      "surface": "tutor",
+      "path": "runs/final/cases/N-E04-tutor.json",
+      "recordHash": "da041517c33f9af6bb9774ca37faa12faf55fc79c60227a055ea88322d4260a3",
+      "packetHash": "fbe5e724b473a548e73c74664c1c150f1b0ac853b8e86c09e18ae42818d9276a",
+      "origin": {
+        "file": "runs/final-product/cases/E04/tutor.json",
+        "field": "exchanges",
+        "id": "study_exchange_4f26ef27-e255-49bf-a964-d4a910baee15"
+      },
+      "exportPath": "dataset/natural-cases/N-E04-tutor.json",
+      "recordSha256": "5d82d9f4827f198dfa59a6fd09005c386d10eb5ada4840a01a1d2d9063fc427e"
+    },
+    {
+      "caseId": "N-E04-practice",
+      "sourceId": "E04",
+      "collection": "natural",
+      "surface": "practice",
+      "path": "runs/final/cases/N-E04-practice.json",
+      "recordHash": "4a94ba648e69bea8fdc5f2a90a738148bb32292f0d10da906ea2da246cf3b922",
+      "packetHash": "85df7ef158fb718d1aff9f352814374240d2db73de91a3051a6ed1eea3a33b52",
+      "origin": {
+        "file": "runs/final-product/cases/E04/learner-actions.jsonl",
+        "index": 7,
+        "briefId": "teaching_brief_f4ba4235-0373-4491-a996-850e0557a856",
+        "surface": "initial"
+      },
+      "exportPath": "dataset/natural-cases/N-E04-practice.json",
+      "recordSha256": "16d5750f6e97c49200511e9b6dd694168bef66ae65d875d0a25049d171d2e4ae"
+    },
+    {
+      "caseId": "N-E04-repair",
+      "sourceId": "E04",
+      "collection": "natural",
+      "surface": "repair",
+      "path": "runs/final/cases/N-E04-repair.json",
+      "recordHash": "c305f9941d4b5349ab2d9e818daf404a49b83469bd395d1fb973286192d5580c",
+      "packetHash": "67f49aae8f7f1aa24e139a94ba55cf7297200a70d440d2bca00e1a6f75ccfac6",
+      "origin": {
+        "file": "runs/final-product/cases/E04/learner-actions.jsonl",
+        "index": 9,
+        "field": "preAnswerSurface.practice.recovery"
+      },
+      "exportPath": "dataset/natural-cases/N-E04-repair.json",
+      "recordSha256": "00b6f7100cc3f59878e2e47254cf51f3ed34f5ca36b78120c7b2ad4a5285b442"
+    },
+    {
+      "caseId": "N-E04-retest",
+      "sourceId": "E04",
+      "collection": "natural",
+      "surface": "retest",
+      "path": "runs/final/cases/N-E04-retest.json",
+      "recordHash": "a52ebf465e3e02fa2ec4a7ff156c8f749df1082233ac97598c2ae83a2d16d80e",
+      "packetHash": "3cd61c6fe26530fc21c76602d9c361c4dde9e139fd26b2d3b355c189458f2c42",
+      "origin": {
+        "file": "runs/final-product/cases/E04/learner-actions.jsonl",
+        "index": 10,
+        "table": "lesson_execution_states",
+        "field": "practice_interactions.recovery.rounds[0].content.retest"
+      },
+      "exportPath": "dataset/natural-cases/N-E04-retest.json",
+      "recordSha256": "53d778bf61c9aa81ca6d8b1f6df8562dd4629b2d2937fc3ecd14557ff7d80bca"
+    },
+    {
+      "caseId": "N-B-F01-curriculum",
+      "sourceId": "B-F01",
+      "collection": "natural",
+      "surface": "curriculum",
+      "path": "runs/final/cases/N-B-F01-curriculum.json",
+      "recordHash": "24e6409ab63d0644de0466f5f8e409fefc24f4c59ad8cd688f2e30ba1cadf0ab",
+      "packetHash": "12716e8cd14e9b228628db1eed531481bbeaaeb3a0d4c8be20ecc3ae6e48fa77",
+      "origin": {
+        "file": "runs/final-product/cases/B-F01/final.snapshot.json",
+        "table": "curriculum_versions",
+        "id": "curriculum_bb87e56e-79f2-4189-a0d1-f318c05e9936"
+      },
+      "exportPath": "dataset/natural-cases/N-B-F01-curriculum.json",
+      "recordSha256": "10dee901f9e622dff902d6cf726c8e6e33b19a2120670e8794392303d37f4769"
+    },
+    {
+      "caseId": "N-B-F01-teaching",
+      "sourceId": "B-F01",
+      "collection": "natural",
+      "surface": "teaching",
+      "path": "runs/final/cases/N-B-F01-teaching.json",
+      "recordHash": "9edd134762668496f4025ab8704d64ac8b1d20267a4ea607ca177cc8fc74c510",
+      "packetHash": "660750ec2de1212f6389bf44cc42e44c6561df46fc886d2587bb136673578867",
+      "origin": {
+        "file": "runs/final-product/cases/B-F01/lesson-1-complete.json",
+        "field": "lesson",
+        "scope": "complete displayed first Lesson fields, no later unit"
+      },
+      "exportPath": "dataset/natural-cases/N-B-F01-teaching.json",
+      "recordSha256": "6348b7ae2b9fc4a18dc581239a1f24a4a8286047cda53d4944902a82454778cc"
+    },
+    {
+      "caseId": "N-B-F01-tutor",
+      "sourceId": "B-F01",
+      "collection": "natural",
+      "surface": "tutor",
+      "path": "runs/final/cases/N-B-F01-tutor.json",
+      "recordHash": "4da79fdb6d60216046b9315ba6db125a6198d62757b7e942fee909b2fb0aecd3",
+      "packetHash": "0944985db31f63753041821c43e20257dbc3aeb4a97de814178a299c5d20d180",
+      "origin": {
+        "file": "runs/final-product/cases/B-F01/tutor.json",
+        "field": "exchanges",
+        "id": "study_exchange_2b0cde78-b6dc-4903-97a5-0d05d68ea3c7"
+      },
+      "exportPath": "dataset/natural-cases/N-B-F01-tutor.json",
+      "recordSha256": "5095aee006519f2cc1a07f0f65227a502b13d3266977cf7e081daa94f3362602"
+    },
+    {
+      "caseId": "N-B-F01-practice",
+      "sourceId": "B-F01",
+      "collection": "natural",
+      "surface": "practice",
+      "path": "runs/final/cases/N-B-F01-practice.json",
+      "recordHash": "07dc4a426c5460bd1e66e9cd25b1c27d6b01132ae000a81f586c9762377f8dc8",
+      "packetHash": "51962bbe4ea91f734544d07ea87219094b7e526a35cc1b8fb32f2d90d7e354e7",
+      "origin": {
+        "file": "runs/final-product/cases/B-F01/learner-actions.jsonl",
+        "index": 6,
+        "briefId": "teaching_brief_b7625fa6-5eb4-4f72-b791-c983caf265c7",
+        "surface": "initial"
+      },
+      "exportPath": "dataset/natural-cases/N-B-F01-practice.json",
+      "recordSha256": "c9652bb25bd4a4c7d406046829109f96684ec21052537ec25311077a11d7c82a"
+    },
+    {
+      "caseId": "N-B-F01-repair",
+      "sourceId": "B-F01",
+      "collection": "natural",
+      "surface": "repair",
+      "path": "runs/final/cases/N-B-F01-repair.json",
+      "recordHash": "3a464860d9c24214e85098a820a46e36b96d820f664974530cd6cf15a28159f9",
+      "packetHash": "981d24ab1bcd796b824be230f909139716b262b20ad8d6b48a47956d27e760d7",
+      "origin": {
+        "file": "runs/final-product/cases/B-F01/learner-actions.jsonl",
+        "index": 8,
+        "field": "preAnswerSurface.practice.recovery"
+      },
+      "exportPath": "dataset/natural-cases/N-B-F01-repair.json",
+      "recordSha256": "cb1405d0d45ad7e0e272f3546b0c0596751ad6809c43891e0d5517899518ddf2"
+    },
+    {
+      "caseId": "N-B-F01-retest",
+      "sourceId": "B-F01",
+      "collection": "natural",
+      "surface": "retest",
+      "path": "runs/final/cases/N-B-F01-retest.json",
+      "recordHash": "7ef08789123065243e813a83d1be9917c24f4346567a7cbb00a9e7b14c22a426",
+      "packetHash": "c7565046e706afd6fa7bc3ee286cf04353432e4b21ca633d542df920c3e7e46d",
+      "origin": {
+        "file": "runs/final-product/cases/B-F01/learner-actions.jsonl",
+        "index": 9,
+        "table": "lesson_execution_states",
+        "field": "practice_interactions.recovery.rounds[0].content.retest"
+      },
+      "exportPath": "dataset/natural-cases/N-B-F01-retest.json",
+      "recordSha256": "a3fe296a4c4ca6ff859af960908426693e8912c5e11ada273b73c02f3f7bdab7"
+    },
+    {
+      "caseId": "N-B-F05-curriculum",
+      "sourceId": "B-F05",
+      "collection": "natural",
+      "surface": "curriculum",
+      "path": "runs/final/cases/N-B-F05-curriculum.json",
+      "recordHash": "5a81cbe732e25faa21340520c759c56eec2513f8d0aca8e2f8e55a789500145d",
+      "packetHash": "ebc4a54a474a1c6da6530d9a182d3f0840e90a5263a5261ee6e39976575ee812",
+      "origin": {
+        "file": "runs/final-product/cases/B-F05/final.snapshot.json",
+        "table": "curriculum_versions",
+        "id": "curriculum_d317153a-5ad3-4392-8828-a11b6433c9fc"
+      },
+      "exportPath": "dataset/natural-cases/N-B-F05-curriculum.json",
+      "recordSha256": "5990e4aab1232b7e9e18806cb3e8ee849c032d8ddc7cb81e992c6a60c316a6f0"
+    },
+    {
+      "caseId": "N-B-F09-curriculum",
+      "sourceId": "B-F09",
+      "collection": "natural",
+      "surface": "curriculum",
+      "path": "runs/final/cases/N-B-F09-curriculum.json",
+      "recordHash": "57f8a4a380fe8fd97471c879220785109b69d4f4e103680f94c417b0993fa5f2",
+      "packetHash": "2759ba3522894b5df7a86e5e70f9743f31fb3bbcbe673155c3438782cd1eb380",
+      "origin": {
+        "file": "runs/final-product/cases/B-F09/final.snapshot.json",
+        "table": "curriculum_versions",
+        "id": "curriculum_37a92f42-ae63-4fdf-bf57-7d7cef71064f"
+      },
+      "exportPath": "dataset/natural-cases/N-B-F09-curriculum.json",
+      "recordSha256": "70b500eb6d0d9f95b3c69b33adb7a69589bef047507c64c2b9f968019e977337"
+    },
+    {
+      "caseId": "N-B-F09-teaching",
+      "sourceId": "B-F09",
+      "collection": "natural",
+      "surface": "teaching",
+      "path": "runs/final/cases/N-B-F09-teaching.json",
+      "recordHash": "4a40d399d228000ea07ec7f36403203535381f230950686dbfd924fd2606fae7",
+      "packetHash": "25d5d99a84254a173508931b6f767d534c52dbadac583125e9c8df7ffa31f896",
+      "origin": {
+        "file": "runs/final-product/cases/B-F09/lesson-1-complete.json",
+        "field": "lesson",
+        "scope": "complete displayed first Lesson fields, no later unit"
+      },
+      "exportPath": "dataset/natural-cases/N-B-F09-teaching.json",
+      "recordSha256": "318658da58b52a07cf37d60d64943481ce18ea8ac11cce8fabcdf832ec75319d"
+    },
+    {
+      "caseId": "N-B-F09-tutor",
+      "sourceId": "B-F09",
+      "collection": "natural",
+      "surface": "tutor",
+      "path": "runs/final/cases/N-B-F09-tutor.json",
+      "recordHash": "33391bf8a5d5c2afdf7cc157fa4fe810b51899eda93ca5f73c0395b696f81300",
+      "packetHash": "44f20df613b38106fd9ad5810293b14c8b44f0fd54e873aef8cc5f8410551d52",
+      "origin": {
+        "file": "runs/final-product/cases/B-F09/tutor.json",
+        "field": "exchanges",
+        "id": "study_exchange_04eb971d-90d0-4e15-90af-7a1651174281"
+      },
+      "exportPath": "dataset/natural-cases/N-B-F09-tutor.json",
+      "recordSha256": "d820916a081fc030e0d5700f4ecded6a2fe4d4a7f4b1695f69faf5df4d014543"
+    },
+    {
+      "caseId": "N-B-F09-practice",
+      "sourceId": "B-F09",
+      "collection": "natural",
+      "surface": "practice",
+      "path": "runs/final/cases/N-B-F09-practice.json",
+      "recordHash": "966e3410ed05201ff757a31292f027de5f01c99099912cefbddaa1d386c4843b",
+      "packetHash": "08371604399d5313247207a9098e25247e397afad0e0a1c00974622cee642a93",
+      "origin": {
+        "file": "runs/final-product/cases/B-F09/learner-actions.jsonl",
+        "index": 6,
+        "briefId": "teaching_brief_e23b7ea9-0a1a-4b74-a43d-2e27cd007c44",
+        "surface": "initial"
+      },
+      "exportPath": "dataset/natural-cases/N-B-F09-practice.json",
+      "recordSha256": "cb1646cf697fed71b5514cbcbccd0fd6cae0e406206abf27cd934bb22bd00e6a"
+    },
+    {
+      "caseId": "N-B-F09-repair",
+      "sourceId": "B-F09",
+      "collection": "natural",
+      "surface": "repair",
+      "path": "runs/final/cases/N-B-F09-repair.json",
+      "recordHash": "b5e779367742a72c18267999145bdb9d67f7091d936c9dc0aea6d5c95439cc89",
+      "packetHash": "1c6737c584deca89e3c5c564e0b7f684f9ce4ef9371cdc700024e3466ac2e345",
+      "origin": {
+        "file": "runs/final-product/cases/B-F09/learner-actions.jsonl",
+        "index": 8,
+        "field": "preAnswerSurface.practice.recovery"
+      },
+      "exportPath": "dataset/natural-cases/N-B-F09-repair.json",
+      "recordSha256": "c7eff40d361f79fc9ad8cce8c4da90f3334be3e2f5c54e94ee882e99cd927999"
+    },
+    {
+      "caseId": "N-B-F09-retest",
+      "sourceId": "B-F09",
+      "collection": "natural",
+      "surface": "retest",
+      "path": "runs/final/cases/N-B-F09-retest.json",
+      "recordHash": "e36bc83a04c25ca6d6ed37828dd110a3f23811625fbe8fb6ce2b603eedc85fbd",
+      "packetHash": "277a1c53c8a3355223097220864590be132e9eb9997d2ca344715bfbc2affae0",
+      "origin": {
+        "file": "runs/final-product/cases/B-F09/learner-actions.jsonl",
+        "index": 9,
+        "table": "lesson_execution_states",
+        "field": "practice_interactions.recovery.rounds[0].content.retest"
+      },
+      "exportPath": "dataset/natural-cases/N-B-F09-retest.json",
+      "recordSha256": "864cf64316bc65d2003163107db8cad82ba37174365073fe249429f69ffd034c"
+    },
+    {
+      "caseId": "N-B-F09-formal-question",
+      "sourceId": "B-F09",
+      "collection": "natural",
+      "surface": "formal-question",
+      "path": "runs/final/cases/N-B-F09-formal-question.json",
+      "recordHash": "b2580c607d51309158a787544238f6da5d730ef2597d95bd015f32eaef63e849",
+      "packetHash": "adfe74676522339e7c5ad8e673f8a3dfdd884f1a4236cd0e14b5f22b3a773323",
+      "origin": {
+        "file": "runs/final-product/cases/B-F09/formal-1-version.json",
+        "table": "questions",
+        "questionId": "que_c06472b4-d6de-498d-9390-f78bd8fc3c6a"
+      },
+      "exportPath": "dataset/natural-cases/N-B-F09-formal-question.json",
+      "recordSha256": "20d6a7bee9eb0ce699260ac6da8792c49d22193296dbe6a33202d63f7c367b52"
+    },
+    {
+      "caseId": "N-B-F09-grading-positive",
+      "sourceId": "B-F09",
+      "collection": "natural",
+      "surface": "grading-positive",
+      "path": "runs/final/cases/N-B-F09-grading-positive.json",
+      "recordHash": "29b562531bc00ec53afacf4ad9b002d112b41613cc385460ae787d75251b4d7a",
+      "packetHash": "6c5824a79da6fd675e5a2d3bbadffdd4bc8adfccff6652b768f184ef33751dc1",
+      "origin": {
+        "file": "runs/final-product/cases/B-F09/formal-1-answer.json",
+        "assessmentVersionId": "assessment_version_6cc75552-7840-4360-aca8-3aed6306250b",
+        "itemId": "assessment_item_e752914f-28a8-4305-8ff8-7900e859aa80",
+        "answerPolicy": "registered-source-grounded-answer"
+      },
+      "exportPath": "dataset/natural-cases/N-B-F09-grading-positive.json",
+      "recordSha256": "d7e2180a01c266c2f9da3a20632112a15317cba31f9c9795c01f84260dab35e9"
+    },
+    {
+      "caseId": "N-B-F09-grading-negative",
+      "sourceId": "B-F09",
+      "collection": "natural",
+      "surface": "grading-negative",
+      "path": "runs/final/cases/N-B-F09-grading-negative.json",
+      "recordHash": "804daa96461f40c74fdf29ea809c69ea2b4013a46eca61975e9596843bef4787",
+      "packetHash": "a47dc762fbf03e1d43433417ae1cca7f0750cffd158c6f352c6680130a401361",
+      "origin": {
+        "file": "runs/final-product/cases/B-F09-negative-1/answer.json",
+        "assessmentVersionId": "assessment_version_6cc75552-7840-4360-aca8-3aed6306250b",
+        "itemId": "assessment_item_e752914f-28a8-4305-8ff8-7900e859aa80",
+        "answerPolicy": "registered-insufficient-control"
+      },
+      "exportPath": "dataset/natural-cases/N-B-F09-grading-negative.json",
+      "recordSha256": "92d682159b73029b266499b30f15d286738fb7755709a4833c2dd32628747a57"
+    },
+    {
+      "caseId": "N-B-E01-curriculum",
+      "sourceId": "B-E01",
+      "collection": "natural",
+      "surface": "curriculum",
+      "path": "runs/final/cases/N-B-E01-curriculum.json",
+      "recordHash": "b1fca7d53d2634654cd99daf9cbd09138b2031a3a40f7423cc4e5ed29cf83615",
+      "packetHash": "b659a9c6d5754f480c01fdd6048cd8a956b0104744ab194c8c4c3b80d3a4ea94",
+      "origin": {
+        "file": "runs/final-product/cases/B-E01/final.snapshot.json",
+        "table": "curriculum_versions",
+        "id": "curriculum_341c009e-f47e-46a6-9cb5-eb948f80964a"
+      },
+      "exportPath": "dataset/natural-cases/N-B-E01-curriculum.json",
+      "recordSha256": "57f8680fd90be79dc5d65841dc598d844c6a98c016ee516d4d7f61f08b8c01d9"
+    },
+    {
+      "caseId": "N-B-E01-teaching",
+      "sourceId": "B-E01",
+      "collection": "natural",
+      "surface": "teaching",
+      "path": "runs/final/cases/N-B-E01-teaching.json",
+      "recordHash": "c5151c5373f4ec68b736d20611fb343796bfcdbfa06e5059024330930d752a9c",
+      "packetHash": "2a67cfcd53a837aed2572c9826eb2a5fca3abc74b6de0ef54ec1b6fbb0fffbca",
+      "origin": {
+        "file": "runs/final-product/cases/B-E01/lesson-1-complete.json",
+        "field": "lesson",
+        "scope": "complete displayed first Lesson fields, no later unit"
+      },
+      "exportPath": "dataset/natural-cases/N-B-E01-teaching.json",
+      "recordSha256": "dfddb2aaa7bb751e6acf4c49ea87a58df109153e789c60e4d24c414207b037b5"
+    },
+    {
+      "caseId": "N-B-E01-tutor",
+      "sourceId": "B-E01",
+      "collection": "natural",
+      "surface": "tutor",
+      "path": "runs/final/cases/N-B-E01-tutor.json",
+      "recordHash": "5efe7ca6047f975d05988280bdf87be35161f8158920f34895d43d1d2d0cebc1",
+      "packetHash": "de5a263220e290dffceae6add3f2e0c9ffdd2f7b080d2c6c98f59685b692d4bd",
+      "origin": {
+        "file": "runs/final-product/cases/B-E01/tutor.json",
+        "field": "exchanges",
+        "id": "study_exchange_8582267d-bf3a-4b6b-9196-ad0708d69393"
+      },
+      "exportPath": "dataset/natural-cases/N-B-E01-tutor.json",
+      "recordSha256": "857715f4650cb656451b04b30f304b79404f4f025c301d4769bbdc2000995125"
+    },
+    {
+      "caseId": "N-B-E01-practice",
+      "sourceId": "B-E01",
+      "collection": "natural",
+      "surface": "practice",
+      "path": "runs/final/cases/N-B-E01-practice.json",
+      "recordHash": "beeb921efc5bc6ea6945536983f0b235e4e6ec80c09ddff63ef3b11247ff3ee3",
+      "packetHash": "7915d2aa77168d6f11a94344eb3f5073b36ce298770069090b73d5e827d62074",
+      "origin": {
+        "file": "runs/final-product/cases/B-E01/learner-actions.jsonl",
+        "index": 5,
+        "briefId": "teaching_brief_ada8453e-046f-4e7a-b16a-39408ca45f6f",
+        "surface": "initial"
+      },
+      "exportPath": "dataset/natural-cases/N-B-E01-practice.json",
+      "recordSha256": "d5c8ade47bc9542af47077c016b696e8934ee6ca834104d1c38800c3aa6866cc"
+    },
+    {
+      "caseId": "N-B-E01-repair",
+      "sourceId": "B-E01",
+      "collection": "natural",
+      "surface": "repair",
+      "path": "runs/final/cases/N-B-E01-repair.json",
+      "recordHash": "eca60be53bed70437b8c738a5493483a79155f92f387dac362804cdb1d569610",
+      "packetHash": "b0ccaaab35516f44666b83fbbd2a0c9180592a8beb370db79078194f572516ae",
+      "origin": {
+        "file": "runs/final-product/cases/B-E01/learner-actions.jsonl",
+        "index": 7,
+        "field": "preAnswerSurface.practice.recovery"
+      },
+      "exportPath": "dataset/natural-cases/N-B-E01-repair.json",
+      "recordSha256": "ac4eed1fb0dc96136d5e858f01f7c463ca58ec533fc6f56e44e7bb55e48556d8"
+    },
+    {
+      "caseId": "N-B-E01-retest",
+      "sourceId": "B-E01",
+      "collection": "natural",
+      "surface": "retest",
+      "path": "runs/final/cases/N-B-E01-retest.json",
+      "recordHash": "9ef176af716c6690bacf35fa87485d7532d417a49f084dde0c6f52bb65404a9a",
+      "packetHash": "a420d830e35925dcd178e0513995669e8100a4838d7c0caa3614a63fb52d338b",
+      "origin": {
+        "file": "runs/final-product/cases/B-E01/learner-actions.jsonl",
+        "index": 8,
+        "table": "lesson_execution_states",
+        "field": "practice_interactions.recovery.rounds[0].content.retest"
+      },
+      "exportPath": "dataset/natural-cases/N-B-E01-retest.json",
+      "recordSha256": "b7ba05f851807c4e7e38ef3bd2db0ee9dad309d0777e311c2302f4680666f02f"
+    },
+    {
+      "caseId": "N-B-E01-formal-question",
+      "sourceId": "B-E01",
+      "collection": "natural",
+      "surface": "formal-question",
+      "path": "runs/final/cases/N-B-E01-formal-question.json",
+      "recordHash": "6eaf3e0e31fc0a9ab0dc0259cdf53df1a1cdbf13c4f579e1be65ed206768c6a9",
+      "packetHash": "9d3ec04303a75c540245aa5c22d331b7d83e9451cee8fd474c55fe097d50af27",
+      "origin": {
+        "file": "runs/final-product/cases/B-E01/formal-1-version.json",
+        "table": "questions",
+        "questionId": "que_245e7ca9-2af5-4f2f-9e2a-80117511924b"
+      },
+      "exportPath": "dataset/natural-cases/N-B-E01-formal-question.json",
+      "recordSha256": "561e847cd0752749ee4893e2220ec4ed67a1e6a6c2dd35ec484fc6640ac756b3"
+    },
+    {
+      "caseId": "N-B-E01-grading-positive",
+      "sourceId": "B-E01",
+      "collection": "natural",
+      "surface": "grading-positive",
+      "path": "runs/final/cases/N-B-E01-grading-positive.json",
+      "recordHash": "9d1359a6c80a15d2c346314336163ef6aa9f8a6d85d3ae9c642df6a70878bab8",
+      "packetHash": "0c14063510d4bcbcb8d077c500e74ef03cfb38395c3fe4dc76d1cb103de176a4",
+      "origin": {
+        "file": "runs/final-product/cases/B-E01/formal-1-answer.json",
+        "assessmentVersionId": "assessment_version_2e11f76c-5773-4e74-8fa6-09cf4716ccc4",
+        "itemId": "assessment_item_e2e8ca13-3543-4aaf-b013-9997902609cf",
+        "answerPolicy": "registered-source-grounded-answer"
+      },
+      "exportPath": "dataset/natural-cases/N-B-E01-grading-positive.json",
+      "recordSha256": "9ac6211832d6c4c8f9e31545df04a1fcf65b7478921118ea13a5300fb77d456e"
+    },
+    {
+      "caseId": "N-B-E01-grading-negative",
+      "sourceId": "B-E01",
+      "collection": "natural",
+      "surface": "grading-negative",
+      "path": "runs/final/cases/N-B-E01-grading-negative.json",
+      "recordHash": "db9feff30912c9dd835ce951cefa5e8be627870c630fb2f98fa2c4ba06c4f292",
+      "packetHash": "f69662c458f55af607b27562f3b1e20646e04b30dc8f33908b175a8e1cc99658",
+      "origin": {
+        "file": "runs/final-product/cases/B-E01-negative-1/answer.json",
+        "assessmentVersionId": "assessment_version_2e11f76c-5773-4e74-8fa6-09cf4716ccc4",
+        "itemId": "assessment_item_e2e8ca13-3543-4aaf-b013-9997902609cf",
+        "answerPolicy": "registered-insufficient-control"
+      },
+      "exportPath": "dataset/natural-cases/N-B-E01-grading-negative.json",
+      "recordSha256": "9500024c7e5670a6cd550b9d671068d8477a6b56baba257ee0018b8745e46bae"
+    }
+  ]
+}

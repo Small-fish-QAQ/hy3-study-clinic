@@ -1,0 +1,349 @@
+{
+  "task": {
+    "caseId": "N-F07-curriculum",
+    "runId": "N-F07-curriculum-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-F07-curriculum.json",
+    "inputHash": "51ce113863d829ac1ea758729853d1861632b32718635243e3216d38e5786518",
+    "population": "natural",
+    "sourceId": "F07"
+  },
+  "inputHash": "51ce113863d829ac1ea758729853d1861632b32718635243e3216d38e5786518",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "correctness": "d395a0b96d09617dc01e3f4a2fd3a2047b490785dd5c708c6253d84a999138ec",
+      "artifact-audit": "d395a0b96d09617dc01e3f4a2fd3a2047b490785dd5c708c6253d84a999138ec",
+      "certification": "d395a0b96d09617dc01e3f4a2fd3a2047b490785dd5c708c6253d84a999138ec"
+    },
+    "stages": {
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "clear",
+            "affected": [],
+            "reason": "核验 artifacts/1 中四个 obj 的 description 条件总结与来源 e3 实例对照：obj_7987c8e3 的'同时改变多变量不能单一归因、保持无关条件一致'对应 e3 水/温/光同变无法归因及应保持一致；obj_190018e2 应用发芽操作定义并记录全部种子算比例对应 e3 定义与记录规则；obj_3add2d02 设计后续实验对应疑问、保对照一致、明确定义标准对应 e3 后续实验要求；obj_c3461bb6 区分观察与普遍规律、计划执行分离、独立重复要求对应 e3 单次观察不限普遍规律、定义非完整描述、计划执行分离、重复非照片复制等。作者总结量词与条件与来源一致，无混淆充分必要，无实质错误。",
+            "refs": [
+              "e3",
+              "e19"
+            ],
+            "challenge": {
+              "status": "closed",
+              "reason": "针对 obj_7987c8e3 规则尝试构造相容反例：同时改变水与温度但已知温度无影响，则可归因水。但 e3 的方法论规则基于实验设计混淆导致证据不足不能归因，目标为识别此类混淆设计，并非断言绝对因果不可能；且 e3 未提供他变量无效的事实，故原教学断言在给定事实下成立，反例被来源观察规则排除。",
+              "refs": [
+                "e3",
+                "e19"
+              ]
+            },
+            "witnesses": [
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "课堂把同一批种子分到两个透明盒中，想比较有水和无水时的发芽情况。为了使比较有意义，应尽量让其他有关条件一致，例如种子数量、来源、温度、光照、观察天数与发芽判定方式。若有水盒放在温暖窗台、无水盒放在冷暗柜里，即使结果不同，也无法把差异单独归因于水，因为温度和光照同时改变了。\n这里把“发芽”操作性地定义为观察到胚根伸出种皮，便于不同记录者使用同一标准。这个定义是本实验的观察规则，不是所有生物过程的完整描述。记录者应按事先约定的时间观察全部种子，而不是只挑成功的那几颗展示。没有发芽的种子也必须计入，才能知道发芽比例。\n设两盒各十粒同批种子，均在同温同光处放置七天。甲盒保持适量湿润，乙盒保持干燥。甲有八粒达到上述标准，乙有一粒。可以说在这批种子和这些条件下，湿润组观察到的发芽比例更高。仅凭这一次观察，还不能断言所有种类的种子只要加水都会发芽；种子活性、温度及其他条件仍可能重要。也不能说乙盒绝对没有任何水分，因为“保持干燥”是操作描述，并未测出零水分。\n重复实验可以帮助检查结果是否稳定，但重复的对象、条件与方法需要记录。把同一张照片复制三次不是三次独立实验。同一盒内种子也共享环境，不能总把它们当成互不影响的完整重复。入门练习无需复杂统计检验，只要能说明为什么重复有用、哪些信息仍然有限。\n好的后续实验应对应目前的疑问。如果怀疑温度造成差异，就应在同一温度下只改变湿润条件，或设计清楚的组合比较；不能一边改变温度，一边换种子品种，再把结果归因于某一个因素。若希望研究“水太多是否也影响发芽”，可以在其他条件一致时增加不同水量组，事先说明每组的水量与观察标准。\n解释实验时，把计划、执行、观察和结论分开写。计划相同不代表执行真的相同，需核对记录；观察不同不自动证明唯一原因。允许结果不支持原假说，并据此修改下一步问题，正是实验学习的一部分。对证据保留限制，不妨碍学生提出清楚、可检验的预测。",
+                "valueHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648"
+              },
+              {
+                "id": "e19",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "[{\"id\":\"obj_7987c8e3-199c-4229-8598-dae8380b6117\",\"title\":\"识别比较中同时改变的变量并保持无关条件一致\",\"description\":\"Identify when a comparison simultaneously changes multiple variables (e.g., water, temperature, light) and thus cannot attribute difference to a single factor; keep other relevant conditions consistent for valid comparison.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_020e0fb5-0214-4602-af19-786092ae519a\",\"ta_52701f6e-654f-451e-8a9f-98462eaa10e3\"],\"authorityClaimIds\":[\"tac_e0d72998-9109-4402-9a5f-6aaa66f4e118\",\"tac_e990d1ee-a548-42db-91f0-e5e3d12fba6e\",\"tac_19dd6063-0c42-41e2-b6dd-655ce6280cbf\",\"tac_6aa09108-dc67-4a7a-9657-09638dfa3b45\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E1 and E10 provide formal_sufficient authority for identify construct, matching the independently authorized Formal path.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_6718cff7\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_6718cff7\"]},{\"id\":\"obj_190018e2-4f88-4ddb-b03f-da491e28d034\",\"title\":\"应用发芽操作定义并完整记录种子计算比例\",\"description\":\"Apply operational definition of germination (radicle out of seed coat) and record all seeds including non-germinated at predetermined times to compute germination proportion.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_020e0fb5-0214-4602-af19-786092ae519a\",\"ta_52701f6e-654f-451e-8a9f-98462eaa10e3\"],\"authorityClaimIds\":[\"tac_0596b4dd-43a0-40bc-bb4f-f32f453b6332\",\"tac_78878d21-51fb-4242-bca2-9853a4e33b28\",\"tac_c4bec023-f880-4271-beb9-12ce6c80752f\",\"tac_29744ad8-7d88-43db-ae63-e58ae0cbb1f4\",\"tac_51185121-e7b0-436b-9b45-991f13957200\",\"tac_993a5cce-3e40-4b8d-a946-4683665b6579\"],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation with apply construct; exact evidence lacks formal apply authority, so retained as high teaching priority per policy.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_6718cff7\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_3add2d02-2c52-4bf3-b1fb-36e6b77c8527\",\"title\":\"设计保留对照并检验假说的后续实验\",\"description\":\"Design a follow-up experiment that addresses the current question, retains control/comparison with consistent irrelevant conditions, clearly defines variables and observation standards, and can test hypothesis without confounding factors.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"Design construct is teaching-only with no formal evidence authority; central to contract intent, thus high teaching priority.\",\"formalAssessmentConstruct\":\"design\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_c3461bb6-436d-4ec4-a661-4ba6c9c18315\",\"title\":\"识别观察与普遍规律区别、计划执行分离及独立重复要求\",\"description\":\"Identify and distinguish specific experimental observation from universal generalization; recognize operational definition is an observation rule not complete description, and a single observation does not prove a general law. Identify and separate plan, execution, observation, and conclusion when explaining experiments; recognize plan may differ from execution, observation doesn't auto prove unique cause, and unsupported hypothesis is allowed. Identify requirements for independent replication (not photo duplication, not shared-environment seeds as full repeats) and make cautious inference about limited evidence scope.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_020e0fb5-0214-4602-af19-786092ae519a\",\"ta_52701f6e-654f-451e-8a9f-98462eaa10e3\"],\"authorityClaimIds\":[\"tac_5c7bf80d-a439-4301-bb66-b103be264f7e\",\"tac_f04a455d-e5f6-491b-b9ab-925540f4c499\"],\"priority\":\"high\",\"priorityRationale\":\"Merged identify capabilities central to learning intent; exact evidence for parts is unavailable or only partially formal, so retained as high teaching priority rather than required.\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_6718cff7\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_6718cff7\"]}]",
+                "valueHash": "2c157ef3465d4d09c28f0e3cea83406d5ddb03211e4afd2582b434a1e7fd403d"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "kind": "quantities",
+            "status": "not_applicable",
+            "affected": [],
+            "reason": "待评产物 objectives 未做数量推导或公式绑定，虽来源含十粒/八粒等数值但无作者数量断言需独立重算。",
+            "contextHash": "d395a0b96d09617dc01e3f4a2fd3a2047b490785dd5c708c6253d84a999138ec",
+            "proposed": {
+              "kind": "quantities",
+              "status": "not_applicable",
+              "affected": [],
+              "reason": "待评产物 objectives 未做数量推导或公式绑定，虽来源含十粒/八粒等数值但无作者数量断言需独立重算。",
+              "refs": [
+                "e3",
+                "e19"
+              ]
+            },
+            "reviewReasons": []
+          }
+        ],
+        "keys": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 2,
+            "reason": "声明的学习目标 goals(e5,e6,e7) 在产物 objectives(e18,e19) 中均有对应条目(obj_7987c8e3 覆盖识别同时改变变量, obj_c3461bb6 覆盖区分观察与普遍规律, obj_3add2d02 覆盖设计后续实验)，描述与来源 e3 教学断言一致，无目标消失、扭曲或削弱；满足 rubric 中必要目标有忠实可用处理，得2分。",
+            "refs": [
+              "e5",
+              "e6",
+              "e7",
+              "e18",
+              "e19",
+              "e3"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "识别比较中同时改变的变量",
+                "valueHash": "8f35b76ddbb2d39b143a056910fd5c72261ea91f448cbff63ee0837fc75620be"
+              },
+              {
+                "id": "e6",
+                "pointer": "/goals/1",
+                "role": "goal",
+                "kind": "text",
+                "value": "区分实验观察与普遍规律",
+                "valueHash": "3530eeb6511b1a1073a57fcc7c5ff49dd8215420d9858326aa5a667bce47c295"
+              },
+              {
+                "id": "e7",
+                "pointer": "/goals/2",
+                "role": "goal",
+                "kind": "text",
+                "value": "设计保留对照并能检验假说的后续实验",
+                "valueHash": "94c5bc19e0ee073f20331276617163f9935e201c9de4be6e7dd58a97ac8d211b"
+              },
+              {
+                "id": "e18",
+                "pointer": "/artifacts/1/id",
+                "role": "artifact",
+                "kind": "text",
+                "value": "cun_30f6c3ae-a5fb-49ea-becf-e34b797a2b6c/objectives",
+                "valueHash": "8d2acb9efbd8e257751daa9c260d5eaff17c1198731d099545874b3d023ab13d"
+              },
+              {
+                "id": "e19",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "[{\"id\":\"obj_7987c8e3-199c-4229-8598-dae8380b6117\",\"title\":\"识别比较中同时改变的变量并保持无关条件一致\",\"description\":\"Identify when a comparison simultaneously changes multiple variables (e.g., water, temperature, light) and thus cannot attribute difference to a single factor; keep other relevant conditions consistent for valid comparison.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_020e0fb5-0214-4602-af19-786092ae519a\",\"ta_52701f6e-654f-451e-8a9f-98462eaa10e3\"],\"authorityClaimIds\":[\"tac_e0d72998-9109-4402-9a5f-6aaa66f4e118\",\"tac_e990d1ee-a548-42db-91f0-e5e3d12fba6e\",\"tac_19dd6063-0c42-41e2-b6dd-655ce6280cbf\",\"tac_6aa09108-dc67-4a7a-9657-09638dfa3b45\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E1 and E10 provide formal_sufficient authority for identify construct, matching the independently authorized Formal path.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_6718cff7\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_6718cff7\"]},{\"id\":\"obj_190018e2-4f88-4ddb-b03f-da491e28d034\",\"title\":\"应用发芽操作定义并完整记录种子计算比例\",\"description\":\"Apply operational definition of germination (radicle out of seed coat) and record all seeds including non-germinated at predetermined times to compute germination proportion.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_020e0fb5-0214-4602-af19-786092ae519a\",\"ta_52701f6e-654f-451e-8a9f-98462eaa10e3\"],\"authorityClaimIds\":[\"tac_0596b4dd-43a0-40bc-bb4f-f32f453b6332\",\"tac_78878d21-51fb-4242-bca2-9853a4e33b28\",\"tac_c4bec023-f880-4271-beb9-12ce6c80752f\",\"tac_29744ad8-7d88-43db-ae63-e58ae0cbb1f4\",\"tac_51185121-e7b0-436b-9b45-991f13957200\",\"tac_993a5cce-3e40-4b8d-a946-4683665b6579\"],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation with apply construct; exact evidence lacks formal apply authority, so retained as high teaching priority per policy.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_6718cff7\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_3add2d02-2c52-4bf3-b1fb-36e6b77c8527\",\"title\":\"设计保留对照并检验假说的后续实验\",\"description\":\"Design a follow-up experiment that addresses the current question, retains control/comparison with consistent irrelevant conditions, clearly defines variables and observation standards, and can test hypothesis without confounding factors.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"Design construct is teaching-only with no formal evidence authority; central to contract intent, thus high teaching priority.\",\"formalAssessmentConstruct\":\"design\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_c3461bb6-436d-4ec4-a661-4ba6c9c18315\",\"title\":\"识别观察与普遍规律区别、计划执行分离及独立重复要求\",\"description\":\"Identify and distinguish specific experimental observation from universal generalization; recognize operational definition is an observation rule not complete description, and a single observation does not prove a general law. Identify and separate plan, execution, observation, and conclusion when explaining experiments; recognize plan may differ from execution, observation doesn't auto prove unique cause, and unsupported hypothesis is allowed. Identify requirements for independent replication (not photo duplication, not shared-environment seeds as full repeats) and make cautious inference about limited evidence scope.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_020e0fb5-0214-4602-af19-786092ae519a\",\"ta_52701f6e-654f-451e-8a9f-98462eaa10e3\"],\"authorityClaimIds\":[\"tac_5c7bf80d-a439-4301-bb66-b103be264f7e\",\"tac_f04a455d-e5f6-491b-b9ab-925540f4c499\"],\"priority\":\"high\",\"priorityRationale\":\"Merged identify capabilities central to learning intent; exact evidence for parts is unavailable or only partially formal, so retained as high teaching priority rather than required.\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_6718cff7\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_6718cff7\"]}]",
+                "valueHash": "2c157ef3465d4d09c28f0e3cea83406d5ddb03211e4afd2582b434a1e7fd403d"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "课堂把同一批种子分到两个透明盒中，想比较有水和无水时的发芽情况。为了使比较有意义，应尽量让其他有关条件一致，例如种子数量、来源、温度、光照、观察天数与发芽判定方式。若有水盒放在温暖窗台、无水盒放在冷暗柜里，即使结果不同，也无法把差异单独归因于水，因为温度和光照同时改变了。\n这里把“发芽”操作性地定义为观察到胚根伸出种皮，便于不同记录者使用同一标准。这个定义是本实验的观察规则，不是所有生物过程的完整描述。记录者应按事先约定的时间观察全部种子，而不是只挑成功的那几颗展示。没有发芽的种子也必须计入，才能知道发芽比例。\n设两盒各十粒同批种子，均在同温同光处放置七天。甲盒保持适量湿润，乙盒保持干燥。甲有八粒达到上述标准，乙有一粒。可以说在这批种子和这些条件下，湿润组观察到的发芽比例更高。仅凭这一次观察，还不能断言所有种类的种子只要加水都会发芽；种子活性、温度及其他条件仍可能重要。也不能说乙盒绝对没有任何水分，因为“保持干燥”是操作描述，并未测出零水分。\n重复实验可以帮助检查结果是否稳定，但重复的对象、条件与方法需要记录。把同一张照片复制三次不是三次独立实验。同一盒内种子也共享环境，不能总把它们当成互不影响的完整重复。入门练习无需复杂统计检验，只要能说明为什么重复有用、哪些信息仍然有限。\n好的后续实验应对应目前的疑问。如果怀疑温度造成差异，就应在同一温度下只改变湿润条件，或设计清楚的组合比较；不能一边改变温度，一边换种子品种，再把结果归因于某一个因素。若希望研究“水太多是否也影响发芽”，可以在其他条件一致时增加不同水量组，事先说明每组的水量与观察标准。\n解释实验时，把计划、执行、观察和结论分开写。计划相同不代表执行真的相同，需核对记录；观察不同不自动证明唯一原因。允许结果不支持原假说，并据此修改下一步问题，正是实验学习的一部分。对证据保留限制，不妨碍学生提出清楚、可检验的预测。",
+                "valueHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q2",
+            "status": "supported",
+            "reason": "候选结论称目标e5,e6,e7在产物e18/e19的obj_7987c8e3、obj_c3461bb6、obj_3add2d02中忠实覆盖且与e3教学断言一致；findings审计与条件核查status clear、挑战closed、无未决异议，支持字段未被质疑，正向判断成立。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "识别比较中同时改变的变量",
+                "valueHash": "8f35b76ddbb2d39b143a056910fd5c72261ea91f448cbff63ee0837fc75620be"
+              },
+              {
+                "id": "e6",
+                "pointer": "/goals/1",
+                "role": "goal",
+                "kind": "text",
+                "value": "区分实验观察与普遍规律",
+                "valueHash": "3530eeb6511b1a1073a57fcc7c5ff49dd8215420d9858326aa5a667bce47c295"
+              },
+              {
+                "id": "e7",
+                "pointer": "/goals/2",
+                "role": "goal",
+                "kind": "text",
+                "value": "设计保留对照并能检验假说的后续实验",
+                "valueHash": "94c5bc19e0ee073f20331276617163f9935e201c9de4be6e7dd58a97ac8d211b"
+              },
+              {
+                "id": "e18",
+                "pointer": "/artifacts/1/id",
+                "role": "artifact",
+                "kind": "text",
+                "value": "cun_30f6c3ae-a5fb-49ea-becf-e34b797a2b6c/objectives",
+                "valueHash": "8d2acb9efbd8e257751daa9c260d5eaff17c1198731d099545874b3d023ab13d"
+              },
+              {
+                "id": "e19",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "[{\"id\":\"obj_7987c8e3-199c-4229-8598-dae8380b6117\",\"title\":\"识别比较中同时改变的变量并保持无关条件一致\",\"description\":\"Identify when a comparison simultaneously changes multiple variables (e.g., water, temperature, light) and thus cannot attribute difference to a single factor; keep other relevant conditions consistent for valid comparison.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_020e0fb5-0214-4602-af19-786092ae519a\",\"ta_52701f6e-654f-451e-8a9f-98462eaa10e3\"],\"authorityClaimIds\":[\"tac_e0d72998-9109-4402-9a5f-6aaa66f4e118\",\"tac_e990d1ee-a548-42db-91f0-e5e3d12fba6e\",\"tac_19dd6063-0c42-41e2-b6dd-655ce6280cbf\",\"tac_6aa09108-dc67-4a7a-9657-09638dfa3b45\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E1 and E10 provide formal_sufficient authority for identify construct, matching the independently authorized Formal path.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_6718cff7\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_6718cff7\"]},{\"id\":\"obj_190018e2-4f88-4ddb-b03f-da491e28d034\",\"title\":\"应用发芽操作定义并完整记录种子计算比例\",\"description\":\"Apply operational definition of germination (radicle out of seed coat) and record all seeds including non-germinated at predetermined times to compute germination proportion.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_020e0fb5-0214-4602-af19-786092ae519a\",\"ta_52701f6e-654f-451e-8a9f-98462eaa10e3\"],\"authorityClaimIds\":[\"tac_0596b4dd-43a0-40bc-bb4f-f32f453b6332\",\"tac_78878d21-51fb-4242-bca2-9853a4e33b28\",\"tac_c4bec023-f880-4271-beb9-12ce6c80752f\",\"tac_29744ad8-7d88-43db-ae63-e58ae0cbb1f4\",\"tac_51185121-e7b0-436b-9b45-991f13957200\",\"tac_993a5cce-3e40-4b8d-a946-4683665b6579\"],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation with apply construct; exact evidence lacks formal apply authority, so retained as high teaching priority per policy.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_6718cff7\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_3add2d02-2c52-4bf3-b1fb-36e6b77c8527\",\"title\":\"设计保留对照并检验假说的后续实验\",\"description\":\"Design a follow-up experiment that addresses the current question, retains control/comparison with consistent irrelevant conditions, clearly defines variables and observation standards, and can test hypothesis without confounding factors.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"Design construct is teaching-only with no formal evidence authority; central to contract intent, thus high teaching priority.\",\"formalAssessmentConstruct\":\"design\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_c3461bb6-436d-4ec4-a661-4ba6c9c18315\",\"title\":\"识别观察与普遍规律区别、计划执行分离及独立重复要求\",\"description\":\"Identify and distinguish specific experimental observation from universal generalization; recognize operational definition is an observation rule not complete description, and a single observation does not prove a general law. Identify and separate plan, execution, observation, and conclusion when explaining experiments; recognize plan may differ from execution, observation doesn't auto prove unique cause, and unsupported hypothesis is allowed. Identify requirements for independent replication (not photo duplication, not shared-environment seeds as full repeats) and make cautious inference about limited evidence scope.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_020e0fb5-0214-4602-af19-786092ae519a\",\"ta_52701f6e-654f-451e-8a9f-98462eaa10e3\"],\"authorityClaimIds\":[\"tac_5c7bf80d-a439-4301-bb66-b103be264f7e\",\"tac_f04a455d-e5f6-491b-b9ab-925540f4c499\"],\"priority\":\"high\",\"priorityRationale\":\"Merged identify capabilities central to learning intent; exact evidence for parts is unavailable or only partially formal, so retained as high teaching priority rather than required.\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_6718cff7\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_6718cff7\"]}]",
+                "valueHash": "2c157ef3465d4d09c28f0e3cea83406d5ddb03211e4afd2582b434a1e7fd403d"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "课堂把同一批种子分到两个透明盒中，想比较有水和无水时的发芽情况。为了使比较有意义，应尽量让其他有关条件一致，例如种子数量、来源、温度、光照、观察天数与发芽判定方式。若有水盒放在温暖窗台、无水盒放在冷暗柜里，即使结果不同，也无法把差异单独归因于水，因为温度和光照同时改变了。\n这里把“发芽”操作性地定义为观察到胚根伸出种皮，便于不同记录者使用同一标准。这个定义是本实验的观察规则，不是所有生物过程的完整描述。记录者应按事先约定的时间观察全部种子，而不是只挑成功的那几颗展示。没有发芽的种子也必须计入，才能知道发芽比例。\n设两盒各十粒同批种子，均在同温同光处放置七天。甲盒保持适量湿润，乙盒保持干燥。甲有八粒达到上述标准，乙有一粒。可以说在这批种子和这些条件下，湿润组观察到的发芽比例更高。仅凭这一次观察，还不能断言所有种类的种子只要加水都会发芽；种子活性、温度及其他条件仍可能重要。也不能说乙盒绝对没有任何水分，因为“保持干燥”是操作描述，并未测出零水分。\n重复实验可以帮助检查结果是否稳定，但重复的对象、条件与方法需要记录。把同一张照片复制三次不是三次独立实验。同一盒内种子也共享环境，不能总把它们当成互不影响的完整重复。入门练习无需复杂统计检验，只要能说明为什么重复有用、哪些信息仍然有限。\n好的后续实验应对应目前的疑问。如果怀疑温度造成差异，就应在同一温度下只改变湿润条件，或设计清楚的组合比较；不能一边改变温度，一边换种子品种，再把结果归因于某一个因素。若希望研究“水太多是否也影响发芽”，可以在其他条件一致时增加不同水量组，事先说明每组的水量与观察标准。\n解释实验时，把计划、执行、观察和结论分开写。计划相同不代表执行真的相同，需核对记录；观察不同不自动证明唯一原因。允许结果不支持原假说，并据此修改下一步问题，正是实验学习的一部分。对证据保留限制，不妨碍学生提出清楚、可检验的预测。",
+                "valueHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q2",
+          "level": 2,
+          "reason": "声明的学习目标 goals(e5,e6,e7) 在产物 objectives(e18,e19) 中均有对应条目(obj_7987c8e3 覆盖识别同时改变变量, obj_c3461bb6 覆盖区分观察与普遍规律, obj_3add2d02 覆盖设计后续实验)，描述与来源 e3 教学断言一致，无目标消失、扭曲或削弱；满足 rubric 中必要目标有忠实可用处理，得2分。",
+          "refs": [
+            "e5",
+            "e6",
+            "e7",
+            "e18",
+            "e19",
+            "e3"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e5",
+              "pointer": "/goals/0",
+              "role": "goal",
+              "kind": "text",
+              "value": "识别比较中同时改变的变量",
+              "valueHash": "8f35b76ddbb2d39b143a056910fd5c72261ea91f448cbff63ee0837fc75620be"
+            },
+            {
+              "id": "e6",
+              "pointer": "/goals/1",
+              "role": "goal",
+              "kind": "text",
+              "value": "区分实验观察与普遍规律",
+              "valueHash": "3530eeb6511b1a1073a57fcc7c5ff49dd8215420d9858326aa5a667bce47c295"
+            },
+            {
+              "id": "e7",
+              "pointer": "/goals/2",
+              "role": "goal",
+              "kind": "text",
+              "value": "设计保留对照并能检验假说的后续实验",
+              "valueHash": "94c5bc19e0ee073f20331276617163f9935e201c9de4be6e7dd58a97ac8d211b"
+            },
+            {
+              "id": "e18",
+              "pointer": "/artifacts/1/id",
+              "role": "artifact",
+              "kind": "text",
+              "value": "cun_30f6c3ae-a5fb-49ea-becf-e34b797a2b6c/objectives",
+              "valueHash": "8d2acb9efbd8e257751daa9c260d5eaff17c1198731d099545874b3d023ab13d"
+            },
+            {
+              "id": "e19",
+              "pointer": "/artifacts/1/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "[{\"id\":\"obj_7987c8e3-199c-4229-8598-dae8380b6117\",\"title\":\"识别比较中同时改变的变量并保持无关条件一致\",\"description\":\"Identify when a comparison simultaneously changes multiple variables (e.g., water, temperature, light) and thus cannot attribute difference to a single factor; keep other relevant conditions consistent for valid comparison.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_020e0fb5-0214-4602-af19-786092ae519a\",\"ta_52701f6e-654f-451e-8a9f-98462eaa10e3\"],\"authorityClaimIds\":[\"tac_e0d72998-9109-4402-9a5f-6aaa66f4e118\",\"tac_e990d1ee-a548-42db-91f0-e5e3d12fba6e\",\"tac_19dd6063-0c42-41e2-b6dd-655ce6280cbf\",\"tac_6aa09108-dc67-4a7a-9657-09638dfa3b45\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E1 and E10 provide formal_sufficient authority for identify construct, matching the independently authorized Formal path.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_6718cff7\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_6718cff7\"]},{\"id\":\"obj_190018e2-4f88-4ddb-b03f-da491e28d034\",\"title\":\"应用发芽操作定义并完整记录种子计算比例\",\"description\":\"Apply operational definition of germination (radicle out of seed coat) and record all seeds including non-germinated at predetermined times to compute germination proportion.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_020e0fb5-0214-4602-af19-786092ae519a\",\"ta_52701f6e-654f-451e-8a9f-98462eaa10e3\"],\"authorityClaimIds\":[\"tac_0596b4dd-43a0-40bc-bb4f-f32f453b6332\",\"tac_78878d21-51fb-4242-bca2-9853a4e33b28\",\"tac_c4bec023-f880-4271-beb9-12ce6c80752f\",\"tac_29744ad8-7d88-43db-ae63-e58ae0cbb1f4\",\"tac_51185121-e7b0-436b-9b45-991f13957200\",\"tac_993a5cce-3e40-4b8d-a946-4683665b6579\"],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation with apply construct; exact evidence lacks formal apply authority, so retained as high teaching priority per policy.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_6718cff7\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_3add2d02-2c52-4bf3-b1fb-36e6b77c8527\",\"title\":\"设计保留对照并检验假说的后续实验\",\"description\":\"Design a follow-up experiment that addresses the current question, retains control/comparison with consistent irrelevant conditions, clearly defines variables and observation standards, and can test hypothesis without confounding factors.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"Design construct is teaching-only with no formal evidence authority; central to contract intent, thus high teaching priority.\",\"formalAssessmentConstruct\":\"design\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_c3461bb6-436d-4ec4-a661-4ba6c9c18315\",\"title\":\"识别观察与普遍规律区别、计划执行分离及独立重复要求\",\"description\":\"Identify and distinguish specific experimental observation from universal generalization; recognize operational definition is an observation rule not complete description, and a single observation does not prove a general law. Identify and separate plan, execution, observation, and conclusion when explaining experiments; recognize plan may differ from execution, observation doesn't auto prove unique cause, and unsupported hypothesis is allowed. Identify requirements for independent replication (not photo duplication, not shared-environment seeds as full repeats) and make cautious inference about limited evidence scope.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_020e0fb5-0214-4602-af19-786092ae519a\",\"ta_52701f6e-654f-451e-8a9f-98462eaa10e3\"],\"authorityClaimIds\":[\"tac_5c7bf80d-a439-4301-bb66-b103be264f7e\",\"tac_f04a455d-e5f6-491b-b9ab-925540f4c499\"],\"priority\":\"high\",\"priorityRationale\":\"Merged identify capabilities central to learning intent; exact evidence for parts is unavailable or only partially formal, so retained as high teaching priority rather than required.\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_6718cff7\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_6718cff7\"]}]",
+              "valueHash": "2c157ef3465d4d09c28f0e3cea83406d5ddb03211e4afd2582b434a1e7fd403d"
+            },
+            {
+              "id": "e3",
+              "pointer": "/sources/0/text",
+              "role": "source",
+              "kind": "text",
+              "value": "课堂把同一批种子分到两个透明盒中，想比较有水和无水时的发芽情况。为了使比较有意义，应尽量让其他有关条件一致，例如种子数量、来源、温度、光照、观察天数与发芽判定方式。若有水盒放在温暖窗台、无水盒放在冷暗柜里，即使结果不同，也无法把差异单独归因于水，因为温度和光照同时改变了。\n这里把“发芽”操作性地定义为观察到胚根伸出种皮，便于不同记录者使用同一标准。这个定义是本实验的观察规则，不是所有生物过程的完整描述。记录者应按事先约定的时间观察全部种子，而不是只挑成功的那几颗展示。没有发芽的种子也必须计入，才能知道发芽比例。\n设两盒各十粒同批种子，均在同温同光处放置七天。甲盒保持适量湿润，乙盒保持干燥。甲有八粒达到上述标准，乙有一粒。可以说在这批种子和这些条件下，湿润组观察到的发芽比例更高。仅凭这一次观察，还不能断言所有种类的种子只要加水都会发芽；种子活性、温度及其他条件仍可能重要。也不能说乙盒绝对没有任何水分，因为“保持干燥”是操作描述，并未测出零水分。\n重复实验可以帮助检查结果是否稳定，但重复的对象、条件与方法需要记录。把同一张照片复制三次不是三次独立实验。同一盒内种子也共享环境，不能总把它们当成互不影响的完整重复。入门练习无需复杂统计检验，只要能说明为什么重复有用、哪些信息仍然有限。\n好的后续实验应对应目前的疑问。如果怀疑温度造成差异，就应在同一温度下只改变湿润条件，或设计清楚的组合比较；不能一边改变温度，一边换种子品种，再把结果归因于某一个因素。若希望研究“水太多是否也影响发芽”，可以在其他条件一致时增加不同水量组，事先说明每组的水量与观察标准。\n解释实验时，把计划、执行、观察和结论分开写。计划相同不代表执行真的相同，需核对记录；观察不同不自动证明唯一原因。允许结果不支持原假说，并据此修改下一步问题，正是实验学习的一部分。对证据保留限制，不妨碍学生提出清楚、可检验的预测。",
+              "valueHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [],
+          "proposedLevel": 2,
+          "proposedReason": "声明的学习目标 goals(e5,e6,e7) 在产物 objectives(e18,e19) 中均有对应条目(obj_7987c8e3 覆盖识别同时改变变量, obj_c3461bb6 覆盖区分观察与普遍规律, obj_3add2d02 覆盖设计后续实验)，描述与来源 e3 教学断言一致，无目标消失、扭曲或削弱；满足 rubric 中必要目标有忠实可用处理，得2分。"
+        }
+      ],
+      "reviewRequired": [],
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q2",
+            "status": "supported",
+            "reason": "候选结论称目标e5,e6,e7在产物e18/e19的obj_7987c8e3、obj_c3461bb6、obj_3add2d02中忠实覆盖且与e3教学断言一致；findings审计与条件核查status clear、挑战closed、无未决异议，支持字段未被质疑，正向判断成立。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "识别比较中同时改变的变量",
+                "valueHash": "8f35b76ddbb2d39b143a056910fd5c72261ea91f448cbff63ee0837fc75620be"
+              },
+              {
+                "id": "e6",
+                "pointer": "/goals/1",
+                "role": "goal",
+                "kind": "text",
+                "value": "区分实验观察与普遍规律",
+                "valueHash": "3530eeb6511b1a1073a57fcc7c5ff49dd8215420d9858326aa5a667bce47c295"
+              },
+              {
+                "id": "e7",
+                "pointer": "/goals/2",
+                "role": "goal",
+                "kind": "text",
+                "value": "设计保留对照并能检验假说的后续实验",
+                "valueHash": "94c5bc19e0ee073f20331276617163f9935e201c9de4be6e7dd58a97ac8d211b"
+              },
+              {
+                "id": "e18",
+                "pointer": "/artifacts/1/id",
+                "role": "artifact",
+                "kind": "text",
+                "value": "cun_30f6c3ae-a5fb-49ea-becf-e34b797a2b6c/objectives",
+                "valueHash": "8d2acb9efbd8e257751daa9c260d5eaff17c1198731d099545874b3d023ab13d"
+              },
+              {
+                "id": "e19",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "[{\"id\":\"obj_7987c8e3-199c-4229-8598-dae8380b6117\",\"title\":\"识别比较中同时改变的变量并保持无关条件一致\",\"description\":\"Identify when a comparison simultaneously changes multiple variables (e.g., water, temperature, light) and thus cannot attribute difference to a single factor; keep other relevant conditions consistent for valid comparison.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_020e0fb5-0214-4602-af19-786092ae519a\",\"ta_52701f6e-654f-451e-8a9f-98462eaa10e3\"],\"authorityClaimIds\":[\"tac_e0d72998-9109-4402-9a5f-6aaa66f4e118\",\"tac_e990d1ee-a548-42db-91f0-e5e3d12fba6e\",\"tac_19dd6063-0c42-41e2-b6dd-655ce6280cbf\",\"tac_6aa09108-dc67-4a7a-9657-09638dfa3b45\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E1 and E10 provide formal_sufficient authority for identify construct, matching the independently authorized Formal path.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_6718cff7\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_6718cff7\"]},{\"id\":\"obj_190018e2-4f88-4ddb-b03f-da491e28d034\",\"title\":\"应用发芽操作定义并完整记录种子计算比例\",\"description\":\"Apply operational definition of germination (radicle out of seed coat) and record all seeds including non-germinated at predetermined times to compute germination proportion.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_020e0fb5-0214-4602-af19-786092ae519a\",\"ta_52701f6e-654f-451e-8a9f-98462eaa10e3\"],\"authorityClaimIds\":[\"tac_0596b4dd-43a0-40bc-bb4f-f32f453b6332\",\"tac_78878d21-51fb-4242-bca2-9853a4e33b28\",\"tac_c4bec023-f880-4271-beb9-12ce6c80752f\",\"tac_29744ad8-7d88-43db-ae63-e58ae0cbb1f4\",\"tac_51185121-e7b0-436b-9b45-991f13957200\",\"tac_993a5cce-3e40-4b8d-a946-4683665b6579\"],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation with apply construct; exact evidence lacks formal apply authority, so retained as high teaching priority per policy.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_6718cff7\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_3add2d02-2c52-4bf3-b1fb-36e6b77c8527\",\"title\":\"设计保留对照并检验假说的后续实验\",\"description\":\"Design a follow-up experiment that addresses the current question, retains control/comparison with consistent irrelevant conditions, clearly defines variables and observation standards, and can test hypothesis without confounding factors.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"Design construct is teaching-only with no formal evidence authority; central to contract intent, thus high teaching priority.\",\"formalAssessmentConstruct\":\"design\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_c3461bb6-436d-4ec4-a661-4ba6c9c18315\",\"title\":\"识别观察与普遍规律区别、计划执行分离及独立重复要求\",\"description\":\"Identify and distinguish specific experimental observation from universal generalization; recognize operational definition is an observation rule not complete description, and a single observation does not prove a general law. Identify and separate plan, execution, observation, and conclusion when explaining experiments; recognize plan may differ from execution, observation doesn't auto prove unique cause, and unsupported hypothesis is allowed. Identify requirements for independent replication (not photo duplication, not shared-environment seeds as full repeats) and make cautious inference about limited evidence scope.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_020e0fb5-0214-4602-af19-786092ae519a\",\"ta_52701f6e-654f-451e-8a9f-98462eaa10e3\"],\"authorityClaimIds\":[\"tac_5c7bf80d-a439-4301-bb66-b103be264f7e\",\"tac_f04a455d-e5f6-491b-b9ab-925540f4c499\"],\"priority\":\"high\",\"priorityRationale\":\"Merged identify capabilities central to learning intent; exact evidence for parts is unavailable or only partially formal, so retained as high teaching priority rather than required.\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_6718cff7\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_6718cff7\"]}]",
+                "valueHash": "2c157ef3465d4d09c28f0e3cea83406d5ddb03211e4afd2582b434a1e7fd403d"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "课堂把同一批种子分到两个透明盒中，想比较有水和无水时的发芽情况。为了使比较有意义，应尽量让其他有关条件一致，例如种子数量、来源、温度、光照、观察天数与发芽判定方式。若有水盒放在温暖窗台、无水盒放在冷暗柜里，即使结果不同，也无法把差异单独归因于水，因为温度和光照同时改变了。\n这里把“发芽”操作性地定义为观察到胚根伸出种皮，便于不同记录者使用同一标准。这个定义是本实验的观察规则，不是所有生物过程的完整描述。记录者应按事先约定的时间观察全部种子，而不是只挑成功的那几颗展示。没有发芽的种子也必须计入，才能知道发芽比例。\n设两盒各十粒同批种子，均在同温同光处放置七天。甲盒保持适量湿润，乙盒保持干燥。甲有八粒达到上述标准，乙有一粒。可以说在这批种子和这些条件下，湿润组观察到的发芽比例更高。仅凭这一次观察，还不能断言所有种类的种子只要加水都会发芽；种子活性、温度及其他条件仍可能重要。也不能说乙盒绝对没有任何水分，因为“保持干燥”是操作描述，并未测出零水分。\n重复实验可以帮助检查结果是否稳定，但重复的对象、条件与方法需要记录。把同一张照片复制三次不是三次独立实验。同一盒内种子也共享环境，不能总把它们当成互不影响的完整重复。入门练习无需复杂统计检验，只要能说明为什么重复有用、哪些信息仍然有限。\n好的后续实验应对应目前的疑问。如果怀疑温度造成差异，就应在同一温度下只改变湿润条件，或设计清楚的组合比较；不能一边改变温度，一边换种子品种，再把结果归因于某一个因素。若希望研究“水太多是否也影响发芽”，可以在其他条件一致时增加不同水量组，事先说明每组的水量与观察标准。\n解释实验时，把计划、执行、观察和结论分开写。计划相同不代表执行真的相同，需核对记录；观察不同不自动证明唯一原因。允许结果不支持原假说，并据此修改下一步问题，正是实验学习的一部分。对证据保留限制，不妨碍学生提出清楚、可检验的预测。",
+                "valueHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "resultHash": "b41013bdf94c8ac6db975b3fba68110dc33b6c5ee2fa04eec25c2b569ebf2718"
+  }
+}

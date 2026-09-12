@@ -1,0 +1,318 @@
+{
+  "task": {
+    "caseId": "N-F02-curriculum",
+    "runId": "N-F02-curriculum-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-F02-curriculum.json",
+    "inputHash": "c338e4621ce4a27904a8afff6182cbb9d07fef4f1c9678f0088a62197d110a5e",
+    "population": "natural",
+    "sourceId": "F02"
+  },
+  "inputHash": "c338e4621ce4a27904a8afff6182cbb9d07fef4f1c9678f0088a62197d110a5e",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "correctness": "76d6078a784fea15ea51c046edc58bd0a26e2619f8c8c6fba8aa6967724cb2fa",
+      "artifact-audit": "76d6078a784fea15ea51c046edc58bd0a26e2619f8c8c6fba8aa6967724cb2fa",
+      "certification": "76d6078a784fea15ea51c046edc58bd0a26e2619f8c8c6fba8aa6967724cb2fa"
+    },
+    "stages": {
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "clear",
+            "affected": [],
+            "reason": "待评 artifacts 中 objectives 含条件断言：obj_b9463b18 称固定金额与百分比仅在特定基数碰巧相等；obj_0299aa65 称连续计算以每步当前价为基、反向从差额/当前基算，并尊重无额外限制假设或存在时先读条件。与源 e3 对照：源举原价100减20与八折同得80、原价50减20得30八折40，证明非始终相等；源明示本单元假定无运费等限制，若现实有限制先读条件。目标描述量词与条件同源一致，无充分必要混淆。",
+            "refs": [
+              "e19",
+              "e3"
+            ],
+            "challenge": {
+              "status": "closed",
+              "reason": "对 obj_0299aa65 条件规则补充相容情况：现实广告有运费限制，则按分支应先读条件再算，不推翻结论；对固定金额/比例断言尝试构造所有基数皆相等反例需 A=P*r 恒真，仅当 A=0,r=0 或 P 固定，与基数可变事实不容，由 e3 不同基数结果不同排除。故无未建立反例。",
+              "refs": [
+                "e19",
+                "e3"
+              ]
+            },
+            "witnesses": [
+              {
+                "id": "e19",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "[{\"id\":\"obj_b9463b18-a4d6-49ca-8a6e-3b863e7447d6\",\"title\":\"识别百分比变化的基数与量纲区别\",\"description\":\"Identify the base to which a percentage change attaches (e.g., pre-discount original price), recognize that percentage and absolute amount are different quantities requiring the base for conversion, and note that fixed amount versus percentage can coincide only by chance at a specific base.\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_f9237e0f-4dbe-45cd-b085-f88a07e7953e\",\"ta_9aa65f52-2954-4e2b-80cd-b1a21238144d\"],\"authorityClaimIds\":[\"tac_6dd4fbce-1b7c-44b4-912c-8df1317aa73f\",\"tac_07204f15-7bcc-48e2-97f1-36447808a713\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E11 provides formal_sufficient authority for identify construct regarding base attachment and quantity distinction.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_94b59fcb\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_94b59fcb\"]},{\"id\":\"obj_0299aa65-885d-4587-93fa-b1d65e1665b3\",\"title\":\"应用连续百分比变动与反向恢复计算\",\"description\":\"Apply consecutive percentage price change calculations by using the current price as base each step, compute the reverse required percentage from target difference over current base without mechanically swapping equal decrease/increase, and respect the assumption of no extra restrictions (shipping, thresholds, rounding, order) or read conditions first if present.\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_f9237e0f-4dbe-45cd-b085-f88a07e7953e\",\"ta_9aa65f52-2954-4e2b-80cd-b1a21238144d\"],\"authorityClaimIds\":[\"tac_1076f9a8-b533-4dcb-b162-59bae68fa7f4\",\"tac_74ae2d27-34da-443d-9412-e1ca761e0722\",\"tac_b3ee5fe7-fa1b-4abb-a426-422176f6961b\",\"tac_fbbe6bf8-5914-4680-ada2-7a07341653d2\",\"tac_02648244-28f4-4e42-b655-17d910b6dea6\",\"tac_05a442a9-628d-4ae1-aa43-4bd08e14c5dc\",\"tac_58c1f007-2e0e-4366-b34c-222e60691048\",\"tac_7d8ad484-f18f-4e2e-8eb0-deb37ccf48d8\"],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation for applying consecutive percentage calculations; no exact evidence envelope supports apply formally, so high teaching priority retained.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_94b59fcb\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_15467de8-938e-406b-ac0b-1041949504b1\",\"title\":\"解释百分点与相对增长率区别及计算边界\",\"description\":\"Explain the difference between percentage point change and relative growth rate, explain boundaries such as zero original proportion forbidding the relative formula, and explain calculation by stating the base for each step, writing formula, and performing direction check without mixing names.\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation to explain distinction and boundaries; listed evidence envelopes are unavailable for formal explain, so high teaching priority.\",\"formalAssessmentConstruct\":\"explain\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]}]",
+                "valueHash": "342e4404ced3acdc703aad91ba678d834a67f96ea69cbabe3a282e7b31737139"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "价格变化中的百分比总要依附一个基数。“降低百分之二十”通常以变化前价格为基数，意味着保留原价的百分之八十。假设原价是一百元，降价后为一百乘零点八，即八十元。这里减少了二十元，但“二十元”和“百分之二十”不是同一种量；只有同时知道基数，才能在金额与比例之间换算。\n连续变化必须按每一步的当前价格计算。例如先降百分之二十，再在降后价格上提高百分之二十，第二步增加的是八十元的百分之二十，即十六元，最后为九十六元，并没有回到一百元。两个百分比相等，基数却不同。可以把全过程写成“原价乘零点八再乘一点二”。若希望八十元恢复到一百元，需要增加二十元，而二十除以八十等于零点二五，所以应提高百分之二十五。反向问题应从目标差额与当前基数出发，不能机械地把降幅换成同样的涨幅。\n比较方案时也要留意固定金额与比例的区别。原价一百元时，减二十元和打八折都得到八十元；原价五十元时，减二十元得到三十元，打八折得到四十元。一次数值碰巧相等并不证明两种规则始终相同。本单元假定没有运费、满减门槛、四舍五入或叠加顺序的特殊限制；若现实广告存在这些条件，应先读清条件，再计算。\n百分比还可以用来描述某个比例自身的变化。若一项活动报名率由百分之四十变成百分之五十，增加了十个百分点；相对于原来的百分之四十，则增长了百分之二十五，因为十除以四十等于四分之一。“百分点”是两个百分率直接相减的差，“相对增长率”则把差再除以原比例。二者回答不同问题，不应省略名称后混为一个数。\n解释计算时，建议先写“这一步把什么当作百分之百”，再列算式，最后做方向检查。降价再涨价后的结果是否符合基数变化？某个提高幅度是相对于原价还是现价？如果只报告“增长百分之十”而不交代基数，读者可能无法复算。原比例为零时，也不能照搬差额除以原比例的相对增长率公式，因为分母为零；仍可以报告增加了多少元、多少人或多少个百分点。清楚说明边界，比强行给出一个不存在的比例更可靠。",
+                "valueHash": "eed51cb255d5d0e12ca505b4c60926d142df7cf81a0f73781aba0593d2870361"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "kind": "quantities",
+            "status": "not_applicable",
+            "affected": [],
+            "reason": "待评 artifacts 为标题(cun_.../title)与目标数组(cun_.../objectives)，无具体数值演算、单位换算或百分比推导断言；packet.rates 为空，无原始输入可重算。",
+            "contextHash": "76d6078a784fea15ea51c046edc58bd0a26e2619f8c8c6fba8aa6967724cb2fa",
+            "proposed": {
+              "kind": "quantities",
+              "status": "not_applicable",
+              "affected": [],
+              "reason": "待评 artifacts 为标题(cun_.../title)与目标数组(cun_.../objectives)，无具体数值演算、单位换算或百分比推导断言；packet.rates 为空，无原始输入可重算。",
+              "refs": [
+                "e15",
+                "e16",
+                "e17",
+                "e18",
+                "e19"
+              ]
+            },
+            "reviewReasons": []
+          }
+        ],
+        "keys": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 2,
+            "reason": "产物artifacts/1的objectives三个条目分别映射goals/0-2（识别基数、连续变动、百分点区别与边界），描述内容与sources/0(e3)教学文本一致，无目标消失或扭曲，在声明范围内提供了忠实可用的目标覆盖，符合Q2的2+必要目标忠实处理标准。",
+            "refs": [
+              "e19",
+              "e5",
+              "e6",
+              "e7",
+              "e3"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e19",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "[{\"id\":\"obj_b9463b18-a4d6-49ca-8a6e-3b863e7447d6\",\"title\":\"识别百分比变化的基数与量纲区别\",\"description\":\"Identify the base to which a percentage change attaches (e.g., pre-discount original price), recognize that percentage and absolute amount are different quantities requiring the base for conversion, and note that fixed amount versus percentage can coincide only by chance at a specific base.\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_f9237e0f-4dbe-45cd-b085-f88a07e7953e\",\"ta_9aa65f52-2954-4e2b-80cd-b1a21238144d\"],\"authorityClaimIds\":[\"tac_6dd4fbce-1b7c-44b4-912c-8df1317aa73f\",\"tac_07204f15-7bcc-48e2-97f1-36447808a713\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E11 provides formal_sufficient authority for identify construct regarding base attachment and quantity distinction.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_94b59fcb\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_94b59fcb\"]},{\"id\":\"obj_0299aa65-885d-4587-93fa-b1d65e1665b3\",\"title\":\"应用连续百分比变动与反向恢复计算\",\"description\":\"Apply consecutive percentage price change calculations by using the current price as base each step, compute the reverse required percentage from target difference over current base without mechanically swapping equal decrease/increase, and respect the assumption of no extra restrictions (shipping, thresholds, rounding, order) or read conditions first if present.\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_f9237e0f-4dbe-45cd-b085-f88a07e7953e\",\"ta_9aa65f52-2954-4e2b-80cd-b1a21238144d\"],\"authorityClaimIds\":[\"tac_1076f9a8-b533-4dcb-b162-59bae68fa7f4\",\"tac_74ae2d27-34da-443d-9412-e1ca761e0722\",\"tac_b3ee5fe7-fa1b-4abb-a426-422176f6961b\",\"tac_fbbe6bf8-5914-4680-ada2-7a07341653d2\",\"tac_02648244-28f4-4e42-b655-17d910b6dea6\",\"tac_05a442a9-628d-4ae1-aa43-4bd08e14c5dc\",\"tac_58c1f007-2e0e-4366-b34c-222e60691048\",\"tac_7d8ad484-f18f-4e2e-8eb0-deb37ccf48d8\"],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation for applying consecutive percentage calculations; no exact evidence envelope supports apply formally, so high teaching priority retained.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_94b59fcb\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_15467de8-938e-406b-ac0b-1041949504b1\",\"title\":\"解释百分点与相对增长率区别及计算边界\",\"description\":\"Explain the difference between percentage point change and relative growth rate, explain boundaries such as zero original proportion forbidding the relative formula, and explain calculation by stating the base for each step, writing formula, and performing direction check without mixing names.\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation to explain distinction and boundaries; listed evidence envelopes are unavailable for formal explain, so high teaching priority.\",\"formalAssessmentConstruct\":\"explain\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]}]",
+                "valueHash": "342e4404ced3acdc703aad91ba678d834a67f96ea69cbabe3a282e7b31737139"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "识别百分比所用基数",
+                "valueHash": "82bb43043f43888bb31570064053cb184fb6ea5f5cdacd759f20112980af8fff"
+              },
+              {
+                "id": "e6",
+                "pointer": "/goals/1",
+                "role": "goal",
+                "kind": "text",
+                "value": "计算连续价格变动",
+                "valueHash": "2ee9a3208d68515a046a71b3ac28d0d583e38feb7e4ed7c0b4460900bb70a7f2"
+              },
+              {
+                "id": "e7",
+                "pointer": "/goals/2",
+                "role": "goal",
+                "kind": "text",
+                "value": "区分百分点变化与相对变化并说明适用边界",
+                "valueHash": "b063571a301f7ab236b165fa04aa497e08401331d627c1e947572c02882173c5"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "价格变化中的百分比总要依附一个基数。“降低百分之二十”通常以变化前价格为基数，意味着保留原价的百分之八十。假设原价是一百元，降价后为一百乘零点八，即八十元。这里减少了二十元，但“二十元”和“百分之二十”不是同一种量；只有同时知道基数，才能在金额与比例之间换算。\n连续变化必须按每一步的当前价格计算。例如先降百分之二十，再在降后价格上提高百分之二十，第二步增加的是八十元的百分之二十，即十六元，最后为九十六元，并没有回到一百元。两个百分比相等，基数却不同。可以把全过程写成“原价乘零点八再乘一点二”。若希望八十元恢复到一百元，需要增加二十元，而二十除以八十等于零点二五，所以应提高百分之二十五。反向问题应从目标差额与当前基数出发，不能机械地把降幅换成同样的涨幅。\n比较方案时也要留意固定金额与比例的区别。原价一百元时，减二十元和打八折都得到八十元；原价五十元时，减二十元得到三十元，打八折得到四十元。一次数值碰巧相等并不证明两种规则始终相同。本单元假定没有运费、满减门槛、四舍五入或叠加顺序的特殊限制；若现实广告存在这些条件，应先读清条件，再计算。\n百分比还可以用来描述某个比例自身的变化。若一项活动报名率由百分之四十变成百分之五十，增加了十个百分点；相对于原来的百分之四十，则增长了百分之二十五，因为十除以四十等于四分之一。“百分点”是两个百分率直接相减的差，“相对增长率”则把差再除以原比例。二者回答不同问题，不应省略名称后混为一个数。\n解释计算时，建议先写“这一步把什么当作百分之百”，再列算式，最后做方向检查。降价再涨价后的结果是否符合基数变化？某个提高幅度是相对于原价还是现价？如果只报告“增长百分之十”而不交代基数，读者可能无法复算。原比例为零时，也不能照搬差额除以原比例的相对增长率公式，因为分母为零；仍可以报告增加了多少元、多少人或多少个百分点。清楚说明边界，比强行给出一个不存在的比例更可靠。",
+                "valueHash": "eed51cb255d5d0e12ca505b4c60926d142df7cf81a0f73781aba0593d2870361"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q2",
+            "status": "supported",
+            "reason": "candidate Q2正向结论（artifacts/1 objectives映射goals/0-2且与e3一致）经audit锁定level2，correctness conditions clear且challenge closed确认条件断言同源一致，quantities not_applicable无演算异议；无issue无未解依赖，字段e19未被质疑，支持认证。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e19",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "[{\"id\":\"obj_b9463b18-a4d6-49ca-8a6e-3b863e7447d6\",\"title\":\"识别百分比变化的基数与量纲区别\",\"description\":\"Identify the base to which a percentage change attaches (e.g., pre-discount original price), recognize that percentage and absolute amount are different quantities requiring the base for conversion, and note that fixed amount versus percentage can coincide only by chance at a specific base.\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_f9237e0f-4dbe-45cd-b085-f88a07e7953e\",\"ta_9aa65f52-2954-4e2b-80cd-b1a21238144d\"],\"authorityClaimIds\":[\"tac_6dd4fbce-1b7c-44b4-912c-8df1317aa73f\",\"tac_07204f15-7bcc-48e2-97f1-36447808a713\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E11 provides formal_sufficient authority for identify construct regarding base attachment and quantity distinction.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_94b59fcb\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_94b59fcb\"]},{\"id\":\"obj_0299aa65-885d-4587-93fa-b1d65e1665b3\",\"title\":\"应用连续百分比变动与反向恢复计算\",\"description\":\"Apply consecutive percentage price change calculations by using the current price as base each step, compute the reverse required percentage from target difference over current base without mechanically swapping equal decrease/increase, and respect the assumption of no extra restrictions (shipping, thresholds, rounding, order) or read conditions first if present.\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_f9237e0f-4dbe-45cd-b085-f88a07e7953e\",\"ta_9aa65f52-2954-4e2b-80cd-b1a21238144d\"],\"authorityClaimIds\":[\"tac_1076f9a8-b533-4dcb-b162-59bae68fa7f4\",\"tac_74ae2d27-34da-443d-9412-e1ca761e0722\",\"tac_b3ee5fe7-fa1b-4abb-a426-422176f6961b\",\"tac_fbbe6bf8-5914-4680-ada2-7a07341653d2\",\"tac_02648244-28f4-4e42-b655-17d910b6dea6\",\"tac_05a442a9-628d-4ae1-aa43-4bd08e14c5dc\",\"tac_58c1f007-2e0e-4366-b34c-222e60691048\",\"tac_7d8ad484-f18f-4e2e-8eb0-deb37ccf48d8\"],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation for applying consecutive percentage calculations; no exact evidence envelope supports apply formally, so high teaching priority retained.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_94b59fcb\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_15467de8-938e-406b-ac0b-1041949504b1\",\"title\":\"解释百分点与相对增长率区别及计算边界\",\"description\":\"Explain the difference between percentage point change and relative growth rate, explain boundaries such as zero original proportion forbidding the relative formula, and explain calculation by stating the base for each step, writing formula, and performing direction check without mixing names.\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation to explain distinction and boundaries; listed evidence envelopes are unavailable for formal explain, so high teaching priority.\",\"formalAssessmentConstruct\":\"explain\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]}]",
+                "valueHash": "342e4404ced3acdc703aad91ba678d834a67f96ea69cbabe3a282e7b31737139"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "价格变化中的百分比总要依附一个基数。“降低百分之二十”通常以变化前价格为基数，意味着保留原价的百分之八十。假设原价是一百元，降价后为一百乘零点八，即八十元。这里减少了二十元，但“二十元”和“百分之二十”不是同一种量；只有同时知道基数，才能在金额与比例之间换算。\n连续变化必须按每一步的当前价格计算。例如先降百分之二十，再在降后价格上提高百分之二十，第二步增加的是八十元的百分之二十，即十六元，最后为九十六元，并没有回到一百元。两个百分比相等，基数却不同。可以把全过程写成“原价乘零点八再乘一点二”。若希望八十元恢复到一百元，需要增加二十元，而二十除以八十等于零点二五，所以应提高百分之二十五。反向问题应从目标差额与当前基数出发，不能机械地把降幅换成同样的涨幅。\n比较方案时也要留意固定金额与比例的区别。原价一百元时，减二十元和打八折都得到八十元；原价五十元时，减二十元得到三十元，打八折得到四十元。一次数值碰巧相等并不证明两种规则始终相同。本单元假定没有运费、满减门槛、四舍五入或叠加顺序的特殊限制；若现实广告存在这些条件，应先读清条件，再计算。\n百分比还可以用来描述某个比例自身的变化。若一项活动报名率由百分之四十变成百分之五十，增加了十个百分点；相对于原来的百分之四十，则增长了百分之二十五，因为十除以四十等于四分之一。“百分点”是两个百分率直接相减的差，“相对增长率”则把差再除以原比例。二者回答不同问题，不应省略名称后混为一个数。\n解释计算时，建议先写“这一步把什么当作百分之百”，再列算式，最后做方向检查。降价再涨价后的结果是否符合基数变化？某个提高幅度是相对于原价还是现价？如果只报告“增长百分之十”而不交代基数，读者可能无法复算。原比例为零时，也不能照搬差额除以原比例的相对增长率公式，因为分母为零；仍可以报告增加了多少元、多少人或多少个百分点。清楚说明边界，比强行给出一个不存在的比例更可靠。",
+                "valueHash": "eed51cb255d5d0e12ca505b4c60926d142df7cf81a0f73781aba0593d2870361"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "识别百分比所用基数",
+                "valueHash": "82bb43043f43888bb31570064053cb184fb6ea5f5cdacd759f20112980af8fff"
+              },
+              {
+                "id": "e6",
+                "pointer": "/goals/1",
+                "role": "goal",
+                "kind": "text",
+                "value": "计算连续价格变动",
+                "valueHash": "2ee9a3208d68515a046a71b3ac28d0d583e38feb7e4ed7c0b4460900bb70a7f2"
+              },
+              {
+                "id": "e7",
+                "pointer": "/goals/2",
+                "role": "goal",
+                "kind": "text",
+                "value": "区分百分点变化与相对变化并说明适用边界",
+                "valueHash": "b063571a301f7ab236b165fa04aa497e08401331d627c1e947572c02882173c5"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q2",
+          "level": 2,
+          "reason": "产物artifacts/1的objectives三个条目分别映射goals/0-2（识别基数、连续变动、百分点区别与边界），描述内容与sources/0(e3)教学文本一致，无目标消失或扭曲，在声明范围内提供了忠实可用的目标覆盖，符合Q2的2+必要目标忠实处理标准。",
+          "refs": [
+            "e19",
+            "e5",
+            "e6",
+            "e7",
+            "e3"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e19",
+              "pointer": "/artifacts/1/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "[{\"id\":\"obj_b9463b18-a4d6-49ca-8a6e-3b863e7447d6\",\"title\":\"识别百分比变化的基数与量纲区别\",\"description\":\"Identify the base to which a percentage change attaches (e.g., pre-discount original price), recognize that percentage and absolute amount are different quantities requiring the base for conversion, and note that fixed amount versus percentage can coincide only by chance at a specific base.\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_f9237e0f-4dbe-45cd-b085-f88a07e7953e\",\"ta_9aa65f52-2954-4e2b-80cd-b1a21238144d\"],\"authorityClaimIds\":[\"tac_6dd4fbce-1b7c-44b4-912c-8df1317aa73f\",\"tac_07204f15-7bcc-48e2-97f1-36447808a713\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E11 provides formal_sufficient authority for identify construct regarding base attachment and quantity distinction.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_94b59fcb\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_94b59fcb\"]},{\"id\":\"obj_0299aa65-885d-4587-93fa-b1d65e1665b3\",\"title\":\"应用连续百分比变动与反向恢复计算\",\"description\":\"Apply consecutive percentage price change calculations by using the current price as base each step, compute the reverse required percentage from target difference over current base without mechanically swapping equal decrease/increase, and respect the assumption of no extra restrictions (shipping, thresholds, rounding, order) or read conditions first if present.\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_f9237e0f-4dbe-45cd-b085-f88a07e7953e\",\"ta_9aa65f52-2954-4e2b-80cd-b1a21238144d\"],\"authorityClaimIds\":[\"tac_1076f9a8-b533-4dcb-b162-59bae68fa7f4\",\"tac_74ae2d27-34da-443d-9412-e1ca761e0722\",\"tac_b3ee5fe7-fa1b-4abb-a426-422176f6961b\",\"tac_fbbe6bf8-5914-4680-ada2-7a07341653d2\",\"tac_02648244-28f4-4e42-b655-17d910b6dea6\",\"tac_05a442a9-628d-4ae1-aa43-4bd08e14c5dc\",\"tac_58c1f007-2e0e-4366-b34c-222e60691048\",\"tac_7d8ad484-f18f-4e2e-8eb0-deb37ccf48d8\"],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation for applying consecutive percentage calculations; no exact evidence envelope supports apply formally, so high teaching priority retained.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_94b59fcb\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_15467de8-938e-406b-ac0b-1041949504b1\",\"title\":\"解释百分点与相对增长率区别及计算边界\",\"description\":\"Explain the difference between percentage point change and relative growth rate, explain boundaries such as zero original proportion forbidding the relative formula, and explain calculation by stating the base for each step, writing formula, and performing direction check without mixing names.\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation to explain distinction and boundaries; listed evidence envelopes are unavailable for formal explain, so high teaching priority.\",\"formalAssessmentConstruct\":\"explain\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]}]",
+              "valueHash": "342e4404ced3acdc703aad91ba678d834a67f96ea69cbabe3a282e7b31737139"
+            },
+            {
+              "id": "e5",
+              "pointer": "/goals/0",
+              "role": "goal",
+              "kind": "text",
+              "value": "识别百分比所用基数",
+              "valueHash": "82bb43043f43888bb31570064053cb184fb6ea5f5cdacd759f20112980af8fff"
+            },
+            {
+              "id": "e6",
+              "pointer": "/goals/1",
+              "role": "goal",
+              "kind": "text",
+              "value": "计算连续价格变动",
+              "valueHash": "2ee9a3208d68515a046a71b3ac28d0d583e38feb7e4ed7c0b4460900bb70a7f2"
+            },
+            {
+              "id": "e7",
+              "pointer": "/goals/2",
+              "role": "goal",
+              "kind": "text",
+              "value": "区分百分点变化与相对变化并说明适用边界",
+              "valueHash": "b063571a301f7ab236b165fa04aa497e08401331d627c1e947572c02882173c5"
+            },
+            {
+              "id": "e3",
+              "pointer": "/sources/0/text",
+              "role": "source",
+              "kind": "text",
+              "value": "价格变化中的百分比总要依附一个基数。“降低百分之二十”通常以变化前价格为基数，意味着保留原价的百分之八十。假设原价是一百元，降价后为一百乘零点八，即八十元。这里减少了二十元，但“二十元”和“百分之二十”不是同一种量；只有同时知道基数，才能在金额与比例之间换算。\n连续变化必须按每一步的当前价格计算。例如先降百分之二十，再在降后价格上提高百分之二十，第二步增加的是八十元的百分之二十，即十六元，最后为九十六元，并没有回到一百元。两个百分比相等，基数却不同。可以把全过程写成“原价乘零点八再乘一点二”。若希望八十元恢复到一百元，需要增加二十元，而二十除以八十等于零点二五，所以应提高百分之二十五。反向问题应从目标差额与当前基数出发，不能机械地把降幅换成同样的涨幅。\n比较方案时也要留意固定金额与比例的区别。原价一百元时，减二十元和打八折都得到八十元；原价五十元时，减二十元得到三十元，打八折得到四十元。一次数值碰巧相等并不证明两种规则始终相同。本单元假定没有运费、满减门槛、四舍五入或叠加顺序的特殊限制；若现实广告存在这些条件，应先读清条件，再计算。\n百分比还可以用来描述某个比例自身的变化。若一项活动报名率由百分之四十变成百分之五十，增加了十个百分点；相对于原来的百分之四十，则增长了百分之二十五，因为十除以四十等于四分之一。“百分点”是两个百分率直接相减的差，“相对增长率”则把差再除以原比例。二者回答不同问题，不应省略名称后混为一个数。\n解释计算时，建议先写“这一步把什么当作百分之百”，再列算式，最后做方向检查。降价再涨价后的结果是否符合基数变化？某个提高幅度是相对于原价还是现价？如果只报告“增长百分之十”而不交代基数，读者可能无法复算。原比例为零时，也不能照搬差额除以原比例的相对增长率公式，因为分母为零；仍可以报告增加了多少元、多少人或多少个百分点。清楚说明边界，比强行给出一个不存在的比例更可靠。",
+              "valueHash": "eed51cb255d5d0e12ca505b4c60926d142df7cf81a0f73781aba0593d2870361"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [],
+          "proposedLevel": 2,
+          "proposedReason": "产物artifacts/1的objectives三个条目分别映射goals/0-2（识别基数、连续变动、百分点区别与边界），描述内容与sources/0(e3)教学文本一致，无目标消失或扭曲，在声明范围内提供了忠实可用的目标覆盖，符合Q2的2+必要目标忠实处理标准。"
+        }
+      ],
+      "reviewRequired": [],
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q2",
+            "status": "supported",
+            "reason": "candidate Q2正向结论（artifacts/1 objectives映射goals/0-2且与e3一致）经audit锁定level2，correctness conditions clear且challenge closed确认条件断言同源一致，quantities not_applicable无演算异议；无issue无未解依赖，字段e19未被质疑，支持认证。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e19",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "[{\"id\":\"obj_b9463b18-a4d6-49ca-8a6e-3b863e7447d6\",\"title\":\"识别百分比变化的基数与量纲区别\",\"description\":\"Identify the base to which a percentage change attaches (e.g., pre-discount original price), recognize that percentage and absolute amount are different quantities requiring the base for conversion, and note that fixed amount versus percentage can coincide only by chance at a specific base.\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_f9237e0f-4dbe-45cd-b085-f88a07e7953e\",\"ta_9aa65f52-2954-4e2b-80cd-b1a21238144d\"],\"authorityClaimIds\":[\"tac_6dd4fbce-1b7c-44b4-912c-8df1317aa73f\",\"tac_07204f15-7bcc-48e2-97f1-36447808a713\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E11 provides formal_sufficient authority for identify construct regarding base attachment and quantity distinction.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_94b59fcb\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_94b59fcb\"]},{\"id\":\"obj_0299aa65-885d-4587-93fa-b1d65e1665b3\",\"title\":\"应用连续百分比变动与反向恢复计算\",\"description\":\"Apply consecutive percentage price change calculations by using the current price as base each step, compute the reverse required percentage from target difference over current base without mechanically swapping equal decrease/increase, and respect the assumption of no extra restrictions (shipping, thresholds, rounding, order) or read conditions first if present.\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_f9237e0f-4dbe-45cd-b085-f88a07e7953e\",\"ta_9aa65f52-2954-4e2b-80cd-b1a21238144d\"],\"authorityClaimIds\":[\"tac_1076f9a8-b533-4dcb-b162-59bae68fa7f4\",\"tac_74ae2d27-34da-443d-9412-e1ca761e0722\",\"tac_b3ee5fe7-fa1b-4abb-a426-422176f6961b\",\"tac_fbbe6bf8-5914-4680-ada2-7a07341653d2\",\"tac_02648244-28f4-4e42-b655-17d910b6dea6\",\"tac_05a442a9-628d-4ae1-aa43-4bd08e14c5dc\",\"tac_58c1f007-2e0e-4366-b34c-222e60691048\",\"tac_7d8ad484-f18f-4e2e-8eb0-deb37ccf48d8\"],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation for applying consecutive percentage calculations; no exact evidence envelope supports apply formally, so high teaching priority retained.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_94b59fcb\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_15467de8-938e-406b-ac0b-1041949504b1\",\"title\":\"解释百分点与相对增长率区别及计算边界\",\"description\":\"Explain the difference between percentage point change and relative growth rate, explain boundaries such as zero original proportion forbidding the relative formula, and explain calculation by stating the base for each step, writing formula, and performing direction check without mixing names.\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation to explain distinction and boundaries; listed evidence envelopes are unavailable for formal explain, so high teaching priority.\",\"formalAssessmentConstruct\":\"explain\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]}]",
+                "valueHash": "342e4404ced3acdc703aad91ba678d834a67f96ea69cbabe3a282e7b31737139"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "价格变化中的百分比总要依附一个基数。“降低百分之二十”通常以变化前价格为基数，意味着保留原价的百分之八十。假设原价是一百元，降价后为一百乘零点八，即八十元。这里减少了二十元，但“二十元”和“百分之二十”不是同一种量；只有同时知道基数，才能在金额与比例之间换算。\n连续变化必须按每一步的当前价格计算。例如先降百分之二十，再在降后价格上提高百分之二十，第二步增加的是八十元的百分之二十，即十六元，最后为九十六元，并没有回到一百元。两个百分比相等，基数却不同。可以把全过程写成“原价乘零点八再乘一点二”。若希望八十元恢复到一百元，需要增加二十元，而二十除以八十等于零点二五，所以应提高百分之二十五。反向问题应从目标差额与当前基数出发，不能机械地把降幅换成同样的涨幅。\n比较方案时也要留意固定金额与比例的区别。原价一百元时，减二十元和打八折都得到八十元；原价五十元时，减二十元得到三十元，打八折得到四十元。一次数值碰巧相等并不证明两种规则始终相同。本单元假定没有运费、满减门槛、四舍五入或叠加顺序的特殊限制；若现实广告存在这些条件，应先读清条件，再计算。\n百分比还可以用来描述某个比例自身的变化。若一项活动报名率由百分之四十变成百分之五十，增加了十个百分点；相对于原来的百分之四十，则增长了百分之二十五，因为十除以四十等于四分之一。“百分点”是两个百分率直接相减的差，“相对增长率”则把差再除以原比例。二者回答不同问题，不应省略名称后混为一个数。\n解释计算时，建议先写“这一步把什么当作百分之百”，再列算式，最后做方向检查。降价再涨价后的结果是否符合基数变化？某个提高幅度是相对于原价还是现价？如果只报告“增长百分之十”而不交代基数，读者可能无法复算。原比例为零时，也不能照搬差额除以原比例的相对增长率公式，因为分母为零；仍可以报告增加了多少元、多少人或多少个百分点。清楚说明边界，比强行给出一个不存在的比例更可靠。",
+                "valueHash": "eed51cb255d5d0e12ca505b4c60926d142df7cf81a0f73781aba0593d2870361"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "识别百分比所用基数",
+                "valueHash": "82bb43043f43888bb31570064053cb184fb6ea5f5cdacd759f20112980af8fff"
+              },
+              {
+                "id": "e6",
+                "pointer": "/goals/1",
+                "role": "goal",
+                "kind": "text",
+                "value": "计算连续价格变动",
+                "valueHash": "2ee9a3208d68515a046a71b3ac28d0d583e38feb7e4ed7c0b4460900bb70a7f2"
+              },
+              {
+                "id": "e7",
+                "pointer": "/goals/2",
+                "role": "goal",
+                "kind": "text",
+                "value": "区分百分点变化与相对变化并说明适用边界",
+                "valueHash": "b063571a301f7ab236b165fa04aa497e08401331d627c1e947572c02882173c5"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "resultHash": "b4bbcb712dac2f02af1d24d1f5a3514a3e79cdead1a7e4a6cc826e1dd3147854"
+  }
+}

@@ -1,397 +1,2635 @@
 [
   {
-    "courseId": "course-01680f10a504b765",
+    "sourceId": "F01",
     "surface": "formal-question",
-    "reason": "No admitted Formal question"
+    "reason": "No admitted Formal question",
+    "stateEvents": [
+      {
+        "stage": "formal",
+        "error": {
+          "name": "AppError",
+          "code": "VALIDATION_ERROR",
+          "message": "Curriculum objective authority is not semantically supported for this operation.",
+          "details": {
+            "kind": "objective_authority_semantic_support_invalid",
+            "boundary": "formal_provider",
+            "diagnosticCodes": [
+              "semantic_support_failed"
+            ],
+            "diagnostics": [
+              "Objective obj_1f08f5c4-0032-4f61-b5be-3739ed41d358 did not pass objective-authority semantic support."
+            ]
+          }
+        }
+      }
+    ]
   },
   {
-    "courseId": "course-01680f10a504b765",
-    "surface": "grading-negative",
-    "reason": "No admitted Formal question"
-  },
-  {
-    "courseId": "course-01680f10a504b765",
+    "sourceId": "F01",
     "surface": "grading-positive",
-    "reason": "No admitted Formal question"
+    "reason": "No admitted Formal question",
+    "stateEvents": [
+      {
+        "stage": "formal",
+        "error": {
+          "name": "AppError",
+          "code": "VALIDATION_ERROR",
+          "message": "Curriculum objective authority is not semantically supported for this operation.",
+          "details": {
+            "kind": "objective_authority_semantic_support_invalid",
+            "boundary": "formal_provider",
+            "diagnosticCodes": [
+              "semantic_support_failed"
+            ],
+            "diagnostics": [
+              "Objective obj_1f08f5c4-0032-4f61-b5be-3739ed41d358 did not pass objective-authority semantic support."
+            ]
+          }
+        }
+      }
+    ]
   },
   {
-    "courseId": "course-01680f10a504b765",
+    "sourceId": "F01",
+    "surface": "grading-negative",
+    "reason": "No admitted Formal question",
+    "stateEvents": [
+      {
+        "stage": "formal",
+        "error": {
+          "name": "AppError",
+          "code": "VALIDATION_ERROR",
+          "message": "Curriculum objective authority is not semantically supported for this operation.",
+          "details": {
+            "kind": "objective_authority_semantic_support_invalid",
+            "boundary": "formal_provider",
+            "diagnosticCodes": [
+              "semantic_support_failed"
+            ],
+            "diagnostics": [
+              "Objective obj_1f08f5c4-0032-4f61-b5be-3739ed41d358 did not pass objective-authority semantic support."
+            ]
+          }
+        }
+      }
+    ]
+  },
+  {
+    "sourceId": "F02",
+    "surface": "formal-question",
+    "reason": "No admitted Formal question",
+    "stateEvents": [
+      {
+        "stage": "teaching",
+        "error": {
+          "name": "Error",
+          "message": "Lesson unavailable: retry_available Lesson preparation can be retried."
+        }
+      }
+    ]
+  },
+  {
+    "sourceId": "F02",
+    "surface": "grading-positive",
+    "reason": "No admitted Formal question",
+    "stateEvents": [
+      {
+        "stage": "teaching",
+        "error": {
+          "name": "Error",
+          "message": "Lesson unavailable: retry_available Lesson preparation can be retried."
+        }
+      }
+    ]
+  },
+  {
+    "sourceId": "F02",
+    "surface": "grading-negative",
+    "reason": "No admitted Formal question",
+    "stateEvents": [
+      {
+        "stage": "teaching",
+        "error": {
+          "name": "Error",
+          "message": "Lesson unavailable: retry_available Lesson preparation can be retried."
+        }
+      }
+    ]
+  },
+  {
+    "sourceId": "F03",
+    "surface": "formal-question",
+    "reason": "No admitted Formal question",
+    "stateEvents": [
+      {
+        "stage": "formal",
+        "error": {
+          "name": "AppError",
+          "code": "VALIDATION_ERROR",
+          "message": "Curriculum objective authority is not semantically supported for this operation.",
+          "details": {
+            "kind": "objective_authority_semantic_support_invalid",
+            "boundary": "formal_provider",
+            "diagnosticCodes": [
+              "semantic_support_failed"
+            ],
+            "diagnostics": [
+              "Objective obj_19076cfa-a32f-4705-8518-893923e039ad did not pass objective-authority semantic support."
+            ]
+          }
+        }
+      }
+    ]
+  },
+  {
+    "sourceId": "F03",
+    "surface": "grading-positive",
+    "reason": "No admitted Formal question",
+    "stateEvents": [
+      {
+        "stage": "formal",
+        "error": {
+          "name": "AppError",
+          "code": "VALIDATION_ERROR",
+          "message": "Curriculum objective authority is not semantically supported for this operation.",
+          "details": {
+            "kind": "objective_authority_semantic_support_invalid",
+            "boundary": "formal_provider",
+            "diagnosticCodes": [
+              "semantic_support_failed"
+            ],
+            "diagnostics": [
+              "Objective obj_19076cfa-a32f-4705-8518-893923e039ad did not pass objective-authority semantic support."
+            ]
+          }
+        }
+      }
+    ]
+  },
+  {
+    "sourceId": "F03",
+    "surface": "grading-negative",
+    "reason": "No admitted Formal question",
+    "stateEvents": [
+      {
+        "stage": "formal",
+        "error": {
+          "name": "AppError",
+          "code": "VALIDATION_ERROR",
+          "message": "Curriculum objective authority is not semantically supported for this operation.",
+          "details": {
+            "kind": "objective_authority_semantic_support_invalid",
+            "boundary": "formal_provider",
+            "diagnosticCodes": [
+              "semantic_support_failed"
+            ],
+            "diagnostics": [
+              "Objective obj_19076cfa-a32f-4705-8518-893923e039ad did not pass objective-authority semantic support."
+            ]
+          }
+        }
+      }
+    ]
+  },
+  {
+    "sourceId": "F04",
+    "surface": "teaching",
+    "reason": "First sampled Lesson not delivered",
+    "stateEvents": [
+      {
+        "stage": "teaching",
+        "error": {
+          "name": "Error",
+          "message": "Lesson unavailable: retry_available Lesson preparation can be retried."
+        }
+      }
+    ]
+  },
+  {
+    "sourceId": "F04",
+    "surface": "tutor",
+    "reason": "Tutor not reached",
+    "stateEvents": [
+      {
+        "stage": "teaching",
+        "error": {
+          "name": "Error",
+          "message": "Lesson unavailable: retry_available Lesson preparation can be retried."
+        }
+      }
+    ]
+  },
+  {
+    "sourceId": "F04",
+    "surface": "practice",
+    "reason": "First Practice not reached",
+    "stateEvents": [
+      {
+        "stage": "teaching",
+        "error": {
+          "name": "Error",
+          "message": "Lesson unavailable: retry_available Lesson preparation can be retried."
+        }
+      }
+    ]
+  },
+  {
+    "sourceId": "F04",
     "surface": "repair",
-    "reason": "Repair not delivered in sampled route"
+    "reason": "Repair not delivered in sampled route",
+    "stateEvents": [
+      {
+        "stage": "teaching",
+        "error": {
+          "name": "Error",
+          "message": "Lesson unavailable: retry_available Lesson preparation can be retried."
+        }
+      }
+    ]
   },
   {
-    "courseId": "course-01680f10a504b765",
+    "sourceId": "F04",
     "surface": "retest",
-    "reason": "Retest not reached"
+    "reason": "Retest not reached",
+    "stateEvents": [
+      {
+        "stage": "teaching",
+        "error": {
+          "name": "Error",
+          "message": "Lesson unavailable: retry_available Lesson preparation can be retried."
+        }
+      }
+    ]
   },
   {
-    "courseId": "course-17610dfc6d39952e",
+    "sourceId": "F04",
     "surface": "formal-question",
-    "reason": "No admitted Formal question"
+    "reason": "No admitted Formal question",
+    "stateEvents": [
+      {
+        "stage": "teaching",
+        "error": {
+          "name": "Error",
+          "message": "Lesson unavailable: retry_available Lesson preparation can be retried."
+        }
+      }
+    ]
   },
   {
-    "courseId": "course-17610dfc6d39952e",
-    "surface": "grading-negative",
-    "reason": "No admitted Formal question"
-  },
-  {
-    "courseId": "course-17610dfc6d39952e",
+    "sourceId": "F04",
     "surface": "grading-positive",
-    "reason": "No admitted Formal question"
+    "reason": "No admitted Formal question",
+    "stateEvents": [
+      {
+        "stage": "teaching",
+        "error": {
+          "name": "Error",
+          "message": "Lesson unavailable: retry_available Lesson preparation can be retried."
+        }
+      }
+    ]
   },
   {
-    "courseId": "course-2bdaf8871d701d22",
+    "sourceId": "F04",
+    "surface": "grading-negative",
+    "reason": "No admitted Formal question",
+    "stateEvents": [
+      {
+        "stage": "teaching",
+        "error": {
+          "name": "Error",
+          "message": "Lesson unavailable: retry_available Lesson preparation can be retried."
+        }
+      }
+    ]
+  },
+  {
+    "sourceId": "F05",
     "surface": "formal-question",
-    "reason": "No admitted Formal question"
+    "reason": "No admitted Formal question",
+    "stateEvents": [
+      {
+        "stage": "formal",
+        "error": {
+          "name": "AppError",
+          "code": "VALIDATION_ERROR",
+          "message": "Curriculum objective authority is not semantically supported for this operation.",
+          "details": {
+            "kind": "objective_authority_semantic_support_invalid",
+            "boundary": "formal_provider",
+            "diagnosticCodes": [
+              "semantic_support_failed"
+            ],
+            "diagnostics": [
+              "Objective obj_7746b238-2411-4cb1-a818-8a80020a2159 did not pass objective-authority semantic support."
+            ]
+          }
+        }
+      }
+    ]
   },
   {
-    "courseId": "course-2bdaf8871d701d22",
-    "surface": "grading-negative",
-    "reason": "No admitted Formal question"
-  },
-  {
-    "courseId": "course-2bdaf8871d701d22",
+    "sourceId": "F05",
     "surface": "grading-positive",
-    "reason": "No admitted Formal question"
+    "reason": "No admitted Formal question",
+    "stateEvents": [
+      {
+        "stage": "formal",
+        "error": {
+          "name": "AppError",
+          "code": "VALIDATION_ERROR",
+          "message": "Curriculum objective authority is not semantically supported for this operation.",
+          "details": {
+            "kind": "objective_authority_semantic_support_invalid",
+            "boundary": "formal_provider",
+            "diagnosticCodes": [
+              "semantic_support_failed"
+            ],
+            "diagnostics": [
+              "Objective obj_7746b238-2411-4cb1-a818-8a80020a2159 did not pass objective-authority semantic support."
+            ]
+          }
+        }
+      }
+    ]
   },
   {
-    "courseId": "course-2ff0d2b503fa9698",
-    "surface": "formal-question",
-    "reason": "No admitted Formal question"
-  },
-  {
-    "courseId": "course-2ff0d2b503fa9698",
+    "sourceId": "F05",
     "surface": "grading-negative",
-    "reason": "No admitted Formal question"
+    "reason": "No admitted Formal question",
+    "stateEvents": [
+      {
+        "stage": "formal",
+        "error": {
+          "name": "AppError",
+          "code": "VALIDATION_ERROR",
+          "message": "Curriculum objective authority is not semantically supported for this operation.",
+          "details": {
+            "kind": "objective_authority_semantic_support_invalid",
+            "boundary": "formal_provider",
+            "diagnosticCodes": [
+              "semantic_support_failed"
+            ],
+            "diagnostics": [
+              "Objective obj_7746b238-2411-4cb1-a818-8a80020a2159 did not pass objective-authority semantic support."
+            ]
+          }
+        }
+      }
+    ]
   },
   {
-    "courseId": "course-2ff0d2b503fa9698",
-    "surface": "grading-positive",
-    "reason": "No admitted Formal question"
-  },
-  {
-    "courseId": "course-34011a1dddcf898a",
-    "surface": "formal-question",
-    "reason": "No admitted Formal question"
-  },
-  {
-    "courseId": "course-34011a1dddcf898a",
-    "surface": "grading-negative",
-    "reason": "No admitted Formal question"
-  },
-  {
-    "courseId": "course-34011a1dddcf898a",
-    "surface": "grading-positive",
-    "reason": "No admitted Formal question"
-  },
-  {
-    "courseId": "course-38b597f36efe7a66",
-    "surface": "formal-question",
-    "reason": "No admitted Formal question"
-  },
-  {
-    "courseId": "course-38b597f36efe7a66",
-    "surface": "grading-negative",
-    "reason": "No admitted Formal question"
-  },
-  {
-    "courseId": "course-38b597f36efe7a66",
-    "surface": "grading-positive",
-    "reason": "No admitted Formal question"
-  },
-  {
-    "courseId": "course-513f5dc47e0d2bd5",
+    "sourceId": "F06",
     "surface": "curriculum",
-    "reason": "No accepted curriculum"
+    "reason": "No accepted curriculum",
+    "stateEvents": [
+      {
+        "stage": "course",
+        "error": {
+          "name": "ProviderError",
+          "code": "PROVIDER_INVALID_OUTPUT",
+          "message": "模型返回的数据经有界修复后仍不符合约定格式。",
+          "details": {
+            "validationKind": "candidate",
+            "candidateFailure": {
+              "kind": "curriculum_detail_candidate_validation_failed",
+              "context": {
+                "courseMapId": "course_map_ebfc5ede8dd617119c967448",
+                "batchKey": "detail_batch_6460b45f225707fdf04d50da",
+                "sourceAllocationFingerprint": "course_map_source_allocation_87445fc892c0fb1892de3ee67130d3bf0f26eb71"
+              },
+              "diagnostics": [
+                {
+                  "code": "required_objective_parent_topic_mismatch",
+                  "message": "Required objective detail-objective-course_map_region_3bbb676fc2e98e1d3e99afd9-2 has no meaningful semantic anchor in its own learner-visible LearningUnit title. Rename or regroup the unit so its title covers every required objective.",
+                  "facts": {
+                    "courseMapRegionId": "course_map_region_3bbb676fc2e98e1d3e99afd9",
+                    "learningUnitTitle": "等待时间数据的平均数、中位数计算、异常大值影响与指标选择",
+                    "objectiveKey": "detail-objective-course_map_region_3bbb676fc2e98e1d3e99afd9-2",
+                    "objectiveTitle": "Explain differential impact of anomalously large waiting time",
+                    "ownAnchoredRequiredObjectiveCount": 0,
+                    "matchingSiblingUnitTitles": []
+                  }
+                }
+              ]
+            },
+            "structuredFailure": {
+              "attemptNumber": 2,
+              "attemptKind": "repair",
+              "finishReason": "stop",
+              "truncated": false,
+              "possiblyIncomplete": false,
+              "jsonParseSuccess": true,
+              "jsonFormat": "direct",
+              "schemaIssueCount": 0,
+              "schemaIssues": [],
+              "semanticIssueCodes": [
+                "required_objective_parent_topic_mismatch"
+              ],
+              "failureCategory": "SEMANTIC_VALIDATION_FAILURE",
+              "repairAction": "exhausted"
+            }
+          }
+        }
+      }
+    ]
   },
   {
-    "courseId": "course-513f5dc47e0d2bd5",
-    "surface": "formal-question",
-    "reason": "No admitted Formal question"
-  },
-  {
-    "courseId": "course-513f5dc47e0d2bd5",
-    "surface": "grading-negative",
-    "reason": "No admitted Formal question"
-  },
-  {
-    "courseId": "course-513f5dc47e0d2bd5",
-    "surface": "grading-positive",
-    "reason": "No admitted Formal question"
-  },
-  {
-    "courseId": "course-513f5dc47e0d2bd5",
-    "surface": "practice",
-    "reason": "First Practice not reached"
-  },
-  {
-    "courseId": "course-513f5dc47e0d2bd5",
-    "surface": "repair",
-    "reason": "Repair not delivered in sampled route"
-  },
-  {
-    "courseId": "course-513f5dc47e0d2bd5",
-    "surface": "retest",
-    "reason": "Retest not reached"
-  },
-  {
-    "courseId": "course-513f5dc47e0d2bd5",
+    "sourceId": "F06",
     "surface": "teaching",
-    "reason": "First sampled Lesson not delivered"
+    "reason": "First sampled Lesson not delivered",
+    "stateEvents": [
+      {
+        "stage": "course",
+        "error": {
+          "name": "ProviderError",
+          "code": "PROVIDER_INVALID_OUTPUT",
+          "message": "模型返回的数据经有界修复后仍不符合约定格式。",
+          "details": {
+            "validationKind": "candidate",
+            "candidateFailure": {
+              "kind": "curriculum_detail_candidate_validation_failed",
+              "context": {
+                "courseMapId": "course_map_ebfc5ede8dd617119c967448",
+                "batchKey": "detail_batch_6460b45f225707fdf04d50da",
+                "sourceAllocationFingerprint": "course_map_source_allocation_87445fc892c0fb1892de3ee67130d3bf0f26eb71"
+              },
+              "diagnostics": [
+                {
+                  "code": "required_objective_parent_topic_mismatch",
+                  "message": "Required objective detail-objective-course_map_region_3bbb676fc2e98e1d3e99afd9-2 has no meaningful semantic anchor in its own learner-visible LearningUnit title. Rename or regroup the unit so its title covers every required objective.",
+                  "facts": {
+                    "courseMapRegionId": "course_map_region_3bbb676fc2e98e1d3e99afd9",
+                    "learningUnitTitle": "等待时间数据的平均数、中位数计算、异常大值影响与指标选择",
+                    "objectiveKey": "detail-objective-course_map_region_3bbb676fc2e98e1d3e99afd9-2",
+                    "objectiveTitle": "Explain differential impact of anomalously large waiting time",
+                    "ownAnchoredRequiredObjectiveCount": 0,
+                    "matchingSiblingUnitTitles": []
+                  }
+                }
+              ]
+            },
+            "structuredFailure": {
+              "attemptNumber": 2,
+              "attemptKind": "repair",
+              "finishReason": "stop",
+              "truncated": false,
+              "possiblyIncomplete": false,
+              "jsonParseSuccess": true,
+              "jsonFormat": "direct",
+              "schemaIssueCount": 0,
+              "schemaIssues": [],
+              "semanticIssueCodes": [
+                "required_objective_parent_topic_mismatch"
+              ],
+              "failureCategory": "SEMANTIC_VALIDATION_FAILURE",
+              "repairAction": "exhausted"
+            }
+          }
+        }
+      }
+    ]
   },
   {
-    "courseId": "course-513f5dc47e0d2bd5",
+    "sourceId": "F06",
     "surface": "tutor",
-    "reason": "Tutor not reached"
+    "reason": "Tutor not reached",
+    "stateEvents": [
+      {
+        "stage": "course",
+        "error": {
+          "name": "ProviderError",
+          "code": "PROVIDER_INVALID_OUTPUT",
+          "message": "模型返回的数据经有界修复后仍不符合约定格式。",
+          "details": {
+            "validationKind": "candidate",
+            "candidateFailure": {
+              "kind": "curriculum_detail_candidate_validation_failed",
+              "context": {
+                "courseMapId": "course_map_ebfc5ede8dd617119c967448",
+                "batchKey": "detail_batch_6460b45f225707fdf04d50da",
+                "sourceAllocationFingerprint": "course_map_source_allocation_87445fc892c0fb1892de3ee67130d3bf0f26eb71"
+              },
+              "diagnostics": [
+                {
+                  "code": "required_objective_parent_topic_mismatch",
+                  "message": "Required objective detail-objective-course_map_region_3bbb676fc2e98e1d3e99afd9-2 has no meaningful semantic anchor in its own learner-visible LearningUnit title. Rename or regroup the unit so its title covers every required objective.",
+                  "facts": {
+                    "courseMapRegionId": "course_map_region_3bbb676fc2e98e1d3e99afd9",
+                    "learningUnitTitle": "等待时间数据的平均数、中位数计算、异常大值影响与指标选择",
+                    "objectiveKey": "detail-objective-course_map_region_3bbb676fc2e98e1d3e99afd9-2",
+                    "objectiveTitle": "Explain differential impact of anomalously large waiting time",
+                    "ownAnchoredRequiredObjectiveCount": 0,
+                    "matchingSiblingUnitTitles": []
+                  }
+                }
+              ]
+            },
+            "structuredFailure": {
+              "attemptNumber": 2,
+              "attemptKind": "repair",
+              "finishReason": "stop",
+              "truncated": false,
+              "possiblyIncomplete": false,
+              "jsonParseSuccess": true,
+              "jsonFormat": "direct",
+              "schemaIssueCount": 0,
+              "schemaIssues": [],
+              "semanticIssueCodes": [
+                "required_objective_parent_topic_mismatch"
+              ],
+              "failureCategory": "SEMANTIC_VALIDATION_FAILURE",
+              "repairAction": "exhausted"
+            }
+          }
+        }
+      }
+    ]
   },
   {
-    "courseId": "course-754fec7e6983fd57",
-    "surface": "formal-question",
-    "reason": "No admitted Formal question"
-  },
-  {
-    "courseId": "course-754fec7e6983fd57",
-    "surface": "grading-negative",
-    "reason": "No admitted Formal question"
-  },
-  {
-    "courseId": "course-754fec7e6983fd57",
-    "surface": "grading-positive",
-    "reason": "No admitted Formal question"
-  },
-  {
-    "courseId": "course-754fec7e6983fd57",
+    "sourceId": "F06",
     "surface": "practice",
-    "reason": "First Practice not reached"
+    "reason": "First Practice not reached",
+    "stateEvents": [
+      {
+        "stage": "course",
+        "error": {
+          "name": "ProviderError",
+          "code": "PROVIDER_INVALID_OUTPUT",
+          "message": "模型返回的数据经有界修复后仍不符合约定格式。",
+          "details": {
+            "validationKind": "candidate",
+            "candidateFailure": {
+              "kind": "curriculum_detail_candidate_validation_failed",
+              "context": {
+                "courseMapId": "course_map_ebfc5ede8dd617119c967448",
+                "batchKey": "detail_batch_6460b45f225707fdf04d50da",
+                "sourceAllocationFingerprint": "course_map_source_allocation_87445fc892c0fb1892de3ee67130d3bf0f26eb71"
+              },
+              "diagnostics": [
+                {
+                  "code": "required_objective_parent_topic_mismatch",
+                  "message": "Required objective detail-objective-course_map_region_3bbb676fc2e98e1d3e99afd9-2 has no meaningful semantic anchor in its own learner-visible LearningUnit title. Rename or regroup the unit so its title covers every required objective.",
+                  "facts": {
+                    "courseMapRegionId": "course_map_region_3bbb676fc2e98e1d3e99afd9",
+                    "learningUnitTitle": "等待时间数据的平均数、中位数计算、异常大值影响与指标选择",
+                    "objectiveKey": "detail-objective-course_map_region_3bbb676fc2e98e1d3e99afd9-2",
+                    "objectiveTitle": "Explain differential impact of anomalously large waiting time",
+                    "ownAnchoredRequiredObjectiveCount": 0,
+                    "matchingSiblingUnitTitles": []
+                  }
+                }
+              ]
+            },
+            "structuredFailure": {
+              "attemptNumber": 2,
+              "attemptKind": "repair",
+              "finishReason": "stop",
+              "truncated": false,
+              "possiblyIncomplete": false,
+              "jsonParseSuccess": true,
+              "jsonFormat": "direct",
+              "schemaIssueCount": 0,
+              "schemaIssues": [],
+              "semanticIssueCodes": [
+                "required_objective_parent_topic_mismatch"
+              ],
+              "failureCategory": "SEMANTIC_VALIDATION_FAILURE",
+              "repairAction": "exhausted"
+            }
+          }
+        }
+      }
+    ]
   },
   {
-    "courseId": "course-754fec7e6983fd57",
+    "sourceId": "F06",
     "surface": "repair",
-    "reason": "Repair not delivered in sampled route"
+    "reason": "Repair not delivered in sampled route",
+    "stateEvents": [
+      {
+        "stage": "course",
+        "error": {
+          "name": "ProviderError",
+          "code": "PROVIDER_INVALID_OUTPUT",
+          "message": "模型返回的数据经有界修复后仍不符合约定格式。",
+          "details": {
+            "validationKind": "candidate",
+            "candidateFailure": {
+              "kind": "curriculum_detail_candidate_validation_failed",
+              "context": {
+                "courseMapId": "course_map_ebfc5ede8dd617119c967448",
+                "batchKey": "detail_batch_6460b45f225707fdf04d50da",
+                "sourceAllocationFingerprint": "course_map_source_allocation_87445fc892c0fb1892de3ee67130d3bf0f26eb71"
+              },
+              "diagnostics": [
+                {
+                  "code": "required_objective_parent_topic_mismatch",
+                  "message": "Required objective detail-objective-course_map_region_3bbb676fc2e98e1d3e99afd9-2 has no meaningful semantic anchor in its own learner-visible LearningUnit title. Rename or regroup the unit so its title covers every required objective.",
+                  "facts": {
+                    "courseMapRegionId": "course_map_region_3bbb676fc2e98e1d3e99afd9",
+                    "learningUnitTitle": "等待时间数据的平均数、中位数计算、异常大值影响与指标选择",
+                    "objectiveKey": "detail-objective-course_map_region_3bbb676fc2e98e1d3e99afd9-2",
+                    "objectiveTitle": "Explain differential impact of anomalously large waiting time",
+                    "ownAnchoredRequiredObjectiveCount": 0,
+                    "matchingSiblingUnitTitles": []
+                  }
+                }
+              ]
+            },
+            "structuredFailure": {
+              "attemptNumber": 2,
+              "attemptKind": "repair",
+              "finishReason": "stop",
+              "truncated": false,
+              "possiblyIncomplete": false,
+              "jsonParseSuccess": true,
+              "jsonFormat": "direct",
+              "schemaIssueCount": 0,
+              "schemaIssues": [],
+              "semanticIssueCodes": [
+                "required_objective_parent_topic_mismatch"
+              ],
+              "failureCategory": "SEMANTIC_VALIDATION_FAILURE",
+              "repairAction": "exhausted"
+            }
+          }
+        }
+      }
+    ]
   },
   {
-    "courseId": "course-754fec7e6983fd57",
+    "sourceId": "F06",
     "surface": "retest",
-    "reason": "Retest not reached"
+    "reason": "Retest not reached",
+    "stateEvents": [
+      {
+        "stage": "course",
+        "error": {
+          "name": "ProviderError",
+          "code": "PROVIDER_INVALID_OUTPUT",
+          "message": "模型返回的数据经有界修复后仍不符合约定格式。",
+          "details": {
+            "validationKind": "candidate",
+            "candidateFailure": {
+              "kind": "curriculum_detail_candidate_validation_failed",
+              "context": {
+                "courseMapId": "course_map_ebfc5ede8dd617119c967448",
+                "batchKey": "detail_batch_6460b45f225707fdf04d50da",
+                "sourceAllocationFingerprint": "course_map_source_allocation_87445fc892c0fb1892de3ee67130d3bf0f26eb71"
+              },
+              "diagnostics": [
+                {
+                  "code": "required_objective_parent_topic_mismatch",
+                  "message": "Required objective detail-objective-course_map_region_3bbb676fc2e98e1d3e99afd9-2 has no meaningful semantic anchor in its own learner-visible LearningUnit title. Rename or regroup the unit so its title covers every required objective.",
+                  "facts": {
+                    "courseMapRegionId": "course_map_region_3bbb676fc2e98e1d3e99afd9",
+                    "learningUnitTitle": "等待时间数据的平均数、中位数计算、异常大值影响与指标选择",
+                    "objectiveKey": "detail-objective-course_map_region_3bbb676fc2e98e1d3e99afd9-2",
+                    "objectiveTitle": "Explain differential impact of anomalously large waiting time",
+                    "ownAnchoredRequiredObjectiveCount": 0,
+                    "matchingSiblingUnitTitles": []
+                  }
+                }
+              ]
+            },
+            "structuredFailure": {
+              "attemptNumber": 2,
+              "attemptKind": "repair",
+              "finishReason": "stop",
+              "truncated": false,
+              "possiblyIncomplete": false,
+              "jsonParseSuccess": true,
+              "jsonFormat": "direct",
+              "schemaIssueCount": 0,
+              "schemaIssues": [],
+              "semanticIssueCodes": [
+                "required_objective_parent_topic_mismatch"
+              ],
+              "failureCategory": "SEMANTIC_VALIDATION_FAILURE",
+              "repairAction": "exhausted"
+            }
+          }
+        }
+      }
+    ]
   },
   {
-    "courseId": "course-754fec7e6983fd57",
+    "sourceId": "F06",
+    "surface": "formal-question",
+    "reason": "No admitted Formal question",
+    "stateEvents": [
+      {
+        "stage": "course",
+        "error": {
+          "name": "ProviderError",
+          "code": "PROVIDER_INVALID_OUTPUT",
+          "message": "模型返回的数据经有界修复后仍不符合约定格式。",
+          "details": {
+            "validationKind": "candidate",
+            "candidateFailure": {
+              "kind": "curriculum_detail_candidate_validation_failed",
+              "context": {
+                "courseMapId": "course_map_ebfc5ede8dd617119c967448",
+                "batchKey": "detail_batch_6460b45f225707fdf04d50da",
+                "sourceAllocationFingerprint": "course_map_source_allocation_87445fc892c0fb1892de3ee67130d3bf0f26eb71"
+              },
+              "diagnostics": [
+                {
+                  "code": "required_objective_parent_topic_mismatch",
+                  "message": "Required objective detail-objective-course_map_region_3bbb676fc2e98e1d3e99afd9-2 has no meaningful semantic anchor in its own learner-visible LearningUnit title. Rename or regroup the unit so its title covers every required objective.",
+                  "facts": {
+                    "courseMapRegionId": "course_map_region_3bbb676fc2e98e1d3e99afd9",
+                    "learningUnitTitle": "等待时间数据的平均数、中位数计算、异常大值影响与指标选择",
+                    "objectiveKey": "detail-objective-course_map_region_3bbb676fc2e98e1d3e99afd9-2",
+                    "objectiveTitle": "Explain differential impact of anomalously large waiting time",
+                    "ownAnchoredRequiredObjectiveCount": 0,
+                    "matchingSiblingUnitTitles": []
+                  }
+                }
+              ]
+            },
+            "structuredFailure": {
+              "attemptNumber": 2,
+              "attemptKind": "repair",
+              "finishReason": "stop",
+              "truncated": false,
+              "possiblyIncomplete": false,
+              "jsonParseSuccess": true,
+              "jsonFormat": "direct",
+              "schemaIssueCount": 0,
+              "schemaIssues": [],
+              "semanticIssueCodes": [
+                "required_objective_parent_topic_mismatch"
+              ],
+              "failureCategory": "SEMANTIC_VALIDATION_FAILURE",
+              "repairAction": "exhausted"
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "sourceId": "F06",
+    "surface": "grading-positive",
+    "reason": "No admitted Formal question",
+    "stateEvents": [
+      {
+        "stage": "course",
+        "error": {
+          "name": "ProviderError",
+          "code": "PROVIDER_INVALID_OUTPUT",
+          "message": "模型返回的数据经有界修复后仍不符合约定格式。",
+          "details": {
+            "validationKind": "candidate",
+            "candidateFailure": {
+              "kind": "curriculum_detail_candidate_validation_failed",
+              "context": {
+                "courseMapId": "course_map_ebfc5ede8dd617119c967448",
+                "batchKey": "detail_batch_6460b45f225707fdf04d50da",
+                "sourceAllocationFingerprint": "course_map_source_allocation_87445fc892c0fb1892de3ee67130d3bf0f26eb71"
+              },
+              "diagnostics": [
+                {
+                  "code": "required_objective_parent_topic_mismatch",
+                  "message": "Required objective detail-objective-course_map_region_3bbb676fc2e98e1d3e99afd9-2 has no meaningful semantic anchor in its own learner-visible LearningUnit title. Rename or regroup the unit so its title covers every required objective.",
+                  "facts": {
+                    "courseMapRegionId": "course_map_region_3bbb676fc2e98e1d3e99afd9",
+                    "learningUnitTitle": "等待时间数据的平均数、中位数计算、异常大值影响与指标选择",
+                    "objectiveKey": "detail-objective-course_map_region_3bbb676fc2e98e1d3e99afd9-2",
+                    "objectiveTitle": "Explain differential impact of anomalously large waiting time",
+                    "ownAnchoredRequiredObjectiveCount": 0,
+                    "matchingSiblingUnitTitles": []
+                  }
+                }
+              ]
+            },
+            "structuredFailure": {
+              "attemptNumber": 2,
+              "attemptKind": "repair",
+              "finishReason": "stop",
+              "truncated": false,
+              "possiblyIncomplete": false,
+              "jsonParseSuccess": true,
+              "jsonFormat": "direct",
+              "schemaIssueCount": 0,
+              "schemaIssues": [],
+              "semanticIssueCodes": [
+                "required_objective_parent_topic_mismatch"
+              ],
+              "failureCategory": "SEMANTIC_VALIDATION_FAILURE",
+              "repairAction": "exhausted"
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "sourceId": "F06",
+    "surface": "grading-negative",
+    "reason": "No admitted Formal question",
+    "stateEvents": [
+      {
+        "stage": "course",
+        "error": {
+          "name": "ProviderError",
+          "code": "PROVIDER_INVALID_OUTPUT",
+          "message": "模型返回的数据经有界修复后仍不符合约定格式。",
+          "details": {
+            "validationKind": "candidate",
+            "candidateFailure": {
+              "kind": "curriculum_detail_candidate_validation_failed",
+              "context": {
+                "courseMapId": "course_map_ebfc5ede8dd617119c967448",
+                "batchKey": "detail_batch_6460b45f225707fdf04d50da",
+                "sourceAllocationFingerprint": "course_map_source_allocation_87445fc892c0fb1892de3ee67130d3bf0f26eb71"
+              },
+              "diagnostics": [
+                {
+                  "code": "required_objective_parent_topic_mismatch",
+                  "message": "Required objective detail-objective-course_map_region_3bbb676fc2e98e1d3e99afd9-2 has no meaningful semantic anchor in its own learner-visible LearningUnit title. Rename or regroup the unit so its title covers every required objective.",
+                  "facts": {
+                    "courseMapRegionId": "course_map_region_3bbb676fc2e98e1d3e99afd9",
+                    "learningUnitTitle": "等待时间数据的平均数、中位数计算、异常大值影响与指标选择",
+                    "objectiveKey": "detail-objective-course_map_region_3bbb676fc2e98e1d3e99afd9-2",
+                    "objectiveTitle": "Explain differential impact of anomalously large waiting time",
+                    "ownAnchoredRequiredObjectiveCount": 0,
+                    "matchingSiblingUnitTitles": []
+                  }
+                }
+              ]
+            },
+            "structuredFailure": {
+              "attemptNumber": 2,
+              "attemptKind": "repair",
+              "finishReason": "stop",
+              "truncated": false,
+              "possiblyIncomplete": false,
+              "jsonParseSuccess": true,
+              "jsonFormat": "direct",
+              "schemaIssueCount": 0,
+              "schemaIssues": [],
+              "semanticIssueCodes": [
+                "required_objective_parent_topic_mismatch"
+              ],
+              "failureCategory": "SEMANTIC_VALIDATION_FAILURE",
+              "repairAction": "exhausted"
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "sourceId": "F08",
+    "surface": "repair",
+    "reason": "Repair not delivered in sampled route",
+    "stateEvents": [
+      {
+        "stage": "teaching",
+        "error": {
+          "name": "ProviderError",
+          "code": "PROVIDER_INVALID_OUTPUT",
+          "message": "模型返回的数据经有界修复后仍不符合约定格式。",
+          "details": {
+            "validationKind": "schema",
+            "structuredFailure": {
+              "attemptNumber": 2,
+              "attemptKind": "retry",
+              "finishReason": "length",
+              "truncated": true,
+              "possiblyIncomplete": false,
+              "jsonParseSuccess": false,
+              "jsonFormat": null,
+              "schemaIssueCount": 0,
+              "schemaIssues": [],
+              "semanticIssueCodes": [],
+              "failureCategory": "TRUNCATED_OUTPUT",
+              "repairAction": "exhausted",
+              "preparationFailure": {
+                "failureClass": "OUTPUT",
+                "failureCode": "truncated_output"
+              },
+              "recoveryAction": "exhausted",
+              "localizedRepair": false,
+              "immutableItemIds": [],
+              "affectedItemIds": [],
+              "affectedComponents": []
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "sourceId": "F08",
+    "surface": "retest",
+    "reason": "Retest not reached",
+    "stateEvents": [
+      {
+        "stage": "teaching",
+        "error": {
+          "name": "ProviderError",
+          "code": "PROVIDER_INVALID_OUTPUT",
+          "message": "模型返回的数据经有界修复后仍不符合约定格式。",
+          "details": {
+            "validationKind": "schema",
+            "structuredFailure": {
+              "attemptNumber": 2,
+              "attemptKind": "retry",
+              "finishReason": "length",
+              "truncated": true,
+              "possiblyIncomplete": false,
+              "jsonParseSuccess": false,
+              "jsonFormat": null,
+              "schemaIssueCount": 0,
+              "schemaIssues": [],
+              "semanticIssueCodes": [],
+              "failureCategory": "TRUNCATED_OUTPUT",
+              "repairAction": "exhausted",
+              "preparationFailure": {
+                "failureClass": "OUTPUT",
+                "failureCode": "truncated_output"
+              },
+              "recoveryAction": "exhausted",
+              "localizedRepair": false,
+              "immutableItemIds": [],
+              "affectedItemIds": [],
+              "affectedComponents": []
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "sourceId": "F08",
+    "surface": "formal-question",
+    "reason": "No admitted Formal question",
+    "stateEvents": [
+      {
+        "stage": "teaching",
+        "error": {
+          "name": "ProviderError",
+          "code": "PROVIDER_INVALID_OUTPUT",
+          "message": "模型返回的数据经有界修复后仍不符合约定格式。",
+          "details": {
+            "validationKind": "schema",
+            "structuredFailure": {
+              "attemptNumber": 2,
+              "attemptKind": "retry",
+              "finishReason": "length",
+              "truncated": true,
+              "possiblyIncomplete": false,
+              "jsonParseSuccess": false,
+              "jsonFormat": null,
+              "schemaIssueCount": 0,
+              "schemaIssues": [],
+              "semanticIssueCodes": [],
+              "failureCategory": "TRUNCATED_OUTPUT",
+              "repairAction": "exhausted",
+              "preparationFailure": {
+                "failureClass": "OUTPUT",
+                "failureCode": "truncated_output"
+              },
+              "recoveryAction": "exhausted",
+              "localizedRepair": false,
+              "immutableItemIds": [],
+              "affectedItemIds": [],
+              "affectedComponents": []
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "sourceId": "F08",
+    "surface": "grading-positive",
+    "reason": "No admitted Formal question",
+    "stateEvents": [
+      {
+        "stage": "teaching",
+        "error": {
+          "name": "ProviderError",
+          "code": "PROVIDER_INVALID_OUTPUT",
+          "message": "模型返回的数据经有界修复后仍不符合约定格式。",
+          "details": {
+            "validationKind": "schema",
+            "structuredFailure": {
+              "attemptNumber": 2,
+              "attemptKind": "retry",
+              "finishReason": "length",
+              "truncated": true,
+              "possiblyIncomplete": false,
+              "jsonParseSuccess": false,
+              "jsonFormat": null,
+              "schemaIssueCount": 0,
+              "schemaIssues": [],
+              "semanticIssueCodes": [],
+              "failureCategory": "TRUNCATED_OUTPUT",
+              "repairAction": "exhausted",
+              "preparationFailure": {
+                "failureClass": "OUTPUT",
+                "failureCode": "truncated_output"
+              },
+              "recoveryAction": "exhausted",
+              "localizedRepair": false,
+              "immutableItemIds": [],
+              "affectedItemIds": [],
+              "affectedComponents": []
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "sourceId": "F08",
+    "surface": "grading-negative",
+    "reason": "No admitted Formal question",
+    "stateEvents": [
+      {
+        "stage": "teaching",
+        "error": {
+          "name": "ProviderError",
+          "code": "PROVIDER_INVALID_OUTPUT",
+          "message": "模型返回的数据经有界修复后仍不符合约定格式。",
+          "details": {
+            "validationKind": "schema",
+            "structuredFailure": {
+              "attemptNumber": 2,
+              "attemptKind": "retry",
+              "finishReason": "length",
+              "truncated": true,
+              "possiblyIncomplete": false,
+              "jsonParseSuccess": false,
+              "jsonFormat": null,
+              "schemaIssueCount": 0,
+              "schemaIssues": [],
+              "semanticIssueCodes": [],
+              "failureCategory": "TRUNCATED_OUTPUT",
+              "repairAction": "exhausted",
+              "preparationFailure": {
+                "failureClass": "OUTPUT",
+                "failureCode": "truncated_output"
+              },
+              "recoveryAction": "exhausted",
+              "localizedRepair": false,
+              "immutableItemIds": [],
+              "affectedItemIds": [],
+              "affectedComponents": []
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "sourceId": "F10",
     "surface": "teaching",
-    "reason": "First sampled Lesson not delivered"
+    "reason": "First sampled Lesson not delivered",
+    "stateEvents": [
+      {
+        "stage": "teaching",
+        "error": {
+          "name": "Error",
+          "message": "Lesson unavailable: retry_available Lesson preparation can be retried."
+        }
+      }
+    ]
   },
   {
-    "courseId": "course-754fec7e6983fd57",
+    "sourceId": "F10",
     "surface": "tutor",
-    "reason": "Tutor not reached"
+    "reason": "Tutor not reached",
+    "stateEvents": [
+      {
+        "stage": "teaching",
+        "error": {
+          "name": "Error",
+          "message": "Lesson unavailable: retry_available Lesson preparation can be retried."
+        }
+      }
+    ]
   },
   {
-    "courseId": "course-75ef620714036001",
+    "sourceId": "F10",
+    "surface": "practice",
+    "reason": "First Practice not reached",
+    "stateEvents": [
+      {
+        "stage": "teaching",
+        "error": {
+          "name": "Error",
+          "message": "Lesson unavailable: retry_available Lesson preparation can be retried."
+        }
+      }
+    ]
+  },
+  {
+    "sourceId": "F10",
+    "surface": "repair",
+    "reason": "Repair not delivered in sampled route",
+    "stateEvents": [
+      {
+        "stage": "teaching",
+        "error": {
+          "name": "Error",
+          "message": "Lesson unavailable: retry_available Lesson preparation can be retried."
+        }
+      }
+    ]
+  },
+  {
+    "sourceId": "F10",
+    "surface": "retest",
+    "reason": "Retest not reached",
+    "stateEvents": [
+      {
+        "stage": "teaching",
+        "error": {
+          "name": "Error",
+          "message": "Lesson unavailable: retry_available Lesson preparation can be retried."
+        }
+      }
+    ]
+  },
+  {
+    "sourceId": "F10",
+    "surface": "formal-question",
+    "reason": "No admitted Formal question",
+    "stateEvents": [
+      {
+        "stage": "teaching",
+        "error": {
+          "name": "Error",
+          "message": "Lesson unavailable: retry_available Lesson preparation can be retried."
+        }
+      }
+    ]
+  },
+  {
+    "sourceId": "F10",
+    "surface": "grading-positive",
+    "reason": "No admitted Formal question",
+    "stateEvents": [
+      {
+        "stage": "teaching",
+        "error": {
+          "name": "Error",
+          "message": "Lesson unavailable: retry_available Lesson preparation can be retried."
+        }
+      }
+    ]
+  },
+  {
+    "sourceId": "F10",
+    "surface": "grading-negative",
+    "reason": "No admitted Formal question",
+    "stateEvents": [
+      {
+        "stage": "teaching",
+        "error": {
+          "name": "Error",
+          "message": "Lesson unavailable: retry_available Lesson preparation can be retried."
+        }
+      }
+    ]
+  },
+  {
+    "sourceId": "F11",
+    "surface": "repair",
+    "reason": "Repair not delivered in sampled route",
+    "stateEvents": [
+      {
+        "stage": "teaching",
+        "error": {
+          "name": "ProviderError",
+          "code": "PROVIDER_INVALID_OUTPUT",
+          "message": "模型返回的数据经有界修复后仍不符合约定格式。",
+          "details": {
+            "validationKind": "schema",
+            "structuredFailure": {
+              "attemptNumber": 2,
+              "attemptKind": "retry",
+              "finishReason": "length",
+              "truncated": true,
+              "possiblyIncomplete": true,
+              "jsonParseSuccess": false,
+              "jsonFormat": null,
+              "schemaIssueCount": 0,
+              "schemaIssues": [],
+              "semanticIssueCodes": [],
+              "failureCategory": "TRUNCATED_OUTPUT",
+              "repairAction": "exhausted",
+              "preparationFailure": {
+                "failureClass": "OUTPUT",
+                "failureCode": "truncated_output"
+              },
+              "recoveryAction": "exhausted",
+              "localizedRepair": false,
+              "immutableItemIds": [],
+              "affectedItemIds": [],
+              "affectedComponents": []
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "sourceId": "F11",
+    "surface": "retest",
+    "reason": "Retest not reached",
+    "stateEvents": [
+      {
+        "stage": "teaching",
+        "error": {
+          "name": "ProviderError",
+          "code": "PROVIDER_INVALID_OUTPUT",
+          "message": "模型返回的数据经有界修复后仍不符合约定格式。",
+          "details": {
+            "validationKind": "schema",
+            "structuredFailure": {
+              "attemptNumber": 2,
+              "attemptKind": "retry",
+              "finishReason": "length",
+              "truncated": true,
+              "possiblyIncomplete": true,
+              "jsonParseSuccess": false,
+              "jsonFormat": null,
+              "schemaIssueCount": 0,
+              "schemaIssues": [],
+              "semanticIssueCodes": [],
+              "failureCategory": "TRUNCATED_OUTPUT",
+              "repairAction": "exhausted",
+              "preparationFailure": {
+                "failureClass": "OUTPUT",
+                "failureCode": "truncated_output"
+              },
+              "recoveryAction": "exhausted",
+              "localizedRepair": false,
+              "immutableItemIds": [],
+              "affectedItemIds": [],
+              "affectedComponents": []
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "sourceId": "F11",
+    "surface": "formal-question",
+    "reason": "No admitted Formal question",
+    "stateEvents": [
+      {
+        "stage": "teaching",
+        "error": {
+          "name": "ProviderError",
+          "code": "PROVIDER_INVALID_OUTPUT",
+          "message": "模型返回的数据经有界修复后仍不符合约定格式。",
+          "details": {
+            "validationKind": "schema",
+            "structuredFailure": {
+              "attemptNumber": 2,
+              "attemptKind": "retry",
+              "finishReason": "length",
+              "truncated": true,
+              "possiblyIncomplete": true,
+              "jsonParseSuccess": false,
+              "jsonFormat": null,
+              "schemaIssueCount": 0,
+              "schemaIssues": [],
+              "semanticIssueCodes": [],
+              "failureCategory": "TRUNCATED_OUTPUT",
+              "repairAction": "exhausted",
+              "preparationFailure": {
+                "failureClass": "OUTPUT",
+                "failureCode": "truncated_output"
+              },
+              "recoveryAction": "exhausted",
+              "localizedRepair": false,
+              "immutableItemIds": [],
+              "affectedItemIds": [],
+              "affectedComponents": []
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "sourceId": "F11",
+    "surface": "grading-positive",
+    "reason": "No admitted Formal question",
+    "stateEvents": [
+      {
+        "stage": "teaching",
+        "error": {
+          "name": "ProviderError",
+          "code": "PROVIDER_INVALID_OUTPUT",
+          "message": "模型返回的数据经有界修复后仍不符合约定格式。",
+          "details": {
+            "validationKind": "schema",
+            "structuredFailure": {
+              "attemptNumber": 2,
+              "attemptKind": "retry",
+              "finishReason": "length",
+              "truncated": true,
+              "possiblyIncomplete": true,
+              "jsonParseSuccess": false,
+              "jsonFormat": null,
+              "schemaIssueCount": 0,
+              "schemaIssues": [],
+              "semanticIssueCodes": [],
+              "failureCategory": "TRUNCATED_OUTPUT",
+              "repairAction": "exhausted",
+              "preparationFailure": {
+                "failureClass": "OUTPUT",
+                "failureCode": "truncated_output"
+              },
+              "recoveryAction": "exhausted",
+              "localizedRepair": false,
+              "immutableItemIds": [],
+              "affectedItemIds": [],
+              "affectedComponents": []
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "sourceId": "F11",
+    "surface": "grading-negative",
+    "reason": "No admitted Formal question",
+    "stateEvents": [
+      {
+        "stage": "teaching",
+        "error": {
+          "name": "ProviderError",
+          "code": "PROVIDER_INVALID_OUTPUT",
+          "message": "模型返回的数据经有界修复后仍不符合约定格式。",
+          "details": {
+            "validationKind": "schema",
+            "structuredFailure": {
+              "attemptNumber": 2,
+              "attemptKind": "retry",
+              "finishReason": "length",
+              "truncated": true,
+              "possiblyIncomplete": true,
+              "jsonParseSuccess": false,
+              "jsonFormat": null,
+              "schemaIssueCount": 0,
+              "schemaIssues": [],
+              "semanticIssueCodes": [],
+              "failureCategory": "TRUNCATED_OUTPUT",
+              "repairAction": "exhausted",
+              "preparationFailure": {
+                "failureClass": "OUTPUT",
+                "failureCode": "truncated_output"
+              },
+              "recoveryAction": "exhausted",
+              "localizedRepair": false,
+              "immutableItemIds": [],
+              "affectedItemIds": [],
+              "affectedComponents": []
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "sourceId": "F12",
+    "surface": "formal-question",
+    "reason": "No admitted Formal question",
+    "stateEvents": []
+  },
+  {
+    "sourceId": "F12",
+    "surface": "grading-positive",
+    "reason": "No admitted Formal question",
+    "stateEvents": []
+  },
+  {
+    "sourceId": "F12",
+    "surface": "grading-negative",
+    "reason": "No admitted Formal question",
+    "stateEvents": []
+  },
+  {
+    "sourceId": "E01",
+    "surface": "formal-question",
+    "reason": "No admitted Formal question",
+    "stateEvents": [
+      {
+        "stage": "formal",
+        "error": {
+          "name": "AppError",
+          "code": "VALIDATION_ERROR",
+          "message": "Curriculum objective authority is not semantically supported for this operation.",
+          "details": {
+            "kind": "objective_authority_semantic_support_invalid",
+            "boundary": "formal_provider",
+            "diagnosticCodes": [
+              "semantic_support_failed"
+            ],
+            "diagnostics": [
+              "Objective obj_049a4705-9620-42bd-a5cb-7156c29e2f26 did not pass objective-authority semantic support."
+            ]
+          }
+        }
+      }
+    ]
+  },
+  {
+    "sourceId": "E01",
+    "surface": "grading-positive",
+    "reason": "No admitted Formal question",
+    "stateEvents": [
+      {
+        "stage": "formal",
+        "error": {
+          "name": "AppError",
+          "code": "VALIDATION_ERROR",
+          "message": "Curriculum objective authority is not semantically supported for this operation.",
+          "details": {
+            "kind": "objective_authority_semantic_support_invalid",
+            "boundary": "formal_provider",
+            "diagnosticCodes": [
+              "semantic_support_failed"
+            ],
+            "diagnostics": [
+              "Objective obj_049a4705-9620-42bd-a5cb-7156c29e2f26 did not pass objective-authority semantic support."
+            ]
+          }
+        }
+      }
+    ]
+  },
+  {
+    "sourceId": "E01",
+    "surface": "grading-negative",
+    "reason": "No admitted Formal question",
+    "stateEvents": [
+      {
+        "stage": "formal",
+        "error": {
+          "name": "AppError",
+          "code": "VALIDATION_ERROR",
+          "message": "Curriculum objective authority is not semantically supported for this operation.",
+          "details": {
+            "kind": "objective_authority_semantic_support_invalid",
+            "boundary": "formal_provider",
+            "diagnosticCodes": [
+              "semantic_support_failed"
+            ],
+            "diagnostics": [
+              "Objective obj_049a4705-9620-42bd-a5cb-7156c29e2f26 did not pass objective-authority semantic support."
+            ]
+          }
+        }
+      }
+    ]
+  },
+  {
+    "sourceId": "E02",
+    "surface": "formal-question",
+    "reason": "No admitted Formal question",
+    "stateEvents": [
+      {
+        "stage": "formal",
+        "error": {
+          "name": "AppError",
+          "code": "VALIDATION_ERROR",
+          "message": "Curriculum objective authority is not semantically supported for this operation.",
+          "details": {
+            "kind": "objective_authority_semantic_support_invalid",
+            "boundary": "formal_provider",
+            "diagnosticCodes": [
+              "semantic_support_failed"
+            ],
+            "diagnostics": [
+              "Objective obj_1b66befd-507a-4d9d-95f9-986e1a9647a6 did not pass objective-authority semantic support."
+            ]
+          }
+        }
+      }
+    ]
+  },
+  {
+    "sourceId": "E02",
+    "surface": "grading-positive",
+    "reason": "No admitted Formal question",
+    "stateEvents": [
+      {
+        "stage": "formal",
+        "error": {
+          "name": "AppError",
+          "code": "VALIDATION_ERROR",
+          "message": "Curriculum objective authority is not semantically supported for this operation.",
+          "details": {
+            "kind": "objective_authority_semantic_support_invalid",
+            "boundary": "formal_provider",
+            "diagnosticCodes": [
+              "semantic_support_failed"
+            ],
+            "diagnostics": [
+              "Objective obj_1b66befd-507a-4d9d-95f9-986e1a9647a6 did not pass objective-authority semantic support."
+            ]
+          }
+        }
+      }
+    ]
+  },
+  {
+    "sourceId": "E02",
+    "surface": "grading-negative",
+    "reason": "No admitted Formal question",
+    "stateEvents": [
+      {
+        "stage": "formal",
+        "error": {
+          "name": "AppError",
+          "code": "VALIDATION_ERROR",
+          "message": "Curriculum objective authority is not semantically supported for this operation.",
+          "details": {
+            "kind": "objective_authority_semantic_support_invalid",
+            "boundary": "formal_provider",
+            "diagnosticCodes": [
+              "semantic_support_failed"
+            ],
+            "diagnostics": [
+              "Objective obj_1b66befd-507a-4d9d-95f9-986e1a9647a6 did not pass objective-authority semantic support."
+            ]
+          }
+        }
+      }
+    ]
+  },
+  {
+    "sourceId": "E03",
     "surface": "curriculum",
-    "reason": "No accepted curriculum"
+    "reason": "No accepted curriculum",
+    "stateEvents": [
+      {
+        "stage": "course",
+        "error": {
+          "name": "ProviderError",
+          "code": "PROVIDER_INVALID_OUTPUT",
+          "message": "模型返回的数据经有界修复后仍不符合约定格式。",
+          "details": {
+            "validationKind": "candidate",
+            "candidateFailure": {
+              "kind": "curriculum_detail_candidate_validation_failed",
+              "context": {
+                "courseMapId": "course_map_fd175ffd7a23f4cf6cc00fa5",
+                "batchKey": "detail_batch_ffa14a39b32c411d361f2ce3",
+                "sourceAllocationFingerprint": "course_map_source_allocation_e22df6c0547c387cfa57b5e4e1c9d83b4d576aa4"
+              },
+              "diagnostics": [
+                {
+                  "code": "required_objective_parent_topic_mismatch",
+                  "message": "Required objective detail-objective-course_map_region_9734641eb9379d2da4946fad-1 has no meaningful semantic anchor in its own learner-visible LearningUnit title. Rename or regroup the unit so its title covers every required objective.",
+                  "facts": {
+                    "courseMapRegionId": "course_map_region_9734641eb9379d2da4946fad",
+                    "learningUnitTitle": "集中趋势度量：均值中位数众数的中心定义、极端值表现、奇偶中位数与众数条件",
+                    "objectiveKey": "detail-objective-course_map_region_9734641eb9379d2da4946fad-1",
+                    "objectiveTitle": "Explain mean, median, mode as center measures",
+                    "ownAnchoredRequiredObjectiveCount": 0,
+                    "matchingSiblingUnitTitles": []
+                  }
+                },
+                {
+                  "code": "required_objective_parent_topic_mismatch",
+                  "message": "Required objective detail-objective-course_map_region_9734641eb9379d2da4946fad-2 has no meaningful semantic anchor in its own learner-visible LearningUnit title. Rename or regroup the unit so its title covers every required objective.",
+                  "facts": {
+                    "courseMapRegionId": "course_map_region_9734641eb9379d2da4946fad",
+                    "learningUnitTitle": "集中趋势度量：均值中位数众数的中心定义、极端值表现、奇偶中位数与众数条件",
+                    "objectiveKey": "detail-objective-course_map_region_9734641eb9379d2da4946fad-2",
+                    "objectiveTitle": "Explain median vs mean with extreme values",
+                    "ownAnchoredRequiredObjectiveCount": 0,
+                    "matchingSiblingUnitTitles": []
+                  }
+                },
+                {
+                  "code": "required_objective_parent_topic_mismatch",
+                  "message": "Required objective detail-objective-course_map_region_9734641eb9379d2da4946fad-3 has no meaningful semantic anchor in its own learner-visible LearningUnit title. Rename or regroup the unit so its title covers every required objective.",
+                  "facts": {
+                    "courseMapRegionId": "course_map_region_9734641eb9379d2da4946fad",
+                    "learningUnitTitle": "集中趋势度量：均值中位数众数的中心定义、极端值表现、奇偶中位数与众数条件",
+                    "objectiveKey": "detail-objective-course_map_region_9734641eb9379d2da4946fad-3",
+                    "objectiveTitle": "Explain median parity condition",
+                    "ownAnchoredRequiredObjectiveCount": 0,
+                    "matchingSiblingUnitTitles": []
+                  }
+                },
+                {
+                  "code": "required_objective_parent_topic_mismatch",
+                  "message": "Required objective detail-objective-course_map_region_9734641eb9379d2da4946fad-4 has no meaningful semantic anchor in its own learner-visible LearningUnit title. Rename or regroup the unit so its title covers every required objective.",
+                  "facts": {
+                    "courseMapRegionId": "course_map_region_9734641eb9379d2da4946fad",
+                    "learningUnitTitle": "集中趋势度量：均值中位数众数的中心定义、极端值表现、奇偶中位数与众数条件",
+                    "objectiveKey": "detail-objective-course_map_region_9734641eb9379d2da4946fad-4",
+                    "objectiveTitle": "Explain mode conditions",
+                    "ownAnchoredRequiredObjectiveCount": 0,
+                    "matchingSiblingUnitTitles": []
+                  }
+                }
+              ]
+            },
+            "structuredFailure": {
+              "attemptNumber": 2,
+              "attemptKind": "repair",
+              "finishReason": "stop",
+              "truncated": false,
+              "possiblyIncomplete": false,
+              "jsonParseSuccess": true,
+              "jsonFormat": "direct",
+              "schemaIssueCount": 0,
+              "schemaIssues": [],
+              "semanticIssueCodes": [
+                "required_objective_parent_topic_mismatch"
+              ],
+              "failureCategory": "SEMANTIC_VALIDATION_FAILURE",
+              "repairAction": "exhausted"
+            }
+          }
+        }
+      }
+    ]
   },
   {
-    "courseId": "course-75ef620714036001",
-    "surface": "formal-question",
-    "reason": "No admitted Formal question"
-  },
-  {
-    "courseId": "course-75ef620714036001",
-    "surface": "grading-negative",
-    "reason": "No admitted Formal question"
-  },
-  {
-    "courseId": "course-75ef620714036001",
-    "surface": "grading-positive",
-    "reason": "No admitted Formal question"
-  },
-  {
-    "courseId": "course-75ef620714036001",
-    "surface": "practice",
-    "reason": "First Practice not reached"
-  },
-  {
-    "courseId": "course-75ef620714036001",
-    "surface": "repair",
-    "reason": "Repair not delivered in sampled route"
-  },
-  {
-    "courseId": "course-75ef620714036001",
-    "surface": "retest",
-    "reason": "Retest not reached"
-  },
-  {
-    "courseId": "course-75ef620714036001",
+    "sourceId": "E03",
     "surface": "teaching",
-    "reason": "First sampled Lesson not delivered"
+    "reason": "First sampled Lesson not delivered",
+    "stateEvents": [
+      {
+        "stage": "course",
+        "error": {
+          "name": "ProviderError",
+          "code": "PROVIDER_INVALID_OUTPUT",
+          "message": "模型返回的数据经有界修复后仍不符合约定格式。",
+          "details": {
+            "validationKind": "candidate",
+            "candidateFailure": {
+              "kind": "curriculum_detail_candidate_validation_failed",
+              "context": {
+                "courseMapId": "course_map_fd175ffd7a23f4cf6cc00fa5",
+                "batchKey": "detail_batch_ffa14a39b32c411d361f2ce3",
+                "sourceAllocationFingerprint": "course_map_source_allocation_e22df6c0547c387cfa57b5e4e1c9d83b4d576aa4"
+              },
+              "diagnostics": [
+                {
+                  "code": "required_objective_parent_topic_mismatch",
+                  "message": "Required objective detail-objective-course_map_region_9734641eb9379d2da4946fad-1 has no meaningful semantic anchor in its own learner-visible LearningUnit title. Rename or regroup the unit so its title covers every required objective.",
+                  "facts": {
+                    "courseMapRegionId": "course_map_region_9734641eb9379d2da4946fad",
+                    "learningUnitTitle": "集中趋势度量：均值中位数众数的中心定义、极端值表现、奇偶中位数与众数条件",
+                    "objectiveKey": "detail-objective-course_map_region_9734641eb9379d2da4946fad-1",
+                    "objectiveTitle": "Explain mean, median, mode as center measures",
+                    "ownAnchoredRequiredObjectiveCount": 0,
+                    "matchingSiblingUnitTitles": []
+                  }
+                },
+                {
+                  "code": "required_objective_parent_topic_mismatch",
+                  "message": "Required objective detail-objective-course_map_region_9734641eb9379d2da4946fad-2 has no meaningful semantic anchor in its own learner-visible LearningUnit title. Rename or regroup the unit so its title covers every required objective.",
+                  "facts": {
+                    "courseMapRegionId": "course_map_region_9734641eb9379d2da4946fad",
+                    "learningUnitTitle": "集中趋势度量：均值中位数众数的中心定义、极端值表现、奇偶中位数与众数条件",
+                    "objectiveKey": "detail-objective-course_map_region_9734641eb9379d2da4946fad-2",
+                    "objectiveTitle": "Explain median vs mean with extreme values",
+                    "ownAnchoredRequiredObjectiveCount": 0,
+                    "matchingSiblingUnitTitles": []
+                  }
+                },
+                {
+                  "code": "required_objective_parent_topic_mismatch",
+                  "message": "Required objective detail-objective-course_map_region_9734641eb9379d2da4946fad-3 has no meaningful semantic anchor in its own learner-visible LearningUnit title. Rename or regroup the unit so its title covers every required objective.",
+                  "facts": {
+                    "courseMapRegionId": "course_map_region_9734641eb9379d2da4946fad",
+                    "learningUnitTitle": "集中趋势度量：均值中位数众数的中心定义、极端值表现、奇偶中位数与众数条件",
+                    "objectiveKey": "detail-objective-course_map_region_9734641eb9379d2da4946fad-3",
+                    "objectiveTitle": "Explain median parity condition",
+                    "ownAnchoredRequiredObjectiveCount": 0,
+                    "matchingSiblingUnitTitles": []
+                  }
+                },
+                {
+                  "code": "required_objective_parent_topic_mismatch",
+                  "message": "Required objective detail-objective-course_map_region_9734641eb9379d2da4946fad-4 has no meaningful semantic anchor in its own learner-visible LearningUnit title. Rename or regroup the unit so its title covers every required objective.",
+                  "facts": {
+                    "courseMapRegionId": "course_map_region_9734641eb9379d2da4946fad",
+                    "learningUnitTitle": "集中趋势度量：均值中位数众数的中心定义、极端值表现、奇偶中位数与众数条件",
+                    "objectiveKey": "detail-objective-course_map_region_9734641eb9379d2da4946fad-4",
+                    "objectiveTitle": "Explain mode conditions",
+                    "ownAnchoredRequiredObjectiveCount": 0,
+                    "matchingSiblingUnitTitles": []
+                  }
+                }
+              ]
+            },
+            "structuredFailure": {
+              "attemptNumber": 2,
+              "attemptKind": "repair",
+              "finishReason": "stop",
+              "truncated": false,
+              "possiblyIncomplete": false,
+              "jsonParseSuccess": true,
+              "jsonFormat": "direct",
+              "schemaIssueCount": 0,
+              "schemaIssues": [],
+              "semanticIssueCodes": [
+                "required_objective_parent_topic_mismatch"
+              ],
+              "failureCategory": "SEMANTIC_VALIDATION_FAILURE",
+              "repairAction": "exhausted"
+            }
+          }
+        }
+      }
+    ]
   },
   {
-    "courseId": "course-75ef620714036001",
+    "sourceId": "E03",
     "surface": "tutor",
-    "reason": "Tutor not reached"
+    "reason": "Tutor not reached",
+    "stateEvents": [
+      {
+        "stage": "course",
+        "error": {
+          "name": "ProviderError",
+          "code": "PROVIDER_INVALID_OUTPUT",
+          "message": "模型返回的数据经有界修复后仍不符合约定格式。",
+          "details": {
+            "validationKind": "candidate",
+            "candidateFailure": {
+              "kind": "curriculum_detail_candidate_validation_failed",
+              "context": {
+                "courseMapId": "course_map_fd175ffd7a23f4cf6cc00fa5",
+                "batchKey": "detail_batch_ffa14a39b32c411d361f2ce3",
+                "sourceAllocationFingerprint": "course_map_source_allocation_e22df6c0547c387cfa57b5e4e1c9d83b4d576aa4"
+              },
+              "diagnostics": [
+                {
+                  "code": "required_objective_parent_topic_mismatch",
+                  "message": "Required objective detail-objective-course_map_region_9734641eb9379d2da4946fad-1 has no meaningful semantic anchor in its own learner-visible LearningUnit title. Rename or regroup the unit so its title covers every required objective.",
+                  "facts": {
+                    "courseMapRegionId": "course_map_region_9734641eb9379d2da4946fad",
+                    "learningUnitTitle": "集中趋势度量：均值中位数众数的中心定义、极端值表现、奇偶中位数与众数条件",
+                    "objectiveKey": "detail-objective-course_map_region_9734641eb9379d2da4946fad-1",
+                    "objectiveTitle": "Explain mean, median, mode as center measures",
+                    "ownAnchoredRequiredObjectiveCount": 0,
+                    "matchingSiblingUnitTitles": []
+                  }
+                },
+                {
+                  "code": "required_objective_parent_topic_mismatch",
+                  "message": "Required objective detail-objective-course_map_region_9734641eb9379d2da4946fad-2 has no meaningful semantic anchor in its own learner-visible LearningUnit title. Rename or regroup the unit so its title covers every required objective.",
+                  "facts": {
+                    "courseMapRegionId": "course_map_region_9734641eb9379d2da4946fad",
+                    "learningUnitTitle": "集中趋势度量：均值中位数众数的中心定义、极端值表现、奇偶中位数与众数条件",
+                    "objectiveKey": "detail-objective-course_map_region_9734641eb9379d2da4946fad-2",
+                    "objectiveTitle": "Explain median vs mean with extreme values",
+                    "ownAnchoredRequiredObjectiveCount": 0,
+                    "matchingSiblingUnitTitles": []
+                  }
+                },
+                {
+                  "code": "required_objective_parent_topic_mismatch",
+                  "message": "Required objective detail-objective-course_map_region_9734641eb9379d2da4946fad-3 has no meaningful semantic anchor in its own learner-visible LearningUnit title. Rename or regroup the unit so its title covers every required objective.",
+                  "facts": {
+                    "courseMapRegionId": "course_map_region_9734641eb9379d2da4946fad",
+                    "learningUnitTitle": "集中趋势度量：均值中位数众数的中心定义、极端值表现、奇偶中位数与众数条件",
+                    "objectiveKey": "detail-objective-course_map_region_9734641eb9379d2da4946fad-3",
+                    "objectiveTitle": "Explain median parity condition",
+                    "ownAnchoredRequiredObjectiveCount": 0,
+                    "matchingSiblingUnitTitles": []
+                  }
+                },
+                {
+                  "code": "required_objective_parent_topic_mismatch",
+                  "message": "Required objective detail-objective-course_map_region_9734641eb9379d2da4946fad-4 has no meaningful semantic anchor in its own learner-visible LearningUnit title. Rename or regroup the unit so its title covers every required objective.",
+                  "facts": {
+                    "courseMapRegionId": "course_map_region_9734641eb9379d2da4946fad",
+                    "learningUnitTitle": "集中趋势度量：均值中位数众数的中心定义、极端值表现、奇偶中位数与众数条件",
+                    "objectiveKey": "detail-objective-course_map_region_9734641eb9379d2da4946fad-4",
+                    "objectiveTitle": "Explain mode conditions",
+                    "ownAnchoredRequiredObjectiveCount": 0,
+                    "matchingSiblingUnitTitles": []
+                  }
+                }
+              ]
+            },
+            "structuredFailure": {
+              "attemptNumber": 2,
+              "attemptKind": "repair",
+              "finishReason": "stop",
+              "truncated": false,
+              "possiblyIncomplete": false,
+              "jsonParseSuccess": true,
+              "jsonFormat": "direct",
+              "schemaIssueCount": 0,
+              "schemaIssues": [],
+              "semanticIssueCodes": [
+                "required_objective_parent_topic_mismatch"
+              ],
+              "failureCategory": "SEMANTIC_VALIDATION_FAILURE",
+              "repairAction": "exhausted"
+            }
+          }
+        }
+      }
+    ]
   },
   {
-    "courseId": "course-ae45e947bdadedb9",
-    "surface": "formal-question",
-    "reason": "No admitted Formal question"
-  },
-  {
-    "courseId": "course-ae45e947bdadedb9",
-    "surface": "grading-negative",
-    "reason": "No admitted Formal question"
-  },
-  {
-    "courseId": "course-ae45e947bdadedb9",
-    "surface": "grading-positive",
-    "reason": "No admitted Formal question"
-  },
-  {
-    "courseId": "course-b0167dc0675b70b7",
-    "surface": "formal-question",
-    "reason": "No admitted Formal question"
-  },
-  {
-    "courseId": "course-b0167dc0675b70b7",
-    "surface": "grading-negative",
-    "reason": "No admitted Formal question"
-  },
-  {
-    "courseId": "course-b0167dc0675b70b7",
-    "surface": "grading-positive",
-    "reason": "No admitted Formal question"
-  },
-  {
-    "courseId": "course-b51a15933a9c0636",
-    "surface": "formal-question",
-    "reason": "No admitted Formal question"
-  },
-  {
-    "courseId": "course-b51a15933a9c0636",
-    "surface": "grading-negative",
-    "reason": "No admitted Formal question"
-  },
-  {
-    "courseId": "course-b51a15933a9c0636",
-    "surface": "grading-positive",
-    "reason": "No admitted Formal question"
-  },
-  {
-    "courseId": "course-b51a15933a9c0636",
+    "sourceId": "E03",
     "surface": "practice",
-    "reason": "First Practice not reached"
+    "reason": "First Practice not reached",
+    "stateEvents": [
+      {
+        "stage": "course",
+        "error": {
+          "name": "ProviderError",
+          "code": "PROVIDER_INVALID_OUTPUT",
+          "message": "模型返回的数据经有界修复后仍不符合约定格式。",
+          "details": {
+            "validationKind": "candidate",
+            "candidateFailure": {
+              "kind": "curriculum_detail_candidate_validation_failed",
+              "context": {
+                "courseMapId": "course_map_fd175ffd7a23f4cf6cc00fa5",
+                "batchKey": "detail_batch_ffa14a39b32c411d361f2ce3",
+                "sourceAllocationFingerprint": "course_map_source_allocation_e22df6c0547c387cfa57b5e4e1c9d83b4d576aa4"
+              },
+              "diagnostics": [
+                {
+                  "code": "required_objective_parent_topic_mismatch",
+                  "message": "Required objective detail-objective-course_map_region_9734641eb9379d2da4946fad-1 has no meaningful semantic anchor in its own learner-visible LearningUnit title. Rename or regroup the unit so its title covers every required objective.",
+                  "facts": {
+                    "courseMapRegionId": "course_map_region_9734641eb9379d2da4946fad",
+                    "learningUnitTitle": "集中趋势度量：均值中位数众数的中心定义、极端值表现、奇偶中位数与众数条件",
+                    "objectiveKey": "detail-objective-course_map_region_9734641eb9379d2da4946fad-1",
+                    "objectiveTitle": "Explain mean, median, mode as center measures",
+                    "ownAnchoredRequiredObjectiveCount": 0,
+                    "matchingSiblingUnitTitles": []
+                  }
+                },
+                {
+                  "code": "required_objective_parent_topic_mismatch",
+                  "message": "Required objective detail-objective-course_map_region_9734641eb9379d2da4946fad-2 has no meaningful semantic anchor in its own learner-visible LearningUnit title. Rename or regroup the unit so its title covers every required objective.",
+                  "facts": {
+                    "courseMapRegionId": "course_map_region_9734641eb9379d2da4946fad",
+                    "learningUnitTitle": "集中趋势度量：均值中位数众数的中心定义、极端值表现、奇偶中位数与众数条件",
+                    "objectiveKey": "detail-objective-course_map_region_9734641eb9379d2da4946fad-2",
+                    "objectiveTitle": "Explain median vs mean with extreme values",
+                    "ownAnchoredRequiredObjectiveCount": 0,
+                    "matchingSiblingUnitTitles": []
+                  }
+                },
+                {
+                  "code": "required_objective_parent_topic_mismatch",
+                  "message": "Required objective detail-objective-course_map_region_9734641eb9379d2da4946fad-3 has no meaningful semantic anchor in its own learner-visible LearningUnit title. Rename or regroup the unit so its title covers every required objective.",
+                  "facts": {
+                    "courseMapRegionId": "course_map_region_9734641eb9379d2da4946fad",
+                    "learningUnitTitle": "集中趋势度量：均值中位数众数的中心定义、极端值表现、奇偶中位数与众数条件",
+                    "objectiveKey": "detail-objective-course_map_region_9734641eb9379d2da4946fad-3",
+                    "objectiveTitle": "Explain median parity condition",
+                    "ownAnchoredRequiredObjectiveCount": 0,
+                    "matchingSiblingUnitTitles": []
+                  }
+                },
+                {
+                  "code": "required_objective_parent_topic_mismatch",
+                  "message": "Required objective detail-objective-course_map_region_9734641eb9379d2da4946fad-4 has no meaningful semantic anchor in its own learner-visible LearningUnit title. Rename or regroup the unit so its title covers every required objective.",
+                  "facts": {
+                    "courseMapRegionId": "course_map_region_9734641eb9379d2da4946fad",
+                    "learningUnitTitle": "集中趋势度量：均值中位数众数的中心定义、极端值表现、奇偶中位数与众数条件",
+                    "objectiveKey": "detail-objective-course_map_region_9734641eb9379d2da4946fad-4",
+                    "objectiveTitle": "Explain mode conditions",
+                    "ownAnchoredRequiredObjectiveCount": 0,
+                    "matchingSiblingUnitTitles": []
+                  }
+                }
+              ]
+            },
+            "structuredFailure": {
+              "attemptNumber": 2,
+              "attemptKind": "repair",
+              "finishReason": "stop",
+              "truncated": false,
+              "possiblyIncomplete": false,
+              "jsonParseSuccess": true,
+              "jsonFormat": "direct",
+              "schemaIssueCount": 0,
+              "schemaIssues": [],
+              "semanticIssueCodes": [
+                "required_objective_parent_topic_mismatch"
+              ],
+              "failureCategory": "SEMANTIC_VALIDATION_FAILURE",
+              "repairAction": "exhausted"
+            }
+          }
+        }
+      }
+    ]
   },
   {
-    "courseId": "course-b51a15933a9c0636",
+    "sourceId": "E03",
     "surface": "repair",
-    "reason": "Repair not delivered in sampled route"
+    "reason": "Repair not delivered in sampled route",
+    "stateEvents": [
+      {
+        "stage": "course",
+        "error": {
+          "name": "ProviderError",
+          "code": "PROVIDER_INVALID_OUTPUT",
+          "message": "模型返回的数据经有界修复后仍不符合约定格式。",
+          "details": {
+            "validationKind": "candidate",
+            "candidateFailure": {
+              "kind": "curriculum_detail_candidate_validation_failed",
+              "context": {
+                "courseMapId": "course_map_fd175ffd7a23f4cf6cc00fa5",
+                "batchKey": "detail_batch_ffa14a39b32c411d361f2ce3",
+                "sourceAllocationFingerprint": "course_map_source_allocation_e22df6c0547c387cfa57b5e4e1c9d83b4d576aa4"
+              },
+              "diagnostics": [
+                {
+                  "code": "required_objective_parent_topic_mismatch",
+                  "message": "Required objective detail-objective-course_map_region_9734641eb9379d2da4946fad-1 has no meaningful semantic anchor in its own learner-visible LearningUnit title. Rename or regroup the unit so its title covers every required objective.",
+                  "facts": {
+                    "courseMapRegionId": "course_map_region_9734641eb9379d2da4946fad",
+                    "learningUnitTitle": "集中趋势度量：均值中位数众数的中心定义、极端值表现、奇偶中位数与众数条件",
+                    "objectiveKey": "detail-objective-course_map_region_9734641eb9379d2da4946fad-1",
+                    "objectiveTitle": "Explain mean, median, mode as center measures",
+                    "ownAnchoredRequiredObjectiveCount": 0,
+                    "matchingSiblingUnitTitles": []
+                  }
+                },
+                {
+                  "code": "required_objective_parent_topic_mismatch",
+                  "message": "Required objective detail-objective-course_map_region_9734641eb9379d2da4946fad-2 has no meaningful semantic anchor in its own learner-visible LearningUnit title. Rename or regroup the unit so its title covers every required objective.",
+                  "facts": {
+                    "courseMapRegionId": "course_map_region_9734641eb9379d2da4946fad",
+                    "learningUnitTitle": "集中趋势度量：均值中位数众数的中心定义、极端值表现、奇偶中位数与众数条件",
+                    "objectiveKey": "detail-objective-course_map_region_9734641eb9379d2da4946fad-2",
+                    "objectiveTitle": "Explain median vs mean with extreme values",
+                    "ownAnchoredRequiredObjectiveCount": 0,
+                    "matchingSiblingUnitTitles": []
+                  }
+                },
+                {
+                  "code": "required_objective_parent_topic_mismatch",
+                  "message": "Required objective detail-objective-course_map_region_9734641eb9379d2da4946fad-3 has no meaningful semantic anchor in its own learner-visible LearningUnit title. Rename or regroup the unit so its title covers every required objective.",
+                  "facts": {
+                    "courseMapRegionId": "course_map_region_9734641eb9379d2da4946fad",
+                    "learningUnitTitle": "集中趋势度量：均值中位数众数的中心定义、极端值表现、奇偶中位数与众数条件",
+                    "objectiveKey": "detail-objective-course_map_region_9734641eb9379d2da4946fad-3",
+                    "objectiveTitle": "Explain median parity condition",
+                    "ownAnchoredRequiredObjectiveCount": 0,
+                    "matchingSiblingUnitTitles": []
+                  }
+                },
+                {
+                  "code": "required_objective_parent_topic_mismatch",
+                  "message": "Required objective detail-objective-course_map_region_9734641eb9379d2da4946fad-4 has no meaningful semantic anchor in its own learner-visible LearningUnit title. Rename or regroup the unit so its title covers every required objective.",
+                  "facts": {
+                    "courseMapRegionId": "course_map_region_9734641eb9379d2da4946fad",
+                    "learningUnitTitle": "集中趋势度量：均值中位数众数的中心定义、极端值表现、奇偶中位数与众数条件",
+                    "objectiveKey": "detail-objective-course_map_region_9734641eb9379d2da4946fad-4",
+                    "objectiveTitle": "Explain mode conditions",
+                    "ownAnchoredRequiredObjectiveCount": 0,
+                    "matchingSiblingUnitTitles": []
+                  }
+                }
+              ]
+            },
+            "structuredFailure": {
+              "attemptNumber": 2,
+              "attemptKind": "repair",
+              "finishReason": "stop",
+              "truncated": false,
+              "possiblyIncomplete": false,
+              "jsonParseSuccess": true,
+              "jsonFormat": "direct",
+              "schemaIssueCount": 0,
+              "schemaIssues": [],
+              "semanticIssueCodes": [
+                "required_objective_parent_topic_mismatch"
+              ],
+              "failureCategory": "SEMANTIC_VALIDATION_FAILURE",
+              "repairAction": "exhausted"
+            }
+          }
+        }
+      }
+    ]
   },
   {
-    "courseId": "course-b51a15933a9c0636",
+    "sourceId": "E03",
     "surface": "retest",
-    "reason": "Retest not reached"
+    "reason": "Retest not reached",
+    "stateEvents": [
+      {
+        "stage": "course",
+        "error": {
+          "name": "ProviderError",
+          "code": "PROVIDER_INVALID_OUTPUT",
+          "message": "模型返回的数据经有界修复后仍不符合约定格式。",
+          "details": {
+            "validationKind": "candidate",
+            "candidateFailure": {
+              "kind": "curriculum_detail_candidate_validation_failed",
+              "context": {
+                "courseMapId": "course_map_fd175ffd7a23f4cf6cc00fa5",
+                "batchKey": "detail_batch_ffa14a39b32c411d361f2ce3",
+                "sourceAllocationFingerprint": "course_map_source_allocation_e22df6c0547c387cfa57b5e4e1c9d83b4d576aa4"
+              },
+              "diagnostics": [
+                {
+                  "code": "required_objective_parent_topic_mismatch",
+                  "message": "Required objective detail-objective-course_map_region_9734641eb9379d2da4946fad-1 has no meaningful semantic anchor in its own learner-visible LearningUnit title. Rename or regroup the unit so its title covers every required objective.",
+                  "facts": {
+                    "courseMapRegionId": "course_map_region_9734641eb9379d2da4946fad",
+                    "learningUnitTitle": "集中趋势度量：均值中位数众数的中心定义、极端值表现、奇偶中位数与众数条件",
+                    "objectiveKey": "detail-objective-course_map_region_9734641eb9379d2da4946fad-1",
+                    "objectiveTitle": "Explain mean, median, mode as center measures",
+                    "ownAnchoredRequiredObjectiveCount": 0,
+                    "matchingSiblingUnitTitles": []
+                  }
+                },
+                {
+                  "code": "required_objective_parent_topic_mismatch",
+                  "message": "Required objective detail-objective-course_map_region_9734641eb9379d2da4946fad-2 has no meaningful semantic anchor in its own learner-visible LearningUnit title. Rename or regroup the unit so its title covers every required objective.",
+                  "facts": {
+                    "courseMapRegionId": "course_map_region_9734641eb9379d2da4946fad",
+                    "learningUnitTitle": "集中趋势度量：均值中位数众数的中心定义、极端值表现、奇偶中位数与众数条件",
+                    "objectiveKey": "detail-objective-course_map_region_9734641eb9379d2da4946fad-2",
+                    "objectiveTitle": "Explain median vs mean with extreme values",
+                    "ownAnchoredRequiredObjectiveCount": 0,
+                    "matchingSiblingUnitTitles": []
+                  }
+                },
+                {
+                  "code": "required_objective_parent_topic_mismatch",
+                  "message": "Required objective detail-objective-course_map_region_9734641eb9379d2da4946fad-3 has no meaningful semantic anchor in its own learner-visible LearningUnit title. Rename or regroup the unit so its title covers every required objective.",
+                  "facts": {
+                    "courseMapRegionId": "course_map_region_9734641eb9379d2da4946fad",
+                    "learningUnitTitle": "集中趋势度量：均值中位数众数的中心定义、极端值表现、奇偶中位数与众数条件",
+                    "objectiveKey": "detail-objective-course_map_region_9734641eb9379d2da4946fad-3",
+                    "objectiveTitle": "Explain median parity condition",
+                    "ownAnchoredRequiredObjectiveCount": 0,
+                    "matchingSiblingUnitTitles": []
+                  }
+                },
+                {
+                  "code": "required_objective_parent_topic_mismatch",
+                  "message": "Required objective detail-objective-course_map_region_9734641eb9379d2da4946fad-4 has no meaningful semantic anchor in its own learner-visible LearningUnit title. Rename or regroup the unit so its title covers every required objective.",
+                  "facts": {
+                    "courseMapRegionId": "course_map_region_9734641eb9379d2da4946fad",
+                    "learningUnitTitle": "集中趋势度量：均值中位数众数的中心定义、极端值表现、奇偶中位数与众数条件",
+                    "objectiveKey": "detail-objective-course_map_region_9734641eb9379d2da4946fad-4",
+                    "objectiveTitle": "Explain mode conditions",
+                    "ownAnchoredRequiredObjectiveCount": 0,
+                    "matchingSiblingUnitTitles": []
+                  }
+                }
+              ]
+            },
+            "structuredFailure": {
+              "attemptNumber": 2,
+              "attemptKind": "repair",
+              "finishReason": "stop",
+              "truncated": false,
+              "possiblyIncomplete": false,
+              "jsonParseSuccess": true,
+              "jsonFormat": "direct",
+              "schemaIssueCount": 0,
+              "schemaIssues": [],
+              "semanticIssueCodes": [
+                "required_objective_parent_topic_mismatch"
+              ],
+              "failureCategory": "SEMANTIC_VALIDATION_FAILURE",
+              "repairAction": "exhausted"
+            }
+          }
+        }
+      }
+    ]
   },
   {
-    "courseId": "course-b51a15933a9c0636",
+    "sourceId": "E03",
+    "surface": "formal-question",
+    "reason": "No admitted Formal question",
+    "stateEvents": [
+      {
+        "stage": "course",
+        "error": {
+          "name": "ProviderError",
+          "code": "PROVIDER_INVALID_OUTPUT",
+          "message": "模型返回的数据经有界修复后仍不符合约定格式。",
+          "details": {
+            "validationKind": "candidate",
+            "candidateFailure": {
+              "kind": "curriculum_detail_candidate_validation_failed",
+              "context": {
+                "courseMapId": "course_map_fd175ffd7a23f4cf6cc00fa5",
+                "batchKey": "detail_batch_ffa14a39b32c411d361f2ce3",
+                "sourceAllocationFingerprint": "course_map_source_allocation_e22df6c0547c387cfa57b5e4e1c9d83b4d576aa4"
+              },
+              "diagnostics": [
+                {
+                  "code": "required_objective_parent_topic_mismatch",
+                  "message": "Required objective detail-objective-course_map_region_9734641eb9379d2da4946fad-1 has no meaningful semantic anchor in its own learner-visible LearningUnit title. Rename or regroup the unit so its title covers every required objective.",
+                  "facts": {
+                    "courseMapRegionId": "course_map_region_9734641eb9379d2da4946fad",
+                    "learningUnitTitle": "集中趋势度量：均值中位数众数的中心定义、极端值表现、奇偶中位数与众数条件",
+                    "objectiveKey": "detail-objective-course_map_region_9734641eb9379d2da4946fad-1",
+                    "objectiveTitle": "Explain mean, median, mode as center measures",
+                    "ownAnchoredRequiredObjectiveCount": 0,
+                    "matchingSiblingUnitTitles": []
+                  }
+                },
+                {
+                  "code": "required_objective_parent_topic_mismatch",
+                  "message": "Required objective detail-objective-course_map_region_9734641eb9379d2da4946fad-2 has no meaningful semantic anchor in its own learner-visible LearningUnit title. Rename or regroup the unit so its title covers every required objective.",
+                  "facts": {
+                    "courseMapRegionId": "course_map_region_9734641eb9379d2da4946fad",
+                    "learningUnitTitle": "集中趋势度量：均值中位数众数的中心定义、极端值表现、奇偶中位数与众数条件",
+                    "objectiveKey": "detail-objective-course_map_region_9734641eb9379d2da4946fad-2",
+                    "objectiveTitle": "Explain median vs mean with extreme values",
+                    "ownAnchoredRequiredObjectiveCount": 0,
+                    "matchingSiblingUnitTitles": []
+                  }
+                },
+                {
+                  "code": "required_objective_parent_topic_mismatch",
+                  "message": "Required objective detail-objective-course_map_region_9734641eb9379d2da4946fad-3 has no meaningful semantic anchor in its own learner-visible LearningUnit title. Rename or regroup the unit so its title covers every required objective.",
+                  "facts": {
+                    "courseMapRegionId": "course_map_region_9734641eb9379d2da4946fad",
+                    "learningUnitTitle": "集中趋势度量：均值中位数众数的中心定义、极端值表现、奇偶中位数与众数条件",
+                    "objectiveKey": "detail-objective-course_map_region_9734641eb9379d2da4946fad-3",
+                    "objectiveTitle": "Explain median parity condition",
+                    "ownAnchoredRequiredObjectiveCount": 0,
+                    "matchingSiblingUnitTitles": []
+                  }
+                },
+                {
+                  "code": "required_objective_parent_topic_mismatch",
+                  "message": "Required objective detail-objective-course_map_region_9734641eb9379d2da4946fad-4 has no meaningful semantic anchor in its own learner-visible LearningUnit title. Rename or regroup the unit so its title covers every required objective.",
+                  "facts": {
+                    "courseMapRegionId": "course_map_region_9734641eb9379d2da4946fad",
+                    "learningUnitTitle": "集中趋势度量：均值中位数众数的中心定义、极端值表现、奇偶中位数与众数条件",
+                    "objectiveKey": "detail-objective-course_map_region_9734641eb9379d2da4946fad-4",
+                    "objectiveTitle": "Explain mode conditions",
+                    "ownAnchoredRequiredObjectiveCount": 0,
+                    "matchingSiblingUnitTitles": []
+                  }
+                }
+              ]
+            },
+            "structuredFailure": {
+              "attemptNumber": 2,
+              "attemptKind": "repair",
+              "finishReason": "stop",
+              "truncated": false,
+              "possiblyIncomplete": false,
+              "jsonParseSuccess": true,
+              "jsonFormat": "direct",
+              "schemaIssueCount": 0,
+              "schemaIssues": [],
+              "semanticIssueCodes": [
+                "required_objective_parent_topic_mismatch"
+              ],
+              "failureCategory": "SEMANTIC_VALIDATION_FAILURE",
+              "repairAction": "exhausted"
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "sourceId": "E03",
+    "surface": "grading-positive",
+    "reason": "No admitted Formal question",
+    "stateEvents": [
+      {
+        "stage": "course",
+        "error": {
+          "name": "ProviderError",
+          "code": "PROVIDER_INVALID_OUTPUT",
+          "message": "模型返回的数据经有界修复后仍不符合约定格式。",
+          "details": {
+            "validationKind": "candidate",
+            "candidateFailure": {
+              "kind": "curriculum_detail_candidate_validation_failed",
+              "context": {
+                "courseMapId": "course_map_fd175ffd7a23f4cf6cc00fa5",
+                "batchKey": "detail_batch_ffa14a39b32c411d361f2ce3",
+                "sourceAllocationFingerprint": "course_map_source_allocation_e22df6c0547c387cfa57b5e4e1c9d83b4d576aa4"
+              },
+              "diagnostics": [
+                {
+                  "code": "required_objective_parent_topic_mismatch",
+                  "message": "Required objective detail-objective-course_map_region_9734641eb9379d2da4946fad-1 has no meaningful semantic anchor in its own learner-visible LearningUnit title. Rename or regroup the unit so its title covers every required objective.",
+                  "facts": {
+                    "courseMapRegionId": "course_map_region_9734641eb9379d2da4946fad",
+                    "learningUnitTitle": "集中趋势度量：均值中位数众数的中心定义、极端值表现、奇偶中位数与众数条件",
+                    "objectiveKey": "detail-objective-course_map_region_9734641eb9379d2da4946fad-1",
+                    "objectiveTitle": "Explain mean, median, mode as center measures",
+                    "ownAnchoredRequiredObjectiveCount": 0,
+                    "matchingSiblingUnitTitles": []
+                  }
+                },
+                {
+                  "code": "required_objective_parent_topic_mismatch",
+                  "message": "Required objective detail-objective-course_map_region_9734641eb9379d2da4946fad-2 has no meaningful semantic anchor in its own learner-visible LearningUnit title. Rename or regroup the unit so its title covers every required objective.",
+                  "facts": {
+                    "courseMapRegionId": "course_map_region_9734641eb9379d2da4946fad",
+                    "learningUnitTitle": "集中趋势度量：均值中位数众数的中心定义、极端值表现、奇偶中位数与众数条件",
+                    "objectiveKey": "detail-objective-course_map_region_9734641eb9379d2da4946fad-2",
+                    "objectiveTitle": "Explain median vs mean with extreme values",
+                    "ownAnchoredRequiredObjectiveCount": 0,
+                    "matchingSiblingUnitTitles": []
+                  }
+                },
+                {
+                  "code": "required_objective_parent_topic_mismatch",
+                  "message": "Required objective detail-objective-course_map_region_9734641eb9379d2da4946fad-3 has no meaningful semantic anchor in its own learner-visible LearningUnit title. Rename or regroup the unit so its title covers every required objective.",
+                  "facts": {
+                    "courseMapRegionId": "course_map_region_9734641eb9379d2da4946fad",
+                    "learningUnitTitle": "集中趋势度量：均值中位数众数的中心定义、极端值表现、奇偶中位数与众数条件",
+                    "objectiveKey": "detail-objective-course_map_region_9734641eb9379d2da4946fad-3",
+                    "objectiveTitle": "Explain median parity condition",
+                    "ownAnchoredRequiredObjectiveCount": 0,
+                    "matchingSiblingUnitTitles": []
+                  }
+                },
+                {
+                  "code": "required_objective_parent_topic_mismatch",
+                  "message": "Required objective detail-objective-course_map_region_9734641eb9379d2da4946fad-4 has no meaningful semantic anchor in its own learner-visible LearningUnit title. Rename or regroup the unit so its title covers every required objective.",
+                  "facts": {
+                    "courseMapRegionId": "course_map_region_9734641eb9379d2da4946fad",
+                    "learningUnitTitle": "集中趋势度量：均值中位数众数的中心定义、极端值表现、奇偶中位数与众数条件",
+                    "objectiveKey": "detail-objective-course_map_region_9734641eb9379d2da4946fad-4",
+                    "objectiveTitle": "Explain mode conditions",
+                    "ownAnchoredRequiredObjectiveCount": 0,
+                    "matchingSiblingUnitTitles": []
+                  }
+                }
+              ]
+            },
+            "structuredFailure": {
+              "attemptNumber": 2,
+              "attemptKind": "repair",
+              "finishReason": "stop",
+              "truncated": false,
+              "possiblyIncomplete": false,
+              "jsonParseSuccess": true,
+              "jsonFormat": "direct",
+              "schemaIssueCount": 0,
+              "schemaIssues": [],
+              "semanticIssueCodes": [
+                "required_objective_parent_topic_mismatch"
+              ],
+              "failureCategory": "SEMANTIC_VALIDATION_FAILURE",
+              "repairAction": "exhausted"
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "sourceId": "E03",
+    "surface": "grading-negative",
+    "reason": "No admitted Formal question",
+    "stateEvents": [
+      {
+        "stage": "course",
+        "error": {
+          "name": "ProviderError",
+          "code": "PROVIDER_INVALID_OUTPUT",
+          "message": "模型返回的数据经有界修复后仍不符合约定格式。",
+          "details": {
+            "validationKind": "candidate",
+            "candidateFailure": {
+              "kind": "curriculum_detail_candidate_validation_failed",
+              "context": {
+                "courseMapId": "course_map_fd175ffd7a23f4cf6cc00fa5",
+                "batchKey": "detail_batch_ffa14a39b32c411d361f2ce3",
+                "sourceAllocationFingerprint": "course_map_source_allocation_e22df6c0547c387cfa57b5e4e1c9d83b4d576aa4"
+              },
+              "diagnostics": [
+                {
+                  "code": "required_objective_parent_topic_mismatch",
+                  "message": "Required objective detail-objective-course_map_region_9734641eb9379d2da4946fad-1 has no meaningful semantic anchor in its own learner-visible LearningUnit title. Rename or regroup the unit so its title covers every required objective.",
+                  "facts": {
+                    "courseMapRegionId": "course_map_region_9734641eb9379d2da4946fad",
+                    "learningUnitTitle": "集中趋势度量：均值中位数众数的中心定义、极端值表现、奇偶中位数与众数条件",
+                    "objectiveKey": "detail-objective-course_map_region_9734641eb9379d2da4946fad-1",
+                    "objectiveTitle": "Explain mean, median, mode as center measures",
+                    "ownAnchoredRequiredObjectiveCount": 0,
+                    "matchingSiblingUnitTitles": []
+                  }
+                },
+                {
+                  "code": "required_objective_parent_topic_mismatch",
+                  "message": "Required objective detail-objective-course_map_region_9734641eb9379d2da4946fad-2 has no meaningful semantic anchor in its own learner-visible LearningUnit title. Rename or regroup the unit so its title covers every required objective.",
+                  "facts": {
+                    "courseMapRegionId": "course_map_region_9734641eb9379d2da4946fad",
+                    "learningUnitTitle": "集中趋势度量：均值中位数众数的中心定义、极端值表现、奇偶中位数与众数条件",
+                    "objectiveKey": "detail-objective-course_map_region_9734641eb9379d2da4946fad-2",
+                    "objectiveTitle": "Explain median vs mean with extreme values",
+                    "ownAnchoredRequiredObjectiveCount": 0,
+                    "matchingSiblingUnitTitles": []
+                  }
+                },
+                {
+                  "code": "required_objective_parent_topic_mismatch",
+                  "message": "Required objective detail-objective-course_map_region_9734641eb9379d2da4946fad-3 has no meaningful semantic anchor in its own learner-visible LearningUnit title. Rename or regroup the unit so its title covers every required objective.",
+                  "facts": {
+                    "courseMapRegionId": "course_map_region_9734641eb9379d2da4946fad",
+                    "learningUnitTitle": "集中趋势度量：均值中位数众数的中心定义、极端值表现、奇偶中位数与众数条件",
+                    "objectiveKey": "detail-objective-course_map_region_9734641eb9379d2da4946fad-3",
+                    "objectiveTitle": "Explain median parity condition",
+                    "ownAnchoredRequiredObjectiveCount": 0,
+                    "matchingSiblingUnitTitles": []
+                  }
+                },
+                {
+                  "code": "required_objective_parent_topic_mismatch",
+                  "message": "Required objective detail-objective-course_map_region_9734641eb9379d2da4946fad-4 has no meaningful semantic anchor in its own learner-visible LearningUnit title. Rename or regroup the unit so its title covers every required objective.",
+                  "facts": {
+                    "courseMapRegionId": "course_map_region_9734641eb9379d2da4946fad",
+                    "learningUnitTitle": "集中趋势度量：均值中位数众数的中心定义、极端值表现、奇偶中位数与众数条件",
+                    "objectiveKey": "detail-objective-course_map_region_9734641eb9379d2da4946fad-4",
+                    "objectiveTitle": "Explain mode conditions",
+                    "ownAnchoredRequiredObjectiveCount": 0,
+                    "matchingSiblingUnitTitles": []
+                  }
+                }
+              ]
+            },
+            "structuredFailure": {
+              "attemptNumber": 2,
+              "attemptKind": "repair",
+              "finishReason": "stop",
+              "truncated": false,
+              "possiblyIncomplete": false,
+              "jsonParseSuccess": true,
+              "jsonFormat": "direct",
+              "schemaIssueCount": 0,
+              "schemaIssues": [],
+              "semanticIssueCodes": [
+                "required_objective_parent_topic_mismatch"
+              ],
+              "failureCategory": "SEMANTIC_VALIDATION_FAILURE",
+              "repairAction": "exhausted"
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "sourceId": "E04",
+    "surface": "formal-question",
+    "reason": "No admitted Formal question",
+    "stateEvents": [
+      {
+        "stage": "formal",
+        "error": {
+          "name": "ProviderError",
+          "code": "PROVIDER_ERROR",
+          "message": "无法连接模型服务,请检查网络与 HY3_BASE_URL 配置。"
+        }
+      }
+    ]
+  },
+  {
+    "sourceId": "E04",
+    "surface": "grading-positive",
+    "reason": "No admitted Formal question",
+    "stateEvents": [
+      {
+        "stage": "formal",
+        "error": {
+          "name": "ProviderError",
+          "code": "PROVIDER_ERROR",
+          "message": "无法连接模型服务,请检查网络与 HY3_BASE_URL 配置。"
+        }
+      }
+    ]
+  },
+  {
+    "sourceId": "E04",
+    "surface": "grading-negative",
+    "reason": "No admitted Formal question",
+    "stateEvents": [
+      {
+        "stage": "formal",
+        "error": {
+          "name": "ProviderError",
+          "code": "PROVIDER_ERROR",
+          "message": "无法连接模型服务,请检查网络与 HY3_BASE_URL 配置。"
+        }
+      }
+    ]
+  },
+  {
+    "sourceId": "B-F01",
+    "surface": "formal-question",
+    "reason": "No admitted Formal question",
+    "stateEvents": [
+      {
+        "stage": "formal",
+        "error": {
+          "name": "AppError",
+          "code": "VALIDATION_ERROR",
+          "message": "Curriculum objective authority is not semantically supported for this operation.",
+          "details": {
+            "kind": "objective_authority_semantic_support_invalid",
+            "boundary": "formal_provider",
+            "diagnosticCodes": [
+              "semantic_support_failed"
+            ],
+            "diagnostics": [
+              "Objective obj_b14e8ee6-d1cf-4112-91f0-88861b5c49c7 did not pass objective-authority semantic support."
+            ]
+          }
+        }
+      }
+    ]
+  },
+  {
+    "sourceId": "B-F01",
+    "surface": "grading-positive",
+    "reason": "No admitted Formal question",
+    "stateEvents": [
+      {
+        "stage": "formal",
+        "error": {
+          "name": "AppError",
+          "code": "VALIDATION_ERROR",
+          "message": "Curriculum objective authority is not semantically supported for this operation.",
+          "details": {
+            "kind": "objective_authority_semantic_support_invalid",
+            "boundary": "formal_provider",
+            "diagnosticCodes": [
+              "semantic_support_failed"
+            ],
+            "diagnostics": [
+              "Objective obj_b14e8ee6-d1cf-4112-91f0-88861b5c49c7 did not pass objective-authority semantic support."
+            ]
+          }
+        }
+      }
+    ]
+  },
+  {
+    "sourceId": "B-F01",
+    "surface": "grading-negative",
+    "reason": "No admitted Formal question",
+    "stateEvents": [
+      {
+        "stage": "formal",
+        "error": {
+          "name": "AppError",
+          "code": "VALIDATION_ERROR",
+          "message": "Curriculum objective authority is not semantically supported for this operation.",
+          "details": {
+            "kind": "objective_authority_semantic_support_invalid",
+            "boundary": "formal_provider",
+            "diagnosticCodes": [
+              "semantic_support_failed"
+            ],
+            "diagnostics": [
+              "Objective obj_b14e8ee6-d1cf-4112-91f0-88861b5c49c7 did not pass objective-authority semantic support."
+            ]
+          }
+        }
+      }
+    ]
+  },
+  {
+    "sourceId": "B-F05",
     "surface": "teaching",
-    "reason": "First sampled Lesson not delivered"
+    "reason": "First sampled Lesson not delivered",
+    "stateEvents": [
+      {
+        "stage": "teaching",
+        "error": {
+          "name": "Error",
+          "message": "Lesson unavailable: retry_available Lesson preparation can be retried."
+        }
+      }
+    ]
   },
   {
-    "courseId": "course-b51a15933a9c0636",
+    "sourceId": "B-F05",
     "surface": "tutor",
-    "reason": "Tutor not reached"
+    "reason": "Tutor not reached",
+    "stateEvents": [
+      {
+        "stage": "teaching",
+        "error": {
+          "name": "Error",
+          "message": "Lesson unavailable: retry_available Lesson preparation can be retried."
+        }
+      }
+    ]
   },
   {
-    "courseId": "course-c648954f860209f4",
-    "surface": "formal-question",
-    "reason": "No admitted Formal question"
-  },
-  {
-    "courseId": "course-c648954f860209f4",
-    "surface": "grading-negative",
-    "reason": "No admitted Formal question"
-  },
-  {
-    "courseId": "course-c648954f860209f4",
-    "surface": "grading-positive",
-    "reason": "No admitted Formal question"
-  },
-  {
-    "courseId": "course-d09d37013f41ec52",
-    "surface": "formal-question",
-    "reason": "No admitted Formal question"
-  },
-  {
-    "courseId": "course-d09d37013f41ec52",
-    "surface": "grading-negative",
-    "reason": "No admitted Formal question"
-  },
-  {
-    "courseId": "course-d09d37013f41ec52",
-    "surface": "grading-positive",
-    "reason": "No admitted Formal question"
-  },
-  {
-    "courseId": "course-d6e85959f83cc891",
-    "surface": "formal-question",
-    "reason": "No admitted Formal question"
-  },
-  {
-    "courseId": "course-d6e85959f83cc891",
-    "surface": "grading-negative",
-    "reason": "No admitted Formal question"
-  },
-  {
-    "courseId": "course-d6e85959f83cc891",
-    "surface": "grading-positive",
-    "reason": "No admitted Formal question"
-  },
-  {
-    "courseId": "course-d6e85959f83cc891",
-    "surface": "repair",
-    "reason": "Repair not delivered in sampled route"
-  },
-  {
-    "courseId": "course-d6e85959f83cc891",
-    "surface": "retest",
-    "reason": "Retest not reached"
-  },
-  {
-    "courseId": "course-dea9e0be16c38f1c",
-    "surface": "formal-question",
-    "reason": "No admitted Formal question"
-  },
-  {
-    "courseId": "course-dea9e0be16c38f1c",
-    "surface": "grading-negative",
-    "reason": "No admitted Formal question"
-  },
-  {
-    "courseId": "course-dea9e0be16c38f1c",
-    "surface": "grading-positive",
-    "reason": "No admitted Formal question"
-  },
-  {
-    "courseId": "course-dea9e0be16c38f1c",
+    "sourceId": "B-F05",
     "surface": "practice",
-    "reason": "First Practice not reached"
+    "reason": "First Practice not reached",
+    "stateEvents": [
+      {
+        "stage": "teaching",
+        "error": {
+          "name": "Error",
+          "message": "Lesson unavailable: retry_available Lesson preparation can be retried."
+        }
+      }
+    ]
   },
   {
-    "courseId": "course-dea9e0be16c38f1c",
+    "sourceId": "B-F05",
     "surface": "repair",
-    "reason": "Repair not delivered in sampled route"
+    "reason": "Repair not delivered in sampled route",
+    "stateEvents": [
+      {
+        "stage": "teaching",
+        "error": {
+          "name": "Error",
+          "message": "Lesson unavailable: retry_available Lesson preparation can be retried."
+        }
+      }
+    ]
   },
   {
-    "courseId": "course-dea9e0be16c38f1c",
+    "sourceId": "B-F05",
     "surface": "retest",
-    "reason": "Retest not reached"
+    "reason": "Retest not reached",
+    "stateEvents": [
+      {
+        "stage": "teaching",
+        "error": {
+          "name": "Error",
+          "message": "Lesson unavailable: retry_available Lesson preparation can be retried."
+        }
+      }
+    ]
   },
   {
-    "courseId": "course-dea9e0be16c38f1c",
-    "surface": "teaching",
-    "reason": "First sampled Lesson not delivered"
+    "sourceId": "B-F05",
+    "surface": "formal-question",
+    "reason": "No admitted Formal question",
+    "stateEvents": [
+      {
+        "stage": "teaching",
+        "error": {
+          "name": "Error",
+          "message": "Lesson unavailable: retry_available Lesson preparation can be retried."
+        }
+      }
+    ]
   },
   {
-    "courseId": "course-dea9e0be16c38f1c",
-    "surface": "tutor",
-    "reason": "Tutor not reached"
+    "sourceId": "B-F05",
+    "surface": "grading-positive",
+    "reason": "No admitted Formal question",
+    "stateEvents": [
+      {
+        "stage": "teaching",
+        "error": {
+          "name": "Error",
+          "message": "Lesson unavailable: retry_available Lesson preparation can be retried."
+        }
+      }
+    ]
+  },
+  {
+    "sourceId": "B-F05",
+    "surface": "grading-negative",
+    "reason": "No admitted Formal question",
+    "stateEvents": [
+      {
+        "stage": "teaching",
+        "error": {
+          "name": "Error",
+          "message": "Lesson unavailable: retry_available Lesson preparation can be retried."
+        }
+      }
+    ]
   }
 ]

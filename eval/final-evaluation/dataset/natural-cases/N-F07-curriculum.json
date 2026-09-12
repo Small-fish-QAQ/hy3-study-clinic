@@ -1,0 +1,38 @@
+{
+  "dimensions": [
+    "Q2"
+  ],
+  "evidence": {
+    "sources": [
+      {
+        "id": "F07",
+        "text": "课堂把同一批种子分到两个透明盒中，想比较有水和无水时的发芽情况。为了使比较有意义，应尽量让其他有关条件一致，例如种子数量、来源、温度、光照、观察天数与发芽判定方式。若有水盒放在温暖窗台、无水盒放在冷暗柜里，即使结果不同，也无法把差异单独归因于水，因为温度和光照同时改变了。\n这里把“发芽”操作性地定义为观察到胚根伸出种皮，便于不同记录者使用同一标准。这个定义是本实验的观察规则，不是所有生物过程的完整描述。记录者应按事先约定的时间观察全部种子，而不是只挑成功的那几颗展示。没有发芽的种子也必须计入，才能知道发芽比例。\n设两盒各十粒同批种子，均在同温同光处放置七天。甲盒保持适量湿润，乙盒保持干燥。甲有八粒达到上述标准，乙有一粒。可以说在这批种子和这些条件下，湿润组观察到的发芽比例更高。仅凭这一次观察，还不能断言所有种类的种子只要加水都会发芽；种子活性、温度及其他条件仍可能重要。也不能说乙盒绝对没有任何水分，因为“保持干燥”是操作描述，并未测出零水分。\n重复实验可以帮助检查结果是否稳定，但重复的对象、条件与方法需要记录。把同一张照片复制三次不是三次独立实验。同一盒内种子也共享环境，不能总把它们当成互不影响的完整重复。入门练习无需复杂统计检验，只要能说明为什么重复有用、哪些信息仍然有限。\n好的后续实验应对应目前的疑问。如果怀疑温度造成差异，就应在同一温度下只改变湿润条件，或设计清楚的组合比较；不能一边改变温度，一边换种子品种，再把结果归因于某一个因素。若希望研究“水太多是否也影响发芽”，可以在其他条件一致时增加不同水量组，事先说明每组的水量与观察标准。\n解释实验时，把计划、执行、观察和结论分开写。计划相同不代表执行真的相同，需核对记录；观察不同不自动证明唯一原因。允许结果不支持原假说，并据此修改下一步问题，正是实验学习的一部分。对证据保留限制，不妨碍学生提出清楚、可检验的预测。"
+      }
+    ],
+    "goals": [
+      "识别比较中同时改变的变量",
+      "区分实验观察与普遍规律",
+      "设计保留对照并能检验假说的后续实验"
+    ],
+    "prerequisites": [
+      "理解相同与不同",
+      "能按表格记录观察"
+    ],
+    "desiredDepth": "working_fluency",
+    "authorityBoundaries": [
+      "本次评估只涉及所给来源、明确的教学范围和实际展示的产物；脚本作答用于检查工作流，不代表真实学习者。",
+      "Q2评价提议课程对所注册学习目标的保留和范围；不将尚未发生的教学交付或Formal准入当成已经完成。"
+    ],
+    "artifacts": [
+      {
+        "id": "cun_30f6c3ae-a5fb-49ea-becf-e34b797a2b6c/title",
+        "text": "种子对照实验的变量控制、观察记录与后续设计"
+      },
+      {
+        "id": "cun_30f6c3ae-a5fb-49ea-becf-e34b797a2b6c/objectives",
+        "text": "[{\"id\":\"obj_7987c8e3-199c-4229-8598-dae8380b6117\",\"title\":\"识别比较中同时改变的变量并保持无关条件一致\",\"description\":\"Identify when a comparison simultaneously changes multiple variables (e.g., water, temperature, light) and thus cannot attribute difference to a single factor; keep other relevant conditions consistent for valid comparison.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_020e0fb5-0214-4602-af19-786092ae519a\",\"ta_52701f6e-654f-451e-8a9f-98462eaa10e3\"],\"authorityClaimIds\":[\"tac_e0d72998-9109-4402-9a5f-6aaa66f4e118\",\"tac_e990d1ee-a548-42db-91f0-e5e3d12fba6e\",\"tac_19dd6063-0c42-41e2-b6dd-655ce6280cbf\",\"tac_6aa09108-dc67-4a7a-9657-09638dfa3b45\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E1 and E10 provide formal_sufficient authority for identify construct, matching the independently authorized Formal path.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_6718cff7\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_6718cff7\"]},{\"id\":\"obj_190018e2-4f88-4ddb-b03f-da491e28d034\",\"title\":\"应用发芽操作定义并完整记录种子计算比例\",\"description\":\"Apply operational definition of germination (radicle out of seed coat) and record all seeds including non-germinated at predetermined times to compute germination proportion.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_020e0fb5-0214-4602-af19-786092ae519a\",\"ta_52701f6e-654f-451e-8a9f-98462eaa10e3\"],\"authorityClaimIds\":[\"tac_0596b4dd-43a0-40bc-bb4f-f32f453b6332\",\"tac_78878d21-51fb-4242-bca2-9853a4e33b28\",\"tac_c4bec023-f880-4271-beb9-12ce6c80752f\",\"tac_29744ad8-7d88-43db-ae63-e58ae0cbb1f4\",\"tac_51185121-e7b0-436b-9b45-991f13957200\",\"tac_993a5cce-3e40-4b8d-a946-4683665b6579\"],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation with apply construct; exact evidence lacks formal apply authority, so retained as high teaching priority per policy.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_6718cff7\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_3add2d02-2c52-4bf3-b1fb-36e6b77c8527\",\"title\":\"设计保留对照并检验假说的后续实验\",\"description\":\"Design a follow-up experiment that addresses the current question, retains control/comparison with consistent irrelevant conditions, clearly defines variables and observation standards, and can test hypothesis without confounding factors.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"Design construct is teaching-only with no formal evidence authority; central to contract intent, thus high teaching priority.\",\"formalAssessmentConstruct\":\"design\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_c3461bb6-436d-4ec4-a661-4ba6c9c18315\",\"title\":\"识别观察与普遍规律区别、计划执行分离及独立重复要求\",\"description\":\"Identify and distinguish specific experimental observation from universal generalization; recognize operational definition is an observation rule not complete description, and a single observation does not prove a general law. Identify and separate plan, execution, observation, and conclusion when explaining experiments; recognize plan may differ from execution, observation doesn't auto prove unique cause, and unsupported hypothesis is allowed. Identify requirements for independent replication (not photo duplication, not shared-environment seeds as full repeats) and make cautious inference about limited evidence scope.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_020e0fb5-0214-4602-af19-786092ae519a\",\"ta_52701f6e-654f-451e-8a9f-98462eaa10e3\"],\"authorityClaimIds\":[\"tac_5c7bf80d-a439-4301-bb66-b103be264f7e\",\"tac_f04a455d-e5f6-491b-b9ab-925540f4c499\"],\"priority\":\"high\",\"priorityRationale\":\"Merged identify capabilities central to learning intent; exact evidence for parts is unavailable or only partially formal, so retained as high teaching priority rather than required.\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_6718cff7\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_6718cff7\"]}]"
+      }
+    ],
+    "exposure": []
+  }
+}

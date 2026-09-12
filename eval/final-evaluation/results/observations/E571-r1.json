@@ -1,0 +1,302 @@
+{
+  "task": {
+    "caseId": "E571",
+    "runId": "E571-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E571.json",
+    "inputHash": "f8bc4e1d5fe33704e0430a412e44dfa6efde4fcd2909983e6ca979ca4ab98915",
+    "population": "boundary",
+    "sourceId": "F01"
+  },
+  "inputHash": "f8bc4e1d5fe33704e0430a412e44dfa6efde4fcd2909983e6ca979ca4ab98915",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "solve-current": "9443423ee4196499829834a328040d90228acc6a124fcd2c210c358499b700ee",
+      "correctness": "d32e75ac6a623101c78429a16b6ee10b80920705ca7d7389be361105503de96d",
+      "artifact-audit": "d32e75ac6a623101c78429a16b6ee10b80920705ca7d7389be361105503de96d",
+      "certification": "d32e75ac6a623101c78429a16b6ee10b80920705ca7d7389be361105503de96d"
+    },
+    "stages": {
+      "solve-current": {
+        "status": "resolved",
+        "solution": "不能确定不同到馆者人数恰好三十。题设：本次两天共记录三十人次，没有去重名单（e14）。人次计次可能含同一人多次，故独立人数≤30。相容情况：①30名不同者各到馆1次→独立人数=30；②1名居民到馆30次（或有人重复）→独立人数<30（如1）。",
+        "witnesses": [
+          {
+            "id": "e14",
+            "pointer": "/question/prompt",
+            "role": "question",
+            "kind": "text",
+            "value": "以下是新的独立情境，来源中的示例数字不作为本题未明示的数据。本次两天共记录三十人次，没有去重名单。能否确定不同到馆者人数恰好三十？给出相容的两种情况。",
+            "valueHash": "5e4c770560a2ec4d0f627f6b8355bbf1cdee6447666764e815891588069c80d5"
+          }
+        ],
+        "reviewReasons": []
+      },
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "clear",
+            "affected": [],
+            "reason": "作者参考解（e18）在题设（e14：记录三十人次、无去重名单）下结论不能确定独立人数恰好三十，并给两相容实例。反例挑战：尝试补充与假设相容且能确定恰好三十的情况，但人次定义允许重复，给定事实无法排除独立人数<30（如一人三十次或十五人各两次），故原结论成立；无必要条件混淆或缺失。",
+            "refs": [
+              "e14",
+              "e18"
+            ],
+            "challenge": {
+              "status": "closed",
+              "reason": "明确题设（e14）规定三十人次且无去重名单，人次计次允许同一人多次，因此可排除‘必然恰好三十人’的相容反例；作者结论‘不能确定’与给定事实一致。",
+              "refs": [
+                "e14"
+              ]
+            },
+            "witnesses": [
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "以下是新的独立情境，来源中的示例数字不作为本题未明示的数据。本次两天共记录三十人次，没有去重名单。能否确定不同到馆者人数恰好三十？给出相容的两种情况。",
+                "valueHash": "5e4c770560a2ec4d0f627f6b8355bbf1cdee6447666764e815891588069c80d5"
+              },
+              {
+                "id": "e18",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "本题作者参考解（未向学习者提前展示）：不能；三十人各来一次可为三十人，十五人各来两次可为十五人。",
+                "valueHash": "9a106e55f0df6d990dacba46b84749acde8f016bebc18446e659f4b00d804854"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "kind": "quantities",
+            "status": "clear",
+            "affected": [],
+            "reason": "原始输入为三十人次（事件计数，无去重）。作者例：30人×1次=30人次、15人×2次=30人次，单位统一、数量级正确；盲解同理。独立重算确认无核心数值错误。",
+            "refs": [
+              "e14",
+              "e18"
+            ],
+            "witnesses": [
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "以下是新的独立情境，来源中的示例数字不作为本题未明示的数据。本次两天共记录三十人次，没有去重名单。能否确定不同到馆者人数恰好三十？给出相容的两种情况。",
+                "valueHash": "5e4c770560a2ec4d0f627f6b8355bbf1cdee6447666764e815891588069c80d5"
+              },
+              {
+                "id": "e18",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "本题作者参考解（未向学习者提前展示）：不能；三十人各来一次可为三十人，十五人各来两次可为十五人。",
+                "valueHash": "9a106e55f0df6d990dacba46b84749acde8f016bebc18446e659f4b00d804854"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ],
+        "keys": [
+          {
+            "taskId": "current",
+            "status": "agrees",
+            "reason": "作者参考解（e18）指定‘不能’并确定两情况：三十人各来一次为三十人、十五人各来两次为十五人。盲解（blindSolutions）同得不能确定恰好三十，给30人各1次与1人30次等相容情况。两者核心结论、去重限制与示例边界一致，无冲突或保留疑问。",
+            "refs": [
+              "e14",
+              "e18"
+            ],
+            "witnesses": [
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "以下是新的独立情境，来源中的示例数字不作为本题未明示的数据。本次两天共记录三十人次，没有去重名单。能否确定不同到馆者人数恰好三十？给出相容的两种情况。",
+                "valueHash": "5e4c770560a2ec4d0f627f6b8355bbf1cdee6447666764e815891588069c80d5"
+              },
+              {
+                "id": "e18",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "本题作者参考解（未向学习者提前展示）：不能；三十人各来一次可为三十人，十五人各来两次可为十五人。",
+                "valueHash": "9a106e55f0df6d990dacba46b84749acde8f016bebc18446e659f4b00d804854"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q4",
+            "level": 2,
+            "reason": "priorExposure(e19)为空，无先前完成本题必要判断的曝光；题干(e14)提供独立情境'三十人次无去重名单'前提充分，学习者需作答不能确定并给两情况；artifact(e18)标明参考解未向学习者展示，无泄题；blindSolutions当前解与题目预期键一致，非强制歧义。满足Q4的2分标准。",
+            "refs": [
+              "e14",
+              "e18",
+              "e19"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "以下是新的独立情境，来源中的示例数字不作为本题未明示的数据。本次两天共记录三十人次，没有去重名单。能否确定不同到馆者人数恰好三十？给出相容的两种情况。",
+                "valueHash": "5e4c770560a2ec4d0f627f6b8355bbf1cdee6447666764e815891588069c80d5"
+              },
+              {
+                "id": "e18",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "本题作者参考解（未向学习者提前展示）：不能；三十人各来一次可为三十人，十五人各来两次可为十五人。",
+                "valueHash": "9a106e55f0df6d990dacba46b84749acde8f016bebc18446e659f4b00d804854"
+              },
+              {
+                "id": "e19",
+                "pointer": "/priorExposure",
+                "role": "prior_exposure",
+                "kind": "array_length",
+                "value": 0,
+                "valueHash": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q4",
+            "status": "supported",
+            "reason": "Q4的2分判断基于题干独立前提(e14)、无先前曝光(e19)、参考解未展示(e18)且盲解结论一致(findings)，与审计和正确性检查一致，无未决事项。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "以下是新的独立情境，来源中的示例数字不作为本题未明示的数据。本次两天共记录三十人次，没有去重名单。能否确定不同到馆者人数恰好三十？给出相容的两种情况。",
+                "valueHash": "5e4c770560a2ec4d0f627f6b8355bbf1cdee6447666764e815891588069c80d5"
+              },
+              {
+                "id": "e18",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "本题作者参考解（未向学习者提前展示）：不能；三十人各来一次可为三十人，十五人各来两次可为十五人。",
+                "valueHash": "9a106e55f0df6d990dacba46b84749acde8f016bebc18446e659f4b00d804854"
+              },
+              {
+                "id": "e19",
+                "pointer": "/priorExposure",
+                "role": "prior_exposure",
+                "kind": "array_length",
+                "value": 0,
+                "valueHash": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q4",
+          "level": 2,
+          "reason": "priorExposure(e19)为空，无先前完成本题必要判断的曝光；题干(e14)提供独立情境'三十人次无去重名单'前提充分，学习者需作答不能确定并给两情况；artifact(e18)标明参考解未向学习者展示，无泄题；blindSolutions当前解与题目预期键一致，非强制歧义。满足Q4的2分标准。",
+          "refs": [
+            "e14",
+            "e18",
+            "e19"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e14",
+              "pointer": "/question/prompt",
+              "role": "question",
+              "kind": "text",
+              "value": "以下是新的独立情境，来源中的示例数字不作为本题未明示的数据。本次两天共记录三十人次，没有去重名单。能否确定不同到馆者人数恰好三十？给出相容的两种情况。",
+              "valueHash": "5e4c770560a2ec4d0f627f6b8355bbf1cdee6447666764e815891588069c80d5"
+            },
+            {
+              "id": "e18",
+              "pointer": "/artifacts/0/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "本题作者参考解（未向学习者提前展示）：不能；三十人各来一次可为三十人，十五人各来两次可为十五人。",
+              "valueHash": "9a106e55f0df6d990dacba46b84749acde8f016bebc18446e659f4b00d804854"
+            },
+            {
+              "id": "e19",
+              "pointer": "/priorExposure",
+              "role": "prior_exposure",
+              "kind": "array_length",
+              "value": 0,
+              "valueHash": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [],
+          "proposedLevel": 2,
+          "proposedReason": "priorExposure(e19)为空，无先前完成本题必要判断的曝光；题干(e14)提供独立情境'三十人次无去重名单'前提充分，学习者需作答不能确定并给两情况；artifact(e18)标明参考解未向学习者展示，无泄题；blindSolutions当前解与题目预期键一致，非强制歧义。满足Q4的2分标准。"
+        }
+      ],
+      "reviewRequired": [],
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q4",
+            "status": "supported",
+            "reason": "Q4的2分判断基于题干独立前提(e14)、无先前曝光(e19)、参考解未展示(e18)且盲解结论一致(findings)，与审计和正确性检查一致，无未决事项。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "以下是新的独立情境，来源中的示例数字不作为本题未明示的数据。本次两天共记录三十人次，没有去重名单。能否确定不同到馆者人数恰好三十？给出相容的两种情况。",
+                "valueHash": "5e4c770560a2ec4d0f627f6b8355bbf1cdee6447666764e815891588069c80d5"
+              },
+              {
+                "id": "e18",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "本题作者参考解（未向学习者提前展示）：不能；三十人各来一次可为三十人，十五人各来两次可为十五人。",
+                "valueHash": "9a106e55f0df6d990dacba46b84749acde8f016bebc18446e659f4b00d804854"
+              },
+              {
+                "id": "e19",
+                "pointer": "/priorExposure",
+                "role": "prior_exposure",
+                "kind": "array_length",
+                "value": 0,
+                "valueHash": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "resultHash": "6f3ef3eafd6dd5579d2154f6bc86367ac73e09223f32261d0808424b36dacfd4"
+  }
+}

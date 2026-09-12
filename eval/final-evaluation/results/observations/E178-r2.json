@@ -1,0 +1,237 @@
+{
+  "task": {
+    "caseId": "E178",
+    "runId": "E178-r2",
+    "replicate": 2,
+    "path": "benchmark/cases/E178.json",
+    "inputHash": "e7d30d53e477425f78e38e34094a347d8b3ab0f76e60d13bb42c956aaf630201",
+    "population": "controlled",
+    "sourceId": "F09"
+  },
+  "inputHash": "e7d30d53e477425f78e38e34094a347d8b3ab0f76e60d13bb42c956aaf630201",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "correctness": "e8543fa4eabb29ce2a787b26b1e5cc9bf8e0ae837d7ecdf85fc24f92ec09c30d",
+      "artifact-audit": "e8543fa4eabb29ce2a787b26b1e5cc9bf8e0ae837d7ecdf85fc24f92ec09c30d",
+      "certification": "e8543fa4eabb29ce2a787b26b1e5cc9bf8e0ae837d7ecdf85fc24f92ec09c30d"
+    },
+    "stages": {
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "clear",
+            "affected": [],
+            "reason": "作者于e15给出联合条件（可分工、无重复、各自恒速且无等待）下实例计算，并给出条件式反例（设备冲突则前提不成立）。对照条件与实例，多条件联合作为充分条件使用，未混淆必要充分；作者未声称单独条件充要。",
+            "refs": [
+              "e15"
+            ],
+            "challenge": {
+              "status": "closed",
+              "reason": "固定e15中明示假设与实例参数（工作1份、甲1/8乙1/4剩余3/4），补充相容情况不能否定合速度加法与除法结果，给定算术规则排除反例。",
+              "refs": [
+                "e15"
+              ]
+            },
+            "witnesses": [
+              {
+                "id": "e15",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "先把整项工作看作1份。在可分工、无重复、各自恒速且无等待的条件下，甲每小时完成1/8份、乙完成1/4份，合速度3/8份每小时。剩余3/4份要用(3/4)÷(3/8)=2小时，因为时间乘速度应恢复工作量。若只有一台必需设备不能同时使用，则速度相加的前提不成立，需另问合作方式。",
+                "valueHash": "fd8f188373627ec654114401516a09603fdcde697a535f3321000df39e7b91f9"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "kind": "quantities",
+            "status": "clear",
+            "affected": [],
+            "reason": "依e15原始输入重算：合速度1/8+1/4=3/8份/h，时间(3/4)/(3/8)=2h，单位份/(份/h)=h，验算2*(3/8)=3/4份，正确。",
+            "refs": [
+              "e15"
+            ],
+            "witnesses": [
+              {
+                "id": "e15",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "先把整项工作看作1份。在可分工、无重复、各自恒速且无等待的条件下，甲每小时完成1/8份、乙完成1/4份，合速度3/8份每小时。剩余3/4份要用(3/4)÷(3/8)=2小时，因为时间乘速度应恢复工作量。若只有一台必需设备不能同时使用，则速度相加的前提不成立，需另问合作方式。",
+                "valueHash": "fd8f188373627ec654114401516a09603fdcde697a535f3321000df39e7b91f9"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ],
+        "keys": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q3",
+            "level": 2,
+            "reason": "Artifact e15 presents a local example: sets total work as 1 unit, states conditions (divisible, no duplication, constant speed, no waiting), derives individual speeds 1/8 and 1/4 and combined 3/8 per hour, then computes time for a given remaining 3/4 via (3/4)÷(3/8)=2h with rationale (time×speed recovers workload). It states a relevant boundary: if only one essential device prevents simultaneous use, speed addition premise fails. Goal e5 asks to clarify reasoning steps and applicable boundary of the shown local example, not full coverage. Prerequisites (fractions, mul/div) suffice to follow. No central error or misleading gap within the presented scope.",
+            "refs": [
+              "e15",
+              "e5"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e15",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "先把整项工作看作1份。在可分工、无重复、各自恒速且无等待的条件下，甲每小时完成1/8份、乙完成1/4份，合速度3/8份每小时。剩余3/4份要用(3/4)÷(3/8)=2小时，因为时间乘速度应恢复工作量。若只有一台必需设备不能同时使用，则速度相加的前提不成立，需另问合作方式。",
+                "valueHash": "fd8f188373627ec654114401516a09603fdcde697a535f3321000df39e7b91f9"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "讲清当前所示局部例子的推理步骤与适用边界；不要求覆盖整份教材。",
+                "valueHash": "9993d328e7a9560cdfb74d56adf9b1d8c9f4a1c7c71c80ed3120d850114e0ea2"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q3",
+            "status": "supported",
+            "reason": "Artifact e15 presents a bounded local example: total work 1, explicit conditions, speeds 1/8+1/4=3/8, remaining 3/4 time (3/4)÷(3/8)=2h with unit check, and states device-conflict boundary. Goal e5 scopes to such example's steps/boundary; prerequisites e7/e8 suffice. Audit and correctness checks cleared, no issues.",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e15",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "先把整项工作看作1份。在可分工、无重复、各自恒速且无等待的条件下，甲每小时完成1/8份、乙完成1/4份，合速度3/8份每小时。剩余3/4份要用(3/4)÷(3/8)=2小时，因为时间乘速度应恢复工作量。若只有一台必需设备不能同时使用，则速度相加的前提不成立，需另问合作方式。",
+                "valueHash": "fd8f188373627ec654114401516a09603fdcde697a535f3321000df39e7b91f9"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "讲清当前所示局部例子的推理步骤与适用边界；不要求覆盖整份教材。",
+                "valueHash": "9993d328e7a9560cdfb74d56adf9b1d8c9f4a1c7c71c80ed3120d850114e0ea2"
+              },
+              {
+                "id": "e7",
+                "pointer": "/prerequisites/0",
+                "role": "context",
+                "kind": "text",
+                "value": "分数",
+                "valueHash": "89e35e662a1e8efb69f37931ae6f8e23f6cf9b18eeb697959636dd4400baa57d"
+              },
+              {
+                "id": "e8",
+                "pointer": "/prerequisites/1",
+                "role": "context",
+                "kind": "text",
+                "value": "乘除法",
+                "valueHash": "1bd4d8eed3854b195d94d8f17d84227f4cfd7ba1e720276ddd553773741a5645"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q3",
+          "level": 2,
+          "reason": "Artifact e15 presents a local example: sets total work as 1 unit, states conditions (divisible, no duplication, constant speed, no waiting), derives individual speeds 1/8 and 1/4 and combined 3/8 per hour, then computes time for a given remaining 3/4 via (3/4)÷(3/8)=2h with rationale (time×speed recovers workload). It states a relevant boundary: if only one essential device prevents simultaneous use, speed addition premise fails. Goal e5 asks to clarify reasoning steps and applicable boundary of the shown local example, not full coverage. Prerequisites (fractions, mul/div) suffice to follow. No central error or misleading gap within the presented scope.",
+          "refs": [
+            "e15",
+            "e5"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e15",
+              "pointer": "/artifacts/0/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "先把整项工作看作1份。在可分工、无重复、各自恒速且无等待的条件下，甲每小时完成1/8份、乙完成1/4份，合速度3/8份每小时。剩余3/4份要用(3/4)÷(3/8)=2小时，因为时间乘速度应恢复工作量。若只有一台必需设备不能同时使用，则速度相加的前提不成立，需另问合作方式。",
+              "valueHash": "fd8f188373627ec654114401516a09603fdcde697a535f3321000df39e7b91f9"
+            },
+            {
+              "id": "e5",
+              "pointer": "/goals/0",
+              "role": "goal",
+              "kind": "text",
+              "value": "讲清当前所示局部例子的推理步骤与适用边界；不要求覆盖整份教材。",
+              "valueHash": "9993d328e7a9560cdfb74d56adf9b1d8c9f4a1c7c71c80ed3120d850114e0ea2"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [],
+          "proposedLevel": 2,
+          "proposedReason": "Artifact e15 presents a local example: sets total work as 1 unit, states conditions (divisible, no duplication, constant speed, no waiting), derives individual speeds 1/8 and 1/4 and combined 3/8 per hour, then computes time for a given remaining 3/4 via (3/4)÷(3/8)=2h with rationale (time×speed recovers workload). It states a relevant boundary: if only one essential device prevents simultaneous use, speed addition premise fails. Goal e5 asks to clarify reasoning steps and applicable boundary of the shown local example, not full coverage. Prerequisites (fractions, mul/div) suffice to follow. No central error or misleading gap within the presented scope."
+        }
+      ],
+      "reviewRequired": [],
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q3",
+            "status": "supported",
+            "reason": "Artifact e15 presents a bounded local example: total work 1, explicit conditions, speeds 1/8+1/4=3/8, remaining 3/4 time (3/4)÷(3/8)=2h with unit check, and states device-conflict boundary. Goal e5 scopes to such example's steps/boundary; prerequisites e7/e8 suffice. Audit and correctness checks cleared, no issues.",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e15",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "先把整项工作看作1份。在可分工、无重复、各自恒速且无等待的条件下，甲每小时完成1/8份、乙完成1/4份，合速度3/8份每小时。剩余3/4份要用(3/4)÷(3/8)=2小时，因为时间乘速度应恢复工作量。若只有一台必需设备不能同时使用，则速度相加的前提不成立，需另问合作方式。",
+                "valueHash": "fd8f188373627ec654114401516a09603fdcde697a535f3321000df39e7b91f9"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "讲清当前所示局部例子的推理步骤与适用边界；不要求覆盖整份教材。",
+                "valueHash": "9993d328e7a9560cdfb74d56adf9b1d8c9f4a1c7c71c80ed3120d850114e0ea2"
+              },
+              {
+                "id": "e7",
+                "pointer": "/prerequisites/0",
+                "role": "context",
+                "kind": "text",
+                "value": "分数",
+                "valueHash": "89e35e662a1e8efb69f37931ae6f8e23f6cf9b18eeb697959636dd4400baa57d"
+              },
+              {
+                "id": "e8",
+                "pointer": "/prerequisites/1",
+                "role": "context",
+                "kind": "text",
+                "value": "乘除法",
+                "valueHash": "1bd4d8eed3854b195d94d8f17d84227f4cfd7ba1e720276ddd553773741a5645"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "resultHash": "05bf6dec7d2b86bdeef62ddc04401fe9e1fca7216cc1d313d4713912590fcf7e"
+  }
+}

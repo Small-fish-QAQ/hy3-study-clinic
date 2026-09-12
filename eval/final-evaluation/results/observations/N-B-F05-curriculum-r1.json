@@ -1,0 +1,342 @@
+{
+  "task": {
+    "caseId": "N-B-F05-curriculum",
+    "runId": "N-B-F05-curriculum-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-B-F05-curriculum.json",
+    "inputHash": "5a81cbe732e25faa21340520c759c56eec2513f8d0aca8e2f8e55a789500145d",
+    "population": "natural",
+    "sourceId": "B-F05"
+  },
+  "inputHash": "5a81cbe732e25faa21340520c759c56eec2513f8d0aca8e2f8e55a789500145d",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "correctness": "ebc4a54a474a1c6da6530d9a182d3f0840e90a5263a5261ee6e39976575ee812",
+      "artifact-audit": "ebc4a54a474a1c6da6530d9a182d3f0840e90a5263a5261ee6e39976575ee812",
+      "certification": "ebc4a54a474a1c6da6530d9a182d3f0840e90a5263a5261ee6e39976575ee812"
+    },
+    "stages": {
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "clear",
+            "affected": [],
+            "reason": "核验 artifacts/1 (e19) 中四个 objective 描述与源 e3 条件规则对照：obj_a322211e 对应 e3 首段分辨率≠准确度及校准等影响；obj_15eafa15 对应 e3 第二段闭区间构建须 e 来自给定/校准且例12.4/0.2→[12.2,12.6]；obj_6373ee58 对应 e3 第三段区间比较规则（甲max<乙min则甲短，重叠则不能保证顺序且非实际等长）及系统偏差注意；obj_7f3ec958 对应 e3 末段规范记录与缺失处理。条件、量词与实例均一致。反例挑战：固定 e3 明示假设（简化闭区间模型、e须给定/校准），尝试补充仅依刻度宣误或开区间等相容情形均被排除；甲max<乙min在模型下必甲短无反例；重叠结论非确定正确。",
+            "refs": [
+              "e3",
+              "e19"
+            ],
+            "challenge": {
+              "status": "closed",
+              "reason": "由源材料 e3 固定简化模型（闭区间、误差上界须给定/校准）排除相容反例；区间比较规则在模型下必然成立，原结论已建立。",
+              "refs": [
+                "e3",
+                "e19"
+              ]
+            },
+            "witnesses": [
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "测量结果是带有方法和限制的信息。尺子上最小刻度为一毫米，意味着使用者能够按这种刻度记录长度，但这不保证每次读数与真实长度的差都小于一毫米。尺子本身是否校准、起点是否对齐、观察角度是否合适，都会影响结果。因此“显示的小数位多”与“结果一定更准确”不是同一件事。\n为了练习推理，本单元采用一个明确的简化模型：某次测量的读数为r厘米，且已知真实长度与读数的差的绝对值不超过e厘米，则真实长度在r减e到r加e的闭区间内，两个端点都包括。这里的误差上界必须来自题目给定或可靠校准，不能只凭尺子刻度自行宣布。假设读数为十二点四厘米，误差上界为零点二厘米，那么真实长度可能在十二点二至十二点六厘米之间。\n比较两件物品时，应比较它们允许的区间，而不是只看中心读数。若甲在十二点二至十二点六厘米，乙在十二点八至十三点二厘米，甲的最大值仍小于乙的最小值，因此可断定甲更短。若乙的区间改为十二点五至十二点九厘米，两个区间重叠，就不能由这些界限保证甲更短。甲可能比乙短，也可能略长；这不是说两件物品实际等长，而是证据不足以确定顺序。\n重复测量也需要区分误差类型。如果每次起点都固定偏移零点三厘米，多测几次再取平均不一定消除这个共同偏差。多次独立的小幅随机波动与每次同向的系统偏差不同。没有额外模型时，不能把“测了十次”直接翻译成“准确程度提高十倍”。本单元只使用给定的区间界限，不要求统计学公式。\n记录结果时，可以把读数、单位、误差上界和使用条件写在一起，例如“在此校准条件下，读数为十二点四厘米，误差不超过零点二厘米”。这样下一位读者知道能推出什么，也知道不能推出什么。把数值写成十二点四零零零厘米不会凭空增加新证据。\n遇到信息缺失的题，应具体说明缺了什么：是误差上界、共同起点还是单位？能算的部分仍可先算，例如把已知区间列出来，再说明另一个区间无法建立。一个好的测量解释既提供可执行的计算，也尊重给定方法的可信范围。",
+                "valueHash": "04ede0e2b943c283408af13f15e429c4d3f550318ac34096022b20c8a80a02fc"
+              },
+              {
+                "id": "e19",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "[{\"id\":\"obj_a322211e-362a-4c2b-adc1-b3c35c861098\",\"title\":\"区分读数分辨率与真实准确程度并识别小数位误区\",\"description\":\"区分读数分辨率（最小刻度/小数位）与真实准确程度，识别“显示小数位多≠结果更准确”的误区，并知晓尺子校准、起点对齐、观察角度等影响真实误差\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_ee24990f-9456-4e6e-86f7-f3741aad29fa\",\"ta_7757a8c3-3ed2-48e6-a6d1-4f29197639c6\"],\"authorityClaimIds\":[\"tac_828e2412-e1b0-43da-94e3-f289957be2fd\",\"tac_8ca93fbb-5330-49e9-998d-59ac33d9c309\",\"tac_f5c374ab-37fa-41f3-a498-3c0d5dd3a480\",\"tac_5477bbf9-fd2a-415f-b4fb-bc2afb9db6c5\",\"tac_7deb803d-0724-4070-b8c2-66699ec72149\",\"tac_d68016a2-39ce-43d5-a54e-fd279103cbd6\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E1, E9, E10 supports identify with formal_sufficient authority envelope.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_df6c2d20\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_df6c2d20\"]},{\"id\":\"obj_15eafa15-f5ab-40db-9d3d-b578fa7466c2\",\"title\":\"使用给定误差上界构建闭区间\",\"description\":\"使用题目给定或可靠校准的误差上界e与读数r，构建真实长度所在的闭区间[r-e, r+e]（两端点包括），不可仅依尺子刻度自行宣布误差，如12.4cm与0.2cm得[12.2,12.6]\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_ee24990f-9456-4e6e-86f7-f3741aad29fa\",\"ta_7757a8c3-3ed2-48e6-a6d1-4f29197639c6\"],\"authorityClaimIds\":[\"tac_0d5b62ac-25bd-4f58-82aa-3f813844fab5\",\"tac_83836414-8cd0-4950-83e6-dc9cdd771c37\",\"tac_a1b2511c-b383-4635-96d2-2bb7a7975570\",\"tac_2d2c344d-2cc6-437e-9f21-a0f413b029ee\",\"tac_3d01f6bb-45d2-4ed1-9c2a-18d76ab717ca\",\"tac_f67f66b9-ce80-460b-a469-4e53d09e4a5d\"],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation to apply the source-stated interval model; formal authority unavailable for apply, retained as high teaching priority.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_df6c2d20\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_6373ee58-7a2f-4840-b2b4-14278ae52dfe\",\"title\":\"比较允许区间判断大小关系并注意系统偏差\",\"description\":\"比较物品时比较其允许区间而非中心读数，以判断区间是否支持大小关系：若甲最大值<乙最小值则断定甲更短；若区间重叠则不能由界限保证顺序（可能短也可能长，非实际等长）；并注意固定系统偏差多次平均不一定消除\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_ee24990f-9456-4e6e-86f7-f3741aad29fa\",\"ta_7757a8c3-3ed2-48e6-a6d1-4f29197639c6\"],\"authorityClaimIds\":[\"tac_23607bf3-e514-4b14-8727-f1e1551b726a\",\"tac_66ed6942-c7b4-421f-a89d-2f8dcad88ee4\",\"tac_e91e6a19-56fa-476f-ba17-51ededa23a33\",\"tac_51207bb3-2dcd-4f83-b875-4f29f68b04cf\",\"tac_c5856e73-3de6-4859-8608-59ad6b639a48\",\"tac_ee64ef5c-75af-4a09-8789-caeda7030e8c\"],\"priority\":\"high\",\"priorityRationale\":\"Core applied comparison skill taught by material; no formal apply evidence, maintain high teaching priority.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_df6c2d20\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_7f3ec958-b25e-43e7-97e2-d5ffabdd31ea\",\"title\":\"规范记录测量结果并处理信息缺失\",\"description\":\"规范记录测量结果：将读数、单位、误差上界与使用条件一并写出；识别写成更多小数零不增加证据；信息缺失时具体说明缺何项（误差上界、共同起点或单位）并先列已知区间\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"Source-anchored procedural recording and missing-info handling; apply construct lacks formal envelope, kept as high.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]}]",
+                "valueHash": "38ce1d72f281d757ea59e99df0a2fd92514962136362659170efc0afd2f6fb0e"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "kind": "quantities",
+            "status": "clear",
+            "affected": [],
+            "reason": "对 obj_15eafa15 (e19) 实例 r=12.4cm, e=0.2cm 独立重算 r-e=12.2, r+e=12.6，单位厘米，闭区间端点包括，与 e3 文本实例一致，无推导错误。",
+            "refs": [
+              "e3",
+              "e19"
+            ],
+            "witnesses": [
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "测量结果是带有方法和限制的信息。尺子上最小刻度为一毫米，意味着使用者能够按这种刻度记录长度，但这不保证每次读数与真实长度的差都小于一毫米。尺子本身是否校准、起点是否对齐、观察角度是否合适，都会影响结果。因此“显示的小数位多”与“结果一定更准确”不是同一件事。\n为了练习推理，本单元采用一个明确的简化模型：某次测量的读数为r厘米，且已知真实长度与读数的差的绝对值不超过e厘米，则真实长度在r减e到r加e的闭区间内，两个端点都包括。这里的误差上界必须来自题目给定或可靠校准，不能只凭尺子刻度自行宣布。假设读数为十二点四厘米，误差上界为零点二厘米，那么真实长度可能在十二点二至十二点六厘米之间。\n比较两件物品时，应比较它们允许的区间，而不是只看中心读数。若甲在十二点二至十二点六厘米，乙在十二点八至十三点二厘米，甲的最大值仍小于乙的最小值，因此可断定甲更短。若乙的区间改为十二点五至十二点九厘米，两个区间重叠，就不能由这些界限保证甲更短。甲可能比乙短，也可能略长；这不是说两件物品实际等长，而是证据不足以确定顺序。\n重复测量也需要区分误差类型。如果每次起点都固定偏移零点三厘米，多测几次再取平均不一定消除这个共同偏差。多次独立的小幅随机波动与每次同向的系统偏差不同。没有额外模型时，不能把“测了十次”直接翻译成“准确程度提高十倍”。本单元只使用给定的区间界限，不要求统计学公式。\n记录结果时，可以把读数、单位、误差上界和使用条件写在一起，例如“在此校准条件下，读数为十二点四厘米，误差不超过零点二厘米”。这样下一位读者知道能推出什么，也知道不能推出什么。把数值写成十二点四零零零厘米不会凭空增加新证据。\n遇到信息缺失的题，应具体说明缺了什么：是误差上界、共同起点还是单位？能算的部分仍可先算，例如把已知区间列出来，再说明另一个区间无法建立。一个好的测量解释既提供可执行的计算，也尊重给定方法的可信范围。",
+                "valueHash": "04ede0e2b943c283408af13f15e429c4d3f550318ac34096022b20c8a80a02fc"
+              },
+              {
+                "id": "e19",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "[{\"id\":\"obj_a322211e-362a-4c2b-adc1-b3c35c861098\",\"title\":\"区分读数分辨率与真实准确程度并识别小数位误区\",\"description\":\"区分读数分辨率（最小刻度/小数位）与真实准确程度，识别“显示小数位多≠结果更准确”的误区，并知晓尺子校准、起点对齐、观察角度等影响真实误差\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_ee24990f-9456-4e6e-86f7-f3741aad29fa\",\"ta_7757a8c3-3ed2-48e6-a6d1-4f29197639c6\"],\"authorityClaimIds\":[\"tac_828e2412-e1b0-43da-94e3-f289957be2fd\",\"tac_8ca93fbb-5330-49e9-998d-59ac33d9c309\",\"tac_f5c374ab-37fa-41f3-a498-3c0d5dd3a480\",\"tac_5477bbf9-fd2a-415f-b4fb-bc2afb9db6c5\",\"tac_7deb803d-0724-4070-b8c2-66699ec72149\",\"tac_d68016a2-39ce-43d5-a54e-fd279103cbd6\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E1, E9, E10 supports identify with formal_sufficient authority envelope.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_df6c2d20\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_df6c2d20\"]},{\"id\":\"obj_15eafa15-f5ab-40db-9d3d-b578fa7466c2\",\"title\":\"使用给定误差上界构建闭区间\",\"description\":\"使用题目给定或可靠校准的误差上界e与读数r，构建真实长度所在的闭区间[r-e, r+e]（两端点包括），不可仅依尺子刻度自行宣布误差，如12.4cm与0.2cm得[12.2,12.6]\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_ee24990f-9456-4e6e-86f7-f3741aad29fa\",\"ta_7757a8c3-3ed2-48e6-a6d1-4f29197639c6\"],\"authorityClaimIds\":[\"tac_0d5b62ac-25bd-4f58-82aa-3f813844fab5\",\"tac_83836414-8cd0-4950-83e6-dc9cdd771c37\",\"tac_a1b2511c-b383-4635-96d2-2bb7a7975570\",\"tac_2d2c344d-2cc6-437e-9f21-a0f413b029ee\",\"tac_3d01f6bb-45d2-4ed1-9c2a-18d76ab717ca\",\"tac_f67f66b9-ce80-460b-a469-4e53d09e4a5d\"],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation to apply the source-stated interval model; formal authority unavailable for apply, retained as high teaching priority.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_df6c2d20\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_6373ee58-7a2f-4840-b2b4-14278ae52dfe\",\"title\":\"比较允许区间判断大小关系并注意系统偏差\",\"description\":\"比较物品时比较其允许区间而非中心读数，以判断区间是否支持大小关系：若甲最大值<乙最小值则断定甲更短；若区间重叠则不能由界限保证顺序（可能短也可能长，非实际等长）；并注意固定系统偏差多次平均不一定消除\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_ee24990f-9456-4e6e-86f7-f3741aad29fa\",\"ta_7757a8c3-3ed2-48e6-a6d1-4f29197639c6\"],\"authorityClaimIds\":[\"tac_23607bf3-e514-4b14-8727-f1e1551b726a\",\"tac_66ed6942-c7b4-421f-a89d-2f8dcad88ee4\",\"tac_e91e6a19-56fa-476f-ba17-51ededa23a33\",\"tac_51207bb3-2dcd-4f83-b875-4f29f68b04cf\",\"tac_c5856e73-3de6-4859-8608-59ad6b639a48\",\"tac_ee64ef5c-75af-4a09-8789-caeda7030e8c\"],\"priority\":\"high\",\"priorityRationale\":\"Core applied comparison skill taught by material; no formal apply evidence, maintain high teaching priority.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_df6c2d20\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_7f3ec958-b25e-43e7-97e2-d5ffabdd31ea\",\"title\":\"规范记录测量结果并处理信息缺失\",\"description\":\"规范记录测量结果：将读数、单位、误差上界与使用条件一并写出；识别写成更多小数零不增加证据；信息缺失时具体说明缺何项（误差上界、共同起点或单位）并先列已知区间\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"Source-anchored procedural recording and missing-info handling; apply construct lacks formal envelope, kept as high.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]}]",
+                "valueHash": "38ce1d72f281d757ea59e99df0a2fd92514962136362659170efc0afd2f6fb0e"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ],
+        "keys": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 2,
+            "reason": "声明采样范围的目标 e5,e6,e7 均在 artifact objectives(e19) 中被明确定义为 obj_a322、obj_15eafa15、obj_6373ee58，其描述与源 e3 的教学内容一致（分辨率≠准确、闭区间构建、区间比较与系统偏差），标题 e17 也概括对应主题；无目标消失、扭曲或无声削弱，pass_oriented 深度下提供了忠实可用的覆盖。",
+            "refs": [
+              "e19",
+              "e5",
+              "e6",
+              "e7",
+              "e17"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e19",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "[{\"id\":\"obj_a322211e-362a-4c2b-adc1-b3c35c861098\",\"title\":\"区分读数分辨率与真实准确程度并识别小数位误区\",\"description\":\"区分读数分辨率（最小刻度/小数位）与真实准确程度，识别“显示小数位多≠结果更准确”的误区，并知晓尺子校准、起点对齐、观察角度等影响真实误差\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_ee24990f-9456-4e6e-86f7-f3741aad29fa\",\"ta_7757a8c3-3ed2-48e6-a6d1-4f29197639c6\"],\"authorityClaimIds\":[\"tac_828e2412-e1b0-43da-94e3-f289957be2fd\",\"tac_8ca93fbb-5330-49e9-998d-59ac33d9c309\",\"tac_f5c374ab-37fa-41f3-a498-3c0d5dd3a480\",\"tac_5477bbf9-fd2a-415f-b4fb-bc2afb9db6c5\",\"tac_7deb803d-0724-4070-b8c2-66699ec72149\",\"tac_d68016a2-39ce-43d5-a54e-fd279103cbd6\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E1, E9, E10 supports identify with formal_sufficient authority envelope.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_df6c2d20\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_df6c2d20\"]},{\"id\":\"obj_15eafa15-f5ab-40db-9d3d-b578fa7466c2\",\"title\":\"使用给定误差上界构建闭区间\",\"description\":\"使用题目给定或可靠校准的误差上界e与读数r，构建真实长度所在的闭区间[r-e, r+e]（两端点包括），不可仅依尺子刻度自行宣布误差，如12.4cm与0.2cm得[12.2,12.6]\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_ee24990f-9456-4e6e-86f7-f3741aad29fa\",\"ta_7757a8c3-3ed2-48e6-a6d1-4f29197639c6\"],\"authorityClaimIds\":[\"tac_0d5b62ac-25bd-4f58-82aa-3f813844fab5\",\"tac_83836414-8cd0-4950-83e6-dc9cdd771c37\",\"tac_a1b2511c-b383-4635-96d2-2bb7a7975570\",\"tac_2d2c344d-2cc6-437e-9f21-a0f413b029ee\",\"tac_3d01f6bb-45d2-4ed1-9c2a-18d76ab717ca\",\"tac_f67f66b9-ce80-460b-a469-4e53d09e4a5d\"],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation to apply the source-stated interval model; formal authority unavailable for apply, retained as high teaching priority.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_df6c2d20\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_6373ee58-7a2f-4840-b2b4-14278ae52dfe\",\"title\":\"比较允许区间判断大小关系并注意系统偏差\",\"description\":\"比较物品时比较其允许区间而非中心读数，以判断区间是否支持大小关系：若甲最大值<乙最小值则断定甲更短；若区间重叠则不能由界限保证顺序（可能短也可能长，非实际等长）；并注意固定系统偏差多次平均不一定消除\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_ee24990f-9456-4e6e-86f7-f3741aad29fa\",\"ta_7757a8c3-3ed2-48e6-a6d1-4f29197639c6\"],\"authorityClaimIds\":[\"tac_23607bf3-e514-4b14-8727-f1e1551b726a\",\"tac_66ed6942-c7b4-421f-a89d-2f8dcad88ee4\",\"tac_e91e6a19-56fa-476f-ba17-51ededa23a33\",\"tac_51207bb3-2dcd-4f83-b875-4f29f68b04cf\",\"tac_c5856e73-3de6-4859-8608-59ad6b639a48\",\"tac_ee64ef5c-75af-4a09-8789-caeda7030e8c\"],\"priority\":\"high\",\"priorityRationale\":\"Core applied comparison skill taught by material; no formal apply evidence, maintain high teaching priority.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_df6c2d20\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_7f3ec958-b25e-43e7-97e2-d5ffabdd31ea\",\"title\":\"规范记录测量结果并处理信息缺失\",\"description\":\"规范记录测量结果：将读数、单位、误差上界与使用条件一并写出；识别写成更多小数零不增加证据；信息缺失时具体说明缺何项（误差上界、共同起点或单位）并先列已知区间\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"Source-anchored procedural recording and missing-info handling; apply construct lacks formal envelope, kept as high.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]}]",
+                "valueHash": "38ce1d72f281d757ea59e99df0a2fd92514962136362659170efc0afd2f6fb0e"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "区分读数分辨率与真实准确程度",
+                "valueHash": "974f091625a397eadb261006f5285e9c63c7ca6b839e6bdbb8c41f4bfff75e27"
+              },
+              {
+                "id": "e6",
+                "pointer": "/goals/1",
+                "role": "goal",
+                "kind": "text",
+                "value": "使用给定误差界限形成区间",
+                "valueHash": "b948cbdb264205a71c39bbf43fca64b81f119fd6bce83afbff737e5a078063b3"
+              },
+              {
+                "id": "e7",
+                "pointer": "/goals/2",
+                "role": "goal",
+                "kind": "text",
+                "value": "判断多个测量区间是否支持大小关系",
+                "valueHash": "a63a83b2364923d8e078ddf815b65a88e03ab9e5b2b372710e75e020c2056d1a"
+              },
+              {
+                "id": "e17",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "测量误区识别、误差区间构建、规范记录与区间比较",
+                "valueHash": "96c76ce9fe2b30207b8462f22ec89f63a08df313ab52eb3db75377ebb2d3dcc5"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q2",
+            "status": "supported",
+            "reason": "Q2=2 结论称 artifacts 目标(e19)与标题(e17)忠实覆盖声明目标 e5,e6,e7，findings 中 audit 与 correctness 均确认 obj 描述与源 e3 条件/量词/实例一致、无反例异议，issues 空，支持字段未被质疑，完整认证成立。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e19",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "[{\"id\":\"obj_a322211e-362a-4c2b-adc1-b3c35c861098\",\"title\":\"区分读数分辨率与真实准确程度并识别小数位误区\",\"description\":\"区分读数分辨率（最小刻度/小数位）与真实准确程度，识别“显示小数位多≠结果更准确”的误区，并知晓尺子校准、起点对齐、观察角度等影响真实误差\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_ee24990f-9456-4e6e-86f7-f3741aad29fa\",\"ta_7757a8c3-3ed2-48e6-a6d1-4f29197639c6\"],\"authorityClaimIds\":[\"tac_828e2412-e1b0-43da-94e3-f289957be2fd\",\"tac_8ca93fbb-5330-49e9-998d-59ac33d9c309\",\"tac_f5c374ab-37fa-41f3-a498-3c0d5dd3a480\",\"tac_5477bbf9-fd2a-415f-b4fb-bc2afb9db6c5\",\"tac_7deb803d-0724-4070-b8c2-66699ec72149\",\"tac_d68016a2-39ce-43d5-a54e-fd279103cbd6\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E1, E9, E10 supports identify with formal_sufficient authority envelope.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_df6c2d20\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_df6c2d20\"]},{\"id\":\"obj_15eafa15-f5ab-40db-9d3d-b578fa7466c2\",\"title\":\"使用给定误差上界构建闭区间\",\"description\":\"使用题目给定或可靠校准的误差上界e与读数r，构建真实长度所在的闭区间[r-e, r+e]（两端点包括），不可仅依尺子刻度自行宣布误差，如12.4cm与0.2cm得[12.2,12.6]\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_ee24990f-9456-4e6e-86f7-f3741aad29fa\",\"ta_7757a8c3-3ed2-48e6-a6d1-4f29197639c6\"],\"authorityClaimIds\":[\"tac_0d5b62ac-25bd-4f58-82aa-3f813844fab5\",\"tac_83836414-8cd0-4950-83e6-dc9cdd771c37\",\"tac_a1b2511c-b383-4635-96d2-2bb7a7975570\",\"tac_2d2c344d-2cc6-437e-9f21-a0f413b029ee\",\"tac_3d01f6bb-45d2-4ed1-9c2a-18d76ab717ca\",\"tac_f67f66b9-ce80-460b-a469-4e53d09e4a5d\"],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation to apply the source-stated interval model; formal authority unavailable for apply, retained as high teaching priority.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_df6c2d20\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_6373ee58-7a2f-4840-b2b4-14278ae52dfe\",\"title\":\"比较允许区间判断大小关系并注意系统偏差\",\"description\":\"比较物品时比较其允许区间而非中心读数，以判断区间是否支持大小关系：若甲最大值<乙最小值则断定甲更短；若区间重叠则不能由界限保证顺序（可能短也可能长，非实际等长）；并注意固定系统偏差多次平均不一定消除\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_ee24990f-9456-4e6e-86f7-f3741aad29fa\",\"ta_7757a8c3-3ed2-48e6-a6d1-4f29197639c6\"],\"authorityClaimIds\":[\"tac_23607bf3-e514-4b14-8727-f1e1551b726a\",\"tac_66ed6942-c7b4-421f-a89d-2f8dcad88ee4\",\"tac_e91e6a19-56fa-476f-ba17-51ededa23a33\",\"tac_51207bb3-2dcd-4f83-b875-4f29f68b04cf\",\"tac_c5856e73-3de6-4859-8608-59ad6b639a48\",\"tac_ee64ef5c-75af-4a09-8789-caeda7030e8c\"],\"priority\":\"high\",\"priorityRationale\":\"Core applied comparison skill taught by material; no formal apply evidence, maintain high teaching priority.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_df6c2d20\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_7f3ec958-b25e-43e7-97e2-d5ffabdd31ea\",\"title\":\"规范记录测量结果并处理信息缺失\",\"description\":\"规范记录测量结果：将读数、单位、误差上界与使用条件一并写出；识别写成更多小数零不增加证据；信息缺失时具体说明缺何项（误差上界、共同起点或单位）并先列已知区间\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"Source-anchored procedural recording and missing-info handling; apply construct lacks formal envelope, kept as high.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]}]",
+                "valueHash": "38ce1d72f281d757ea59e99df0a2fd92514962136362659170efc0afd2f6fb0e"
+              },
+              {
+                "id": "e17",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "测量误区识别、误差区间构建、规范记录与区间比较",
+                "valueHash": "96c76ce9fe2b30207b8462f22ec89f63a08df313ab52eb3db75377ebb2d3dcc5"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "测量结果是带有方法和限制的信息。尺子上最小刻度为一毫米，意味着使用者能够按这种刻度记录长度，但这不保证每次读数与真实长度的差都小于一毫米。尺子本身是否校准、起点是否对齐、观察角度是否合适，都会影响结果。因此“显示的小数位多”与“结果一定更准确”不是同一件事。\n为了练习推理，本单元采用一个明确的简化模型：某次测量的读数为r厘米，且已知真实长度与读数的差的绝对值不超过e厘米，则真实长度在r减e到r加e的闭区间内，两个端点都包括。这里的误差上界必须来自题目给定或可靠校准，不能只凭尺子刻度自行宣布。假设读数为十二点四厘米，误差上界为零点二厘米，那么真实长度可能在十二点二至十二点六厘米之间。\n比较两件物品时，应比较它们允许的区间，而不是只看中心读数。若甲在十二点二至十二点六厘米，乙在十二点八至十三点二厘米，甲的最大值仍小于乙的最小值，因此可断定甲更短。若乙的区间改为十二点五至十二点九厘米，两个区间重叠，就不能由这些界限保证甲更短。甲可能比乙短，也可能略长；这不是说两件物品实际等长，而是证据不足以确定顺序。\n重复测量也需要区分误差类型。如果每次起点都固定偏移零点三厘米，多测几次再取平均不一定消除这个共同偏差。多次独立的小幅随机波动与每次同向的系统偏差不同。没有额外模型时，不能把“测了十次”直接翻译成“准确程度提高十倍”。本单元只使用给定的区间界限，不要求统计学公式。\n记录结果时，可以把读数、单位、误差上界和使用条件写在一起，例如“在此校准条件下，读数为十二点四厘米，误差不超过零点二厘米”。这样下一位读者知道能推出什么，也知道不能推出什么。把数值写成十二点四零零零厘米不会凭空增加新证据。\n遇到信息缺失的题，应具体说明缺了什么：是误差上界、共同起点还是单位？能算的部分仍可先算，例如把已知区间列出来，再说明另一个区间无法建立。一个好的测量解释既提供可执行的计算，也尊重给定方法的可信范围。",
+                "valueHash": "04ede0e2b943c283408af13f15e429c4d3f550318ac34096022b20c8a80a02fc"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "区分读数分辨率与真实准确程度",
+                "valueHash": "974f091625a397eadb261006f5285e9c63c7ca6b839e6bdbb8c41f4bfff75e27"
+              },
+              {
+                "id": "e6",
+                "pointer": "/goals/1",
+                "role": "goal",
+                "kind": "text",
+                "value": "使用给定误差界限形成区间",
+                "valueHash": "b948cbdb264205a71c39bbf43fca64b81f119fd6bce83afbff737e5a078063b3"
+              },
+              {
+                "id": "e7",
+                "pointer": "/goals/2",
+                "role": "goal",
+                "kind": "text",
+                "value": "判断多个测量区间是否支持大小关系",
+                "valueHash": "a63a83b2364923d8e078ddf815b65a88e03ab9e5b2b372710e75e020c2056d1a"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q2",
+          "level": 2,
+          "reason": "声明采样范围的目标 e5,e6,e7 均在 artifact objectives(e19) 中被明确定义为 obj_a322、obj_15eafa15、obj_6373ee58，其描述与源 e3 的教学内容一致（分辨率≠准确、闭区间构建、区间比较与系统偏差），标题 e17 也概括对应主题；无目标消失、扭曲或无声削弱，pass_oriented 深度下提供了忠实可用的覆盖。",
+          "refs": [
+            "e19",
+            "e5",
+            "e6",
+            "e7",
+            "e17"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e19",
+              "pointer": "/artifacts/1/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "[{\"id\":\"obj_a322211e-362a-4c2b-adc1-b3c35c861098\",\"title\":\"区分读数分辨率与真实准确程度并识别小数位误区\",\"description\":\"区分读数分辨率（最小刻度/小数位）与真实准确程度，识别“显示小数位多≠结果更准确”的误区，并知晓尺子校准、起点对齐、观察角度等影响真实误差\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_ee24990f-9456-4e6e-86f7-f3741aad29fa\",\"ta_7757a8c3-3ed2-48e6-a6d1-4f29197639c6\"],\"authorityClaimIds\":[\"tac_828e2412-e1b0-43da-94e3-f289957be2fd\",\"tac_8ca93fbb-5330-49e9-998d-59ac33d9c309\",\"tac_f5c374ab-37fa-41f3-a498-3c0d5dd3a480\",\"tac_5477bbf9-fd2a-415f-b4fb-bc2afb9db6c5\",\"tac_7deb803d-0724-4070-b8c2-66699ec72149\",\"tac_d68016a2-39ce-43d5-a54e-fd279103cbd6\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E1, E9, E10 supports identify with formal_sufficient authority envelope.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_df6c2d20\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_df6c2d20\"]},{\"id\":\"obj_15eafa15-f5ab-40db-9d3d-b578fa7466c2\",\"title\":\"使用给定误差上界构建闭区间\",\"description\":\"使用题目给定或可靠校准的误差上界e与读数r，构建真实长度所在的闭区间[r-e, r+e]（两端点包括），不可仅依尺子刻度自行宣布误差，如12.4cm与0.2cm得[12.2,12.6]\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_ee24990f-9456-4e6e-86f7-f3741aad29fa\",\"ta_7757a8c3-3ed2-48e6-a6d1-4f29197639c6\"],\"authorityClaimIds\":[\"tac_0d5b62ac-25bd-4f58-82aa-3f813844fab5\",\"tac_83836414-8cd0-4950-83e6-dc9cdd771c37\",\"tac_a1b2511c-b383-4635-96d2-2bb7a7975570\",\"tac_2d2c344d-2cc6-437e-9f21-a0f413b029ee\",\"tac_3d01f6bb-45d2-4ed1-9c2a-18d76ab717ca\",\"tac_f67f66b9-ce80-460b-a469-4e53d09e4a5d\"],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation to apply the source-stated interval model; formal authority unavailable for apply, retained as high teaching priority.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_df6c2d20\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_6373ee58-7a2f-4840-b2b4-14278ae52dfe\",\"title\":\"比较允许区间判断大小关系并注意系统偏差\",\"description\":\"比较物品时比较其允许区间而非中心读数，以判断区间是否支持大小关系：若甲最大值<乙最小值则断定甲更短；若区间重叠则不能由界限保证顺序（可能短也可能长，非实际等长）；并注意固定系统偏差多次平均不一定消除\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_ee24990f-9456-4e6e-86f7-f3741aad29fa\",\"ta_7757a8c3-3ed2-48e6-a6d1-4f29197639c6\"],\"authorityClaimIds\":[\"tac_23607bf3-e514-4b14-8727-f1e1551b726a\",\"tac_66ed6942-c7b4-421f-a89d-2f8dcad88ee4\",\"tac_e91e6a19-56fa-476f-ba17-51ededa23a33\",\"tac_51207bb3-2dcd-4f83-b875-4f29f68b04cf\",\"tac_c5856e73-3de6-4859-8608-59ad6b639a48\",\"tac_ee64ef5c-75af-4a09-8789-caeda7030e8c\"],\"priority\":\"high\",\"priorityRationale\":\"Core applied comparison skill taught by material; no formal apply evidence, maintain high teaching priority.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_df6c2d20\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_7f3ec958-b25e-43e7-97e2-d5ffabdd31ea\",\"title\":\"规范记录测量结果并处理信息缺失\",\"description\":\"规范记录测量结果：将读数、单位、误差上界与使用条件一并写出；识别写成更多小数零不增加证据；信息缺失时具体说明缺何项（误差上界、共同起点或单位）并先列已知区间\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"Source-anchored procedural recording and missing-info handling; apply construct lacks formal envelope, kept as high.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]}]",
+              "valueHash": "38ce1d72f281d757ea59e99df0a2fd92514962136362659170efc0afd2f6fb0e"
+            },
+            {
+              "id": "e5",
+              "pointer": "/goals/0",
+              "role": "goal",
+              "kind": "text",
+              "value": "区分读数分辨率与真实准确程度",
+              "valueHash": "974f091625a397eadb261006f5285e9c63c7ca6b839e6bdbb8c41f4bfff75e27"
+            },
+            {
+              "id": "e6",
+              "pointer": "/goals/1",
+              "role": "goal",
+              "kind": "text",
+              "value": "使用给定误差界限形成区间",
+              "valueHash": "b948cbdb264205a71c39bbf43fca64b81f119fd6bce83afbff737e5a078063b3"
+            },
+            {
+              "id": "e7",
+              "pointer": "/goals/2",
+              "role": "goal",
+              "kind": "text",
+              "value": "判断多个测量区间是否支持大小关系",
+              "valueHash": "a63a83b2364923d8e078ddf815b65a88e03ab9e5b2b372710e75e020c2056d1a"
+            },
+            {
+              "id": "e17",
+              "pointer": "/artifacts/0/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "测量误区识别、误差区间构建、规范记录与区间比较",
+              "valueHash": "96c76ce9fe2b30207b8462f22ec89f63a08df313ab52eb3db75377ebb2d3dcc5"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [],
+          "proposedLevel": 2,
+          "proposedReason": "声明采样范围的目标 e5,e6,e7 均在 artifact objectives(e19) 中被明确定义为 obj_a322、obj_15eafa15、obj_6373ee58，其描述与源 e3 的教学内容一致（分辨率≠准确、闭区间构建、区间比较与系统偏差），标题 e17 也概括对应主题；无目标消失、扭曲或无声削弱，pass_oriented 深度下提供了忠实可用的覆盖。"
+        }
+      ],
+      "reviewRequired": [],
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q2",
+            "status": "supported",
+            "reason": "Q2=2 结论称 artifacts 目标(e19)与标题(e17)忠实覆盖声明目标 e5,e6,e7，findings 中 audit 与 correctness 均确认 obj 描述与源 e3 条件/量词/实例一致、无反例异议，issues 空，支持字段未被质疑，完整认证成立。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e19",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "[{\"id\":\"obj_a322211e-362a-4c2b-adc1-b3c35c861098\",\"title\":\"区分读数分辨率与真实准确程度并识别小数位误区\",\"description\":\"区分读数分辨率（最小刻度/小数位）与真实准确程度，识别“显示小数位多≠结果更准确”的误区，并知晓尺子校准、起点对齐、观察角度等影响真实误差\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_ee24990f-9456-4e6e-86f7-f3741aad29fa\",\"ta_7757a8c3-3ed2-48e6-a6d1-4f29197639c6\"],\"authorityClaimIds\":[\"tac_828e2412-e1b0-43da-94e3-f289957be2fd\",\"tac_8ca93fbb-5330-49e9-998d-59ac33d9c309\",\"tac_f5c374ab-37fa-41f3-a498-3c0d5dd3a480\",\"tac_5477bbf9-fd2a-415f-b4fb-bc2afb9db6c5\",\"tac_7deb803d-0724-4070-b8c2-66699ec72149\",\"tac_d68016a2-39ce-43d5-a54e-fd279103cbd6\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E1, E9, E10 supports identify with formal_sufficient authority envelope.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_df6c2d20\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_df6c2d20\"]},{\"id\":\"obj_15eafa15-f5ab-40db-9d3d-b578fa7466c2\",\"title\":\"使用给定误差上界构建闭区间\",\"description\":\"使用题目给定或可靠校准的误差上界e与读数r，构建真实长度所在的闭区间[r-e, r+e]（两端点包括），不可仅依尺子刻度自行宣布误差，如12.4cm与0.2cm得[12.2,12.6]\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_ee24990f-9456-4e6e-86f7-f3741aad29fa\",\"ta_7757a8c3-3ed2-48e6-a6d1-4f29197639c6\"],\"authorityClaimIds\":[\"tac_0d5b62ac-25bd-4f58-82aa-3f813844fab5\",\"tac_83836414-8cd0-4950-83e6-dc9cdd771c37\",\"tac_a1b2511c-b383-4635-96d2-2bb7a7975570\",\"tac_2d2c344d-2cc6-437e-9f21-a0f413b029ee\",\"tac_3d01f6bb-45d2-4ed1-9c2a-18d76ab717ca\",\"tac_f67f66b9-ce80-460b-a469-4e53d09e4a5d\"],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation to apply the source-stated interval model; formal authority unavailable for apply, retained as high teaching priority.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_df6c2d20\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_6373ee58-7a2f-4840-b2b4-14278ae52dfe\",\"title\":\"比较允许区间判断大小关系并注意系统偏差\",\"description\":\"比较物品时比较其允许区间而非中心读数，以判断区间是否支持大小关系：若甲最大值<乙最小值则断定甲更短；若区间重叠则不能由界限保证顺序（可能短也可能长，非实际等长）；并注意固定系统偏差多次平均不一定消除\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_ee24990f-9456-4e6e-86f7-f3741aad29fa\",\"ta_7757a8c3-3ed2-48e6-a6d1-4f29197639c6\"],\"authorityClaimIds\":[\"tac_23607bf3-e514-4b14-8727-f1e1551b726a\",\"tac_66ed6942-c7b4-421f-a89d-2f8dcad88ee4\",\"tac_e91e6a19-56fa-476f-ba17-51ededa23a33\",\"tac_51207bb3-2dcd-4f83-b875-4f29f68b04cf\",\"tac_c5856e73-3de6-4859-8608-59ad6b639a48\",\"tac_ee64ef5c-75af-4a09-8789-caeda7030e8c\"],\"priority\":\"high\",\"priorityRationale\":\"Core applied comparison skill taught by material; no formal apply evidence, maintain high teaching priority.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_df6c2d20\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_7f3ec958-b25e-43e7-97e2-d5ffabdd31ea\",\"title\":\"规范记录测量结果并处理信息缺失\",\"description\":\"规范记录测量结果：将读数、单位、误差上界与使用条件一并写出；识别写成更多小数零不增加证据；信息缺失时具体说明缺何项（误差上界、共同起点或单位）并先列已知区间\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"Source-anchored procedural recording and missing-info handling; apply construct lacks formal envelope, kept as high.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]}]",
+                "valueHash": "38ce1d72f281d757ea59e99df0a2fd92514962136362659170efc0afd2f6fb0e"
+              },
+              {
+                "id": "e17",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "测量误区识别、误差区间构建、规范记录与区间比较",
+                "valueHash": "96c76ce9fe2b30207b8462f22ec89f63a08df313ab52eb3db75377ebb2d3dcc5"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "测量结果是带有方法和限制的信息。尺子上最小刻度为一毫米，意味着使用者能够按这种刻度记录长度，但这不保证每次读数与真实长度的差都小于一毫米。尺子本身是否校准、起点是否对齐、观察角度是否合适，都会影响结果。因此“显示的小数位多”与“结果一定更准确”不是同一件事。\n为了练习推理，本单元采用一个明确的简化模型：某次测量的读数为r厘米，且已知真实长度与读数的差的绝对值不超过e厘米，则真实长度在r减e到r加e的闭区间内，两个端点都包括。这里的误差上界必须来自题目给定或可靠校准，不能只凭尺子刻度自行宣布。假设读数为十二点四厘米，误差上界为零点二厘米，那么真实长度可能在十二点二至十二点六厘米之间。\n比较两件物品时，应比较它们允许的区间，而不是只看中心读数。若甲在十二点二至十二点六厘米，乙在十二点八至十三点二厘米，甲的最大值仍小于乙的最小值，因此可断定甲更短。若乙的区间改为十二点五至十二点九厘米，两个区间重叠，就不能由这些界限保证甲更短。甲可能比乙短，也可能略长；这不是说两件物品实际等长，而是证据不足以确定顺序。\n重复测量也需要区分误差类型。如果每次起点都固定偏移零点三厘米，多测几次再取平均不一定消除这个共同偏差。多次独立的小幅随机波动与每次同向的系统偏差不同。没有额外模型时，不能把“测了十次”直接翻译成“准确程度提高十倍”。本单元只使用给定的区间界限，不要求统计学公式。\n记录结果时，可以把读数、单位、误差上界和使用条件写在一起，例如“在此校准条件下，读数为十二点四厘米，误差不超过零点二厘米”。这样下一位读者知道能推出什么，也知道不能推出什么。把数值写成十二点四零零零厘米不会凭空增加新证据。\n遇到信息缺失的题，应具体说明缺了什么：是误差上界、共同起点还是单位？能算的部分仍可先算，例如把已知区间列出来，再说明另一个区间无法建立。一个好的测量解释既提供可执行的计算，也尊重给定方法的可信范围。",
+                "valueHash": "04ede0e2b943c283408af13f15e429c4d3f550318ac34096022b20c8a80a02fc"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "区分读数分辨率与真实准确程度",
+                "valueHash": "974f091625a397eadb261006f5285e9c63c7ca6b839e6bdbb8c41f4bfff75e27"
+              },
+              {
+                "id": "e6",
+                "pointer": "/goals/1",
+                "role": "goal",
+                "kind": "text",
+                "value": "使用给定误差界限形成区间",
+                "valueHash": "b948cbdb264205a71c39bbf43fca64b81f119fd6bce83afbff737e5a078063b3"
+              },
+              {
+                "id": "e7",
+                "pointer": "/goals/2",
+                "role": "goal",
+                "kind": "text",
+                "value": "判断多个测量区间是否支持大小关系",
+                "valueHash": "a63a83b2364923d8e078ddf815b65a88e03ab9e5b2b372710e75e020c2056d1a"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "resultHash": "565922879d45824fcde83d6171d345ce8ebb8b042ea7aa48969892cae331df20"
+  }
+}

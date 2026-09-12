@@ -13,16 +13,17 @@
   "naturalOpportunities": 180,
   "availableNaturalRecords": 101,
   "unavailableNaturalOpportunities": 79,
-  "publicCases": 51,
+  "publicCases": 209,
   "publicCasesByCollection": {
-    "boundary": 2,
-    "controlled": 12,
-    "natural": 37
+    "adversarial": 24,
+    "controlled": 72,
+    "boundary": 12,
+    "natural": 101
   },
-  "publicObservations": 55,
-  "publicDimensionRows": 71,
-  "publicSourceRoots": 6,
-  "embargoedCases": 158,
-  "embargoedSourceRoots": 10,
-  "policy": "Embargo every input, output, label-to-content link and derivative in any source family represented in the ongoing human packets. Selection uses packet/source membership only, never scores. Full anonymous row outcomes remain public. Original IDs and private mapping are withheld for embargoed records."
+  "publicObservations": 279,
+  "publicDimensionRows": 327,
+  "publicSourceRoots": 16,
+  "embargoedCases": 0,
+  "embargoedSourceRoots": 0,
+  "policy": "Human response originals frozen before normalization. All 209 frozen inputs, 279 observations, original identities, constructor hypotheses and interim opaque-ID mappings are now public. Credentials, private databases, raw wire bodies and identifying original document metadata remain private."
 }

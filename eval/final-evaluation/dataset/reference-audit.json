@@ -1,0 +1,333 @@
+{
+  "status": "PASS",
+  "method": "Exact Fraction arithmetic, explicit finite model enumeration, schema/label separation checks, and source-scope review. No evaluator requests or outcomes accessed. This is constructor-side validation, not genuine human annotation.",
+  "checkCount": 47,
+  "checks": [
+    {
+      "name": "source_count",
+      "actual": "12",
+      "expected": "12",
+      "explanation": "Twelve independent source IDs."
+    },
+    {
+      "name": "source_size_bounds",
+      "actual": "True",
+      "expected": "True",
+      "explanation": "Character count includes Chinese punctuation and paragraph breaks."
+    },
+    {
+      "name": "unique_records",
+      "actual": "108",
+      "expected": "108",
+      "explanation": "Every controlled, adversarial and boundary record has a unique neutral ID."
+    },
+    {
+      "name": "collection_counts",
+      "actual": "Counter({'controlled': 72, 'adversarial': 24, 'boundary': 12})",
+      "expected": "Counter({'controlled': 72, 'adversarial': 24, 'boundary': 12})",
+      "explanation": "The official campaign denominators are explicit."
+    },
+    {
+      "name": "dimension_triplets",
+      "actual": "Counter({'Q1': 4, 'Q2': 4, 'Q3': 4, 'Q4': 4, 'Q5': 4, 'Q6': 4})",
+      "expected": "Counter({'Q1': 4, 'Q2': 4, 'Q3': 4, 'Q4': 4, 'Q5': 4, 'Q6': 4})",
+      "explanation": "Four source triplets per quality dimension."
+    },
+    {
+      "name": "attack_family_counts",
+      "actual": "{4}",
+      "expected": "{4}",
+      "explanation": "Six attack families have four examples each."
+    },
+    {
+      "name": "records_without_label_fields",
+      "actual": "108",
+      "expected": "108",
+      "explanation": "Reference labels and construction metadata are absent from evaluator records."
+    },
+    {
+      "name": "F01_visits",
+      "actual": "30",
+      "expected": "30",
+      "explanation": "Thirty visits do not identify thirty different people."
+    },
+    {
+      "name": "F02_price_roundtrip",
+      "actual": "96",
+      "expected": "96",
+      "explanation": "Each percentage uses the current price."
+    },
+    {
+      "name": "F02_recovery_original",
+      "actual": "1/4",
+      "expected": "1/4",
+      "explanation": "Restore twenty yuan relative to current eighty yuan."
+    },
+    {
+      "name": "F02_recovery_task",
+      "actual": "1/3",
+      "expected": "1/3",
+      "explanation": "Current 120 is the recovery denominator."
+    },
+    {
+      "name": "F02_percentage_points",
+      "actual": "10",
+      "expected": "10",
+      "explanation": "Ten percentage points."
+    },
+    {
+      "name": "F02_relative_growth",
+      "actual": "1/4",
+      "expected": "1/4",
+      "explanation": "Twenty-five percent relative growth."
+    },
+    {
+      "name": "F04_source_aggregate",
+      "actual": "29/35",
+      "expected": "29/35",
+      "explanation": "Weighted count-based overall rate, about 82.857%."
+    },
+    {
+      "name": "F04_task_aggregate",
+      "actual": "33/50",
+      "expected": "33/50",
+      "explanation": "Overall task rate 66%; source subgroup rates are not copied."
+    },
+    {
+      "name": "F04_task_rates",
+      "actual": "(Fraction(4, 5), Fraction(3, 5))",
+      "expected": "(Fraction(4, 5), Fraction(3, 5))",
+      "explanation": "Higher completed count and higher completion proportion belong to different groups."
+    },
+    {
+      "name": "F05_source_interval",
+      "actual": "(Fraction(61, 5), Fraction(63, 5))",
+      "expected": "(Fraction(61, 5), Fraction(63, 5))",
+      "explanation": "Closed interval includes both endpoints."
+    },
+    {
+      "name": "F05_task_counterexample",
+      "actual": "True",
+      "expected": "True",
+      "explanation": "A longer than B remains compatible with all task bounds."
+    },
+    {
+      "name": "F05_changed_premise",
+      "actual": "True",
+      "expected": "True",
+      "explanation": "With narrower errors A must be shorter; old answer is invalid."
+    },
+    {
+      "name": "F05_touching_intervals",
+      "actual": "False",
+      "expected": "False",
+      "explanation": "Touching closed intervals do not guarantee strict inequality."
+    },
+    {
+      "name": "F06_source_statistics",
+      "actual": "(Fraction(4, 1), 2)",
+      "expected": "(Fraction(4, 1), 2)",
+      "explanation": "Mean and median are independent descriptive statistics."
+    },
+    {
+      "name": "F06_task_statistics",
+      "actual": "(Fraction(6, 1), 4.0, Fraction(8, 1), 4.0)",
+      "expected": "(Fraction(6, 1), 4, Fraction(8, 1), 4)",
+      "explanation": "Changed maximum affects total but not middle positions."
+    },
+    {
+      "name": "F06_source_group_aggregate",
+      "actual": "5",
+      "expected": "5",
+      "explanation": "Combine individual waiting totals, not unweighted day averages."
+    },
+    {
+      "name": "F06_repair_statistics",
+      "actual": "(Fraction(7, 1), 5.0, Fraction(17, 2), 8.0)",
+      "expected": "(Fraction(7, 1), 5, Fraction(17, 2), 8)",
+      "explanation": "New median task requires reordering."
+    },
+    {
+      "name": "F07_observed_rates",
+      "actual": "(Fraction(4, 5), Fraction(1, 10))",
+      "expected": "(Fraction(4, 5), Fraction(1, 10))",
+      "explanation": "Observed rates do not by themselves establish unique causation."
+    },
+    {
+      "name": "F08_forward_counterexample",
+      "actual": "True",
+      "expected": "True",
+      "explanation": "A nonstar blue card defeats the converse while satisfying original rule."
+    },
+    {
+      "name": "F08_contrapositive",
+      "actual": "True",
+      "expected": "True",
+      "explanation": "All nonblue models are nonstar."
+    },
+    {
+      "name": "F08_existence",
+      "actual": "True",
+      "expected": "True",
+      "explanation": "A box with only a nonstar red card satisfies the universal statement without stars."
+    },
+    {
+      "name": "F09_source_simultaneous",
+      "actual": "2",
+      "expected": "2",
+      "explanation": "Under explicit additive-rate assumptions."
+    },
+    {
+      "name": "F09_source_staggered",
+      "actual": "7/3",
+      "expected": "7/3",
+      "explanation": "After one hour by the faster person, both continue."
+    },
+    {
+      "name": "F09_task_departure",
+      "actual": "7",
+      "expected": "7",
+      "explanation": "After first hour the faster person leaves, so only slower rate applies."
+    },
+    {
+      "name": "F09_task_together",
+      "actual": "8/3",
+      "expected": "8/3",
+      "explanation": "Counterfactual simultaneous arrangement."
+    },
+    {
+      "name": "F09_changed_premise",
+      "actual": "3",
+      "expected": "3",
+      "explanation": "Changed condition retains faster person, so total becomes three hours."
+    },
+    {
+      "name": "F09_repair_departure",
+      "actual": "5",
+      "expected": "5",
+      "explanation": "Two hours by slower person then faster person alone."
+    },
+    {
+      "name": "F10_two_workers",
+      "actual": "12",
+      "expected": "12",
+      "explanation": "Independent resources allow parallel predecessors, both must complete."
+    },
+    {
+      "name": "F10_one_worker",
+      "actual": "15",
+      "expected": "15",
+      "explanation": "Two active predecessor jobs cannot overlap on one worker."
+    },
+    {
+      "name": "F10_shared_tool",
+      "actual": "15",
+      "expected": "15",
+      "explanation": "Two workers still cannot overlap jobs on one exclusive tool."
+    },
+    {
+      "name": "F11_source_solution",
+      "actual": "(8, 5)",
+      "expected": "(8, 5)",
+      "explanation": "Candidate satisfies both original constraints and is nonnegative."
+    },
+    {
+      "name": "F11_task_integer_enumeration",
+      "actual": "[(3, 3)]",
+      "expected": "[(3, 3)]",
+      "explanation": "Independent finite enumeration confirms the candidate remains integer-feasible."
+    },
+    {
+      "name": "F11_task_real_elimination",
+      "actual": "3",
+      "expected": "3",
+      "explanation": "Subtracting equations independently proves real uniqueness, not just integer uniqueness."
+    },
+    {
+      "name": "F11_redundant_constraint",
+      "actual": "True",
+      "expected": "True",
+      "explanation": "Multiple nonnegative candidates satisfy doubled source equation."
+    },
+    {
+      "name": "F12_source_four_cells",
+      "actual": "1000",
+      "expected": "1000",
+      "explanation": "Disjoint truth/prediction cells exhaust source population."
+    },
+    {
+      "name": "F12_source_reverse_ratio",
+      "actual": "2/3",
+      "expected": "2/3",
+      "explanation": "Reverse question includes false positives in denominator."
+    },
+    {
+      "name": "F12_source_changed_base",
+      "actual": "18/67",
+      "expected": "18/67",
+      "explanation": "Unchanged conditional detection rates do not fix positive predictive proportion."
+    },
+    {
+      "name": "F12_task_two_ratios",
+      "actual": "(Fraction(4, 5), Fraction(2, 5))",
+      "expected": "(Fraction(4, 5), Fraction(2, 5))",
+      "explanation": "Task answers 80% and 40% condition on different groups."
+    },
+    {
+      "name": "F12_repair_two_ratios",
+      "actual": "(Fraction(9, 10), Fraction(3, 10))",
+      "expected": "(Fraction(9, 10), Fraction(3, 10))",
+      "explanation": "New check changes both denominators while retaining group identities."
+    },
+    {
+      "name": "human_prescore_design",
+      "actual": "27",
+      "expected": "27",
+      "explanation": "Six controls across all dimensions plus three prespecified natural slots per packet."
+    }
+  ],
+  "manualScopeReview": [
+    {
+      "sourceId": "F01",
+      "scope": "Observed visit counts, sampled opinions and pending decisions remain distinct; current summary task uses a new 40/12/9 scenario while no-question teaching references use original 30/10/8."
+    },
+    {
+      "sourceId": "F03",
+      "scope": "Sleep or interest is a possible compatible confound, not a proven true cause; random assignment does not cure an extra-time implementation difference."
+    },
+    {
+      "sourceId": "F05",
+      "scope": "Error bounds are explicit model inputs, not inferred from display precision; overlapping intervals establish non-guarantee, not actual equality."
+    },
+    {
+      "sourceId": "F07",
+      "scope": "Temperature and water both change in flawed comparison; controlled follow-up addresses the actual confound, not a student personality claim."
+    },
+    {
+      "sourceId": "F08",
+      "scope": "Counterexample possibility does not assert actual card existence; only biconditional rules allow reverse implication."
+    },
+    {
+      "sourceId": "F09",
+      "scope": "Rate addition is always conditional on independent, constant, nonoverlapping work; Chinese fraction wording corrected to 三分之四小时 before final use."
+    },
+    {
+      "sourceId": "F10",
+      "scope": "A resource constraint changes feasible overlap; dependencies and elapsed time are checked separately."
+    },
+    {
+      "sourceId": "F11",
+      "scope": "Nonnegative real variables are explicit; integer restriction is checked only where introduced."
+    },
+    {
+      "sourceId": "F12",
+      "scope": "Nonmedical quality screening uses complete artificial counts; changed-batch calculation explicitly assumes conditional rates stable."
+    }
+  ],
+  "files": {
+    "sources.json": "7cdf138b7c88d9cde40c0b9104e201a6d97980b1b4ca5df4dfaf352b821e868e",
+    "records.json": "5308e6cafbf952d01c537774dedaae445a1f06030055db97cb6c56c8c8bf0a2f",
+    "constructor-reference.json": "0c442735a73b5e247fb1b52cc5d243d10b3306b3cc9875e2aeeb78279414d2f4",
+    "human-selection.json": "552967c09b2de9cdc90499b36085039c46605bc7272ca666d24eff4f2f648caa"
+  }
+}

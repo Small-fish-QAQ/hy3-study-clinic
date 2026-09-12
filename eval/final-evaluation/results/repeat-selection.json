@@ -1,0 +1,51 @@
+{
+  "policyHash": "d36fb6f5b559cf529e26ce71dfd16919663bbecdb842455e42d39b8a5c99a251",
+  "repeatIds": [
+    "E047",
+    "E141",
+    "E611",
+    "E705",
+    "E178",
+    "E272",
+    "E742",
+    "E836",
+    "E309",
+    "E403",
+    "E873",
+    "E967",
+    "E440",
+    "E628",
+    "E816",
+    "E007",
+    "E195",
+    "E383",
+    "E571",
+    "E618",
+    "E665",
+    "E712",
+    "E759",
+    "E806",
+    "N-F01-tutor",
+    "N-F02-tutor",
+    "N-F03-tutor",
+    "N-F04-curriculum",
+    "N-F05-tutor",
+    "N-F07-tutor",
+    "N-F08-tutor",
+    "N-F09-tutor",
+    "N-F10-curriculum",
+    "N-F11-tutor",
+    "N-F12-tutor"
+  ],
+  "missing": [
+    {
+      "sourceId": "F06",
+      "surface": "tutor",
+      "fallbacks": [
+        "teaching",
+        "curriculum"
+      ],
+      "policy": "first available registered surface; retain missing if none"
+    }
+  ]
+}

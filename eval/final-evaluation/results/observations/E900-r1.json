@@ -1,0 +1,32 @@
+{
+  "task": {
+    "caseId": "E900",
+    "runId": "E900-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E900.json",
+    "inputHash": "12d813f686c2bfce95724c524837a898b438e72e66b8e234dd8ee6729c555a5f",
+    "population": "boundary",
+    "sourceId": "F08"
+  },
+  "inputHash": "12d813f686c2bfce95724c524837a898b438e72e66b8e234dd8ee6729c555a5f",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "solve-current": "7dab17ea18422ef387cbcda030dff6b5c27a6699d50b11c76510ac4adbfc7f53"
+    },
+    "stages": {
+      "solve-current": {
+        "status": "JUDGE_INVALID",
+        "category": "output_contract",
+        "reason": "MALFORMED_JSON"
+      }
+    },
+    "result": {
+      "status": "JUDGE_INVALID",
+      "category": "output_contract",
+      "reason": "MALFORMED_JSON"
+    },
+    "resultHash": "3a2398e5abb757205c73976d49523a027fce42527d879b1703cd00da58a1b9b2"
+  }
+}

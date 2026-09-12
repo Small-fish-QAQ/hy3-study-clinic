@@ -1,0 +1,74 @@
+{
+  "dimensions": [
+    "Q5"
+  ],
+  "evidence": {
+    "sources": [
+      {
+        "id": "F09",
+        "text": "讨论两个人合作完成一项工作时，先约定“整项工作”为一份。若小岚单独整理一批卡片需要六小时，且全过程速度恒定，那么每小时完成六分之一份；小禾单独需要三小时，每小时完成三分之一份。时间的单位是小时，速度的单位是份每小时，两者不能直接相加成同一种量。\n在以下明确假设下，两人的工作速度可以相加：卡片能够任意分开处理，两人的工作互不重复，合作不会改变各自速度，也没有额外等待或交接开销。此时合速度为六分之一加三分之一，即二分之一份每小时，整份工作需要一除以二分之一，等于两小时。直接把六小时和三小时相加得到九小时，或者取平均得到四点五小时，都没有表示合作每小时完成多少工作。\n若两人不是同时开始，应分时段计算。例如小禾先做一小时，完成三分之一份，还剩三分之二份；随后两人按前述假设共同做，速度仍为二分之一份每小时，剩余时间为三分之二除以二分之一。除以二分之一等于乘二，所以得到三分之四小时，即一又三分之一小时。加上最初一小时，总时长为二又三分之一小时。写分数时要特别检查除法的方向，不能只凭“合作更快”的趋势认可数值。\n为避免口语分数混淆，上面的核心算式可以直接写成：(2/3)÷(1/2)=4/3小时，总计1+4/3=7/3小时。完成量应再验算：第一小时完成1/3，后面4/3小时以1/2的速度完成2/3，两段合计正好一份。把结果代回原始工作量，是发现倒数错误的有效方法。\n这些公式依赖模型条件。若工作只有一台必需设备，两人无法同时操作；或两人都检查同一张卡片导致重复工作，就不能直接使用独立速度相加。题目只给单独用时而未说明合作方式时，应先指出所需假设，再给条件式结果。现实合作可能有额外收益，也可能有协调损失，单独速度不足以确定所有情况。\n回答此类问题时依次写清总工作量、各段速度、各段完成量和最终时间。不要混淆某个人工作了多久与整个任务从开始到结束经过多久。即使最后数值相同，单位与过程仍决定解释是否可靠。"
+      }
+    ],
+    "goals": [
+      "评价本题的逐项评分与实际证据后果"
+    ],
+    "prerequisites": [
+      "分数",
+      "乘除法",
+      "小时与分钟换算",
+      "Explain that total work is defined as one unit, represent personal speed as units per hour (e.g., fractions of the unit), and distinguish completion time (hours) from work speed (units/hour) as different quantities that cannot be directly added or averaged.",
+      "Apply the explicit independent additive assumption to calculate cooperative completion time: sum individual speeds to get combined speed, compute total time as workload divided by combined speed for simultaneous start; for staggered start, compute segmented completion amounts and times; follow steps of stating total workload, segment speeds, segment completed amounts, final time; verify by substituting back that total completed equals one unit."
+    ],
+    "desiredDepth": "working_fluency",
+    "authorityBoundaries": [
+      "本次评估只涉及所给来源、明确的教学范围和实际展示的产物；脚本作答用于检查工作流，不代表真实学习者。"
+    ],
+    "artifacts": [
+      {
+        "id": "product-feedback",
+        "text": "这次回答还没有回应题目要求的关键内容。"
+      }
+    ],
+    "exposure": [],
+    "question": {
+      "prompt": "小岚单独整理一批卡片需要六小时，且全过程速度恒定；小禾单独需要三小时。请将整项工作约定为一份，说明两人工作速度分别表示为什么，并解释为什么不能直接将六小时和三小时相加或平均来得到合作每小时完成的工作量。",
+      "options": []
+    },
+    "rubric": [
+      {
+        "id": "criterion_f0ecb96a-d8e8-4b59-bb47-0a7a7a7fac42",
+        "text": "若小岚单独整理一批卡片需要六小时，且全过程速度恒定，那么每小时完成六分之一份；小禾单独需要三小时，每小时完成三分之一份。",
+        "required": true
+      },
+      {
+        "id": "criterion_9fbc946b-f79c-4a28-b62e-357c5eab36ac",
+        "text": "时间的单位是小时，速度的单位是份每小时，两者不能直接相加成同一种量。",
+        "required": true
+      },
+      {
+        "id": "criterion_0a669e8c-5392-444f-a317-a57e46595063",
+        "text": "直接把六小时和三小时相加得到九小时，或者取平均得到四点五小时，都没有表示合作每小时完成多少工作。",
+        "required": true
+      }
+    ],
+    "answer": "先把整项工作看作1份。在可分工、无重复、各自恒速且无等待的条件下，甲每小时完成1/8份、乙完成1/4份，合速度3/8份每小时。剩余3/4份要用(3/4)÷(3/8)=2小时，因为时间乘速度应恢复工作量。若只有一台必需设备不能同时使用，则速度相加的前提不成立，需另问合作方式。",
+    "productJudgment": {
+      "criteria": [
+        {
+          "id": "criterion_f0ecb96a-d8e8-4b59-bb47-0a7a7a7fac42",
+          "result": "not_met"
+        },
+        {
+          "id": "criterion_9fbc946b-f79c-4a28-b62e-357c5eab36ac",
+          "result": "not_met"
+        },
+        {
+          "id": "criterion_0a669e8c-5392-444f-a317-a57e46595063",
+          "result": "not_met"
+        }
+      ],
+      "feedback": "这次回答还没有回应题目要求的关键内容。",
+      "consequence": "withheld"
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "task": {
+    "caseId": "N-F09-repair",
+    "runId": "N-F09-repair-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-F09-repair.json",
+    "inputHash": "7abb634d0bd63774fd64de57023023c5314bf4246eb32cda191f482c87991ec5",
+    "population": "natural",
+    "sourceId": "F09"
+  },
+  "inputHash": "7abb634d0bd63774fd64de57023023c5314bf4246eb32cda191f482c87991ec5",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "correctness": "7f09647fb80d91a58df4ad341bd115945dc7a3dc6b525e0a3566ab447ee4a05b"
+    },
+    "stages": {
+      "correctness": {
+        "status": "JUDGE_INVALID",
+        "category": "output_contract",
+        "reason": "TRUNCATED_OUTPUT"
+      }
+    },
+    "result": {
+      "status": "JUDGE_INVALID",
+      "category": "output_contract",
+      "reason": "TRUNCATED_OUTPUT"
+    },
+    "resultHash": "fa300d519134b1c2f1472700b5189451ecb96b7596f8f6debb399101ca99953e"
+  }
+}

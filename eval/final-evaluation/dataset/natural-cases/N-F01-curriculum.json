@@ -1,0 +1,38 @@
+{
+  "dimensions": [
+    "Q2"
+  ],
+  "evidence": {
+    "sources": [
+      {
+        "id": "F01",
+        "text": "榕树书屋每周公布一页周报，供居民了解试行安排。阅读这类材料时，先问每句话是在报告已经发生的事、提出下一步建议，还是说明目前还不知道的情况。摘要可以压缩例子和修辞，但不能删掉会改变结论的对象、时间范围与限制。“部分读者认为”不等于“全体读者同意”，“将讨论”不等于“已经决定”。写摘要的任务是忠实地缩短材料，不是替作者补完故事。\n下面是一份练习周报。书屋在两个周六试行上午提前半小时开门。第一个周六有十八人提前到馆，第二个周六有十二人提前到馆。这些数字按到馆人次记录，同一个人来两次会被记两次。工作人员在提前到馆的人中收回十份意见卡，其中八份建议继续，另两份希望先看看排班能否承受。周报没有说明未填卡者的意见，也没有统计其他时段的读者。负责人提出再试行两个周六，待核对人员安排后讨论是否长期实行；目前没有宣布永久变更。\n一份合适的摘要可以写：“书屋两个周六试行提前开门，共记录三十个提前到馆人次；十份回收意见卡中八份支持继续。负责人建议延长试行，长期安排尚待讨论。”它保留了事件、有限证据和决策状态。摘要不必复述两次分别有多少人，但不能把“三十人次”写成“三十位不同居民”，因为独立人数没有给出。也不能把意见卡结果外推成全体读者支持率。\n证据与解释还要分开。若周报另提到同一周新增了路边指示牌，这只能说明两件事同时发生；没有比较或其他依据，不能写成“指示牌使提前到馆人数增加”。若有人建议先记录每位到馆者是否重复出现，这是一项改进建议，不是现有统计已经去重的证据。引用原文时，引用片段必须真的支持所写结论；引号本身不会增加证明力。\n练习时可按三个步骤自检。第一，把想保留的句子标为事实、意见、建议或未知；第二，为关键数字写清单位和对象；第三，回到原文寻找每项结论的依据。若依据只能支持较弱说法，就收窄摘要，而不是补上猜测。不同摘要可以有不同句式与顺序，只要核心信息和限制不变，就不必追求唯一范文。面向没读过周报的居民，清楚标明“已发生”和“待决定”通常比堆叠形容词更有用。"
+      }
+    ],
+    "goals": [
+      "区分事实、建议与未确定信息",
+      "写出保留范围和限制的简短摘要",
+      "用原文支持结论，避免把相关叙述改写成因果"
+    ],
+    "prerequisites": [
+      "能阅读日常中文",
+      "理解部分与全部的区别"
+    ],
+    "desiredDepth": "working_fluency",
+    "authorityBoundaries": [
+      "本次评估只涉及所给来源、明确的教学范围和实际展示的产物；脚本作答用于检查工作流，不代表真实学习者。",
+      "Q2评价提议课程对所注册学习目标的保留和范围；不将尚未发生的教学交付或Formal准入当成已经完成。"
+    ],
+    "artifacts": [
+      {
+        "id": "cun_624727ca-c2e8-4b0a-a37f-8c4d8b871127/title",
+        "text": "识别句子事实建议未知与摘要忠实性基础"
+      },
+      {
+        "id": "cun_624727ca-c2e8-4b0a-a37f-8c4d8b871127/objectives",
+        "text": "[{\"id\":\"obj_1f08f5c4-0032-4f61-b5be-3739ed41d358\",\"title\":\"识别句子为事实、意见、建议或未知及界限\",\"description\":\"识别句子为事实、意见、建议或未知，并注意“部分读者认为”不等于“全体读者同意”、“将讨论”不等于“已经决定”的界限\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_1183928e-453d-439e-a6ea-075180c5eaa9\",\"ta_6ef9eebc-c481-4495-a031-864445849fc8\"],\"authorityClaimIds\":[\"tac_b13825be-4287-45b4-9f78-ba13bc55ddfd\",\"tac_2e8d50c2-15ee-4975-92d8-646958bfe565\"],\"priority\":\"required\",\"priorityRationale\":\"证据E1自身信封支持identify正式构念，且为覆盖要求的核心识别能力\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_d3f9fdaf\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_d3f9fdaf\"]},{\"id\":\"obj_3709083a-b885-446f-ac18-65ddb882c881\",\"title\":\"应用三步自检写出忠实简短摘要\",\"description\":\"应用三步自检写出忠实简短摘要：标类、写清数字单位对象、回原文找依据；压缩修辞但不删改变结论的对象/时间/限制；面向未读者标明“已发生”和“待决定”；引用原文须真支持且证据与解释分开；不把相关改写因果、不外推部分意见为全体、不把人次写作不同居民\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"学习者合同要求应用写出摘要，但所列证据均无正式权威，保留apply教学优先级以覆盖核心应用能力而不降格为explain\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]}]"
+      }
+    ],
+    "exposure": []
+  }
+}

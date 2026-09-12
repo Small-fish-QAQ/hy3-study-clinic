@@ -1,0 +1,30 @@
+[
+  {
+    "reviewerLabel": "Max",
+    "reviewerType": "MODEL",
+    "masterCsv": "human/model-reviews/max.csv",
+    "masterCsvSha256": "8d31974a2be5213805895c3c969e90019b3fee2c57bb157f687aca3e2fe6470f",
+    "originalManifestSha256": "85e42130e356d675bb1959a2df3ffb9b0d8a99c00f9c5ebe9cde81c2d895897d",
+    "independenceStatement": "This review was performed independently, using only Packet-1.docx, Packet-2.docx, Packet-3.docx and their visible instructions, rubrics and evidence. No StudyEval judgments, previous machine annotation answers, human annotators’ answers, external owner/reference answers or benchmark expected labels were consulted. No final-results.json or final observation outputs were accessed. Packet-embedded candidate solutions, displayed learner responses and displayed grading decisions were evaluated as the material under review, not used as external annotation answer keys. No labels were inferred from IDs, filenames, dataset structure or experiment metadata. StudyEval and Hy3 were not rerun. No product or evaluation changes were made; the only project writes were the requested review deliverables in human/model-reviews/max/. No other annotators, models, sub-agents, web sources or external reference material were consulted.",
+    "inputPacketHashes": {
+      "Packet-1.docx": "445b8d46633ff12531b25f35fac80c083fd8c3315bab5de08f3737df027a8c9f",
+      "Packet-2.docx": "d42cec4dc5830d00bc161be7dbc06c32f1b47baf11990bccad5c9dde6aabb9fa",
+      "Packet-3.docx": "e6a385ba91307c6038389add21fe55a787df4d4263d40218ceb4424dc8800e41"
+    },
+    "manifestPrivacyTransform": "Only non-identifying fields exported; original manifests contain local filesystem paths."
+  },
+  {
+    "reviewerLabel": "Fable",
+    "reviewerType": "MODEL",
+    "masterCsv": "human/model-reviews/fable.csv",
+    "masterCsvSha256": "d4c63a26945e3395601a09ead3cc421458258ce197afe8106aaeb248392724fe",
+    "originalManifestSha256": "fee69645ca2dbb8eefa7f602a3c51bbd92b473db5552275ad3e44d067ecd2aa4",
+    "independenceStatement": "This review was performed independently, using only the content visible inside Packet-1.docx, Packet-2.docx and Packet-3.docx (materials, tasks, content under review, and the packet rubric). No StudyEval judgments, machine/final-results outputs, Max review outputs, other model reviews, human answer sheets (Human-A/B/C folders were not opened), owner/reference answers, constructor labels or benchmark expected labels were consulted. Labels were not inferred from case IDs, filenames or dataset structure.",
+    "inputPacketHashes": {
+      "Packet-1.docx": "445b8d46633ff12531b25f35fac80c083fd8c3315bab5de08f3737df027a8c9f",
+      "Packet-2.docx": "d42cec4dc5830d00bc161be7dbc06c32f1b47baf11990bccad5c9dde6aabb9fa",
+      "Packet-3.docx": "e6a385ba91307c6038389add21fe55a787df4d4263d40218ceb4424dc8800e41"
+    },
+    "manifestPrivacyTransform": "Only non-identifying fields exported; original manifests contain local filesystem paths."
+  }
+]

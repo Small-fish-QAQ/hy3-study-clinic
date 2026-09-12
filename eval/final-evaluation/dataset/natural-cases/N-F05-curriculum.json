@@ -1,0 +1,38 @@
+{
+  "dimensions": [
+    "Q2"
+  ],
+  "evidence": {
+    "sources": [
+      {
+        "id": "F05",
+        "text": "测量结果是带有方法和限制的信息。尺子上最小刻度为一毫米，意味着使用者能够按这种刻度记录长度，但这不保证每次读数与真实长度的差都小于一毫米。尺子本身是否校准、起点是否对齐、观察角度是否合适，都会影响结果。因此“显示的小数位多”与“结果一定更准确”不是同一件事。\n为了练习推理，本单元采用一个明确的简化模型：某次测量的读数为r厘米，且已知真实长度与读数的差的绝对值不超过e厘米，则真实长度在r减e到r加e的闭区间内，两个端点都包括。这里的误差上界必须来自题目给定或可靠校准，不能只凭尺子刻度自行宣布。假设读数为十二点四厘米，误差上界为零点二厘米，那么真实长度可能在十二点二至十二点六厘米之间。\n比较两件物品时，应比较它们允许的区间，而不是只看中心读数。若甲在十二点二至十二点六厘米，乙在十二点八至十三点二厘米，甲的最大值仍小于乙的最小值，因此可断定甲更短。若乙的区间改为十二点五至十二点九厘米，两个区间重叠，就不能由这些界限保证甲更短。甲可能比乙短，也可能略长；这不是说两件物品实际等长，而是证据不足以确定顺序。\n重复测量也需要区分误差类型。如果每次起点都固定偏移零点三厘米，多测几次再取平均不一定消除这个共同偏差。多次独立的小幅随机波动与每次同向的系统偏差不同。没有额外模型时，不能把“测了十次”直接翻译成“准确程度提高十倍”。本单元只使用给定的区间界限，不要求统计学公式。\n记录结果时，可以把读数、单位、误差上界和使用条件写在一起，例如“在此校准条件下，读数为十二点四厘米，误差不超过零点二厘米”。这样下一位读者知道能推出什么，也知道不能推出什么。把数值写成十二点四零零零厘米不会凭空增加新证据。\n遇到信息缺失的题，应具体说明缺了什么：是误差上界、共同起点还是单位？能算的部分仍可先算，例如把已知区间列出来，再说明另一个区间无法建立。一个好的测量解释既提供可执行的计算，也尊重给定方法的可信范围。"
+      }
+    ],
+    "goals": [
+      "区分读数分辨率与真实准确程度",
+      "使用给定误差界限形成区间",
+      "判断多个测量区间是否支持大小关系"
+    ],
+    "prerequisites": [
+      "小数加减",
+      "厘米与毫米的换算"
+    ],
+    "desiredDepth": "working_fluency",
+    "authorityBoundaries": [
+      "本次评估只涉及所给来源、明确的教学范围和实际展示的产物；脚本作答用于检查工作流，不代表真实学习者。",
+      "Q2评价提议课程对所注册学习目标的保留和范围；不将尚未发生的教学交付或Formal准入当成已经完成。"
+    ],
+    "artifacts": [
+      {
+        "id": "cun_2e97d9ba-0dd6-4c3e-9b2f-2b545c3d0829/title",
+        "text": "简化误差区间模型与允许区间比较实践"
+      },
+      {
+        "id": "cun_2e97d9ba-0dd6-4c3e-9b2f-2b545c3d0829/objectives",
+        "text": "[{\"id\":\"obj_7746b238-2411-4cb1-a818-8a80020a2159\",\"title\":\"识别读数分辨率不等于真实准确程度\",\"description\":\"识别读数分辨率（如尺子最小刻度或显示小数位）不等于真实准确程度；认识到实际误差受校准、起点对齐、观察角度等影响，显示小数位多不保证更准确。\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_7b7b7239-d012-4b1d-b8b6-f8dd1ededd05\",\"ta_736d8fa5-697e-43bc-b97e-a0e883b12581\"],\"authorityClaimIds\":[\"tac_364cddb2-0e44-48a9-829c-df19b07ef9fa\",\"tac_4e12ba38-f779-49e0-a0c2-dfad64883df9\",\"tac_14954615-0c78-4430-bdd3-8a6022424824\",\"tac_63db8fe5-aa0e-494e-8f07-8591c73e0331\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E9 and E1 provide formal authority for identify construct, satisfying required formal path.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_fabee345\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_fabee345\"]},{\"id\":\"obj_a9eae890-33a0-4ecc-a550-6321c3a32b27\",\"title\":\"应用简化误差区间模型形成闭区间\",\"description\":\"应用简化模型：根据题目给定或可靠校准提供的误差上界e（不能仅由刻度自行宣布），与读数r形成包含端点的闭区间[r-e, r+e]，并能计算如12.4±0.2得[12.2,12.6]。\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_7b7b7239-d012-4b1d-b8b6-f8dd1ededd05\",\"ta_736d8fa5-697e-43bc-b97e-a0e883b12581\"],\"authorityClaimIds\":[\"tac_7a1aebd1-1348-4019-aab6-c6d918c1119a\",\"tac_94b1f0c5-ff95-4d66-83ee-dd65508eee81\",\"tac_aed6b040-d54c-44c6-aabd-d5d828d21a61\",\"tac_b97fa4f4-0693-4e26-9ca0-609ccab2b101\",\"tac_d99739dd-2c47-409b-8c39-6f54474eb210\",\"tac_e5ddd0b4-9f4a-46cb-82ac-05aef5b44dbd\"],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation per coverage requirement; exact evidence lacks formal apply authority (E11 unavailable, E2/E12 only identify) so retained as high teaching priority, not required.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_fabee345\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_d7b1fcf4-825b-48e1-bc60-1d5661838d01\",\"title\":\"运用允许区间而非中心读数判断大小关系\",\"description\":\"运用允许区间而非中心读数判断大小关系：若一区间最大值小于另一区间最小值则可断定更短；若区间重叠则证据不足确定顺序（非证明等长），仅使用给定区间不引入统计公式。\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_7b7b7239-d012-4b1d-b8b6-f8dd1ededd05\",\"ta_736d8fa5-697e-43bc-b97e-a0e883b12581\"],\"authorityClaimIds\":[\"tac_04f90c18-e3b5-48d7-9a71-609829cffa94\",\"tac_2145fd70-8cd2-4d69-941c-428f7a20eb40\",\"tac_98302c8f-ec5f-4703-b804-5b246e3c2d8e\",\"tac_0a3e6a38-f69c-4ab8-971c-291ba6d34d95\",\"tac_3918a5fc-27f7-4620-a9f7-fef9f3ed064b\",\"tac_549c5476-fd32-438b-a072-c7876af7d876\"],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation per coverage requirement; exact evidence E3 supports only identify/explain, E14/E15 only identify, so evaluate is teaching-only, retained as high priority.\",\"formalAssessmentConstruct\":\"evaluate\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_fabee345\"],\"formalEvidenceSourceBlockIds\":[]}]"
+      }
+    ],
+    "exposure": []
+  }
+}

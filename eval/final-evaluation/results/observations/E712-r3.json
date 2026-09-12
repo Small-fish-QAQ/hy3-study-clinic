@@ -1,0 +1,308 @@
+{
+  "task": {
+    "caseId": "E712",
+    "runId": "E712-r3",
+    "replicate": 3,
+    "path": "benchmark/cases/E712.json",
+    "inputHash": "8522602410817f5b63c13e676c270b8b055b8d495ba1b4b0f1021573fa9b1702",
+    "population": "boundary",
+    "sourceId": "F04"
+  },
+  "inputHash": "8522602410817f5b63c13e676c270b8b055b8d495ba1b4b0f1021573fa9b1702",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "solve-current": "a2620aaabf8b132b87f26ba16083615e74d03ef3b5be4cb4b79645a1b33920bf",
+      "correctness": "6f43481dff197282d02646e0a3224db5cd6a6ff348caeafff907aba3537b905f",
+      "artifact-audit": "6f43481dff197282d02646e0a3224db5cd6a6ff348caeafff907aba3537b905f"
+    },
+    "stages": {
+      "solve-current": {
+        "status": "uncertain",
+        "solution": "Independent solution could not be established.",
+        "proposed": {
+          "status": "resolved",
+          "solution": "据e3：若只有完成件数而无登记总数，就能比较完成件数，却不能计算完成比例。本题已知甲80乙36无登记数，故件数可比较(甲>乙)，比例不可比(缺分母)。",
+          "refs": [
+            "e3"
+          ]
+        },
+        "reviewReasons": [
+          "BLIND_SOLUTION_UNGROUNDED"
+        ]
+      },
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "uncertain",
+            "affected": [
+              "Q4"
+            ],
+            "reason": "The counterexample check is not established.",
+            "proposed": {
+              "kind": "conditions",
+              "status": "clear",
+              "affected": [],
+              "reason": "核验e3中作者总结条件句：'若只有完成件数而没有登记总数，就能比较完成件数，却不能计算完成比例'等，与给定实例（e14已知甲80乙36无登记数）一致，结论正确；其他如'直接平均只在每组分母相同等特定条件下等于整体比例'亦正确。无实质错误。",
+              "refs": [
+                "e3",
+                "e14"
+              ],
+              "challenge": {
+                "status": "closed",
+                "reason": "作者条件前提为信息缺失（只有件数无总数）。构造相容反例：实际登记数未知但件数已知，仍缺分母无法算比例，件数可比较，结论不变；由e3规则自身排除反例。",
+                "refs": [
+                  "e3"
+                ]
+              }
+            },
+            "reviewReasons": [
+              "CONDITIONS_CHALLENGE_UNGROUNDED"
+            ]
+          },
+          {
+            "kind": "quantities",
+            "status": "uncertain",
+            "affected": [
+              "Q4"
+            ],
+            "reason": "Correctness check cannot be grounded.",
+            "proposed": {
+              "kind": "quantities",
+              "status": "clear",
+              "affected": [],
+              "reason": "独立重算e3中数值：36/40=90%正确；80/100=80%正确；116/140≈82.9%正确；直接平均85%被作者正确指出因分母不同而非整体比例。演算无错误。",
+              "refs": [
+                "e3"
+              ]
+            },
+            "reviewReasons": [
+              "CORRECTNESS_EVIDENCE_OR_SCOPE_MISSING"
+            ]
+          }
+        ],
+        "keys": [
+          {
+            "taskId": "current",
+            "status": "absent",
+            "reason": "question选项数组空(e15)，artifact(e18)仅声明'只接受一个确定结论，不接受条件或信息不足'但未给出具体答案键值，无当前作者指定答案。",
+            "refs": [
+              "e15",
+              "e18"
+            ],
+            "witnesses": [
+              {
+                "id": "e15",
+                "pointer": "/question/options",
+                "role": "question",
+                "kind": "array_length",
+                "value": 0,
+                "valueHash": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+              },
+              {
+                "id": "e18",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "本题作者参考解（未向学习者提前展示）：此题只接受一个确定结论，不接受条件或信息不足。",
+                "valueHash": "fb7dfa3db3f3d397b2de92b75bea658f0970327223dee113ac125695264a3444"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q4",
+            "level": 0,
+            "reason": "题干e14要求对'能否比较完成件数和完成比例'给出确定数值或唯一肯定结论且禁条件分支；但e3规则表明仅件数无总数时件数可比较而比例不可计算，正确回答需分支。题目强迫单一结论构成forced ambiguous key，无合法可辩护答案集；e18作者参考解确认只接受确定结论。e19无先前曝光。",
+            "refs": [
+              "e14",
+              "e3",
+              "e18",
+              "e19"
+            ],
+            "issue": "content",
+            "witnesses": [
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "以下是新的独立情境，来源中的示例数字不作为本题未明示的数据。只知道甲完成八十件、乙完成三十六件，未给各自登记件数。能否比较完成件数和完成比例？ 现在必须给出一个确定的数值或唯一肯定结论，不允许说明信息不足、条件分支或另加假设。",
+                "valueHash": "cc34e2bea127004489dec7218891a652f4755dc85ece18c04b5d048f2d6272ec"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "图表能够帮助人快速比较，但标题、坐标与分母共同决定图表在说什么。读柱形图时，先找每根柱表示的量，再检查纵轴从哪里起、每格代表多少以及比较对象是否使用相同单位。如果纵轴从九十开始，九十五和一百的柱子在画面上可能呈现很大的高度差，但原始数量只相差五。视觉差异不能代替对原始数值的比较。\n这里用文字给出一张“修补活动登记表”。甲点登记一百件旧物，其中八十件完成修补；乙点登记四十件，其中三十六件完成修补。甲点完成的件数多，八十件大于三十六件；乙点的完成比例高，三十六除以四十等于百分之九十，而甲点八十除以一百等于百分之八十。件数和比例回答不同问题。若问哪个点实际完成更多工作，应先看件数；若问本次登记物品中完成的份额，应看比例。\n把两个点合并时，整体比例必须用总完成件数除以总登记件数，即一百一十六除以一百四十，约为百分之八十二点九。不能直接把百分之八十与百分之九十平均成百分之八十五，因为两点分母不同。直接平均只在每组分母相同等特定条件下等于整体比例。解释时最好保留分子、分母，使读者可以独立核对。\n同样，完成比例较高不自动说明工作人员能力较强。乙点可能接收了更容易修补的物品，也可能有更长的处理时间；登记表没有这些信息。我们可以准确报告本次结果，却不能把未观测的原因当成事实。若要公平比较，需要先约定物品难度、统计时段和完成定义等条件。\n在摘要中可以同时写：“甲点完成八十件，乙点完成三十六件；乙点在其登记量中的完成比例更高。”这并不矛盾，因为比较量不同。若只有完成件数而没有登记总数，就能比较完成件数，却不能计算完成比例。若图上省略单位，也应先补齐单位再解释，不要默认柱高就是百分比。\n最后检查结论是否超出材料。一次活动的数据不能自动说明全年趋势；某点表现更好也不等于某项措施导致改善。读图不是寻找最醒目的柱子，而是把图示还原为可核对的量、运算和有条件的陈述。即使没有图片，只要表格和文字给足信息，同样可以完成这些判断。",
+                "valueHash": "d285228b9962482d5b8d81456178a4eb5cad39d02c75d3a204457e6093fff0ba"
+              },
+              {
+                "id": "e18",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "本题作者参考解（未向学习者提前展示）：此题只接受一个确定结论，不接受条件或信息不足。",
+                "valueHash": "fb7dfa3db3f3d397b2de92b75bea658f0970327223dee113ac125695264a3444"
+              },
+              {
+                "id": "e19",
+                "pointer": "/priorExposure",
+                "role": "prior_exposure",
+                "kind": "array_length",
+                "value": 0,
+                "valueHash": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q4",
+          "level": 0,
+          "reason": "题干e14要求对'能否比较完成件数和完成比例'给出确定数值或唯一肯定结论且禁条件分支；但e3规则表明仅件数无总数时件数可比较而比例不可计算，正确回答需分支。题目强迫单一结论构成forced ambiguous key，无合法可辩护答案集；e18作者参考解确认只接受确定结论。e19无先前曝光。",
+          "refs": [
+            "e14",
+            "e3",
+            "e18",
+            "e19"
+          ],
+          "issue": "content",
+          "witnesses": [
+            {
+              "id": "e14",
+              "pointer": "/question/prompt",
+              "role": "question",
+              "kind": "text",
+              "value": "以下是新的独立情境，来源中的示例数字不作为本题未明示的数据。只知道甲完成八十件、乙完成三十六件，未给各自登记件数。能否比较完成件数和完成比例？ 现在必须给出一个确定的数值或唯一肯定结论，不允许说明信息不足、条件分支或另加假设。",
+              "valueHash": "cc34e2bea127004489dec7218891a652f4755dc85ece18c04b5d048f2d6272ec"
+            },
+            {
+              "id": "e3",
+              "pointer": "/sources/0/text",
+              "role": "source",
+              "kind": "text",
+              "value": "图表能够帮助人快速比较，但标题、坐标与分母共同决定图表在说什么。读柱形图时，先找每根柱表示的量，再检查纵轴从哪里起、每格代表多少以及比较对象是否使用相同单位。如果纵轴从九十开始，九十五和一百的柱子在画面上可能呈现很大的高度差，但原始数量只相差五。视觉差异不能代替对原始数值的比较。\n这里用文字给出一张“修补活动登记表”。甲点登记一百件旧物，其中八十件完成修补；乙点登记四十件，其中三十六件完成修补。甲点完成的件数多，八十件大于三十六件；乙点的完成比例高，三十六除以四十等于百分之九十，而甲点八十除以一百等于百分之八十。件数和比例回答不同问题。若问哪个点实际完成更多工作，应先看件数；若问本次登记物品中完成的份额，应看比例。\n把两个点合并时，整体比例必须用总完成件数除以总登记件数，即一百一十六除以一百四十，约为百分之八十二点九。不能直接把百分之八十与百分之九十平均成百分之八十五，因为两点分母不同。直接平均只在每组分母相同等特定条件下等于整体比例。解释时最好保留分子、分母，使读者可以独立核对。\n同样，完成比例较高不自动说明工作人员能力较强。乙点可能接收了更容易修补的物品，也可能有更长的处理时间；登记表没有这些信息。我们可以准确报告本次结果，却不能把未观测的原因当成事实。若要公平比较，需要先约定物品难度、统计时段和完成定义等条件。\n在摘要中可以同时写：“甲点完成八十件，乙点完成三十六件；乙点在其登记量中的完成比例更高。”这并不矛盾，因为比较量不同。若只有完成件数而没有登记总数，就能比较完成件数，却不能计算完成比例。若图上省略单位，也应先补齐单位再解释，不要默认柱高就是百分比。\n最后检查结论是否超出材料。一次活动的数据不能自动说明全年趋势；某点表现更好也不等于某项措施导致改善。读图不是寻找最醒目的柱子，而是把图示还原为可核对的量、运算和有条件的陈述。即使没有图片，只要表格和文字给足信息，同样可以完成这些判断。",
+              "valueHash": "d285228b9962482d5b8d81456178a4eb5cad39d02c75d3a204457e6093fff0ba"
+            },
+            {
+              "id": "e18",
+              "pointer": "/artifacts/0/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "本题作者参考解（未向学习者提前展示）：此题只接受一个确定结论，不接受条件或信息不足。",
+              "valueHash": "fb7dfa3db3f3d397b2de92b75bea658f0970327223dee113ac125695264a3444"
+            },
+            {
+              "id": "e19",
+              "pointer": "/priorExposure",
+              "role": "prior_exposure",
+              "kind": "array_length",
+              "value": 0,
+              "valueHash": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [
+            {
+              "level": "U",
+              "code": "INDEPENDENT_CONDITIONS",
+              "detail": {
+                "kind": "conditions",
+                "status": "uncertain",
+                "affected": [
+                  "Q4"
+                ],
+                "reason": "The counterexample check is not established.",
+                "proposed": {
+                  "kind": "conditions",
+                  "status": "clear",
+                  "affected": [],
+                  "reason": "核验e3中作者总结条件句：'若只有完成件数而没有登记总数，就能比较完成件数，却不能计算完成比例'等，与给定实例（e14已知甲80乙36无登记数）一致，结论正确；其他如'直接平均只在每组分母相同等特定条件下等于整体比例'亦正确。无实质错误。",
+                  "refs": [
+                    "e3",
+                    "e14"
+                  ],
+                  "challenge": {
+                    "status": "closed",
+                    "reason": "作者条件前提为信息缺失（只有件数无总数）。构造相容反例：实际登记数未知但件数已知，仍缺分母无法算比例，件数可比较，结论不变；由e3规则自身排除反例。",
+                    "refs": [
+                      "e3"
+                    ]
+                  }
+                },
+                "reviewReasons": [
+                  "CONDITIONS_CHALLENGE_UNGROUNDED"
+                ]
+              }
+            },
+            {
+              "level": "U",
+              "code": "INDEPENDENT_QUANTITIES",
+              "detail": {
+                "kind": "quantities",
+                "status": "uncertain",
+                "affected": [
+                  "Q4"
+                ],
+                "reason": "Correctness check cannot be grounded.",
+                "proposed": {
+                  "kind": "quantities",
+                  "status": "clear",
+                  "affected": [],
+                  "reason": "独立重算e3中数值：36/40=90%正确；80/100=80%正确；116/140≈82.9%正确；直接平均85%被作者正确指出因分母不同而非整体比例。演算无错误。",
+                  "refs": [
+                    "e3"
+                  ]
+                },
+                "reviewReasons": [
+                  "CORRECTNESS_EVIDENCE_OR_SCOPE_MISSING"
+                ]
+              }
+            },
+            {
+              "level": "U",
+              "code": "BLIND_SOLUTION_UNCERTAIN",
+              "detail": {
+                "taskId": "current",
+                "status": "uncertain",
+                "solution": "Independent solution could not be established.",
+                "proposed": {
+                  "status": "resolved",
+                  "solution": "据e3：若只有完成件数而无登记总数，就能比较完成件数，却不能计算完成比例。本题已知甲80乙36无登记数，故件数可比较(甲>乙)，比例不可比(缺分母)。",
+                  "refs": [
+                    "e3"
+                  ]
+                },
+                "reviewReasons": [
+                  "BLIND_SOLUTION_UNGROUNDED"
+                ]
+              }
+            }
+          ],
+          "proposedLevel": 0,
+          "proposedReason": "题干e14要求对'能否比较完成件数和完成比例'给出确定数值或唯一肯定结论且禁条件分支；但e3规则表明仅件数无总数时件数可比较而比例不可计算，正确回答需分支。题目强迫单一结论构成forced ambiguous key，无合法可辩护答案集；e18作者参考解确认只接受确定结论。e19无先前曝光。"
+        }
+      ],
+      "reviewRequired": [
+        {
+          "dimension": "Q4",
+          "reason": "RESOLVED_DEFECT_WITH_OTHER_UNCERTAINTY"
+        }
+      ]
+    },
+    "resultHash": "1078f957d1404289354a8e7f59f868b94973c49fdf3a19531c6eeefa87fdabd9"
+  }
+}

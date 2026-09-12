@@ -10,7 +10,7 @@
     "caseId": "case-02a4401111989d17",
     "runId": "case-02a4401111989d17-r1",
     "tripletId": "triplet-07c23158c754d9d4",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -23,7 +23,7 @@
     "caseId": "case-02cc719a4313e8ee",
     "runId": "case-02cc719a4313e8ee-r1",
     "tripletId": "triplet-6d64bed9e9dc2ace",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -75,7 +75,7 @@
     "caseId": "case-04ace0ce42b4a688",
     "runId": "case-04ace0ce42b4a688-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -88,7 +88,7 @@
     "caseId": "case-056fc2baafafd8c8",
     "runId": "case-056fc2baafafd8c8-r1",
     "tripletId": "triplet-e3681e8d0a5c0550",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -101,7 +101,7 @@
     "caseId": "case-077b34551f92e4ac",
     "runId": "case-077b34551f92e4ac-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -114,7 +114,7 @@
     "caseId": "case-077b34551f92e4ac",
     "runId": "case-077b34551f92e4ac-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -127,7 +127,7 @@
     "caseId": "case-07a47044d004d21a",
     "runId": "case-07a47044d004d21a-r1",
     "tripletId": "triplet-3f305ed22f0b8184",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -153,7 +153,7 @@
     "caseId": "case-07d7a3fca5cfea35",
     "runId": "case-07d7a3fca5cfea35-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -166,7 +166,7 @@
     "caseId": "case-0913ed49dee25c94",
     "runId": "case-0913ed49dee25c94-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -179,7 +179,7 @@
     "caseId": "case-0913ed49dee25c94",
     "runId": "case-0913ed49dee25c94-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -192,7 +192,7 @@
     "caseId": "case-0c45970252ec3938",
     "runId": "case-0c45970252ec3938-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 2,
@@ -205,7 +205,7 @@
     "caseId": "case-0c45970252ec3938",
     "runId": "case-0c45970252ec3938-r2",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 3,
@@ -218,7 +218,7 @@
     "caseId": "case-0c45970252ec3938",
     "runId": "case-0c45970252ec3938-r3",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -231,7 +231,7 @@
     "caseId": "case-0e97fe107b49b71f",
     "runId": "case-0e97fe107b49b71f-r1",
     "tripletId": "triplet-62419ff0b00e34e5",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -257,7 +257,7 @@
     "caseId": "case-10a838e8bedbf630",
     "runId": "case-10a838e8bedbf630-r1",
     "tripletId": "triplet-888b1d6b493c5e1d",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 2,
@@ -270,7 +270,7 @@
     "caseId": "case-10a838e8bedbf630",
     "runId": "case-10a838e8bedbf630-r2",
     "tripletId": "triplet-888b1d6b493c5e1d",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 3,
@@ -283,7 +283,7 @@
     "caseId": "case-10a838e8bedbf630",
     "runId": "case-10a838e8bedbf630-r3",
     "tripletId": "triplet-888b1d6b493c5e1d",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -296,7 +296,7 @@
     "caseId": "case-140ad9a3ff4352a2",
     "runId": "case-140ad9a3ff4352a2-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -309,7 +309,7 @@
     "caseId": "case-15b767dd0269ce7c",
     "runId": "case-15b767dd0269ce7c-r1",
     "tripletId": "triplet-888b1d6b493c5e1d",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -322,7 +322,7 @@
     "caseId": "case-187f08bdfb86dc5f",
     "runId": "case-187f08bdfb86dc5f-r1",
     "tripletId": "triplet-07c23158c754d9d4",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 2,
@@ -335,7 +335,7 @@
     "caseId": "case-187f08bdfb86dc5f",
     "runId": "case-187f08bdfb86dc5f-r2",
     "tripletId": "triplet-07c23158c754d9d4",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 3,
@@ -348,7 +348,7 @@
     "caseId": "case-187f08bdfb86dc5f",
     "runId": "case-187f08bdfb86dc5f-r3",
     "tripletId": "triplet-07c23158c754d9d4",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -361,7 +361,7 @@
     "caseId": "case-188c948e0842d742",
     "runId": "case-188c948e0842d742-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -478,7 +478,7 @@
     "caseId": "case-1b14334c73306a10",
     "runId": "case-1b14334c73306a10-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -491,7 +491,7 @@
     "caseId": "case-1b14334c73306a10",
     "runId": "case-1b14334c73306a10-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -517,7 +517,7 @@
     "caseId": "case-1b6315ba5250910d",
     "runId": "case-1b6315ba5250910d-r1",
     "tripletId": "triplet-7c7832fd263e1d17",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -530,7 +530,7 @@
     "caseId": "case-1b7001fc371791e6",
     "runId": "case-1b7001fc371791e6-r1",
     "tripletId": "triplet-62419ff0b00e34e5",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -543,7 +543,7 @@
     "caseId": "case-1becbce3a84e3592",
     "runId": "case-1becbce3a84e3592-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -556,7 +556,7 @@
     "caseId": "case-1becbce3a84e3592",
     "runId": "case-1becbce3a84e3592-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -569,7 +569,7 @@
     "caseId": "case-1dc6bf199a93034c",
     "runId": "case-1dc6bf199a93034c-r1",
     "tripletId": "triplet-e3681e8d0a5c0550",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 2,
@@ -582,7 +582,7 @@
     "caseId": "case-1dc6bf199a93034c",
     "runId": "case-1dc6bf199a93034c-r2",
     "tripletId": "triplet-e3681e8d0a5c0550",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 3,
@@ -595,7 +595,7 @@
     "caseId": "case-1dc6bf199a93034c",
     "runId": "case-1dc6bf199a93034c-r3",
     "tripletId": "triplet-e3681e8d0a5c0550",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -621,7 +621,7 @@
     "caseId": "case-1f135e18ef351293",
     "runId": "case-1f135e18ef351293-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -634,7 +634,7 @@
     "caseId": "case-1f135e18ef351293",
     "runId": "case-1f135e18ef351293-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -647,7 +647,7 @@
     "caseId": "case-2156a5da62cfdac2",
     "runId": "case-2156a5da62cfdac2-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -673,7 +673,7 @@
     "caseId": "case-2310153cbc2d2976",
     "runId": "case-2310153cbc2d2976-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -686,7 +686,7 @@
     "caseId": "case-270b975eeb0d9459",
     "runId": "case-270b975eeb0d9459-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -699,7 +699,7 @@
     "caseId": "case-271850ad03221a7d",
     "runId": "case-271850ad03221a7d-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -725,7 +725,7 @@
     "caseId": "case-2ab64497314c3138",
     "runId": "case-2ab64497314c3138-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -738,7 +738,7 @@
     "caseId": "case-2ab64497314c3138",
     "runId": "case-2ab64497314c3138-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 2,
@@ -751,7 +751,7 @@
     "caseId": "case-2ab64497314c3138",
     "runId": "case-2ab64497314c3138-r2",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 2,
@@ -764,7 +764,7 @@
     "caseId": "case-2ab64497314c3138",
     "runId": "case-2ab64497314c3138-r2",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 3,
@@ -777,7 +777,7 @@
     "caseId": "case-2ab64497314c3138",
     "runId": "case-2ab64497314c3138-r3",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 3,
@@ -790,7 +790,7 @@
     "caseId": "case-2ab64497314c3138",
     "runId": "case-2ab64497314c3138-r3",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -816,7 +816,7 @@
     "caseId": "case-2d6075a19baf1b8a",
     "runId": "case-2d6075a19baf1b8a-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -829,7 +829,7 @@
     "caseId": "case-2f5660d109155d3d",
     "runId": "case-2f5660d109155d3d-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -842,7 +842,7 @@
     "caseId": "case-2f69b216b1e093f5",
     "runId": "case-2f69b216b1e093f5-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 2,
@@ -855,7 +855,7 @@
     "caseId": "case-2f69b216b1e093f5",
     "runId": "case-2f69b216b1e093f5-r2",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 3,
@@ -868,7 +868,7 @@
     "caseId": "case-2f69b216b1e093f5",
     "runId": "case-2f69b216b1e093f5-r3",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -881,7 +881,7 @@
     "caseId": "case-2fafaf63d0c350e1",
     "runId": "case-2fafaf63d0c350e1-r1",
     "tripletId": "triplet-6c1695e7b1cce419",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 2,
@@ -894,7 +894,7 @@
     "caseId": "case-2fafaf63d0c350e1",
     "runId": "case-2fafaf63d0c350e1-r2",
     "tripletId": "triplet-6c1695e7b1cce419",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 3,
@@ -907,7 +907,7 @@
     "caseId": "case-2fafaf63d0c350e1",
     "runId": "case-2fafaf63d0c350e1-r3",
     "tripletId": "triplet-6c1695e7b1cce419",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -920,7 +920,7 @@
     "caseId": "case-357650a5c7f3b37d",
     "runId": "case-357650a5c7f3b37d-r1",
     "tripletId": "triplet-93ae8bd79dabd3f0",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -933,7 +933,7 @@
     "caseId": "case-36d1be131c43987c",
     "runId": "case-36d1be131c43987c-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -972,7 +972,7 @@
     "caseId": "case-3aa1b5303dafe016",
     "runId": "case-3aa1b5303dafe016-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -985,7 +985,7 @@
     "caseId": "case-3c0dff2fdeca0da0",
     "runId": "case-3c0dff2fdeca0da0-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -998,7 +998,7 @@
     "caseId": "case-3c7898d87b05e297",
     "runId": "case-3c7898d87b05e297-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 2,
@@ -1011,7 +1011,7 @@
     "caseId": "case-3c7898d87b05e297",
     "runId": "case-3c7898d87b05e297-r2",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 3,
@@ -1024,7 +1024,7 @@
     "caseId": "case-3c7898d87b05e297",
     "runId": "case-3c7898d87b05e297-r3",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -1037,7 +1037,7 @@
     "caseId": "case-3ce13e995574a59d",
     "runId": "case-3ce13e995574a59d-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -1050,7 +1050,7 @@
     "caseId": "case-3cfeee3310b69f8a",
     "runId": "case-3cfeee3310b69f8a-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -1063,7 +1063,7 @@
     "caseId": "case-3dd27e3c71c3838a",
     "runId": "case-3dd27e3c71c3838a-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -1089,7 +1089,7 @@
     "caseId": "case-40a9241f80d3a3fc",
     "runId": "case-40a9241f80d3a3fc-r1",
     "tripletId": "triplet-6c1695e7b1cce419",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 2,
@@ -1102,7 +1102,7 @@
     "caseId": "case-40a9241f80d3a3fc",
     "runId": "case-40a9241f80d3a3fc-r2",
     "tripletId": "triplet-6c1695e7b1cce419",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 3,
@@ -1115,7 +1115,7 @@
     "caseId": "case-40a9241f80d3a3fc",
     "runId": "case-40a9241f80d3a3fc-r3",
     "tripletId": "triplet-6c1695e7b1cce419",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -1141,7 +1141,7 @@
     "caseId": "case-41771975c493d5fc",
     "runId": "case-41771975c493d5fc-r1",
     "tripletId": "triplet-bea4c4e1d863e6dd",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -1154,7 +1154,7 @@
     "caseId": "case-42140cb0664e80d0",
     "runId": "case-42140cb0664e80d0-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -1167,7 +1167,7 @@
     "caseId": "case-452c5baff6a91817",
     "runId": "case-452c5baff6a91817-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -1193,7 +1193,7 @@
     "caseId": "case-464ed419a24c267e",
     "runId": "case-464ed419a24c267e-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -1206,7 +1206,7 @@
     "caseId": "case-468b7c3c85b9e530",
     "runId": "case-468b7c3c85b9e530-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 2,
@@ -1219,7 +1219,7 @@
     "caseId": "case-468b7c3c85b9e530",
     "runId": "case-468b7c3c85b9e530-r2",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 3,
@@ -1232,7 +1232,7 @@
     "caseId": "case-468b7c3c85b9e530",
     "runId": "case-468b7c3c85b9e530-r3",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -1245,7 +1245,7 @@
     "caseId": "case-47fa2296d1d910b8",
     "runId": "case-47fa2296d1d910b8-r1",
     "tripletId": "triplet-6c1695e7b1cce419",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -1258,7 +1258,7 @@
     "caseId": "case-4a27d67d674def19",
     "runId": "case-4a27d67d674def19-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -1271,7 +1271,7 @@
     "caseId": "case-4a27d67d674def19",
     "runId": "case-4a27d67d674def19-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 2,
@@ -1284,7 +1284,7 @@
     "caseId": "case-4a27d67d674def19",
     "runId": "case-4a27d67d674def19-r2",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 2,
@@ -1297,7 +1297,7 @@
     "caseId": "case-4a27d67d674def19",
     "runId": "case-4a27d67d674def19-r2",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 3,
@@ -1310,7 +1310,7 @@
     "caseId": "case-4a27d67d674def19",
     "runId": "case-4a27d67d674def19-r3",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 3,
@@ -1323,7 +1323,7 @@
     "caseId": "case-4a27d67d674def19",
     "runId": "case-4a27d67d674def19-r3",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -1336,7 +1336,7 @@
     "caseId": "case-4a7c2e22f06371ad",
     "runId": "case-4a7c2e22f06371ad-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -1349,7 +1349,7 @@
     "caseId": "case-4c28acd349f77b7f",
     "runId": "case-4c28acd349f77b7f-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 2,
@@ -1362,7 +1362,7 @@
     "caseId": "case-4c28acd349f77b7f",
     "runId": "case-4c28acd349f77b7f-r2",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 3,
@@ -1375,7 +1375,7 @@
     "caseId": "case-4c28acd349f77b7f",
     "runId": "case-4c28acd349f77b7f-r3",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -1388,7 +1388,7 @@
     "caseId": "case-4ce616a1df0ba086",
     "runId": "case-4ce616a1df0ba086-r1",
     "tripletId": "triplet-e3681e8d0a5c0550",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 2,
@@ -1401,7 +1401,7 @@
     "caseId": "case-4ce616a1df0ba086",
     "runId": "case-4ce616a1df0ba086-r2",
     "tripletId": "triplet-e3681e8d0a5c0550",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 3,
@@ -1414,7 +1414,7 @@
     "caseId": "case-4ce616a1df0ba086",
     "runId": "case-4ce616a1df0ba086-r3",
     "tripletId": "triplet-e3681e8d0a5c0550",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -1427,7 +1427,7 @@
     "caseId": "case-4e99dd36c0e4d57b",
     "runId": "case-4e99dd36c0e4d57b-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -1440,7 +1440,7 @@
     "caseId": "case-4ed41afdb994c8ef",
     "runId": "case-4ed41afdb994c8ef-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -1453,7 +1453,7 @@
     "caseId": "case-4ed41afdb994c8ef",
     "runId": "case-4ed41afdb994c8ef-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -1466,7 +1466,7 @@
     "caseId": "case-508da8395d6680c2",
     "runId": "case-508da8395d6680c2-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -1479,7 +1479,7 @@
     "caseId": "case-512eea176946b928",
     "runId": "case-512eea176946b928-r1",
     "tripletId": "triplet-3d6d569ff630a5f0",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -1492,7 +1492,7 @@
     "caseId": "case-52002a137f98be72",
     "runId": "case-52002a137f98be72-r1",
     "tripletId": "triplet-07c23158c754d9d4",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 2,
@@ -1505,7 +1505,7 @@
     "caseId": "case-52002a137f98be72",
     "runId": "case-52002a137f98be72-r2",
     "tripletId": "triplet-07c23158c754d9d4",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 3,
@@ -1518,7 +1518,7 @@
     "caseId": "case-52002a137f98be72",
     "runId": "case-52002a137f98be72-r3",
     "tripletId": "triplet-07c23158c754d9d4",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -1531,7 +1531,7 @@
     "caseId": "case-52cb16b3db5bead3",
     "runId": "case-52cb16b3db5bead3-r1",
     "tripletId": "triplet-3d6d569ff630a5f0",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -1544,7 +1544,7 @@
     "caseId": "case-55e3f20a4ffb29d8",
     "runId": "case-55e3f20a4ffb29d8-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 2,
@@ -1557,7 +1557,7 @@
     "caseId": "case-55e3f20a4ffb29d8",
     "runId": "case-55e3f20a4ffb29d8-r2",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 3,
@@ -1570,7 +1570,7 @@
     "caseId": "case-55e3f20a4ffb29d8",
     "runId": "case-55e3f20a4ffb29d8-r3",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -1583,7 +1583,7 @@
     "caseId": "case-58308a9bc7c75cf5",
     "runId": "case-58308a9bc7c75cf5-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -1596,7 +1596,7 @@
     "caseId": "case-59002396658be044",
     "runId": "case-59002396658be044-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -1609,7 +1609,7 @@
     "caseId": "case-59b25d5a09352be5",
     "runId": "case-59b25d5a09352be5-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -1622,7 +1622,7 @@
     "caseId": "case-5a680bcba2a44515",
     "runId": "case-5a680bcba2a44515-r1",
     "tripletId": "triplet-bdb15c3d2ff02215",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -1635,7 +1635,7 @@
     "caseId": "case-5b675cf6286b79d0",
     "runId": "case-5b675cf6286b79d0-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -1661,7 +1661,7 @@
     "caseId": "case-5cb1f3dd812fb545",
     "runId": "case-5cb1f3dd812fb545-r1",
     "tripletId": "triplet-bdb15c3d2ff02215",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -1674,7 +1674,7 @@
     "caseId": "case-5d99d0689a6d8f63",
     "runId": "case-5d99d0689a6d8f63-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -1687,7 +1687,7 @@
     "caseId": "case-5d99d0689a6d8f63",
     "runId": "case-5d99d0689a6d8f63-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 2,
@@ -1700,7 +1700,7 @@
     "caseId": "case-5d99d0689a6d8f63",
     "runId": "case-5d99d0689a6d8f63-r2",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 2,
@@ -1713,7 +1713,7 @@
     "caseId": "case-5d99d0689a6d8f63",
     "runId": "case-5d99d0689a6d8f63-r2",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 3,
@@ -1726,7 +1726,7 @@
     "caseId": "case-5d99d0689a6d8f63",
     "runId": "case-5d99d0689a6d8f63-r3",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 3,
@@ -1739,7 +1739,7 @@
     "caseId": "case-5d99d0689a6d8f63",
     "runId": "case-5d99d0689a6d8f63-r3",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -1752,7 +1752,7 @@
     "caseId": "case-5e5c45cf880340ae",
     "runId": "case-5e5c45cf880340ae-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -1765,7 +1765,7 @@
     "caseId": "case-5e5c45cf880340ae",
     "runId": "case-5e5c45cf880340ae-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 2,
@@ -1778,7 +1778,7 @@
     "caseId": "case-5e5c45cf880340ae",
     "runId": "case-5e5c45cf880340ae-r2",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 2,
@@ -1791,7 +1791,7 @@
     "caseId": "case-5e5c45cf880340ae",
     "runId": "case-5e5c45cf880340ae-r2",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 3,
@@ -1804,7 +1804,7 @@
     "caseId": "case-5e5c45cf880340ae",
     "runId": "case-5e5c45cf880340ae-r3",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 3,
@@ -1817,7 +1817,7 @@
     "caseId": "case-5e5c45cf880340ae",
     "runId": "case-5e5c45cf880340ae-r3",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -1856,7 +1856,7 @@
     "caseId": "case-6045959d74084dc7",
     "runId": "case-6045959d74084dc7-r1",
     "tripletId": "triplet-53dd22eac17e6ccf",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -1882,7 +1882,7 @@
     "caseId": "case-627963f9b30b28b9",
     "runId": "case-627963f9b30b28b9-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -1895,7 +1895,7 @@
     "caseId": "case-627963f9b30b28b9",
     "runId": "case-627963f9b30b28b9-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 2,
@@ -1908,7 +1908,7 @@
     "caseId": "case-627963f9b30b28b9",
     "runId": "case-627963f9b30b28b9-r2",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 2,
@@ -1921,7 +1921,7 @@
     "caseId": "case-627963f9b30b28b9",
     "runId": "case-627963f9b30b28b9-r2",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 3,
@@ -1934,7 +1934,7 @@
     "caseId": "case-627963f9b30b28b9",
     "runId": "case-627963f9b30b28b9-r3",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 3,
@@ -1947,7 +1947,7 @@
     "caseId": "case-627963f9b30b28b9",
     "runId": "case-627963f9b30b28b9-r3",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -1960,7 +1960,7 @@
     "caseId": "case-6307284775c902ae",
     "runId": "case-6307284775c902ae-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 2,
@@ -1973,7 +1973,7 @@
     "caseId": "case-6307284775c902ae",
     "runId": "case-6307284775c902ae-r2",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 3,
@@ -1986,7 +1986,7 @@
     "caseId": "case-6307284775c902ae",
     "runId": "case-6307284775c902ae-r3",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -2012,7 +2012,7 @@
     "caseId": "case-65148061de92092c",
     "runId": "case-65148061de92092c-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -2038,7 +2038,7 @@
     "caseId": "case-6c93e2b053061cc5",
     "runId": "case-6c93e2b053061cc5-r1",
     "tripletId": "triplet-d3f9f788f2164fc6",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -2051,7 +2051,7 @@
     "caseId": "case-6df70d14606453b8",
     "runId": "case-6df70d14606453b8-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -2064,7 +2064,7 @@
     "caseId": "case-6f4a7f5ee3d6a461",
     "runId": "case-6f4a7f5ee3d6a461-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -2090,7 +2090,7 @@
     "caseId": "case-7071fa1bfd96b0ed",
     "runId": "case-7071fa1bfd96b0ed-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -2142,7 +2142,7 @@
     "caseId": "case-74fa3486d3a17488",
     "runId": "case-74fa3486d3a17488-r1",
     "tripletId": "triplet-3bd548818ffefde3",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -2155,7 +2155,7 @@
     "caseId": "case-758bb8ae6f94332e",
     "runId": "case-758bb8ae6f94332e-r1",
     "tripletId": "triplet-487961fcacd6e257",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -2168,7 +2168,7 @@
     "caseId": "case-75cbdd62bf1b5e6b",
     "runId": "case-75cbdd62bf1b5e6b-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -2181,7 +2181,7 @@
     "caseId": "case-7651d9a0dea5f27d",
     "runId": "case-7651d9a0dea5f27d-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -2194,7 +2194,7 @@
     "caseId": "case-76987a71b23e7b9a",
     "runId": "case-76987a71b23e7b9a-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -2233,7 +2233,7 @@
     "caseId": "case-7b042b0570443024",
     "runId": "case-7b042b0570443024-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 2,
@@ -2246,7 +2246,7 @@
     "caseId": "case-7b042b0570443024",
     "runId": "case-7b042b0570443024-r2",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 3,
@@ -2259,7 +2259,7 @@
     "caseId": "case-7b042b0570443024",
     "runId": "case-7b042b0570443024-r3",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -2272,7 +2272,7 @@
     "caseId": "case-7b13496022db3b5e",
     "runId": "case-7b13496022db3b5e-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -2298,7 +2298,7 @@
     "caseId": "case-7dc333777f640b8c",
     "runId": "case-7dc333777f640b8c-r1",
     "tripletId": "triplet-3f305ed22f0b8184",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -2311,7 +2311,7 @@
     "caseId": "case-8307da98bd1bd9fc",
     "runId": "case-8307da98bd1bd9fc-r1",
     "tripletId": "triplet-3d6d569ff630a5f0",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -2350,7 +2350,7 @@
     "caseId": "case-83c606b7c3f6c319",
     "runId": "case-83c606b7c3f6c319-r1",
     "tripletId": "triplet-3bd548818ffefde3",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -2363,7 +2363,7 @@
     "caseId": "case-83e895fd75a9e741",
     "runId": "case-83e895fd75a9e741-r1",
     "tripletId": "triplet-d3f9f788f2164fc6",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 2,
@@ -2376,7 +2376,7 @@
     "caseId": "case-83e895fd75a9e741",
     "runId": "case-83e895fd75a9e741-r2",
     "tripletId": "triplet-d3f9f788f2164fc6",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 3,
@@ -2389,7 +2389,7 @@
     "caseId": "case-83e895fd75a9e741",
     "runId": "case-83e895fd75a9e741-r3",
     "tripletId": "triplet-d3f9f788f2164fc6",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -2402,7 +2402,7 @@
     "caseId": "case-84e99b6de31a9a56",
     "runId": "case-84e99b6de31a9a56-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 2,
@@ -2415,7 +2415,7 @@
     "caseId": "case-84e99b6de31a9a56",
     "runId": "case-84e99b6de31a9a56-r2",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 3,
@@ -2428,7 +2428,7 @@
     "caseId": "case-84e99b6de31a9a56",
     "runId": "case-84e99b6de31a9a56-r3",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -2441,7 +2441,7 @@
     "caseId": "case-84f796b7de0ad4c3",
     "runId": "case-84f796b7de0ad4c3-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -2454,7 +2454,7 @@
     "caseId": "case-852a81f525c001ad",
     "runId": "case-852a81f525c001ad-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -2467,7 +2467,7 @@
     "caseId": "case-869069eca11b1fa3",
     "runId": "case-869069eca11b1fa3-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -2493,7 +2493,7 @@
     "caseId": "case-8876a60ec9458b99",
     "runId": "case-8876a60ec9458b99-r1",
     "tripletId": "triplet-f76603dd041b3947",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -2519,7 +2519,7 @@
     "caseId": "case-8a0948f339fe0aac",
     "runId": "case-8a0948f339fe0aac-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -2532,7 +2532,7 @@
     "caseId": "case-8ac35fdee53cf470",
     "runId": "case-8ac35fdee53cf470-r1",
     "tripletId": "triplet-487961fcacd6e257",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -2558,7 +2558,7 @@
     "caseId": "case-8f98f2b998912ce6",
     "runId": "case-8f98f2b998912ce6-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -2584,7 +2584,7 @@
     "caseId": "case-932287fa96c9cdd2",
     "runId": "case-932287fa96c9cdd2-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 2,
@@ -2597,7 +2597,7 @@
     "caseId": "case-932287fa96c9cdd2",
     "runId": "case-932287fa96c9cdd2-r2",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 3,
@@ -2610,7 +2610,7 @@
     "caseId": "case-932287fa96c9cdd2",
     "runId": "case-932287fa96c9cdd2-r3",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -2636,7 +2636,7 @@
     "caseId": "case-962ef5da6eea2e1d",
     "runId": "case-962ef5da6eea2e1d-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 2,
@@ -2649,7 +2649,7 @@
     "caseId": "case-962ef5da6eea2e1d",
     "runId": "case-962ef5da6eea2e1d-r2",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 3,
@@ -2662,7 +2662,7 @@
     "caseId": "case-962ef5da6eea2e1d",
     "runId": "case-962ef5da6eea2e1d-r3",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -2688,7 +2688,7 @@
     "caseId": "case-99483b23b05ee507",
     "runId": "case-99483b23b05ee507-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -2701,7 +2701,7 @@
     "caseId": "case-9a71a55ed9ebee9b",
     "runId": "case-9a71a55ed9ebee9b-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -2714,7 +2714,7 @@
     "caseId": "case-9a71a55ed9ebee9b",
     "runId": "case-9a71a55ed9ebee9b-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -2727,7 +2727,7 @@
     "caseId": "case-9acbe3abea77c08d",
     "runId": "case-9acbe3abea77c08d-r1",
     "tripletId": "triplet-62419ff0b00e34e5",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -2753,7 +2753,7 @@
     "caseId": "case-9b06c7cbcbd65582",
     "runId": "case-9b06c7cbcbd65582-r1",
     "tripletId": "triplet-5e4a6910eae7d0be",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -2766,7 +2766,7 @@
     "caseId": "case-9ceb6a2769b2b86e",
     "runId": "case-9ceb6a2769b2b86e-r1",
     "tripletId": "triplet-6d64bed9e9dc2ace",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -2792,7 +2792,7 @@
     "caseId": "case-9f6e5ae794ad383a",
     "runId": "case-9f6e5ae794ad383a-r1",
     "tripletId": "triplet-ca779f216f701388",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -2805,7 +2805,7 @@
     "caseId": "case-a11972889ffd9982",
     "runId": "case-a11972889ffd9982-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -2818,7 +2818,7 @@
     "caseId": "case-a1e15495498d85c8",
     "runId": "case-a1e15495498d85c8-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -2831,7 +2831,7 @@
     "caseId": "case-a3d86044735858bc",
     "runId": "case-a3d86044735858bc-r1",
     "tripletId": "triplet-f76603dd041b3947",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -2857,7 +2857,7 @@
     "caseId": "case-a56f78ab08e45579",
     "runId": "case-a56f78ab08e45579-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -2870,7 +2870,7 @@
     "caseId": "case-a57594ce9642b246",
     "runId": "case-a57594ce9642b246-r1",
     "tripletId": "triplet-5e4a6910eae7d0be",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -2883,7 +2883,7 @@
     "caseId": "case-a60c7eb13f8f7a9c",
     "runId": "case-a60c7eb13f8f7a9c-r1",
     "tripletId": "triplet-53dd22eac17e6ccf",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -2896,7 +2896,7 @@
     "caseId": "case-a6a8f9f90f9ff18c",
     "runId": "case-a6a8f9f90f9ff18c-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -2909,7 +2909,7 @@
     "caseId": "case-a7aed2916fa5ad25",
     "runId": "case-a7aed2916fa5ad25-r1",
     "tripletId": "triplet-6d64bed9e9dc2ace",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -2961,7 +2961,7 @@
     "caseId": "case-ab256756bfc980f4",
     "runId": "case-ab256756bfc980f4-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -2974,7 +2974,7 @@
     "caseId": "case-ae5c29ad071f937b",
     "runId": "case-ae5c29ad071f937b-r1",
     "tripletId": "triplet-b28d4ef225bf602f",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -2987,7 +2987,7 @@
     "caseId": "case-afdc1b5eec53c8b8",
     "runId": "case-afdc1b5eec53c8b8-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -3000,7 +3000,7 @@
     "caseId": "case-b05bd4b7fc87757d",
     "runId": "case-b05bd4b7fc87757d-r1",
     "tripletId": "triplet-bea4c4e1d863e6dd",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -3013,7 +3013,7 @@
     "caseId": "case-b0fc7cade6545aa3",
     "runId": "case-b0fc7cade6545aa3-r1",
     "tripletId": "triplet-5e4a6910eae7d0be",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -3026,7 +3026,7 @@
     "caseId": "case-b155c67d6c36434a",
     "runId": "case-b155c67d6c36434a-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -3039,7 +3039,7 @@
     "caseId": "case-b1d53a044ea08e1d",
     "runId": "case-b1d53a044ea08e1d-r1",
     "tripletId": "triplet-7c7832fd263e1d17",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 2,
@@ -3052,7 +3052,7 @@
     "caseId": "case-b1d53a044ea08e1d",
     "runId": "case-b1d53a044ea08e1d-r2",
     "tripletId": "triplet-7c7832fd263e1d17",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 3,
@@ -3065,7 +3065,7 @@
     "caseId": "case-b1d53a044ea08e1d",
     "runId": "case-b1d53a044ea08e1d-r3",
     "tripletId": "triplet-7c7832fd263e1d17",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -3078,7 +3078,7 @@
     "caseId": "case-b2430538b53b8c01",
     "runId": "case-b2430538b53b8c01-r1",
     "tripletId": "triplet-ca779f216f701388",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -3117,7 +3117,7 @@
     "caseId": "case-b4be741f92292140",
     "runId": "case-b4be741f92292140-r1",
     "tripletId": "triplet-bea4c4e1d863e6dd",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -3130,7 +3130,7 @@
     "caseId": "case-b5d8fbd9446d547b",
     "runId": "case-b5d8fbd9446d547b-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -3221,7 +3221,7 @@
     "caseId": "case-b73869a08dfab4f1",
     "runId": "case-b73869a08dfab4f1-r1",
     "tripletId": "triplet-b28d4ef225bf602f",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -3234,7 +3234,7 @@
     "caseId": "case-b928db2458fccb19",
     "runId": "case-b928db2458fccb19-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -3247,7 +3247,7 @@
     "caseId": "case-b928db2458fccb19",
     "runId": "case-b928db2458fccb19-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 2,
@@ -3260,7 +3260,7 @@
     "caseId": "case-b928db2458fccb19",
     "runId": "case-b928db2458fccb19-r2",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 2,
@@ -3273,7 +3273,7 @@
     "caseId": "case-b928db2458fccb19",
     "runId": "case-b928db2458fccb19-r2",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 3,
@@ -3286,7 +3286,7 @@
     "caseId": "case-b928db2458fccb19",
     "runId": "case-b928db2458fccb19-r3",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 3,
@@ -3299,7 +3299,7 @@
     "caseId": "case-b928db2458fccb19",
     "runId": "case-b928db2458fccb19-r3",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -3325,7 +3325,7 @@
     "caseId": "case-bacfb96b7cc638b0",
     "runId": "case-bacfb96b7cc638b0-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 2,
@@ -3338,7 +3338,7 @@
     "caseId": "case-bacfb96b7cc638b0",
     "runId": "case-bacfb96b7cc638b0-r2",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 3,
@@ -3351,7 +3351,7 @@
     "caseId": "case-bacfb96b7cc638b0",
     "runId": "case-bacfb96b7cc638b0-r3",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -3390,7 +3390,7 @@
     "caseId": "case-bf44bfb962cff565",
     "runId": "case-bf44bfb962cff565-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -3403,7 +3403,7 @@
     "caseId": "case-bf44bfb962cff565",
     "runId": "case-bf44bfb962cff565-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 2,
@@ -3416,7 +3416,7 @@
     "caseId": "case-bf44bfb962cff565",
     "runId": "case-bf44bfb962cff565-r2",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 2,
@@ -3429,7 +3429,7 @@
     "caseId": "case-bf44bfb962cff565",
     "runId": "case-bf44bfb962cff565-r2",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 3,
@@ -3442,7 +3442,7 @@
     "caseId": "case-bf44bfb962cff565",
     "runId": "case-bf44bfb962cff565-r3",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 3,
@@ -3455,7 +3455,7 @@
     "caseId": "case-bf44bfb962cff565",
     "runId": "case-bf44bfb962cff565-r3",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -3468,7 +3468,7 @@
     "caseId": "case-c083d36146e5f876",
     "runId": "case-c083d36146e5f876-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -3494,7 +3494,7 @@
     "caseId": "case-c1b52dde4c4d9a98",
     "runId": "case-c1b52dde4c4d9a98-r1",
     "tripletId": "triplet-888b1d6b493c5e1d",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 2,
@@ -3507,7 +3507,7 @@
     "caseId": "case-c1b52dde4c4d9a98",
     "runId": "case-c1b52dde4c4d9a98-r2",
     "tripletId": "triplet-888b1d6b493c5e1d",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 3,
@@ -3520,7 +3520,7 @@
     "caseId": "case-c1b52dde4c4d9a98",
     "runId": "case-c1b52dde4c4d9a98-r3",
     "tripletId": "triplet-888b1d6b493c5e1d",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -3559,7 +3559,7 @@
     "caseId": "case-c8129797543c5930",
     "runId": "case-c8129797543c5930-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -3572,7 +3572,7 @@
     "caseId": "case-c935fdffd5f7cf00",
     "runId": "case-c935fdffd5f7cf00-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -3585,7 +3585,7 @@
     "caseId": "case-caa74ef772dc95fd",
     "runId": "case-caa74ef772dc95fd-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -3598,7 +3598,7 @@
     "caseId": "case-caa74ef772dc95fd",
     "runId": "case-caa74ef772dc95fd-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -3611,7 +3611,7 @@
     "caseId": "case-cd5130535eab3975",
     "runId": "case-cd5130535eab3975-r1",
     "tripletId": "triplet-3f305ed22f0b8184",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -3624,7 +3624,7 @@
     "caseId": "case-cf3dd8509dd2996b",
     "runId": "case-cf3dd8509dd2996b-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -3637,7 +3637,7 @@
     "caseId": "case-cfd3f68c349941cd",
     "runId": "case-cfd3f68c349941cd-r1",
     "tripletId": "triplet-7c7832fd263e1d17",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 2,
@@ -3650,7 +3650,7 @@
     "caseId": "case-cfd3f68c349941cd",
     "runId": "case-cfd3f68c349941cd-r2",
     "tripletId": "triplet-7c7832fd263e1d17",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 3,
@@ -3663,7 +3663,7 @@
     "caseId": "case-cfd3f68c349941cd",
     "runId": "case-cfd3f68c349941cd-r3",
     "tripletId": "triplet-7c7832fd263e1d17",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -3676,7 +3676,7 @@
     "caseId": "case-d1b0737dd66d6ab7",
     "runId": "case-d1b0737dd66d6ab7-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -3689,7 +3689,7 @@
     "caseId": "case-d57f9726600d8c85",
     "runId": "case-d57f9726600d8c85-r1",
     "tripletId": "triplet-d3f9f788f2164fc6",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 2,
@@ -3702,7 +3702,7 @@
     "caseId": "case-d57f9726600d8c85",
     "runId": "case-d57f9726600d8c85-r2",
     "tripletId": "triplet-d3f9f788f2164fc6",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 3,
@@ -3715,7 +3715,7 @@
     "caseId": "case-d57f9726600d8c85",
     "runId": "case-d57f9726600d8c85-r3",
     "tripletId": "triplet-d3f9f788f2164fc6",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -3728,7 +3728,7 @@
     "caseId": "case-d9d348df0c65d10c",
     "runId": "case-d9d348df0c65d10c-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -3741,7 +3741,7 @@
     "caseId": "case-d9d348df0c65d10c",
     "runId": "case-d9d348df0c65d10c-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -3780,7 +3780,7 @@
     "caseId": "case-dc8aaea174c186f1",
     "runId": "case-dc8aaea174c186f1-r1",
     "tripletId": "triplet-487961fcacd6e257",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -3793,7 +3793,7 @@
     "caseId": "case-dd1a92d04450dd00",
     "runId": "case-dd1a92d04450dd00-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -3806,7 +3806,7 @@
     "caseId": "case-de8afc24c22c715d",
     "runId": "case-de8afc24c22c715d-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -3819,7 +3819,7 @@
     "caseId": "case-def928b81354343c",
     "runId": "case-def928b81354343c-r1",
     "tripletId": "triplet-3bd548818ffefde3",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -3858,7 +3858,7 @@
     "caseId": "case-e015e03da7585e3f",
     "runId": "case-e015e03da7585e3f-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -3871,7 +3871,7 @@
     "caseId": "case-e015e03da7585e3f",
     "runId": "case-e015e03da7585e3f-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -3884,7 +3884,7 @@
     "caseId": "case-e11311f61715bdc3",
     "runId": "case-e11311f61715bdc3-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -3897,7 +3897,7 @@
     "caseId": "case-e11311f61715bdc3",
     "runId": "case-e11311f61715bdc3-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -3910,7 +3910,7 @@
     "caseId": "case-e236b32c3cf6cf63",
     "runId": "case-e236b32c3cf6cf63-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 2,
@@ -3923,7 +3923,7 @@
     "caseId": "case-e236b32c3cf6cf63",
     "runId": "case-e236b32c3cf6cf63-r2",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 3,
@@ -3936,7 +3936,7 @@
     "caseId": "case-e236b32c3cf6cf63",
     "runId": "case-e236b32c3cf6cf63-r3",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -3949,7 +3949,7 @@
     "caseId": "case-e2ddb425360d9aae",
     "runId": "case-e2ddb425360d9aae-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -3975,7 +3975,7 @@
     "caseId": "case-e5f3bb0c2ef9be96",
     "runId": "case-e5f3bb0c2ef9be96-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 2,
@@ -3988,7 +3988,7 @@
     "caseId": "case-e5f3bb0c2ef9be96",
     "runId": "case-e5f3bb0c2ef9be96-r2",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 3,
@@ -4001,7 +4001,7 @@
     "caseId": "case-e5f3bb0c2ef9be96",
     "runId": "case-e5f3bb0c2ef9be96-r3",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -4027,7 +4027,7 @@
     "caseId": "case-e716f81d8e95872e",
     "runId": "case-e716f81d8e95872e-r1",
     "tripletId": "triplet-93ae8bd79dabd3f0",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -4040,7 +4040,7 @@
     "caseId": "case-e7da404ecd647dd6",
     "runId": "case-e7da404ecd647dd6-r1",
     "tripletId": "triplet-b28d4ef225bf602f",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -4053,7 +4053,7 @@
     "caseId": "case-e9fa07edfbf71dc1",
     "runId": "case-e9fa07edfbf71dc1-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -4066,7 +4066,7 @@
     "caseId": "case-ea731ed849605ce6",
     "runId": "case-ea731ed849605ce6-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -4079,7 +4079,7 @@
     "caseId": "case-eb3eff099b75074b",
     "runId": "case-eb3eff099b75074b-r1",
     "tripletId": "triplet-ca779f216f701388",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -4092,7 +4092,7 @@
     "caseId": "case-ec4a8f1228822760",
     "runId": "case-ec4a8f1228822760-r1",
     "tripletId": "triplet-f76603dd041b3947",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -4105,7 +4105,7 @@
     "caseId": "case-ec982ddd8c69da71",
     "runId": "case-ec982ddd8c69da71-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -4118,7 +4118,7 @@
     "caseId": "case-eca9d3b6cdbe1aa2",
     "runId": "case-eca9d3b6cdbe1aa2-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -4131,7 +4131,7 @@
     "caseId": "case-ed41d46c0eb6f06e",
     "runId": "case-ed41d46c0eb6f06e-r1",
     "tripletId": "triplet-bdb15c3d2ff02215",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -4144,7 +4144,7 @@
     "caseId": "case-f1723268f83d9f89",
     "runId": "case-f1723268f83d9f89-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -4157,7 +4157,7 @@
     "caseId": "case-f5481088782bf0ce",
     "runId": "case-f5481088782bf0ce-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -4170,7 +4170,7 @@
     "caseId": "case-f593279bd381ce44",
     "runId": "case-f593279bd381ce44-r1",
     "tripletId": "triplet-93ae8bd79dabd3f0",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -4183,7 +4183,7 @@
     "caseId": "case-f65415303ccddaf0",
     "runId": "case-f65415303ccddaf0-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -4196,7 +4196,7 @@
     "caseId": "case-f95c698191ab135c",
     "runId": "case-f95c698191ab135c-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -4209,7 +4209,7 @@
     "caseId": "case-fa8690e266efa19b",
     "runId": "case-fa8690e266efa19b-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -4222,7 +4222,7 @@
     "caseId": "case-fabe75cdd7b8f656",
     "runId": "case-fabe75cdd7b8f656-r1",
     "tripletId": "triplet-53dd22eac17e6ccf",
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   },
   {
     "replicate": 1,
@@ -4248,6 +4248,6 @@
     "caseId": "case-fe9b0638e5103caf",
     "runId": "case-fe9b0638e5103caf-r1",
     "tripletId": null,
-    "evidenceAvailable": false
+    "evidenceAvailable": true
   }
 ]

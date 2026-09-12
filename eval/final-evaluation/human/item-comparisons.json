@@ -1,0 +1,1770 @@
+[
+  {
+    "itemId": "P1-01",
+    "dimension": "Q1",
+    "humans": [
+      {
+        "annotator": "A",
+        "answer": "2",
+        "reason": "不能把三十人次写成三十位不同居民，作者保留了统计范围，没有盲目扩大"
+      },
+      {
+        "annotator": "C",
+        "answer": "2",
+        "reason": "误区核查清晰"
+      }
+    ],
+    "humanPairSeverity": {
+      "n": 1,
+      "exact": 1,
+      "adjacent": 0,
+      "polarity": 0,
+      "uncertain": 0,
+      "abstention": 0,
+      "missing": 0,
+      "invalid": 0,
+      "bothNumeric": 1,
+      "leftHigher": 0,
+      "leftLower": 0,
+      "transitions": {
+        "2 -> 2": 1
+      }
+    },
+    "consensus": "2",
+    "models": {
+      "StudyEval": "U",
+      "Max": "2",
+      "Fable": "2"
+    },
+    "modelAmbiguity": {
+      "Max": false,
+      "Fable": false
+    },
+    "modelReasons": {
+      "Max": {
+        "short_reason": "18+12=30人次、10份卡中8份支持以及长期安排未定均有资料依据，且保留了不能去重计人数、不能外推全体的限制。",
+        "alternative_if_any": ""
+      },
+      "Fable": {
+        "short_reason": "总结与资料完全一致：三十人次不等于三十位居民、十卡八支持不外推、长期安排未决定、保留“试行”和统计范围；无数字或归因错误。",
+        "alternative_if_any": ""
+      }
+    }
+  },
+  {
+    "itemId": "P1-02",
+    "dimension": "Q1",
+    "humans": [
+      {
+        "annotator": "A",
+        "answer": "2",
+        "reason": "正确解释了不能把部分意见推广到全部读者，事实和限制均符合资料。"
+      },
+      {
+        "annotator": "C",
+        "answer": "2",
+        "reason": "关键逻辑清楚,即:时间上的重叠或共同出现，不等于一方造成另一方。"
+      }
+    ],
+    "humanPairSeverity": {
+      "n": 1,
+      "exact": 1,
+      "adjacent": 0,
+      "polarity": 0,
+      "uncertain": 0,
+      "abstention": 0,
+      "missing": 0,
+      "invalid": 0,
+      "bothNumeric": 1,
+      "leftHigher": 0,
+      "leftLower": 0,
+      "transitions": {
+        "2 -> 2": 1
+      }
+    },
+    "consensus": "2",
+    "models": {
+      "StudyEval": "2",
+      "Max": "2",
+      "Fable": "2"
+    },
+    "modelAmbiguity": {
+      "Max": false,
+      "Fable": false
+    },
+    "modelReasons": {
+      "Max": {
+        "short_reason": "同现不足以支持因果符合资料；读书节与喷药明确作为假设，气味影响也只说可能，未把补充例子当成已证实事实。",
+        "alternative_if_any": ""
+      },
+      "Fable": {
+        "short_reason": "对资料“指示牌与到馆人数只是同时发生”的转述准确；例子（读书节与公园喷药）内部事实自洽，没有编造资料没有的主张。",
+        "alternative_if_any": ""
+      }
+    }
+  },
+  {
+    "itemId": "P1-02",
+    "dimension": "Q3",
+    "humans": [
+      {
+        "annotator": "A",
+        "answer": "2",
+        "reason": "同时发生不等于导致，因果没问题"
+      },
+      {
+        "annotator": "C",
+        "answer": "2",
+        "reason": "举例直观"
+      }
+    ],
+    "humanPairSeverity": {
+      "n": 1,
+      "exact": 1,
+      "adjacent": 0,
+      "polarity": 0,
+      "uncertain": 0,
+      "abstention": 0,
+      "missing": 0,
+      "invalid": 0,
+      "bothNumeric": 1,
+      "leftHigher": 0,
+      "leftLower": 0,
+      "transitions": {
+        "2 -> 2": 1
+      }
+    },
+    "consensus": "2",
+    "models": {
+      "StudyEval": "2",
+      "Max": "2",
+      "Fable": "2"
+    },
+    "modelAmbiguity": {
+      "Max": false,
+      "Fable": false
+    },
+    "modelReasons": {
+      "Max": {
+        "short_reason": "先说明同现与因果的区别，再用新例子展示缺少比较时不能归因，并明确该类比只解释这一关系及需要补充证据的边界。",
+        "alternative_if_any": ""
+      },
+      "Fable": {
+        "short_reason": "关键关系（共现≠因果）说清，新例子与资料不同且易懂，并明确了适用边界（只说明不可凭同现臆断，证明因果需对比数据）。",
+        "alternative_if_any": "有人可能因例子略显牵强（喷药可能减少人流的猜测）给 1，但这不影响关键推理。"
+      }
+    }
+  },
+  {
+    "itemId": "P1-03",
+    "dimension": "Q2",
+    "humans": [
+      {
+        "annotator": "A",
+        "answer": "2",
+        "reason": "包含区间计算、误差限制和刻度不等于准确等核心内容，覆盖目标要求。"
+      },
+      {
+        "annotator": "C",
+        "answer": "1",
+        "reason": "刻度细不等于准确我觉得在这段话里没体现"
+      }
+    ],
+    "humanPairSeverity": {
+      "n": 1,
+      "exact": 0,
+      "adjacent": 1,
+      "polarity": 0,
+      "uncertain": 0,
+      "abstention": 0,
+      "missing": 0,
+      "invalid": 0,
+      "bothNumeric": 1,
+      "leftHigher": 1,
+      "leftLower": 0,
+      "transitions": {
+        "2 -> 1": 1
+      }
+    },
+    "consensus": null,
+    "models": {
+      "StudyEval": "2",
+      "Max": "1",
+      "Fable": "1"
+    },
+    "modelAmbiguity": {
+      "Max": false,
+      "Fable": true
+    },
+    "modelReasons": {
+      "Max": {
+        "short_reason": "区间构造、大小比较及刻度不等于准确的主要目标均保留，但次要延伸只说留意共同偏差，未说明重复取平均不能自动消除它。",
+        "alternative_if_any": ""
+      },
+      "Fable": {
+        "short_reason": "主要目标（分辨率≠准确、闭区间、区间比较、写清单位与误差）都保留；次要延伸只写“留意共同偏差”，没有说明重复平均不能自动消除同向偏差，处理偏薄。",
+        "alternative_if_any": "认为“留意共同偏差”已足够覆盖次要延伸的标注者会给 2。"
+      }
+    }
+  },
+  {
+    "itemId": "P1-04",
+    "dimension": "Q3",
+    "humans": [
+      {
+        "annotator": "A",
+        "answer": "0",
+        "reason": "原文要求裁纸和调墨都完成才能盖章，作者遗漏前置条件导致时间计算错误。"
+      },
+      {
+        "annotator": "C",
+        "answer": "0",
+        "reason": "为什么盖章不等裁纸"
+      }
+    ],
+    "humanPairSeverity": {
+      "n": 1,
+      "exact": 1,
+      "adjacent": 0,
+      "polarity": 0,
+      "uncertain": 0,
+      "abstention": 0,
+      "missing": 0,
+      "invalid": 0,
+      "bothNumeric": 1,
+      "leftHigher": 0,
+      "leftLower": 0,
+      "transitions": {
+        "0 -> 0": 1
+      }
+    },
+    "consensus": "0",
+    "models": {
+      "StudyEval": "0",
+      "Max": "0",
+      "Fable": "0"
+    },
+    "modelAmbiguity": {
+      "Max": false,
+      "Fable": false
+    },
+    "modelReasons": {
+      "Max": {
+        "short_reason": "忽略盖章必须等待裁纸和调墨都完成，又否认人数限制，导致11分钟的错误结果；按资料，两人最早12分钟，一人15分钟。",
+        "alternative_if_any": ""
+      },
+      "Fable": {
+        "short_reason": "关键推理错误：资料明确盖章须等裁纸和调墨都完成（第4分钟），待评内容改为只等调墨（第3分钟），得出第5分钟盖完、第11分钟结束，并错误声称与工作人员数量无关。",
+        "alternative_if_any": ""
+      }
+    }
+  },
+  {
+    "itemId": "P1-05",
+    "dimension": "Q1",
+    "humans": [
+      {
+        "annotator": "A",
+        "answer": "2",
+        "reason": "作者正确说明百分比变化取决于基数，果园例子计算也正确"
+      },
+      {
+        "annotator": "C",
+        "answer": "2",
+        "reason": "连续百分比不能叠加及原因说明清晰"
+      }
+    ],
+    "humanPairSeverity": {
+      "n": 1,
+      "exact": 1,
+      "adjacent": 0,
+      "polarity": 0,
+      "uncertain": 0,
+      "abstention": 0,
+      "missing": 0,
+      "invalid": 0,
+      "bothNumeric": 1,
+      "leftHigher": 0,
+      "leftLower": 0,
+      "transitions": {
+        "2 -> 2": 1
+      }
+    },
+    "consensus": "2",
+    "models": {
+      "StudyEval": "2",
+      "Max": "2",
+      "Fable": "2"
+    },
+    "modelAmbiguity": {
+      "Max": false,
+      "Fable": false
+    },
+    "modelReasons": {
+      "Max": {
+        "short_reason": "引用准确，500×0.8=400、400×1.2=480计算正确；第二次以400为基数的说明和按比例变化的限定均符合资料。",
+        "alternative_if_any": ""
+      },
+      "Fable": {
+        "short_reason": "引文与资料原句一致；例子计算正确（500→400→480），未把资料没有的条件当作事实。",
+        "alternative_if_any": ""
+      }
+    }
+  },
+  {
+    "itemId": "P1-05",
+    "dimension": "Q3",
+    "humans": [
+      {
+        "annotator": "A",
+        "answer": "2",
+        "reason": "作者用产量变化解释百分比不能抵消，例子符合资料中的关键关系"
+      },
+      {
+        "annotator": "C",
+        "answer": "1",
+        "reason": "百分点和相对增长率跳过了"
+      }
+    ],
+    "humanPairSeverity": {
+      "n": 1,
+      "exact": 0,
+      "adjacent": 1,
+      "polarity": 0,
+      "uncertain": 0,
+      "abstention": 0,
+      "missing": 0,
+      "invalid": 0,
+      "bothNumeric": 1,
+      "leftHigher": 1,
+      "leftLower": 0,
+      "transitions": {
+        "2 -> 1": 1
+      }
+    },
+    "consensus": null,
+    "models": {
+      "StudyEval": "2",
+      "Max": "2",
+      "Fable": "2"
+    },
+    "modelAmbiguity": {
+      "Max": false,
+      "Fable": false
+    },
+    "modelReasons": {
+      "Max": {
+        "short_reason": "果园例子逐步交代两个不同基数和实际增量80箱，清楚解释等幅百分比不能抵消，并说明取整或特殊门槛需要另行处理。",
+        "alternative_if_any": ""
+      },
+      "Fable": {
+        "short_reason": "用果园产量这个非价格例子清楚展示连续等百分比不抵消的原因（第二步基数变了），并给出适用边界（仅按比例连续变化、无取整或门槛）。",
+        "alternative_if_any": ""
+      }
+    }
+  },
+  {
+    "itemId": "P1-06",
+    "dimension": "Q4",
+    "humans": [
+      {
+        "annotator": "A",
+        "answer": "2",
+        "reason": "题目条件完整，参考答案正确，且没有提前展示解答"
+      },
+      {
+        "annotator": "C",
+        "answer": "2",
+        "reason": "作答正确，步骤简洁"
+      }
+    ],
+    "humanPairSeverity": {
+      "n": 1,
+      "exact": 1,
+      "adjacent": 0,
+      "polarity": 0,
+      "uncertain": 0,
+      "abstention": 0,
+      "missing": 0,
+      "invalid": 0,
+      "bothNumeric": 1,
+      "leftHigher": 0,
+      "leftLower": 0,
+      "transitions": {
+        "2 -> 2": 1
+      }
+    },
+    "consensus": "2",
+    "models": {
+      "StudyEval": "2",
+      "Max": "2",
+      "Fable": "2"
+    },
+    "modelAmbiguity": {
+      "Max": false,
+      "Fable": false
+    },
+    "modelReasons": {
+      "Max": {
+        "short_reason": "离开后的分段任务要求应用条件，且记录说明未提前展示解答；乙完成1/4后甲需6小时，总7小时，而同时合作需1÷(1/8+1/4)=8/3小时，作者答案成立。",
+        "alternative_if_any": ""
+      },
+      "Fable": {
+        "short_reason": "题目条件充分（8h/4h、可分拆、恒速、乙先做1小时后离开）；作者答案验算正确：乙完成1/4，甲以1/8速度做3/4需6小时共7小时；合作速度3/8需8/3小时；记录显示未提前展示，且题目要求迁移不是复述。",
+        "alternative_if_any": ""
+      }
+    }
+  },
+  {
+    "itemId": "P1-07",
+    "dimension": "Q5",
+    "humans": [
+      {
+        "annotator": "A",
+        "answer": "2",
+        "reason": "学习者满足平均数、中位数计算和解释要求，系统评分符合标准"
+      },
+      {
+        "annotator": "C",
+        "answer": "1",
+        "reason": "学生答案没有小标题，不满足标准三了"
+      }
+    ],
+    "humanPairSeverity": {
+      "n": 1,
+      "exact": 0,
+      "adjacent": 1,
+      "polarity": 0,
+      "uncertain": 0,
+      "abstention": 0,
+      "missing": 0,
+      "invalid": 0,
+      "bothNumeric": 1,
+      "leftHigher": 1,
+      "leftLower": 0,
+      "transitions": {
+        "2 -> 1": 1
+      }
+    },
+    "consensus": null,
+    "models": {
+      "StudyEval": "1",
+      "Max": "1",
+      "Fable": "1"
+    },
+    "modelAmbiguity": {
+      "Max": false,
+      "Fable": false
+    },
+    "modelReasons": {
+      "Max": {
+        "short_reason": "学习者已给出四个正确数值及变化原因，授予学分正确，但回答没有小标题，系统把可选标准3判满足并声称用了小标题不准确。",
+        "alternative_if_any": ""
+      },
+      "Fable": {
+        "short_reason": "两条必要标准判定正确、授予学分正确；但学习者并未使用小标题，系统却判可选标准3满足并反馈“你用小标题分开了步骤”，属可选/非关键判定不准确。",
+        "alternative_if_any": ""
+      }
+    }
+  },
+  {
+    "itemId": "P1-08",
+    "dimension": "Q1",
+    "humans": [
+      {
+        "annotator": "A",
+        "answer": "2",
+        "reason": "指出观察数据不能直接证明因果，符合资料对混杂因素的说明"
+      },
+      {
+        "annotator": "C",
+        "answer": "2",
+        "reason": "关键关系说明正确"
+      }
+    ],
+    "humanPairSeverity": {
+      "n": 1,
+      "exact": 1,
+      "adjacent": 0,
+      "polarity": 0,
+      "uncertain": 0,
+      "abstention": 0,
+      "missing": 0,
+      "invalid": 0,
+      "bothNumeric": 1,
+      "leftHigher": 0,
+      "leftLower": 0,
+      "transitions": {
+        "2 -> 2": 1
+      }
+    },
+    "consensus": "2",
+    "models": {
+      "StudyEval": "2",
+      "Max": "2",
+      "Fable": "2"
+    },
+    "modelAmbiguity": {
+      "Max": true,
+      "Fable": true
+    },
+    "modelReasons": {
+      "Max": {
+        "short_reason": "所引早餐调查句子与可见资料一致，鞋类和训练量被标为假设及可能混杂，核心归因有据；包内未单独标明所称资料标题，故标题本身未核实。",
+        "alternative_if_any": "1：若将包内未得到印证的《早餐调查能说明什么》这一具体标题视为局部来源归因不足。"
+      },
+      "Fable": {
+        "short_reason": "引用的原句与资料逐字一致，例子内的事实为假想情景且已标明；唯一疑点是给资料加了标题《早餐调查能说明什么》，包内资料没有显示标题，无法核实。",
+        "alternative_if_any": "把无法核实的标题视为局部归因问题的标注者会给 1。"
+      }
+    }
+  },
+  {
+    "itemId": "P1-08",
+    "dimension": "Q3",
+    "humans": [
+      {
+        "annotator": "A",
+        "answer": "1",
+        "reason": "运动鞋例子说明相关不等于因果，并指出随机分组会改变结论"
+      },
+      {
+        "annotator": "C",
+        "answer": "2",
+        "reason": "举例直观"
+      }
+    ],
+    "humanPairSeverity": {
+      "n": 1,
+      "exact": 0,
+      "adjacent": 1,
+      "polarity": 0,
+      "uncertain": 0,
+      "abstention": 0,
+      "missing": 0,
+      "invalid": 0,
+      "bothNumeric": 1,
+      "leftHigher": 0,
+      "leftLower": 1,
+      "transitions": {
+        "1 -> 2": 1
+      }
+    },
+    "consensus": null,
+    "models": {
+      "StudyEval": "2",
+      "Max": "2",
+      "Fable": "2"
+    },
+    "modelAmbiguity": {
+      "Max": false,
+      "Fable": false
+    },
+    "modelReasons": {
+      "Max": {
+        "short_reason": "以训练量可能同时关联鞋类和成绩说明混杂，依次区分观察、假说和因果主张，并限定为未随机且未控制条件的观察情景。",
+        "alternative_if_any": ""
+      },
+      "Fable": {
+        "short_reason": "运动鞋与凉鞋的例子清楚展示观察差异≠因果，指出混杂（训练量、体质），说明了适用边界（未随机分配时），并按资料的三层框架演示。",
+        "alternative_if_any": ""
+      }
+    }
+  },
+  {
+    "itemId": "P1-09",
+    "dimension": "Q6",
+    "humans": [
+      {
+        "annotator": "A",
+        "answer": "0",
+        "reason": "作者把错误归因于“不认真背诵”，没有针对自愿分组导致的因果错误提供补救，抄三遍过于主观"
+      },
+      {
+        "annotator": "C",
+        "answer": "0",
+        "reason": "错因不够详细"
+      }
+    ],
+    "humanPairSeverity": {
+      "n": 1,
+      "exact": 1,
+      "adjacent": 0,
+      "polarity": 0,
+      "uncertain": 0,
+      "abstention": 0,
+      "missing": 0,
+      "invalid": 0,
+      "bothNumeric": 1,
+      "leftHigher": 0,
+      "leftLower": 0,
+      "transitions": {
+        "0 -> 0": 1
+      }
+    },
+    "consensus": "0",
+    "models": {
+      "StudyEval": "0",
+      "Max": "0",
+      "Fable": "0"
+    },
+    "modelAmbiguity": {
+      "Max": false,
+      "Fable": false
+    },
+    "modelReasons": {
+      "Max": {
+        "short_reason": "由错误臆断没有认真背诵，未针对自愿参加不等于随机分组作诊断，又把抄写三遍及原题复述当成独立迁移掌握，直接违反该维度要求。",
+        "alternative_if_any": ""
+      },
+      "Fable": {
+        "short_reason": "臆测学习者心理（“没有认真背诵”），补救是把参考答案原样抄三遍再原样作答，并把复述当成“独立迁移掌握”；没有针对“自愿≠随机”这一实际错误作任何解释或检验。",
+        "alternative_if_any": ""
+      }
+    }
+  },
+  {
+    "itemId": "P2-01",
+    "dimension": "Q1",
+    "humans": [
+      {
+        "annotator": "A",
+        "answer": "1",
+        "reason": "说的基本跟原材料一致"
+      },
+      {
+        "annotator": "B",
+        "answer": "1",
+        "reason": "负责人建议延长试行，长期安排尚待讨论。"
+      }
+    ],
+    "humanPairSeverity": {
+      "n": 1,
+      "exact": 1,
+      "adjacent": 0,
+      "polarity": 0,
+      "uncertain": 0,
+      "abstention": 0,
+      "missing": 0,
+      "invalid": 0,
+      "bothNumeric": 1,
+      "leftHigher": 0,
+      "leftLower": 0,
+      "transitions": {
+        "1 -> 1": 1
+      }
+    },
+    "consensus": "1",
+    "models": {
+      "StudyEval": "0",
+      "Max": "1",
+      "Fable": "1"
+    },
+    "modelAmbiguity": {
+      "Max": false,
+      "Fable": false
+    },
+    "modelReasons": {
+      "Max": {
+        "short_reason": "附带回顾把第一、第二个周六的18与12人次对调；30人次总量、意见卡范围和长期安排未定仍正确，属于不改变主要结论的局部错误。",
+        "alternative_if_any": ""
+      },
+      "Fable": {
+        "short_reason": "主体总结正确，但“附带回顾”把两个周六的人次写反（资料是第一个周六十八、第二个周六十二）；这是局部事实错误，总数三十和各项结论不受影响。",
+        "alternative_if_any": "严格的标注者可能认为核对任务中出现数字错误就应给 0。"
+      }
+    }
+  },
+  {
+    "itemId": "P2-02",
+    "dimension": "Q1",
+    "humans": [
+      {
+        "annotator": "A",
+        "answer": "2",
+        "reason": "数字算对了，也知道数量和比例不是一回事，不能混着比较"
+      },
+      {
+        "annotator": "B",
+        "answer": "2",
+        "reason": "若要公平比较，需要先约定物品难度、统计时段和完成定义等条件。"
+      }
+    ],
+    "humanPairSeverity": {
+      "n": 1,
+      "exact": 1,
+      "adjacent": 0,
+      "polarity": 0,
+      "uncertain": 0,
+      "abstention": 0,
+      "missing": 0,
+      "invalid": 0,
+      "bothNumeric": 1,
+      "leftHigher": 0,
+      "leftLower": 0,
+      "transitions": {
+        "2 -> 2": 1
+      }
+    },
+    "consensus": "2",
+    "models": {
+      "StudyEval": "2",
+      "Max": "2",
+      "Fable": "2"
+    },
+    "modelAmbiguity": {
+      "Max": false,
+      "Fable": false
+    },
+    "modelReasons": {
+      "Max": {
+        "short_reason": "80件与36件、80%与90%以及合并116/140≈82.9%均正确，也保留了难度信息不足以归因能力、截断纵轴不改变原数值的限制。",
+        "alternative_if_any": ""
+      },
+      "Fable": {
+        "short_reason": "所有数字与资料一致：80件对36件、80%对90%、合并116/140≈82.9%、不可直接平均百分率；关于能力原因需额外信息、纵轴截断不改变原值的说法也有资料依据。",
+        "alternative_if_any": ""
+      }
+    }
+  },
+  {
+    "itemId": "P2-03",
+    "dimension": "Q2",
+    "humans": [
+      {
+        "annotator": "A",
+        "answer": "0",
+        "reason": "这题重点不只是看小数位，他把误差和区间这些重要内容都漏掉了。"
+      },
+      {
+        "annotator": "B",
+        "answer": "0",
+        "reason": "比较两件物品时，应比较它们允许的区间，而不是只看中心读数。"
+      }
+    ],
+    "humanPairSeverity": {
+      "n": 1,
+      "exact": 1,
+      "adjacent": 0,
+      "polarity": 0,
+      "uncertain": 0,
+      "abstention": 0,
+      "missing": 0,
+      "invalid": 0,
+      "bothNumeric": 1,
+      "leftHigher": 0,
+      "leftLower": 0,
+      "transitions": {
+        "0 -> 0": 1
+      }
+    },
+    "consensus": "0",
+    "models": {
+      "StudyEval": "0",
+      "Max": "0",
+      "Fable": "0"
+    },
+    "modelAmbiguity": {
+      "Max": false,
+      "Fable": false
+    },
+    "modelReasons": {
+      "Max": {
+        "short_reason": "明确排除误差界限与区间比较两个关键应用目标，并把读数小数位更多误说成必定更准，实质改变了声明的学习范围与能力要求。",
+        "alternative_if_any": ""
+      },
+      "Fable": {
+        "short_reason": "把范围改成“只要求会读小数位”，宣称误差界限和区间比较都不用学，并断言小数位越多必定越准，与资料及声明目标直接相反；关键目标被遗漏且改变。",
+        "alternative_if_any": ""
+      }
+    }
+  },
+  {
+    "itemId": "P2-04",
+    "dimension": "Q3",
+    "humans": [
+      {
+        "annotator": "A",
+        "answer": "2",
+        "reason": "讲得挺明白的，把前后步骤和两个人合作的情况都解释出来了。"
+      },
+      {
+        "annotator": "B",
+        "answer": "2",
+        "reason": "评价方案时，先检查每一步的开工条件，再讨论是否还有不必要的等待。"
+      }
+    ],
+    "humanPairSeverity": {
+      "n": 1,
+      "exact": 1,
+      "adjacent": 0,
+      "polarity": 0,
+      "uncertain": 0,
+      "abstention": 0,
+      "missing": 0,
+      "invalid": 0,
+      "bothNumeric": 1,
+      "leftHigher": 0,
+      "leftLower": 0,
+      "transitions": {
+        "2 -> 2": 1
+      }
+    },
+    "consensus": "2",
+    "models": {
+      "StudyEval": "2",
+      "Max": "2",
+      "Fable": "2"
+    },
+    "modelAmbiguity": {
+      "Max": false,
+      "Fable": false
+    },
+    "modelReasons": {
+      "Max": {
+        "short_reason": "明确解释需等待较晚完成的前置步骤，并给出两人的4→6→11→12时间线和一人先花7分钟的推理，资源边界及合法与最短的区别清楚。",
+        "alternative_if_any": ""
+      },
+      "Fable": {
+        "short_reason": "讲清了关键规则（盖章开工取两条前置路径完成时刻的较大值），两人12分钟、一人15分钟的时间线正确，并给出“先查依赖与资源、合法不等于最快”的适用边界。",
+        "alternative_if_any": ""
+      }
+    }
+  },
+  {
+    "itemId": "P2-05",
+    "dimension": "Q1",
+    "humans": [
+      {
+        "annotator": "A",
+        "answer": "2",
+        "reason": "他的说法没有问题，误差范围和比较方法都跟材料一样。"
+      },
+      {
+        "annotator": "B",
+        "answer": "2",
+        "reason": "对资料转述准确，且例子区间计算也正确"
+      }
+    ],
+    "humanPairSeverity": {
+      "n": 1,
+      "exact": 1,
+      "adjacent": 0,
+      "polarity": 0,
+      "uncertain": 0,
+      "abstention": 0,
+      "missing": 0,
+      "invalid": 0,
+      "bothNumeric": 1,
+      "leftHigher": 0,
+      "leftLower": 0,
+      "transitions": {
+        "2 -> 2": 1
+      }
+    },
+    "consensus": "2",
+    "models": {
+      "StudyEval": "2",
+      "Max": "2",
+      "Fable": "2"
+    },
+    "modelAmbiguity": {
+      "Max": true,
+      "Fable": false
+    },
+    "modelReasons": {
+      "Max": {
+        "short_reason": "三个允许区间及195–210的重叠均正确；结合结尾的简化模型限定，将准确程度理解为误差界限所能保证的范围时，核心主张成立。",
+        "alternative_if_any": "1：若把“准确程度由给定误差上界决定”读成真实误差完全由上界确定，该句过强；上界较宽并不能证明这次实际测得更不准。"
+      },
+      "Fable": {
+        "short_reason": "对资料的转述（闭区间、比区间不比中心、甲[12.2,12.6]与乙[12.5,12.9]重叠）准确；例子区间计算正确（[190,210]、[185,215]、[195,215]，与甲在195–210重叠）。",
+        "alternative_if_any": ""
+      }
+    }
+  },
+  {
+    "itemId": "P2-05",
+    "dimension": "Q3",
+    "humans": [
+      {
+        "annotator": "A",
+        "answer": "2",
+        "reason": "例子比较简单，一看就能明白为什么不能只看数字大小。"
+      },
+      {
+        "annotator": "B",
+        "answer": "2",
+        "reason": "电子秤直观展示，并且明确了范围与边界"
+      }
+    ],
+    "humanPairSeverity": {
+      "n": 1,
+      "exact": 1,
+      "adjacent": 0,
+      "polarity": 0,
+      "uncertain": 0,
+      "abstention": 0,
+      "missing": 0,
+      "invalid": 0,
+      "bothNumeric": 1,
+      "leftHigher": 0,
+      "leftLower": 0,
+      "transitions": {
+        "2 -> 2": 1
+      }
+    },
+    "consensus": "2",
+    "models": {
+      "StudyEval": "2",
+      "Max": "2",
+      "Fable": "2"
+    },
+    "modelAmbiguity": {
+      "Max": false,
+      "Fable": false
+    },
+    "modelReasons": {
+      "Max": {
+        "short_reason": "用秤的小数位与允许区间宽度对照，再用重叠区间说明不能保证轻重顺序，计算可跟随，且明确限定为已知对称误差界限的模型。",
+        "alternative_if_any": ""
+      },
+      "Fable": {
+        "short_reason": "电子秤例子直观展示了“小数位多但区间更宽”与“重叠即证据不足”，并明确该简化模型的适用边界（误差上界已知且对称、不处理统计平均）。",
+        "alternative_if_any": ""
+      }
+    }
+  },
+  {
+    "itemId": "P2-06",
+    "dimension": "Q4",
+    "humans": [
+      {
+        "annotator": "A",
+        "answer": "2",
+        "reason": "题目本身没问题，条件也够，而且没有提前给答案。"
+      },
+      {
+        "annotator": "B",
+        "answer": "0",
+        "reason": "解答实际上已经在资料中给出，不满足要求"
+      }
+    ],
+    "humanPairSeverity": {
+      "n": 1,
+      "exact": 0,
+      "adjacent": 0,
+      "polarity": 1,
+      "uncertain": 0,
+      "abstention": 0,
+      "missing": 0,
+      "invalid": 0,
+      "bothNumeric": 1,
+      "leftHigher": 1,
+      "leftLower": 0,
+      "transitions": {
+        "2 -> 0": 1
+      }
+    },
+    "consensus": null,
+    "models": {
+      "StudyEval": "2",
+      "Max": "U",
+      "Fable": "1"
+    },
+    "modelAmbiguity": {
+      "Max": true,
+      "Fable": true
+    },
+    "modelReasons": {
+      "Max": {
+        "short_reason": "资料逐字给出小岚每小时完成六分之一份，题目又要求按已给说法复述，但展示记录称没有提前展示本题解答，无法可靠确定应按简单复述给1还是按已展示解答给0。",
+        "alternative_if_any": "1：把来源视为教学内容并采信未提前展示的记录；0：把来源中同一人、同一数值的现成答案视为已提前展示本题解答。"
+      },
+      "Fable": {
+        "short_reason": "题目可作答且答案1/6正确，但题干本身写明“按来源已经给出的说法”，答案在资料第一段逐字可见，只是简单复述，无法区分理解程度。",
+        "alternative_if_any": "有人会因为解答实际上已在资料中展示而给 0；但展示记录声明未提前展示本题解答，且资料本就是学习材料。"
+      }
+    }
+  },
+  {
+    "itemId": "P2-07",
+    "dimension": "Q5",
+    "humans": [
+      {
+        "annotator": "A",
+        "answer": "0",
+        "reason": "系统判断错了，学生其实已经答对了，不应该不给分。"
+      },
+      {
+        "annotator": "B",
+        "answer": "0",
+        "reason": "原平均24/4=6，中位(4+4)/2=4；改后平均32/4=8，中位仍4。"
+      }
+    ],
+    "humanPairSeverity": {
+      "n": 1,
+      "exact": 1,
+      "adjacent": 0,
+      "polarity": 0,
+      "uncertain": 0,
+      "abstention": 0,
+      "missing": 0,
+      "invalid": 0,
+      "bothNumeric": 1,
+      "leftHigher": 0,
+      "leftLower": 0,
+      "transitions": {
+        "0 -> 0": 1
+      }
+    },
+    "consensus": "0",
+    "models": {
+      "StudyEval": "0",
+      "Max": "0",
+      "Fable": "0"
+    },
+    "modelAmbiguity": {
+      "Max": false,
+      "Fable": false
+    },
+    "modelReasons": {
+      "Max": {
+        "short_reason": "学习者完整给出原平均6、中位4及修改后平均8、中位4，也解释了变化原因，系统却把必要标准1判为完全不满足并拒绝授予学分。",
+        "alternative_if_any": ""
+      },
+      "Fable": {
+        "short_reason": "学习者给出原平均6、中位4、改后平均8、中位4，与作者参考解和标准1完全一致，系统却判标准1“完全未满足”并不予学分；正确回答被错误拒绝。",
+        "alternative_if_any": ""
+      }
+    }
+  },
+  {
+    "itemId": "P2-08",
+    "dimension": "Q2",
+    "humans": [
+      {
+        "annotator": "A",
+        "answer": "0",
+        "reason": "原文要求的不只是平均数，还有中位数这些内容，但这里被简化掉了。"
+      },
+      {
+        "annotator": "B",
+        "answer": "0",
+        "reason": "若中间位置的数据或排序结构改变，中位数也可能改变。"
+      }
+    ],
+    "humanPairSeverity": {
+      "n": 1,
+      "exact": 1,
+      "adjacent": 0,
+      "polarity": 0,
+      "uncertain": 0,
+      "abstention": 0,
+      "missing": 0,
+      "invalid": 0,
+      "bothNumeric": 1,
+      "leftHigher": 0,
+      "leftLower": 0,
+      "transitions": {
+        "0 -> 0": 1
+      }
+    },
+    "consensus": "0",
+    "models": {
+      "StudyEval": "0",
+      "Max": "0",
+      "Fable": "0"
+    },
+    "modelAmbiguity": {
+      "Max": false,
+      "Fable": false
+    },
+    "modelReasons": {
+      "Max": {
+        "short_reason": "把计算、理解异常值及按问题选择指标改成背诵平均数最公平，并明确不学中位数或数据变化，遗漏关键目标且引入一概使用平均数的错误要求。",
+        "alternative_if_any": ""
+      },
+      "Fable": {
+        "short_reason": "把目标改成背诵“平均数最公平”，明确删除中位数、异常值影响和合并组平均等关键与次要目标，与资料立场相反。",
+        "alternative_if_any": ""
+      }
+    }
+  },
+  {
+    "itemId": "P2-09",
+    "dimension": "Q6",
+    "humans": [
+      {
+        "annotator": "A",
+        "answer": "2",
+        "reason": "反馈找到了问题原因，也告诉了之后应该怎么改。"
+      },
+      {
+        "annotator": "B",
+        "answer": "1",
+        "reason": "但测量了若干变量不等于排除了所有差异。研究设计越接近只改变目标因素，因果解释通常越有依据；具体能支持到什么范围，还取决于实际执行和数据。"
+      }
+    ],
+    "humanPairSeverity": {
+      "n": 1,
+      "exact": 0,
+      "adjacent": 1,
+      "polarity": 0,
+      "uncertain": 0,
+      "abstention": 0,
+      "missing": 0,
+      "invalid": 0,
+      "bothNumeric": 1,
+      "leftHigher": 1,
+      "leftLower": 0,
+      "transitions": {
+        "2 -> 1": 1
+      }
+    },
+    "consensus": null,
+    "models": {
+      "StudyEval": "2",
+      "Max": "2",
+      "Fable": "2"
+    },
+    "modelAmbiguity": {
+      "Max": false,
+      "Fable": false
+    },
+    "modelReasons": {
+      "Max": {
+        "short_reason": "直接纠正自愿不等于随机，给出原有兴趣同时影响参与和进步的反例，再用额外练习十分钟的问题检验能否识别未控制条件，后续操作可用。",
+        "alternative_if_any": ""
+      },
+      "Fable": {
+        "short_reason": "精确定位实际错误（自愿参加不等于随机分组），给出与数据相容的反例（高兴趣者更爱参加），再给一道可检验迁移的鉴别题（抽签分组但甲组多练十分钟）。",
+        "alternative_if_any": ""
+      }
+    }
+  },
+  {
+    "itemId": "P3-01",
+    "dimension": "Q1",
+    "humans": [
+      {
+        "annotator": "B",
+        "answer": "0",
+        "reason": "目前没有宣布永久变更"
+      },
+      {
+        "annotator": "C",
+        "answer": "0",
+        "reason": "三句话全错了"
+      }
+    ],
+    "humanPairSeverity": {
+      "n": 1,
+      "exact": 1,
+      "adjacent": 0,
+      "polarity": 0,
+      "uncertain": 0,
+      "abstention": 0,
+      "missing": 0,
+      "invalid": 0,
+      "bothNumeric": 1,
+      "leftHigher": 0,
+      "leftLower": 0,
+      "transitions": {
+        "0 -> 0": 1
+      }
+    },
+    "consensus": "0",
+    "models": {
+      "StudyEval": "0",
+      "Max": "0",
+      "Fable": "0"
+    },
+    "modelAmbiguity": {
+      "Max": false,
+      "Fable": false
+    },
+    "modelReasons": {
+      "Max": {
+        "short_reason": "把30人次当成30位不同且全部支持的居民，把十份卡外推全体，并把尚待讨论的长期安排写成永久决定，均改变了来源的核心结论。",
+        "alternative_if_any": ""
+      },
+      "Fable": {
+        "short_reason": "三处核心事实错误：把三十人次当成三十位不同居民并称“全部支持”，把“尚待讨论”写成“已决定永久提前开门”，把十张意见卡外推为代表所有读者；结论完全改变。",
+        "alternative_if_any": ""
+      }
+    }
+  },
+  {
+    "itemId": "P3-02",
+    "dimension": "Q1",
+    "humans": [
+      {
+        "annotator": "B",
+        "answer": "1",
+        "reason": "重复实验可以帮助检查结果是否稳定，但重复的对象、条件与方法需要记录"
+      },
+      {
+        "annotator": "C",
+        "answer": "2",
+        "reason": "根据原题自行举例，但大意没出错，推导也正确"
+      }
+    ],
+    "humanPairSeverity": {
+      "n": 1,
+      "exact": 0,
+      "adjacent": 1,
+      "polarity": 0,
+      "uncertain": 0,
+      "abstention": 0,
+      "missing": 0,
+      "invalid": 0,
+      "bothNumeric": 1,
+      "leftHigher": 0,
+      "leftLower": 1,
+      "transitions": {
+        "1 -> 2": 1
+      }
+    },
+    "consensus": null,
+    "models": {
+      "StudyEval": "U",
+      "Max": "2",
+      "Fable": "2"
+    },
+    "modelAmbiguity": {
+      "Max": false,
+      "Fable": false
+    },
+    "modelReasons": {
+      "Max": {
+        "short_reason": "控制观察天数等其他条件的原则有原文依据；7天与4天以“若”引入，是条件性例子，手机湿度也明示为补充类比，没有把它们当成已发生的实验记录。",
+        "alternative_if_any": ""
+      },
+      "Fable": {
+        "short_reason": "对资料的归因准确（资料确实把观察天数与判定方式列为需一致的条件）；“7天对4天”明确写为假设情景，手机例子也标为补充说明，没有把假想当作资料事实。",
+        "alternative_if_any": ""
+      }
+    }
+  },
+  {
+    "itemId": "P3-02",
+    "dimension": "Q3",
+    "humans": [
+      {
+        "annotator": "B",
+        "answer": "2",
+        "reason": "举例清晰，涵盖全面"
+      },
+      {
+        "annotator": "C",
+        "answer": "2",
+        "reason": "举例有点奇怪，但没有硬伤错误"
+      }
+    ],
+    "humanPairSeverity": {
+      "n": 1,
+      "exact": 1,
+      "adjacent": 0,
+      "polarity": 0,
+      "uncertain": 0,
+      "abstention": 0,
+      "missing": 0,
+      "invalid": 0,
+      "bothNumeric": 1,
+      "leftHigher": 0,
+      "leftLower": 0,
+      "transitions": {
+        "2 -> 2": 1
+      }
+    },
+    "consensus": "2",
+    "models": {
+      "StudyEval": "U",
+      "Max": "2",
+      "Fable": "2"
+    },
+    "modelAmbiguity": {
+      "Max": false,
+      "Fable": true
+    },
+    "modelReasons": {
+      "Max": {
+        "short_reason": "以手机型号和环境湿度同时变化展示无法单独归因的原因，联系观察天数一致的规则，并限定类比只说明控制额外变量的逻辑，关键推理完整。",
+        "alternative_if_any": ""
+      },
+      "Fable": {
+        "short_reason": "关键关系（未控制额外变量就不能单因归因）和手机湿度例子清楚，适用边界说明到位；末句“当前题目留给你判断选项，我不替你选”指向包内不存在的选项题，略显突兀但不构成推理缺口。",
+        "alternative_if_any": "把无关末句视为解释缺口的标注者会给 1。"
+      }
+    }
+  },
+  {
+    "itemId": "P3-03",
+    "dimension": "Q2",
+    "humans": [
+      {
+        "annotator": "B",
+        "answer": "2",
+        "reason": "比较两件物品时，应比较它们允许的区间"
+      },
+      {
+        "annotator": "C",
+        "answer": "1",
+        "reason": "同packet1 03"
+      }
+    ],
+    "humanPairSeverity": {
+      "n": 1,
+      "exact": 0,
+      "adjacent": 1,
+      "polarity": 0,
+      "uncertain": 0,
+      "abstention": 0,
+      "missing": 0,
+      "invalid": 0,
+      "bothNumeric": 1,
+      "leftHigher": 1,
+      "leftLower": 0,
+      "transitions": {
+        "2 -> 1": 1
+      }
+    },
+    "consensus": null,
+    "models": {
+      "StudyEval": "2",
+      "Max": "2",
+      "Fable": "2"
+    },
+    "modelAmbiguity": {
+      "Max": false,
+      "Fable": false
+    },
+    "modelReasons": {
+      "Max": {
+        "short_reason": "涵盖由给定误差构造闭区间、不重叠和重叠时的比较、刻度与校准的区别，并明确重复平均不能自动消除同向偏差，所声明主次目标均保留。",
+        "alternative_if_any": ""
+      },
+      "Fable": {
+        "short_reason": "覆盖全部声明目标：分辨率≠准确、给定误差形成闭区间、区间比较与重叠判断，以及次要延伸“同向偏差不会仅靠重复平均自动消失”，还保留了写单位与误差依据的要求。",
+        "alternative_if_any": ""
+      }
+    }
+  },
+  {
+    "itemId": "P3-04",
+    "dimension": "Q3",
+    "humans": [
+      {
+        "annotator": "B",
+        "answer": "2",
+        "reason": "所有时长固定，不考虑走动与工具切换的额外时间"
+      },
+      {
+        "annotator": "C",
+        "answer": "2",
+        "reason": "步骤描述清晰"
+      }
+    ],
+    "humanPairSeverity": {
+      "n": 1,
+      "exact": 1,
+      "adjacent": 0,
+      "polarity": 0,
+      "uncertain": 0,
+      "abstention": 0,
+      "missing": 0,
+      "invalid": 0,
+      "bothNumeric": 1,
+      "leftHigher": 0,
+      "leftLower": 0,
+      "transitions": {
+        "2 -> 2": 1
+      }
+    },
+    "consensus": "2",
+    "models": {
+      "StudyEval": "1",
+      "Max": "2",
+      "Fable": "1"
+    },
+    "modelAmbiguity": {
+      "Max": true,
+      "Fable": true
+    },
+    "modelReasons": {
+      "Max": {
+        "short_reason": "两人的4→6→11→12时间线展示各步依赖，一人时前两步全程占人的限制也明确；结合给定时长，读者能复算15分钟，局部例子的关键条件可跟随。",
+        "alternative_if_any": "1：若要求显式说明取较晚完成时刻，以及一人情形4+3+2+5+1的加总，则这段压缩表达仍有局部推理跳步。"
+      },
+      "Fable": {
+        "short_reason": "时间线（12分钟、15分钟）正确且给出“先检查依赖”的边界，但没有说明为什么盖章从第4分钟而不是第3分钟开始（须等较晚完成的前置步骤），关键规则只给结果不给理由，属局部解释缺口。",
+        "alternative_if_any": "认为读者结合资料前置知识能自行补上该步的标注者会给 2。"
+      }
+    }
+  },
+  {
+    "itemId": "P3-05",
+    "dimension": "Q1",
+    "humans": [
+      {
+        "annotator": "B",
+        "answer": "2",
+        "reason": "列出允许与不允许的组合，能帮助我们看清规则到底排除了什么，而不是凭语言感觉推断"
+      },
+      {
+        "annotator": "C",
+        "answer": "2",
+        "reason": "事实部分与资料一致"
+      }
+    ],
+    "humanPairSeverity": {
+      "n": 1,
+      "exact": 1,
+      "adjacent": 0,
+      "polarity": 0,
+      "uncertain": 0,
+      "abstention": 0,
+      "missing": 0,
+      "invalid": 0,
+      "bothNumeric": 1,
+      "leftHigher": 0,
+      "leftLower": 0,
+      "transitions": {
+        "2 -> 2": 1
+      }
+    },
+    "consensus": "2",
+    "models": {
+      "StudyEval": "2",
+      "Max": "2",
+      "Fable": "2"
+    },
+    "modelAmbiguity": {
+      "Max": true,
+      "Fable": true
+    },
+    "modelReasons": {
+      "Max": {
+        "short_reason": "星形推出蓝色、非蓝推出非星以及反向不成立均与资料一致；按文中明确的满分足以推出奖章来理解，新例子的逻辑成立，但资料标题未在包内单独核实。",
+        "alternative_if_any": "1：若将包内未得到印证的《印章卡片的逻辑》这一具体标题视为局部来源归因不足。"
+      },
+      "Fable": {
+        "short_reason": "对规则方向、逆否成立、逆命题不成立的转述与资料一致，例子的逻辑正确；唯一疑点是资料标题《印章卡片的逻辑》在包内不可见、无法核实。",
+        "alternative_if_any": "把无法核实的标题当作局部归因问题的标注者会给 1。"
+      }
+    }
+  },
+  {
+    "itemId": "P3-05",
+    "dimension": "Q3",
+    "humans": [
+      {
+        "annotator": "B",
+        "answer": "2",
+        "reason": "若给定规则和事实排除了所有反例，才可以说必然"
+      },
+      {
+        "annotator": "C",
+        "answer": "2",
+        "reason": "举例符合原意"
+      }
+    ],
+    "humanPairSeverity": {
+      "n": 1,
+      "exact": 1,
+      "adjacent": 0,
+      "polarity": 0,
+      "uncertain": 0,
+      "abstention": 0,
+      "missing": 0,
+      "invalid": 0,
+      "bothNumeric": 1,
+      "leftHigher": 0,
+      "leftLower": 0,
+      "transitions": {
+        "2 -> 2": 1
+      }
+    },
+    "consensus": "2",
+    "models": {
+      "StudyEval": "2",
+      "Max": "2",
+      "Fable": "2"
+    },
+    "modelAmbiguity": {
+      "Max": true,
+      "Fable": false
+    },
+    "modelReasons": {
+      "Max": {
+        "short_reason": "正文明确将满分当作获奖的充分条件，并用其他可能获奖途径区分正向、逆否与反向推断；按这一保证获奖的课堂规则理解，例子与边界清楚。",
+        "alternative_if_any": "1：若“就能获得”被读成仅有获奖资格，需补充保证实际授奖的条件，否则从未获奖逆推非满分的讲解有条件说明缺口。"
+      },
+      "Fable": {
+        "short_reason": "“满分→奖章”例子准确对应四种推断（顺推、逆否、逆命题不成立、否前件不成立），并说明只类比方向、不得把“如果”补成“当且仅当”。",
+        "alternative_if_any": ""
+      }
+    }
+  },
+  {
+    "itemId": "P3-06",
+    "dimension": "Q4",
+    "humans": [
+      {
+        "annotator": "B",
+        "answer": "0",
+        "reason": "乙先做1小时后离开，甲独自完成剩余部分"
+      },
+      {
+        "annotator": "C",
+        "answer": "0",
+        "reason": "参考答案给一半"
+      }
+    ],
+    "humanPairSeverity": {
+      "n": 1,
+      "exact": 1,
+      "adjacent": 0,
+      "polarity": 0,
+      "uncertain": 0,
+      "abstention": 0,
+      "missing": 0,
+      "invalid": 0,
+      "bothNumeric": 1,
+      "leftHigher": 0,
+      "leftLower": 0,
+      "transitions": {
+        "0 -> 0": 1
+      }
+    },
+    "consensus": "0",
+    "models": {
+      "StudyEval": "0",
+      "Max": "0",
+      "Fable": "0"
+    },
+    "modelAmbiguity": {
+      "Max": false,
+      "Fable": false
+    },
+    "modelReasons": {
+      "Max": {
+        "short_reason": "题目明说乙做1小时后离开，作者却让乙继续合作并得3小时；实际甲独做余下3/4需6小时，总7小时，且未完成与同时合作8/3小时的比较。",
+        "alternative_if_any": ""
+      },
+      "Fable": {
+        "short_reason": "题目写明乙做1小时后离开、甲独自完成，作者参考解却按“两人仍一直合作”计算得总3小时；答案与题目条件矛盾，正确应为7小时。",
+        "alternative_if_any": ""
+      }
+    }
+  },
+  {
+    "itemId": "P3-07",
+    "dimension": "Q5",
+    "humans": [
+      {
+        "annotator": "B",
+        "answer": "2",
+        "reason": "原平均24/4=6，中位(4+4)/2=4；改后平均32/4=8，中位仍4"
+      },
+      {
+        "annotator": "C",
+        "answer": "2",
+        "reason": "根据标准评分正确"
+      }
+    ],
+    "humanPairSeverity": {
+      "n": 1,
+      "exact": 1,
+      "adjacent": 0,
+      "polarity": 0,
+      "uncertain": 0,
+      "abstention": 0,
+      "missing": 0,
+      "invalid": 0,
+      "bothNumeric": 1,
+      "leftHigher": 0,
+      "leftLower": 0,
+      "transitions": {
+        "2 -> 2": 1
+      }
+    },
+    "consensus": "2",
+    "models": {
+      "StudyEval": "2",
+      "Max": "2",
+      "Fable": "2"
+    },
+    "modelAmbiguity": {
+      "Max": false,
+      "Fable": false
+    },
+    "modelReasons": {
+      "Max": {
+        "short_reason": "两项必要标准均被完整满足，系统正确接受了等价解释并授予学分，同时准确指出缺少的只是可选小标题，没有错误改变通过后果。",
+        "alternative_if_any": ""
+      },
+      "Fable": {
+        "short_reason": "两条必要标准判满足正确（数值和解释都在学习者回答中），可选标准3判不满足正确（确实没有小标题），反馈说明其不影响通过，授予学分正确。",
+        "alternative_if_any": ""
+      }
+    }
+  },
+  {
+    "itemId": "P3-08",
+    "dimension": "Q1",
+    "humans": [
+      {
+        "annotator": "B",
+        "answer": "1",
+        "reason": "题目只给单独用时而未说明合作方式时，应先指出所需假设，再给条件式结果。现实合作可能有额外收益，也可能有协调损失，单独速度不足以确定所有情况"
+      },
+      {
+        "annotator": "C",
+        "answer": "2",
+        "reason": "概括及原因总结正确"
+      }
+    ],
+    "humanPairSeverity": {
+      "n": 1,
+      "exact": 0,
+      "adjacent": 1,
+      "polarity": 0,
+      "uncertain": 0,
+      "abstention": 0,
+      "missing": 0,
+      "invalid": 0,
+      "bothNumeric": 1,
+      "leftHigher": 0,
+      "leftLower": 1,
+      "transitions": {
+        "1 -> 2": 1
+      }
+    },
+    "consensus": null,
+    "models": {
+      "StudyEval": "2",
+      "Max": "2",
+      "Fable": "2"
+    },
+    "modelAmbiguity": {
+      "Max": true,
+      "Fable": true
+    },
+    "modelReasons": {
+      "Max": {
+        "short_reason": "引文及速度可加条件与资料吻合；乙先做1/12、余下时间(11/12)÷(2/3)=11/8、总0.5+11/8=1.875小时均正确，仅具体资料标题未在包内单独核实。",
+        "alternative_if_any": "1：若将包内未得到印证的《轮流做家务的工作量》这一具体标题视为局部来源归因不足。"
+      },
+      "Fable": {
+        "short_reason": "摘录与资料逐字一致，条件列举准确；例子计算正确（1/12、11/12、合速2/3、11/8小时、总1.875小时）；仅资料标题《轮流做家务的工作量》包内不可见。",
+        "alternative_if_any": "把无法核实的标题当作局部归因问题的标注者会给 1。"
+      }
+    }
+  },
+  {
+    "itemId": "P3-08",
+    "dimension": "Q3",
+    "humans": [
+      {
+        "annotator": "B",
+        "answer": "2",
+        "reason": "这些公式依赖模型条件"
+      },
+      {
+        "annotator": "C",
+        "answer": "2",
+        "reason": "举例易懂，且有难度升级"
+      }
+    ],
+    "humanPairSeverity": {
+      "n": 1,
+      "exact": 1,
+      "adjacent": 0,
+      "polarity": 0,
+      "uncertain": 0,
+      "abstention": 0,
+      "missing": 0,
+      "invalid": 0,
+      "bothNumeric": 1,
+      "leftHigher": 0,
+      "leftLower": 0,
+      "transitions": {
+        "2 -> 2": 1
+      }
+    },
+    "consensus": "2",
+    "models": {
+      "StudyEval": "2",
+      "Max": "2",
+      "Fable": "2"
+    },
+    "modelAmbiguity": {
+      "Max": false,
+      "Fable": false
+    },
+    "modelReasons": {
+      "Max": {
+        "short_reason": "从一份工作和个人速度出发，逐段计算完成量、剩余量和总时间，并用脚手架冲突与重复涂刷说明不能直接相加的情形，推理与适用边界可跟随。",
+        "alternative_if_any": ""
+      },
+      "Fable": {
+        "short_reason": "粉刷墙壁的例子完整走了总工作量→各段速度→各段完成量→总时间的步骤，分段计算正确，并给出适用边界（可划分、不重复、速度不变；单套脚手架时不可相加）。",
+        "alternative_if_any": ""
+      }
+    }
+  },
+  {
+    "itemId": "P3-09",
+    "dimension": "Q6",
+    "humans": [
+      {
+        "annotator": "B",
+        "answer": "1",
+        "reason": "但测量了若干变量不等于排除了所有差异。研究设计越接近只改变目标因素，因果解释通常越有依据；具体能支持到什么范围，还取决于实际执行和数据"
+      },
+      {
+        "annotator": "C",
+        "answer": "2",
+        "reason": "给学生提供的建议详细可实施"
+      }
+    ],
+    "humanPairSeverity": {
+      "n": 1,
+      "exact": 0,
+      "adjacent": 1,
+      "polarity": 0,
+      "uncertain": 0,
+      "abstention": 0,
+      "missing": 0,
+      "invalid": 0,
+      "bothNumeric": 1,
+      "leftHigher": 0,
+      "leftLower": 1,
+      "transitions": {
+        "1 -> 2": 1
+      }
+    },
+    "consensus": null,
+    "models": {
+      "StudyEval": "1",
+      "Max": "1",
+      "Fable": "1"
+    },
+    "modelAmbiguity": {
+      "Max": false,
+      "Fable": false
+    },
+    "modelReasons": {
+      "Max": {
+        "short_reason": "重读规则、列条件和练同主题新题的方向相关，但补救指令未具体定位自愿等于随机的误解，也未给出可直接使用的新题或明确检验标准。",
+        "alternative_if_any": ""
+      },
+      "Fable": {
+        "short_reason": "方向相关（重读来源、列清条件、再练新题），但没有指出学习者的具体错误（把自愿参加当成随机分组），也没有给出可用的鉴别问题或检验，较泛泛。",
+        "alternative_if_any": ""
+      }
+    }
+  }
+]

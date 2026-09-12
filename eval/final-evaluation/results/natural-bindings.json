@@ -1,0 +1,1149 @@
+[
+  {
+    "caseId": "N-F01-curriculum",
+    "sourceId": "F01",
+    "inputHash": "915055513d43a04a877aed23278a68d8d1ff8cd35b3600ef47867c2ad6392b2d",
+    "sourceTextHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4",
+    "origin": {
+      "file": "runs/final-product/cases/F01/final.snapshot.json",
+      "table": "curriculum_versions",
+      "id": "curriculum_acd984ca-d957-49d5-ae28-efe5e7f22a18"
+    }
+  },
+  {
+    "caseId": "N-F01-teaching",
+    "sourceId": "F01",
+    "inputHash": "9980ad795e9af18095a9d060548474a1e51cd030869ed7eff9a78e5ae16e689b",
+    "sourceTextHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4",
+    "origin": {
+      "file": "runs/final-product/cases/F01/lesson-1-complete.json",
+      "field": "lesson",
+      "scope": "complete displayed first Lesson fields, no later unit"
+    }
+  },
+  {
+    "caseId": "N-F01-tutor",
+    "sourceId": "F01",
+    "inputHash": "a03e021c3abfc0921f93c64381059ff54f10084a4e254b73ca45e64c55cb3e9e",
+    "sourceTextHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4",
+    "origin": {
+      "file": "runs/final-product/cases/F01/tutor.json",
+      "field": "exchanges",
+      "id": "study_exchange_175bc015-b063-4966-b3bd-31bfbc35661d"
+    }
+  },
+  {
+    "caseId": "N-F01-practice",
+    "sourceId": "F01",
+    "inputHash": "7f39a9f92a0b0843a4e00d3e41ec29ce772a9f91e066b8b24b75325e04696a91",
+    "sourceTextHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4",
+    "origin": {
+      "file": "runs/final-product/cases/F01/learner-actions.jsonl",
+      "index": 7,
+      "briefId": "teaching_brief_20de3fe0-9f51-4854-a5f1-b7f05571b4e4",
+      "surface": "initial"
+    }
+  },
+  {
+    "caseId": "N-F01-repair",
+    "sourceId": "F01",
+    "inputHash": "06dcaf39da496aef48fdf29611ad9e2844c3119ce67ed35a4d29127214f710ef",
+    "sourceTextHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4",
+    "origin": {
+      "file": "runs/final-product/cases/F01/learner-actions.jsonl",
+      "index": 9,
+      "field": "preAnswerSurface.practice.recovery"
+    }
+  },
+  {
+    "caseId": "N-F01-retest",
+    "sourceId": "F01",
+    "inputHash": "3d4f662e3e7fe1cacd3a51bb729bc64f03ffd6cea6b4614f775356c5354e1e66",
+    "sourceTextHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4",
+    "origin": {
+      "file": "runs/final-product/cases/F01/learner-actions.jsonl",
+      "index": 10,
+      "table": "lesson_execution_states",
+      "field": "practice_interactions.recovery.rounds[0].content.retest"
+    }
+  },
+  {
+    "caseId": "N-F02-curriculum",
+    "sourceId": "F02",
+    "inputHash": "c338e4621ce4a27904a8afff6182cbb9d07fef4f1c9678f0088a62197d110a5e",
+    "sourceTextHash": "eed51cb255d5d0e12ca505b4c60926d142df7cf81a0f73781aba0593d2870361",
+    "origin": {
+      "file": "runs/final-product/cases/F02/final.snapshot.json",
+      "table": "curriculum_versions",
+      "id": "curriculum_49fedf1d-39e5-40dd-93d3-eb398baf3aa8"
+    }
+  },
+  {
+    "caseId": "N-F02-teaching",
+    "sourceId": "F02",
+    "inputHash": "5fc6a16fa62ae5d0773ba6d7ce0e3e9e2baa9084fe15526258a8c1ec9668ba2e",
+    "sourceTextHash": "eed51cb255d5d0e12ca505b4c60926d142df7cf81a0f73781aba0593d2870361",
+    "origin": {
+      "file": "runs/final-product/cases/F02/lesson-1-complete.json",
+      "field": "lesson",
+      "scope": "complete displayed first Lesson fields, no later unit"
+    }
+  },
+  {
+    "caseId": "N-F02-tutor",
+    "sourceId": "F02",
+    "inputHash": "03d50ecde50ddf9d85d9caf6ceb17427a247f4de31d09bd49f793bc33dc9fb65",
+    "sourceTextHash": "eed51cb255d5d0e12ca505b4c60926d142df7cf81a0f73781aba0593d2870361",
+    "origin": {
+      "file": "runs/final-product/cases/F02/tutor.json",
+      "field": "exchanges",
+      "id": "study_exchange_eba3ea41-0cd5-4844-8e46-1ccc84e4fd94"
+    }
+  },
+  {
+    "caseId": "N-F02-practice",
+    "sourceId": "F02",
+    "inputHash": "83e41837e890f703941ad28446f8ae1f61cce2fb89e17324f06c5086570d9413",
+    "sourceTextHash": "eed51cb255d5d0e12ca505b4c60926d142df7cf81a0f73781aba0593d2870361",
+    "origin": {
+      "file": "runs/final-product/cases/F02/learner-actions.jsonl",
+      "index": 7,
+      "briefId": "teaching_brief_60c006a4-446a-44c7-961d-3d7109224657",
+      "surface": "initial"
+    }
+  },
+  {
+    "caseId": "N-F02-repair",
+    "sourceId": "F02",
+    "inputHash": "9916b55b1c49d3eec89ea0b32a67bcbb19db83594fec8af98192b01dce2e1bf1",
+    "sourceTextHash": "eed51cb255d5d0e12ca505b4c60926d142df7cf81a0f73781aba0593d2870361",
+    "origin": {
+      "file": "runs/final-product/cases/F02/learner-actions.jsonl",
+      "index": 9,
+      "field": "preAnswerSurface.practice.recovery"
+    }
+  },
+  {
+    "caseId": "N-F02-retest",
+    "sourceId": "F02",
+    "inputHash": "f270820eecf531e381ec7f2ebe46c6e091e1d78afe746bc667f05c162005ee95",
+    "sourceTextHash": "eed51cb255d5d0e12ca505b4c60926d142df7cf81a0f73781aba0593d2870361",
+    "origin": {
+      "file": "runs/final-product/cases/F02/learner-actions.jsonl",
+      "index": 10,
+      "table": "lesson_execution_states",
+      "field": "practice_interactions.recovery.rounds[0].content.retest"
+    }
+  },
+  {
+    "caseId": "N-F03-curriculum",
+    "sourceId": "F03",
+    "inputHash": "e85d621dce1d62ed83e377de2701ca8ec8503c2ecf4d4d803b5fadde6529b1bf",
+    "sourceTextHash": "944a460c4eccfdbd61d456dc9fc3969b0ed10c585ea05e87ccfe3e9b93549680",
+    "origin": {
+      "file": "runs/final-product/cases/F03/final.snapshot.json",
+      "table": "curriculum_versions",
+      "id": "curriculum_45af1548-cfd0-47b1-9b73-50286698628e"
+    }
+  },
+  {
+    "caseId": "N-F03-teaching",
+    "sourceId": "F03",
+    "inputHash": "fcafa94d17f6a6c0729938234c0e56939eedb63cbda9aba6b310dd48fc41adfb",
+    "sourceTextHash": "944a460c4eccfdbd61d456dc9fc3969b0ed10c585ea05e87ccfe3e9b93549680",
+    "origin": {
+      "file": "runs/final-product/cases/F03/lesson-1-complete.json",
+      "field": "lesson",
+      "scope": "complete displayed first Lesson fields, no later unit"
+    }
+  },
+  {
+    "caseId": "N-F03-tutor",
+    "sourceId": "F03",
+    "inputHash": "278275b2f9f3d606ff2afde4dad0d40a93eb9aca4c40947e15619b0fdc9b9c57",
+    "sourceTextHash": "944a460c4eccfdbd61d456dc9fc3969b0ed10c585ea05e87ccfe3e9b93549680",
+    "origin": {
+      "file": "runs/final-product/cases/F03/tutor.json",
+      "field": "exchanges",
+      "id": "study_exchange_6f88ed0c-d7c1-425b-9375-51f19182e4c1"
+    }
+  },
+  {
+    "caseId": "N-F03-practice",
+    "sourceId": "F03",
+    "inputHash": "8ca214abc2f18e1c85bcb0e1640c113c978c743206dbf2b036ee7cf932c7fefc",
+    "sourceTextHash": "944a460c4eccfdbd61d456dc9fc3969b0ed10c585ea05e87ccfe3e9b93549680",
+    "origin": {
+      "file": "runs/final-product/cases/F03/learner-actions.jsonl",
+      "index": 7,
+      "briefId": "teaching_brief_38348c09-7074-4e28-87c7-db4885362704",
+      "surface": "initial"
+    }
+  },
+  {
+    "caseId": "N-F03-repair",
+    "sourceId": "F03",
+    "inputHash": "e8686acf60c468f92c81f40094eff887e12176c68c17c627fb7a944b8aed19fe",
+    "sourceTextHash": "944a460c4eccfdbd61d456dc9fc3969b0ed10c585ea05e87ccfe3e9b93549680",
+    "origin": {
+      "file": "runs/final-product/cases/F03/learner-actions.jsonl",
+      "index": 9,
+      "field": "preAnswerSurface.practice.recovery"
+    }
+  },
+  {
+    "caseId": "N-F03-retest",
+    "sourceId": "F03",
+    "inputHash": "4dd922f1b46b0c693d737d16bd4c0700b35d8b827c143335cf7c94176e688783",
+    "sourceTextHash": "944a460c4eccfdbd61d456dc9fc3969b0ed10c585ea05e87ccfe3e9b93549680",
+    "origin": {
+      "file": "runs/final-product/cases/F03/learner-actions.jsonl",
+      "index": 10,
+      "table": "lesson_execution_states",
+      "field": "practice_interactions.recovery.rounds[0].content.retest"
+    }
+  },
+  {
+    "caseId": "N-F04-curriculum",
+    "sourceId": "F04",
+    "inputHash": "c3a65720a687035f8e3bdc86221ce3260bfaf694c38a573cb3db6ed100e51871",
+    "sourceTextHash": "d285228b9962482d5b8d81456178a4eb5cad39d02c75d3a204457e6093fff0ba",
+    "origin": {
+      "file": "runs/final-product/cases/F04/final.snapshot.json",
+      "table": "curriculum_versions",
+      "id": "curriculum_49a74b01-c4f1-4270-bc42-2edfa6d370c6"
+    }
+  },
+  {
+    "caseId": "N-F05-curriculum",
+    "sourceId": "F05",
+    "inputHash": "6fd1db05e531ecb555b1ff9fe167beaf0ba18b607f796815551ba03eaf5d9c3c",
+    "sourceTextHash": "04ede0e2b943c283408af13f15e429c4d3f550318ac34096022b20c8a80a02fc",
+    "origin": {
+      "file": "runs/final-product/cases/F05/final.snapshot.json",
+      "table": "curriculum_versions",
+      "id": "curriculum_f8a8b0cf-53a0-46aa-b6f1-cb3e7eda7c00"
+    }
+  },
+  {
+    "caseId": "N-F05-teaching",
+    "sourceId": "F05",
+    "inputHash": "389eed8370a765be0f289aa56886f604662f9fa627d460c43dcf1024780d602d",
+    "sourceTextHash": "04ede0e2b943c283408af13f15e429c4d3f550318ac34096022b20c8a80a02fc",
+    "origin": {
+      "file": "runs/final-product/cases/F05/lesson-1-complete.json",
+      "field": "lesson",
+      "scope": "complete displayed first Lesson fields, no later unit"
+    }
+  },
+  {
+    "caseId": "N-F05-tutor",
+    "sourceId": "F05",
+    "inputHash": "e5df30e0c13100ce17282c86e71282ac7f2558dd968c0773fcabc87b642ff096",
+    "sourceTextHash": "04ede0e2b943c283408af13f15e429c4d3f550318ac34096022b20c8a80a02fc",
+    "origin": {
+      "file": "runs/final-product/cases/F05/tutor.json",
+      "field": "exchanges",
+      "id": "study_exchange_35ff7056-eff7-46bf-9374-f8526b12e729"
+    }
+  },
+  {
+    "caseId": "N-F05-practice",
+    "sourceId": "F05",
+    "inputHash": "08726de8b0923e5b5c1380d72dbedb92d4235f926b7dcd9d6d626f023ef1155f",
+    "sourceTextHash": "04ede0e2b943c283408af13f15e429c4d3f550318ac34096022b20c8a80a02fc",
+    "origin": {
+      "file": "runs/final-product/cases/F05/learner-actions.jsonl",
+      "index": 7,
+      "briefId": "teaching_brief_11aaaa65-d1ec-4788-a7fa-b702b4a0d5f3",
+      "surface": "initial"
+    }
+  },
+  {
+    "caseId": "N-F05-repair",
+    "sourceId": "F05",
+    "inputHash": "dd32ac4d35b82ec51021fd066e04683f3b7d45d87095cc4f1cb71af9c24fc8f9",
+    "sourceTextHash": "04ede0e2b943c283408af13f15e429c4d3f550318ac34096022b20c8a80a02fc",
+    "origin": {
+      "file": "runs/final-product/cases/F05/learner-actions.jsonl",
+      "index": 9,
+      "field": "preAnswerSurface.practice.recovery"
+    }
+  },
+  {
+    "caseId": "N-F05-retest",
+    "sourceId": "F05",
+    "inputHash": "1f9a0cf8b15ec98f37c19199fcf7ddb3d1ea0512c6c31968831ea92c4e820f09",
+    "sourceTextHash": "04ede0e2b943c283408af13f15e429c4d3f550318ac34096022b20c8a80a02fc",
+    "origin": {
+      "file": "runs/final-product/cases/F05/learner-actions.jsonl",
+      "index": 10,
+      "table": "lesson_execution_states",
+      "field": "practice_interactions.recovery.rounds[0].content.retest"
+    }
+  },
+  {
+    "caseId": "N-F07-curriculum",
+    "sourceId": "F07",
+    "inputHash": "51ce113863d829ac1ea758729853d1861632b32718635243e3216d38e5786518",
+    "sourceTextHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648",
+    "origin": {
+      "file": "runs/final-product/cases/F07/final.snapshot.json",
+      "table": "curriculum_versions",
+      "id": "curriculum_baa40bc6-f08c-46b3-b26c-6dd48d68901c"
+    }
+  },
+  {
+    "caseId": "N-F07-teaching",
+    "sourceId": "F07",
+    "inputHash": "2c7df843ab28b1ff97ea85fd9758771cc93f3d4c46b072c0d03bf7d2a1aa6502",
+    "sourceTextHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648",
+    "origin": {
+      "file": "runs/final-product/cases/F07/lesson-1-complete.json",
+      "field": "lesson",
+      "scope": "complete displayed first Lesson fields, no later unit"
+    }
+  },
+  {
+    "caseId": "N-F07-tutor",
+    "sourceId": "F07",
+    "inputHash": "b37e7384d5f4ffa0c9382488ecc79d26019020396378d497e43a8577f960a101",
+    "sourceTextHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648",
+    "origin": {
+      "file": "runs/final-product/cases/F07/tutor.json",
+      "field": "exchanges",
+      "id": "study_exchange_02a605c2-428b-4713-8171-872950ee1e1f"
+    }
+  },
+  {
+    "caseId": "N-F07-practice",
+    "sourceId": "F07",
+    "inputHash": "eb101fc00e358d7ad8d92597772d8726b27a63e6151ad24aef397cc7ebed4368",
+    "sourceTextHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648",
+    "origin": {
+      "file": "runs/final-product/cases/F07/learner-actions.jsonl",
+      "index": 7,
+      "briefId": "teaching_brief_1a6fdf0a-b1e7-44d1-aa90-782d58a2c063",
+      "surface": "initial"
+    }
+  },
+  {
+    "caseId": "N-F07-repair",
+    "sourceId": "F07",
+    "inputHash": "486fd5ba4508be85aa95544004e599ebcfe7f1f97864633570decbcee6eddcbe",
+    "sourceTextHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648",
+    "origin": {
+      "file": "runs/final-product/cases/F07/learner-actions.jsonl",
+      "index": 9,
+      "field": "preAnswerSurface.practice.recovery"
+    }
+  },
+  {
+    "caseId": "N-F07-retest",
+    "sourceId": "F07",
+    "inputHash": "04e2d63686fba7b1fd9345305122df62ff3248e9797c7489df9f9519f0fe53a9",
+    "sourceTextHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648",
+    "origin": {
+      "file": "runs/final-product/cases/F07/learner-actions.jsonl",
+      "index": 10,
+      "table": "lesson_execution_states",
+      "field": "practice_interactions.recovery.rounds[0].content.retest"
+    }
+  },
+  {
+    "caseId": "N-F07-formal-question",
+    "sourceId": "F07",
+    "inputHash": "672646141af6719541d16d2c1d4b61dd9f200cedd36192911464d9fa5908e2c2",
+    "sourceTextHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648",
+    "origin": {
+      "file": "runs/final-product/cases/F07/formal-1-version.json",
+      "table": "questions",
+      "questionId": "que_da5557ac-57e4-4488-a4b9-54375c400492"
+    }
+  },
+  {
+    "caseId": "N-F07-grading-positive",
+    "sourceId": "F07",
+    "inputHash": "3bd968ea4e153c30d7a516c7e29b53a24ed928c09445a7e137561c8a3aba3431",
+    "sourceTextHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648",
+    "origin": {
+      "file": "runs/final-product/cases/F07/formal-1-answer.json",
+      "assessmentVersionId": "assessment_version_9c775e05-cba7-4c67-8231-50e430588e38",
+      "itemId": "assessment_item_38d400bf-5d31-4077-a0af-5fe6ee731938",
+      "answerPolicy": "registered-source-grounded-answer"
+    }
+  },
+  {
+    "caseId": "N-F07-grading-negative",
+    "sourceId": "F07",
+    "inputHash": "e7d2c7ef24f535d8ff0a643d5dca6a3bc1b7e7858f157738018d751c3369a589",
+    "sourceTextHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648",
+    "origin": {
+      "file": "runs/final-product/cases/F07-negative-1/answer.json",
+      "assessmentVersionId": "assessment_version_9c775e05-cba7-4c67-8231-50e430588e38",
+      "itemId": "assessment_item_38d400bf-5d31-4077-a0af-5fe6ee731938",
+      "answerPolicy": "registered-insufficient-control"
+    }
+  },
+  {
+    "caseId": "N-F08-curriculum",
+    "sourceId": "F08",
+    "inputHash": "201c3c17908200f0ddef8491ab13c3915bb9ff0db8f96ef584531cb840f76e48",
+    "sourceTextHash": "132c532360b4bc6ac5b2aa8886b4b3bf89c500f85d4e1be08595f9a669823289",
+    "origin": {
+      "file": "runs/final-product/cases/F08/final.snapshot.json",
+      "table": "curriculum_versions",
+      "id": "curriculum_0332d805-c0c3-4a33-b969-9384830881c5"
+    }
+  },
+  {
+    "caseId": "N-F08-teaching",
+    "sourceId": "F08",
+    "inputHash": "4352fdd749f4f1aa2628c82ac57687af1751ee2730a279cb7d445f386afef58d",
+    "sourceTextHash": "132c532360b4bc6ac5b2aa8886b4b3bf89c500f85d4e1be08595f9a669823289",
+    "origin": {
+      "file": "runs/final-product/cases/F08/lesson-1-complete.json",
+      "field": "lesson",
+      "scope": "complete displayed first Lesson fields, no later unit"
+    }
+  },
+  {
+    "caseId": "N-F08-tutor",
+    "sourceId": "F08",
+    "inputHash": "821be6a706b8d39de0de84d6d17b0fff2256a8e984214299069795eb546e598d",
+    "sourceTextHash": "132c532360b4bc6ac5b2aa8886b4b3bf89c500f85d4e1be08595f9a669823289",
+    "origin": {
+      "file": "runs/final-product/cases/F08/tutor.json",
+      "field": "exchanges",
+      "id": "study_exchange_18a8319a-4a0a-46f5-852c-5117beefa9c6"
+    }
+  },
+  {
+    "caseId": "N-F08-practice",
+    "sourceId": "F08",
+    "inputHash": "2a298329ab79e32b3cf2da241b0a9afb63d52c127e32ac06f3ccd47a200a748a",
+    "sourceTextHash": "132c532360b4bc6ac5b2aa8886b4b3bf89c500f85d4e1be08595f9a669823289",
+    "origin": {
+      "file": "runs/final-product/cases/F08/learner-actions.jsonl",
+      "index": 7,
+      "briefId": "teaching_brief_1136c454-e69c-4dcb-b90f-b54705c11ad6",
+      "surface": "initial"
+    }
+  },
+  {
+    "caseId": "N-F09-curriculum",
+    "sourceId": "F09",
+    "inputHash": "4b9c9a3db64933fcc1f634023ea3c1a0b1bcdfffbc62ab5f1ee478b52eca83c0",
+    "sourceTextHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051",
+    "origin": {
+      "file": "runs/final-product/cases/F09/final.snapshot.json",
+      "table": "curriculum_versions",
+      "id": "curriculum_c0858467-8748-451c-be41-c8b2d3bb0ca7"
+    }
+  },
+  {
+    "caseId": "N-F09-teaching",
+    "sourceId": "F09",
+    "inputHash": "c3e5ec4c13c6fcc27a3b55ad2c00aaf2f63c4db063bd1b8244c2d28dda9dcc2f",
+    "sourceTextHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051",
+    "origin": {
+      "file": "runs/final-product/cases/F09/lesson-1-complete.json",
+      "field": "lesson",
+      "scope": "complete displayed first Lesson fields, no later unit"
+    }
+  },
+  {
+    "caseId": "N-F09-tutor",
+    "sourceId": "F09",
+    "inputHash": "22e4040cd3ffd8ec6a389198142f453e0b1f9e0e75515078b7926885ff55af39",
+    "sourceTextHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051",
+    "origin": {
+      "file": "runs/final-product/cases/F09/tutor.json",
+      "field": "exchanges",
+      "id": "study_exchange_3430f5ed-e1c3-4ba7-ae07-939f12e1efd5"
+    }
+  },
+  {
+    "caseId": "N-F09-practice",
+    "sourceId": "F09",
+    "inputHash": "683c7443f541c8934519c0b9be88a259efaf61954aa43599dfbbac9a958c9b16",
+    "sourceTextHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051",
+    "origin": {
+      "file": "runs/final-product/cases/F09/learner-actions.jsonl",
+      "index": 7,
+      "briefId": "teaching_brief_f3ead707-7568-4b9a-b11f-d7e952c959b5",
+      "surface": "initial"
+    }
+  },
+  {
+    "caseId": "N-F09-repair",
+    "sourceId": "F09",
+    "inputHash": "7abb634d0bd63774fd64de57023023c5314bf4246eb32cda191f482c87991ec5",
+    "sourceTextHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051",
+    "origin": {
+      "file": "runs/final-product/cases/F09/learner-actions.jsonl",
+      "index": 9,
+      "field": "preAnswerSurface.practice.recovery"
+    }
+  },
+  {
+    "caseId": "N-F09-retest",
+    "sourceId": "F09",
+    "inputHash": "c8db90196f7eb2771db49fdbd5a66a6753415e6119b66aaad48a11094ab4eb4d",
+    "sourceTextHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051",
+    "origin": {
+      "file": "runs/final-product/cases/F09/learner-actions.jsonl",
+      "index": 10,
+      "table": "lesson_execution_states",
+      "field": "practice_interactions.recovery.rounds[0].content.retest"
+    }
+  },
+  {
+    "caseId": "N-F09-formal-question",
+    "sourceId": "F09",
+    "inputHash": "4adedb58411899e9ec250e63432aaaa913f21d3885bfdb44c5fca54596e1df2b",
+    "sourceTextHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051",
+    "origin": {
+      "file": "runs/final-product/cases/F09/formal-1-version.json",
+      "table": "questions",
+      "questionId": "que_ec9aa612-aaf2-49b1-9d1a-7fe4f368c7c8"
+    }
+  },
+  {
+    "caseId": "N-F09-grading-positive",
+    "sourceId": "F09",
+    "inputHash": "228cf0a9ed455ffba6597a636f1c9eedc35c1f813cbbf513bbc86c914218385c",
+    "sourceTextHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051",
+    "origin": {
+      "file": "runs/final-product/cases/F09/formal-1-answer.json",
+      "assessmentVersionId": "assessment_version_1f9809c4-35bb-443b-89ce-c07470a08c14",
+      "itemId": "assessment_item_1de01600-1cea-40d0-a358-5b72716efb27",
+      "answerPolicy": "registered-source-grounded-answer"
+    }
+  },
+  {
+    "caseId": "N-F09-grading-negative",
+    "sourceId": "F09",
+    "inputHash": "904bbd1ea183c97127b2d7f2da39527da86079ce7e8d62c55bc249e873aff395",
+    "sourceTextHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051",
+    "origin": {
+      "file": "runs/final-product/cases/F09-negative-1/answer.json",
+      "assessmentVersionId": "assessment_version_1f9809c4-35bb-443b-89ce-c07470a08c14",
+      "itemId": "assessment_item_1de01600-1cea-40d0-a358-5b72716efb27",
+      "answerPolicy": "registered-insufficient-control"
+    }
+  },
+  {
+    "caseId": "N-F10-curriculum",
+    "sourceId": "F10",
+    "inputHash": "b05cfc5c0f5c71aa44896c5c22d0faf5979a5cc09bdf3979e4ff0c3ed46ff991",
+    "sourceTextHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932",
+    "origin": {
+      "file": "runs/final-product/cases/F10/final.snapshot.json",
+      "table": "curriculum_versions",
+      "id": "curriculum_a1545afc-de87-48f5-aedf-8734c1906bf9"
+    }
+  },
+  {
+    "caseId": "N-F11-curriculum",
+    "sourceId": "F11",
+    "inputHash": "63506e29d1d3a10682c244d139b9fbe9a0d0637f979f883f076bf7c266946923",
+    "sourceTextHash": "3d467962cceddb9a766ded25aaa2f5d1c9767ee6b9307e50472157ea664b2422",
+    "origin": {
+      "file": "runs/final-product/cases/F11/final.snapshot.json",
+      "table": "curriculum_versions",
+      "id": "curriculum_866f45b0-6732-46fb-8108-110614ad852d"
+    }
+  },
+  {
+    "caseId": "N-F11-teaching",
+    "sourceId": "F11",
+    "inputHash": "c93c7ff95949c75c16edb5c64c7e8cfb092e561277b8b3be120f15ad82055972",
+    "sourceTextHash": "3d467962cceddb9a766ded25aaa2f5d1c9767ee6b9307e50472157ea664b2422",
+    "origin": {
+      "file": "runs/final-product/cases/F11/lesson-1-complete.json",
+      "field": "lesson",
+      "scope": "complete displayed first Lesson fields, no later unit"
+    }
+  },
+  {
+    "caseId": "N-F11-tutor",
+    "sourceId": "F11",
+    "inputHash": "aa16ff37e1ef5b9316c370eae6ffeb8576e2848ba04b8417612d0f49889842b9",
+    "sourceTextHash": "3d467962cceddb9a766ded25aaa2f5d1c9767ee6b9307e50472157ea664b2422",
+    "origin": {
+      "file": "runs/final-product/cases/F11/tutor.json",
+      "field": "exchanges",
+      "id": "study_exchange_8d096bf9-28f5-44d2-b32e-e5083380e3c7"
+    }
+  },
+  {
+    "caseId": "N-F11-practice",
+    "sourceId": "F11",
+    "inputHash": "b996bf4647fef3fd50e4992a43fd8ee4f6f4f45da3a5d9d26610920ed85286e9",
+    "sourceTextHash": "3d467962cceddb9a766ded25aaa2f5d1c9767ee6b9307e50472157ea664b2422",
+    "origin": {
+      "file": "runs/final-product/cases/F11/learner-actions.jsonl",
+      "index": 8,
+      "briefId": "teaching_brief_db3881cc-aed6-417a-9fa5-f880e48d11e7",
+      "surface": "initial"
+    }
+  },
+  {
+    "caseId": "N-F12-curriculum",
+    "sourceId": "F12",
+    "inputHash": "462f2d767d9140448efe24b18c036b7da88259f66b27fd653d90ac8c704c7102",
+    "sourceTextHash": "f2f400674bd7889c87f6b67501fb0945c56396dd3c9d5fccf9110cd78642a53e",
+    "origin": {
+      "file": "runs/final-product/cases/F12/final.snapshot.json",
+      "table": "curriculum_versions",
+      "id": "curriculum_689d04af-e23e-4e26-b1c0-9ec4308ec7e8"
+    }
+  },
+  {
+    "caseId": "N-F12-teaching",
+    "sourceId": "F12",
+    "inputHash": "7b4fb980d1fbc47ec7dacf77ca332191acf8ef08a59c7025e7812fe6294f0001",
+    "sourceTextHash": "f2f400674bd7889c87f6b67501fb0945c56396dd3c9d5fccf9110cd78642a53e",
+    "origin": {
+      "file": "runs/final-product/cases/F12/lesson-1-complete.json",
+      "field": "lesson",
+      "scope": "complete displayed first Lesson fields, no later unit"
+    }
+  },
+  {
+    "caseId": "N-F12-tutor",
+    "sourceId": "F12",
+    "inputHash": "46227c6bb103af88747cf50b06fc7ff96840541d6e2950a4cf8f2b377628abfb",
+    "sourceTextHash": "f2f400674bd7889c87f6b67501fb0945c56396dd3c9d5fccf9110cd78642a53e",
+    "origin": {
+      "file": "runs/final-product/cases/F12/tutor.json",
+      "field": "exchanges",
+      "id": "study_exchange_de37c92e-74a6-4223-b09e-49af81f00a00"
+    }
+  },
+  {
+    "caseId": "N-F12-practice",
+    "sourceId": "F12",
+    "inputHash": "098a4ad5dbf3ff8064f004263c48667d3dab0863f7cee75ead7b78adfd382186",
+    "sourceTextHash": "f2f400674bd7889c87f6b67501fb0945c56396dd3c9d5fccf9110cd78642a53e",
+    "origin": {
+      "file": "runs/final-product/cases/F12/learner-actions.jsonl",
+      "index": 7,
+      "briefId": "teaching_brief_e8f80f66-a7df-4fce-bc29-3ba6ac7920b6",
+      "surface": "initial"
+    }
+  },
+  {
+    "caseId": "N-F12-repair",
+    "sourceId": "F12",
+    "inputHash": "3380d63583395437db9d419d3878e8701aac7c7ae998845e07cf23db97633890",
+    "sourceTextHash": "f2f400674bd7889c87f6b67501fb0945c56396dd3c9d5fccf9110cd78642a53e",
+    "origin": {
+      "file": "runs/final-product/cases/F12/learner-actions.jsonl",
+      "index": 9,
+      "field": "preAnswerSurface.practice.recovery"
+    }
+  },
+  {
+    "caseId": "N-F12-retest",
+    "sourceId": "F12",
+    "inputHash": "5d70d2938a733fe01f54152012b8969b3656859954a5041104a698c17999fcb2",
+    "sourceTextHash": "f2f400674bd7889c87f6b67501fb0945c56396dd3c9d5fccf9110cd78642a53e",
+    "origin": {
+      "file": "runs/final-product/cases/F12/learner-actions.jsonl",
+      "index": 10,
+      "table": "lesson_execution_states",
+      "field": "practice_interactions.recovery.rounds[0].content.retest"
+    }
+  },
+  {
+    "caseId": "N-E01-curriculum",
+    "sourceId": "E01",
+    "inputHash": "25b13eb9a8bf9494e227e15312e20febfa6fd9eb709a482de0ff0ff7c9d41511",
+    "sourceTextHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd",
+    "origin": {
+      "file": "runs/final-product/cases/E01/final.snapshot.json",
+      "table": "curriculum_versions",
+      "id": "curriculum_60c66594-9d4f-4ff0-b9f8-6d0d58f8458e"
+    }
+  },
+  {
+    "caseId": "N-E01-teaching",
+    "sourceId": "E01",
+    "inputHash": "b3cd92b9bc7b4a153419baedaf896e3faf54b1fcb4bc421d201da490af00bfb3",
+    "sourceTextHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd",
+    "origin": {
+      "file": "runs/final-product/cases/E01/lesson-1-complete.json",
+      "field": "lesson",
+      "scope": "complete displayed first Lesson fields, no later unit"
+    }
+  },
+  {
+    "caseId": "N-E01-tutor",
+    "sourceId": "E01",
+    "inputHash": "704abb3090e0422f5afe17f25f57fcd26a40458043e41b355ef4eb81d258fc9d",
+    "sourceTextHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd",
+    "origin": {
+      "file": "runs/final-product/cases/E01/tutor.json",
+      "field": "exchanges",
+      "id": "study_exchange_6a252f11-933c-476d-a91c-c82d2410c263"
+    }
+  },
+  {
+    "caseId": "N-E01-practice",
+    "sourceId": "E01",
+    "inputHash": "1180a657521eae8c77860226c2bde3b270e1c40f1e67c87b3b5332981bdadb81",
+    "sourceTextHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd",
+    "origin": {
+      "file": "runs/final-product/cases/E01/learner-actions.jsonl",
+      "index": 7,
+      "briefId": "teaching_brief_03a98019-8796-4edc-98e1-bc86c35a2976",
+      "surface": "initial"
+    }
+  },
+  {
+    "caseId": "N-E01-repair",
+    "sourceId": "E01",
+    "inputHash": "016fa40105045ed0dcbb6b87cfb1d228bfe438d038da356c207eec916653fca5",
+    "sourceTextHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd",
+    "origin": {
+      "file": "runs/final-product/cases/E01/learner-actions.jsonl",
+      "index": 9,
+      "field": "preAnswerSurface.practice.recovery"
+    }
+  },
+  {
+    "caseId": "N-E01-retest",
+    "sourceId": "E01",
+    "inputHash": "1b28c17474354a352309e99c30923c764d776547e266159b7c510ee32cad45d8",
+    "sourceTextHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd",
+    "origin": {
+      "file": "runs/final-product/cases/E01/learner-actions.jsonl",
+      "index": 10,
+      "table": "lesson_execution_states",
+      "field": "practice_interactions.recovery.rounds[0].content.retest"
+    }
+  },
+  {
+    "caseId": "N-E02-curriculum",
+    "sourceId": "E02",
+    "inputHash": "8986463467244eb3ef7a3a8ef6f32ee29c760fde5b026743baa15bea01927426",
+    "sourceTextHash": "6bfef5addb7581a7a5154aa3f44613f99aea8cec06cb8fcd5a7616deee504d45",
+    "origin": {
+      "file": "runs/final-product/cases/E02/final.snapshot.json",
+      "table": "curriculum_versions",
+      "id": "curriculum_1fe53d72-a198-46a4-8f8b-41818af4915c"
+    }
+  },
+  {
+    "caseId": "N-E02-teaching",
+    "sourceId": "E02",
+    "inputHash": "afe67498d6c6fd5f7a9759df74a7bdce72f1678c29aacb724ef4169078c6af3b",
+    "sourceTextHash": "6bfef5addb7581a7a5154aa3f44613f99aea8cec06cb8fcd5a7616deee504d45",
+    "origin": {
+      "file": "runs/final-product/cases/E02/lesson-1-complete.json",
+      "field": "lesson",
+      "scope": "complete displayed first Lesson fields, no later unit"
+    }
+  },
+  {
+    "caseId": "N-E02-tutor",
+    "sourceId": "E02",
+    "inputHash": "5525c12e79db29eeb2f3dd8411d9b226871ed43221e30e5f63bf3b64dd0bc068",
+    "sourceTextHash": "6bfef5addb7581a7a5154aa3f44613f99aea8cec06cb8fcd5a7616deee504d45",
+    "origin": {
+      "file": "runs/final-product/cases/E02/tutor.json",
+      "field": "exchanges",
+      "id": "study_exchange_e9852bd1-4097-4786-ad13-2a3cd0636dfd"
+    }
+  },
+  {
+    "caseId": "N-E02-practice",
+    "sourceId": "E02",
+    "inputHash": "44b057609c990a9eb059e4f8e48682b2d80353dfc382b7e2c2597d1117e61155",
+    "sourceTextHash": "6bfef5addb7581a7a5154aa3f44613f99aea8cec06cb8fcd5a7616deee504d45",
+    "origin": {
+      "file": "runs/final-product/cases/E02/learner-actions.jsonl",
+      "index": 7,
+      "briefId": "teaching_brief_392e90c8-67f7-4dd2-9c0a-b30ae54e25ea",
+      "surface": "initial"
+    }
+  },
+  {
+    "caseId": "N-E02-repair",
+    "sourceId": "E02",
+    "inputHash": "3de3b445e3d09c30390a16745f40e961e4d2cfaac9124b7eb587df1cac86966f",
+    "sourceTextHash": "6bfef5addb7581a7a5154aa3f44613f99aea8cec06cb8fcd5a7616deee504d45",
+    "origin": {
+      "file": "runs/final-product/cases/E02/learner-actions.jsonl",
+      "index": 9,
+      "field": "preAnswerSurface.practice.recovery"
+    }
+  },
+  {
+    "caseId": "N-E02-retest",
+    "sourceId": "E02",
+    "inputHash": "3c2110825b1a9354a6df1da28ffc505d996218c4aae0e47096b1234655644ab3",
+    "sourceTextHash": "6bfef5addb7581a7a5154aa3f44613f99aea8cec06cb8fcd5a7616deee504d45",
+    "origin": {
+      "file": "runs/final-product/cases/E02/learner-actions.jsonl",
+      "index": 10,
+      "table": "lesson_execution_states",
+      "field": "practice_interactions.recovery.rounds[0].content.retest"
+    }
+  },
+  {
+    "caseId": "N-E04-curriculum",
+    "sourceId": "E04",
+    "inputHash": "a3ffef2e79f58b1bf66db6d10603918274bb5326d5b3d7134b56ad1eed5219c7",
+    "sourceTextHash": "bf1b2eea6b7f20a856c4cfc2f378ff4216695c2cb1b009da66f5aca83f238b9f",
+    "origin": {
+      "file": "runs/final-product/cases/E04/final.snapshot.json",
+      "table": "curriculum_versions",
+      "id": "curriculum_2f69b5d7-84af-4baf-8fd3-7e99702b9f34"
+    }
+  },
+  {
+    "caseId": "N-E04-teaching",
+    "sourceId": "E04",
+    "inputHash": "db00b93cd227b8afc46a714aed49794dce6b9e15f293a8440d601dee0741863c",
+    "sourceTextHash": "bf1b2eea6b7f20a856c4cfc2f378ff4216695c2cb1b009da66f5aca83f238b9f",
+    "origin": {
+      "file": "runs/final-product/cases/E04/lesson-1-complete.json",
+      "field": "lesson",
+      "scope": "complete displayed first Lesson fields, no later unit"
+    }
+  },
+  {
+    "caseId": "N-E04-tutor",
+    "sourceId": "E04",
+    "inputHash": "da041517c33f9af6bb9774ca37faa12faf55fc79c60227a055ea88322d4260a3",
+    "sourceTextHash": "bf1b2eea6b7f20a856c4cfc2f378ff4216695c2cb1b009da66f5aca83f238b9f",
+    "origin": {
+      "file": "runs/final-product/cases/E04/tutor.json",
+      "field": "exchanges",
+      "id": "study_exchange_4f26ef27-e255-49bf-a964-d4a910baee15"
+    }
+  },
+  {
+    "caseId": "N-E04-practice",
+    "sourceId": "E04",
+    "inputHash": "4a94ba648e69bea8fdc5f2a90a738148bb32292f0d10da906ea2da246cf3b922",
+    "sourceTextHash": "bf1b2eea6b7f20a856c4cfc2f378ff4216695c2cb1b009da66f5aca83f238b9f",
+    "origin": {
+      "file": "runs/final-product/cases/E04/learner-actions.jsonl",
+      "index": 7,
+      "briefId": "teaching_brief_f4ba4235-0373-4491-a996-850e0557a856",
+      "surface": "initial"
+    }
+  },
+  {
+    "caseId": "N-E04-repair",
+    "sourceId": "E04",
+    "inputHash": "c305f9941d4b5349ab2d9e818daf404a49b83469bd395d1fb973286192d5580c",
+    "sourceTextHash": "bf1b2eea6b7f20a856c4cfc2f378ff4216695c2cb1b009da66f5aca83f238b9f",
+    "origin": {
+      "file": "runs/final-product/cases/E04/learner-actions.jsonl",
+      "index": 9,
+      "field": "preAnswerSurface.practice.recovery"
+    }
+  },
+  {
+    "caseId": "N-E04-retest",
+    "sourceId": "E04",
+    "inputHash": "a52ebf465e3e02fa2ec4a7ff156c8f749df1082233ac97598c2ae83a2d16d80e",
+    "sourceTextHash": "bf1b2eea6b7f20a856c4cfc2f378ff4216695c2cb1b009da66f5aca83f238b9f",
+    "origin": {
+      "file": "runs/final-product/cases/E04/learner-actions.jsonl",
+      "index": 10,
+      "table": "lesson_execution_states",
+      "field": "practice_interactions.recovery.rounds[0].content.retest"
+    }
+  },
+  {
+    "caseId": "N-B-F01-curriculum",
+    "sourceId": "B-F01",
+    "inputHash": "24e6409ab63d0644de0466f5f8e409fefc24f4c59ad8cd688f2e30ba1cadf0ab",
+    "sourceTextHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4",
+    "origin": {
+      "file": "runs/final-product/cases/B-F01/final.snapshot.json",
+      "table": "curriculum_versions",
+      "id": "curriculum_bb87e56e-79f2-4189-a0d1-f318c05e9936"
+    }
+  },
+  {
+    "caseId": "N-B-F01-teaching",
+    "sourceId": "B-F01",
+    "inputHash": "9edd134762668496f4025ab8704d64ac8b1d20267a4ea607ca177cc8fc74c510",
+    "sourceTextHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4",
+    "origin": {
+      "file": "runs/final-product/cases/B-F01/lesson-1-complete.json",
+      "field": "lesson",
+      "scope": "complete displayed first Lesson fields, no later unit"
+    }
+  },
+  {
+    "caseId": "N-B-F01-tutor",
+    "sourceId": "B-F01",
+    "inputHash": "4da79fdb6d60216046b9315ba6db125a6198d62757b7e942fee909b2fb0aecd3",
+    "sourceTextHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4",
+    "origin": {
+      "file": "runs/final-product/cases/B-F01/tutor.json",
+      "field": "exchanges",
+      "id": "study_exchange_2b0cde78-b6dc-4903-97a5-0d05d68ea3c7"
+    }
+  },
+  {
+    "caseId": "N-B-F01-practice",
+    "sourceId": "B-F01",
+    "inputHash": "07dc4a426c5460bd1e66e9cd25b1c27d6b01132ae000a81f586c9762377f8dc8",
+    "sourceTextHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4",
+    "origin": {
+      "file": "runs/final-product/cases/B-F01/learner-actions.jsonl",
+      "index": 6,
+      "briefId": "teaching_brief_b7625fa6-5eb4-4f72-b791-c983caf265c7",
+      "surface": "initial"
+    }
+  },
+  {
+    "caseId": "N-B-F01-repair",
+    "sourceId": "B-F01",
+    "inputHash": "3a464860d9c24214e85098a820a46e36b96d820f664974530cd6cf15a28159f9",
+    "sourceTextHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4",
+    "origin": {
+      "file": "runs/final-product/cases/B-F01/learner-actions.jsonl",
+      "index": 8,
+      "field": "preAnswerSurface.practice.recovery"
+    }
+  },
+  {
+    "caseId": "N-B-F01-retest",
+    "sourceId": "B-F01",
+    "inputHash": "7ef08789123065243e813a83d1be9917c24f4346567a7cbb00a9e7b14c22a426",
+    "sourceTextHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4",
+    "origin": {
+      "file": "runs/final-product/cases/B-F01/learner-actions.jsonl",
+      "index": 9,
+      "table": "lesson_execution_states",
+      "field": "practice_interactions.recovery.rounds[0].content.retest"
+    }
+  },
+  {
+    "caseId": "N-B-F05-curriculum",
+    "sourceId": "B-F05",
+    "inputHash": "5a81cbe732e25faa21340520c759c56eec2513f8d0aca8e2f8e55a789500145d",
+    "sourceTextHash": "04ede0e2b943c283408af13f15e429c4d3f550318ac34096022b20c8a80a02fc",
+    "origin": {
+      "file": "runs/final-product/cases/B-F05/final.snapshot.json",
+      "table": "curriculum_versions",
+      "id": "curriculum_d317153a-5ad3-4392-8828-a11b6433c9fc"
+    }
+  },
+  {
+    "caseId": "N-B-F09-curriculum",
+    "sourceId": "B-F09",
+    "inputHash": "57f8a4a380fe8fd97471c879220785109b69d4f4e103680f94c417b0993fa5f2",
+    "sourceTextHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051",
+    "origin": {
+      "file": "runs/final-product/cases/B-F09/final.snapshot.json",
+      "table": "curriculum_versions",
+      "id": "curriculum_37a92f42-ae63-4fdf-bf57-7d7cef71064f"
+    }
+  },
+  {
+    "caseId": "N-B-F09-teaching",
+    "sourceId": "B-F09",
+    "inputHash": "4a40d399d228000ea07ec7f36403203535381f230950686dbfd924fd2606fae7",
+    "sourceTextHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051",
+    "origin": {
+      "file": "runs/final-product/cases/B-F09/lesson-1-complete.json",
+      "field": "lesson",
+      "scope": "complete displayed first Lesson fields, no later unit"
+    }
+  },
+  {
+    "caseId": "N-B-F09-tutor",
+    "sourceId": "B-F09",
+    "inputHash": "33391bf8a5d5c2afdf7cc157fa4fe810b51899eda93ca5f73c0395b696f81300",
+    "sourceTextHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051",
+    "origin": {
+      "file": "runs/final-product/cases/B-F09/tutor.json",
+      "field": "exchanges",
+      "id": "study_exchange_04eb971d-90d0-4e15-90af-7a1651174281"
+    }
+  },
+  {
+    "caseId": "N-B-F09-practice",
+    "sourceId": "B-F09",
+    "inputHash": "966e3410ed05201ff757a31292f027de5f01c99099912cefbddaa1d386c4843b",
+    "sourceTextHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051",
+    "origin": {
+      "file": "runs/final-product/cases/B-F09/learner-actions.jsonl",
+      "index": 6,
+      "briefId": "teaching_brief_e23b7ea9-0a1a-4b74-a43d-2e27cd007c44",
+      "surface": "initial"
+    }
+  },
+  {
+    "caseId": "N-B-F09-repair",
+    "sourceId": "B-F09",
+    "inputHash": "b5e779367742a72c18267999145bdb9d67f7091d936c9dc0aea6d5c95439cc89",
+    "sourceTextHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051",
+    "origin": {
+      "file": "runs/final-product/cases/B-F09/learner-actions.jsonl",
+      "index": 8,
+      "field": "preAnswerSurface.practice.recovery"
+    }
+  },
+  {
+    "caseId": "N-B-F09-retest",
+    "sourceId": "B-F09",
+    "inputHash": "e36bc83a04c25ca6d6ed37828dd110a3f23811625fbe8fb6ce2b603eedc85fbd",
+    "sourceTextHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051",
+    "origin": {
+      "file": "runs/final-product/cases/B-F09/learner-actions.jsonl",
+      "index": 9,
+      "table": "lesson_execution_states",
+      "field": "practice_interactions.recovery.rounds[0].content.retest"
+    }
+  },
+  {
+    "caseId": "N-B-F09-formal-question",
+    "sourceId": "B-F09",
+    "inputHash": "b2580c607d51309158a787544238f6da5d730ef2597d95bd015f32eaef63e849",
+    "sourceTextHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051",
+    "origin": {
+      "file": "runs/final-product/cases/B-F09/formal-1-version.json",
+      "table": "questions",
+      "questionId": "que_c06472b4-d6de-498d-9390-f78bd8fc3c6a"
+    }
+  },
+  {
+    "caseId": "N-B-F09-grading-positive",
+    "sourceId": "B-F09",
+    "inputHash": "29b562531bc00ec53afacf4ad9b002d112b41613cc385460ae787d75251b4d7a",
+    "sourceTextHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051",
+    "origin": {
+      "file": "runs/final-product/cases/B-F09/formal-1-answer.json",
+      "assessmentVersionId": "assessment_version_6cc75552-7840-4360-aca8-3aed6306250b",
+      "itemId": "assessment_item_e752914f-28a8-4305-8ff8-7900e859aa80",
+      "answerPolicy": "registered-source-grounded-answer"
+    }
+  },
+  {
+    "caseId": "N-B-F09-grading-negative",
+    "sourceId": "B-F09",
+    "inputHash": "804daa96461f40c74fdf29ea809c69ea2b4013a46eca61975e9596843bef4787",
+    "sourceTextHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051",
+    "origin": {
+      "file": "runs/final-product/cases/B-F09-negative-1/answer.json",
+      "assessmentVersionId": "assessment_version_6cc75552-7840-4360-aca8-3aed6306250b",
+      "itemId": "assessment_item_e752914f-28a8-4305-8ff8-7900e859aa80",
+      "answerPolicy": "registered-insufficient-control"
+    }
+  },
+  {
+    "caseId": "N-B-E01-curriculum",
+    "sourceId": "B-E01",
+    "inputHash": "b1fca7d53d2634654cd99daf9cbd09138b2031a3a40f7423cc4e5ed29cf83615",
+    "sourceTextHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd",
+    "origin": {
+      "file": "runs/final-product/cases/B-E01/final.snapshot.json",
+      "table": "curriculum_versions",
+      "id": "curriculum_341c009e-f47e-46a6-9cb5-eb948f80964a"
+    }
+  },
+  {
+    "caseId": "N-B-E01-teaching",
+    "sourceId": "B-E01",
+    "inputHash": "c5151c5373f4ec68b736d20611fb343796bfcdbfa06e5059024330930d752a9c",
+    "sourceTextHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd",
+    "origin": {
+      "file": "runs/final-product/cases/B-E01/lesson-1-complete.json",
+      "field": "lesson",
+      "scope": "complete displayed first Lesson fields, no later unit"
+    }
+  },
+  {
+    "caseId": "N-B-E01-tutor",
+    "sourceId": "B-E01",
+    "inputHash": "5efe7ca6047f975d05988280bdf87be35161f8158920f34895d43d1d2d0cebc1",
+    "sourceTextHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd",
+    "origin": {
+      "file": "runs/final-product/cases/B-E01/tutor.json",
+      "field": "exchanges",
+      "id": "study_exchange_8582267d-bf3a-4b6b-9196-ad0708d69393"
+    }
+  },
+  {
+    "caseId": "N-B-E01-practice",
+    "sourceId": "B-E01",
+    "inputHash": "beeb921efc5bc6ea6945536983f0b235e4e6ec80c09ddff63ef3b11247ff3ee3",
+    "sourceTextHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd",
+    "origin": {
+      "file": "runs/final-product/cases/B-E01/learner-actions.jsonl",
+      "index": 5,
+      "briefId": "teaching_brief_ada8453e-046f-4e7a-b16a-39408ca45f6f",
+      "surface": "initial"
+    }
+  },
+  {
+    "caseId": "N-B-E01-repair",
+    "sourceId": "B-E01",
+    "inputHash": "eca60be53bed70437b8c738a5493483a79155f92f387dac362804cdb1d569610",
+    "sourceTextHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd",
+    "origin": {
+      "file": "runs/final-product/cases/B-E01/learner-actions.jsonl",
+      "index": 7,
+      "field": "preAnswerSurface.practice.recovery"
+    }
+  },
+  {
+    "caseId": "N-B-E01-retest",
+    "sourceId": "B-E01",
+    "inputHash": "9ef176af716c6690bacf35fa87485d7532d417a49f084dde0c6f52bb65404a9a",
+    "sourceTextHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd",
+    "origin": {
+      "file": "runs/final-product/cases/B-E01/learner-actions.jsonl",
+      "index": 8,
+      "table": "lesson_execution_states",
+      "field": "practice_interactions.recovery.rounds[0].content.retest"
+    }
+  },
+  {
+    "caseId": "N-B-E01-formal-question",
+    "sourceId": "B-E01",
+    "inputHash": "6eaf3e0e31fc0a9ab0dc0259cdf53df1a1cdbf13c4f579e1be65ed206768c6a9",
+    "sourceTextHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd",
+    "origin": {
+      "file": "runs/final-product/cases/B-E01/formal-1-version.json",
+      "table": "questions",
+      "questionId": "que_245e7ca9-2af5-4f2f-9e2a-80117511924b"
+    }
+  },
+  {
+    "caseId": "N-B-E01-grading-positive",
+    "sourceId": "B-E01",
+    "inputHash": "9d1359a6c80a15d2c346314336163ef6aa9f8a6d85d3ae9c642df6a70878bab8",
+    "sourceTextHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd",
+    "origin": {
+      "file": "runs/final-product/cases/B-E01/formal-1-answer.json",
+      "assessmentVersionId": "assessment_version_2e11f76c-5773-4e74-8fa6-09cf4716ccc4",
+      "itemId": "assessment_item_e2e8ca13-3543-4aaf-b013-9997902609cf",
+      "answerPolicy": "registered-source-grounded-answer"
+    }
+  },
+  {
+    "caseId": "N-B-E01-grading-negative",
+    "sourceId": "B-E01",
+    "inputHash": "db9feff30912c9dd835ce951cefa5e8be627870c630fb2f98fa2c4ba06c4f292",
+    "sourceTextHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd",
+    "origin": {
+      "file": "runs/final-product/cases/B-E01-negative-1/answer.json",
+      "assessmentVersionId": "assessment_version_2e11f76c-5773-4e74-8fa6-09cf4716ccc4",
+      "itemId": "assessment_item_e2e8ca13-3543-4aaf-b013-9997902609cf",
+      "answerPolicy": "registered-insufficient-control"
+    }
+  }
+]

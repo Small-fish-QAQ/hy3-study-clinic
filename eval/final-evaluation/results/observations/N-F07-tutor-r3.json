@@ -1,0 +1,443 @@
+{
+  "task": {
+    "caseId": "N-F07-tutor",
+    "runId": "N-F07-tutor-r3",
+    "replicate": 3,
+    "path": "runs/final/cases/N-F07-tutor.json",
+    "inputHash": "b37e7384d5f4ffa0c9382488ecc79d26019020396378d497e43a8577f960a101",
+    "population": "natural",
+    "sourceId": "F07"
+  },
+  "inputHash": "b37e7384d5f4ffa0c9382488ecc79d26019020396378d497e43a8577f960a101",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "correctness": "d749de171d5c00ae28ac7d38a5930a10cdc7d6c40fb258193c3701aea08be5fe",
+      "artifact-audit": "d749de171d5c00ae28ac7d38a5930a10cdc7d6c40fb258193c3701aea08be5fe",
+      "certification": "d749de171d5c00ae28ac7d38a5930a10cdc7d6c40fb258193c3701aea08be5fe"
+    },
+    "stages": {
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "clear",
+            "affected": [],
+            "reason": "核验tutor-reply(e16)断言：资料e3要求比较时其他有关条件如观察天数一致，多变量同时改变不能单一归因；tutor用甲加水观察7天乙无水观察4天（观察天数不同）说明不能单独归因水，符合资料控制变量逻辑，未混淆充分必要；手机例子边界说明与资料精神一致。",
+            "refs": [
+              "e3",
+              "e16"
+            ],
+            "challenge": {
+              "status": "closed",
+              "reason": "资料e3明确列举观察天数需一致且多变量未控不能单一归因；tutor实例为水与观察天数双变量未控，结论被e3规则支持，无法构造相容反例使必要条件不成立（方法论上未控即不能归因）。",
+              "refs": [
+                "e3",
+                "e16"
+              ]
+            },
+            "witnesses": [
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "课堂把同一批种子分到两个透明盒中，想比较有水和无水时的发芽情况。为了使比较有意义，应尽量让其他有关条件一致，例如种子数量、来源、温度、光照、观察天数与发芽判定方式。若有水盒放在温暖窗台、无水盒放在冷暗柜里，即使结果不同，也无法把差异单独归因于水，因为温度和光照同时改变了。\n这里把“发芽”操作性地定义为观察到胚根伸出种皮，便于不同记录者使用同一标准。这个定义是本实验的观察规则，不是所有生物过程的完整描述。记录者应按事先约定的时间观察全部种子，而不是只挑成功的那几颗展示。没有发芽的种子也必须计入，才能知道发芽比例。\n设两盒各十粒同批种子，均在同温同光处放置七天。甲盒保持适量湿润，乙盒保持干燥。甲有八粒达到上述标准，乙有一粒。可以说在这批种子和这些条件下，湿润组观察到的发芽比例更高。仅凭这一次观察，还不能断言所有种类的种子只要加水都会发芽；种子活性、温度及其他条件仍可能重要。也不能说乙盒绝对没有任何水分，因为“保持干燥”是操作描述，并未测出零水分。\n重复实验可以帮助检查结果是否稳定，但重复的对象、条件与方法需要记录。把同一张照片复制三次不是三次独立实验。同一盒内种子也共享环境，不能总把它们当成互不影响的完整重复。入门练习无需复杂统计检验，只要能说明为什么重复有用、哪些信息仍然有限。\n好的后续实验应对应目前的疑问。如果怀疑温度造成差异，就应在同一温度下只改变湿润条件，或设计清楚的组合比较；不能一边改变温度，一边换种子品种，再把结果归因于某一个因素。若希望研究“水太多是否也影响发芽”，可以在其他条件一致时增加不同水量组，事先说明每组的水量与观察标准。\n解释实验时，把计划、执行、观察和结论分开写。计划相同不代表执行真的相同，需核对记录；观察不同不自动证明唯一原因。允许结果不支持原假说，并据此修改下一步问题，正是实验学习的一部分。对证据保留限制，不妨碍学生提出清楚、可检验的预测。",
+                "valueHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648"
+              },
+              {
+                "id": "e16",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "课程资料指出，比较两个条件时应尽量让其他有关条件一致，例如观察天数与发芽判定方式；若甲盒加水观察7天、乙盒无水观察4天，除水外观察天数也不同，就不能把发芽差异单独归因于水（见资料原句列举观察天数等需一致）。这正是当前练习的关键关系：单一因素归因要求其他变量受控。\n\n举例（补充说明）：想象比较两款手机哪款触屏更灵敏，却让一款在干燥环境测、另一款在潮湿环境测，结果响应不同，你不能只说是手机型号导致，因为环境湿度也变了。这个例子的适用边界是：它仅用来直观展示“额外变量未控制则无法归因”的逻辑，不涉及真实触屏复杂的硬件差异；且若实际测试时两款都在同湿度下，该类比就不适用，那时才可考察手机本身。当前题目留给你判断选项，我不替你选。",
+                "valueHash": "98463466492601085e31eabda2920d8153801ad49d3f58ed0283684b400c9ded"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "kind": "quantities",
+            "status": "not_applicable",
+            "affected": [],
+            "reason": "产物tutor-reply(e16)未做任何数量演算或声称数值结果，仅用文字例子解释控制变量关系，无数量断言需独立重算。",
+            "contextHash": "d749de171d5c00ae28ac7d38a5930a10cdc7d6c40fb258193c3701aea08be5fe",
+            "proposed": {
+              "kind": "quantities",
+              "status": "not_applicable",
+              "affected": [],
+              "reason": "产物tutor-reply(e16)未做任何数量演算或声称数值结果，仅用文字例子解释控制变量关系，无数量断言需独立重算。",
+              "refs": [
+                "e16"
+              ]
+            },
+            "reviewReasons": []
+          }
+        ],
+        "keys": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 2,
+            "reason": "Artifact e16 correctly cites e3 that comparison requires consistent conditions (e.g., observation days) and validly infers that differing observation days with water change blocks single-factor attribution. Authored phone analogy and its boundary are correct, no invented support.",
+            "refs": [
+              "e16",
+              "e3",
+              "e5"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e16",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "课程资料指出，比较两个条件时应尽量让其他有关条件一致，例如观察天数与发芽判定方式；若甲盒加水观察7天、乙盒无水观察4天，除水外观察天数也不同，就不能把发芽差异单独归因于水（见资料原句列举观察天数等需一致）。这正是当前练习的关键关系：单一因素归因要求其他变量受控。\n\n举例（补充说明）：想象比较两款手机哪款触屏更灵敏，却让一款在干燥环境测、另一款在潮湿环境测，结果响应不同，你不能只说是手机型号导致，因为环境湿度也变了。这个例子的适用边界是：它仅用来直观展示“额外变量未控制则无法归因”的逻辑，不涉及真实触屏复杂的硬件差异；且若实际测试时两款都在同湿度下，该类比就不适用，那时才可考察手机本身。当前题目留给你判断选项，我不替你选。",
+                "valueHash": "98463466492601085e31eabda2920d8153801ad49d3f58ed0283684b400c9ded"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "课堂把同一批种子分到两个透明盒中，想比较有水和无水时的发芽情况。为了使比较有意义，应尽量让其他有关条件一致，例如种子数量、来源、温度、光照、观察天数与发芽判定方式。若有水盒放在温暖窗台、无水盒放在冷暗柜里，即使结果不同，也无法把差异单独归因于水，因为温度和光照同时改变了。\n这里把“发芽”操作性地定义为观察到胚根伸出种皮，便于不同记录者使用同一标准。这个定义是本实验的观察规则，不是所有生物过程的完整描述。记录者应按事先约定的时间观察全部种子，而不是只挑成功的那几颗展示。没有发芽的种子也必须计入，才能知道发芽比例。\n设两盒各十粒同批种子，均在同温同光处放置七天。甲盒保持适量湿润，乙盒保持干燥。甲有八粒达到上述标准，乙有一粒。可以说在这批种子和这些条件下，湿润组观察到的发芽比例更高。仅凭这一次观察，还不能断言所有种类的种子只要加水都会发芽；种子活性、温度及其他条件仍可能重要。也不能说乙盒绝对没有任何水分，因为“保持干燥”是操作描述，并未测出零水分。\n重复实验可以帮助检查结果是否稳定，但重复的对象、条件与方法需要记录。把同一张照片复制三次不是三次独立实验。同一盒内种子也共享环境，不能总把它们当成互不影响的完整重复。入门练习无需复杂统计检验，只要能说明为什么重复有用、哪些信息仍然有限。\n好的后续实验应对应目前的疑问。如果怀疑温度造成差异，就应在同一温度下只改变湿润条件，或设计清楚的组合比较；不能一边改变温度，一边换种子品种，再把结果归因于某一个因素。若希望研究“水太多是否也影响发芽”，可以在其他条件一致时增加不同水量组，事先说明每组的水量与观察标准。\n解释实验时，把计划、执行、观察和结论分开写。计划相同不代表执行真的相同，需核对记录；观察不同不自动证明唯一原因。允许结果不支持原假说，并据此修改下一步问题，正是实验学习的一部分。对证据保留限制，不妨碍学生提出清楚、可检验的预测。",
+                "valueHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "请针对当前内容，用一个与资料不同但容易理解的例子解释关键关系，并说明例子的适用边界。",
+                "valueHash": "8554fd2a6af26f8cda0d4670bec8b7daaade91997a1e3a766c77f315dc970152"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "dimension": "Q3",
+            "level": 2,
+            "reason": "With prerequisites e7-e10, learner can follow why/how: e16 explains controlled-variable need via source logic and a different phone example, and gives relevant boundary (analogy only shows logic, not for same-humidity case). Explanation usable and bounded.",
+            "refs": [
+              "e16",
+              "e3",
+              "e7",
+              "e9",
+              "e10"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e16",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "课程资料指出，比较两个条件时应尽量让其他有关条件一致，例如观察天数与发芽判定方式；若甲盒加水观察7天、乙盒无水观察4天，除水外观察天数也不同，就不能把发芽差异单独归因于水（见资料原句列举观察天数等需一致）。这正是当前练习的关键关系：单一因素归因要求其他变量受控。\n\n举例（补充说明）：想象比较两款手机哪款触屏更灵敏，却让一款在干燥环境测、另一款在潮湿环境测，结果响应不同，你不能只说是手机型号导致，因为环境湿度也变了。这个例子的适用边界是：它仅用来直观展示“额外变量未控制则无法归因”的逻辑，不涉及真实触屏复杂的硬件差异；且若实际测试时两款都在同湿度下，该类比就不适用，那时才可考察手机本身。当前题目留给你判断选项，我不替你选。",
+                "valueHash": "98463466492601085e31eabda2920d8153801ad49d3f58ed0283684b400c9ded"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "课堂把同一批种子分到两个透明盒中，想比较有水和无水时的发芽情况。为了使比较有意义，应尽量让其他有关条件一致，例如种子数量、来源、温度、光照、观察天数与发芽判定方式。若有水盒放在温暖窗台、无水盒放在冷暗柜里，即使结果不同，也无法把差异单独归因于水，因为温度和光照同时改变了。\n这里把“发芽”操作性地定义为观察到胚根伸出种皮，便于不同记录者使用同一标准。这个定义是本实验的观察规则，不是所有生物过程的完整描述。记录者应按事先约定的时间观察全部种子，而不是只挑成功的那几颗展示。没有发芽的种子也必须计入，才能知道发芽比例。\n设两盒各十粒同批种子，均在同温同光处放置七天。甲盒保持适量湿润，乙盒保持干燥。甲有八粒达到上述标准，乙有一粒。可以说在这批种子和这些条件下，湿润组观察到的发芽比例更高。仅凭这一次观察，还不能断言所有种类的种子只要加水都会发芽；种子活性、温度及其他条件仍可能重要。也不能说乙盒绝对没有任何水分，因为“保持干燥”是操作描述，并未测出零水分。\n重复实验可以帮助检查结果是否稳定，但重复的对象、条件与方法需要记录。把同一张照片复制三次不是三次独立实验。同一盒内种子也共享环境，不能总把它们当成互不影响的完整重复。入门练习无需复杂统计检验，只要能说明为什么重复有用、哪些信息仍然有限。\n好的后续实验应对应目前的疑问。如果怀疑温度造成差异，就应在同一温度下只改变湿润条件，或设计清楚的组合比较；不能一边改变温度，一边换种子品种，再把结果归因于某一个因素。若希望研究“水太多是否也影响发芽”，可以在其他条件一致时增加不同水量组，事先说明每组的水量与观察标准。\n解释实验时，把计划、执行、观察和结论分开写。计划相同不代表执行真的相同，需核对记录；观察不同不自动证明唯一原因。允许结果不支持原假说，并据此修改下一步问题，正是实验学习的一部分。对证据保留限制，不妨碍学生提出清楚、可检验的预测。",
+                "valueHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648"
+              },
+              {
+                "id": "e7",
+                "pointer": "/prerequisites/0",
+                "role": "context",
+                "kind": "text",
+                "value": "理解相同与不同",
+                "valueHash": "5d9f9e41ac5465029c60d930aa3142d5754cdf1f405ba64d86bbc7f24243e226"
+              },
+              {
+                "id": "e9",
+                "pointer": "/prerequisites/2",
+                "role": "context",
+                "kind": "text",
+                "value": "Identify when a comparison simultaneously changes multiple variables (e.g., water, temperature, light) and thus cannot attribute difference to a single factor; keep other relevant conditions consistent for valid comparison.",
+                "valueHash": "cef7aea2f520a0d199cbc174d7b6b0e4ed7d5f340ad09bc94b602df813939a81"
+              },
+              {
+                "id": "e10",
+                "pointer": "/prerequisites/3",
+                "role": "context",
+                "kind": "text",
+                "value": "Apply operational definition of germination (radicle out of seed coat) and record all seeds including non-germinated at predetermined times to compute germination proportion.",
+                "valueHash": "1ee6ae5a15c7690b1e812ec9f05a7ee8a2e489a59eacf5f18b40644a7439eb40"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q1",
+            "status": "supported",
+            "reason": "Artifact e16 cites e3's controlled-condition rule and correctly infers that differing observation days with water change blocks single-factor attribution; phone analogy and its boundary are valid, no invented support. Findings audit and correctness clear confirm.",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e16",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "课程资料指出，比较两个条件时应尽量让其他有关条件一致，例如观察天数与发芽判定方式；若甲盒加水观察7天、乙盒无水观察4天，除水外观察天数也不同，就不能把发芽差异单独归因于水（见资料原句列举观察天数等需一致）。这正是当前练习的关键关系：单一因素归因要求其他变量受控。\n\n举例（补充说明）：想象比较两款手机哪款触屏更灵敏，却让一款在干燥环境测、另一款在潮湿环境测，结果响应不同，你不能只说是手机型号导致，因为环境湿度也变了。这个例子的适用边界是：它仅用来直观展示“额外变量未控制则无法归因”的逻辑，不涉及真实触屏复杂的硬件差异；且若实际测试时两款都在同湿度下，该类比就不适用，那时才可考察手机本身。当前题目留给你判断选项，我不替你选。",
+                "valueHash": "98463466492601085e31eabda2920d8153801ad49d3f58ed0283684b400c9ded"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "课堂把同一批种子分到两个透明盒中，想比较有水和无水时的发芽情况。为了使比较有意义，应尽量让其他有关条件一致，例如种子数量、来源、温度、光照、观察天数与发芽判定方式。若有水盒放在温暖窗台、无水盒放在冷暗柜里，即使结果不同，也无法把差异单独归因于水，因为温度和光照同时改变了。\n这里把“发芽”操作性地定义为观察到胚根伸出种皮，便于不同记录者使用同一标准。这个定义是本实验的观察规则，不是所有生物过程的完整描述。记录者应按事先约定的时间观察全部种子，而不是只挑成功的那几颗展示。没有发芽的种子也必须计入，才能知道发芽比例。\n设两盒各十粒同批种子，均在同温同光处放置七天。甲盒保持适量湿润，乙盒保持干燥。甲有八粒达到上述标准，乙有一粒。可以说在这批种子和这些条件下，湿润组观察到的发芽比例更高。仅凭这一次观察，还不能断言所有种类的种子只要加水都会发芽；种子活性、温度及其他条件仍可能重要。也不能说乙盒绝对没有任何水分，因为“保持干燥”是操作描述，并未测出零水分。\n重复实验可以帮助检查结果是否稳定，但重复的对象、条件与方法需要记录。把同一张照片复制三次不是三次独立实验。同一盒内种子也共享环境，不能总把它们当成互不影响的完整重复。入门练习无需复杂统计检验，只要能说明为什么重复有用、哪些信息仍然有限。\n好的后续实验应对应目前的疑问。如果怀疑温度造成差异，就应在同一温度下只改变湿润条件，或设计清楚的组合比较；不能一边改变温度，一边换种子品种，再把结果归因于某一个因素。若希望研究“水太多是否也影响发芽”，可以在其他条件一致时增加不同水量组，事先说明每组的水量与观察标准。\n解释实验时，把计划、执行、观察和结论分开写。计划相同不代表执行真的相同，需核对记录；观察不同不自动证明唯一原因。允许结果不支持原假说，并据此修改下一步问题，正是实验学习的一部分。对证据保留限制，不妨碍学生提出清楚、可检验的预测。",
+                "valueHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "dimension": "Q3",
+            "status": "supported",
+            "reason": "With prerequisites e7-e10, e16 explains controlled-variable need via source logic and a different phone example, and states relevant boundary (analogy only shows logic, not for same-humidity case). Explanation usable and bounded; findings consistent.",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e16",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "课程资料指出，比较两个条件时应尽量让其他有关条件一致，例如观察天数与发芽判定方式；若甲盒加水观察7天、乙盒无水观察4天，除水外观察天数也不同，就不能把发芽差异单独归因于水（见资料原句列举观察天数等需一致）。这正是当前练习的关键关系：单一因素归因要求其他变量受控。\n\n举例（补充说明）：想象比较两款手机哪款触屏更灵敏，却让一款在干燥环境测、另一款在潮湿环境测，结果响应不同，你不能只说是手机型号导致，因为环境湿度也变了。这个例子的适用边界是：它仅用来直观展示“额外变量未控制则无法归因”的逻辑，不涉及真实触屏复杂的硬件差异；且若实际测试时两款都在同湿度下，该类比就不适用，那时才可考察手机本身。当前题目留给你判断选项，我不替你选。",
+                "valueHash": "98463466492601085e31eabda2920d8153801ad49d3f58ed0283684b400c9ded"
+              },
+              {
+                "id": "e7",
+                "pointer": "/prerequisites/0",
+                "role": "context",
+                "kind": "text",
+                "value": "理解相同与不同",
+                "valueHash": "5d9f9e41ac5465029c60d930aa3142d5754cdf1f405ba64d86bbc7f24243e226"
+              },
+              {
+                "id": "e8",
+                "pointer": "/prerequisites/1",
+                "role": "context",
+                "kind": "text",
+                "value": "能按表格记录观察",
+                "valueHash": "254ac1098c0f9eca0ffbc4412f39af6c7b3e10d534766eb7d4d700016e6d025e"
+              },
+              {
+                "id": "e9",
+                "pointer": "/prerequisites/2",
+                "role": "context",
+                "kind": "text",
+                "value": "Identify when a comparison simultaneously changes multiple variables (e.g., water, temperature, light) and thus cannot attribute difference to a single factor; keep other relevant conditions consistent for valid comparison.",
+                "valueHash": "cef7aea2f520a0d199cbc174d7b6b0e4ed7d5f340ad09bc94b602df813939a81"
+              },
+              {
+                "id": "e10",
+                "pointer": "/prerequisites/3",
+                "role": "context",
+                "kind": "text",
+                "value": "Apply operational definition of germination (radicle out of seed coat) and record all seeds including non-germinated at predetermined times to compute germination proportion.",
+                "valueHash": "1ee6ae5a15c7690b1e812ec9f05a7ee8a2e489a59eacf5f18b40644a7439eb40"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q1",
+          "level": 2,
+          "reason": "Artifact e16 correctly cites e3 that comparison requires consistent conditions (e.g., observation days) and validly infers that differing observation days with water change blocks single-factor attribution. Authored phone analogy and its boundary are correct, no invented support.",
+          "refs": [
+            "e16",
+            "e3",
+            "e5"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e16",
+              "pointer": "/artifacts/0/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "课程资料指出，比较两个条件时应尽量让其他有关条件一致，例如观察天数与发芽判定方式；若甲盒加水观察7天、乙盒无水观察4天，除水外观察天数也不同，就不能把发芽差异单独归因于水（见资料原句列举观察天数等需一致）。这正是当前练习的关键关系：单一因素归因要求其他变量受控。\n\n举例（补充说明）：想象比较两款手机哪款触屏更灵敏，却让一款在干燥环境测、另一款在潮湿环境测，结果响应不同，你不能只说是手机型号导致，因为环境湿度也变了。这个例子的适用边界是：它仅用来直观展示“额外变量未控制则无法归因”的逻辑，不涉及真实触屏复杂的硬件差异；且若实际测试时两款都在同湿度下，该类比就不适用，那时才可考察手机本身。当前题目留给你判断选项，我不替你选。",
+              "valueHash": "98463466492601085e31eabda2920d8153801ad49d3f58ed0283684b400c9ded"
+            },
+            {
+              "id": "e3",
+              "pointer": "/sources/0/text",
+              "role": "source",
+              "kind": "text",
+              "value": "课堂把同一批种子分到两个透明盒中，想比较有水和无水时的发芽情况。为了使比较有意义，应尽量让其他有关条件一致，例如种子数量、来源、温度、光照、观察天数与发芽判定方式。若有水盒放在温暖窗台、无水盒放在冷暗柜里，即使结果不同，也无法把差异单独归因于水，因为温度和光照同时改变了。\n这里把“发芽”操作性地定义为观察到胚根伸出种皮，便于不同记录者使用同一标准。这个定义是本实验的观察规则，不是所有生物过程的完整描述。记录者应按事先约定的时间观察全部种子，而不是只挑成功的那几颗展示。没有发芽的种子也必须计入，才能知道发芽比例。\n设两盒各十粒同批种子，均在同温同光处放置七天。甲盒保持适量湿润，乙盒保持干燥。甲有八粒达到上述标准，乙有一粒。可以说在这批种子和这些条件下，湿润组观察到的发芽比例更高。仅凭这一次观察，还不能断言所有种类的种子只要加水都会发芽；种子活性、温度及其他条件仍可能重要。也不能说乙盒绝对没有任何水分，因为“保持干燥”是操作描述，并未测出零水分。\n重复实验可以帮助检查结果是否稳定，但重复的对象、条件与方法需要记录。把同一张照片复制三次不是三次独立实验。同一盒内种子也共享环境，不能总把它们当成互不影响的完整重复。入门练习无需复杂统计检验，只要能说明为什么重复有用、哪些信息仍然有限。\n好的后续实验应对应目前的疑问。如果怀疑温度造成差异，就应在同一温度下只改变湿润条件，或设计清楚的组合比较；不能一边改变温度，一边换种子品种，再把结果归因于某一个因素。若希望研究“水太多是否也影响发芽”，可以在其他条件一致时增加不同水量组，事先说明每组的水量与观察标准。\n解释实验时，把计划、执行、观察和结论分开写。计划相同不代表执行真的相同，需核对记录；观察不同不自动证明唯一原因。允许结果不支持原假说，并据此修改下一步问题，正是实验学习的一部分。对证据保留限制，不妨碍学生提出清楚、可检验的预测。",
+              "valueHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648"
+            },
+            {
+              "id": "e5",
+              "pointer": "/goals/0",
+              "role": "goal",
+              "kind": "text",
+              "value": "请针对当前内容，用一个与资料不同但容易理解的例子解释关键关系，并说明例子的适用边界。",
+              "valueHash": "8554fd2a6af26f8cda0d4670bec8b7daaade91997a1e3a766c77f315dc970152"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [],
+          "proposedLevel": 2,
+          "proposedReason": "Artifact e16 correctly cites e3 that comparison requires consistent conditions (e.g., observation days) and validly infers that differing observation days with water change blocks single-factor attribution. Authored phone analogy and its boundary are correct, no invented support."
+        },
+        {
+          "dimension": "Q3",
+          "level": 2,
+          "reason": "With prerequisites e7-e10, learner can follow why/how: e16 explains controlled-variable need via source logic and a different phone example, and gives relevant boundary (analogy only shows logic, not for same-humidity case). Explanation usable and bounded.",
+          "refs": [
+            "e16",
+            "e3",
+            "e7",
+            "e9",
+            "e10"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e16",
+              "pointer": "/artifacts/0/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "课程资料指出，比较两个条件时应尽量让其他有关条件一致，例如观察天数与发芽判定方式；若甲盒加水观察7天、乙盒无水观察4天，除水外观察天数也不同，就不能把发芽差异单独归因于水（见资料原句列举观察天数等需一致）。这正是当前练习的关键关系：单一因素归因要求其他变量受控。\n\n举例（补充说明）：想象比较两款手机哪款触屏更灵敏，却让一款在干燥环境测、另一款在潮湿环境测，结果响应不同，你不能只说是手机型号导致，因为环境湿度也变了。这个例子的适用边界是：它仅用来直观展示“额外变量未控制则无法归因”的逻辑，不涉及真实触屏复杂的硬件差异；且若实际测试时两款都在同湿度下，该类比就不适用，那时才可考察手机本身。当前题目留给你判断选项，我不替你选。",
+              "valueHash": "98463466492601085e31eabda2920d8153801ad49d3f58ed0283684b400c9ded"
+            },
+            {
+              "id": "e3",
+              "pointer": "/sources/0/text",
+              "role": "source",
+              "kind": "text",
+              "value": "课堂把同一批种子分到两个透明盒中，想比较有水和无水时的发芽情况。为了使比较有意义，应尽量让其他有关条件一致，例如种子数量、来源、温度、光照、观察天数与发芽判定方式。若有水盒放在温暖窗台、无水盒放在冷暗柜里，即使结果不同，也无法把差异单独归因于水，因为温度和光照同时改变了。\n这里把“发芽”操作性地定义为观察到胚根伸出种皮，便于不同记录者使用同一标准。这个定义是本实验的观察规则，不是所有生物过程的完整描述。记录者应按事先约定的时间观察全部种子，而不是只挑成功的那几颗展示。没有发芽的种子也必须计入，才能知道发芽比例。\n设两盒各十粒同批种子，均在同温同光处放置七天。甲盒保持适量湿润，乙盒保持干燥。甲有八粒达到上述标准，乙有一粒。可以说在这批种子和这些条件下，湿润组观察到的发芽比例更高。仅凭这一次观察，还不能断言所有种类的种子只要加水都会发芽；种子活性、温度及其他条件仍可能重要。也不能说乙盒绝对没有任何水分，因为“保持干燥”是操作描述，并未测出零水分。\n重复实验可以帮助检查结果是否稳定，但重复的对象、条件与方法需要记录。把同一张照片复制三次不是三次独立实验。同一盒内种子也共享环境，不能总把它们当成互不影响的完整重复。入门练习无需复杂统计检验，只要能说明为什么重复有用、哪些信息仍然有限。\n好的后续实验应对应目前的疑问。如果怀疑温度造成差异，就应在同一温度下只改变湿润条件，或设计清楚的组合比较；不能一边改变温度，一边换种子品种，再把结果归因于某一个因素。若希望研究“水太多是否也影响发芽”，可以在其他条件一致时增加不同水量组，事先说明每组的水量与观察标准。\n解释实验时，把计划、执行、观察和结论分开写。计划相同不代表执行真的相同，需核对记录；观察不同不自动证明唯一原因。允许结果不支持原假说，并据此修改下一步问题，正是实验学习的一部分。对证据保留限制，不妨碍学生提出清楚、可检验的预测。",
+              "valueHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648"
+            },
+            {
+              "id": "e7",
+              "pointer": "/prerequisites/0",
+              "role": "context",
+              "kind": "text",
+              "value": "理解相同与不同",
+              "valueHash": "5d9f9e41ac5465029c60d930aa3142d5754cdf1f405ba64d86bbc7f24243e226"
+            },
+            {
+              "id": "e9",
+              "pointer": "/prerequisites/2",
+              "role": "context",
+              "kind": "text",
+              "value": "Identify when a comparison simultaneously changes multiple variables (e.g., water, temperature, light) and thus cannot attribute difference to a single factor; keep other relevant conditions consistent for valid comparison.",
+              "valueHash": "cef7aea2f520a0d199cbc174d7b6b0e4ed7d5f340ad09bc94b602df813939a81"
+            },
+            {
+              "id": "e10",
+              "pointer": "/prerequisites/3",
+              "role": "context",
+              "kind": "text",
+              "value": "Apply operational definition of germination (radicle out of seed coat) and record all seeds including non-germinated at predetermined times to compute germination proportion.",
+              "valueHash": "1ee6ae5a15c7690b1e812ec9f05a7ee8a2e489a59eacf5f18b40644a7439eb40"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [],
+          "proposedLevel": 2,
+          "proposedReason": "With prerequisites e7-e10, learner can follow why/how: e16 explains controlled-variable need via source logic and a different phone example, and gives relevant boundary (analogy only shows logic, not for same-humidity case). Explanation usable and bounded."
+        }
+      ],
+      "reviewRequired": [],
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q1",
+            "status": "supported",
+            "reason": "Artifact e16 cites e3's controlled-condition rule and correctly infers that differing observation days with water change blocks single-factor attribution; phone analogy and its boundary are valid, no invented support. Findings audit and correctness clear confirm.",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e16",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "课程资料指出，比较两个条件时应尽量让其他有关条件一致，例如观察天数与发芽判定方式；若甲盒加水观察7天、乙盒无水观察4天，除水外观察天数也不同，就不能把发芽差异单独归因于水（见资料原句列举观察天数等需一致）。这正是当前练习的关键关系：单一因素归因要求其他变量受控。\n\n举例（补充说明）：想象比较两款手机哪款触屏更灵敏，却让一款在干燥环境测、另一款在潮湿环境测，结果响应不同，你不能只说是手机型号导致，因为环境湿度也变了。这个例子的适用边界是：它仅用来直观展示“额外变量未控制则无法归因”的逻辑，不涉及真实触屏复杂的硬件差异；且若实际测试时两款都在同湿度下，该类比就不适用，那时才可考察手机本身。当前题目留给你判断选项，我不替你选。",
+                "valueHash": "98463466492601085e31eabda2920d8153801ad49d3f58ed0283684b400c9ded"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "课堂把同一批种子分到两个透明盒中，想比较有水和无水时的发芽情况。为了使比较有意义，应尽量让其他有关条件一致，例如种子数量、来源、温度、光照、观察天数与发芽判定方式。若有水盒放在温暖窗台、无水盒放在冷暗柜里，即使结果不同，也无法把差异单独归因于水，因为温度和光照同时改变了。\n这里把“发芽”操作性地定义为观察到胚根伸出种皮，便于不同记录者使用同一标准。这个定义是本实验的观察规则，不是所有生物过程的完整描述。记录者应按事先约定的时间观察全部种子，而不是只挑成功的那几颗展示。没有发芽的种子也必须计入，才能知道发芽比例。\n设两盒各十粒同批种子，均在同温同光处放置七天。甲盒保持适量湿润，乙盒保持干燥。甲有八粒达到上述标准，乙有一粒。可以说在这批种子和这些条件下，湿润组观察到的发芽比例更高。仅凭这一次观察，还不能断言所有种类的种子只要加水都会发芽；种子活性、温度及其他条件仍可能重要。也不能说乙盒绝对没有任何水分，因为“保持干燥”是操作描述，并未测出零水分。\n重复实验可以帮助检查结果是否稳定，但重复的对象、条件与方法需要记录。把同一张照片复制三次不是三次独立实验。同一盒内种子也共享环境，不能总把它们当成互不影响的完整重复。入门练习无需复杂统计检验，只要能说明为什么重复有用、哪些信息仍然有限。\n好的后续实验应对应目前的疑问。如果怀疑温度造成差异，就应在同一温度下只改变湿润条件，或设计清楚的组合比较；不能一边改变温度，一边换种子品种，再把结果归因于某一个因素。若希望研究“水太多是否也影响发芽”，可以在其他条件一致时增加不同水量组，事先说明每组的水量与观察标准。\n解释实验时，把计划、执行、观察和结论分开写。计划相同不代表执行真的相同，需核对记录；观察不同不自动证明唯一原因。允许结果不支持原假说，并据此修改下一步问题，正是实验学习的一部分。对证据保留限制，不妨碍学生提出清楚、可检验的预测。",
+                "valueHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "dimension": "Q3",
+            "status": "supported",
+            "reason": "With prerequisites e7-e10, e16 explains controlled-variable need via source logic and a different phone example, and states relevant boundary (analogy only shows logic, not for same-humidity case). Explanation usable and bounded; findings consistent.",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e16",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "课程资料指出，比较两个条件时应尽量让其他有关条件一致，例如观察天数与发芽判定方式；若甲盒加水观察7天、乙盒无水观察4天，除水外观察天数也不同，就不能把发芽差异单独归因于水（见资料原句列举观察天数等需一致）。这正是当前练习的关键关系：单一因素归因要求其他变量受控。\n\n举例（补充说明）：想象比较两款手机哪款触屏更灵敏，却让一款在干燥环境测、另一款在潮湿环境测，结果响应不同，你不能只说是手机型号导致，因为环境湿度也变了。这个例子的适用边界是：它仅用来直观展示“额外变量未控制则无法归因”的逻辑，不涉及真实触屏复杂的硬件差异；且若实际测试时两款都在同湿度下，该类比就不适用，那时才可考察手机本身。当前题目留给你判断选项，我不替你选。",
+                "valueHash": "98463466492601085e31eabda2920d8153801ad49d3f58ed0283684b400c9ded"
+              },
+              {
+                "id": "e7",
+                "pointer": "/prerequisites/0",
+                "role": "context",
+                "kind": "text",
+                "value": "理解相同与不同",
+                "valueHash": "5d9f9e41ac5465029c60d930aa3142d5754cdf1f405ba64d86bbc7f24243e226"
+              },
+              {
+                "id": "e8",
+                "pointer": "/prerequisites/1",
+                "role": "context",
+                "kind": "text",
+                "value": "能按表格记录观察",
+                "valueHash": "254ac1098c0f9eca0ffbc4412f39af6c7b3e10d534766eb7d4d700016e6d025e"
+              },
+              {
+                "id": "e9",
+                "pointer": "/prerequisites/2",
+                "role": "context",
+                "kind": "text",
+                "value": "Identify when a comparison simultaneously changes multiple variables (e.g., water, temperature, light) and thus cannot attribute difference to a single factor; keep other relevant conditions consistent for valid comparison.",
+                "valueHash": "cef7aea2f520a0d199cbc174d7b6b0e4ed7d5f340ad09bc94b602df813939a81"
+              },
+              {
+                "id": "e10",
+                "pointer": "/prerequisites/3",
+                "role": "context",
+                "kind": "text",
+                "value": "Apply operational definition of germination (radicle out of seed coat) and record all seeds including non-germinated at predetermined times to compute germination proportion.",
+                "valueHash": "1ee6ae5a15c7690b1e812ec9f05a7ee8a2e489a59eacf5f18b40644a7439eb40"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "resultHash": "a9ef2148e976ffaad6df1380fb5b2be156c563b0916541fdd6f9060012e54353"
+  }
+}

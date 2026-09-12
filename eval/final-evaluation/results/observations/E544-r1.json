@@ -1,0 +1,922 @@
+{
+  "task": {
+    "caseId": "E544",
+    "runId": "E544-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E544.json",
+    "inputHash": "6ff2484f2b7fe1767ca3c539a575aa55551c2125913b7c1cf1c42f5c766b07a3",
+    "population": "controlled",
+    "sourceId": "F06"
+  },
+  "inputHash": "6ff2484f2b7fe1767ca3c539a575aa55551c2125913b7c1cf1c42f5c766b07a3",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "solve-current": "208a058b5a731f38a0577c3270fbbfe8dde8c668010b6d96c714738f7ece4f8c",
+      "student-criteria": "f7435836479474df114d31806e42becda9ca3c9972c15ab838bf5a87a2cf1aed",
+      "artifact-audit": "b7a4b17460ddc08503d7a6fb3c651dbd30d432289c5327c2a7acb606494535e4"
+    },
+    "stages": {
+      "solve-current": {
+        "status": "resolved",
+        "solution": "四次等待2,4,4,14：平均数=(2+4+4+14)/4=6；排序后中间两数为4和4，中位数=4。将14改为22后：平均数=(2+4+4+22)/4=8；中位数仍为4。变化不同因平均数受全部数值总和影响，单个大值增大会拉高平均数；中位数取中间位置的数值，本例中间两值未变故不受影响。题设条件充足，依e14及e3中指标定义求解。",
+        "witnesses": [
+          {
+            "id": "e14",
+            "pointer": "/question/prompt",
+            "role": "question",
+            "kind": "text",
+            "value": "四次等待为2、4、4、14分钟。计算平均数与中位数；若14改为22，二者各变为多少？说明为什么变化不同。",
+            "valueHash": "c72bdf5aa33b5c9b2a61dcde88889cc9c7e6ebaf01687c706d6d8539580d34da"
+          },
+          {
+            "id": "e3",
+            "pointer": "/sources/0/text",
+            "role": "source",
+            "kind": "text",
+            "value": "服务台记录了一组等待时间，想向居民说明排队体验。平均数的计算方法是把所有等待时间相加，再除以记录条数。中位数则先把时间从小到大排列；条数为奇数时取最中间一个，条数为偶数时取中间两个数的平均。它们都可以描述数据，但强调的方面不同，不存在离开问题就永远最好的一个指标。\n例如五位居民的等待时间依次为一、二、二、三、十二分钟。总和为二十分钟，平均数为四分钟；排序后中间一个数是二，所以中位数为二分钟。十二分钟的记录把平均数向上拉，但没有改变位于中间的二。说“平均等待四分钟”不意味着每个人都等了四分钟，也不意味着有一半人恰好等四分钟。说“中位数二分钟”也不意味着最长等待只有二分钟。\n若把最长那次十二分钟改成二十二分钟，其余四次不变，总和增加十分钟，平均数增加两分钟，变为六分钟；中位数仍是二分钟。这个例子说明单个很大的数能够明显影响平均数。但不能由此说中位数不受任何数据变化影响：若中间位置的数据或排序结构改变，中位数也可能改变。\n向公众介绍“典型一次等待”时，可以同时报告中位数和范围；计算整个服务台累计占用的等待分钟数时，平均数乘记录条数可以恢复总和，中位数一般不能这样使用。选择指标取决于所要回答的问题。若两天的平均数相同，不能断言两天每位居民的体验相同；它们可能有不同的最短、最长与分布形状。\n合并两天数据时，还要考虑记录条数。第一天四条记录的平均数为三分钟，第二天两条记录的平均数为九分钟。总等待时间为四乘三加二乘九，共三十分钟；总记录数六条，合并平均数为五分钟。直接平均三和九得到六分钟，相当于把两天当成同样大小的组，未反映实际记录人数。本单元的“每次等待”都按一条记录计，不讨论同一个人多次到访是否应另行去重。\n写解释时建议附上必要运算和指标名称，并把数据范围与结论范围对齐。样本只有几次记录时，可以描述这几次，不宜保证未来总是如此。数据缺了几条，或“等待”的起止定义发生变化，也会改变比较意义；这些条件应在计算前先说明。",
+            "valueHash": "a43f09ae51e1a19e3e4fe7ef6283f10eab5bf8c071e52a5d86e3c347cdbc2311"
+          }
+        ],
+        "reviewReasons": []
+      },
+      "student-criteria": {
+        "taskValidity": "valid",
+        "rubricValidity": "valid",
+        "reason": "题目e14数据明确可解，量规e16-e25必要标准与题目匹配，学生回答e26满足所有必需要求。",
+        "validityWitnesses": [
+          {
+            "id": "e14",
+            "pointer": "/question/prompt",
+            "role": "question",
+            "kind": "text",
+            "value": "四次等待为2、4、4、14分钟。计算平均数与中位数；若14改为22，二者各变为多少？说明为什么变化不同。",
+            "valueHash": "c72bdf5aa33b5c9b2a61dcde88889cc9c7e6ebaf01687c706d6d8539580d34da"
+          },
+          {
+            "id": "e16",
+            "pointer": "/rubric",
+            "role": "criterion",
+            "kind": "array_length",
+            "value": 3,
+            "valueHash": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "c1",
+            "required": true,
+            "result": "met",
+            "reason": "学生给出原平均6、中位4及修改后平均8、中位4，与e18一致。",
+            "witnesses": [
+              {
+                "id": "e26",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "原总和24，四次平均6；中间两个都是4，中位4。改后总和32，平均8，中间位置仍是两个4，中位还为4。最长那次拉高总和而没有移动中间值。",
+                "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+              },
+              {
+                "id": "e18",
+                "pointer": "/rubric/0/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "正确给出原平均6、中位4以及修改后平均8、中位4。",
+                "valueHash": "e02e5b424f4f364b920f9462ff535d75eeb6d43f45d68b0dea41fa71a19f5580"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "id": "c2",
+            "required": true,
+            "result": "met",
+            "reason": "学生说明最长拉高总和而中间两项仍为4中位未变，满足e21解释。",
+            "witnesses": [
+              {
+                "id": "e26",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "原总和24，四次平均6；中间两个都是4，中位4。改后总和32，平均8，中间位置仍是两个4，中位还为4。最长那次拉高总和而没有移动中间值。",
+                "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+              },
+              {
+                "id": "e21",
+                "pointer": "/rubric/1/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "解释总和增加使平均改变，而中间两项仍为4所以中位数未变。",
+                "valueHash": "4c9d2175c5a7d1dae375f7046ecf6682b4c8fb683c91f8952989ba0eec2332e4"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "id": "c3",
+            "required": false,
+            "result": "not_met",
+            "reason": "学生未用小标题分开，但e25标明非必需。",
+            "witnesses": [
+              {
+                "id": "e26",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "原总和24，四次平均6；中间两个都是4，中位4。改后总和32，平均8，中间位置仍是两个4，中位还为4。最长那次拉高总和而没有移动中间值。",
+                "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+              },
+              {
+                "id": "e24",
+                "pointer": "/rubric/2/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "可选表达：用小标题分开计算和解释。",
+                "valueHash": "ed58a9e65b5e9c545c19428652cec947f94db416fe4bf8b7812969666b7e080a"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ],
+        "sufficiency": "sufficient",
+        "reviewReasons": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q5",
+            "level": 0,
+            "reason": "产品判断将必要标准c1误判为not_met（e33），但学生答案e26明确给出原平均6、中位4及改后平均8、中位4，满足e18；导致反馈e38称不通过且后果e39未授学分，与充足表现冲突，属必要标准错误拒绝。",
+            "refs": [
+              "e26",
+              "e33",
+              "e18",
+              "e38",
+              "e39"
+            ],
+            "issue": "grading",
+            "witnesses": [
+              {
+                "id": "e26",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "原总和24，四次平均6；中间两个都是4，中位4。改后总和32，平均8，中间位置仍是两个4，中位还为4。最长那次拉高总和而没有移动中间值。",
+                "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+              },
+              {
+                "id": "e33",
+                "pointer": "/productJudgment/criteria/0/result",
+                "role": "product",
+                "kind": "text",
+                "value": "not_met",
+                "valueHash": "1fbcf23a28d84c32b3e517b749f865dff62e466f1caa29b50173e236542a8342"
+              },
+              {
+                "id": "e18",
+                "pointer": "/rubric/0/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "正确给出原平均6、中位4以及修改后平均8、中位4。",
+                "valueHash": "e02e5b424f4f364b920f9462ff535d75eeb6d43f45d68b0dea41fa71a19f5580"
+              },
+              {
+                "id": "e38",
+                "pointer": "/productJudgment/feedback",
+                "role": "product",
+                "kind": "text",
+                "value": "第一条必要标准完全未满足，因此不通过。",
+                "valueHash": "eaafb4f97eefd86cb260d3a0f21cf1518825670c1b814e7677787a8649a8f815"
+              },
+              {
+                "id": "e39",
+                "pointer": "/productJudgment/consequence",
+                "role": "product",
+                "kind": "text",
+                "value": "未授予本题学分。",
+                "valueHash": "e298549347889f278e833a49e1967d6d1d1c8f52afcb9de2ec7885d1b295867f"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ],
+        "credit": {
+          "outcome": "withheld",
+          "reason": "产品后果e39未授予本题学分，但学生答案满足所有必要标准（e26,e18,e21），实际产品决策与充足表现冲突，程序将再约束。",
+          "refs": [
+            "e39",
+            "e26",
+            "e18",
+            "e21"
+          ],
+          "witnesses": [
+            {
+              "id": "e39",
+              "pointer": "/productJudgment/consequence",
+              "role": "product",
+              "kind": "text",
+              "value": "未授予本题学分。",
+              "valueHash": "e298549347889f278e833a49e1967d6d1d1c8f52afcb9de2ec7885d1b295867f"
+            },
+            {
+              "id": "e26",
+              "pointer": "/answer",
+              "role": "student",
+              "kind": "text",
+              "value": "原总和24，四次平均6；中间两个都是4，中位4。改后总和32，平均8，中间位置仍是两个4，中位还为4。最长那次拉高总和而没有移动中间值。",
+              "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+            },
+            {
+              "id": "e18",
+              "pointer": "/rubric/0/text",
+              "role": "criterion",
+              "kind": "text",
+              "value": "正确给出原平均6、中位4以及修改后平均8、中位4。",
+              "valueHash": "e02e5b424f4f364b920f9462ff535d75eeb6d43f45d68b0dea41fa71a19f5580"
+            },
+            {
+              "id": "e21",
+              "pointer": "/rubric/1/text",
+              "role": "criterion",
+              "kind": "text",
+              "value": "解释总和增加使平均改变，而中间两项仍为4所以中位数未变。",
+              "valueHash": "4c9d2175c5a7d1dae375f7046ecf6682b4c8fb683c91f8952989ba0eec2332e4"
+            }
+          ],
+          "reviewReasons": []
+        },
+        "studentCheck": {
+          "taskValidity": "valid",
+          "rubricValidity": "valid",
+          "reason": "学生答案正确计算并解释，满足必要标准c1,c2；rubric标准必要含义合理捕捉目标。",
+          "validityWitnesses": [
+            {
+              "id": "e26",
+              "pointer": "/answer",
+              "role": "student",
+              "kind": "text",
+              "value": "原总和24，四次平均6；中间两个都是4，中位4。改后总和32，平均8，中间位置仍是两个4，中位还为4。最长那次拉高总和而没有移动中间值。",
+              "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+            },
+            {
+              "id": "e18",
+              "pointer": "/rubric/0/text",
+              "role": "criterion",
+              "kind": "text",
+              "value": "正确给出原平均6、中位4以及修改后平均8、中位4。",
+              "valueHash": "e02e5b424f4f364b920f9462ff535d75eeb6d43f45d68b0dea41fa71a19f5580"
+            },
+            {
+              "id": "e21",
+              "pointer": "/rubric/1/text",
+              "role": "criterion",
+              "kind": "text",
+              "value": "解释总和增加使平均改变，而中间两项仍为4所以中位数未变。",
+              "valueHash": "4c9d2175c5a7d1dae375f7046ecf6682b4c8fb683c91f8952989ba0eec2332e4"
+            },
+            {
+              "id": "e24",
+              "pointer": "/rubric/2/text",
+              "role": "criterion",
+              "kind": "text",
+              "value": "可选表达：用小标题分开计算和解释。",
+              "valueHash": "ed58a9e65b5e9c545c19428652cec947f94db416fe4bf8b7812969666b7e080a"
+            }
+          ],
+          "criteria": [
+            {
+              "id": "c1",
+              "required": true,
+              "result": "met",
+              "reason": "e26明确原平均6中位4改后平均8中位4，符合e18必要数值",
+              "witnesses": [
+                {
+                  "id": "e26",
+                  "pointer": "/answer",
+                  "role": "student",
+                  "kind": "text",
+                  "value": "原总和24，四次平均6；中间两个都是4，中位4。改后总和32，平均8，中间位置仍是两个4，中位还为4。最长那次拉高总和而没有移动中间值。",
+                  "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+                },
+                {
+                  "id": "e18",
+                  "pointer": "/rubric/0/text",
+                  "role": "criterion",
+                  "kind": "text",
+                  "value": "正确给出原平均6、中位4以及修改后平均8、中位4。",
+                  "valueHash": "e02e5b424f4f364b920f9462ff535d75eeb6d43f45d68b0dea41fa71a19f5580"
+                }
+              ],
+              "reviewReasons": []
+            },
+            {
+              "id": "c2",
+              "required": true,
+              "result": "met",
+              "reason": "e26说明最长拉高总和未移动中间值，等价于e21总和增平均变而中间两项仍4中位未变",
+              "witnesses": [
+                {
+                  "id": "e26",
+                  "pointer": "/answer",
+                  "role": "student",
+                  "kind": "text",
+                  "value": "原总和24，四次平均6；中间两个都是4，中位4。改后总和32，平均8，中间位置仍是两个4，中位还为4。最长那次拉高总和而没有移动中间值。",
+                  "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+                },
+                {
+                  "id": "e21",
+                  "pointer": "/rubric/1/text",
+                  "role": "criterion",
+                  "kind": "text",
+                  "value": "解释总和增加使平均改变，而中间两项仍为4所以中位数未变。",
+                  "valueHash": "4c9d2175c5a7d1dae375f7046ecf6682b4c8fb683c91f8952989ba0eec2332e4"
+                }
+              ],
+              "reviewReasons": []
+            },
+            {
+              "id": "c3",
+              "required": false,
+              "result": "not_met",
+              "reason": "e26未用小标题，但e24标明可选非必需，不影响任务有效",
+              "witnesses": [
+                {
+                  "id": "e26",
+                  "pointer": "/answer",
+                  "role": "student",
+                  "kind": "text",
+                  "value": "原总和24，四次平均6；中间两个都是4，中位4。改后总和32，平均8，中间位置仍是两个4，中位还为4。最长那次拉高总和而没有移动中间值。",
+                  "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+                },
+                {
+                  "id": "e24",
+                  "pointer": "/rubric/2/text",
+                  "role": "criterion",
+                  "kind": "text",
+                  "value": "可选表达：用小标题分开计算和解释。",
+                  "valueHash": "ed58a9e65b5e9c545c19428652cec947f94db416fe4bf8b7812969666b7e080a"
+                }
+              ],
+              "reviewReasons": []
+            }
+          ],
+          "sufficiency": "sufficient",
+          "reviewReasons": []
+        }
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q5",
+          "level": 0,
+          "reason": "REQUIRED_CRITERION_CONTRADICTION",
+          "refs": [
+            "e26",
+            "e33",
+            "e18",
+            "e38",
+            "e39"
+          ],
+          "issue": "grading",
+          "witnesses": [
+            {
+              "id": "e26",
+              "pointer": "/answer",
+              "role": "student",
+              "kind": "text",
+              "value": "原总和24，四次平均6；中间两个都是4，中位4。改后总和32，平均8，中间位置仍是两个4，中位还为4。最长那次拉高总和而没有移动中间值。",
+              "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+            },
+            {
+              "id": "e33",
+              "pointer": "/productJudgment/criteria/0/result",
+              "role": "product",
+              "kind": "text",
+              "value": "not_met",
+              "valueHash": "1fbcf23a28d84c32b3e517b749f865dff62e466f1caa29b50173e236542a8342"
+            },
+            {
+              "id": "e18",
+              "pointer": "/rubric/0/text",
+              "role": "criterion",
+              "kind": "text",
+              "value": "正确给出原平均6、中位4以及修改后平均8、中位4。",
+              "valueHash": "e02e5b424f4f364b920f9462ff535d75eeb6d43f45d68b0dea41fa71a19f5580"
+            },
+            {
+              "id": "e38",
+              "pointer": "/productJudgment/feedback",
+              "role": "product",
+              "kind": "text",
+              "value": "第一条必要标准完全未满足，因此不通过。",
+              "valueHash": "eaafb4f97eefd86cb260d3a0f21cf1518825670c1b814e7677787a8649a8f815"
+            },
+            {
+              "id": "e39",
+              "pointer": "/productJudgment/consequence",
+              "role": "product",
+              "kind": "text",
+              "value": "未授予本题学分。",
+              "valueHash": "e298549347889f278e833a49e1967d6d1d1c8f52afcb9de2ec7885d1b295867f"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [
+            {
+              "level": 0,
+              "code": "REQUIRED_CRITERION_CONTRADICTION",
+              "detail": {
+                "independent": {
+                  "id": "c1",
+                  "required": true,
+                  "result": "met",
+                  "reason": "学生给出原平均6、中位4及修改后平均8、中位4，与e18一致。",
+                  "witnesses": [
+                    {
+                      "id": "e26",
+                      "pointer": "/answer",
+                      "role": "student",
+                      "kind": "text",
+                      "value": "原总和24，四次平均6；中间两个都是4，中位4。改后总和32，平均8，中间位置仍是两个4，中位还为4。最长那次拉高总和而没有移动中间值。",
+                      "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+                    },
+                    {
+                      "id": "e18",
+                      "pointer": "/rubric/0/text",
+                      "role": "criterion",
+                      "kind": "text",
+                      "value": "正确给出原平均6、中位4以及修改后平均8、中位4。",
+                      "valueHash": "e02e5b424f4f364b920f9462ff535d75eeb6d43f45d68b0dea41fa71a19f5580"
+                    }
+                  ],
+                  "reviewReasons": [],
+                  "independentWitnesses": [
+                    {
+                      "id": "e26",
+                      "pointer": "/answer",
+                      "role": "student",
+                      "kind": "text",
+                      "value": "原总和24，四次平均6；中间两个都是4，中位4。改后总和32，平均8，中间位置仍是两个4，中位还为4。最长那次拉高总和而没有移动中间值。",
+                      "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+                    },
+                    {
+                      "id": "e18",
+                      "pointer": "/rubric/0/text",
+                      "role": "criterion",
+                      "kind": "text",
+                      "value": "正确给出原平均6、中位4以及修改后平均8、中位4。",
+                      "valueHash": "e02e5b424f4f364b920f9462ff535d75eeb6d43f45d68b0dea41fa71a19f5580"
+                    }
+                  ]
+                },
+                "product": {
+                  "id": "c1",
+                  "result": "not_met"
+                }
+              }
+            },
+            {
+              "level": 0,
+              "code": "CREDIT_CONTRADICTION",
+              "detail": {
+                "sufficiency": "sufficient",
+                "credit": {
+                  "outcome": "withheld",
+                  "reason": "产品后果e39未授予本题学分，但学生答案满足所有必要标准（e26,e18,e21），实际产品决策与充足表现冲突，程序将再约束。",
+                  "refs": [
+                    "e39",
+                    "e26",
+                    "e18",
+                    "e21"
+                  ],
+                  "witnesses": [
+                    {
+                      "id": "e39",
+                      "pointer": "/productJudgment/consequence",
+                      "role": "product",
+                      "kind": "text",
+                      "value": "未授予本题学分。",
+                      "valueHash": "e298549347889f278e833a49e1967d6d1d1c8f52afcb9de2ec7885d1b295867f"
+                    },
+                    {
+                      "id": "e26",
+                      "pointer": "/answer",
+                      "role": "student",
+                      "kind": "text",
+                      "value": "原总和24，四次平均6；中间两个都是4，中位4。改后总和32，平均8，中间位置仍是两个4，中位还为4。最长那次拉高总和而没有移动中间值。",
+                      "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+                    },
+                    {
+                      "id": "e18",
+                      "pointer": "/rubric/0/text",
+                      "role": "criterion",
+                      "kind": "text",
+                      "value": "正确给出原平均6、中位4以及修改后平均8、中位4。",
+                      "valueHash": "e02e5b424f4f364b920f9462ff535d75eeb6d43f45d68b0dea41fa71a19f5580"
+                    },
+                    {
+                      "id": "e21",
+                      "pointer": "/rubric/1/text",
+                      "role": "criterion",
+                      "kind": "text",
+                      "value": "解释总和增加使平均改变，而中间两项仍为4所以中位数未变。",
+                      "valueHash": "4c9d2175c5a7d1dae375f7046ecf6682b4c8fb683c91f8952989ba0eec2332e4"
+                    }
+                  ],
+                  "reviewReasons": []
+                }
+              }
+            }
+          ],
+          "proposedLevel": 0,
+          "proposedReason": "产品判断将必要标准c1误判为not_met（e33），但学生答案e26明确给出原平均6、中位4及改后平均8、中位4，满足e18；导致反馈e38称不通过且后果e39未授学分，与充足表现冲突，属必要标准错误拒绝。",
+          "decidingConstraint": "REQUIRED_CRITERION_CONTRADICTION"
+        }
+      ],
+      "studentAssessment": {
+        "taskValidity": "valid",
+        "rubricValidity": "valid",
+        "reason": "题目e14数据明确可解，量规e16-e25必要标准与题目匹配，学生回答e26满足所有必需要求。",
+        "validityWitnesses": [
+          {
+            "id": "e14",
+            "pointer": "/question/prompt",
+            "role": "question",
+            "kind": "text",
+            "value": "四次等待为2、4、4、14分钟。计算平均数与中位数；若14改为22，二者各变为多少？说明为什么变化不同。",
+            "valueHash": "c72bdf5aa33b5c9b2a61dcde88889cc9c7e6ebaf01687c706d6d8539580d34da"
+          },
+          {
+            "id": "e16",
+            "pointer": "/rubric",
+            "role": "criterion",
+            "kind": "array_length",
+            "value": 3,
+            "valueHash": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "c1",
+            "required": true,
+            "result": "met",
+            "reason": "学生给出原平均6、中位4及修改后平均8、中位4，与e18一致。",
+            "witnesses": [
+              {
+                "id": "e26",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "原总和24，四次平均6；中间两个都是4，中位4。改后总和32，平均8，中间位置仍是两个4，中位还为4。最长那次拉高总和而没有移动中间值。",
+                "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+              },
+              {
+                "id": "e18",
+                "pointer": "/rubric/0/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "正确给出原平均6、中位4以及修改后平均8、中位4。",
+                "valueHash": "e02e5b424f4f364b920f9462ff535d75eeb6d43f45d68b0dea41fa71a19f5580"
+              }
+            ],
+            "reviewReasons": [],
+            "independentWitnesses": [
+              {
+                "id": "e26",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "原总和24，四次平均6；中间两个都是4，中位4。改后总和32，平均8，中间位置仍是两个4，中位还为4。最长那次拉高总和而没有移动中间值。",
+                "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+              },
+              {
+                "id": "e18",
+                "pointer": "/rubric/0/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "正确给出原平均6、中位4以及修改后平均8、中位4。",
+                "valueHash": "e02e5b424f4f364b920f9462ff535d75eeb6d43f45d68b0dea41fa71a19f5580"
+              }
+            ]
+          },
+          {
+            "id": "c2",
+            "required": true,
+            "result": "met",
+            "reason": "学生说明最长拉高总和而中间两项仍为4中位未变，满足e21解释。",
+            "witnesses": [
+              {
+                "id": "e26",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "原总和24，四次平均6；中间两个都是4，中位4。改后总和32，平均8，中间位置仍是两个4，中位还为4。最长那次拉高总和而没有移动中间值。",
+                "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+              },
+              {
+                "id": "e21",
+                "pointer": "/rubric/1/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "解释总和增加使平均改变，而中间两项仍为4所以中位数未变。",
+                "valueHash": "4c9d2175c5a7d1dae375f7046ecf6682b4c8fb683c91f8952989ba0eec2332e4"
+              }
+            ],
+            "reviewReasons": [],
+            "independentWitnesses": [
+              {
+                "id": "e26",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "原总和24，四次平均6；中间两个都是4，中位4。改后总和32，平均8，中间位置仍是两个4，中位还为4。最长那次拉高总和而没有移动中间值。",
+                "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+              },
+              {
+                "id": "e21",
+                "pointer": "/rubric/1/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "解释总和增加使平均改变，而中间两项仍为4所以中位数未变。",
+                "valueHash": "4c9d2175c5a7d1dae375f7046ecf6682b4c8fb683c91f8952989ba0eec2332e4"
+              }
+            ]
+          },
+          {
+            "id": "c3",
+            "required": false,
+            "result": "not_met",
+            "reason": "学生未用小标题分开，但e25标明非必需。",
+            "witnesses": [
+              {
+                "id": "e26",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "原总和24，四次平均6；中间两个都是4，中位4。改后总和32，平均8，中间位置仍是两个4，中位还为4。最长那次拉高总和而没有移动中间值。",
+                "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+              },
+              {
+                "id": "e24",
+                "pointer": "/rubric/2/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "可选表达：用小标题分开计算和解释。",
+                "valueHash": "ed58a9e65b5e9c545c19428652cec947f94db416fe4bf8b7812969666b7e080a"
+              }
+            ],
+            "reviewReasons": [],
+            "independentWitnesses": [
+              {
+                "id": "e26",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "原总和24，四次平均6；中间两个都是4，中位4。改后总和32，平均8，中间位置仍是两个4，中位还为4。最长那次拉高总和而没有移动中间值。",
+                "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+              },
+              {
+                "id": "e24",
+                "pointer": "/rubric/2/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "可选表达：用小标题分开计算和解释。",
+                "valueHash": "ed58a9e65b5e9c545c19428652cec947f94db416fe4bf8b7812969666b7e080a"
+              }
+            ]
+          }
+        ],
+        "sufficiency": "sufficient",
+        "reviewReasons": [],
+        "independentAssessments": [
+          {
+            "taskValidity": "valid",
+            "rubricValidity": "valid",
+            "reason": "题目e14数据明确可解，量规e16-e25必要标准与题目匹配，学生回答e26满足所有必需要求。",
+            "validityWitnesses": [
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "四次等待为2、4、4、14分钟。计算平均数与中位数；若14改为22，二者各变为多少？说明为什么变化不同。",
+                "valueHash": "c72bdf5aa33b5c9b2a61dcde88889cc9c7e6ebaf01687c706d6d8539580d34da"
+              },
+              {
+                "id": "e16",
+                "pointer": "/rubric",
+                "role": "criterion",
+                "kind": "array_length",
+                "value": 3,
+                "valueHash": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce"
+              }
+            ],
+            "criteria": [
+              {
+                "id": "c1",
+                "required": true,
+                "result": "met",
+                "reason": "学生给出原平均6、中位4及修改后平均8、中位4，与e18一致。",
+                "witnesses": [
+                  {
+                    "id": "e26",
+                    "pointer": "/answer",
+                    "role": "student",
+                    "kind": "text",
+                    "value": "原总和24，四次平均6；中间两个都是4，中位4。改后总和32，平均8，中间位置仍是两个4，中位还为4。最长那次拉高总和而没有移动中间值。",
+                    "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+                  },
+                  {
+                    "id": "e18",
+                    "pointer": "/rubric/0/text",
+                    "role": "criterion",
+                    "kind": "text",
+                    "value": "正确给出原平均6、中位4以及修改后平均8、中位4。",
+                    "valueHash": "e02e5b424f4f364b920f9462ff535d75eeb6d43f45d68b0dea41fa71a19f5580"
+                  }
+                ],
+                "reviewReasons": []
+              },
+              {
+                "id": "c2",
+                "required": true,
+                "result": "met",
+                "reason": "学生说明最长拉高总和而中间两项仍为4中位未变，满足e21解释。",
+                "witnesses": [
+                  {
+                    "id": "e26",
+                    "pointer": "/answer",
+                    "role": "student",
+                    "kind": "text",
+                    "value": "原总和24，四次平均6；中间两个都是4，中位4。改后总和32，平均8，中间位置仍是两个4，中位还为4。最长那次拉高总和而没有移动中间值。",
+                    "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+                  },
+                  {
+                    "id": "e21",
+                    "pointer": "/rubric/1/text",
+                    "role": "criterion",
+                    "kind": "text",
+                    "value": "解释总和增加使平均改变，而中间两项仍为4所以中位数未变。",
+                    "valueHash": "4c9d2175c5a7d1dae375f7046ecf6682b4c8fb683c91f8952989ba0eec2332e4"
+                  }
+                ],
+                "reviewReasons": []
+              },
+              {
+                "id": "c3",
+                "required": false,
+                "result": "not_met",
+                "reason": "学生未用小标题分开，但e25标明非必需。",
+                "witnesses": [
+                  {
+                    "id": "e26",
+                    "pointer": "/answer",
+                    "role": "student",
+                    "kind": "text",
+                    "value": "原总和24，四次平均6；中间两个都是4，中位4。改后总和32，平均8，中间位置仍是两个4，中位还为4。最长那次拉高总和而没有移动中间值。",
+                    "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+                  },
+                  {
+                    "id": "e24",
+                    "pointer": "/rubric/2/text",
+                    "role": "criterion",
+                    "kind": "text",
+                    "value": "可选表达：用小标题分开计算和解释。",
+                    "valueHash": "ed58a9e65b5e9c545c19428652cec947f94db416fe4bf8b7812969666b7e080a"
+                  }
+                ],
+                "reviewReasons": []
+              }
+            ],
+            "sufficiency": "sufficient",
+            "reviewReasons": []
+          },
+          {
+            "taskValidity": "valid",
+            "rubricValidity": "valid",
+            "reason": "学生答案正确计算并解释，满足必要标准c1,c2；rubric标准必要含义合理捕捉目标。",
+            "validityWitnesses": [
+              {
+                "id": "e26",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "原总和24，四次平均6；中间两个都是4，中位4。改后总和32，平均8，中间位置仍是两个4，中位还为4。最长那次拉高总和而没有移动中间值。",
+                "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+              },
+              {
+                "id": "e18",
+                "pointer": "/rubric/0/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "正确给出原平均6、中位4以及修改后平均8、中位4。",
+                "valueHash": "e02e5b424f4f364b920f9462ff535d75eeb6d43f45d68b0dea41fa71a19f5580"
+              },
+              {
+                "id": "e21",
+                "pointer": "/rubric/1/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "解释总和增加使平均改变，而中间两项仍为4所以中位数未变。",
+                "valueHash": "4c9d2175c5a7d1dae375f7046ecf6682b4c8fb683c91f8952989ba0eec2332e4"
+              },
+              {
+                "id": "e24",
+                "pointer": "/rubric/2/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "可选表达：用小标题分开计算和解释。",
+                "valueHash": "ed58a9e65b5e9c545c19428652cec947f94db416fe4bf8b7812969666b7e080a"
+              }
+            ],
+            "criteria": [
+              {
+                "id": "c1",
+                "required": true,
+                "result": "met",
+                "reason": "e26明确原平均6中位4改后平均8中位4，符合e18必要数值",
+                "witnesses": [
+                  {
+                    "id": "e26",
+                    "pointer": "/answer",
+                    "role": "student",
+                    "kind": "text",
+                    "value": "原总和24，四次平均6；中间两个都是4，中位4。改后总和32，平均8，中间位置仍是两个4，中位还为4。最长那次拉高总和而没有移动中间值。",
+                    "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+                  },
+                  {
+                    "id": "e18",
+                    "pointer": "/rubric/0/text",
+                    "role": "criterion",
+                    "kind": "text",
+                    "value": "正确给出原平均6、中位4以及修改后平均8、中位4。",
+                    "valueHash": "e02e5b424f4f364b920f9462ff535d75eeb6d43f45d68b0dea41fa71a19f5580"
+                  }
+                ],
+                "reviewReasons": []
+              },
+              {
+                "id": "c2",
+                "required": true,
+                "result": "met",
+                "reason": "e26说明最长拉高总和未移动中间值，等价于e21总和增平均变而中间两项仍4中位未变",
+                "witnesses": [
+                  {
+                    "id": "e26",
+                    "pointer": "/answer",
+                    "role": "student",
+                    "kind": "text",
+                    "value": "原总和24，四次平均6；中间两个都是4，中位4。改后总和32，平均8，中间位置仍是两个4，中位还为4。最长那次拉高总和而没有移动中间值。",
+                    "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+                  },
+                  {
+                    "id": "e21",
+                    "pointer": "/rubric/1/text",
+                    "role": "criterion",
+                    "kind": "text",
+                    "value": "解释总和增加使平均改变，而中间两项仍为4所以中位数未变。",
+                    "valueHash": "4c9d2175c5a7d1dae375f7046ecf6682b4c8fb683c91f8952989ba0eec2332e4"
+                  }
+                ],
+                "reviewReasons": []
+              },
+              {
+                "id": "c3",
+                "required": false,
+                "result": "not_met",
+                "reason": "e26未用小标题，但e24标明可选非必需，不影响任务有效",
+                "witnesses": [
+                  {
+                    "id": "e26",
+                    "pointer": "/answer",
+                    "role": "student",
+                    "kind": "text",
+                    "value": "原总和24，四次平均6；中间两个都是4，中位4。改后总和32，平均8，中间位置仍是两个4，中位还为4。最长那次拉高总和而没有移动中间值。",
+                    "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+                  },
+                  {
+                    "id": "e24",
+                    "pointer": "/rubric/2/text",
+                    "role": "criterion",
+                    "kind": "text",
+                    "value": "可选表达：用小标题分开计算和解释。",
+                    "valueHash": "ed58a9e65b5e9c545c19428652cec947f94db416fe4bf8b7812969666b7e080a"
+                  }
+                ],
+                "reviewReasons": []
+              }
+            ],
+            "sufficiency": "sufficient",
+            "reviewReasons": []
+          }
+        ]
+      },
+      "reviewRequired": []
+    },
+    "resultHash": "1f2888d8b4bb62cd6f71d7f43f82e2f178f264a32e0187a6607e0b66738cd1d3"
+  }
+}

@@ -1,0 +1,713 @@
+{
+  "task": {
+    "caseId": "N-F07-grading-negative",
+    "runId": "N-F07-grading-negative-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-F07-grading-negative.json",
+    "inputHash": "e7d2c7ef24f535d8ff0a643d5dca6a3bc1b7e7858f157738018d751c3369a589",
+    "population": "natural",
+    "sourceId": "F07"
+  },
+  "inputHash": "e7d2c7ef24f535d8ff0a643d5dca6a3bc1b7e7858f157738018d751c3369a589",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "solve-current": "badaee5eb61f4f1e81f3b294fbbd5a1a85ed21c5690a6669a7fd4e52d1e9ac4e",
+      "student-criteria": "d7b46c9bac99bb92abba5e8ee2467e20099a874c3b182f54235dcc610f16eeec",
+      "artifact-audit": "a42239af8995672d4825c54131dbd86cbe46e5d889c1f40b9fc72ae7009f9830"
+    },
+    "stages": {
+      "solve-current": {
+        "status": "resolved",
+        "solution": "题目(e14)设甲盒加水+温暖窗台、乙盒无水+冷暗柜，问何不能单归因水。据e3实验规则：比较有水无水应使温度、光照等其他条件一致；此情景同时改变水、温度、光照，故差异不能单独归因于水。",
+        "witnesses": [
+          {
+            "id": "e14",
+            "pointer": "/question/prompt",
+            "role": "question",
+            "kind": "text",
+            "value": "课堂将同批种子分两盒，甲盒加水并放在温暖窗台，乙盒无水并放在冷暗柜。七天后甲盒八粒发芽，乙盒一粒。为什么不能把发芽差异单独归因于水？请依据实验规则解释。",
+            "valueHash": "aea4d2790423a6704c586f5684d01737a1004832d04470e73336a8036483e1a9"
+          },
+          {
+            "id": "e3",
+            "pointer": "/sources/0/text",
+            "role": "source",
+            "kind": "text",
+            "value": "课堂把同一批种子分到两个透明盒中，想比较有水和无水时的发芽情况。为了使比较有意义，应尽量让其他有关条件一致，例如种子数量、来源、温度、光照、观察天数与发芽判定方式。若有水盒放在温暖窗台、无水盒放在冷暗柜里，即使结果不同，也无法把差异单独归因于水，因为温度和光照同时改变了。\n这里把“发芽”操作性地定义为观察到胚根伸出种皮，便于不同记录者使用同一标准。这个定义是本实验的观察规则，不是所有生物过程的完整描述。记录者应按事先约定的时间观察全部种子，而不是只挑成功的那几颗展示。没有发芽的种子也必须计入，才能知道发芽比例。\n设两盒各十粒同批种子，均在同温同光处放置七天。甲盒保持适量湿润，乙盒保持干燥。甲有八粒达到上述标准，乙有一粒。可以说在这批种子和这些条件下，湿润组观察到的发芽比例更高。仅凭这一次观察，还不能断言所有种类的种子只要加水都会发芽；种子活性、温度及其他条件仍可能重要。也不能说乙盒绝对没有任何水分，因为“保持干燥”是操作描述，并未测出零水分。\n重复实验可以帮助检查结果是否稳定，但重复的对象、条件与方法需要记录。把同一张照片复制三次不是三次独立实验。同一盒内种子也共享环境，不能总把它们当成互不影响的完整重复。入门练习无需复杂统计检验，只要能说明为什么重复有用、哪些信息仍然有限。\n好的后续实验应对应目前的疑问。如果怀疑温度造成差异，就应在同一温度下只改变湿润条件，或设计清楚的组合比较；不能一边改变温度，一边换种子品种，再把结果归因于某一个因素。若希望研究“水太多是否也影响发芽”，可以在其他条件一致时增加不同水量组，事先说明每组的水量与观察标准。\n解释实验时，把计划、执行、观察和结论分开写。计划相同不代表执行真的相同，需核对记录；观察不同不自动证明唯一原因。允许结果不支持原假说，并据此修改下一步问题，正是实验学习的一部分。对证据保留限制，不妨碍学生提出清楚、可检验的预测。",
+            "valueHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648"
+          }
+        ],
+        "reviewReasons": []
+      },
+      "student-criteria": {
+        "taskValidity": "valid",
+        "rubricValidity": "valid",
+        "reason": "题目e14与量规e18基于e3有效；学生e20拒核条件、只凭表面结论，未满足标准",
+        "validityWitnesses": [
+          {
+            "id": "e14",
+            "pointer": "/question/prompt",
+            "role": "question",
+            "kind": "text",
+            "value": "课堂将同批种子分两盒，甲盒加水并放在温暖窗台，乙盒无水并放在冷暗柜。七天后甲盒八粒发芽，乙盒一粒。为什么不能把发芽差异单独归因于水？请依据实验规则解释。",
+            "valueHash": "aea4d2790423a6704c586f5684d01737a1004832d04470e73336a8036483e1a9"
+          },
+          {
+            "id": "e18",
+            "pointer": "/rubric/0/text",
+            "role": "criterion",
+            "kind": "text",
+            "value": "若有水盒放在温暖窗台、无水盒放在冷暗柜里，即使结果不同，也无法把差异单独归因于水，因为温度和光照同时改变了。",
+            "valueHash": "78dfbd759259717c24ded91c384fdeaf758fcbbbab24181c575a43e4c902edf0"
+          },
+          {
+            "id": "e20",
+            "pointer": "/answer",
+            "role": "student",
+            "kind": "text",
+            "value": "我认为不用核对资料中的条件、范围或理由，只凭表面结果就可以直接下结论。",
+            "valueHash": "6a3168b13a5b4301a294631198d87f7fa8c3b97b073bd70375f7e3285b02a2ab"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "criterion_767475fe-df79-401a-b89a-2774fcfa5d8b",
+            "required": true,
+            "result": "not_met",
+            "reason": "学生e20声称不用核对资料条件、只凭表面结果下结论，未指出水/温度/光照同时改变导致无法单归因，缺失必要含义且矛盾于标准e18",
+            "witnesses": [
+              {
+                "id": "e20",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "我认为不用核对资料中的条件、范围或理由，只凭表面结果就可以直接下结论。",
+                "valueHash": "6a3168b13a5b4301a294631198d87f7fa8c3b97b073bd70375f7e3285b02a2ab"
+              },
+              {
+                "id": "e18",
+                "pointer": "/rubric/0/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "若有水盒放在温暖窗台、无水盒放在冷暗柜里，即使结果不同，也无法把差异单独归因于水，因为温度和光照同时改变了。",
+                "valueHash": "78dfbd759259717c24ded91c384fdeaf758fcbbbab24181c575a43e4c902edf0"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ],
+        "sufficiency": "insufficient",
+        "reviewReasons": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q5",
+            "level": 2,
+            "reason": "产品判定标准criterion_767475fe未满足(not_met e27)且学分withheld(e29)，与学生回答e20拒绝依据实验规则解释、未提及温度光照同时改变一致；标准e17-e19要求解释不能单归因水因温度光照同变，学生未回应关键内容，产品反馈e28正确，无实质评分错误。",
+            "refs": [
+              "e20",
+              "e27",
+              "e28",
+              "e29",
+              "e17",
+              "e3"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e20",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "我认为不用核对资料中的条件、范围或理由，只凭表面结果就可以直接下结论。",
+                "valueHash": "6a3168b13a5b4301a294631198d87f7fa8c3b97b073bd70375f7e3285b02a2ab"
+              },
+              {
+                "id": "e27",
+                "pointer": "/productJudgment/criteria/0/result",
+                "role": "product",
+                "kind": "text",
+                "value": "not_met",
+                "valueHash": "1fbcf23a28d84c32b3e517b749f865dff62e466f1caa29b50173e236542a8342"
+              },
+              {
+                "id": "e28",
+                "pointer": "/productJudgment/feedback",
+                "role": "product",
+                "kind": "text",
+                "value": "这次回答还没有回应题目要求的关键内容。",
+                "valueHash": "1ded2d4e9a69bf76d0e4a2da11dae0c4d5fcc55335eb33bf55e372a8e7bb8496"
+              },
+              {
+                "id": "e29",
+                "pointer": "/productJudgment/consequence",
+                "role": "product",
+                "kind": "text",
+                "value": "withheld",
+                "valueHash": "a3b3d76fdf1e33a8c7bde9a7152980d0de2656e3d541feafb198261dcc7cf51c"
+              },
+              {
+                "id": "e17",
+                "pointer": "/rubric/0/id",
+                "role": "criterion",
+                "kind": "text",
+                "value": "criterion_767475fe-df79-401a-b89a-2774fcfa5d8b",
+                "valueHash": "824a67df8f37d75521ed97c64f58f3c6940aff30fb37c64a13d1b534f908143f"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "课堂把同一批种子分到两个透明盒中，想比较有水和无水时的发芽情况。为了使比较有意义，应尽量让其他有关条件一致，例如种子数量、来源、温度、光照、观察天数与发芽判定方式。若有水盒放在温暖窗台、无水盒放在冷暗柜里，即使结果不同，也无法把差异单独归因于水，因为温度和光照同时改变了。\n这里把“发芽”操作性地定义为观察到胚根伸出种皮，便于不同记录者使用同一标准。这个定义是本实验的观察规则，不是所有生物过程的完整描述。记录者应按事先约定的时间观察全部种子，而不是只挑成功的那几颗展示。没有发芽的种子也必须计入，才能知道发芽比例。\n设两盒各十粒同批种子，均在同温同光处放置七天。甲盒保持适量湿润，乙盒保持干燥。甲有八粒达到上述标准，乙有一粒。可以说在这批种子和这些条件下，湿润组观察到的发芽比例更高。仅凭这一次观察，还不能断言所有种类的种子只要加水都会发芽；种子活性、温度及其他条件仍可能重要。也不能说乙盒绝对没有任何水分，因为“保持干燥”是操作描述，并未测出零水分。\n重复实验可以帮助检查结果是否稳定，但重复的对象、条件与方法需要记录。把同一张照片复制三次不是三次独立实验。同一盒内种子也共享环境，不能总把它们当成互不影响的完整重复。入门练习无需复杂统计检验，只要能说明为什么重复有用、哪些信息仍然有限。\n好的后续实验应对应目前的疑问。如果怀疑温度造成差异，就应在同一温度下只改变湿润条件，或设计清楚的组合比较；不能一边改变温度，一边换种子品种，再把结果归因于某一个因素。若希望研究“水太多是否也影响发芽”，可以在其他条件一致时增加不同水量组，事先说明每组的水量与观察标准。\n解释实验时，把计划、执行、观察和结论分开写。计划相同不代表执行真的相同，需核对记录；观察不同不自动证明唯一原因。允许结果不支持原假说，并据此修改下一步问题，正是实验学习的一部分。对证据保留限制，不妨碍学生提出清楚、可检验的预测。",
+                "valueHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ],
+        "credit": {
+          "outcome": "withheld",
+          "reason": "产品后果e29明确withheld，因学生未满足必要标准criterion_767475fe(not_met e27)，实际产品后果与不足表现一致，不授予学分。",
+          "refs": [
+            "e29",
+            "e27",
+            "e20"
+          ],
+          "witnesses": [
+            {
+              "id": "e29",
+              "pointer": "/productJudgment/consequence",
+              "role": "product",
+              "kind": "text",
+              "value": "withheld",
+              "valueHash": "a3b3d76fdf1e33a8c7bde9a7152980d0de2656e3d541feafb198261dcc7cf51c"
+            },
+            {
+              "id": "e27",
+              "pointer": "/productJudgment/criteria/0/result",
+              "role": "product",
+              "kind": "text",
+              "value": "not_met",
+              "valueHash": "1fbcf23a28d84c32b3e517b749f865dff62e466f1caa29b50173e236542a8342"
+            },
+            {
+              "id": "e20",
+              "pointer": "/answer",
+              "role": "student",
+              "kind": "text",
+              "value": "我认为不用核对资料中的条件、范围或理由，只凭表面结果就可以直接下结论。",
+              "valueHash": "6a3168b13a5b4301a294631198d87f7fa8c3b97b073bd70375f7e3285b02a2ab"
+            }
+          ],
+          "reviewReasons": []
+        },
+        "studentCheck": {
+          "taskValidity": "invalid",
+          "rubricValidity": "valid",
+          "reason": "学生回答e20声明不核对资料条件、只凭表面下结论，未依据实验规则解释为何不能单归因水，未完成任务要求；评分标准e17-e19正确提取自来源e3的实验规则（温度光照同时改变导致不能单归因），适用于本题。",
+          "validityWitnesses": [
+            {
+              "id": "e20",
+              "pointer": "/answer",
+              "role": "student",
+              "kind": "text",
+              "value": "我认为不用核对资料中的条件、范围或理由，只凭表面结果就可以直接下结论。",
+              "valueHash": "6a3168b13a5b4301a294631198d87f7fa8c3b97b073bd70375f7e3285b02a2ab"
+            },
+            {
+              "id": "e14",
+              "pointer": "/question/prompt",
+              "role": "question",
+              "kind": "text",
+              "value": "课堂将同批种子分两盒，甲盒加水并放在温暖窗台，乙盒无水并放在冷暗柜。七天后甲盒八粒发芽，乙盒一粒。为什么不能把发芽差异单独归因于水？请依据实验规则解释。",
+              "valueHash": "aea4d2790423a6704c586f5684d01737a1004832d04470e73336a8036483e1a9"
+            },
+            {
+              "id": "e17",
+              "pointer": "/rubric/0/id",
+              "role": "criterion",
+              "kind": "text",
+              "value": "criterion_767475fe-df79-401a-b89a-2774fcfa5d8b",
+              "valueHash": "824a67df8f37d75521ed97c64f58f3c6940aff30fb37c64a13d1b534f908143f"
+            },
+            {
+              "id": "e3",
+              "pointer": "/sources/0/text",
+              "role": "source",
+              "kind": "text",
+              "value": "课堂把同一批种子分到两个透明盒中，想比较有水和无水时的发芽情况。为了使比较有意义，应尽量让其他有关条件一致，例如种子数量、来源、温度、光照、观察天数与发芽判定方式。若有水盒放在温暖窗台、无水盒放在冷暗柜里，即使结果不同，也无法把差异单独归因于水，因为温度和光照同时改变了。\n这里把“发芽”操作性地定义为观察到胚根伸出种皮，便于不同记录者使用同一标准。这个定义是本实验的观察规则，不是所有生物过程的完整描述。记录者应按事先约定的时间观察全部种子，而不是只挑成功的那几颗展示。没有发芽的种子也必须计入，才能知道发芽比例。\n设两盒各十粒同批种子，均在同温同光处放置七天。甲盒保持适量湿润，乙盒保持干燥。甲有八粒达到上述标准，乙有一粒。可以说在这批种子和这些条件下，湿润组观察到的发芽比例更高。仅凭这一次观察，还不能断言所有种类的种子只要加水都会发芽；种子活性、温度及其他条件仍可能重要。也不能说乙盒绝对没有任何水分，因为“保持干燥”是操作描述，并未测出零水分。\n重复实验可以帮助检查结果是否稳定，但重复的对象、条件与方法需要记录。把同一张照片复制三次不是三次独立实验。同一盒内种子也共享环境，不能总把它们当成互不影响的完整重复。入门练习无需复杂统计检验，只要能说明为什么重复有用、哪些信息仍然有限。\n好的后续实验应对应目前的疑问。如果怀疑温度造成差异，就应在同一温度下只改变湿润条件，或设计清楚的组合比较；不能一边改变温度，一边换种子品种，再把结果归因于某一个因素。若希望研究“水太多是否也影响发芽”，可以在其他条件一致时增加不同水量组，事先说明每组的水量与观察标准。\n解释实验时，把计划、执行、观察和结论分开写。计划相同不代表执行真的相同，需核对记录；观察不同不自动证明唯一原因。允许结果不支持原假说，并据此修改下一步问题，正是实验学习的一部分。对证据保留限制，不妨碍学生提出清楚、可检验的预测。",
+              "valueHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648"
+            }
+          ],
+          "criteria": [
+            {
+              "id": "criterion_767475fe-df79-401a-b89a-2774fcfa5d8b",
+              "required": true,
+              "result": "uncertain",
+              "reason": "Student/criterion evidence is missing or invalid.",
+              "proposed": {
+                "id": "criterion_767475fe-df79-401a-b89a-2774fcfa5d8b",
+                "result": "not_met",
+                "reason": "必要含义为指出情景中水、温度、光照同时改变故不能单归因水；学生e20未提及任何条件控制或温度光照，仅称凭表面结果下结论，缺失关键解释。",
+                "refs": [
+                  "e20",
+                  "e17",
+                  "e3"
+                ]
+              },
+              "reviewReasons": [
+                "CRITERION_STUDENT_GROUNDING_MISSING"
+              ]
+            }
+          ],
+          "sufficiency": "uncertain",
+          "reviewReasons": []
+        }
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q5",
+          "level": "U",
+          "reason": "REQUIRED_CRITERION_UNCERTAIN",
+          "refs": [
+            "e20",
+            "e27",
+            "e28",
+            "e29",
+            "e17",
+            "e3"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e20",
+              "pointer": "/answer",
+              "role": "student",
+              "kind": "text",
+              "value": "我认为不用核对资料中的条件、范围或理由，只凭表面结果就可以直接下结论。",
+              "valueHash": "6a3168b13a5b4301a294631198d87f7fa8c3b97b073bd70375f7e3285b02a2ab"
+            },
+            {
+              "id": "e27",
+              "pointer": "/productJudgment/criteria/0/result",
+              "role": "product",
+              "kind": "text",
+              "value": "not_met",
+              "valueHash": "1fbcf23a28d84c32b3e517b749f865dff62e466f1caa29b50173e236542a8342"
+            },
+            {
+              "id": "e28",
+              "pointer": "/productJudgment/feedback",
+              "role": "product",
+              "kind": "text",
+              "value": "这次回答还没有回应题目要求的关键内容。",
+              "valueHash": "1ded2d4e9a69bf76d0e4a2da11dae0c4d5fcc55335eb33bf55e372a8e7bb8496"
+            },
+            {
+              "id": "e29",
+              "pointer": "/productJudgment/consequence",
+              "role": "product",
+              "kind": "text",
+              "value": "withheld",
+              "valueHash": "a3b3d76fdf1e33a8c7bde9a7152980d0de2656e3d541feafb198261dcc7cf51c"
+            },
+            {
+              "id": "e17",
+              "pointer": "/rubric/0/id",
+              "role": "criterion",
+              "kind": "text",
+              "value": "criterion_767475fe-df79-401a-b89a-2774fcfa5d8b",
+              "valueHash": "824a67df8f37d75521ed97c64f58f3c6940aff30fb37c64a13d1b534f908143f"
+            },
+            {
+              "id": "e3",
+              "pointer": "/sources/0/text",
+              "role": "source",
+              "kind": "text",
+              "value": "课堂把同一批种子分到两个透明盒中，想比较有水和无水时的发芽情况。为了使比较有意义，应尽量让其他有关条件一致，例如种子数量、来源、温度、光照、观察天数与发芽判定方式。若有水盒放在温暖窗台、无水盒放在冷暗柜里，即使结果不同，也无法把差异单独归因于水，因为温度和光照同时改变了。\n这里把“发芽”操作性地定义为观察到胚根伸出种皮，便于不同记录者使用同一标准。这个定义是本实验的观察规则，不是所有生物过程的完整描述。记录者应按事先约定的时间观察全部种子，而不是只挑成功的那几颗展示。没有发芽的种子也必须计入，才能知道发芽比例。\n设两盒各十粒同批种子，均在同温同光处放置七天。甲盒保持适量湿润，乙盒保持干燥。甲有八粒达到上述标准，乙有一粒。可以说在这批种子和这些条件下，湿润组观察到的发芽比例更高。仅凭这一次观察，还不能断言所有种类的种子只要加水都会发芽；种子活性、温度及其他条件仍可能重要。也不能说乙盒绝对没有任何水分，因为“保持干燥”是操作描述，并未测出零水分。\n重复实验可以帮助检查结果是否稳定，但重复的对象、条件与方法需要记录。把同一张照片复制三次不是三次独立实验。同一盒内种子也共享环境，不能总把它们当成互不影响的完整重复。入门练习无需复杂统计检验，只要能说明为什么重复有用、哪些信息仍然有限。\n好的后续实验应对应目前的疑问。如果怀疑温度造成差异，就应在同一温度下只改变湿润条件，或设计清楚的组合比较；不能一边改变温度，一边换种子品种，再把结果归因于某一个因素。若希望研究“水太多是否也影响发芽”，可以在其他条件一致时增加不同水量组，事先说明每组的水量与观察标准。\n解释实验时，把计划、执行、观察和结论分开写。计划相同不代表执行真的相同，需核对记录；观察不同不自动证明唯一原因。允许结果不支持原假说，并据此修改下一步问题，正是实验学习的一部分。对证据保留限制，不妨碍学生提出清楚、可检验的预测。",
+              "valueHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [
+            {
+              "level": "U",
+              "code": "REQUIRED_CRITERION_UNCERTAIN",
+              "detail": {
+                "independent": {
+                  "id": "criterion_767475fe-df79-401a-b89a-2774fcfa5d8b",
+                  "required": true,
+                  "result": "uncertain",
+                  "reason": "Independent semantic readings differ; review the actual answer and requirement.",
+                  "witnesses": [
+                    {
+                      "id": "e20",
+                      "pointer": "/answer",
+                      "role": "student",
+                      "kind": "text",
+                      "value": "我认为不用核对资料中的条件、范围或理由，只凭表面结果就可以直接下结论。",
+                      "valueHash": "6a3168b13a5b4301a294631198d87f7fa8c3b97b073bd70375f7e3285b02a2ab"
+                    },
+                    {
+                      "id": "e18",
+                      "pointer": "/rubric/0/text",
+                      "role": "criterion",
+                      "kind": "text",
+                      "value": "若有水盒放在温暖窗台、无水盒放在冷暗柜里，即使结果不同，也无法把差异单独归因于水，因为温度和光照同时改变了。",
+                      "valueHash": "78dfbd759259717c24ded91c384fdeaf758fcbbbab24181c575a43e4c902edf0"
+                    }
+                  ],
+                  "reviewReasons": [
+                    "CRITERION_SEMANTIC_DISAGREEMENT"
+                  ],
+                  "readings": [
+                    {
+                      "id": "criterion_767475fe-df79-401a-b89a-2774fcfa5d8b",
+                      "required": true,
+                      "result": "not_met",
+                      "reason": "学生e20声称不用核对资料条件、只凭表面结果下结论，未指出水/温度/光照同时改变导致无法单归因，缺失必要含义且矛盾于标准e18",
+                      "witnesses": [
+                        {
+                          "id": "e20",
+                          "pointer": "/answer",
+                          "role": "student",
+                          "kind": "text",
+                          "value": "我认为不用核对资料中的条件、范围或理由，只凭表面结果就可以直接下结论。",
+                          "valueHash": "6a3168b13a5b4301a294631198d87f7fa8c3b97b073bd70375f7e3285b02a2ab"
+                        },
+                        {
+                          "id": "e18",
+                          "pointer": "/rubric/0/text",
+                          "role": "criterion",
+                          "kind": "text",
+                          "value": "若有水盒放在温暖窗台、无水盒放在冷暗柜里，即使结果不同，也无法把差异单独归因于水，因为温度和光照同时改变了。",
+                          "valueHash": "78dfbd759259717c24ded91c384fdeaf758fcbbbab24181c575a43e4c902edf0"
+                        }
+                      ],
+                      "reviewReasons": []
+                    },
+                    {
+                      "id": "criterion_767475fe-df79-401a-b89a-2774fcfa5d8b",
+                      "required": true,
+                      "result": "uncertain",
+                      "reason": "Student/criterion evidence is missing or invalid.",
+                      "proposed": {
+                        "id": "criterion_767475fe-df79-401a-b89a-2774fcfa5d8b",
+                        "result": "not_met",
+                        "reason": "必要含义为指出情景中水、温度、光照同时改变故不能单归因水；学生e20未提及任何条件控制或温度光照，仅称凭表面结果下结论，缺失关键解释。",
+                        "refs": [
+                          "e20",
+                          "e17",
+                          "e3"
+                        ]
+                      },
+                      "reviewReasons": [
+                        "CRITERION_STUDENT_GROUNDING_MISSING"
+                      ]
+                    }
+                  ]
+                },
+                "product": {
+                  "id": "criterion_767475fe-df79-401a-b89a-2774fcfa5d8b",
+                  "result": "not_met"
+                }
+              }
+            },
+            {
+              "level": "U",
+              "code": "CREDIT_CORRECTNESS_UNCERTAIN",
+              "detail": {
+                "sufficiency": "uncertain",
+                "credit": {
+                  "outcome": "withheld",
+                  "reason": "产品后果e29明确withheld，因学生未满足必要标准criterion_767475fe(not_met e27)，实际产品后果与不足表现一致，不授予学分。",
+                  "refs": [
+                    "e29",
+                    "e27",
+                    "e20"
+                  ],
+                  "witnesses": [
+                    {
+                      "id": "e29",
+                      "pointer": "/productJudgment/consequence",
+                      "role": "product",
+                      "kind": "text",
+                      "value": "withheld",
+                      "valueHash": "a3b3d76fdf1e33a8c7bde9a7152980d0de2656e3d541feafb198261dcc7cf51c"
+                    },
+                    {
+                      "id": "e27",
+                      "pointer": "/productJudgment/criteria/0/result",
+                      "role": "product",
+                      "kind": "text",
+                      "value": "not_met",
+                      "valueHash": "1fbcf23a28d84c32b3e517b749f865dff62e466f1caa29b50173e236542a8342"
+                    },
+                    {
+                      "id": "e20",
+                      "pointer": "/answer",
+                      "role": "student",
+                      "kind": "text",
+                      "value": "我认为不用核对资料中的条件、范围或理由，只凭表面结果就可以直接下结论。",
+                      "valueHash": "6a3168b13a5b4301a294631198d87f7fa8c3b97b073bd70375f7e3285b02a2ab"
+                    }
+                  ],
+                  "reviewReasons": []
+                }
+              }
+            }
+          ],
+          "proposedLevel": 2,
+          "proposedReason": "产品判定标准criterion_767475fe未满足(not_met e27)且学分withheld(e29)，与学生回答e20拒绝依据实验规则解释、未提及温度光照同时改变一致；标准e17-e19要求解释不能单归因水因温度光照同变，学生未回应关键内容，产品反馈e28正确，无实质评分错误。",
+          "decidingConstraint": "REQUIRED_CRITERION_UNCERTAIN"
+        }
+      ],
+      "studentAssessment": {
+        "taskValidity": "uncertain",
+        "rubricValidity": "valid",
+        "reason": "题目e14与量规e18基于e3有效；学生e20拒核条件、只凭表面结论，未满足标准",
+        "validityWitnesses": [
+          {
+            "id": "e14",
+            "pointer": "/question/prompt",
+            "role": "question",
+            "kind": "text",
+            "value": "课堂将同批种子分两盒，甲盒加水并放在温暖窗台，乙盒无水并放在冷暗柜。七天后甲盒八粒发芽，乙盒一粒。为什么不能把发芽差异单独归因于水？请依据实验规则解释。",
+            "valueHash": "aea4d2790423a6704c586f5684d01737a1004832d04470e73336a8036483e1a9"
+          },
+          {
+            "id": "e18",
+            "pointer": "/rubric/0/text",
+            "role": "criterion",
+            "kind": "text",
+            "value": "若有水盒放在温暖窗台、无水盒放在冷暗柜里，即使结果不同，也无法把差异单独归因于水，因为温度和光照同时改变了。",
+            "valueHash": "78dfbd759259717c24ded91c384fdeaf758fcbbbab24181c575a43e4c902edf0"
+          },
+          {
+            "id": "e20",
+            "pointer": "/answer",
+            "role": "student",
+            "kind": "text",
+            "value": "我认为不用核对资料中的条件、范围或理由，只凭表面结果就可以直接下结论。",
+            "valueHash": "6a3168b13a5b4301a294631198d87f7fa8c3b97b073bd70375f7e3285b02a2ab"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "criterion_767475fe-df79-401a-b89a-2774fcfa5d8b",
+            "required": true,
+            "result": "uncertain",
+            "reason": "Independent semantic readings differ; review the actual answer and requirement.",
+            "witnesses": [
+              {
+                "id": "e20",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "我认为不用核对资料中的条件、范围或理由，只凭表面结果就可以直接下结论。",
+                "valueHash": "6a3168b13a5b4301a294631198d87f7fa8c3b97b073bd70375f7e3285b02a2ab"
+              },
+              {
+                "id": "e18",
+                "pointer": "/rubric/0/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "若有水盒放在温暖窗台、无水盒放在冷暗柜里，即使结果不同，也无法把差异单独归因于水，因为温度和光照同时改变了。",
+                "valueHash": "78dfbd759259717c24ded91c384fdeaf758fcbbbab24181c575a43e4c902edf0"
+              }
+            ],
+            "reviewReasons": [
+              "CRITERION_SEMANTIC_DISAGREEMENT"
+            ],
+            "readings": [
+              {
+                "id": "criterion_767475fe-df79-401a-b89a-2774fcfa5d8b",
+                "required": true,
+                "result": "not_met",
+                "reason": "学生e20声称不用核对资料条件、只凭表面结果下结论，未指出水/温度/光照同时改变导致无法单归因，缺失必要含义且矛盾于标准e18",
+                "witnesses": [
+                  {
+                    "id": "e20",
+                    "pointer": "/answer",
+                    "role": "student",
+                    "kind": "text",
+                    "value": "我认为不用核对资料中的条件、范围或理由，只凭表面结果就可以直接下结论。",
+                    "valueHash": "6a3168b13a5b4301a294631198d87f7fa8c3b97b073bd70375f7e3285b02a2ab"
+                  },
+                  {
+                    "id": "e18",
+                    "pointer": "/rubric/0/text",
+                    "role": "criterion",
+                    "kind": "text",
+                    "value": "若有水盒放在温暖窗台、无水盒放在冷暗柜里，即使结果不同，也无法把差异单独归因于水，因为温度和光照同时改变了。",
+                    "valueHash": "78dfbd759259717c24ded91c384fdeaf758fcbbbab24181c575a43e4c902edf0"
+                  }
+                ],
+                "reviewReasons": []
+              },
+              {
+                "id": "criterion_767475fe-df79-401a-b89a-2774fcfa5d8b",
+                "required": true,
+                "result": "uncertain",
+                "reason": "Student/criterion evidence is missing or invalid.",
+                "proposed": {
+                  "id": "criterion_767475fe-df79-401a-b89a-2774fcfa5d8b",
+                  "result": "not_met",
+                  "reason": "必要含义为指出情景中水、温度、光照同时改变故不能单归因水；学生e20未提及任何条件控制或温度光照，仅称凭表面结果下结论，缺失关键解释。",
+                  "refs": [
+                    "e20",
+                    "e17",
+                    "e3"
+                  ]
+                },
+                "reviewReasons": [
+                  "CRITERION_STUDENT_GROUNDING_MISSING"
+                ]
+              }
+            ]
+          }
+        ],
+        "sufficiency": "uncertain",
+        "reviewReasons": [],
+        "independentAssessments": [
+          {
+            "taskValidity": "valid",
+            "rubricValidity": "valid",
+            "reason": "题目e14与量规e18基于e3有效；学生e20拒核条件、只凭表面结论，未满足标准",
+            "validityWitnesses": [
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "课堂将同批种子分两盒，甲盒加水并放在温暖窗台，乙盒无水并放在冷暗柜。七天后甲盒八粒发芽，乙盒一粒。为什么不能把发芽差异单独归因于水？请依据实验规则解释。",
+                "valueHash": "aea4d2790423a6704c586f5684d01737a1004832d04470e73336a8036483e1a9"
+              },
+              {
+                "id": "e18",
+                "pointer": "/rubric/0/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "若有水盒放在温暖窗台、无水盒放在冷暗柜里，即使结果不同，也无法把差异单独归因于水，因为温度和光照同时改变了。",
+                "valueHash": "78dfbd759259717c24ded91c384fdeaf758fcbbbab24181c575a43e4c902edf0"
+              },
+              {
+                "id": "e20",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "我认为不用核对资料中的条件、范围或理由，只凭表面结果就可以直接下结论。",
+                "valueHash": "6a3168b13a5b4301a294631198d87f7fa8c3b97b073bd70375f7e3285b02a2ab"
+              }
+            ],
+            "criteria": [
+              {
+                "id": "criterion_767475fe-df79-401a-b89a-2774fcfa5d8b",
+                "required": true,
+                "result": "not_met",
+                "reason": "学生e20声称不用核对资料条件、只凭表面结果下结论，未指出水/温度/光照同时改变导致无法单归因，缺失必要含义且矛盾于标准e18",
+                "witnesses": [
+                  {
+                    "id": "e20",
+                    "pointer": "/answer",
+                    "role": "student",
+                    "kind": "text",
+                    "value": "我认为不用核对资料中的条件、范围或理由，只凭表面结果就可以直接下结论。",
+                    "valueHash": "6a3168b13a5b4301a294631198d87f7fa8c3b97b073bd70375f7e3285b02a2ab"
+                  },
+                  {
+                    "id": "e18",
+                    "pointer": "/rubric/0/text",
+                    "role": "criterion",
+                    "kind": "text",
+                    "value": "若有水盒放在温暖窗台、无水盒放在冷暗柜里，即使结果不同，也无法把差异单独归因于水，因为温度和光照同时改变了。",
+                    "valueHash": "78dfbd759259717c24ded91c384fdeaf758fcbbbab24181c575a43e4c902edf0"
+                  }
+                ],
+                "reviewReasons": []
+              }
+            ],
+            "sufficiency": "insufficient",
+            "reviewReasons": []
+          },
+          {
+            "taskValidity": "invalid",
+            "rubricValidity": "valid",
+            "reason": "学生回答e20声明不核对资料条件、只凭表面下结论，未依据实验规则解释为何不能单归因水，未完成任务要求；评分标准e17-e19正确提取自来源e3的实验规则（温度光照同时改变导致不能单归因），适用于本题。",
+            "validityWitnesses": [
+              {
+                "id": "e20",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "我认为不用核对资料中的条件、范围或理由，只凭表面结果就可以直接下结论。",
+                "valueHash": "6a3168b13a5b4301a294631198d87f7fa8c3b97b073bd70375f7e3285b02a2ab"
+              },
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "课堂将同批种子分两盒，甲盒加水并放在温暖窗台，乙盒无水并放在冷暗柜。七天后甲盒八粒发芽，乙盒一粒。为什么不能把发芽差异单独归因于水？请依据实验规则解释。",
+                "valueHash": "aea4d2790423a6704c586f5684d01737a1004832d04470e73336a8036483e1a9"
+              },
+              {
+                "id": "e17",
+                "pointer": "/rubric/0/id",
+                "role": "criterion",
+                "kind": "text",
+                "value": "criterion_767475fe-df79-401a-b89a-2774fcfa5d8b",
+                "valueHash": "824a67df8f37d75521ed97c64f58f3c6940aff30fb37c64a13d1b534f908143f"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "课堂把同一批种子分到两个透明盒中，想比较有水和无水时的发芽情况。为了使比较有意义，应尽量让其他有关条件一致，例如种子数量、来源、温度、光照、观察天数与发芽判定方式。若有水盒放在温暖窗台、无水盒放在冷暗柜里，即使结果不同，也无法把差异单独归因于水，因为温度和光照同时改变了。\n这里把“发芽”操作性地定义为观察到胚根伸出种皮，便于不同记录者使用同一标准。这个定义是本实验的观察规则，不是所有生物过程的完整描述。记录者应按事先约定的时间观察全部种子，而不是只挑成功的那几颗展示。没有发芽的种子也必须计入，才能知道发芽比例。\n设两盒各十粒同批种子，均在同温同光处放置七天。甲盒保持适量湿润，乙盒保持干燥。甲有八粒达到上述标准，乙有一粒。可以说在这批种子和这些条件下，湿润组观察到的发芽比例更高。仅凭这一次观察，还不能断言所有种类的种子只要加水都会发芽；种子活性、温度及其他条件仍可能重要。也不能说乙盒绝对没有任何水分，因为“保持干燥”是操作描述，并未测出零水分。\n重复实验可以帮助检查结果是否稳定，但重复的对象、条件与方法需要记录。把同一张照片复制三次不是三次独立实验。同一盒内种子也共享环境，不能总把它们当成互不影响的完整重复。入门练习无需复杂统计检验，只要能说明为什么重复有用、哪些信息仍然有限。\n好的后续实验应对应目前的疑问。如果怀疑温度造成差异，就应在同一温度下只改变湿润条件，或设计清楚的组合比较；不能一边改变温度，一边换种子品种，再把结果归因于某一个因素。若希望研究“水太多是否也影响发芽”，可以在其他条件一致时增加不同水量组，事先说明每组的水量与观察标准。\n解释实验时，把计划、执行、观察和结论分开写。计划相同不代表执行真的相同，需核对记录；观察不同不自动证明唯一原因。允许结果不支持原假说，并据此修改下一步问题，正是实验学习的一部分。对证据保留限制，不妨碍学生提出清楚、可检验的预测。",
+                "valueHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648"
+              }
+            ],
+            "criteria": [
+              {
+                "id": "criterion_767475fe-df79-401a-b89a-2774fcfa5d8b",
+                "required": true,
+                "result": "uncertain",
+                "reason": "Student/criterion evidence is missing or invalid.",
+                "proposed": {
+                  "id": "criterion_767475fe-df79-401a-b89a-2774fcfa5d8b",
+                  "result": "not_met",
+                  "reason": "必要含义为指出情景中水、温度、光照同时改变故不能单归因水；学生e20未提及任何条件控制或温度光照，仅称凭表面结果下结论，缺失关键解释。",
+                  "refs": [
+                    "e20",
+                    "e17",
+                    "e3"
+                  ]
+                },
+                "reviewReasons": [
+                  "CRITERION_STUDENT_GROUNDING_MISSING"
+                ]
+              }
+            ],
+            "sufficiency": "uncertain",
+            "reviewReasons": []
+          }
+        ]
+      },
+      "reviewRequired": [
+        {
+          "dimension": "Q5",
+          "reason": "UNRESOLVED"
+        }
+      ]
+    },
+    "resultHash": "500631af54886715d3d3bab17887576880b520d2f9fdee264e90fd70e40ff23c"
+  }
+}

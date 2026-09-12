@@ -1,0 +1,546 @@
+{
+  "task": {
+    "caseId": "N-B-F09-grading-positive",
+    "runId": "N-B-F09-grading-positive-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-B-F09-grading-positive.json",
+    "inputHash": "29b562531bc00ec53afacf4ad9b002d112b41613cc385460ae787d75251b4d7a",
+    "population": "natural",
+    "sourceId": "B-F09"
+  },
+  "inputHash": "29b562531bc00ec53afacf4ad9b002d112b41613cc385460ae787d75251b4d7a",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "solve-current": "55575b4fa27693eeceb4c394a5d17b6ae3e20d1127b49688018848030f911766",
+      "student-criteria": "63f0a0aab94b53087526e52d0aa36a82e089b582b6563d66807e1225d98104b0",
+      "artifact-audit": "6c5824a79da6fd675e5a2d3bbadffdd4bc8adfccff6652b768f184ef33751dc1"
+    },
+    "stages": {
+      "solve-current": {
+        "status": "resolved",
+        "solution": "题目 e15 问为何不能将6小时与3小时简单相加为合作时间并说明物理量区别。据 e3 明示：时间单位为小时，速度单位为份每小时，二者异量纲不能直接相加成同一种量；6h与3h是个人完成时间，合作时间须由合速度(1/6+1/3=1/2份/小时)除总量1份得2小时，简单相加9h或平均4.5h无合作效率含义。物理量区别：完成时间（小时）≠工作速度（份/小时），时间算术和不代表协同产出率。",
+        "witnesses": [
+          {
+            "id": "e15",
+            "pointer": "/question/prompt",
+            "role": "question",
+            "kind": "text",
+            "value": "根据资料，在讨论两人合作完成一项工作时，已知小岚单独需6小时、小禾单独需3小时。为什么不能简单将‘6小时’和‘3小时’相加作为合作完成时间？请说明涉及的物理量区别。",
+            "valueHash": "ab43675dbe7ce7e7fd6feb2e560a6f54e052f6d999c15ddb0e65417989bfd92f"
+          },
+          {
+            "id": "e3",
+            "pointer": "/sources/0/text",
+            "role": "source",
+            "kind": "text",
+            "value": "讨论两个人合作完成一项工作时，先约定“整项工作”为一份。若小岚单独整理一批卡片需要六小时，且全过程速度恒定，那么每小时完成六分之一份；小禾单独需要三小时，每小时完成三分之一份。时间的单位是小时，速度的单位是份每小时，两者不能直接相加成同一种量。\n在以下明确假设下，两人的工作速度可以相加：卡片能够任意分开处理，两人的工作互不重复，合作不会改变各自速度，也没有额外等待或交接开销。此时合速度为六分之一加三分之一，即二分之一份每小时，整份工作需要一除以二分之一，等于两小时。直接把六小时和三小时相加得到九小时，或者取平均得到四点五小时，都没有表示合作每小时完成多少工作。\n若两人不是同时开始，应分时段计算。例如小禾先做一小时，完成三分之一份，还剩三分之二份；随后两人按前述假设共同做，速度仍为二分之一份每小时，剩余时间为三分之二除以二分之一。除以二分之一等于乘二，所以得到三分之四小时，即一又三分之一小时。加上最初一小时，总时长为二又三分之一小时。写分数时要特别检查除法的方向，不能只凭“合作更快”的趋势认可数值。\n为避免口语分数混淆，上面的核心算式可以直接写成：(2/3)÷(1/2)=4/3小时，总计1+4/3=7/3小时。完成量应再验算：第一小时完成1/3，后面4/3小时以1/2的速度完成2/3，两段合计正好一份。把结果代回原始工作量，是发现倒数错误的有效方法。\n这些公式依赖模型条件。若工作只有一台必需设备，两人无法同时操作；或两人都检查同一张卡片导致重复工作，就不能直接使用独立速度相加。题目只给单独用时而未说明合作方式时，应先指出所需假设，再给条件式结果。现实合作可能有额外收益，也可能有协调损失，单独速度不足以确定所有情况。\n回答此类问题时依次写清总工作量、各段速度、各段完成量和最终时间。不要混淆某个人工作了多久与整个任务从开始到结束经过多久。即使最后数值相同，单位与过程仍决定解释是否可靠。",
+            "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+          }
+        ],
+        "reviewReasons": []
+      },
+      "student-criteria": {
+        "taskValidity": "valid",
+        "rubricValidity": "valid",
+        "reason": "题目e15基于资料e3提问为何不能将6h与3h相加并说明物理量区别，与资料一致且清晰；量规e19捕捉了核心必要含义（时间小时与速度份每小时异量纲不能直接相加），有效对应题目要求。",
+        "validityWitnesses": [
+          {
+            "id": "e15",
+            "pointer": "/question/prompt",
+            "role": "question",
+            "kind": "text",
+            "value": "根据资料，在讨论两人合作完成一项工作时，已知小岚单独需6小时、小禾单独需3小时。为什么不能简单将‘6小时’和‘3小时’相加作为合作完成时间？请说明涉及的物理量区别。",
+            "valueHash": "ab43675dbe7ce7e7fd6feb2e560a6f54e052f6d999c15ddb0e65417989bfd92f"
+          },
+          {
+            "id": "e19",
+            "pointer": "/rubric/0/text",
+            "role": "criterion",
+            "kind": "text",
+            "value": "时间的单位是小时，速度的单位是份每小时，两者不能直接相加成同一种量。",
+            "valueHash": "39c8c8ee8af55568a03a5724c3eacbe2a92c0365f3daeef9ce3934870bbf3919"
+          },
+          {
+            "id": "e21",
+            "pointer": "/answer",
+            "role": "student",
+            "kind": "text",
+            "value": "先把整项工作看作1份。在可分工、无重复、各自恒速且无等待的条件下，甲每小时完成1/8份、乙完成1/4份，合速度3/8份每小时。剩余3/4份要用(3/4)÷(3/8)=2小时，因为时间乘速度应恢复工作量。若只有一台必需设备不能同时使用，则速度相加的前提不成立，需另问合作方式。",
+            "valueHash": "fd8f188373627ec654114401516a09603fdcde697a535f3321000df39e7b91f9"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "criterion_bb7b8d51-1d2c-4f7d-85d4-426014ae8b13",
+            "required": true,
+            "result": "not_met",
+            "reason": "学生回答e21未提及题目给定的小岚6小时、小禾3小时，未解释不能将两者时间相加的原因，未展示时间（小时）与速度（份/小时）为异量纲量不能直接相加的必要含义；反而自设甲1/8、乙1/4并相加速度，完全偏离问题核心。",
+            "witnesses": [
+              {
+                "id": "e21",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "先把整项工作看作1份。在可分工、无重复、各自恒速且无等待的条件下，甲每小时完成1/8份、乙完成1/4份，合速度3/8份每小时。剩余3/4份要用(3/4)÷(3/8)=2小时，因为时间乘速度应恢复工作量。若只有一台必需设备不能同时使用，则速度相加的前提不成立，需另问合作方式。",
+                "valueHash": "fd8f188373627ec654114401516a09603fdcde697a535f3321000df39e7b91f9"
+              },
+              {
+                "id": "e19",
+                "pointer": "/rubric/0/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "时间的单位是小时，速度的单位是份每小时，两者不能直接相加成同一种量。",
+                "valueHash": "39c8c8ee8af55568a03a5724c3eacbe2a92c0365f3daeef9ce3934870bbf3919"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ],
+        "sufficiency": "insufficient",
+        "reviewReasons": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q5",
+            "level": 0,
+            "reason": "产品将准则c_bb7b8d51(e19,required)判为partial(e28)，但学生答案e21未提及题目e15给定的6h/3h，未说明时间(小时)与速度(份/小时)异量纲不能直接相加，且自行使用错误速度1/8、1/4，完全未满足必需标准必要含义；产品错误将未满足判为partial，属本质标准错误接受。",
+            "refs": [
+              "e21",
+              "e28",
+              "e19",
+              "e15"
+            ],
+            "issue": "grading",
+            "witnesses": [
+              {
+                "id": "e21",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "先把整项工作看作1份。在可分工、无重复、各自恒速且无等待的条件下，甲每小时完成1/8份、乙完成1/4份，合速度3/8份每小时。剩余3/4份要用(3/4)÷(3/8)=2小时，因为时间乘速度应恢复工作量。若只有一台必需设备不能同时使用，则速度相加的前提不成立，需另问合作方式。",
+                "valueHash": "fd8f188373627ec654114401516a09603fdcde697a535f3321000df39e7b91f9"
+              },
+              {
+                "id": "e28",
+                "pointer": "/productJudgment/criteria/0/result",
+                "role": "product",
+                "kind": "text",
+                "value": "partial",
+                "valueHash": "9834a14ab9bcaa0f6a8da71073617eac8f004e596a3fa11d807b84631b825d9d"
+              },
+              {
+                "id": "e19",
+                "pointer": "/rubric/0/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "时间的单位是小时，速度的单位是份每小时，两者不能直接相加成同一种量。",
+                "valueHash": "39c8c8ee8af55568a03a5724c3eacbe2a92c0365f3daeef9ce3934870bbf3919"
+              },
+              {
+                "id": "e15",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "根据资料，在讨论两人合作完成一项工作时，已知小岚单独需6小时、小禾单独需3小时。为什么不能简单将‘6小时’和‘3小时’相加作为合作完成时间？请说明涉及的物理量区别。",
+                "valueHash": "ab43675dbe7ce7e7fd6feb2e560a6f54e052f6d999c15ddb0e65417989bfd92f"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ],
+        "credit": {
+          "outcome": "withheld",
+          "reason": "产品实际后果字段e30明确为withheld，即产品语义上扣留学分，此为既定产物后果。",
+          "refs": [
+            "e30"
+          ],
+          "witnesses": [
+            {
+              "id": "e30",
+              "pointer": "/productJudgment/consequence",
+              "role": "product",
+              "kind": "text",
+              "value": "withheld",
+              "valueHash": "a3b3d76fdf1e33a8c7bde9a7152980d0de2656e3d541feafb198261dcc7cf51c"
+            }
+          ],
+          "reviewReasons": []
+        },
+        "studentCheck": {
+          "taskValidity": "valid",
+          "rubricValidity": "valid",
+          "reason": "题目e15基于资料e3合理提问不能相加的原因及物理量区别；标准e19明确要求指出时间与速度单位异量纲不能相加，有效。学生答案e21未回应题目，未阐述该区别，数值亦错。",
+          "validityWitnesses": [
+            {
+              "id": "e15",
+              "pointer": "/question/prompt",
+              "role": "question",
+              "kind": "text",
+              "value": "根据资料，在讨论两人合作完成一项工作时，已知小岚单独需6小时、小禾单独需3小时。为什么不能简单将‘6小时’和‘3小时’相加作为合作完成时间？请说明涉及的物理量区别。",
+              "valueHash": "ab43675dbe7ce7e7fd6feb2e560a6f54e052f6d999c15ddb0e65417989bfd92f"
+            },
+            {
+              "id": "e19",
+              "pointer": "/rubric/0/text",
+              "role": "criterion",
+              "kind": "text",
+              "value": "时间的单位是小时，速度的单位是份每小时，两者不能直接相加成同一种量。",
+              "valueHash": "39c8c8ee8af55568a03a5724c3eacbe2a92c0365f3daeef9ce3934870bbf3919"
+            },
+            {
+              "id": "e21",
+              "pointer": "/answer",
+              "role": "student",
+              "kind": "text",
+              "value": "先把整项工作看作1份。在可分工、无重复、各自恒速且无等待的条件下，甲每小时完成1/8份、乙完成1/4份，合速度3/8份每小时。剩余3/4份要用(3/4)÷(3/8)=2小时，因为时间乘速度应恢复工作量。若只有一台必需设备不能同时使用，则速度相加的前提不成立，需另问合作方式。",
+              "valueHash": "fd8f188373627ec654114401516a09603fdcde697a535f3321000df39e7b91f9"
+            }
+          ],
+          "criteria": [
+            {
+              "id": "criterion_bb7b8d51-1d2c-4f7d-85d4-426014ae8b13",
+              "required": true,
+              "result": "not_met",
+              "reason": "必要含义为指出时间单位小时与速度单位份每小时不能直接相加成同量；学生答案未提6h/3h，未说明异量纲，反用错误速度值，完全缺失标准要素。",
+              "witnesses": [
+                {
+                  "id": "e21",
+                  "pointer": "/answer",
+                  "role": "student",
+                  "kind": "text",
+                  "value": "先把整项工作看作1份。在可分工、无重复、各自恒速且无等待的条件下，甲每小时完成1/8份、乙完成1/4份，合速度3/8份每小时。剩余3/4份要用(3/4)÷(3/8)=2小时，因为时间乘速度应恢复工作量。若只有一台必需设备不能同时使用，则速度相加的前提不成立，需另问合作方式。",
+                  "valueHash": "fd8f188373627ec654114401516a09603fdcde697a535f3321000df39e7b91f9"
+                },
+                {
+                  "id": "e19",
+                  "pointer": "/rubric/0/text",
+                  "role": "criterion",
+                  "kind": "text",
+                  "value": "时间的单位是小时，速度的单位是份每小时，两者不能直接相加成同一种量。",
+                  "valueHash": "39c8c8ee8af55568a03a5724c3eacbe2a92c0365f3daeef9ce3934870bbf3919"
+                }
+              ],
+              "reviewReasons": []
+            }
+          ],
+          "sufficiency": "insufficient",
+          "reviewReasons": []
+        }
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q5",
+          "level": 0,
+          "reason": "产品将准则c_bb7b8d51(e19,required)判为partial(e28)，但学生答案e21未提及题目e15给定的6h/3h，未说明时间(小时)与速度(份/小时)异量纲不能直接相加，且自行使用错误速度1/8、1/4，完全未满足必需标准必要含义；产品错误将未满足判为partial，属本质标准错误接受。",
+          "refs": [
+            "e21",
+            "e28",
+            "e19",
+            "e15"
+          ],
+          "issue": "grading",
+          "witnesses": [
+            {
+              "id": "e21",
+              "pointer": "/answer",
+              "role": "student",
+              "kind": "text",
+              "value": "先把整项工作看作1份。在可分工、无重复、各自恒速且无等待的条件下，甲每小时完成1/8份、乙完成1/4份，合速度3/8份每小时。剩余3/4份要用(3/4)÷(3/8)=2小时，因为时间乘速度应恢复工作量。若只有一台必需设备不能同时使用，则速度相加的前提不成立，需另问合作方式。",
+              "valueHash": "fd8f188373627ec654114401516a09603fdcde697a535f3321000df39e7b91f9"
+            },
+            {
+              "id": "e28",
+              "pointer": "/productJudgment/criteria/0/result",
+              "role": "product",
+              "kind": "text",
+              "value": "partial",
+              "valueHash": "9834a14ab9bcaa0f6a8da71073617eac8f004e596a3fa11d807b84631b825d9d"
+            },
+            {
+              "id": "e19",
+              "pointer": "/rubric/0/text",
+              "role": "criterion",
+              "kind": "text",
+              "value": "时间的单位是小时，速度的单位是份每小时，两者不能直接相加成同一种量。",
+              "valueHash": "39c8c8ee8af55568a03a5724c3eacbe2a92c0365f3daeef9ce3934870bbf3919"
+            },
+            {
+              "id": "e15",
+              "pointer": "/question/prompt",
+              "role": "question",
+              "kind": "text",
+              "value": "根据资料，在讨论两人合作完成一项工作时，已知小岚单独需6小时、小禾单独需3小时。为什么不能简单将‘6小时’和‘3小时’相加作为合作完成时间？请说明涉及的物理量区别。",
+              "valueHash": "ab43675dbe7ce7e7fd6feb2e560a6f54e052f6d999c15ddb0e65417989bfd92f"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [
+            {
+              "level": 1,
+              "code": "PARTIAL_CRITERION_DIFFERENCE",
+              "detail": {
+                "independent": {
+                  "id": "criterion_bb7b8d51-1d2c-4f7d-85d4-426014ae8b13",
+                  "required": true,
+                  "result": "not_met",
+                  "reason": "学生回答e21未提及题目给定的小岚6小时、小禾3小时，未解释不能将两者时间相加的原因，未展示时间（小时）与速度（份/小时）为异量纲量不能直接相加的必要含义；反而自设甲1/8、乙1/4并相加速度，完全偏离问题核心。",
+                  "witnesses": [
+                    {
+                      "id": "e21",
+                      "pointer": "/answer",
+                      "role": "student",
+                      "kind": "text",
+                      "value": "先把整项工作看作1份。在可分工、无重复、各自恒速且无等待的条件下，甲每小时完成1/8份、乙完成1/4份，合速度3/8份每小时。剩余3/4份要用(3/4)÷(3/8)=2小时，因为时间乘速度应恢复工作量。若只有一台必需设备不能同时使用，则速度相加的前提不成立，需另问合作方式。",
+                      "valueHash": "fd8f188373627ec654114401516a09603fdcde697a535f3321000df39e7b91f9"
+                    },
+                    {
+                      "id": "e19",
+                      "pointer": "/rubric/0/text",
+                      "role": "criterion",
+                      "kind": "text",
+                      "value": "时间的单位是小时，速度的单位是份每小时，两者不能直接相加成同一种量。",
+                      "valueHash": "39c8c8ee8af55568a03a5724c3eacbe2a92c0365f3daeef9ce3934870bbf3919"
+                    }
+                  ],
+                  "reviewReasons": [],
+                  "independentWitnesses": [
+                    {
+                      "id": "e21",
+                      "pointer": "/answer",
+                      "role": "student",
+                      "kind": "text",
+                      "value": "先把整项工作看作1份。在可分工、无重复、各自恒速且无等待的条件下，甲每小时完成1/8份、乙完成1/4份，合速度3/8份每小时。剩余3/4份要用(3/4)÷(3/8)=2小时，因为时间乘速度应恢复工作量。若只有一台必需设备不能同时使用，则速度相加的前提不成立，需另问合作方式。",
+                      "valueHash": "fd8f188373627ec654114401516a09603fdcde697a535f3321000df39e7b91f9"
+                    },
+                    {
+                      "id": "e19",
+                      "pointer": "/rubric/0/text",
+                      "role": "criterion",
+                      "kind": "text",
+                      "value": "时间的单位是小时，速度的单位是份每小时，两者不能直接相加成同一种量。",
+                      "valueHash": "39c8c8ee8af55568a03a5724c3eacbe2a92c0365f3daeef9ce3934870bbf3919"
+                    }
+                  ]
+                },
+                "product": {
+                  "id": "criterion_bb7b8d51-1d2c-4f7d-85d4-426014ae8b13",
+                  "result": "partial"
+                }
+              }
+            }
+          ],
+          "proposedLevel": 0,
+          "proposedReason": "产品将准则c_bb7b8d51(e19,required)判为partial(e28)，但学生答案e21未提及题目e15给定的6h/3h，未说明时间(小时)与速度(份/小时)异量纲不能直接相加，且自行使用错误速度1/8、1/4，完全未满足必需标准必要含义；产品错误将未满足判为partial，属本质标准错误接受。"
+        }
+      ],
+      "studentAssessment": {
+        "taskValidity": "valid",
+        "rubricValidity": "valid",
+        "reason": "题目e15基于资料e3提问为何不能将6h与3h相加并说明物理量区别，与资料一致且清晰；量规e19捕捉了核心必要含义（时间小时与速度份每小时异量纲不能直接相加），有效对应题目要求。",
+        "validityWitnesses": [
+          {
+            "id": "e15",
+            "pointer": "/question/prompt",
+            "role": "question",
+            "kind": "text",
+            "value": "根据资料，在讨论两人合作完成一项工作时，已知小岚单独需6小时、小禾单独需3小时。为什么不能简单将‘6小时’和‘3小时’相加作为合作完成时间？请说明涉及的物理量区别。",
+            "valueHash": "ab43675dbe7ce7e7fd6feb2e560a6f54e052f6d999c15ddb0e65417989bfd92f"
+          },
+          {
+            "id": "e19",
+            "pointer": "/rubric/0/text",
+            "role": "criterion",
+            "kind": "text",
+            "value": "时间的单位是小时，速度的单位是份每小时，两者不能直接相加成同一种量。",
+            "valueHash": "39c8c8ee8af55568a03a5724c3eacbe2a92c0365f3daeef9ce3934870bbf3919"
+          },
+          {
+            "id": "e21",
+            "pointer": "/answer",
+            "role": "student",
+            "kind": "text",
+            "value": "先把整项工作看作1份。在可分工、无重复、各自恒速且无等待的条件下，甲每小时完成1/8份、乙完成1/4份，合速度3/8份每小时。剩余3/4份要用(3/4)÷(3/8)=2小时，因为时间乘速度应恢复工作量。若只有一台必需设备不能同时使用，则速度相加的前提不成立，需另问合作方式。",
+            "valueHash": "fd8f188373627ec654114401516a09603fdcde697a535f3321000df39e7b91f9"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "criterion_bb7b8d51-1d2c-4f7d-85d4-426014ae8b13",
+            "required": true,
+            "result": "not_met",
+            "reason": "学生回答e21未提及题目给定的小岚6小时、小禾3小时，未解释不能将两者时间相加的原因，未展示时间（小时）与速度（份/小时）为异量纲量不能直接相加的必要含义；反而自设甲1/8、乙1/4并相加速度，完全偏离问题核心。",
+            "witnesses": [
+              {
+                "id": "e21",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "先把整项工作看作1份。在可分工、无重复、各自恒速且无等待的条件下，甲每小时完成1/8份、乙完成1/4份，合速度3/8份每小时。剩余3/4份要用(3/4)÷(3/8)=2小时，因为时间乘速度应恢复工作量。若只有一台必需设备不能同时使用，则速度相加的前提不成立，需另问合作方式。",
+                "valueHash": "fd8f188373627ec654114401516a09603fdcde697a535f3321000df39e7b91f9"
+              },
+              {
+                "id": "e19",
+                "pointer": "/rubric/0/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "时间的单位是小时，速度的单位是份每小时，两者不能直接相加成同一种量。",
+                "valueHash": "39c8c8ee8af55568a03a5724c3eacbe2a92c0365f3daeef9ce3934870bbf3919"
+              }
+            ],
+            "reviewReasons": [],
+            "independentWitnesses": [
+              {
+                "id": "e21",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "先把整项工作看作1份。在可分工、无重复、各自恒速且无等待的条件下，甲每小时完成1/8份、乙完成1/4份，合速度3/8份每小时。剩余3/4份要用(3/4)÷(3/8)=2小时，因为时间乘速度应恢复工作量。若只有一台必需设备不能同时使用，则速度相加的前提不成立，需另问合作方式。",
+                "valueHash": "fd8f188373627ec654114401516a09603fdcde697a535f3321000df39e7b91f9"
+              },
+              {
+                "id": "e19",
+                "pointer": "/rubric/0/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "时间的单位是小时，速度的单位是份每小时，两者不能直接相加成同一种量。",
+                "valueHash": "39c8c8ee8af55568a03a5724c3eacbe2a92c0365f3daeef9ce3934870bbf3919"
+              }
+            ]
+          }
+        ],
+        "sufficiency": "insufficient",
+        "reviewReasons": [],
+        "independentAssessments": [
+          {
+            "taskValidity": "valid",
+            "rubricValidity": "valid",
+            "reason": "题目e15基于资料e3提问为何不能将6h与3h相加并说明物理量区别，与资料一致且清晰；量规e19捕捉了核心必要含义（时间小时与速度份每小时异量纲不能直接相加），有效对应题目要求。",
+            "validityWitnesses": [
+              {
+                "id": "e15",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "根据资料，在讨论两人合作完成一项工作时，已知小岚单独需6小时、小禾单独需3小时。为什么不能简单将‘6小时’和‘3小时’相加作为合作完成时间？请说明涉及的物理量区别。",
+                "valueHash": "ab43675dbe7ce7e7fd6feb2e560a6f54e052f6d999c15ddb0e65417989bfd92f"
+              },
+              {
+                "id": "e19",
+                "pointer": "/rubric/0/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "时间的单位是小时，速度的单位是份每小时，两者不能直接相加成同一种量。",
+                "valueHash": "39c8c8ee8af55568a03a5724c3eacbe2a92c0365f3daeef9ce3934870bbf3919"
+              },
+              {
+                "id": "e21",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "先把整项工作看作1份。在可分工、无重复、各自恒速且无等待的条件下，甲每小时完成1/8份、乙完成1/4份，合速度3/8份每小时。剩余3/4份要用(3/4)÷(3/8)=2小时，因为时间乘速度应恢复工作量。若只有一台必需设备不能同时使用，则速度相加的前提不成立，需另问合作方式。",
+                "valueHash": "fd8f188373627ec654114401516a09603fdcde697a535f3321000df39e7b91f9"
+              }
+            ],
+            "criteria": [
+              {
+                "id": "criterion_bb7b8d51-1d2c-4f7d-85d4-426014ae8b13",
+                "required": true,
+                "result": "not_met",
+                "reason": "学生回答e21未提及题目给定的小岚6小时、小禾3小时，未解释不能将两者时间相加的原因，未展示时间（小时）与速度（份/小时）为异量纲量不能直接相加的必要含义；反而自设甲1/8、乙1/4并相加速度，完全偏离问题核心。",
+                "witnesses": [
+                  {
+                    "id": "e21",
+                    "pointer": "/answer",
+                    "role": "student",
+                    "kind": "text",
+                    "value": "先把整项工作看作1份。在可分工、无重复、各自恒速且无等待的条件下，甲每小时完成1/8份、乙完成1/4份，合速度3/8份每小时。剩余3/4份要用(3/4)÷(3/8)=2小时，因为时间乘速度应恢复工作量。若只有一台必需设备不能同时使用，则速度相加的前提不成立，需另问合作方式。",
+                    "valueHash": "fd8f188373627ec654114401516a09603fdcde697a535f3321000df39e7b91f9"
+                  },
+                  {
+                    "id": "e19",
+                    "pointer": "/rubric/0/text",
+                    "role": "criterion",
+                    "kind": "text",
+                    "value": "时间的单位是小时，速度的单位是份每小时，两者不能直接相加成同一种量。",
+                    "valueHash": "39c8c8ee8af55568a03a5724c3eacbe2a92c0365f3daeef9ce3934870bbf3919"
+                  }
+                ],
+                "reviewReasons": []
+              }
+            ],
+            "sufficiency": "insufficient",
+            "reviewReasons": []
+          },
+          {
+            "taskValidity": "valid",
+            "rubricValidity": "valid",
+            "reason": "题目e15基于资料e3合理提问不能相加的原因及物理量区别；标准e19明确要求指出时间与速度单位异量纲不能相加，有效。学生答案e21未回应题目，未阐述该区别，数值亦错。",
+            "validityWitnesses": [
+              {
+                "id": "e15",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "根据资料，在讨论两人合作完成一项工作时，已知小岚单独需6小时、小禾单独需3小时。为什么不能简单将‘6小时’和‘3小时’相加作为合作完成时间？请说明涉及的物理量区别。",
+                "valueHash": "ab43675dbe7ce7e7fd6feb2e560a6f54e052f6d999c15ddb0e65417989bfd92f"
+              },
+              {
+                "id": "e19",
+                "pointer": "/rubric/0/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "时间的单位是小时，速度的单位是份每小时，两者不能直接相加成同一种量。",
+                "valueHash": "39c8c8ee8af55568a03a5724c3eacbe2a92c0365f3daeef9ce3934870bbf3919"
+              },
+              {
+                "id": "e21",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "先把整项工作看作1份。在可分工、无重复、各自恒速且无等待的条件下，甲每小时完成1/8份、乙完成1/4份，合速度3/8份每小时。剩余3/4份要用(3/4)÷(3/8)=2小时，因为时间乘速度应恢复工作量。若只有一台必需设备不能同时使用，则速度相加的前提不成立，需另问合作方式。",
+                "valueHash": "fd8f188373627ec654114401516a09603fdcde697a535f3321000df39e7b91f9"
+              }
+            ],
+            "criteria": [
+              {
+                "id": "criterion_bb7b8d51-1d2c-4f7d-85d4-426014ae8b13",
+                "required": true,
+                "result": "not_met",
+                "reason": "必要含义为指出时间单位小时与速度单位份每小时不能直接相加成同量；学生答案未提6h/3h，未说明异量纲，反用错误速度值，完全缺失标准要素。",
+                "witnesses": [
+                  {
+                    "id": "e21",
+                    "pointer": "/answer",
+                    "role": "student",
+                    "kind": "text",
+                    "value": "先把整项工作看作1份。在可分工、无重复、各自恒速且无等待的条件下，甲每小时完成1/8份、乙完成1/4份，合速度3/8份每小时。剩余3/4份要用(3/4)÷(3/8)=2小时，因为时间乘速度应恢复工作量。若只有一台必需设备不能同时使用，则速度相加的前提不成立，需另问合作方式。",
+                    "valueHash": "fd8f188373627ec654114401516a09603fdcde697a535f3321000df39e7b91f9"
+                  },
+                  {
+                    "id": "e19",
+                    "pointer": "/rubric/0/text",
+                    "role": "criterion",
+                    "kind": "text",
+                    "value": "时间的单位是小时，速度的单位是份每小时，两者不能直接相加成同一种量。",
+                    "valueHash": "39c8c8ee8af55568a03a5724c3eacbe2a92c0365f3daeef9ce3934870bbf3919"
+                  }
+                ],
+                "reviewReasons": []
+              }
+            ],
+            "sufficiency": "insufficient",
+            "reviewReasons": []
+          }
+        ]
+      },
+      "reviewRequired": []
+    },
+    "resultHash": "e807c058c98d60cc9985584232c73ef06c95804dab6307456aa25a20eefa5d65"
+  }
+}

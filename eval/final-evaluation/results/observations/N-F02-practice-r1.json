@@ -1,0 +1,76 @@
+{
+  "task": {
+    "caseId": "N-F02-practice",
+    "runId": "N-F02-practice-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-F02-practice.json",
+    "inputHash": "83e41837e890f703941ad28446f8ae1f61cce2fb89e17324f06c5086570d9413",
+    "population": "natural",
+    "sourceId": "F02"
+  },
+  "inputHash": "83e41837e890f703941ad28446f8ae1f61cce2fb89e17324f06c5086570d9413",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "prepare-context-current": "e3d2a7ed8f7749606033b07d2e0e5a3a70c478ff5b4c4bc573844410cacabb2a",
+      "solve-current": "055ecb49b12ba08af36ed92ddafbb8c6e3c1d2455e5ac96e66bb3861ad9ad861",
+      "correctness": "e9cddb1f80dce347429fe47eba0aa96d0c14130471f2c7b189803952fcb10425"
+    },
+    "stages": {
+      "prepare-context-current": {
+        "contexts": [
+          {
+            "taskId": "current",
+            "status": "ready",
+            "reason": "题干自足，直接给出商品甲原价120元现价90元、商品乙原价60元现价45元及同一种折扣方式假设，无需引用history字段；sources含通用规则不重复提取，情景可完整分离。",
+            "premises": [],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "solve-current": {
+        "status": "resolved",
+        "solution": "甲现价/原价=90/120=0.75，乙=45/60=0.75，二者同比例打七五折（降价25%）。选项A算式正确且两件均符；选项B乙60-30=30≠45；选项C甲120-15=105≠90。依e3百分比依附原价基数、固定金额与比例仅特定基数巧合，最可能方式为A。",
+        "witnesses": [
+          {
+            "id": "e14",
+            "pointer": "/question/prompt",
+            "role": "question",
+            "kind": "text",
+            "value": "商品甲原价120元、现价90元；商品乙原价60元、现价45元，两件商品使用了同一种折扣方式。该方式最可能是？",
+            "valueHash": "06efa35dbe30cc1d0fddbc57a15c53c80a8025207b7d5202e9ab7a9dc0bdc04e"
+          },
+          {
+            "id": "e3",
+            "pointer": "/sources/0/text",
+            "role": "source",
+            "kind": "text",
+            "value": "价格变化中的百分比总要依附一个基数。“降低百分之二十”通常以变化前价格为基数，意味着保留原价的百分之八十。假设原价是一百元，降价后为一百乘零点八，即八十元。这里减少了二十元，但“二十元”和“百分之二十”不是同一种量；只有同时知道基数，才能在金额与比例之间换算。\n连续变化必须按每一步的当前价格计算。例如先降百分之二十，再在降后价格上提高百分之二十，第二步增加的是八十元的百分之二十，即十六元，最后为九十六元，并没有回到一百元。两个百分比相等，基数却不同。可以把全过程写成“原价乘零点八再乘一点二”。若希望八十元恢复到一百元，需要增加二十元，而二十除以八十等于零点二五，所以应提高百分之二十五。反向问题应从目标差额与当前基数出发，不能机械地把降幅换成同样的涨幅。\n比较方案时也要留意固定金额与比例的区别。原价一百元时，减二十元和打八折都得到八十元；原价五十元时，减二十元得到三十元，打八折得到四十元。一次数值碰巧相等并不证明两种规则始终相同。本单元假定没有运费、满减门槛、四舍五入或叠加顺序的特殊限制；若现实广告存在这些条件，应先读清条件，再计算。\n百分比还可以用来描述某个比例自身的变化。若一项活动报名率由百分之四十变成百分之五十，增加了十个百分点；相对于原来的百分之四十，则增长了百分之二十五，因为十除以四十等于四分之一。“百分点”是两个百分率直接相减的差，“相对增长率”则把差再除以原比例。二者回答不同问题，不应省略名称后混为一个数。\n解释计算时，建议先写“这一步把什么当作百分之百”，再列算式，最后做方向检查。降价再涨价后的结果是否符合基数变化？某个提高幅度是相对于原价还是现价？如果只报告“增长百分之十”而不交代基数，读者可能无法复算。原比例为零时，也不能照搬差额除以原比例的相对增长率公式，因为分母为零；仍可以报告增加了多少元、多少人或多少个百分点。清楚说明边界，比强行给出一个不存在的比例更可靠。",
+            "valueHash": "eed51cb255d5d0e12ca505b4c60926d142df7cf81a0f73781aba0593d2870361"
+          },
+          {
+            "id": "e17",
+            "pointer": "/question/options/0/text",
+            "role": "question",
+            "kind": "text",
+            "value": "打七五折（即按原价降价25%），此时甲120×0.75=90，乙60×0.75=45",
+            "valueHash": "477a6342a09cb62de887b119a27268a1ca156a2ac871aceba544ec7ac0e50a81"
+          }
+        ],
+        "reviewReasons": []
+      },
+      "correctness": {
+        "status": "JUDGE_INVALID",
+        "category": "output_contract",
+        "reason": "TRUNCATED_OUTPUT"
+      }
+    },
+    "result": {
+      "status": "JUDGE_INVALID",
+      "category": "output_contract",
+      "reason": "TRUNCATED_OUTPUT"
+    },
+    "resultHash": "fa300d519134b1c2f1472700b5189451ecb96b7596f8f6debb399101ca99953e"
+  }
+}

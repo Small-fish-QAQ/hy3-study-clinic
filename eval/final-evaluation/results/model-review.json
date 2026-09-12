@@ -1,5 +1,5 @@
 {
-  "status": "MODEL_REVIEW_COMPLETE_HUMAN_VALIDATION_PENDING",
+  "status": "MODEL_REVIEW_COMPLETE_HUMAN_VALIDATION_COMPLETE",
   "unit": "one primary requested packet-item dimension; repeats excluded",
   "items": 27,
   "judgments": 34,

@@ -1,0 +1,314 @@
+{
+  "selectedBeforeMachineJudging": true,
+  "selectionPolicyHash": "c1e76552c29b4f5d271cec61d8e55a4073d6177f4b2bf6057c7af08d425b9500",
+  "packets": [
+    {
+      "packet": 1,
+      "file": "human/packets/Packet-1.docx",
+      "sha256": "445b8d46633ff12531b25f35fac80c083fd8c3315bab5de08f3737df027a8c9f"
+    },
+    {
+      "packet": 2,
+      "file": "human/packets/Packet-2.docx",
+      "sha256": "d42cec4dc5830d00bc161be7dbc06c32f1b47baf11990bccad5c9dde6aabb9fa"
+    },
+    {
+      "packet": 3,
+      "file": "human/packets/Packet-3.docx",
+      "sha256": "e6a385ba91307c6038389add21fe55a787df4d4263d40218ceb4424dc8800e41"
+    }
+  ],
+  "assignments": {
+    "A": [
+      1,
+      2
+    ],
+    "B": [
+      2,
+      3
+    ],
+    "C": [
+      3,
+      1
+    ]
+  },
+  "items": [
+    {
+      "packet": 1,
+      "itemId": "P1-01",
+      "frozenCaseId": "E047",
+      "caseId": "case-52002a137f98be72",
+      "dimensions": [
+        "Q1"
+      ],
+      "inputHash": "ef8d7792ebda61812466b1f13a52756fbd35b533c300c281e79d0828bb15cf92"
+    },
+    {
+      "packet": 1,
+      "itemId": "P1-02",
+      "frozenCaseId": "N-F01-tutor",
+      "caseId": "case-bf44bfb962cff565",
+      "dimensions": [
+        "Q1",
+        "Q3"
+      ],
+      "inputHash": "a03e021c3abfc0921f93c64381059ff54f10084a4e254b73ca45e64c55cb3e9e"
+    },
+    {
+      "packet": 1,
+      "itemId": "P1-03",
+      "frozenCaseId": "E658",
+      "caseId": "case-15b767dd0269ce7c",
+      "dimensions": [
+        "Q2"
+      ],
+      "inputHash": "07fa108a650e1ccbcbd3dfcd13915bffcb5d1d9464320760a4ea5542d2c8ea6f"
+    },
+    {
+      "packet": 1,
+      "itemId": "P1-04",
+      "frozenCaseId": "E413",
+      "caseId": "case-5a680bcba2a44515",
+      "dimensions": [
+        "Q3"
+      ],
+      "inputHash": "dd39f264e0fd5760d77195257997a2ffc0d85b3366a467c458f5769bbaf9b980"
+    },
+    {
+      "packet": 1,
+      "itemId": "P1-05",
+      "frozenCaseId": "N-F02-tutor",
+      "caseId": "case-2ab64497314c3138",
+      "dimensions": [
+        "Q1",
+        "Q3"
+      ],
+      "inputHash": "03d50ecde50ddf9d85d9caf6ceb17427a247f4de31d09bd49f793bc33dc9fb65"
+    },
+    {
+      "packet": 1,
+      "itemId": "P1-06",
+      "frozenCaseId": "E027",
+      "caseId": "case-8307da98bd1bd9fc",
+      "dimensions": [
+        "Q4"
+      ],
+      "inputHash": "27e79ead871b1233fce22af4b7cd122a02e4e7a93fd14ff2f25e1b52c25d10ae"
+    },
+    {
+      "packet": 1,
+      "itemId": "P1-07",
+      "frozenCaseId": "E497",
+      "caseId": "case-74fa3486d3a17488",
+      "dimensions": [
+        "Q5"
+      ],
+      "inputHash": "b62b6128a5713adcb245bf537cd8bf0d306cd2e799a3fb5928a50de4353169ed"
+    },
+    {
+      "packet": 1,
+      "itemId": "P1-08",
+      "frozenCaseId": "N-F03-tutor",
+      "caseId": "case-5d99d0689a6d8f63",
+      "dimensions": [
+        "Q1",
+        "Q3"
+      ],
+      "inputHash": "278275b2f9f3d606ff2afde4dad0d40a93eb9aca4c40947e15619b0fdc9b9c57"
+    },
+    {
+      "packet": 1,
+      "itemId": "P1-09",
+      "frozenCaseId": "E967",
+      "caseId": "case-4ce616a1df0ba086",
+      "dimensions": [
+        "Q6"
+      ],
+      "inputHash": "57247b05dcd3b0c88d34f5a5a5e57eeff3904547f864dbc3a87c803f7680f8be"
+    },
+    {
+      "packet": 2,
+      "itemId": "P2-01",
+      "frozenCaseId": "E094",
+      "caseId": "case-02a4401111989d17",
+      "dimensions": [
+        "Q1"
+      ],
+      "inputHash": "e8edfc4e6a7f698db1c4caa1e95476f9689a95e6b87d32336d8d0af4d8c95adb"
+    },
+    {
+      "packet": 2,
+      "itemId": "P2-02",
+      "frozenCaseId": "E470",
+      "caseId": "case-758bb8ae6f94332e",
+      "dimensions": [
+        "Q1"
+      ],
+      "inputHash": "dd377a458a8db124d451ed2aa0b7d3fef555e62146877d4dff5b197694b0c452"
+    },
+    {
+      "packet": 2,
+      "itemId": "P2-03",
+      "frozenCaseId": "E705",
+      "caseId": "case-c1b52dde4c4d9a98",
+      "dimensions": [
+        "Q2"
+      ],
+      "inputHash": "5b3183984d363b1023add0b5e9f28080511e53612f4a5411d761d0860cd94626"
+    },
+    {
+      "packet": 2,
+      "itemId": "P2-04",
+      "frozenCaseId": "E319",
+      "caseId": "case-ed41d46c0eb6f06e",
+      "dimensions": [
+        "Q3"
+      ],
+      "inputHash": "1feb5f7c0f6db7f0655e47ce7b2776808e02b38f107576a096b6800295819796"
+    },
+    {
+      "packet": 2,
+      "itemId": "P2-05",
+      "frozenCaseId": "N-F05-tutor",
+      "caseId": "case-b928db2458fccb19",
+      "dimensions": [
+        "Q1",
+        "Q3"
+      ],
+      "inputHash": "e5df30e0c13100ce17282c86e71282ac7f2558dd968c0773fcabc87b642ff096"
+    },
+    {
+      "packet": 2,
+      "itemId": "P2-06",
+      "frozenCaseId": "E074",
+      "caseId": "case-52cb16b3db5bead3",
+      "dimensions": [
+        "Q4"
+      ],
+      "inputHash": "1db95a987151a3b0561e54505a5d3699184d1f70508076077aa6d3cbb4ace9ce"
+    },
+    {
+      "packet": 2,
+      "itemId": "P2-07",
+      "frozenCaseId": "E544",
+      "caseId": "case-def928b81354343c",
+      "dimensions": [
+        "Q5"
+      ],
+      "inputHash": "6ff2484f2b7fe1767ca3c539a575aa55551c2125913b7c1cf1c42f5c766b07a3"
+    },
+    {
+      "packet": 2,
+      "itemId": "P2-08",
+      "frozenCaseId": "E846",
+      "caseId": "case-0e97fe107b49b71f",
+      "dimensions": [
+        "Q2"
+      ],
+      "inputHash": "d057f1ff411a69d4352c3da1c03e896e7b571ef9e91c4eea6add8b4dbf731e9b"
+    },
+    {
+      "packet": 2,
+      "itemId": "P2-09",
+      "frozenCaseId": "E873",
+      "caseId": "case-1dc6bf199a93034c",
+      "dimensions": [
+        "Q6"
+      ],
+      "inputHash": "1a75e7d9d68339a276ef3b9675f67332307ea9ae90fb1136a5b54b8b1fcf4106"
+    },
+    {
+      "packet": 3,
+      "itemId": "P3-01",
+      "frozenCaseId": "E141",
+      "caseId": "case-187f08bdfb86dc5f",
+      "dimensions": [
+        "Q1"
+      ],
+      "inputHash": "e1769cd39c01d626137a2c86d3a4d3f6cd710fed1646fb2e8570eb901c076049"
+    },
+    {
+      "packet": 3,
+      "itemId": "P3-02",
+      "frozenCaseId": "N-F07-tutor",
+      "caseId": "case-4a27d67d674def19",
+      "dimensions": [
+        "Q1",
+        "Q3"
+      ],
+      "inputHash": "b37e7384d5f4ffa0c9382488ecc79d26019020396378d497e43a8577f960a101"
+    },
+    {
+      "packet": 3,
+      "itemId": "P3-03",
+      "frozenCaseId": "E611",
+      "caseId": "case-10a838e8bedbf630",
+      "dimensions": [
+        "Q2"
+      ],
+      "inputHash": "c0bfa347bcd1a8f2d3751c2acebc48d79c8b1403697b7568a78e5134036941fb"
+    },
+    {
+      "packet": 3,
+      "itemId": "P3-04",
+      "frozenCaseId": "E366",
+      "caseId": "case-5cb1f3dd812fb545",
+      "dimensions": [
+        "Q3"
+      ],
+      "inputHash": "9ddec8a0080a675ad35184be3719fb2aa7c0dea1fa6ed89b489fda08842779ba"
+    },
+    {
+      "packet": 3,
+      "itemId": "P3-05",
+      "frozenCaseId": "N-F08-tutor",
+      "caseId": "case-627963f9b30b28b9",
+      "dimensions": [
+        "Q1",
+        "Q3"
+      ],
+      "inputHash": "821be6a706b8d39de0de84d6d17b0fff2256a8e984214299069795eb546e598d"
+    },
+    {
+      "packet": 3,
+      "itemId": "P3-06",
+      "frozenCaseId": "E121",
+      "caseId": "case-512eea176946b928",
+      "dimensions": [
+        "Q4"
+      ],
+      "inputHash": "d4898bde5060ba76dd1d8f0f6f416c0e9fcc9b0b2206f38b77bd52cfe57af386"
+    },
+    {
+      "packet": 3,
+      "itemId": "P3-07",
+      "frozenCaseId": "E450",
+      "caseId": "case-83c606b7c3f6c319",
+      "dimensions": [
+        "Q5"
+      ],
+      "inputHash": "ad04afa5a152f413121e43ba12b56273f0397aa1c6c32440892a06adae83a5ee"
+    },
+    {
+      "packet": 3,
+      "itemId": "P3-08",
+      "frozenCaseId": "N-F09-tutor",
+      "caseId": "case-5e5c45cf880340ae",
+      "dimensions": [
+        "Q1",
+        "Q3"
+      ],
+      "inputHash": "22e4040cd3ffd8ec6a389198142f453e0b1f9e0e75515078b7926885ff55af39"
+    },
+    {
+      "packet": 3,
+      "itemId": "P3-09",
+      "frozenCaseId": "E920",
+      "caseId": "case-056fc2baafafd8c8",
+      "dimensions": [
+        "Q6"
+      ],
+      "inputHash": "1cab0ebc541b0976c5c908c3d469d391c15ea2d9e8a5605ad9a520b45bb66302"
+    }
+  ]
+}

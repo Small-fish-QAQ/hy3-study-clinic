@@ -1,0 +1,90 @@
+{
+  "dimensions": [
+    "Q6"
+  ],
+  "evidence": {
+    "sources": [
+      {
+        "id": "F02",
+        "text": "价格变化中的百分比总要依附一个基数。“降低百分之二十”通常以变化前价格为基数，意味着保留原价的百分之八十。假设原价是一百元，降价后为一百乘零点八，即八十元。这里减少了二十元，但“二十元”和“百分之二十”不是同一种量；只有同时知道基数，才能在金额与比例之间换算。\n连续变化必须按每一步的当前价格计算。例如先降百分之二十，再在降后价格上提高百分之二十，第二步增加的是八十元的百分之二十，即十六元，最后为九十六元，并没有回到一百元。两个百分比相等，基数却不同。可以把全过程写成“原价乘零点八再乘一点二”。若希望八十元恢复到一百元，需要增加二十元，而二十除以八十等于零点二五，所以应提高百分之二十五。反向问题应从目标差额与当前基数出发，不能机械地把降幅换成同样的涨幅。\n比较方案时也要留意固定金额与比例的区别。原价一百元时，减二十元和打八折都得到八十元；原价五十元时，减二十元得到三十元，打八折得到四十元。一次数值碰巧相等并不证明两种规则始终相同。本单元假定没有运费、满减门槛、四舍五入或叠加顺序的特殊限制；若现实广告存在这些条件，应先读清条件，再计算。\n百分比还可以用来描述某个比例自身的变化。若一项活动报名率由百分之四十变成百分之五十，增加了十个百分点；相对于原来的百分之四十，则增长了百分之二十五，因为十除以四十等于四分之一。“百分点”是两个百分率直接相减的差，“相对增长率”则把差再除以原比例。二者回答不同问题，不应省略名称后混为一个数。\n解释计算时，建议先写“这一步把什么当作百分之百”，再列算式，最后做方向检查。降价再涨价后的结果是否符合基数变化？某个提高幅度是相对于原价还是现价？如果只报告“增长百分之十”而不交代基数，读者可能无法复算。原比例为零时，也不能照搬差额除以原比例的相对增长率公式，因为分母为零；仍可以报告增加了多少元、多少人或多少个百分点。清楚说明边界，比强行给出一个不存在的比例更可靠。"
+      }
+    ],
+    "goals": [
+      "针对这次实际错误给出有依据的诊断、补救解释和后续检查"
+    ],
+    "prerequisites": [
+      "小数乘除",
+      "百分数的含义",
+      "Identify the base to which a percentage change attaches (e.g., pre-discount original price), recognize that percentage and absolute amount are different quantities requiring the base for conversion, and note that fixed amount versus percentage can coincide only by chance at a specific base.",
+      "Apply consecutive percentage price change calculations by using the current price as base each step, compute the reverse required percentage from target difference over current base without mechanically swapping equal decrease/increase, and respect the assumption of no extra restrictions (shipping, thresholds, rounding, order) or read conditions first if present."
+    ],
+    "desiredDepth": "working_fluency",
+    "authorityBoundaries": [
+      "本次评估只涉及所给来源、明确的教学范围和实际展示的产物；脚本作答用于检查工作流，不代表真实学习者。"
+    ],
+    "artifacts": [
+      {
+        "id": "actual-failed-question",
+        "text": "商品甲原价120元、现价90元；商品乙原价60元、现价45元，两件商品使用了同一种折扣方式。该方式最可能是？"
+      },
+      {
+        "id": "actual-repair/selectedAnswer",
+        "text": "减30元固定金额，此时甲120-30=90，乙60-30=30"
+      },
+      {
+        "id": "actual-repair/feedback",
+        "text": "若采用固定减30元，乙现价应为30元而非45元，与观测不符；这是把单次巧合当普遍规则"
+      },
+      {
+        "id": "actual-repair/learnerNote",
+        "text": "请根据我刚才选择的答案，解释关键错误，并给我新的检验机会。"
+      },
+      {
+        "id": "actual-repair/diagnosis/observation",
+        "text": "你选择了“减30元固定金额”这一选项，并在说明中算出乙为60-30=30元。但原题明确给出乙现价是45元，你的推算结果与题干事实不符。"
+      },
+      {
+        "id": "actual-repair/diagnosis/gap",
+        "text": "缺少对“固定金额折扣与百分比折扣所依附基数不同”的检验步骤：没有把两件商品各自的原价当作100%分别验证同一种规则是否都能得到题给现价，而是把甲上减30碰巧得90的数值巧合直接当作通用规则。"
+      },
+      {
+        "id": "actual-repair/diagnosis/uncertainty",
+        "text": "这是根据这次回答作出的判断；读题疏漏也可能导致同样的选择。"
+      },
+      {
+        "id": "actual-repair/teaching/explanation",
+        "text": "折扣方式分为固定金额（如减30元，不随原价变）和百分比折扣（如打七五折，以各自原价为基数）。当题目说多件商品使用同一种折扣时，必须拿候选规则分别套用到每件商品的已知原价与现价：若某规则对其中一件产生矛盾，则排除。你之前看到甲120减30得90，便认为规则是减30固定金额，却没用乙给定现价45去验证；按减30算乙应为30，矛盾。正确做法是把每件原价当100%：甲90/120=0.75，乙45/60=0.75，比例一致，所以是百分比折扣（七五折）。"
+      },
+      {
+        "id": "actual-repair/teaching/workedExample/prompt",
+        "text": "两本书，甲原价50元、现价40元；乙原价150元、现价120元。它们使用了同一种折扣方式，最可能是固定减额还是百分比折扣？"
+      },
+      {
+        "id": "actual-repair/teaching/workedExample/steps/0",
+        "text": "把甲原价50元当作100%，现价40元，计算比例：40÷50=0.8，即打八折。"
+      },
+      {
+        "id": "actual-repair/teaching/workedExample/steps/1",
+        "text": "把乙原价150元当作100%，现价120元，计算比例：120÷150=0.8，也是打八折。"
+      },
+      {
+        "id": "actual-repair/teaching/workedExample/steps/2",
+        "text": "检验固定减额假设：若减10元，甲50-10=40符合，但乙150-10=140，与给定120元矛盾。"
+      },
+      {
+        "id": "actual-repair/teaching/workedExample/steps/3",
+        "text": "因此同一种规则必须能对两件都成立，只有百分比折扣（各自基数的0.8）满足。"
+      },
+      {
+        "id": "actual-repair/teaching/workedExample/conclusion",
+        "text": "该折扣方式是打八折（按原价降价20%），因为两件商品按各自原价算得相同比例，而固定减10元会在乙上失败。"
+      },
+      {
+        "id": "actual-repair/teaching/contrast",
+        "text": "如果只根据甲原价50减10得40就认定“减10元固定金额”，那么遇到乙原价150时，按此规则现价应为140，但实际是120，说明固定金额规则在此失效；而百分比规则因依附各自基数，能同时匹配两本书的给定现价。"
+      }
+    ],
+    "exposure": [],
+    "answer": "减30元固定金额，此时甲120-30=90，乙60-30=30"
+  }
+}

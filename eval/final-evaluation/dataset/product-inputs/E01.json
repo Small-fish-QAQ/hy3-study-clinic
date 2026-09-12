@@ -1,0 +1,78 @@
+{
+  "sourceId": "E01",
+  "title": "OpenStax：相同温度为什么触感不同",
+  "domain": "physics_heat_conduction",
+  "prerequisites": [
+    "知道温度与热传递是不同概念",
+    "能借助中文解释阅读简单英文科学教材"
+  ],
+  "goals": [
+    "用中文解释同温度地毯与瓷砖触感不同的原因",
+    "区分热传递方向、温差与热平衡",
+    "说明接触面积如何影响导热，并保留其他条件相同的比较边界"
+  ],
+  "intendedDepth": "working_fluency",
+  "text": "Your feet feel cold as you walk barefoot across the living room carpet in your cold house and then step onto the kitchen tile floor. This result is intriguing, since the carpet and tile floor are both at the same temperature. The different sensation you feel is explained by the different rates of heat transfer: the heat loss during the same time interval is greater for skin in contact with the tiles than with the carpet, so the temperature drop is greater on the tiles.\n\nSome materials conduct thermal energy faster than others. In general, good conductors of electricity (metals like copper, aluminum, gold, and silver) are also good heat conductors, whereas insulators of electricity (wood, plastic, and rubber) are poor heat conductors.\n\nThe (average) kinetic energy of a molecule in the hot body is higher than in the colder body. If two molecules collide, an energy transfer from the molecule with greater kinetic energy to the molecule with less kinetic energy occurs. The cumulative effect from all collisions results in a net flux of heat from the hot body to the colder body. The heat flux thus depends on the temperature difference ΔΤ=Τhot−Tcold. Therefore, you will get a more severe burn from boiling water than from hot tap water. Conversely, if the temperatures are the same, the net heat transfer rate falls to zero, and equilibrium is achieved. Owing to the fact that the number of collisions increases with increasing area, heat conduction depends on the cross-sectional area. If you touch a cold wall with your palm, your hand cools faster than if you just touch it with your fingertip.",
+  "formalFit": {
+    "eligible": true,
+    "rationale": "来源明确支持概念解释；具体 Formal 准入仍由生产应用依据当前目标和权限决定。"
+  },
+  "formalGoodAnswer": "地毯和瓷砖可以具有相同温度，但从皮肤带走热量的速率不同，所以脚的温度下降和冷感不同。一般而言金属导热较快，木材、塑料和橡胶导热较差。大量分子相互作用的总效果是热从较热处流向较冷处，净热流与温差有关；温度相同时净热传递为零。其他条件相同，接触面积较大使导热更快，因此手掌接触冷墙通常比指尖冷得更快。",
+  "formalInsufficientAnswer": "我只根据结果作判断，不需要解释资料中的关系、定义或适用条件。",
+  "provenance": {
+    "kind": "external_textbook_excerpt",
+    "publisher": "OpenStax, Rice University",
+    "bookTitle": "College Physics 2e",
+    "section": "14.5 Conduction",
+    "sourceLanguage": "en",
+    "teachingLanguage": "zh-CN",
+    "canonicalUrl": "https://raw.githubusercontent.com/openstax/osbooks-college-physics-bundle/145a70454855e9376f02e8dc554841474b7bd2be/modules/m42228/index.cnxml",
+    "currentReadablePageUrl": "https://openstax.org/books/college-physics-2e/pages/14-5-conduction",
+    "retrievedAt": "2026-09-11T18:52:37.291Z",
+    "sourceRepository": "https://github.com/openstax/osbooks-college-physics-bundle",
+    "sourceCommit": "145a70454855e9376f02e8dc554841474b7bd2be",
+    "sourceCommitDate": "2025-12-10T22:34:55Z",
+    "documentUuid": "a7beda43-2f3a-4d12-adfe-2e19c20b5e14",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+    "licenseEvidenceUrl": "https://raw.githubusercontent.com/openstax/osbooks-college-physics-bundle/145a70454855e9376f02e8dc554841474b7bd2be/LICENSE",
+    "collectionLicenseEvidenceUrl": "https://raw.githubusercontent.com/openstax/osbooks-college-physics-bundle/145a70454855e9376f02e8dc554841474b7bd2be/collections/college-physics-2e.collection.xml",
+    "attribution": "Excerpted from OpenStax, College Physics 2e, 14.5 Conduction, source revision 145a70454855e9376f02e8dc554841474b7bd2be, licensed CC BY 4.0. Whitespace normalized; selected paragraphs or exact sentence spans; no substantive paraphrase. Chinese goals and scripted answer controls authored for this evaluation.",
+    "modifications": "Extracted XML textContent, collapsed runs of whitespace to one space, selected specified full paragraphs/exact sentence spans, and joined with blank lines. Equations, figure-dependent references and omitted surrounding material are outside excerpt scope.",
+    "currentPageLicenseNotice": "Live HTML retrieved in 2026 displays CC BY-NC-SA 4.0. The evaluation excerpt is sourced from the separately retrieved, pinned pre-2026 CC BY 4.0 publisher repository revision; the live page is contextual provenance, not the license grant for this excerpt.",
+    "rawCnxmlSha256": "2a275d75021359e9844cad3fc7fb23202f4634986c3ebfed6b2124a801a6eafd",
+    "rawHtmlSha256": "5d4e299bae123712d4883ffddb7b3b57e091eab325d8ac45c16fc3230882927c",
+    "licenseSha256": "0ff174546cbe3dd1287da231f9796618ac2f6e6595b2d11f567b2c9790f64868",
+    "collectionSha256": "3d3cf2c93dddb3d55c61a1dcd09d6bae31e6ca7033b5e50081c818e28b4134b6",
+    "extractionSpans": [
+      {
+        "paragraphId": "import-auto-id3254132",
+        "normalizedStart": 0,
+        "normalizedEnd": 473,
+        "paragraphSha256": "5f477aa2d40f7dca8a116455583c53a604cd4caf9f5b32bccad664ecd267e5d9",
+        "excerptSha256": "5f477aa2d40f7dca8a116455583c53a604cd4caf9f5b32bccad664ecd267e5d9"
+      },
+      {
+        "paragraphId": "import-auto-id1954999",
+        "normalizedStart": 0,
+        "normalizedEnd": 268,
+        "paragraphSha256": "daaea4293d89d39c9dfecdbbe897453fbf0845c28c894a985663c4b44add1a67",
+        "excerptSha256": "8eb899a0f85272c023e7b5d608e837b06e8bc82f1f38e2b8a15a6293d3c32b6e"
+      },
+      {
+        "paragraphId": "import-auto-id1954999",
+        "normalizedStart": 326,
+        "normalizedEnd": 1189,
+        "paragraphSha256": "daaea4293d89d39c9dfecdbbe897453fbf0845c28c894a985663c4b44add1a67",
+        "excerptSha256": "4047fafb40c8830a214e297be90fdc2ac6c3c1ce14134cce6017d2966d2e5c40"
+      }
+    ],
+    "limitations": [
+      "Only introductory conduction prose is included; figures, conductivity tables and Fourier-law numerical exercises are excluded.",
+      "The textbook collision explanation is an introductory statistical simplification, not a microscopic guarantee about every collision."
+    ],
+    "humanPacketEligible": false
+  },
+  "textHash": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd",
+  "triggerPracticeRepair": true
+}

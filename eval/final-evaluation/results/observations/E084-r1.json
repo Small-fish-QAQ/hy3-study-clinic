@@ -1,0 +1,298 @@
+{
+  "task": {
+    "caseId": "E084",
+    "runId": "E084-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E084.json",
+    "inputHash": "ab60898f6fda545f46e5ca615ec492cfef189d4114ef775d22b0e1ec9c268112",
+    "population": "controlled",
+    "sourceId": "F08"
+  },
+  "inputHash": "ab60898f6fda545f46e5ca615ec492cfef189d4114ef775d22b0e1ec9c268112",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "correctness": "4152a8c01ff66b820d3386c856c00b154160a03bde2f24cd7531e7ceb1c5b6c8",
+      "artifact-audit": "4152a8c01ff66b820d3386c856c00b154160a03bde2f24cd7531e7ceb1c5b6c8",
+      "certification": "4152a8c01ff66b820d3386c856c00b154160a03bde2f24cd7531e7ceb1c5b6c8"
+    },
+    "stages": {
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "clear",
+            "affected": [],
+            "reason": "artifact(e17)总结source(e3)明示单向规则：星形→蓝禁止星形非蓝，允许圆形蓝(非星形蓝)故蓝不能反推星形；非蓝推非星形为逆否；当且仅当才双向；留意实际存在。与e3给定假设(无例外)及量词一致，未混淆充分必要。",
+            "refs": [
+              "e17",
+              "e3"
+            ],
+            "challenge": {
+              "status": "closed",
+              "reason": "尝试构造与e3单向规则相容却使'蓝不能反推星形'失败(即蓝必推星形)的情况需添加双向规则，违背e3明示假设被排除；'非蓝推非星形'的反例(非蓝且星形)直接违反规则亦排除。",
+              "refs": [
+                "e3",
+                "e17"
+              ]
+            },
+            "witnesses": [
+              {
+                "id": "e17",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "“星形推出蓝色”禁止星形非蓝色，允许圆形蓝色，所以蓝色不能反推星形。非蓝色可推出非星形，因为星形会要求蓝色而矛盾。“当且仅当”才提供两个方向。可以用反例构造来检验推断。另外留意某类卡是否实际存在。",
+                "valueHash": "fd66d24371819349aa363b80e381901207aee31982f170e7fd65cb42960bfa64"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "桌上有一批卡片，每张卡都有形状标记和颜色标记。管理员给出规则：“凡带星形标记的卡片，背面都是蓝色。”为方便讨论，假定这条规则在当前卡片批次没有例外。它说明带星形足以推出背面蓝色，但没有说蓝色只能来自星形。因此，看见一张蓝色卡片时，还不能断定它正面一定有星形；圆形蓝色卡也与规则相容。\n可以把规则理解为一个不允许出现的组合：星形与非蓝色不能同时出现在同一张卡片上。星形蓝色、非星形蓝色、非星形非蓝色都没有被这条规则禁止。列出允许与不允许的组合，能帮助我们看清规则到底排除了什么，而不是凭语言感觉推断。\n若已知某卡背面不是蓝色，就能推出它不是星形。理由是：假如它是星形，规则要求它蓝色，与已经知道的非蓝色矛盾。这种推断保留了原规则的方向。相反，从“不是星形”推出“不是蓝色”不成立，因为规则没有限制非星形卡片的颜色。反例只需给出一张非星形蓝色卡，就足以说明这一推断不是必然的。\n如果规则改为“卡片带星形，当且仅当背面蓝色”，那么同时得到两个方向：星形推出蓝色，蓝色也推出星形。这比原来的单向规则更强。在读取题目时，不能自行把“如果”补成“当且仅当”。日常语言有时省略条件，但本单元只按明示规则判断，不猜测管理员的意图。\n还要区分“可以存在”和“已经存在”。一张圆形蓝色卡与单向规则相容，只能说明这种卡并未被禁止，不能证明盒子里实际至少有一张。若只知道“所有星形卡都蓝色”，甚至不能保证盒子里有星形卡；题目需要另外给出存在信息。“有些蓝色卡是圆形”与“所有蓝色卡是圆形”也不是同一范围。\n练习解释时，先写已有条件，再写所用方向，最后检验是否存在与已知事实相容、却使结论失败的卡片。若能找到这样的组合，结论就不是必然成立；若给定规则和事实排除了所有反例，才可以说必然。这个方法适用于分类与规则阅读，但不把封闭课堂规则直接当成现实事物的普遍规律。",
+                "valueHash": "132c532360b4bc6ac5b2aa8886b4b3bf89c500f85d4e1be08595f9a669823289"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "kind": "quantities",
+            "status": "not_applicable",
+            "affected": [],
+            "reason": "packet.rates为空，e17/e3均未含数值、百分比或单位换算，无数量断言需独立重算。",
+            "contextHash": "4152a8c01ff66b820d3386c856c00b154160a03bde2f24cd7531e7ceb1c5b6c8",
+            "proposed": {
+              "kind": "quantities",
+              "status": "not_applicable",
+              "affected": [],
+              "reason": "packet.rates为空，e17/e3均未含数值、百分比或单位换算，无数量断言需独立重算。",
+              "refs": [
+                "e1",
+                "e15",
+                "e17"
+              ]
+            },
+            "reviewReasons": []
+          }
+        ],
+        "keys": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 2,
+            "reason": "Artifact e17 faithfully covers essential goals e5 (star→blue sufficient not necessary, contrapositive non-blue→non-star), e6 (allowed round-blue implies counterexample and explicitly mentions construction), e7 (only iff gives both directions, boundary respected). Secondary e8 is thin but level 2 only requires essential goals treated.",
+            "refs": [
+              "e17",
+              "e5",
+              "e6",
+              "e7"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e17",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "“星形推出蓝色”禁止星形非蓝色，允许圆形蓝色，所以蓝色不能反推星形。非蓝色可推出非星形，因为星形会要求蓝色而矛盾。“当且仅当”才提供两个方向。可以用反例构造来检验推断。另外留意某类卡是否实际存在。",
+                "valueHash": "fd66d24371819349aa363b80e381901207aee31982f170e7fd65cb42960bfa64"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "区分充分条件与必要条件",
+                "valueHash": "1805ffe40f838b3737e5da1b3372111851e8c6488682205bcbef6ca16d9b82c1"
+              },
+              {
+                "id": "e6",
+                "pointer": "/goals/1",
+                "role": "goal",
+                "kind": "text",
+                "value": "构造反例检验逆向推断",
+                "valueHash": "4b676a6e97edc10f4d2d5b7c4c3496272ee0debe78c66fd3b2143654cf98767f"
+              },
+              {
+                "id": "e7",
+                "pointer": "/goals/2",
+                "role": "goal",
+                "kind": "text",
+                "value": "依据双向规则或单向规则做有边界的判断",
+                "valueHash": "9f04c7f97d911c7a53d18db7b5832d38a7ad28ee668d319ceaa9cb4ade0e0032"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q2",
+            "status": "supported",
+            "reason": "Artifact e17 faithfully summarizes source e3's unilateral rule and covers essential goals e5 (star→blue sufficient not necessary, contrapositive), e6 (round-blue allowed implies counterexample/construction), e7 (iff gives both directions, boundary respected). Findings audit and correctness confirm no distortion; secondary e8 thin but not required for level2.",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e17",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "“星形推出蓝色”禁止星形非蓝色，允许圆形蓝色，所以蓝色不能反推星形。非蓝色可推出非星形，因为星形会要求蓝色而矛盾。“当且仅当”才提供两个方向。可以用反例构造来检验推断。另外留意某类卡是否实际存在。",
+                "valueHash": "fd66d24371819349aa363b80e381901207aee31982f170e7fd65cb42960bfa64"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "区分充分条件与必要条件",
+                "valueHash": "1805ffe40f838b3737e5da1b3372111851e8c6488682205bcbef6ca16d9b82c1"
+              },
+              {
+                "id": "e6",
+                "pointer": "/goals/1",
+                "role": "goal",
+                "kind": "text",
+                "value": "构造反例检验逆向推断",
+                "valueHash": "4b676a6e97edc10f4d2d5b7c4c3496272ee0debe78c66fd3b2143654cf98767f"
+              },
+              {
+                "id": "e7",
+                "pointer": "/goals/2",
+                "role": "goal",
+                "kind": "text",
+                "value": "依据双向规则或单向规则做有边界的判断",
+                "valueHash": "9f04c7f97d911c7a53d18db7b5832d38a7ad28ee668d319ceaa9cb4ade0e0032"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "桌上有一批卡片，每张卡都有形状标记和颜色标记。管理员给出规则：“凡带星形标记的卡片，背面都是蓝色。”为方便讨论，假定这条规则在当前卡片批次没有例外。它说明带星形足以推出背面蓝色，但没有说蓝色只能来自星形。因此，看见一张蓝色卡片时，还不能断定它正面一定有星形；圆形蓝色卡也与规则相容。\n可以把规则理解为一个不允许出现的组合：星形与非蓝色不能同时出现在同一张卡片上。星形蓝色、非星形蓝色、非星形非蓝色都没有被这条规则禁止。列出允许与不允许的组合，能帮助我们看清规则到底排除了什么，而不是凭语言感觉推断。\n若已知某卡背面不是蓝色，就能推出它不是星形。理由是：假如它是星形，规则要求它蓝色，与已经知道的非蓝色矛盾。这种推断保留了原规则的方向。相反，从“不是星形”推出“不是蓝色”不成立，因为规则没有限制非星形卡片的颜色。反例只需给出一张非星形蓝色卡，就足以说明这一推断不是必然的。\n如果规则改为“卡片带星形，当且仅当背面蓝色”，那么同时得到两个方向：星形推出蓝色，蓝色也推出星形。这比原来的单向规则更强。在读取题目时，不能自行把“如果”补成“当且仅当”。日常语言有时省略条件，但本单元只按明示规则判断，不猜测管理员的意图。\n还要区分“可以存在”和“已经存在”。一张圆形蓝色卡与单向规则相容，只能说明这种卡并未被禁止，不能证明盒子里实际至少有一张。若只知道“所有星形卡都蓝色”，甚至不能保证盒子里有星形卡；题目需要另外给出存在信息。“有些蓝色卡是圆形”与“所有蓝色卡是圆形”也不是同一范围。\n练习解释时，先写已有条件，再写所用方向，最后检验是否存在与已知事实相容、却使结论失败的卡片。若能找到这样的组合，结论就不是必然成立；若给定规则和事实排除了所有反例，才可以说必然。这个方法适用于分类与规则阅读，但不把封闭课堂规则直接当成现实事物的普遍规律。",
+                "valueHash": "132c532360b4bc6ac5b2aa8886b4b3bf89c500f85d4e1be08595f9a669823289"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q2",
+          "level": 2,
+          "reason": "Artifact e17 faithfully covers essential goals e5 (star→blue sufficient not necessary, contrapositive non-blue→non-star), e6 (allowed round-blue implies counterexample and explicitly mentions construction), e7 (only iff gives both directions, boundary respected). Secondary e8 is thin but level 2 only requires essential goals treated.",
+          "refs": [
+            "e17",
+            "e5",
+            "e6",
+            "e7"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e17",
+              "pointer": "/artifacts/0/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "“星形推出蓝色”禁止星形非蓝色，允许圆形蓝色，所以蓝色不能反推星形。非蓝色可推出非星形，因为星形会要求蓝色而矛盾。“当且仅当”才提供两个方向。可以用反例构造来检验推断。另外留意某类卡是否实际存在。",
+              "valueHash": "fd66d24371819349aa363b80e381901207aee31982f170e7fd65cb42960bfa64"
+            },
+            {
+              "id": "e5",
+              "pointer": "/goals/0",
+              "role": "goal",
+              "kind": "text",
+              "value": "区分充分条件与必要条件",
+              "valueHash": "1805ffe40f838b3737e5da1b3372111851e8c6488682205bcbef6ca16d9b82c1"
+            },
+            {
+              "id": "e6",
+              "pointer": "/goals/1",
+              "role": "goal",
+              "kind": "text",
+              "value": "构造反例检验逆向推断",
+              "valueHash": "4b676a6e97edc10f4d2d5b7c4c3496272ee0debe78c66fd3b2143654cf98767f"
+            },
+            {
+              "id": "e7",
+              "pointer": "/goals/2",
+              "role": "goal",
+              "kind": "text",
+              "value": "依据双向规则或单向规则做有边界的判断",
+              "valueHash": "9f04c7f97d911c7a53d18db7b5832d38a7ad28ee668d319ceaa9cb4ade0e0032"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [],
+          "proposedLevel": 2,
+          "proposedReason": "Artifact e17 faithfully covers essential goals e5 (star→blue sufficient not necessary, contrapositive non-blue→non-star), e6 (allowed round-blue implies counterexample and explicitly mentions construction), e7 (only iff gives both directions, boundary respected). Secondary e8 is thin but level 2 only requires essential goals treated."
+        }
+      ],
+      "reviewRequired": [],
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q2",
+            "status": "supported",
+            "reason": "Artifact e17 faithfully summarizes source e3's unilateral rule and covers essential goals e5 (star→blue sufficient not necessary, contrapositive), e6 (round-blue allowed implies counterexample/construction), e7 (iff gives both directions, boundary respected). Findings audit and correctness confirm no distortion; secondary e8 thin but not required for level2.",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e17",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "“星形推出蓝色”禁止星形非蓝色，允许圆形蓝色，所以蓝色不能反推星形。非蓝色可推出非星形，因为星形会要求蓝色而矛盾。“当且仅当”才提供两个方向。可以用反例构造来检验推断。另外留意某类卡是否实际存在。",
+                "valueHash": "fd66d24371819349aa363b80e381901207aee31982f170e7fd65cb42960bfa64"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "区分充分条件与必要条件",
+                "valueHash": "1805ffe40f838b3737e5da1b3372111851e8c6488682205bcbef6ca16d9b82c1"
+              },
+              {
+                "id": "e6",
+                "pointer": "/goals/1",
+                "role": "goal",
+                "kind": "text",
+                "value": "构造反例检验逆向推断",
+                "valueHash": "4b676a6e97edc10f4d2d5b7c4c3496272ee0debe78c66fd3b2143654cf98767f"
+              },
+              {
+                "id": "e7",
+                "pointer": "/goals/2",
+                "role": "goal",
+                "kind": "text",
+                "value": "依据双向规则或单向规则做有边界的判断",
+                "valueHash": "9f04c7f97d911c7a53d18db7b5832d38a7ad28ee668d319ceaa9cb4ade0e0032"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "桌上有一批卡片，每张卡都有形状标记和颜色标记。管理员给出规则：“凡带星形标记的卡片，背面都是蓝色。”为方便讨论，假定这条规则在当前卡片批次没有例外。它说明带星形足以推出背面蓝色，但没有说蓝色只能来自星形。因此，看见一张蓝色卡片时，还不能断定它正面一定有星形；圆形蓝色卡也与规则相容。\n可以把规则理解为一个不允许出现的组合：星形与非蓝色不能同时出现在同一张卡片上。星形蓝色、非星形蓝色、非星形非蓝色都没有被这条规则禁止。列出允许与不允许的组合，能帮助我们看清规则到底排除了什么，而不是凭语言感觉推断。\n若已知某卡背面不是蓝色，就能推出它不是星形。理由是：假如它是星形，规则要求它蓝色，与已经知道的非蓝色矛盾。这种推断保留了原规则的方向。相反，从“不是星形”推出“不是蓝色”不成立，因为规则没有限制非星形卡片的颜色。反例只需给出一张非星形蓝色卡，就足以说明这一推断不是必然的。\n如果规则改为“卡片带星形，当且仅当背面蓝色”，那么同时得到两个方向：星形推出蓝色，蓝色也推出星形。这比原来的单向规则更强。在读取题目时，不能自行把“如果”补成“当且仅当”。日常语言有时省略条件，但本单元只按明示规则判断，不猜测管理员的意图。\n还要区分“可以存在”和“已经存在”。一张圆形蓝色卡与单向规则相容，只能说明这种卡并未被禁止，不能证明盒子里实际至少有一张。若只知道“所有星形卡都蓝色”，甚至不能保证盒子里有星形卡；题目需要另外给出存在信息。“有些蓝色卡是圆形”与“所有蓝色卡是圆形”也不是同一范围。\n练习解释时，先写已有条件，再写所用方向，最后检验是否存在与已知事实相容、却使结论失败的卡片。若能找到这样的组合，结论就不是必然成立；若给定规则和事实排除了所有反例，才可以说必然。这个方法适用于分类与规则阅读，但不把封闭课堂规则直接当成现实事物的普遍规律。",
+                "valueHash": "132c532360b4bc6ac5b2aa8886b4b3bf89c500f85d4e1be08595f9a669823289"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "resultHash": "eed964f3f7b1692fcfe8580229ce3629f6897d8aacd7a830984bf8f61968a7fd"
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "dimensions": [
+    "Q5"
+  ],
+  "evidence": {
+    "sources": [
+      {
+        "id": "F07",
+        "text": "课堂把同一批种子分到两个透明盒中，想比较有水和无水时的发芽情况。为了使比较有意义，应尽量让其他有关条件一致，例如种子数量、来源、温度、光照、观察天数与发芽判定方式。若有水盒放在温暖窗台、无水盒放在冷暗柜里，即使结果不同，也无法把差异单独归因于水，因为温度和光照同时改变了。\n这里把“发芽”操作性地定义为观察到胚根伸出种皮，便于不同记录者使用同一标准。这个定义是本实验的观察规则，不是所有生物过程的完整描述。记录者应按事先约定的时间观察全部种子，而不是只挑成功的那几颗展示。没有发芽的种子也必须计入，才能知道发芽比例。\n设两盒各十粒同批种子，均在同温同光处放置七天。甲盒保持适量湿润，乙盒保持干燥。甲有八粒达到上述标准，乙有一粒。可以说在这批种子和这些条件下，湿润组观察到的发芽比例更高。仅凭这一次观察，还不能断言所有种类的种子只要加水都会发芽；种子活性、温度及其他条件仍可能重要。也不能说乙盒绝对没有任何水分，因为“保持干燥”是操作描述，并未测出零水分。\n重复实验可以帮助检查结果是否稳定，但重复的对象、条件与方法需要记录。把同一张照片复制三次不是三次独立实验。同一盒内种子也共享环境，不能总把它们当成互不影响的完整重复。入门练习无需复杂统计检验，只要能说明为什么重复有用、哪些信息仍然有限。\n好的后续实验应对应目前的疑问。如果怀疑温度造成差异，就应在同一温度下只改变湿润条件，或设计清楚的组合比较；不能一边改变温度，一边换种子品种，再把结果归因于某一个因素。若希望研究“水太多是否也影响发芽”，可以在其他条件一致时增加不同水量组，事先说明每组的水量与观察标准。\n解释实验时，把计划、执行、观察和结论分开写。计划相同不代表执行真的相同，需核对记录；观察不同不自动证明唯一原因。允许结果不支持原假说，并据此修改下一步问题，正是实验学习的一部分。对证据保留限制，不妨碍学生提出清楚、可检验的预测。"
+      }
+    ],
+    "goals": [
+      "评价本题的逐项评分与实际证据后果"
+    ],
+    "prerequisites": [
+      "理解相同与不同",
+      "能按表格记录观察",
+      "Identify when a comparison simultaneously changes multiple variables (e.g., water, temperature, light) and thus cannot attribute difference to a single factor; keep other relevant conditions consistent for valid comparison.",
+      "Apply operational definition of germination (radicle out of seed coat) and record all seeds including non-germinated at predetermined times to compute germination proportion."
+    ],
+    "desiredDepth": "working_fluency",
+    "authorityBoundaries": [
+      "本次评估只涉及所给来源、明确的教学范围和实际展示的产物；脚本作答用于检查工作流，不代表真实学习者。"
+    ],
+    "artifacts": [
+      {
+        "id": "product-feedback",
+        "text": "这次回答还没有回应题目要求的关键内容。"
+      }
+    ],
+    "exposure": [],
+    "question": {
+      "prompt": "课堂将同批种子分两盒，甲盒加水并放在温暖窗台，乙盒无水并放在冷暗柜。七天后甲盒八粒发芽，乙盒一粒。为什么不能把发芽差异单独归因于水？请依据实验规则解释。",
+      "options": []
+    },
+    "rubric": [
+      {
+        "id": "criterion_767475fe-df79-401a-b89a-2774fcfa5d8b",
+        "text": "若有水盒放在温暖窗台、无水盒放在冷暗柜里，即使结果不同，也无法把差异单独归因于水，因为温度和光照同时改变了。",
+        "required": true
+      }
+    ],
+    "answer": "我认为不用核对资料中的条件、范围或理由，只凭表面结果就可以直接下结论。",
+    "productJudgment": {
+      "criteria": [
+        {
+          "id": "criterion_767475fe-df79-401a-b89a-2774fcfa5d8b",
+          "result": "not_met"
+        }
+      ],
+      "feedback": "这次回答还没有回应题目要求的关键内容。",
+      "consequence": "withheld"
+    }
+  }
+}

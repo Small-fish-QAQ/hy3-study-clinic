@@ -1,0 +1,266 @@
+{
+  "task": {
+    "caseId": "N-F04-curriculum",
+    "runId": "N-F04-curriculum-r3",
+    "replicate": 3,
+    "path": "runs/final/cases/N-F04-curriculum.json",
+    "inputHash": "c3a65720a687035f8e3bdc86221ce3260bfaf694c38a573cb3db6ed100e51871",
+    "population": "natural",
+    "sourceId": "F04"
+  },
+  "inputHash": "c3a65720a687035f8e3bdc86221ce3260bfaf694c38a573cb3db6ed100e51871",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "correctness": "7afba13865e202b4339b01701371ae119d4137786828eced2e284d8ad05b96a7",
+      "artifact-audit": "7afba13865e202b4339b01701371ae119d4137786828eced2e284d8ad05b96a7"
+    },
+    "stages": {
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "defect",
+            "affected": [
+              "Q2"
+            ],
+            "reason": "产物e19中obj_a4401417断言'direct averaging equals overall proportion only under specific condition that each group denominator is the same'，将源e3中'只在每组分母相同等特定条件下'收窄为唯一条件。构造与给定甲80/100乙36/40相容的组：丙50/100、丁25/50，比例同50%分母不同，直接平均=整体比例，推翻only条件，属实质错误断言。",
+            "refs": [
+              "e19",
+              "e3"
+            ],
+            "challenge": {
+              "status": "counterexample",
+              "reason": "补充与e3给定甲乙事实相容的丙50/100、丁25/50（比例相同分母不同），直接平均等于整体比例，反驳产物声称的only分母相同条件",
+              "refs": [
+                "e19",
+                "e3"
+              ]
+            },
+            "witnesses": [
+              {
+                "id": "e19",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "[{\"id\":\"obj_e4a26adf-b4f3-4d30-ba12-f1889826d69e\",\"title\":\"应用原始数值比较绝对件数与完成比例并合并不同分母组\",\"description\":\"Given numerators and denominators from the material's repair-activity table (e.g., 甲点 80/100=80%, 乙点 36/40=90%), compute proportions, compare counts (80>36) and proportions (90%>80%), recognizing they answer different questions: actual work done vs share of registered items. Additionally, when merging groups with different denominators, compute overall proportion as total completed divided by total registered (e.g., (80+36)/(100+40)=116/140≈82.9%), not simple percentage average, retaining numerator and denominator for independent checking. Follow source-stated procedures exactly in their stated context.\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_e4bb7557-7c23-4837-a8de-4b19e6413dcb\",\"ta_57cec378-306e-4c17-a589-aea253821502\"],\"authorityClaimIds\":[\"tac_2150e1b1-7450-4141-8bff-123ac8c6744d\",\"tac_2ef40ab9-ca45-4a71-be1b-60e62166a64b\",\"tac_49c4cf53-bc0c-462e-a1e5-fd349968d82d\",\"tac_88d93a07-cd63-41a0-aabb-58c14d3561c2\",\"tac_00b111d3-8a50-4429-926b-be6ae722a3c8\",\"tac_0106328d-0fd0-4c70-bb1c-1e5cedf64423\",\"tac_afbd1eb9-8e12-4b54-83ee-fe07edc2d64d\",\"tac_c638df80-6dc8-4b62-adc8-0c629f34d1fe\"],\"priority\":\"high\",\"priorityRationale\":\"Central apply obligations per coverage; exact evidence supports only identify, so high teaching priority non-credit.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"narrower_formal\",\"authoritySourceBlockIds\":[\"blk_0_cae0b5bf\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_7461f245-c8a8-40be-b4e2-ec94a47ac1d4\",\"title\":\"应用有范围限制的数据结论与条件陈述\",\"description\":\"Report observed results accurately from the material but do not extend beyond it: no inference of annual trend, causal improvement, or staff ability from proportion; state conditional requirements (item difficulty, period, definition) before fair comparison; restore chart to verifiable quantities and conditional statements as taught.\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"Apply scoped conclusion obligation; evidence envelopes unavailable for formal, thus high teaching priority.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_158e4758-7a91-4279-8c2f-d792923f6463\",\"title\":\"识别纵轴截断与视觉差异失真\",\"description\":\"When reading a bar chart, check where y-axis starts, each grid unit, and whether comparison objects use same units; recognize that if y-axis starts at 90, bars for 95 and 100 show large height difference but actual difference is only 5, so visual difference cannot replace original value comparison.\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_e4bb7557-7c23-4837-a8de-4b19e6413dcb\",\"ta_57cec378-306e-4c17-a589-aea253821502\"],\"authorityClaimIds\":[\"tac_174c145f-fc08-4283-94eb-76f245e16028\",\"tac_a2f52df3-c973-4d3f-a659-e6dc0c9569a1\",\"tac_e4e5881c-7d50-4925-b259-ffbb0e39cf5f\",\"tac_027b4c55-98f5-4348-bb4a-4aee7da9b333\",\"tac_77e641fd-8d90-48a3-8e80-1cc9d0fb8c27\",\"tac_7ed07f3b-c057-4737-8052-86bf3088df71\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E1, E9, E10 envelopes support identify with formal authority, fulfilling required Formal path.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_cae0b5bf\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_cae0b5bf\"]},{\"id\":\"obj_a4401417-d896-432e-b119-e6f2990ec38f\",\"title\":\"识别分母差异与直接平均的无效条件\",\"description\":\"Identify that groups may have different denominators (e.g., 100 vs 40 registered); direct average of percentages is invalid because denominators differ; direct averaging equals overall proportion only under specific condition that each group denominator is the same.\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"Coverage obligation with identify construct, but sole evidence E15 lacks formal envelope, thus high teaching priority non-credit.\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]}]",
+                "valueHash": "04a4ac91a03494ac80599c65558855bb1e4b3c0e511c9a75cf702210bc0885fb"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "图表能够帮助人快速比较，但标题、坐标与分母共同决定图表在说什么。读柱形图时，先找每根柱表示的量，再检查纵轴从哪里起、每格代表多少以及比较对象是否使用相同单位。如果纵轴从九十开始，九十五和一百的柱子在画面上可能呈现很大的高度差，但原始数量只相差五。视觉差异不能代替对原始数值的比较。\n这里用文字给出一张“修补活动登记表”。甲点登记一百件旧物，其中八十件完成修补；乙点登记四十件，其中三十六件完成修补。甲点完成的件数多，八十件大于三十六件；乙点的完成比例高，三十六除以四十等于百分之九十，而甲点八十除以一百等于百分之八十。件数和比例回答不同问题。若问哪个点实际完成更多工作，应先看件数；若问本次登记物品中完成的份额，应看比例。\n把两个点合并时，整体比例必须用总完成件数除以总登记件数，即一百一十六除以一百四十，约为百分之八十二点九。不能直接把百分之八十与百分之九十平均成百分之八十五，因为两点分母不同。直接平均只在每组分母相同等特定条件下等于整体比例。解释时最好保留分子、分母，使读者可以独立核对。\n同样，完成比例较高不自动说明工作人员能力较强。乙点可能接收了更容易修补的物品，也可能有更长的处理时间；登记表没有这些信息。我们可以准确报告本次结果，却不能把未观测的原因当成事实。若要公平比较，需要先约定物品难度、统计时段和完成定义等条件。\n在摘要中可以同时写：“甲点完成八十件，乙点完成三十六件；乙点在其登记量中的完成比例更高。”这并不矛盾，因为比较量不同。若只有完成件数而没有登记总数，就能比较完成件数，却不能计算完成比例。若图上省略单位，也应先补齐单位再解释，不要默认柱高就是百分比。\n最后检查结论是否超出材料。一次活动的数据不能自动说明全年趋势；某点表现更好也不等于某项措施导致改善。读图不是寻找最醒目的柱子，而是把图示还原为可核对的量、运算和有条件的陈述。即使没有图片，只要表格和文字给足信息，同样可以完成这些判断。",
+                "valueHash": "d285228b9962482d5b8d81456178a4eb5cad39d02c75d3a204457e6093fff0ba"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "kind": "quantities",
+            "status": "clear",
+            "affected": [],
+            "reason": "从e3原始输入甲登记100完成80、乙登记40完成36独立重算：80/100=0.8,36/40=0.9,80>36,0.9>0.8,(80+36)/(100+40)=116/140≈0.8286≈82.9%，与e19中数值及rates精确值一致，无单位绑定错误。",
+            "refs": [
+              "e19",
+              "e3"
+            ],
+            "witnesses": [
+              {
+                "id": "e19",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "[{\"id\":\"obj_e4a26adf-b4f3-4d30-ba12-f1889826d69e\",\"title\":\"应用原始数值比较绝对件数与完成比例并合并不同分母组\",\"description\":\"Given numerators and denominators from the material's repair-activity table (e.g., 甲点 80/100=80%, 乙点 36/40=90%), compute proportions, compare counts (80>36) and proportions (90%>80%), recognizing they answer different questions: actual work done vs share of registered items. Additionally, when merging groups with different denominators, compute overall proportion as total completed divided by total registered (e.g., (80+36)/(100+40)=116/140≈82.9%), not simple percentage average, retaining numerator and denominator for independent checking. Follow source-stated procedures exactly in their stated context.\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_e4bb7557-7c23-4837-a8de-4b19e6413dcb\",\"ta_57cec378-306e-4c17-a589-aea253821502\"],\"authorityClaimIds\":[\"tac_2150e1b1-7450-4141-8bff-123ac8c6744d\",\"tac_2ef40ab9-ca45-4a71-be1b-60e62166a64b\",\"tac_49c4cf53-bc0c-462e-a1e5-fd349968d82d\",\"tac_88d93a07-cd63-41a0-aabb-58c14d3561c2\",\"tac_00b111d3-8a50-4429-926b-be6ae722a3c8\",\"tac_0106328d-0fd0-4c70-bb1c-1e5cedf64423\",\"tac_afbd1eb9-8e12-4b54-83ee-fe07edc2d64d\",\"tac_c638df80-6dc8-4b62-adc8-0c629f34d1fe\"],\"priority\":\"high\",\"priorityRationale\":\"Central apply obligations per coverage; exact evidence supports only identify, so high teaching priority non-credit.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"narrower_formal\",\"authoritySourceBlockIds\":[\"blk_0_cae0b5bf\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_7461f245-c8a8-40be-b4e2-ec94a47ac1d4\",\"title\":\"应用有范围限制的数据结论与条件陈述\",\"description\":\"Report observed results accurately from the material but do not extend beyond it: no inference of annual trend, causal improvement, or staff ability from proportion; state conditional requirements (item difficulty, period, definition) before fair comparison; restore chart to verifiable quantities and conditional statements as taught.\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"Apply scoped conclusion obligation; evidence envelopes unavailable for formal, thus high teaching priority.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_158e4758-7a91-4279-8c2f-d792923f6463\",\"title\":\"识别纵轴截断与视觉差异失真\",\"description\":\"When reading a bar chart, check where y-axis starts, each grid unit, and whether comparison objects use same units; recognize that if y-axis starts at 90, bars for 95 and 100 show large height difference but actual difference is only 5, so visual difference cannot replace original value comparison.\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_e4bb7557-7c23-4837-a8de-4b19e6413dcb\",\"ta_57cec378-306e-4c17-a589-aea253821502\"],\"authorityClaimIds\":[\"tac_174c145f-fc08-4283-94eb-76f245e16028\",\"tac_a2f52df3-c973-4d3f-a659-e6dc0c9569a1\",\"tac_e4e5881c-7d50-4925-b259-ffbb0e39cf5f\",\"tac_027b4c55-98f5-4348-bb4a-4aee7da9b333\",\"tac_77e641fd-8d90-48a3-8e80-1cc9d0fb8c27\",\"tac_7ed07f3b-c057-4737-8052-86bf3088df71\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E1, E9, E10 envelopes support identify with formal authority, fulfilling required Formal path.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_cae0b5bf\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_cae0b5bf\"]},{\"id\":\"obj_a4401417-d896-432e-b119-e6f2990ec38f\",\"title\":\"识别分母差异与直接平均的无效条件\",\"description\":\"Identify that groups may have different denominators (e.g., 100 vs 40 registered); direct average of percentages is invalid because denominators differ; direct averaging equals overall proportion only under specific condition that each group denominator is the same.\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"Coverage obligation with identify construct, but sole evidence E15 lacks formal envelope, thus high teaching priority non-credit.\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]}]",
+                "valueHash": "04a4ac91a03494ac80599c65558855bb1e4b3c0e511c9a75cf702210bc0885fb"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "图表能够帮助人快速比较，但标题、坐标与分母共同决定图表在说什么。读柱形图时，先找每根柱表示的量，再检查纵轴从哪里起、每格代表多少以及比较对象是否使用相同单位。如果纵轴从九十开始，九十五和一百的柱子在画面上可能呈现很大的高度差，但原始数量只相差五。视觉差异不能代替对原始数值的比较。\n这里用文字给出一张“修补活动登记表”。甲点登记一百件旧物，其中八十件完成修补；乙点登记四十件，其中三十六件完成修补。甲点完成的件数多，八十件大于三十六件；乙点的完成比例高，三十六除以四十等于百分之九十，而甲点八十除以一百等于百分之八十。件数和比例回答不同问题。若问哪个点实际完成更多工作，应先看件数；若问本次登记物品中完成的份额，应看比例。\n把两个点合并时，整体比例必须用总完成件数除以总登记件数，即一百一十六除以一百四十，约为百分之八十二点九。不能直接把百分之八十与百分之九十平均成百分之八十五，因为两点分母不同。直接平均只在每组分母相同等特定条件下等于整体比例。解释时最好保留分子、分母，使读者可以独立核对。\n同样，完成比例较高不自动说明工作人员能力较强。乙点可能接收了更容易修补的物品，也可能有更长的处理时间；登记表没有这些信息。我们可以准确报告本次结果，却不能把未观测的原因当成事实。若要公平比较，需要先约定物品难度、统计时段和完成定义等条件。\n在摘要中可以同时写：“甲点完成八十件，乙点完成三十六件；乙点在其登记量中的完成比例更高。”这并不矛盾，因为比较量不同。若只有完成件数而没有登记总数，就能比较完成件数，却不能计算完成比例。若图上省略单位，也应先补齐单位再解释，不要默认柱高就是百分比。\n最后检查结论是否超出材料。一次活动的数据不能自动说明全年趋势；某点表现更好也不等于某项措施导致改善。读图不是寻找最醒目的柱子，而是把图示还原为可核对的量、运算和有条件的陈述。即使没有图片，只要表格和文字给足信息，同样可以完成这些判断。",
+                "valueHash": "d285228b9962482d5b8d81456178a4eb5cad39d02c75d3a204457e6093fff0ba"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ],
+        "keys": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 2,
+            "reason": "产物objectives(e19)含四个obj，覆盖注册目标e5(比较绝对量与比例,obj_e4a26adf)、e6(纵轴截断obj_158e4758与分母差异obj_a4401417)、e7(范围限制结论obj_7461f245)；描述与源e3一致，无扭曲或削弱，符合Q2边界e14对提议课程保留目标的评价。必要目标均有faithful usable treatment。",
+            "refs": [
+              "e19",
+              "e5",
+              "e6",
+              "e7",
+              "e14"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e19",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "[{\"id\":\"obj_e4a26adf-b4f3-4d30-ba12-f1889826d69e\",\"title\":\"应用原始数值比较绝对件数与完成比例并合并不同分母组\",\"description\":\"Given numerators and denominators from the material's repair-activity table (e.g., 甲点 80/100=80%, 乙点 36/40=90%), compute proportions, compare counts (80>36) and proportions (90%>80%), recognizing they answer different questions: actual work done vs share of registered items. Additionally, when merging groups with different denominators, compute overall proportion as total completed divided by total registered (e.g., (80+36)/(100+40)=116/140≈82.9%), not simple percentage average, retaining numerator and denominator for independent checking. Follow source-stated procedures exactly in their stated context.\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_e4bb7557-7c23-4837-a8de-4b19e6413dcb\",\"ta_57cec378-306e-4c17-a589-aea253821502\"],\"authorityClaimIds\":[\"tac_2150e1b1-7450-4141-8bff-123ac8c6744d\",\"tac_2ef40ab9-ca45-4a71-be1b-60e62166a64b\",\"tac_49c4cf53-bc0c-462e-a1e5-fd349968d82d\",\"tac_88d93a07-cd63-41a0-aabb-58c14d3561c2\",\"tac_00b111d3-8a50-4429-926b-be6ae722a3c8\",\"tac_0106328d-0fd0-4c70-bb1c-1e5cedf64423\",\"tac_afbd1eb9-8e12-4b54-83ee-fe07edc2d64d\",\"tac_c638df80-6dc8-4b62-adc8-0c629f34d1fe\"],\"priority\":\"high\",\"priorityRationale\":\"Central apply obligations per coverage; exact evidence supports only identify, so high teaching priority non-credit.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"narrower_formal\",\"authoritySourceBlockIds\":[\"blk_0_cae0b5bf\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_7461f245-c8a8-40be-b4e2-ec94a47ac1d4\",\"title\":\"应用有范围限制的数据结论与条件陈述\",\"description\":\"Report observed results accurately from the material but do not extend beyond it: no inference of annual trend, causal improvement, or staff ability from proportion; state conditional requirements (item difficulty, period, definition) before fair comparison; restore chart to verifiable quantities and conditional statements as taught.\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"Apply scoped conclusion obligation; evidence envelopes unavailable for formal, thus high teaching priority.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_158e4758-7a91-4279-8c2f-d792923f6463\",\"title\":\"识别纵轴截断与视觉差异失真\",\"description\":\"When reading a bar chart, check where y-axis starts, each grid unit, and whether comparison objects use same units; recognize that if y-axis starts at 90, bars for 95 and 100 show large height difference but actual difference is only 5, so visual difference cannot replace original value comparison.\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_e4bb7557-7c23-4837-a8de-4b19e6413dcb\",\"ta_57cec378-306e-4c17-a589-aea253821502\"],\"authorityClaimIds\":[\"tac_174c145f-fc08-4283-94eb-76f245e16028\",\"tac_a2f52df3-c973-4d3f-a659-e6dc0c9569a1\",\"tac_e4e5881c-7d50-4925-b259-ffbb0e39cf5f\",\"tac_027b4c55-98f5-4348-bb4a-4aee7da9b333\",\"tac_77e641fd-8d90-48a3-8e80-1cc9d0fb8c27\",\"tac_7ed07f3b-c057-4737-8052-86bf3088df71\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E1, E9, E10 envelopes support identify with formal authority, fulfilling required Formal path.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_cae0b5bf\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_cae0b5bf\"]},{\"id\":\"obj_a4401417-d896-432e-b119-e6f2990ec38f\",\"title\":\"识别分母差异与直接平均的无效条件\",\"description\":\"Identify that groups may have different denominators (e.g., 100 vs 40 registered); direct average of percentages is invalid because denominators differ; direct averaging equals overall proportion only under specific condition that each group denominator is the same.\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"Coverage obligation with identify construct, but sole evidence E15 lacks formal envelope, thus high teaching priority non-credit.\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]}]",
+                "valueHash": "04a4ac91a03494ac80599c65558855bb1e4b3c0e511c9a75cf702210bc0885fb"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "根据原始数值比较绝对量和比例",
+                "valueHash": "b557479eab860c13ceca80691482fc98b92fa2e32428cf9abb9957ef11496346"
+              },
+              {
+                "id": "e6",
+                "pointer": "/goals/1",
+                "role": "goal",
+                "kind": "text",
+                "value": "识别纵轴截断与分母差异",
+                "valueHash": "dc0e6c62eb9fbb2b13fa4e65dbf6b70425b507caa84afe1bbf41412342d077aa"
+              },
+              {
+                "id": "e7",
+                "pointer": "/goals/2",
+                "role": "goal",
+                "kind": "text",
+                "value": "给出有范围限制的数据结论",
+                "valueHash": "97522fd77081832307b13f57ea256ca6a34c44e8ea9ed8fa053fa95d0e16861c"
+              },
+              {
+                "id": "e14",
+                "pointer": "/authorityBoundaries/1",
+                "role": "boundary",
+                "kind": "text",
+                "value": "Q2评价提议课程对所注册学习目标的保留和范围；不将尚未发生的教学交付或Formal准入当成已经完成。",
+                "valueHash": "fda6a582e8f32aff1fc754c529607badc828976824498d64a102c9649555f08d"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q2",
+          "level": 0,
+          "reason": "产物e19中obj_a4401417断言'direct averaging equals overall proportion only under specific condition that each group denominator is the same'，将源e3中'只在每组分母相同等特定条件下'收窄为唯一条件。构造与给定甲80/100乙36/40相容的组：丙50/100、丁25/50，比例同50%分母不同，直接平均=整体比例，推翻only条件，属实质错误断言。",
+          "refs": [
+            "e19",
+            "e5",
+            "e6",
+            "e7",
+            "e14"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e19",
+              "pointer": "/artifacts/1/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "[{\"id\":\"obj_e4a26adf-b4f3-4d30-ba12-f1889826d69e\",\"title\":\"应用原始数值比较绝对件数与完成比例并合并不同分母组\",\"description\":\"Given numerators and denominators from the material's repair-activity table (e.g., 甲点 80/100=80%, 乙点 36/40=90%), compute proportions, compare counts (80>36) and proportions (90%>80%), recognizing they answer different questions: actual work done vs share of registered items. Additionally, when merging groups with different denominators, compute overall proportion as total completed divided by total registered (e.g., (80+36)/(100+40)=116/140≈82.9%), not simple percentage average, retaining numerator and denominator for independent checking. Follow source-stated procedures exactly in their stated context.\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_e4bb7557-7c23-4837-a8de-4b19e6413dcb\",\"ta_57cec378-306e-4c17-a589-aea253821502\"],\"authorityClaimIds\":[\"tac_2150e1b1-7450-4141-8bff-123ac8c6744d\",\"tac_2ef40ab9-ca45-4a71-be1b-60e62166a64b\",\"tac_49c4cf53-bc0c-462e-a1e5-fd349968d82d\",\"tac_88d93a07-cd63-41a0-aabb-58c14d3561c2\",\"tac_00b111d3-8a50-4429-926b-be6ae722a3c8\",\"tac_0106328d-0fd0-4c70-bb1c-1e5cedf64423\",\"tac_afbd1eb9-8e12-4b54-83ee-fe07edc2d64d\",\"tac_c638df80-6dc8-4b62-adc8-0c629f34d1fe\"],\"priority\":\"high\",\"priorityRationale\":\"Central apply obligations per coverage; exact evidence supports only identify, so high teaching priority non-credit.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"narrower_formal\",\"authoritySourceBlockIds\":[\"blk_0_cae0b5bf\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_7461f245-c8a8-40be-b4e2-ec94a47ac1d4\",\"title\":\"应用有范围限制的数据结论与条件陈述\",\"description\":\"Report observed results accurately from the material but do not extend beyond it: no inference of annual trend, causal improvement, or staff ability from proportion; state conditional requirements (item difficulty, period, definition) before fair comparison; restore chart to verifiable quantities and conditional statements as taught.\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"Apply scoped conclusion obligation; evidence envelopes unavailable for formal, thus high teaching priority.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_158e4758-7a91-4279-8c2f-d792923f6463\",\"title\":\"识别纵轴截断与视觉差异失真\",\"description\":\"When reading a bar chart, check where y-axis starts, each grid unit, and whether comparison objects use same units; recognize that if y-axis starts at 90, bars for 95 and 100 show large height difference but actual difference is only 5, so visual difference cannot replace original value comparison.\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_e4bb7557-7c23-4837-a8de-4b19e6413dcb\",\"ta_57cec378-306e-4c17-a589-aea253821502\"],\"authorityClaimIds\":[\"tac_174c145f-fc08-4283-94eb-76f245e16028\",\"tac_a2f52df3-c973-4d3f-a659-e6dc0c9569a1\",\"tac_e4e5881c-7d50-4925-b259-ffbb0e39cf5f\",\"tac_027b4c55-98f5-4348-bb4a-4aee7da9b333\",\"tac_77e641fd-8d90-48a3-8e80-1cc9d0fb8c27\",\"tac_7ed07f3b-c057-4737-8052-86bf3088df71\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E1, E9, E10 envelopes support identify with formal authority, fulfilling required Formal path.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_cae0b5bf\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_cae0b5bf\"]},{\"id\":\"obj_a4401417-d896-432e-b119-e6f2990ec38f\",\"title\":\"识别分母差异与直接平均的无效条件\",\"description\":\"Identify that groups may have different denominators (e.g., 100 vs 40 registered); direct average of percentages is invalid because denominators differ; direct averaging equals overall proportion only under specific condition that each group denominator is the same.\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"Coverage obligation with identify construct, but sole evidence E15 lacks formal envelope, thus high teaching priority non-credit.\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]}]",
+              "valueHash": "04a4ac91a03494ac80599c65558855bb1e4b3c0e511c9a75cf702210bc0885fb"
+            },
+            {
+              "id": "e5",
+              "pointer": "/goals/0",
+              "role": "goal",
+              "kind": "text",
+              "value": "根据原始数值比较绝对量和比例",
+              "valueHash": "b557479eab860c13ceca80691482fc98b92fa2e32428cf9abb9957ef11496346"
+            },
+            {
+              "id": "e6",
+              "pointer": "/goals/1",
+              "role": "goal",
+              "kind": "text",
+              "value": "识别纵轴截断与分母差异",
+              "valueHash": "dc0e6c62eb9fbb2b13fa4e65dbf6b70425b507caa84afe1bbf41412342d077aa"
+            },
+            {
+              "id": "e7",
+              "pointer": "/goals/2",
+              "role": "goal",
+              "kind": "text",
+              "value": "给出有范围限制的数据结论",
+              "valueHash": "97522fd77081832307b13f57ea256ca6a34c44e8ea9ed8fa053fa95d0e16861c"
+            },
+            {
+              "id": "e14",
+              "pointer": "/authorityBoundaries/1",
+              "role": "boundary",
+              "kind": "text",
+              "value": "Q2评价提议课程对所注册学习目标的保留和范围；不将尚未发生的教学交付或Formal准入当成已经完成。",
+              "valueHash": "fda6a582e8f32aff1fc754c529607badc828976824498d64a102c9649555f08d"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [
+            {
+              "level": 0,
+              "code": "INDEPENDENT_CONDITIONS",
+              "detail": {
+                "kind": "conditions",
+                "status": "defect",
+                "affected": [
+                  "Q2"
+                ],
+                "reason": "产物e19中obj_a4401417断言'direct averaging equals overall proportion only under specific condition that each group denominator is the same'，将源e3中'只在每组分母相同等特定条件下'收窄为唯一条件。构造与给定甲80/100乙36/40相容的组：丙50/100、丁25/50，比例同50%分母不同，直接平均=整体比例，推翻only条件，属实质错误断言。",
+                "refs": [
+                  "e19",
+                  "e3"
+                ],
+                "challenge": {
+                  "status": "counterexample",
+                  "reason": "补充与e3给定甲乙事实相容的丙50/100、丁25/50（比例相同分母不同），直接平均等于整体比例，反驳产物声称的only分母相同条件",
+                  "refs": [
+                    "e19",
+                    "e3"
+                  ]
+                },
+                "witnesses": [
+                  {
+                    "id": "e19",
+                    "pointer": "/artifacts/1/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "[{\"id\":\"obj_e4a26adf-b4f3-4d30-ba12-f1889826d69e\",\"title\":\"应用原始数值比较绝对件数与完成比例并合并不同分母组\",\"description\":\"Given numerators and denominators from the material's repair-activity table (e.g., 甲点 80/100=80%, 乙点 36/40=90%), compute proportions, compare counts (80>36) and proportions (90%>80%), recognizing they answer different questions: actual work done vs share of registered items. Additionally, when merging groups with different denominators, compute overall proportion as total completed divided by total registered (e.g., (80+36)/(100+40)=116/140≈82.9%), not simple percentage average, retaining numerator and denominator for independent checking. Follow source-stated procedures exactly in their stated context.\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_e4bb7557-7c23-4837-a8de-4b19e6413dcb\",\"ta_57cec378-306e-4c17-a589-aea253821502\"],\"authorityClaimIds\":[\"tac_2150e1b1-7450-4141-8bff-123ac8c6744d\",\"tac_2ef40ab9-ca45-4a71-be1b-60e62166a64b\",\"tac_49c4cf53-bc0c-462e-a1e5-fd349968d82d\",\"tac_88d93a07-cd63-41a0-aabb-58c14d3561c2\",\"tac_00b111d3-8a50-4429-926b-be6ae722a3c8\",\"tac_0106328d-0fd0-4c70-bb1c-1e5cedf64423\",\"tac_afbd1eb9-8e12-4b54-83ee-fe07edc2d64d\",\"tac_c638df80-6dc8-4b62-adc8-0c629f34d1fe\"],\"priority\":\"high\",\"priorityRationale\":\"Central apply obligations per coverage; exact evidence supports only identify, so high teaching priority non-credit.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"narrower_formal\",\"authoritySourceBlockIds\":[\"blk_0_cae0b5bf\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_7461f245-c8a8-40be-b4e2-ec94a47ac1d4\",\"title\":\"应用有范围限制的数据结论与条件陈述\",\"description\":\"Report observed results accurately from the material but do not extend beyond it: no inference of annual trend, causal improvement, or staff ability from proportion; state conditional requirements (item difficulty, period, definition) before fair comparison; restore chart to verifiable quantities and conditional statements as taught.\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"Apply scoped conclusion obligation; evidence envelopes unavailable for formal, thus high teaching priority.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_158e4758-7a91-4279-8c2f-d792923f6463\",\"title\":\"识别纵轴截断与视觉差异失真\",\"description\":\"When reading a bar chart, check where y-axis starts, each grid unit, and whether comparison objects use same units; recognize that if y-axis starts at 90, bars for 95 and 100 show large height difference but actual difference is only 5, so visual difference cannot replace original value comparison.\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_e4bb7557-7c23-4837-a8de-4b19e6413dcb\",\"ta_57cec378-306e-4c17-a589-aea253821502\"],\"authorityClaimIds\":[\"tac_174c145f-fc08-4283-94eb-76f245e16028\",\"tac_a2f52df3-c973-4d3f-a659-e6dc0c9569a1\",\"tac_e4e5881c-7d50-4925-b259-ffbb0e39cf5f\",\"tac_027b4c55-98f5-4348-bb4a-4aee7da9b333\",\"tac_77e641fd-8d90-48a3-8e80-1cc9d0fb8c27\",\"tac_7ed07f3b-c057-4737-8052-86bf3088df71\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E1, E9, E10 envelopes support identify with formal authority, fulfilling required Formal path.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_cae0b5bf\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_cae0b5bf\"]},{\"id\":\"obj_a4401417-d896-432e-b119-e6f2990ec38f\",\"title\":\"识别分母差异与直接平均的无效条件\",\"description\":\"Identify that groups may have different denominators (e.g., 100 vs 40 registered); direct average of percentages is invalid because denominators differ; direct averaging equals overall proportion only under specific condition that each group denominator is the same.\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"Coverage obligation with identify construct, but sole evidence E15 lacks formal envelope, thus high teaching priority non-credit.\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]}]",
+                    "valueHash": "04a4ac91a03494ac80599c65558855bb1e4b3c0e511c9a75cf702210bc0885fb"
+                  },
+                  {
+                    "id": "e3",
+                    "pointer": "/sources/0/text",
+                    "role": "source",
+                    "kind": "text",
+                    "value": "图表能够帮助人快速比较，但标题、坐标与分母共同决定图表在说什么。读柱形图时，先找每根柱表示的量，再检查纵轴从哪里起、每格代表多少以及比较对象是否使用相同单位。如果纵轴从九十开始，九十五和一百的柱子在画面上可能呈现很大的高度差，但原始数量只相差五。视觉差异不能代替对原始数值的比较。\n这里用文字给出一张“修补活动登记表”。甲点登记一百件旧物，其中八十件完成修补；乙点登记四十件，其中三十六件完成修补。甲点完成的件数多，八十件大于三十六件；乙点的完成比例高，三十六除以四十等于百分之九十，而甲点八十除以一百等于百分之八十。件数和比例回答不同问题。若问哪个点实际完成更多工作，应先看件数；若问本次登记物品中完成的份额，应看比例。\n把两个点合并时，整体比例必须用总完成件数除以总登记件数，即一百一十六除以一百四十，约为百分之八十二点九。不能直接把百分之八十与百分之九十平均成百分之八十五，因为两点分母不同。直接平均只在每组分母相同等特定条件下等于整体比例。解释时最好保留分子、分母，使读者可以独立核对。\n同样，完成比例较高不自动说明工作人员能力较强。乙点可能接收了更容易修补的物品，也可能有更长的处理时间；登记表没有这些信息。我们可以准确报告本次结果，却不能把未观测的原因当成事实。若要公平比较，需要先约定物品难度、统计时段和完成定义等条件。\n在摘要中可以同时写：“甲点完成八十件，乙点完成三十六件；乙点在其登记量中的完成比例更高。”这并不矛盾，因为比较量不同。若只有完成件数而没有登记总数，就能比较完成件数，却不能计算完成比例。若图上省略单位，也应先补齐单位再解释，不要默认柱高就是百分比。\n最后检查结论是否超出材料。一次活动的数据不能自动说明全年趋势；某点表现更好也不等于某项措施导致改善。读图不是寻找最醒目的柱子，而是把图示还原为可核对的量、运算和有条件的陈述。即使没有图片，只要表格和文字给足信息，同样可以完成这些判断。",
+                    "valueHash": "d285228b9962482d5b8d81456178a4eb5cad39d02c75d3a204457e6093fff0ba"
+                  }
+                ],
+                "reviewReasons": []
+              }
+            }
+          ],
+          "proposedLevel": 2,
+          "proposedReason": "产物objectives(e19)含四个obj，覆盖注册目标e5(比较绝对量与比例,obj_e4a26adf)、e6(纵轴截断obj_158e4758与分母差异obj_a4401417)、e7(范围限制结论obj_7461f245)；描述与源e3一致，无扭曲或削弱，符合Q2边界e14对提议课程保留目标的评价。必要目标均有faithful usable treatment。",
+          "decidingConstraint": "INDEPENDENT_CONDITIONS"
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "42b577383e3977ea5caa046d032e3ea53079d7748c3e27ea219aa0bde9f3936d"
+  }
+}

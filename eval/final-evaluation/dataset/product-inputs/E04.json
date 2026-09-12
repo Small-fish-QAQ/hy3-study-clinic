@@ -1,0 +1,85 @@
+{
+  "sourceId": "E04",
+  "title": "OpenStax：意义、图像与声音的记忆编码",
+  "domain": "psychology_memory_encoding",
+  "prerequisites": [
+    "能够理解记忆编码与回忆的日常含义",
+    "不需要心理学专业背景"
+  ],
+  "goals": [
+    "用中文区分语义、视觉与听觉编码",
+    "使用教材中的词语分类、具体形象和韵律例子解释编码",
+    "把教材中的一般记忆倾向与对每个人的保证区分开"
+  ],
+  "intendedDepth": "working_fluency",
+  "text": "We get information into our brains through a process called encoding, which is the input of information into the memory system. Once we receive sensory information from the environment, our brains label or code it. We organize the information with other similar information and connect new concepts to existing concepts. Encoding information occurs through automatic processing and effortful processing.\n\nThere are three types of encoding. The encoding of words and their meaning is known as semantic encoding. It was first demonstrated by William Bousfield (1935) in an experiment in which he asked people to memorize words. The 60 words were actually divided into 4 categories of meaning, although the participants did not know this because the words were randomly presented. When they were asked to remember the words, they tended to recall them in categories, showing that they paid attention to the meanings of the words as they learned them.\n\nVisual encoding is the encoding of images, and acoustic encoding is the encoding of sounds, words in particular. To see how visual encoding works, read over this list of words: car, level, dog, truth, book, value. If you were asked later to recall the words from this list, which ones do you think you’d most likely remember? You would probably have an easier time recalling the words car, dog, and book, and a more difficult time recalling the words level, truth, and value. Why is this? Because you can recall images (mental pictures) more easily than words alone. When you read the words car, dog, and book you created images of these things in your mind. These are concrete, high-imagery words. On the other hand, abstract words like level, truth, and value are low-imagery words. High-imagery words are encoded both visually and semantically (Paivio, 1986), thus building a stronger memory.\n\nNow let’s turn our attention to acoustic encoding. You are driving in your car and a song comes on the radio that you haven’t heard in at least 10 years, but you sing along, recalling every word. In the United States, children often learn the alphabet through song, and they learn the number of days in each month through rhyme: “Thirty days hath September, / April, June, and November; / All the rest have thirty-one, / Save February, with twenty-eight days clear, / And twenty-nine each leap year.” These lessons are easy to remember because of acoustic encoding. We encode the sounds the words make. This is one of the reasons why much of what we teach young children is done through song, rhyme, and rhythm.",
+  "formalFit": {
+    "eligible": true,
+    "rationale": "来源明确支持概念解释；具体 Formal 准入仍由生产应用依据当前目标和权限决定。"
+  },
+  "formalGoodAnswer": "编码是把输入的信息组织、赋予意义并与已有概念连接的过程。语义编码关注词语的含义，例如词表虽然随机呈现，回忆时仍可能按意义类别组织。视觉编码关注图像，汽车、狗和书等具体词更容易产生心理图像，可同时用视觉和意义编码；抽象词通常较难形成这样的图像。听觉编码关注声音，歌曲、押韵和节奏能够提供声音线索。教材描述的是常见现象与解释方式，不能保证某一种办法对每个人、每份材料都达到同样效果。",
+  "formalInsufficientAnswer": "我只根据结果作判断，不需要解释资料中的关系、定义或适用条件。",
+  "provenance": {
+    "kind": "external_textbook_excerpt",
+    "publisher": "OpenStax, Rice University",
+    "bookTitle": "Psychology 2e",
+    "section": "8.1 How Memory Functions",
+    "sourceLanguage": "en",
+    "teachingLanguage": "zh-CN",
+    "canonicalUrl": "https://raw.githubusercontent.com/openstax/osbooks-psychology/398f50856ca1df97b58cb778659212a1df572bbd/modules/m82213/index.cnxml",
+    "currentReadablePageUrl": "https://openstax.org/books/psychology-2e/pages/8-1-how-memory-functions",
+    "retrievedAt": "2026-09-11T18:52:37.383Z",
+    "sourceRepository": "https://github.com/openstax/osbooks-psychology",
+    "sourceCommit": "398f50856ca1df97b58cb778659212a1df572bbd",
+    "sourceCommitDate": "2025-12-05T15:53:47Z",
+    "documentUuid": "6b17f8a5-2864-40cc-b599-dfba5930ead2",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+    "licenseEvidenceUrl": "https://raw.githubusercontent.com/openstax/osbooks-psychology/398f50856ca1df97b58cb778659212a1df572bbd/LICENSE",
+    "collectionLicenseEvidenceUrl": "https://raw.githubusercontent.com/openstax/osbooks-psychology/398f50856ca1df97b58cb778659212a1df572bbd/collections/psychology-2e.collection.xml",
+    "attribution": "Excerpted from OpenStax, Psychology 2e, 8.1 How Memory Functions, source revision 398f50856ca1df97b58cb778659212a1df572bbd, licensed CC BY 4.0. Whitespace normalized; selected paragraphs or exact sentence spans; no substantive paraphrase. Chinese goals and scripted answer controls authored for this evaluation.",
+    "modifications": "Extracted XML textContent, collapsed runs of whitespace to one space, selected specified full paragraphs/exact sentence spans, and joined with blank lines. Equations, figure-dependent references and omitted surrounding material are outside excerpt scope.",
+    "currentPageLicenseNotice": "Live HTML retrieved in 2026 displays CC BY-NC-SA 4.0. The evaluation excerpt is sourced from the separately retrieved, pinned pre-2026 CC BY 4.0 publisher repository revision; the live page is contextual provenance, not the license grant for this excerpt.",
+    "rawCnxmlSha256": "8157d1e91c466f003f86ef3b83274aaceb14ee6ceb2df49d8e092455c6b6a349",
+    "rawHtmlSha256": "f09697c4dc14f778bfd502aa5babee0eca2dd41052272c5b7c0016a32abe9f8f",
+    "licenseSha256": "0ff174546cbe3dd1287da231f9796618ac2f6e6595b2d11f567b2c9790f64868",
+    "collectionSha256": "10593ebeaf5f0f826fd59d8bb599f2ccf084d8f5a982a6474a359e1d4c9682cf",
+    "extractionSpans": [
+      {
+        "paragraphId": "fs-idm133984352",
+        "normalizedStart": 0,
+        "normalizedEnd": 403,
+        "paragraphSha256": "d3481e33f090fed3da7515ac9077b38e8f6f98273e8ef8818534b2dbf2cfea11",
+        "excerptSha256": "d3481e33f090fed3da7515ac9077b38e8f6f98273e8ef8818534b2dbf2cfea11"
+      },
+      {
+        "paragraphId": "fs-idm144819264",
+        "normalizedStart": 0,
+        "normalizedEnd": 542,
+        "paragraphSha256": "0a68d4e8b2e6d22b4dc4be695924bc08571c41802adffab8aa4ab44d5967645d",
+        "excerptSha256": "0a68d4e8b2e6d22b4dc4be695924bc08571c41802adffab8aa4ab44d5967645d"
+      },
+      {
+        "paragraphId": "fs-idm68600816",
+        "normalizedStart": 0,
+        "normalizedEnd": 895,
+        "paragraphSha256": "dd313763646c6b71aa4c722e1f0236a42d241ec2c9b699b625773ed4c9a54ea2",
+        "excerptSha256": "dd313763646c6b71aa4c722e1f0236a42d241ec2c9b699b625773ed4c9a54ea2"
+      },
+      {
+        "paragraphId": "fs-idm53917840",
+        "normalizedStart": 0,
+        "normalizedEnd": 711,
+        "paragraphSha256": "00afdcbb8c2468ed0052ace22de9dd2040d1ee613bab673ff463a5d881f35ac8",
+        "excerptSha256": "00afdcbb8c2468ed0052ace22de9dd2040d1ee613bab673ff463a5d881f35ac8"
+      }
+    ],
+    "limitations": [
+      "This is an excerpt on encoding rather than a complete account of memory, retrieval, storage or clinical impairment.",
+      "Historical experiment citations and broad pedagogical tendencies are retained as textbook claims; no original-study replication or individual memory-benefit guarantee is made."
+    ],
+    "humanPacketEligible": false
+  },
+  "textHash": "bf1b2eea6b7f20a856c4cfc2f378ff4216695c2cb1b009da66f5aca83f238b9f",
+  "triggerPracticeRepair": true
+}

@@ -1,0 +1,424 @@
+{
+  "task": {
+    "caseId": "N-B-F01-curriculum",
+    "runId": "N-B-F01-curriculum-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-B-F01-curriculum.json",
+    "inputHash": "24e6409ab63d0644de0466f5f8e409fefc24f4c59ad8cd688f2e30ba1cadf0ab",
+    "population": "natural",
+    "sourceId": "B-F01"
+  },
+  "inputHash": "24e6409ab63d0644de0466f5f8e409fefc24f4c59ad8cd688f2e30ba1cadf0ab",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "correctness": "12716e8cd14e9b228628db1eed531481bbeaaeb3a0d4c8be20ecc3ae6e48fa77",
+      "artifact-audit": "12716e8cd14e9b228628db1eed531481bbeaaeb3a0d4c8be20ecc3ae6e48fa77"
+    },
+    "stages": {
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "uncertain",
+            "affected": [
+              "Q2"
+            ],
+            "reason": "The authored conclusion has a compatible counterexample or an unresolved necessary premise. 固定现有事实（e1-e24 未包含任何 ta_/tac_/blk_ 标识实体），相容假设这些被引标识实际缺失或冲突，则 obj_b14e8ee6 声称的“存在已验证无冲突精确来源权威”必要条件不成立，其 formal_sufficient 结论未建立；同理 obj_09069dea/obj_3513d100 的 narrower_formal/unavailable 也缺乏给定事实闭合。反例仅证明未建立，非认定现实发生。",
+            "refs": [
+              "e19",
+              "e2",
+              "e3",
+              "e4",
+              "e5",
+              "e6",
+              "e7",
+              "e14"
+            ],
+            "challenge": {
+              "status": "counterexample",
+              "reason": "固定现有事实（e1-e24 未包含任何 ta_/tac_/blk_ 标识实体），相容假设这些被引标识实际缺失或冲突，则 obj_b14e8ee6 声称的“存在已验证无冲突精确来源权威”必要条件不成立，其 formal_sufficient 结论未建立；同理 obj_09069dea/obj_3513d100 的 narrower_formal/unavailable 也缺乏给定事实闭合。反例仅证明未建立，非认定现实发生。",
+              "refs": [
+                "e19",
+                "e2"
+              ]
+            },
+            "witnesses": [
+              {
+                "id": "e19",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "[{\"id\":\"obj_b14e8ee6-d1cf-4112-91f0-88861b5c49c7\",\"title\":\"识别周报每句话是事实、建议还是未知，并为未读居民标明已发生或待决定状态\",\"description\":\"对书屋周报材料中的每句话，判断其是在报告已发生事实、提出下一步建议还是说明未知情况；面向未读原文居民，在摘要或标注中清楚标明事件已发生与决策待定状态，避免混淆。\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_f502cbf9-9d67-4d69-83e2-18499d2e8667\",\"ta_e7c0a23c-fd2a-41ca-b8b9-f0601e260480\"],\"authorityClaimIds\":[\"tac_7be7c91b-7773-4294-a672-f89ed9f39cfb\",\"tac_e53cfbe6-f084-44ea-9111-c222969cea1f\"],\"priority\":\"required\",\"priorityRationale\":\"证据E1具有formal_sufficient权威并支持identify构念，可授予正式评估路径。\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_de16e33a\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_de16e33a\"]},{\"id\":\"obj_09069dea-ec9d-4d8e-bbc9-10b099e90b88\",\"title\":\"应用流程写忠实简短摘要：压缩修辞但保留对象时间限制，标明状态，写清数字单位，不外延\",\"description\":\"依据材料规则，写摘要时压缩例子修辞，但不删改结论的对象、时间范围与限制；为关键数字写清单位和对象（如到馆人次非不同居民数）；标明已发生与待决定；不得将“部分读者认为”等同全体同意，“将讨论”等同已决定，不得将意见卡结果外推为全体读者支持率。使用原文提供的练习周报进行应用。\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_f502cbf9-9d67-4d69-83e2-18499d2e8667\",\"ta_e7c0a23c-fd2a-41ca-b8b9-f0601e260480\"],\"authorityClaimIds\":[\"tac_cda689d8-a847-4df8-9e52-57aaa1a634db\",\"tac_f5bd9cf0-7462-40c6-9e74-d1a9f1b23551\",\"tac_951ac785-72e7-42fd-8d06-0741c9688197\",\"tac_9f31a0b2-715b-4a6e-a046-ffb8cc4061f7\"],\"priority\":\"high\",\"priorityRationale\":\"所选证据E9/E10/E5/E16均不具备apply正式权威（narrow_formal或unavailable），依覆盖要求保留apply为教学高优先级，不转为explain。\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"narrower_formal\",\"authoritySourceBlockIds\":[\"blk_0_de16e33a\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_3513d100-3e1c-423c-a557-4ce040d8bfa5\",\"title\":\"应用证据与解释分离：摘要中不将同时发生改写为因果，不把建议当现有证据，引用片段须真支持结论\",\"description\":\"摘要中须将证据与解释分开：若周报提到同时发生两事，只能说明同时，无依据不能写因果；建议仅为改进非现有证据；引用原文片段必须真的支持所写结论，引号不增证明力。在练习材料中应用此分离。\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"证据E4/E17无正式apply权威，保留为教学高优先级以满足覆盖能力要求。\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]}]",
+                "valueHash": "50df9b7083e1e4146e5fbcb4a46c58e1658bb345999ac3b85f1eef65f70493b9"
+              },
+              {
+                "id": "e2",
+                "pointer": "/sources/0/id",
+                "role": "source",
+                "kind": "text",
+                "value": "B-F01",
+                "valueHash": "f7a1460204feac5b268feb0720e5633720d9e5d647ddd21260e4a6b88dfb5621"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "榕树书屋每周公布一页周报，供居民了解试行安排。阅读这类材料时，先问每句话是在报告已经发生的事、提出下一步建议，还是说明目前还不知道的情况。摘要可以压缩例子和修辞，但不能删掉会改变结论的对象、时间范围与限制。“部分读者认为”不等于“全体读者同意”，“将讨论”不等于“已经决定”。写摘要的任务是忠实地缩短材料，不是替作者补完故事。\n下面是一份练习周报。书屋在两个周六试行上午提前半小时开门。第一个周六有十八人提前到馆，第二个周六有十二人提前到馆。这些数字按到馆人次记录，同一个人来两次会被记两次。工作人员在提前到馆的人中收回十份意见卡，其中八份建议继续，另两份希望先看看排班能否承受。周报没有说明未填卡者的意见，也没有统计其他时段的读者。负责人提出再试行两个周六，待核对人员安排后讨论是否长期实行；目前没有宣布永久变更。\n一份合适的摘要可以写：“书屋两个周六试行提前开门，共记录三十个提前到馆人次；十份回收意见卡中八份支持继续。负责人建议延长试行，长期安排尚待讨论。”它保留了事件、有限证据和决策状态。摘要不必复述两次分别有多少人，但不能把“三十人次”写成“三十位不同居民”，因为独立人数没有给出。也不能把意见卡结果外推成全体读者支持率。\n证据与解释还要分开。若周报另提到同一周新增了路边指示牌，这只能说明两件事同时发生；没有比较或其他依据，不能写成“指示牌使提前到馆人数增加”。若有人建议先记录每位到馆者是否重复出现，这是一项改进建议，不是现有统计已经去重的证据。引用原文时，引用片段必须真的支持所写结论；引号本身不会增加证明力。\n练习时可按三个步骤自检。第一，把想保留的句子标为事实、意见、建议或未知；第二，为关键数字写清单位和对象；第三，回到原文寻找每项结论的依据。若依据只能支持较弱说法，就收窄摘要，而不是补上猜测。不同摘要可以有不同句式与顺序，只要核心信息和限制不变，就不必追求唯一范文。面向没读过周报的居民，清楚标明“已发生”和“待决定”通常比堆叠形容词更有用。",
+                "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+              },
+              {
+                "id": "e4",
+                "pointer": "/goals",
+                "role": "goal",
+                "kind": "array_length",
+                "value": 3,
+                "valueHash": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "区分事实、建议与未确定信息",
+                "valueHash": "8d6e200be6eb9670df93c957bebaac15354cf2e4097bf4db6cfa3b5b526f4dd2"
+              },
+              {
+                "id": "e6",
+                "pointer": "/goals/1",
+                "role": "goal",
+                "kind": "text",
+                "value": "写出保留范围和限制的简短摘要",
+                "valueHash": "3ef3aa9e140319b1c8c0410461e6947f397de783c593a71766e570a9431013c6"
+              },
+              {
+                "id": "e7",
+                "pointer": "/goals/2",
+                "role": "goal",
+                "kind": "text",
+                "value": "用原文支持结论，避免把相关叙述改写成因果",
+                "valueHash": "f7f4ec4584949444e85ef6e999f7bb688bbc7907c8f78099d897d80d8d5c9760"
+              },
+              {
+                "id": "e14",
+                "pointer": "/authorityBoundaries/1",
+                "role": "boundary",
+                "kind": "text",
+                "value": "Q2评价提议课程对所注册学习目标的保留和范围；不将尚未发生的教学交付或Formal准入当成已经完成。",
+                "valueHash": "fda6a582e8f32aff1fc754c529607badc828976824498d64a102c9649555f08d"
+              }
+            ],
+            "proposed": {
+              "kind": "conditions",
+              "status": "uncertain",
+              "affected": [
+                "Q2"
+              ],
+              "reason": "产品 artifacts/1 的 objectives 对 obj_b14e8ee6 断言 truthPremiseStatus=independently_verified、authorityEnvelopeTier=formal_sufficient、formalAssessmentReady=true，并引用 truthAuthorityRecordIds 等未在本包 facts 中出现的标识；本包仅含来源 B-F01(e2,e3) 与 goals(e4-e7)，无上述权威记录或 blk_0_de16e33a 内容。无法裁定其条件成立，且不能从结论倒推。目标保留方面，三个 obj 分别覆盖 e5/e6/e7 且范围与 e3 教学说明一致，但 formal 准入断言缺乏支撑。",
+              "refs": [
+                "e19",
+                "e2",
+                "e3",
+                "e4",
+                "e5",
+                "e6",
+                "e7",
+                "e14"
+              ],
+              "challenge": {
+                "status": "counterexample",
+                "reason": "固定现有事实（e1-e24 未包含任何 ta_/tac_/blk_ 标识实体），相容假设这些被引标识实际缺失或冲突，则 obj_b14e8ee6 声称的“存在已验证无冲突精确来源权威”必要条件不成立，其 formal_sufficient 结论未建立；同理 obj_09069dea/obj_3513d100 的 narrower_formal/unavailable 也缺乏给定事实闭合。反例仅证明未建立，非认定现实发生。",
+                "refs": [
+                  "e19",
+                  "e2"
+                ]
+              }
+            },
+            "reviewReasons": [
+              "CONDITIONS_COUNTEREXAMPLE_REVIEW"
+            ]
+          },
+          {
+            "kind": "quantities",
+            "status": "not_applicable",
+            "affected": [],
+            "reason": "待评 artifacts 未包含需独立重算的数值演算或单位转换断言；packet.rates 为空，材料数字仅转述自 e3 未被产品改动计算。",
+            "contextHash": "12716e8cd14e9b228628db1eed531481bbeaaeb3a0d4c8be20ecc3ae6e48fa77",
+            "proposed": {
+              "kind": "quantities",
+              "status": "not_applicable",
+              "affected": [],
+              "reason": "待评 artifacts 未包含需独立重算的数值演算或单位转换断言；packet.rates 为空，材料数字仅转述自 e3 未被产品改动计算。",
+              "refs": [
+                "e19",
+                "e3"
+              ]
+            },
+            "reviewReasons": []
+          }
+        ],
+        "keys": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 2,
+            "reason": "产物objectives(e19)完整保留三个注册目标e5,e6,e7：obj_b14e8ee6覆盖事实/建议/未知识别并标明状态；obj_09069dea覆盖忠实摘要保留对象时间范围限制；obj_3513d100覆盖证据解释分离避免因果改写。各目标未消失或扭曲，对缺乏正式apply权威的目标声明了教学高优先级边界(e14,e19中tier/priority)，符合Q2对保留与范围的评判，不要求已交付。",
+            "refs": [
+              "e19",
+              "e5",
+              "e6",
+              "e7",
+              "e14"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e19",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "[{\"id\":\"obj_b14e8ee6-d1cf-4112-91f0-88861b5c49c7\",\"title\":\"识别周报每句话是事实、建议还是未知，并为未读居民标明已发生或待决定状态\",\"description\":\"对书屋周报材料中的每句话，判断其是在报告已发生事实、提出下一步建议还是说明未知情况；面向未读原文居民，在摘要或标注中清楚标明事件已发生与决策待定状态，避免混淆。\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_f502cbf9-9d67-4d69-83e2-18499d2e8667\",\"ta_e7c0a23c-fd2a-41ca-b8b9-f0601e260480\"],\"authorityClaimIds\":[\"tac_7be7c91b-7773-4294-a672-f89ed9f39cfb\",\"tac_e53cfbe6-f084-44ea-9111-c222969cea1f\"],\"priority\":\"required\",\"priorityRationale\":\"证据E1具有formal_sufficient权威并支持identify构念，可授予正式评估路径。\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_de16e33a\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_de16e33a\"]},{\"id\":\"obj_09069dea-ec9d-4d8e-bbc9-10b099e90b88\",\"title\":\"应用流程写忠实简短摘要：压缩修辞但保留对象时间限制，标明状态，写清数字单位，不外延\",\"description\":\"依据材料规则，写摘要时压缩例子修辞，但不删改结论的对象、时间范围与限制；为关键数字写清单位和对象（如到馆人次非不同居民数）；标明已发生与待决定；不得将“部分读者认为”等同全体同意，“将讨论”等同已决定，不得将意见卡结果外推为全体读者支持率。使用原文提供的练习周报进行应用。\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_f502cbf9-9d67-4d69-83e2-18499d2e8667\",\"ta_e7c0a23c-fd2a-41ca-b8b9-f0601e260480\"],\"authorityClaimIds\":[\"tac_cda689d8-a847-4df8-9e52-57aaa1a634db\",\"tac_f5bd9cf0-7462-40c6-9e74-d1a9f1b23551\",\"tac_951ac785-72e7-42fd-8d06-0741c9688197\",\"tac_9f31a0b2-715b-4a6e-a046-ffb8cc4061f7\"],\"priority\":\"high\",\"priorityRationale\":\"所选证据E9/E10/E5/E16均不具备apply正式权威（narrow_formal或unavailable），依覆盖要求保留apply为教学高优先级，不转为explain。\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"narrower_formal\",\"authoritySourceBlockIds\":[\"blk_0_de16e33a\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_3513d100-3e1c-423c-a557-4ce040d8bfa5\",\"title\":\"应用证据与解释分离：摘要中不将同时发生改写为因果，不把建议当现有证据，引用片段须真支持结论\",\"description\":\"摘要中须将证据与解释分开：若周报提到同时发生两事，只能说明同时，无依据不能写因果；建议仅为改进非现有证据；引用原文片段必须真的支持所写结论，引号不增证明力。在练习材料中应用此分离。\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"证据E4/E17无正式apply权威，保留为教学高优先级以满足覆盖能力要求。\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]}]",
+                "valueHash": "50df9b7083e1e4146e5fbcb4a46c58e1658bb345999ac3b85f1eef65f70493b9"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "区分事实、建议与未确定信息",
+                "valueHash": "8d6e200be6eb9670df93c957bebaac15354cf2e4097bf4db6cfa3b5b526f4dd2"
+              },
+              {
+                "id": "e6",
+                "pointer": "/goals/1",
+                "role": "goal",
+                "kind": "text",
+                "value": "写出保留范围和限制的简短摘要",
+                "valueHash": "3ef3aa9e140319b1c8c0410461e6947f397de783c593a71766e570a9431013c6"
+              },
+              {
+                "id": "e7",
+                "pointer": "/goals/2",
+                "role": "goal",
+                "kind": "text",
+                "value": "用原文支持结论，避免把相关叙述改写成因果",
+                "valueHash": "f7f4ec4584949444e85ef6e999f7bb688bbc7907c8f78099d897d80d8d5c9760"
+              },
+              {
+                "id": "e14",
+                "pointer": "/authorityBoundaries/1",
+                "role": "boundary",
+                "kind": "text",
+                "value": "Q2评价提议课程对所注册学习目标的保留和范围；不将尚未发生的教学交付或Formal准入当成已经完成。",
+                "valueHash": "fda6a582e8f32aff1fc754c529607badc828976824498d64a102c9649555f08d"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q2",
+          "level": "U",
+          "reason": "The authored conclusion has a compatible counterexample or an unresolved necessary premise. 固定现有事实（e1-e24 未包含任何 ta_/tac_/blk_ 标识实体），相容假设这些被引标识实际缺失或冲突，则 obj_b14e8ee6 声称的“存在已验证无冲突精确来源权威”必要条件不成立，其 formal_sufficient 结论未建立；同理 obj_09069dea/obj_3513d100 的 narrower_formal/unavailable 也缺乏给定事实闭合。反例仅证明未建立，非认定现实发生。",
+          "refs": [
+            "e19",
+            "e5",
+            "e6",
+            "e7",
+            "e14"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e19",
+              "pointer": "/artifacts/1/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "[{\"id\":\"obj_b14e8ee6-d1cf-4112-91f0-88861b5c49c7\",\"title\":\"识别周报每句话是事实、建议还是未知，并为未读居民标明已发生或待决定状态\",\"description\":\"对书屋周报材料中的每句话，判断其是在报告已发生事实、提出下一步建议还是说明未知情况；面向未读原文居民，在摘要或标注中清楚标明事件已发生与决策待定状态，避免混淆。\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_f502cbf9-9d67-4d69-83e2-18499d2e8667\",\"ta_e7c0a23c-fd2a-41ca-b8b9-f0601e260480\"],\"authorityClaimIds\":[\"tac_7be7c91b-7773-4294-a672-f89ed9f39cfb\",\"tac_e53cfbe6-f084-44ea-9111-c222969cea1f\"],\"priority\":\"required\",\"priorityRationale\":\"证据E1具有formal_sufficient权威并支持identify构念，可授予正式评估路径。\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_de16e33a\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_de16e33a\"]},{\"id\":\"obj_09069dea-ec9d-4d8e-bbc9-10b099e90b88\",\"title\":\"应用流程写忠实简短摘要：压缩修辞但保留对象时间限制，标明状态，写清数字单位，不外延\",\"description\":\"依据材料规则，写摘要时压缩例子修辞，但不删改结论的对象、时间范围与限制；为关键数字写清单位和对象（如到馆人次非不同居民数）；标明已发生与待决定；不得将“部分读者认为”等同全体同意，“将讨论”等同已决定，不得将意见卡结果外推为全体读者支持率。使用原文提供的练习周报进行应用。\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_f502cbf9-9d67-4d69-83e2-18499d2e8667\",\"ta_e7c0a23c-fd2a-41ca-b8b9-f0601e260480\"],\"authorityClaimIds\":[\"tac_cda689d8-a847-4df8-9e52-57aaa1a634db\",\"tac_f5bd9cf0-7462-40c6-9e74-d1a9f1b23551\",\"tac_951ac785-72e7-42fd-8d06-0741c9688197\",\"tac_9f31a0b2-715b-4a6e-a046-ffb8cc4061f7\"],\"priority\":\"high\",\"priorityRationale\":\"所选证据E9/E10/E5/E16均不具备apply正式权威（narrow_formal或unavailable），依覆盖要求保留apply为教学高优先级，不转为explain。\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"narrower_formal\",\"authoritySourceBlockIds\":[\"blk_0_de16e33a\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_3513d100-3e1c-423c-a557-4ce040d8bfa5\",\"title\":\"应用证据与解释分离：摘要中不将同时发生改写为因果，不把建议当现有证据，引用片段须真支持结论\",\"description\":\"摘要中须将证据与解释分开：若周报提到同时发生两事，只能说明同时，无依据不能写因果；建议仅为改进非现有证据；引用原文片段必须真的支持所写结论，引号不增证明力。在练习材料中应用此分离。\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"证据E4/E17无正式apply权威，保留为教学高优先级以满足覆盖能力要求。\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]}]",
+              "valueHash": "50df9b7083e1e4146e5fbcb4a46c58e1658bb345999ac3b85f1eef65f70493b9"
+            },
+            {
+              "id": "e5",
+              "pointer": "/goals/0",
+              "role": "goal",
+              "kind": "text",
+              "value": "区分事实、建议与未确定信息",
+              "valueHash": "8d6e200be6eb9670df93c957bebaac15354cf2e4097bf4db6cfa3b5b526f4dd2"
+            },
+            {
+              "id": "e6",
+              "pointer": "/goals/1",
+              "role": "goal",
+              "kind": "text",
+              "value": "写出保留范围和限制的简短摘要",
+              "valueHash": "3ef3aa9e140319b1c8c0410461e6947f397de783c593a71766e570a9431013c6"
+            },
+            {
+              "id": "e7",
+              "pointer": "/goals/2",
+              "role": "goal",
+              "kind": "text",
+              "value": "用原文支持结论，避免把相关叙述改写成因果",
+              "valueHash": "f7f4ec4584949444e85ef6e999f7bb688bbc7907c8f78099d897d80d8d5c9760"
+            },
+            {
+              "id": "e14",
+              "pointer": "/authorityBoundaries/1",
+              "role": "boundary",
+              "kind": "text",
+              "value": "Q2评价提议课程对所注册学习目标的保留和范围；不将尚未发生的教学交付或Formal准入当成已经完成。",
+              "valueHash": "fda6a582e8f32aff1fc754c529607badc828976824498d64a102c9649555f08d"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [
+            {
+              "level": "U",
+              "code": "INDEPENDENT_CONDITIONS",
+              "detail": {
+                "kind": "conditions",
+                "status": "uncertain",
+                "affected": [
+                  "Q2"
+                ],
+                "reason": "The authored conclusion has a compatible counterexample or an unresolved necessary premise. 固定现有事实（e1-e24 未包含任何 ta_/tac_/blk_ 标识实体），相容假设这些被引标识实际缺失或冲突，则 obj_b14e8ee6 声称的“存在已验证无冲突精确来源权威”必要条件不成立，其 formal_sufficient 结论未建立；同理 obj_09069dea/obj_3513d100 的 narrower_formal/unavailable 也缺乏给定事实闭合。反例仅证明未建立，非认定现实发生。",
+                "refs": [
+                  "e19",
+                  "e2",
+                  "e3",
+                  "e4",
+                  "e5",
+                  "e6",
+                  "e7",
+                  "e14"
+                ],
+                "challenge": {
+                  "status": "counterexample",
+                  "reason": "固定现有事实（e1-e24 未包含任何 ta_/tac_/blk_ 标识实体），相容假设这些被引标识实际缺失或冲突，则 obj_b14e8ee6 声称的“存在已验证无冲突精确来源权威”必要条件不成立，其 formal_sufficient 结论未建立；同理 obj_09069dea/obj_3513d100 的 narrower_formal/unavailable 也缺乏给定事实闭合。反例仅证明未建立，非认定现实发生。",
+                  "refs": [
+                    "e19",
+                    "e2"
+                  ]
+                },
+                "witnesses": [
+                  {
+                    "id": "e19",
+                    "pointer": "/artifacts/1/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "[{\"id\":\"obj_b14e8ee6-d1cf-4112-91f0-88861b5c49c7\",\"title\":\"识别周报每句话是事实、建议还是未知，并为未读居民标明已发生或待决定状态\",\"description\":\"对书屋周报材料中的每句话，判断其是在报告已发生事实、提出下一步建议还是说明未知情况；面向未读原文居民，在摘要或标注中清楚标明事件已发生与决策待定状态，避免混淆。\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_f502cbf9-9d67-4d69-83e2-18499d2e8667\",\"ta_e7c0a23c-fd2a-41ca-b8b9-f0601e260480\"],\"authorityClaimIds\":[\"tac_7be7c91b-7773-4294-a672-f89ed9f39cfb\",\"tac_e53cfbe6-f084-44ea-9111-c222969cea1f\"],\"priority\":\"required\",\"priorityRationale\":\"证据E1具有formal_sufficient权威并支持identify构念，可授予正式评估路径。\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_de16e33a\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_de16e33a\"]},{\"id\":\"obj_09069dea-ec9d-4d8e-bbc9-10b099e90b88\",\"title\":\"应用流程写忠实简短摘要：压缩修辞但保留对象时间限制，标明状态，写清数字单位，不外延\",\"description\":\"依据材料规则，写摘要时压缩例子修辞，但不删改结论的对象、时间范围与限制；为关键数字写清单位和对象（如到馆人次非不同居民数）；标明已发生与待决定；不得将“部分读者认为”等同全体同意，“将讨论”等同已决定，不得将意见卡结果外推为全体读者支持率。使用原文提供的练习周报进行应用。\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_f502cbf9-9d67-4d69-83e2-18499d2e8667\",\"ta_e7c0a23c-fd2a-41ca-b8b9-f0601e260480\"],\"authorityClaimIds\":[\"tac_cda689d8-a847-4df8-9e52-57aaa1a634db\",\"tac_f5bd9cf0-7462-40c6-9e74-d1a9f1b23551\",\"tac_951ac785-72e7-42fd-8d06-0741c9688197\",\"tac_9f31a0b2-715b-4a6e-a046-ffb8cc4061f7\"],\"priority\":\"high\",\"priorityRationale\":\"所选证据E9/E10/E5/E16均不具备apply正式权威（narrow_formal或unavailable），依覆盖要求保留apply为教学高优先级，不转为explain。\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"narrower_formal\",\"authoritySourceBlockIds\":[\"blk_0_de16e33a\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_3513d100-3e1c-423c-a557-4ce040d8bfa5\",\"title\":\"应用证据与解释分离：摘要中不将同时发生改写为因果，不把建议当现有证据，引用片段须真支持结论\",\"description\":\"摘要中须将证据与解释分开：若周报提到同时发生两事，只能说明同时，无依据不能写因果；建议仅为改进非现有证据；引用原文片段必须真的支持所写结论，引号不增证明力。在练习材料中应用此分离。\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"证据E4/E17无正式apply权威，保留为教学高优先级以满足覆盖能力要求。\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]}]",
+                    "valueHash": "50df9b7083e1e4146e5fbcb4a46c58e1658bb345999ac3b85f1eef65f70493b9"
+                  },
+                  {
+                    "id": "e2",
+                    "pointer": "/sources/0/id",
+                    "role": "source",
+                    "kind": "text",
+                    "value": "B-F01",
+                    "valueHash": "f7a1460204feac5b268feb0720e5633720d9e5d647ddd21260e4a6b88dfb5621"
+                  },
+                  {
+                    "id": "e3",
+                    "pointer": "/sources/0/text",
+                    "role": "source",
+                    "kind": "text",
+                    "value": "榕树书屋每周公布一页周报，供居民了解试行安排。阅读这类材料时，先问每句话是在报告已经发生的事、提出下一步建议，还是说明目前还不知道的情况。摘要可以压缩例子和修辞，但不能删掉会改变结论的对象、时间范围与限制。“部分读者认为”不等于“全体读者同意”，“将讨论”不等于“已经决定”。写摘要的任务是忠实地缩短材料，不是替作者补完故事。\n下面是一份练习周报。书屋在两个周六试行上午提前半小时开门。第一个周六有十八人提前到馆，第二个周六有十二人提前到馆。这些数字按到馆人次记录，同一个人来两次会被记两次。工作人员在提前到馆的人中收回十份意见卡，其中八份建议继续，另两份希望先看看排班能否承受。周报没有说明未填卡者的意见，也没有统计其他时段的读者。负责人提出再试行两个周六，待核对人员安排后讨论是否长期实行；目前没有宣布永久变更。\n一份合适的摘要可以写：“书屋两个周六试行提前开门，共记录三十个提前到馆人次；十份回收意见卡中八份支持继续。负责人建议延长试行，长期安排尚待讨论。”它保留了事件、有限证据和决策状态。摘要不必复述两次分别有多少人，但不能把“三十人次”写成“三十位不同居民”，因为独立人数没有给出。也不能把意见卡结果外推成全体读者支持率。\n证据与解释还要分开。若周报另提到同一周新增了路边指示牌，这只能说明两件事同时发生；没有比较或其他依据，不能写成“指示牌使提前到馆人数增加”。若有人建议先记录每位到馆者是否重复出现，这是一项改进建议，不是现有统计已经去重的证据。引用原文时，引用片段必须真的支持所写结论；引号本身不会增加证明力。\n练习时可按三个步骤自检。第一，把想保留的句子标为事实、意见、建议或未知；第二，为关键数字写清单位和对象；第三，回到原文寻找每项结论的依据。若依据只能支持较弱说法，就收窄摘要，而不是补上猜测。不同摘要可以有不同句式与顺序，只要核心信息和限制不变，就不必追求唯一范文。面向没读过周报的居民，清楚标明“已发生”和“待决定”通常比堆叠形容词更有用。",
+                    "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+                  },
+                  {
+                    "id": "e4",
+                    "pointer": "/goals",
+                    "role": "goal",
+                    "kind": "array_length",
+                    "value": 3,
+                    "valueHash": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce"
+                  },
+                  {
+                    "id": "e5",
+                    "pointer": "/goals/0",
+                    "role": "goal",
+                    "kind": "text",
+                    "value": "区分事实、建议与未确定信息",
+                    "valueHash": "8d6e200be6eb9670df93c957bebaac15354cf2e4097bf4db6cfa3b5b526f4dd2"
+                  },
+                  {
+                    "id": "e6",
+                    "pointer": "/goals/1",
+                    "role": "goal",
+                    "kind": "text",
+                    "value": "写出保留范围和限制的简短摘要",
+                    "valueHash": "3ef3aa9e140319b1c8c0410461e6947f397de783c593a71766e570a9431013c6"
+                  },
+                  {
+                    "id": "e7",
+                    "pointer": "/goals/2",
+                    "role": "goal",
+                    "kind": "text",
+                    "value": "用原文支持结论，避免把相关叙述改写成因果",
+                    "valueHash": "f7f4ec4584949444e85ef6e999f7bb688bbc7907c8f78099d897d80d8d5c9760"
+                  },
+                  {
+                    "id": "e14",
+                    "pointer": "/authorityBoundaries/1",
+                    "role": "boundary",
+                    "kind": "text",
+                    "value": "Q2评价提议课程对所注册学习目标的保留和范围；不将尚未发生的教学交付或Formal准入当成已经完成。",
+                    "valueHash": "fda6a582e8f32aff1fc754c529607badc828976824498d64a102c9649555f08d"
+                  }
+                ],
+                "proposed": {
+                  "kind": "conditions",
+                  "status": "uncertain",
+                  "affected": [
+                    "Q2"
+                  ],
+                  "reason": "产品 artifacts/1 的 objectives 对 obj_b14e8ee6 断言 truthPremiseStatus=independently_verified、authorityEnvelopeTier=formal_sufficient、formalAssessmentReady=true，并引用 truthAuthorityRecordIds 等未在本包 facts 中出现的标识；本包仅含来源 B-F01(e2,e3) 与 goals(e4-e7)，无上述权威记录或 blk_0_de16e33a 内容。无法裁定其条件成立，且不能从结论倒推。目标保留方面，三个 obj 分别覆盖 e5/e6/e7 且范围与 e3 教学说明一致，但 formal 准入断言缺乏支撑。",
+                  "refs": [
+                    "e19",
+                    "e2",
+                    "e3",
+                    "e4",
+                    "e5",
+                    "e6",
+                    "e7",
+                    "e14"
+                  ],
+                  "challenge": {
+                    "status": "counterexample",
+                    "reason": "固定现有事实（e1-e24 未包含任何 ta_/tac_/blk_ 标识实体），相容假设这些被引标识实际缺失或冲突，则 obj_b14e8ee6 声称的“存在已验证无冲突精确来源权威”必要条件不成立，其 formal_sufficient 结论未建立；同理 obj_09069dea/obj_3513d100 的 narrower_formal/unavailable 也缺乏给定事实闭合。反例仅证明未建立，非认定现实发生。",
+                    "refs": [
+                      "e19",
+                      "e2"
+                    ]
+                  }
+                },
+                "reviewReasons": [
+                  "CONDITIONS_COUNTEREXAMPLE_REVIEW"
+                ]
+              }
+            }
+          ],
+          "proposedLevel": 2,
+          "proposedReason": "产物objectives(e19)完整保留三个注册目标e5,e6,e7：obj_b14e8ee6覆盖事实/建议/未知识别并标明状态；obj_09069dea覆盖忠实摘要保留对象时间范围限制；obj_3513d100覆盖证据解释分离避免因果改写。各目标未消失或扭曲，对缺乏正式apply权威的目标声明了教学高优先级边界(e14,e19中tier/priority)，符合Q2对保留与范围的评判，不要求已交付。",
+          "decidingConstraint": "INDEPENDENT_CONDITIONS"
+        }
+      ],
+      "reviewRequired": [
+        {
+          "dimension": "Q2",
+          "reason": "UNRESOLVED"
+        }
+      ]
+    },
+    "resultHash": "c692a0187f16861131ca6f31bac5e8e59f71c4a4bb9385a88e26dac40d9518c2"
+  }
+}

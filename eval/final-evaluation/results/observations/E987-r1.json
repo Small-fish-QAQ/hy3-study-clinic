@@ -1,0 +1,234 @@
+{
+  "task": {
+    "caseId": "E987",
+    "runId": "E987-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E987.json",
+    "inputHash": "9eeb65608e14e6a8a173dec4825fce020188cbddc1f28361dc86585ea221f6a3",
+    "population": "controlled",
+    "sourceId": "F07"
+  },
+  "inputHash": "9eeb65608e14e6a8a173dec4825fce020188cbddc1f28361dc86585ea221f6a3",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "correctness": "37447e0afc772c75f8de67472d7519afd35616a55648de3f9589fc6ada1d64ba",
+      "artifact-audit": "37447e0afc772c75f8de67472d7519afd35616a55648de3f9589fc6ada1d64ba"
+    },
+    "stages": {
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "defect",
+            "affected": [
+              "Q2"
+            ],
+            "reason": "Artifact e17 断言：不同组可以同时改变种子、温度和水量，只要照片更绿就宣布水是唯一原因。该条件式结论（照片更绿→水唯一原因）在 multitree 变量同时改变时缺乏控制变量支持，构成实质错误教导，违背实验归因的基本逻辑。",
+            "refs": [
+              "e17"
+            ],
+            "challenge": {
+              "status": "counterexample",
+              "reason": "固定作者允许情景：同时改变种子、温度、水量且照片更绿。可补充相容具体情况：温度差异导致更绿而水量无因果贡献，此时结论'水唯一原因'不成立，证明原断言未建立且错误。",
+              "refs": [
+                "e17"
+              ]
+            },
+            "witnesses": [
+              {
+                "id": "e17",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "本节只训练挑出最好看的发芽照片。不同组可以同时改变种子、温度和水量，只要照片更绿就宣布水是唯一原因。",
+                "valueHash": "dcae8dbed8f56c72787cc0a51b27c89f5dd92430d5013f13cca9a4dc91ab10cd"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "kind": "quantities",
+            "status": "not_applicable",
+            "affected": [],
+            "reason": "Artifact 无数值、单位或演算断言，rates 空，无数量核验对象。",
+            "contextHash": "37447e0afc772c75f8de67472d7519afd35616a55648de3f9589fc6ada1d64ba",
+            "proposed": {
+              "kind": "quantities",
+              "status": "not_applicable",
+              "affected": [],
+              "reason": "Artifact 无数值、单位或演算断言，rates 空，无数量核验对象。",
+              "refs": [
+                "e17"
+              ]
+            },
+            "reviewReasons": []
+          }
+        ],
+        "keys": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 0,
+            "reason": "Artifact e17 instructs picking prettiest photo and allows simultaneously changing seed/temperature/water then declaring water sole cause from greener photo, which distorts essential goal e5 (identify concurrent variables) and e6 (observation vs general rule, cf e3) and silently drops e7 (design controlled follow-up). This matches rubric 0: an essential goal is distorted/disappears.",
+            "refs": [
+              "e17",
+              "e5",
+              "e6",
+              "e7",
+              "e3"
+            ],
+            "issue": "content",
+            "witnesses": [
+              {
+                "id": "e17",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "本节只训练挑出最好看的发芽照片。不同组可以同时改变种子、温度和水量，只要照片更绿就宣布水是唯一原因。",
+                "valueHash": "dcae8dbed8f56c72787cc0a51b27c89f5dd92430d5013f13cca9a4dc91ab10cd"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "识别比较中同时改变的变量",
+                "valueHash": "8f35b76ddbb2d39b143a056910fd5c72261ea91f448cbff63ee0837fc75620be"
+              },
+              {
+                "id": "e6",
+                "pointer": "/goals/1",
+                "role": "goal",
+                "kind": "text",
+                "value": "区分实验观察与普遍规律",
+                "valueHash": "3530eeb6511b1a1073a57fcc7c5ff49dd8215420d9858326aa5a667bce47c295"
+              },
+              {
+                "id": "e7",
+                "pointer": "/goals/2",
+                "role": "goal",
+                "kind": "text",
+                "value": "设计保留对照并能检验假说的后续实验",
+                "valueHash": "94c5bc19e0ee073f20331276617163f9935e201c9de4be6e7dd58a97ac8d211b"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "课堂把同一批种子分到两个透明盒中，想比较有水和无水时的发芽情况。为了使比较有意义，应尽量让其他有关条件一致，例如种子数量、来源、温度、光照、观察天数与发芽判定方式。若有水盒放在温暖窗台、无水盒放在冷暗柜里，即使结果不同，也无法把差异单独归因于水，因为温度和光照同时改变了。\n这里把“发芽”操作性地定义为观察到胚根伸出种皮，便于不同记录者使用同一标准。这个定义是本实验的观察规则，不是所有生物过程的完整描述。记录者应按事先约定的时间观察全部种子，而不是只挑成功的那几颗展示。没有发芽的种子也必须计入，才能知道发芽比例。\n设两盒各十粒同批种子，均在同温同光处放置七天。甲盒保持适量湿润，乙盒保持干燥。甲有八粒达到上述标准，乙有一粒。可以说在这批种子和这些条件下，湿润组观察到的发芽比例更高。仅凭这一次观察，还不能断言所有种类的种子只要加水都会发芽；种子活性、温度及其他条件仍可能重要。也不能说乙盒绝对没有任何水分，因为“保持干燥”是操作描述，并未测出零水分。\n重复实验可以帮助检查结果是否稳定，但重复的对象、条件与方法需要记录。把同一张照片复制三次不是三次独立实验。同一盒内种子也共享环境，不能总把它们当成互不影响的完整重复。入门练习无需复杂统计检验，只要能说明为什么重复有用、哪些信息仍然有限。\n好的后续实验应对应目前的疑问。如果怀疑温度造成差异，就应在同一温度下只改变湿润条件，或设计清楚的组合比较；不能一边改变温度，一边换种子品种，再把结果归因于某一个因素。若希望研究“水太多是否也影响发芽”，可以在其他条件一致时增加不同水量组，事先说明每组的水量与观察标准。\n解释实验时，把计划、执行、观察和结论分开写。计划相同不代表执行真的相同，需核对记录；观察不同不自动证明唯一原因。允许结果不支持原假说，并据此修改下一步问题，正是实验学习的一部分。对证据保留限制，不妨碍学生提出清楚、可检验的预测。",
+                "valueHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q2",
+          "level": 0,
+          "reason": "Artifact e17 断言：不同组可以同时改变种子、温度和水量，只要照片更绿就宣布水是唯一原因。该条件式结论（照片更绿→水唯一原因）在 multitree 变量同时改变时缺乏控制变量支持，构成实质错误教导，违背实验归因的基本逻辑。",
+          "refs": [
+            "e17",
+            "e5",
+            "e6",
+            "e7",
+            "e3"
+          ],
+          "issue": "content",
+          "witnesses": [
+            {
+              "id": "e17",
+              "pointer": "/artifacts/0/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "本节只训练挑出最好看的发芽照片。不同组可以同时改变种子、温度和水量，只要照片更绿就宣布水是唯一原因。",
+              "valueHash": "dcae8dbed8f56c72787cc0a51b27c89f5dd92430d5013f13cca9a4dc91ab10cd"
+            },
+            {
+              "id": "e5",
+              "pointer": "/goals/0",
+              "role": "goal",
+              "kind": "text",
+              "value": "识别比较中同时改变的变量",
+              "valueHash": "8f35b76ddbb2d39b143a056910fd5c72261ea91f448cbff63ee0837fc75620be"
+            },
+            {
+              "id": "e6",
+              "pointer": "/goals/1",
+              "role": "goal",
+              "kind": "text",
+              "value": "区分实验观察与普遍规律",
+              "valueHash": "3530eeb6511b1a1073a57fcc7c5ff49dd8215420d9858326aa5a667bce47c295"
+            },
+            {
+              "id": "e7",
+              "pointer": "/goals/2",
+              "role": "goal",
+              "kind": "text",
+              "value": "设计保留对照并能检验假说的后续实验",
+              "valueHash": "94c5bc19e0ee073f20331276617163f9935e201c9de4be6e7dd58a97ac8d211b"
+            },
+            {
+              "id": "e3",
+              "pointer": "/sources/0/text",
+              "role": "source",
+              "kind": "text",
+              "value": "课堂把同一批种子分到两个透明盒中，想比较有水和无水时的发芽情况。为了使比较有意义，应尽量让其他有关条件一致，例如种子数量、来源、温度、光照、观察天数与发芽判定方式。若有水盒放在温暖窗台、无水盒放在冷暗柜里，即使结果不同，也无法把差异单独归因于水，因为温度和光照同时改变了。\n这里把“发芽”操作性地定义为观察到胚根伸出种皮，便于不同记录者使用同一标准。这个定义是本实验的观察规则，不是所有生物过程的完整描述。记录者应按事先约定的时间观察全部种子，而不是只挑成功的那几颗展示。没有发芽的种子也必须计入，才能知道发芽比例。\n设两盒各十粒同批种子，均在同温同光处放置七天。甲盒保持适量湿润，乙盒保持干燥。甲有八粒达到上述标准，乙有一粒。可以说在这批种子和这些条件下，湿润组观察到的发芽比例更高。仅凭这一次观察，还不能断言所有种类的种子只要加水都会发芽；种子活性、温度及其他条件仍可能重要。也不能说乙盒绝对没有任何水分，因为“保持干燥”是操作描述，并未测出零水分。\n重复实验可以帮助检查结果是否稳定，但重复的对象、条件与方法需要记录。把同一张照片复制三次不是三次独立实验。同一盒内种子也共享环境，不能总把它们当成互不影响的完整重复。入门练习无需复杂统计检验，只要能说明为什么重复有用、哪些信息仍然有限。\n好的后续实验应对应目前的疑问。如果怀疑温度造成差异，就应在同一温度下只改变湿润条件，或设计清楚的组合比较；不能一边改变温度，一边换种子品种，再把结果归因于某一个因素。若希望研究“水太多是否也影响发芽”，可以在其他条件一致时增加不同水量组，事先说明每组的水量与观察标准。\n解释实验时，把计划、执行、观察和结论分开写。计划相同不代表执行真的相同，需核对记录；观察不同不自动证明唯一原因。允许结果不支持原假说，并据此修改下一步问题，正是实验学习的一部分。对证据保留限制，不妨碍学生提出清楚、可检验的预测。",
+              "valueHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [
+            {
+              "level": 0,
+              "code": "INDEPENDENT_CONDITIONS",
+              "detail": {
+                "kind": "conditions",
+                "status": "defect",
+                "affected": [
+                  "Q2"
+                ],
+                "reason": "Artifact e17 断言：不同组可以同时改变种子、温度和水量，只要照片更绿就宣布水是唯一原因。该条件式结论（照片更绿→水唯一原因）在 multitree 变量同时改变时缺乏控制变量支持，构成实质错误教导，违背实验归因的基本逻辑。",
+                "refs": [
+                  "e17"
+                ],
+                "challenge": {
+                  "status": "counterexample",
+                  "reason": "固定作者允许情景：同时改变种子、温度、水量且照片更绿。可补充相容具体情况：温度差异导致更绿而水量无因果贡献，此时结论'水唯一原因'不成立，证明原断言未建立且错误。",
+                  "refs": [
+                    "e17"
+                  ]
+                },
+                "witnesses": [
+                  {
+                    "id": "e17",
+                    "pointer": "/artifacts/0/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "本节只训练挑出最好看的发芽照片。不同组可以同时改变种子、温度和水量，只要照片更绿就宣布水是唯一原因。",
+                    "valueHash": "dcae8dbed8f56c72787cc0a51b27c89f5dd92430d5013f13cca9a4dc91ab10cd"
+                  }
+                ],
+                "reviewReasons": []
+              }
+            }
+          ],
+          "proposedLevel": 0,
+          "proposedReason": "Artifact e17 instructs picking prettiest photo and allows simultaneously changing seed/temperature/water then declaring water sole cause from greener photo, which distorts essential goal e5 (identify concurrent variables) and e6 (observation vs general rule, cf e3) and silently drops e7 (design controlled follow-up). This matches rubric 0: an essential goal is distorted/disappears.",
+          "decidingConstraint": "INDEPENDENT_CONDITIONS"
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "01da6c0e8ff9f8994200324ef1ecec2d2c6046c755bd10d8d6f51369d317b419"
+  }
+}

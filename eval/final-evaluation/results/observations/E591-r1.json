@@ -1,0 +1,1153 @@
+{
+  "task": {
+    "caseId": "E591",
+    "runId": "E591-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E591.json",
+    "inputHash": "635e3e52ad63ecf1fa1b4c1f07f306bd212df0b1c8a66ae3f8c94dadcf067bb9",
+    "population": "controlled",
+    "sourceId": "F10"
+  },
+  "inputHash": "635e3e52ad63ecf1fa1b4c1f07f306bd212df0b1c8a66ae3f8c94dadcf067bb9",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "solve-current": "99fdfee8673e5d3305404a3bc7f4523016e6189fea7d036cde67e050c1f6d2d1",
+      "student-criteria": "1742d57560fb968779981050da091edae024f0aa267185fa4526ad5cf71a0dad",
+      "artifact-audit": "e46fdafd05bdcc21d6f466c51baff5834c29d041518300571dc2b0c79c6300bf"
+    },
+    "stages": {
+      "solve-current": {
+        "status": "resolved",
+        "solution": "单人时裁纸与调墨均须工作人员全程操作，资源互斥不能并行。最早安排：0-4裁纸，4-7调墨（或先调墨0-3后裁纸3-7），7-9盖章，9-14晾干（不占人），14-15装袋；总时长15分钟。前两步不能同时进行因仅一名工作人员且两步骤都需其全程操作（e3单人工况）。",
+        "witnesses": [
+          {
+            "id": "e3",
+            "pointer": "/sources/0/text",
+            "role": "source",
+            "kind": "text",
+            "value": "制作一份纸质纪念册需要四个步骤：裁纸、调墨、盖章、晾干后装袋。这里约定裁纸需要四分钟，调墨需要三分钟；盖章必须在裁纸和调墨都完成后才能开始，需要两分钟；盖章完成后必须连续晾干五分钟，之后装袋需要一分钟。任务从零时刻开始，纸张和墨水均未准备。所有时长固定，不考虑走动与工具切换的额外时间。\n若有两名工作人员，且裁紙工具与调墨工具互不冲突，就可以一人裁纸、一人调墨，从零时刻并行开始。调墨在第三分钟完成，裁纸在第四分钟完成，盖章最早第四分钟开始，第六分钟完成。晾干到第十一分钟，装袋到第十二分钟结束。两条前置路径汇合时，必须等较晚完成的那条，因此不能把三分钟与四分钟相加，也不能只等较短的一条。\n若只有一名工作人员，裁纸和调墨都需要此人全程操作，二者就不能并行，前两步一共七分钟；之后盖章、晾干和装袋再需八分钟，总计十五分钟。晾干本身不占用工作人员，但没有其他待办步骤可在这段时间提前完成。这里的最短时间来自明确依赖和资源条件，不是见到两步就默认可以同时进行。\n工序的顺序关系与总时间要分别检查。一个方案即使碰巧写出十二分钟，只要它在墨未调好时先盖章，仍不合法。反过来，合法方案不一定最短；两名工作人员也可以选择先裁纸后调墨，但那会闲置可用的并行机会。评价方案时，先检查每一步的开工条件，再讨论是否还有不必要的等待。\n如果材料说明改为“盖章后先观察两分钟，确认印迹无扩散后才进入五分钟晾干”，新增步骤会延后装袋时刻，不能沿用旧总时长。若改用一种允许立即装袋的墨，则又需要依据新的明确条件重算。本单元不对真实墨水安全作建议，只按题设的工艺规则安排时间。\n可以用文字时间表表达方案，每行写步骤、开始时刻、结束时刻和它等待的条件。换一种表格或叙述顺序都可以，只要时刻和依赖一致。对缺少工作人员数量或工具冲突信息的问题，应说明哪些并行安排尚不能确定；如果只要求给出一个合法方案，则可以明确提出足够的资源假设，而不是声称它在任何条件下都最短。",
+            "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+          },
+          {
+            "id": "e14",
+            "pointer": "/question/prompt",
+            "role": "question",
+            "kind": "text",
+            "value": "沿用来源的裁纸4分钟、调墨3分钟、盖章2分钟、晾干5分钟、装袋1分钟及依赖。现在只有一名工作人员，裁纸、调墨、盖章和装袋均须其全程操作，晾干不占人。写一个最早完成的安排与总时长，解释前两步为何不能同时进行。",
+            "valueHash": "ce5a8939cb4e78271c0be7d65949a5f5b4ef0845e029b79e800fc25609c626c9"
+          }
+        ],
+        "reviewReasons": []
+      },
+      "student-criteria": {
+        "taskValidity": "valid",
+        "rubricValidity": "valid",
+        "reason": "题目明确单人约束与步骤参数，量规必要标准与题设一致，学生回答可对照评估。",
+        "validityWitnesses": [
+          {
+            "id": "e14",
+            "pointer": "/question/prompt",
+            "role": "question",
+            "kind": "text",
+            "value": "沿用来源的裁纸4分钟、调墨3分钟、盖章2分钟、晾干5分钟、装袋1分钟及依赖。现在只有一名工作人员，裁纸、调墨、盖章和装袋均须其全程操作，晾干不占人。写一个最早完成的安排与总时长，解释前两步为何不能同时进行。",
+            "valueHash": "ce5a8939cb4e78271c0be7d65949a5f5b4ef0845e029b79e800fc25609c626c9"
+          },
+          {
+            "id": "e16",
+            "pointer": "/rubric",
+            "role": "criterion",
+            "kind": "array_length",
+            "value": 3,
+            "valueHash": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce"
+          },
+          {
+            "id": "e3",
+            "pointer": "/sources/0/text",
+            "role": "source",
+            "kind": "text",
+            "value": "制作一份纸质纪念册需要四个步骤：裁纸、调墨、盖章、晾干后装袋。这里约定裁纸需要四分钟，调墨需要三分钟；盖章必须在裁纸和调墨都完成后才能开始，需要两分钟；盖章完成后必须连续晾干五分钟，之后装袋需要一分钟。任务从零时刻开始，纸张和墨水均未准备。所有时长固定，不考虑走动与工具切换的额外时间。\n若有两名工作人员，且裁紙工具与调墨工具互不冲突，就可以一人裁纸、一人调墨，从零时刻并行开始。调墨在第三分钟完成，裁纸在第四分钟完成，盖章最早第四分钟开始，第六分钟完成。晾干到第十一分钟，装袋到第十二分钟结束。两条前置路径汇合时，必须等较晚完成的那条，因此不能把三分钟与四分钟相加，也不能只等较短的一条。\n若只有一名工作人员，裁纸和调墨都需要此人全程操作，二者就不能并行，前两步一共七分钟；之后盖章、晾干和装袋再需八分钟，总计十五分钟。晾干本身不占用工作人员，但没有其他待办步骤可在这段时间提前完成。这里的最短时间来自明确依赖和资源条件，不是见到两步就默认可以同时进行。\n工序的顺序关系与总时间要分别检查。一个方案即使碰巧写出十二分钟，只要它在墨未调好时先盖章，仍不合法。反过来，合法方案不一定最短；两名工作人员也可以选择先裁纸后调墨，但那会闲置可用的并行机会。评价方案时，先检查每一步的开工条件，再讨论是否还有不必要的等待。\n如果材料说明改为“盖章后先观察两分钟，确认印迹无扩散后才进入五分钟晾干”，新增步骤会延后装袋时刻，不能沿用旧总时长。若改用一种允许立即装袋的墨，则又需要依据新的明确条件重算。本单元不对真实墨水安全作建议，只按题设的工艺规则安排时间。\n可以用文字时间表表达方案，每行写步骤、开始时刻、结束时刻和它等待的条件。换一种表格或叙述顺序都可以，只要时刻和依赖一致。对缺少工作人员数量或工具冲突信息的问题，应说明哪些并行安排尚不能确定；如果只要求给出一个合法方案，则可以明确提出足够的资源假设，而不是声称它在任何条件下都最短。",
+            "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+          },
+          {
+            "id": "e26",
+            "pointer": "/answer",
+            "role": "student",
+            "kind": "text",
+            "value": "先裁纸0到4，再调墨4到7；盖章7到9，晾干到14，装袋14到15，共15分钟。一个人不能同时全程做裁纸调墨；盖章等两项都完成，装袋等晾干。",
+            "valueHash": "34accab7968bc0707a122ed587a541eeab95ae31cde0cb7baa3f70221b2e32b9"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "c1",
+            "required": true,
+            "result": "met",
+            "reason": "顺序裁纸0-4、调墨4-7、盖章7-9、晾干至14、装袋14-15共15分，遵守依赖与单人限制。",
+            "witnesses": [
+              {
+                "id": "e26",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "先裁纸0到4，再调墨4到7；盖章7到9，晾干到14，装袋14到15，共15分钟。一个人不能同时全程做裁纸调墨；盖章等两项都完成，装袋等晾干。",
+                "valueHash": "34accab7968bc0707a122ed587a541eeab95ae31cde0cb7baa3f70221b2e32b9"
+              },
+              {
+                "id": "e18",
+                "pointer": "/rubric/0/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "给出遵守全部依赖及一人资源限制的顺序和15分钟总时长。",
+                "valueHash": "6d6fefad5383dac2bb0c47db92b83a89886b59566e1583b412229865ca4b2104"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "id": "c2",
+            "required": true,
+            "result": "met",
+            "reason": "解释一人不能并行做裁纸调墨，盖章等两前置完成、装袋等晾干，满足解释要求。",
+            "witnesses": [
+              {
+                "id": "e26",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "先裁纸0到4，再调墨4到7；盖章7到9，晾干到14，装袋14到15，共15分钟。一个人不能同时全程做裁纸调墨；盖章等两项都完成，装袋等晾干。",
+                "valueHash": "34accab7968bc0707a122ed587a541eeab95ae31cde0cb7baa3f70221b2e32b9"
+              },
+              {
+                "id": "e21",
+                "pointer": "/rubric/1/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "解释裁纸调墨不能并行，盖章须等两前置完成、装袋须等晾干。",
+                "valueHash": "e36185c69c1d059a17bcbf97c9e8c9021a8745bfa007a9bcc19455fe79298ac7"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "id": "c3",
+            "required": false,
+            "result": "not_met",
+            "reason": "未用小标题分开计算和解释，仅连续叙述，未满足可选表达形式。",
+            "witnesses": [
+              {
+                "id": "e26",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "先裁纸0到4，再调墨4到7；盖章7到9，晾干到14，装袋14到15，共15分钟。一个人不能同时全程做裁纸调墨；盖章等两项都完成，装袋等晾干。",
+                "valueHash": "34accab7968bc0707a122ed587a541eeab95ae31cde0cb7baa3f70221b2e32b9"
+              },
+              {
+                "id": "e24",
+                "pointer": "/rubric/2/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "可选表达：用小标题分开计算和解释。",
+                "valueHash": "ed58a9e65b5e9c545c19428652cec947f94db416fe4bf8b7812969666b7e080a"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ],
+        "sufficiency": "sufficient",
+        "reviewReasons": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q5",
+            "level": 2,
+            "reason": "产品判分c1 met(e33),c2 met(e35),c3 not_met(e37)，反馈不影响通过(e38)并授予学分(e39)。独立复核学生答案(e26)给出单人15分顺序与解释，满足必需c1(e17) c2(e20)，c3可选缺失，评分无实质错误。",
+            "refs": [
+              "e26",
+              "e33",
+              "e35",
+              "e37",
+              "e38",
+              "e39",
+              "e17",
+              "e20",
+              "e23"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e26",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "先裁纸0到4，再调墨4到7；盖章7到9，晾干到14，装袋14到15，共15分钟。一个人不能同时全程做裁纸调墨；盖章等两项都完成，装袋等晾干。",
+                "valueHash": "34accab7968bc0707a122ed587a541eeab95ae31cde0cb7baa3f70221b2e32b9"
+              },
+              {
+                "id": "e33",
+                "pointer": "/productJudgment/criteria/0/result",
+                "role": "product",
+                "kind": "text",
+                "value": "met",
+                "valueHash": "6efcbfb1f9f195ced75feb43f202ab14a8cd87832cef086976b16658e23944a8"
+              },
+              {
+                "id": "e35",
+                "pointer": "/productJudgment/criteria/1/result",
+                "role": "product",
+                "kind": "text",
+                "value": "met",
+                "valueHash": "6efcbfb1f9f195ced75feb43f202ab14a8cd87832cef086976b16658e23944a8"
+              },
+              {
+                "id": "e37",
+                "pointer": "/productJudgment/criteria/2/result",
+                "role": "product",
+                "kind": "text",
+                "value": "not_met",
+                "valueHash": "1fbcf23a28d84c32b3e517b749f865dff62e466f1caa29b50173e236542a8342"
+              },
+              {
+                "id": "e38",
+                "pointer": "/productJudgment/feedback",
+                "role": "product",
+                "kind": "text",
+                "value": "必要含义和运算均已展示；没有小标题只影响可选排版，不影响通过。",
+                "valueHash": "89c727f844ede74e17dcf7aac610663610c531d72c23683c04bcd4f42f1d925e"
+              },
+              {
+                "id": "e39",
+                "pointer": "/productJudgment/consequence",
+                "role": "product",
+                "kind": "text",
+                "value": "已授予本题学分。",
+                "valueHash": "7a46f96ef53640241d47aaf5bf8982277cb8089d4e31cb15b6a2197d05b6c7b9"
+              },
+              {
+                "id": "e17",
+                "pointer": "/rubric/0/id",
+                "role": "criterion",
+                "kind": "text",
+                "value": "c1",
+                "valueHash": "d0f631ca1ddba8db3bcfcb9e057cdc98d0379f1bee00e75a545147a27dadd982"
+              },
+              {
+                "id": "e20",
+                "pointer": "/rubric/1/id",
+                "role": "criterion",
+                "kind": "text",
+                "value": "c2",
+                "valueHash": "9c0abe51c6e6655d81de2d044d4fb194931f058c0426c67c7285d8f5657ed64a"
+              },
+              {
+                "id": "e23",
+                "pointer": "/rubric/2/id",
+                "role": "criterion",
+                "kind": "text",
+                "value": "c3",
+                "valueHash": "7c1c97df17c066924822b0af09a65251554962c61e23329aed04cd19020dc3b8"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ],
+        "credit": {
+          "outcome": "granted",
+          "reason": "产品明确已授予本题学分(e39)，必需标准满足，后果语义正确。",
+          "refs": [
+            "e39",
+            "e17",
+            "e20"
+          ],
+          "witnesses": [
+            {
+              "id": "e39",
+              "pointer": "/productJudgment/consequence",
+              "role": "product",
+              "kind": "text",
+              "value": "已授予本题学分。",
+              "valueHash": "7a46f96ef53640241d47aaf5bf8982277cb8089d4e31cb15b6a2197d05b6c7b9"
+            },
+            {
+              "id": "e17",
+              "pointer": "/rubric/0/id",
+              "role": "criterion",
+              "kind": "text",
+              "value": "c1",
+              "valueHash": "d0f631ca1ddba8db3bcfcb9e057cdc98d0379f1bee00e75a545147a27dadd982"
+            },
+            {
+              "id": "e20",
+              "pointer": "/rubric/1/id",
+              "role": "criterion",
+              "kind": "text",
+              "value": "c2",
+              "valueHash": "9c0abe51c6e6655d81de2d044d4fb194931f058c0426c67c7285d8f5657ed64a"
+            }
+          ],
+          "reviewReasons": []
+        },
+        "studentCheck": {
+          "taskValidity": "valid",
+          "rubricValidity": "valid",
+          "reason": "学生答案合法满足任务，产品评分与独立复核一致。",
+          "validityWitnesses": [
+            {
+              "id": "e26",
+              "pointer": "/answer",
+              "role": "student",
+              "kind": "text",
+              "value": "先裁纸0到4，再调墨4到7；盖章7到9，晾干到14，装袋14到15，共15分钟。一个人不能同时全程做裁纸调墨；盖章等两项都完成，装袋等晾干。",
+              "valueHash": "34accab7968bc0707a122ed587a541eeab95ae31cde0cb7baa3f70221b2e32b9"
+            },
+            {
+              "id": "e31",
+              "pointer": "/productJudgment/criteria",
+              "role": "product",
+              "kind": "array_length",
+              "value": 3,
+              "valueHash": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce"
+            }
+          ],
+          "criteria": [
+            {
+              "id": "c1",
+              "required": true,
+              "result": "uncertain",
+              "reason": "Student/criterion evidence is missing or invalid.",
+              "proposed": {
+                "id": "c1",
+                "result": "met",
+                "reason": "顺序0-4裁纸,4-7调墨,7-9盖章,到15分共15，遵守依赖与一人限制(e26,e3)",
+                "refs": [
+                  "e26",
+                  "e17"
+                ]
+              },
+              "reviewReasons": [
+                "CRITERION_STUDENT_GROUNDING_MISSING"
+              ]
+            },
+            {
+              "id": "c2",
+              "required": true,
+              "result": "uncertain",
+              "reason": "Student/criterion evidence is missing or invalid.",
+              "proposed": {
+                "id": "c2",
+                "result": "met",
+                "reason": "解释一人不能同时做裁纸调墨；盖章等两前置，装袋等晾干(e26,e21)",
+                "refs": [
+                  "e26",
+                  "e20"
+                ]
+              },
+              "reviewReasons": [
+                "CRITERION_STUDENT_GROUNDING_MISSING"
+              ]
+            },
+            {
+              "id": "c3",
+              "required": false,
+              "result": "uncertain",
+              "reason": "Student/criterion evidence is missing or invalid.",
+              "proposed": {
+                "id": "c3",
+                "result": "not_met",
+                "reason": "未用小标题分开，但标准可选(e23)",
+                "refs": [
+                  "e26",
+                  "e23"
+                ]
+              },
+              "reviewReasons": [
+                "CRITERION_STUDENT_GROUNDING_MISSING"
+              ]
+            }
+          ],
+          "sufficiency": "uncertain",
+          "reviewReasons": []
+        }
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q5",
+          "level": "U",
+          "reason": "REQUIRED_CRITERION_UNCERTAIN",
+          "refs": [
+            "e26",
+            "e33",
+            "e35",
+            "e37",
+            "e38",
+            "e39",
+            "e17",
+            "e20",
+            "e23"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e26",
+              "pointer": "/answer",
+              "role": "student",
+              "kind": "text",
+              "value": "先裁纸0到4，再调墨4到7；盖章7到9，晾干到14，装袋14到15，共15分钟。一个人不能同时全程做裁纸调墨；盖章等两项都完成，装袋等晾干。",
+              "valueHash": "34accab7968bc0707a122ed587a541eeab95ae31cde0cb7baa3f70221b2e32b9"
+            },
+            {
+              "id": "e33",
+              "pointer": "/productJudgment/criteria/0/result",
+              "role": "product",
+              "kind": "text",
+              "value": "met",
+              "valueHash": "6efcbfb1f9f195ced75feb43f202ab14a8cd87832cef086976b16658e23944a8"
+            },
+            {
+              "id": "e35",
+              "pointer": "/productJudgment/criteria/1/result",
+              "role": "product",
+              "kind": "text",
+              "value": "met",
+              "valueHash": "6efcbfb1f9f195ced75feb43f202ab14a8cd87832cef086976b16658e23944a8"
+            },
+            {
+              "id": "e37",
+              "pointer": "/productJudgment/criteria/2/result",
+              "role": "product",
+              "kind": "text",
+              "value": "not_met",
+              "valueHash": "1fbcf23a28d84c32b3e517b749f865dff62e466f1caa29b50173e236542a8342"
+            },
+            {
+              "id": "e38",
+              "pointer": "/productJudgment/feedback",
+              "role": "product",
+              "kind": "text",
+              "value": "必要含义和运算均已展示；没有小标题只影响可选排版，不影响通过。",
+              "valueHash": "89c727f844ede74e17dcf7aac610663610c531d72c23683c04bcd4f42f1d925e"
+            },
+            {
+              "id": "e39",
+              "pointer": "/productJudgment/consequence",
+              "role": "product",
+              "kind": "text",
+              "value": "已授予本题学分。",
+              "valueHash": "7a46f96ef53640241d47aaf5bf8982277cb8089d4e31cb15b6a2197d05b6c7b9"
+            },
+            {
+              "id": "e17",
+              "pointer": "/rubric/0/id",
+              "role": "criterion",
+              "kind": "text",
+              "value": "c1",
+              "valueHash": "d0f631ca1ddba8db3bcfcb9e057cdc98d0379f1bee00e75a545147a27dadd982"
+            },
+            {
+              "id": "e20",
+              "pointer": "/rubric/1/id",
+              "role": "criterion",
+              "kind": "text",
+              "value": "c2",
+              "valueHash": "9c0abe51c6e6655d81de2d044d4fb194931f058c0426c67c7285d8f5657ed64a"
+            },
+            {
+              "id": "e23",
+              "pointer": "/rubric/2/id",
+              "role": "criterion",
+              "kind": "text",
+              "value": "c3",
+              "valueHash": "7c1c97df17c066924822b0af09a65251554962c61e23329aed04cd19020dc3b8"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [
+            {
+              "level": "U",
+              "code": "REQUIRED_CRITERION_UNCERTAIN",
+              "detail": {
+                "independent": {
+                  "id": "c1",
+                  "required": true,
+                  "result": "uncertain",
+                  "reason": "Independent semantic readings differ; review the actual answer and requirement.",
+                  "witnesses": [
+                    {
+                      "id": "e26",
+                      "pointer": "/answer",
+                      "role": "student",
+                      "kind": "text",
+                      "value": "先裁纸0到4，再调墨4到7；盖章7到9，晾干到14，装袋14到15，共15分钟。一个人不能同时全程做裁纸调墨；盖章等两项都完成，装袋等晾干。",
+                      "valueHash": "34accab7968bc0707a122ed587a541eeab95ae31cde0cb7baa3f70221b2e32b9"
+                    },
+                    {
+                      "id": "e18",
+                      "pointer": "/rubric/0/text",
+                      "role": "criterion",
+                      "kind": "text",
+                      "value": "给出遵守全部依赖及一人资源限制的顺序和15分钟总时长。",
+                      "valueHash": "6d6fefad5383dac2bb0c47db92b83a89886b59566e1583b412229865ca4b2104"
+                    }
+                  ],
+                  "reviewReasons": [
+                    "CRITERION_SEMANTIC_DISAGREEMENT"
+                  ],
+                  "readings": [
+                    {
+                      "id": "c1",
+                      "required": true,
+                      "result": "met",
+                      "reason": "顺序裁纸0-4、调墨4-7、盖章7-9、晾干至14、装袋14-15共15分，遵守依赖与单人限制。",
+                      "witnesses": [
+                        {
+                          "id": "e26",
+                          "pointer": "/answer",
+                          "role": "student",
+                          "kind": "text",
+                          "value": "先裁纸0到4，再调墨4到7；盖章7到9，晾干到14，装袋14到15，共15分钟。一个人不能同时全程做裁纸调墨；盖章等两项都完成，装袋等晾干。",
+                          "valueHash": "34accab7968bc0707a122ed587a541eeab95ae31cde0cb7baa3f70221b2e32b9"
+                        },
+                        {
+                          "id": "e18",
+                          "pointer": "/rubric/0/text",
+                          "role": "criterion",
+                          "kind": "text",
+                          "value": "给出遵守全部依赖及一人资源限制的顺序和15分钟总时长。",
+                          "valueHash": "6d6fefad5383dac2bb0c47db92b83a89886b59566e1583b412229865ca4b2104"
+                        }
+                      ],
+                      "reviewReasons": []
+                    },
+                    {
+                      "id": "c1",
+                      "required": true,
+                      "result": "uncertain",
+                      "reason": "Student/criterion evidence is missing or invalid.",
+                      "proposed": {
+                        "id": "c1",
+                        "result": "met",
+                        "reason": "顺序0-4裁纸,4-7调墨,7-9盖章,到15分共15，遵守依赖与一人限制(e26,e3)",
+                        "refs": [
+                          "e26",
+                          "e17"
+                        ]
+                      },
+                      "reviewReasons": [
+                        "CRITERION_STUDENT_GROUNDING_MISSING"
+                      ]
+                    }
+                  ]
+                },
+                "product": {
+                  "id": "c1",
+                  "result": "met"
+                }
+              }
+            },
+            {
+              "level": "U",
+              "code": "REQUIRED_CRITERION_UNCERTAIN",
+              "detail": {
+                "independent": {
+                  "id": "c2",
+                  "required": true,
+                  "result": "uncertain",
+                  "reason": "Independent semantic readings differ; review the actual answer and requirement.",
+                  "witnesses": [
+                    {
+                      "id": "e26",
+                      "pointer": "/answer",
+                      "role": "student",
+                      "kind": "text",
+                      "value": "先裁纸0到4，再调墨4到7；盖章7到9，晾干到14，装袋14到15，共15分钟。一个人不能同时全程做裁纸调墨；盖章等两项都完成，装袋等晾干。",
+                      "valueHash": "34accab7968bc0707a122ed587a541eeab95ae31cde0cb7baa3f70221b2e32b9"
+                    },
+                    {
+                      "id": "e21",
+                      "pointer": "/rubric/1/text",
+                      "role": "criterion",
+                      "kind": "text",
+                      "value": "解释裁纸调墨不能并行，盖章须等两前置完成、装袋须等晾干。",
+                      "valueHash": "e36185c69c1d059a17bcbf97c9e8c9021a8745bfa007a9bcc19455fe79298ac7"
+                    }
+                  ],
+                  "reviewReasons": [
+                    "CRITERION_SEMANTIC_DISAGREEMENT"
+                  ],
+                  "readings": [
+                    {
+                      "id": "c2",
+                      "required": true,
+                      "result": "met",
+                      "reason": "解释一人不能并行做裁纸调墨，盖章等两前置完成、装袋等晾干，满足解释要求。",
+                      "witnesses": [
+                        {
+                          "id": "e26",
+                          "pointer": "/answer",
+                          "role": "student",
+                          "kind": "text",
+                          "value": "先裁纸0到4，再调墨4到7；盖章7到9，晾干到14，装袋14到15，共15分钟。一个人不能同时全程做裁纸调墨；盖章等两项都完成，装袋等晾干。",
+                          "valueHash": "34accab7968bc0707a122ed587a541eeab95ae31cde0cb7baa3f70221b2e32b9"
+                        },
+                        {
+                          "id": "e21",
+                          "pointer": "/rubric/1/text",
+                          "role": "criterion",
+                          "kind": "text",
+                          "value": "解释裁纸调墨不能并行，盖章须等两前置完成、装袋须等晾干。",
+                          "valueHash": "e36185c69c1d059a17bcbf97c9e8c9021a8745bfa007a9bcc19455fe79298ac7"
+                        }
+                      ],
+                      "reviewReasons": []
+                    },
+                    {
+                      "id": "c2",
+                      "required": true,
+                      "result": "uncertain",
+                      "reason": "Student/criterion evidence is missing or invalid.",
+                      "proposed": {
+                        "id": "c2",
+                        "result": "met",
+                        "reason": "解释一人不能同时做裁纸调墨；盖章等两前置，装袋等晾干(e26,e21)",
+                        "refs": [
+                          "e26",
+                          "e20"
+                        ]
+                      },
+                      "reviewReasons": [
+                        "CRITERION_STUDENT_GROUNDING_MISSING"
+                      ]
+                    }
+                  ]
+                },
+                "product": {
+                  "id": "c2",
+                  "result": "met"
+                }
+              }
+            },
+            {
+              "level": "U",
+              "code": "CREDIT_CORRECTNESS_UNCERTAIN",
+              "detail": {
+                "sufficiency": "uncertain",
+                "credit": {
+                  "outcome": "granted",
+                  "reason": "产品明确已授予本题学分(e39)，必需标准满足，后果语义正确。",
+                  "refs": [
+                    "e39",
+                    "e17",
+                    "e20"
+                  ],
+                  "witnesses": [
+                    {
+                      "id": "e39",
+                      "pointer": "/productJudgment/consequence",
+                      "role": "product",
+                      "kind": "text",
+                      "value": "已授予本题学分。",
+                      "valueHash": "7a46f96ef53640241d47aaf5bf8982277cb8089d4e31cb15b6a2197d05b6c7b9"
+                    },
+                    {
+                      "id": "e17",
+                      "pointer": "/rubric/0/id",
+                      "role": "criterion",
+                      "kind": "text",
+                      "value": "c1",
+                      "valueHash": "d0f631ca1ddba8db3bcfcb9e057cdc98d0379f1bee00e75a545147a27dadd982"
+                    },
+                    {
+                      "id": "e20",
+                      "pointer": "/rubric/1/id",
+                      "role": "criterion",
+                      "kind": "text",
+                      "value": "c2",
+                      "valueHash": "9c0abe51c6e6655d81de2d044d4fb194931f058c0426c67c7285d8f5657ed64a"
+                    }
+                  ],
+                  "reviewReasons": []
+                }
+              }
+            }
+          ],
+          "proposedLevel": 2,
+          "proposedReason": "产品判分c1 met(e33),c2 met(e35),c3 not_met(e37)，反馈不影响通过(e38)并授予学分(e39)。独立复核学生答案(e26)给出单人15分顺序与解释，满足必需c1(e17) c2(e20)，c3可选缺失，评分无实质错误。",
+          "decidingConstraint": "REQUIRED_CRITERION_UNCERTAIN"
+        }
+      ],
+      "studentAssessment": {
+        "taskValidity": "valid",
+        "rubricValidity": "valid",
+        "reason": "题目明确单人约束与步骤参数，量规必要标准与题设一致，学生回答可对照评估。",
+        "validityWitnesses": [
+          {
+            "id": "e14",
+            "pointer": "/question/prompt",
+            "role": "question",
+            "kind": "text",
+            "value": "沿用来源的裁纸4分钟、调墨3分钟、盖章2分钟、晾干5分钟、装袋1分钟及依赖。现在只有一名工作人员，裁纸、调墨、盖章和装袋均须其全程操作，晾干不占人。写一个最早完成的安排与总时长，解释前两步为何不能同时进行。",
+            "valueHash": "ce5a8939cb4e78271c0be7d65949a5f5b4ef0845e029b79e800fc25609c626c9"
+          },
+          {
+            "id": "e16",
+            "pointer": "/rubric",
+            "role": "criterion",
+            "kind": "array_length",
+            "value": 3,
+            "valueHash": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce"
+          },
+          {
+            "id": "e3",
+            "pointer": "/sources/0/text",
+            "role": "source",
+            "kind": "text",
+            "value": "制作一份纸质纪念册需要四个步骤：裁纸、调墨、盖章、晾干后装袋。这里约定裁纸需要四分钟，调墨需要三分钟；盖章必须在裁纸和调墨都完成后才能开始，需要两分钟；盖章完成后必须连续晾干五分钟，之后装袋需要一分钟。任务从零时刻开始，纸张和墨水均未准备。所有时长固定，不考虑走动与工具切换的额外时间。\n若有两名工作人员，且裁紙工具与调墨工具互不冲突，就可以一人裁纸、一人调墨，从零时刻并行开始。调墨在第三分钟完成，裁纸在第四分钟完成，盖章最早第四分钟开始，第六分钟完成。晾干到第十一分钟，装袋到第十二分钟结束。两条前置路径汇合时，必须等较晚完成的那条，因此不能把三分钟与四分钟相加，也不能只等较短的一条。\n若只有一名工作人员，裁纸和调墨都需要此人全程操作，二者就不能并行，前两步一共七分钟；之后盖章、晾干和装袋再需八分钟，总计十五分钟。晾干本身不占用工作人员，但没有其他待办步骤可在这段时间提前完成。这里的最短时间来自明确依赖和资源条件，不是见到两步就默认可以同时进行。\n工序的顺序关系与总时间要分别检查。一个方案即使碰巧写出十二分钟，只要它在墨未调好时先盖章，仍不合法。反过来，合法方案不一定最短；两名工作人员也可以选择先裁纸后调墨，但那会闲置可用的并行机会。评价方案时，先检查每一步的开工条件，再讨论是否还有不必要的等待。\n如果材料说明改为“盖章后先观察两分钟，确认印迹无扩散后才进入五分钟晾干”，新增步骤会延后装袋时刻，不能沿用旧总时长。若改用一种允许立即装袋的墨，则又需要依据新的明确条件重算。本单元不对真实墨水安全作建议，只按题设的工艺规则安排时间。\n可以用文字时间表表达方案，每行写步骤、开始时刻、结束时刻和它等待的条件。换一种表格或叙述顺序都可以，只要时刻和依赖一致。对缺少工作人员数量或工具冲突信息的问题，应说明哪些并行安排尚不能确定；如果只要求给出一个合法方案，则可以明确提出足够的资源假设，而不是声称它在任何条件下都最短。",
+            "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+          },
+          {
+            "id": "e26",
+            "pointer": "/answer",
+            "role": "student",
+            "kind": "text",
+            "value": "先裁纸0到4，再调墨4到7；盖章7到9，晾干到14，装袋14到15，共15分钟。一个人不能同时全程做裁纸调墨；盖章等两项都完成，装袋等晾干。",
+            "valueHash": "34accab7968bc0707a122ed587a541eeab95ae31cde0cb7baa3f70221b2e32b9"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "c1",
+            "required": true,
+            "result": "uncertain",
+            "reason": "Independent semantic readings differ; review the actual answer and requirement.",
+            "witnesses": [
+              {
+                "id": "e26",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "先裁纸0到4，再调墨4到7；盖章7到9，晾干到14，装袋14到15，共15分钟。一个人不能同时全程做裁纸调墨；盖章等两项都完成，装袋等晾干。",
+                "valueHash": "34accab7968bc0707a122ed587a541eeab95ae31cde0cb7baa3f70221b2e32b9"
+              },
+              {
+                "id": "e18",
+                "pointer": "/rubric/0/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "给出遵守全部依赖及一人资源限制的顺序和15分钟总时长。",
+                "valueHash": "6d6fefad5383dac2bb0c47db92b83a89886b59566e1583b412229865ca4b2104"
+              }
+            ],
+            "reviewReasons": [
+              "CRITERION_SEMANTIC_DISAGREEMENT"
+            ],
+            "readings": [
+              {
+                "id": "c1",
+                "required": true,
+                "result": "met",
+                "reason": "顺序裁纸0-4、调墨4-7、盖章7-9、晾干至14、装袋14-15共15分，遵守依赖与单人限制。",
+                "witnesses": [
+                  {
+                    "id": "e26",
+                    "pointer": "/answer",
+                    "role": "student",
+                    "kind": "text",
+                    "value": "先裁纸0到4，再调墨4到7；盖章7到9，晾干到14，装袋14到15，共15分钟。一个人不能同时全程做裁纸调墨；盖章等两项都完成，装袋等晾干。",
+                    "valueHash": "34accab7968bc0707a122ed587a541eeab95ae31cde0cb7baa3f70221b2e32b9"
+                  },
+                  {
+                    "id": "e18",
+                    "pointer": "/rubric/0/text",
+                    "role": "criterion",
+                    "kind": "text",
+                    "value": "给出遵守全部依赖及一人资源限制的顺序和15分钟总时长。",
+                    "valueHash": "6d6fefad5383dac2bb0c47db92b83a89886b59566e1583b412229865ca4b2104"
+                  }
+                ],
+                "reviewReasons": []
+              },
+              {
+                "id": "c1",
+                "required": true,
+                "result": "uncertain",
+                "reason": "Student/criterion evidence is missing or invalid.",
+                "proposed": {
+                  "id": "c1",
+                  "result": "met",
+                  "reason": "顺序0-4裁纸,4-7调墨,7-9盖章,到15分共15，遵守依赖与一人限制(e26,e3)",
+                  "refs": [
+                    "e26",
+                    "e17"
+                  ]
+                },
+                "reviewReasons": [
+                  "CRITERION_STUDENT_GROUNDING_MISSING"
+                ]
+              }
+            ]
+          },
+          {
+            "id": "c2",
+            "required": true,
+            "result": "uncertain",
+            "reason": "Independent semantic readings differ; review the actual answer and requirement.",
+            "witnesses": [
+              {
+                "id": "e26",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "先裁纸0到4，再调墨4到7；盖章7到9，晾干到14，装袋14到15，共15分钟。一个人不能同时全程做裁纸调墨；盖章等两项都完成，装袋等晾干。",
+                "valueHash": "34accab7968bc0707a122ed587a541eeab95ae31cde0cb7baa3f70221b2e32b9"
+              },
+              {
+                "id": "e21",
+                "pointer": "/rubric/1/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "解释裁纸调墨不能并行，盖章须等两前置完成、装袋须等晾干。",
+                "valueHash": "e36185c69c1d059a17bcbf97c9e8c9021a8745bfa007a9bcc19455fe79298ac7"
+              }
+            ],
+            "reviewReasons": [
+              "CRITERION_SEMANTIC_DISAGREEMENT"
+            ],
+            "readings": [
+              {
+                "id": "c2",
+                "required": true,
+                "result": "met",
+                "reason": "解释一人不能并行做裁纸调墨，盖章等两前置完成、装袋等晾干，满足解释要求。",
+                "witnesses": [
+                  {
+                    "id": "e26",
+                    "pointer": "/answer",
+                    "role": "student",
+                    "kind": "text",
+                    "value": "先裁纸0到4，再调墨4到7；盖章7到9，晾干到14，装袋14到15，共15分钟。一个人不能同时全程做裁纸调墨；盖章等两项都完成，装袋等晾干。",
+                    "valueHash": "34accab7968bc0707a122ed587a541eeab95ae31cde0cb7baa3f70221b2e32b9"
+                  },
+                  {
+                    "id": "e21",
+                    "pointer": "/rubric/1/text",
+                    "role": "criterion",
+                    "kind": "text",
+                    "value": "解释裁纸调墨不能并行，盖章须等两前置完成、装袋须等晾干。",
+                    "valueHash": "e36185c69c1d059a17bcbf97c9e8c9021a8745bfa007a9bcc19455fe79298ac7"
+                  }
+                ],
+                "reviewReasons": []
+              },
+              {
+                "id": "c2",
+                "required": true,
+                "result": "uncertain",
+                "reason": "Student/criterion evidence is missing or invalid.",
+                "proposed": {
+                  "id": "c2",
+                  "result": "met",
+                  "reason": "解释一人不能同时做裁纸调墨；盖章等两前置，装袋等晾干(e26,e21)",
+                  "refs": [
+                    "e26",
+                    "e20"
+                  ]
+                },
+                "reviewReasons": [
+                  "CRITERION_STUDENT_GROUNDING_MISSING"
+                ]
+              }
+            ]
+          },
+          {
+            "id": "c3",
+            "required": false,
+            "result": "uncertain",
+            "reason": "Independent semantic readings differ; review the actual answer and requirement.",
+            "witnesses": [
+              {
+                "id": "e26",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "先裁纸0到4，再调墨4到7；盖章7到9，晾干到14，装袋14到15，共15分钟。一个人不能同时全程做裁纸调墨；盖章等两项都完成，装袋等晾干。",
+                "valueHash": "34accab7968bc0707a122ed587a541eeab95ae31cde0cb7baa3f70221b2e32b9"
+              },
+              {
+                "id": "e24",
+                "pointer": "/rubric/2/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "可选表达：用小标题分开计算和解释。",
+                "valueHash": "ed58a9e65b5e9c545c19428652cec947f94db416fe4bf8b7812969666b7e080a"
+              }
+            ],
+            "reviewReasons": [
+              "CRITERION_SEMANTIC_DISAGREEMENT"
+            ],
+            "readings": [
+              {
+                "id": "c3",
+                "required": false,
+                "result": "not_met",
+                "reason": "未用小标题分开计算和解释，仅连续叙述，未满足可选表达形式。",
+                "witnesses": [
+                  {
+                    "id": "e26",
+                    "pointer": "/answer",
+                    "role": "student",
+                    "kind": "text",
+                    "value": "先裁纸0到4，再调墨4到7；盖章7到9，晾干到14，装袋14到15，共15分钟。一个人不能同时全程做裁纸调墨；盖章等两项都完成，装袋等晾干。",
+                    "valueHash": "34accab7968bc0707a122ed587a541eeab95ae31cde0cb7baa3f70221b2e32b9"
+                  },
+                  {
+                    "id": "e24",
+                    "pointer": "/rubric/2/text",
+                    "role": "criterion",
+                    "kind": "text",
+                    "value": "可选表达：用小标题分开计算和解释。",
+                    "valueHash": "ed58a9e65b5e9c545c19428652cec947f94db416fe4bf8b7812969666b7e080a"
+                  }
+                ],
+                "reviewReasons": []
+              },
+              {
+                "id": "c3",
+                "required": false,
+                "result": "uncertain",
+                "reason": "Student/criterion evidence is missing or invalid.",
+                "proposed": {
+                  "id": "c3",
+                  "result": "not_met",
+                  "reason": "未用小标题分开，但标准可选(e23)",
+                  "refs": [
+                    "e26",
+                    "e23"
+                  ]
+                },
+                "reviewReasons": [
+                  "CRITERION_STUDENT_GROUNDING_MISSING"
+                ]
+              }
+            ]
+          }
+        ],
+        "sufficiency": "uncertain",
+        "reviewReasons": [],
+        "independentAssessments": [
+          {
+            "taskValidity": "valid",
+            "rubricValidity": "valid",
+            "reason": "题目明确单人约束与步骤参数，量规必要标准与题设一致，学生回答可对照评估。",
+            "validityWitnesses": [
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "沿用来源的裁纸4分钟、调墨3分钟、盖章2分钟、晾干5分钟、装袋1分钟及依赖。现在只有一名工作人员，裁纸、调墨、盖章和装袋均须其全程操作，晾干不占人。写一个最早完成的安排与总时长，解释前两步为何不能同时进行。",
+                "valueHash": "ce5a8939cb4e78271c0be7d65949a5f5b4ef0845e029b79e800fc25609c626c9"
+              },
+              {
+                "id": "e16",
+                "pointer": "/rubric",
+                "role": "criterion",
+                "kind": "array_length",
+                "value": 3,
+                "valueHash": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "制作一份纸质纪念册需要四个步骤：裁纸、调墨、盖章、晾干后装袋。这里约定裁纸需要四分钟，调墨需要三分钟；盖章必须在裁纸和调墨都完成后才能开始，需要两分钟；盖章完成后必须连续晾干五分钟，之后装袋需要一分钟。任务从零时刻开始，纸张和墨水均未准备。所有时长固定，不考虑走动与工具切换的额外时间。\n若有两名工作人员，且裁紙工具与调墨工具互不冲突，就可以一人裁纸、一人调墨，从零时刻并行开始。调墨在第三分钟完成，裁纸在第四分钟完成，盖章最早第四分钟开始，第六分钟完成。晾干到第十一分钟，装袋到第十二分钟结束。两条前置路径汇合时，必须等较晚完成的那条，因此不能把三分钟与四分钟相加，也不能只等较短的一条。\n若只有一名工作人员，裁纸和调墨都需要此人全程操作，二者就不能并行，前两步一共七分钟；之后盖章、晾干和装袋再需八分钟，总计十五分钟。晾干本身不占用工作人员，但没有其他待办步骤可在这段时间提前完成。这里的最短时间来自明确依赖和资源条件，不是见到两步就默认可以同时进行。\n工序的顺序关系与总时间要分别检查。一个方案即使碰巧写出十二分钟，只要它在墨未调好时先盖章，仍不合法。反过来，合法方案不一定最短；两名工作人员也可以选择先裁纸后调墨，但那会闲置可用的并行机会。评价方案时，先检查每一步的开工条件，再讨论是否还有不必要的等待。\n如果材料说明改为“盖章后先观察两分钟，确认印迹无扩散后才进入五分钟晾干”，新增步骤会延后装袋时刻，不能沿用旧总时长。若改用一种允许立即装袋的墨，则又需要依据新的明确条件重算。本单元不对真实墨水安全作建议，只按题设的工艺规则安排时间。\n可以用文字时间表表达方案，每行写步骤、开始时刻、结束时刻和它等待的条件。换一种表格或叙述顺序都可以，只要时刻和依赖一致。对缺少工作人员数量或工具冲突信息的问题，应说明哪些并行安排尚不能确定；如果只要求给出一个合法方案，则可以明确提出足够的资源假设，而不是声称它在任何条件下都最短。",
+                "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+              },
+              {
+                "id": "e26",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "先裁纸0到4，再调墨4到7；盖章7到9，晾干到14，装袋14到15，共15分钟。一个人不能同时全程做裁纸调墨；盖章等两项都完成，装袋等晾干。",
+                "valueHash": "34accab7968bc0707a122ed587a541eeab95ae31cde0cb7baa3f70221b2e32b9"
+              }
+            ],
+            "criteria": [
+              {
+                "id": "c1",
+                "required": true,
+                "result": "met",
+                "reason": "顺序裁纸0-4、调墨4-7、盖章7-9、晾干至14、装袋14-15共15分，遵守依赖与单人限制。",
+                "witnesses": [
+                  {
+                    "id": "e26",
+                    "pointer": "/answer",
+                    "role": "student",
+                    "kind": "text",
+                    "value": "先裁纸0到4，再调墨4到7；盖章7到9，晾干到14，装袋14到15，共15分钟。一个人不能同时全程做裁纸调墨；盖章等两项都完成，装袋等晾干。",
+                    "valueHash": "34accab7968bc0707a122ed587a541eeab95ae31cde0cb7baa3f70221b2e32b9"
+                  },
+                  {
+                    "id": "e18",
+                    "pointer": "/rubric/0/text",
+                    "role": "criterion",
+                    "kind": "text",
+                    "value": "给出遵守全部依赖及一人资源限制的顺序和15分钟总时长。",
+                    "valueHash": "6d6fefad5383dac2bb0c47db92b83a89886b59566e1583b412229865ca4b2104"
+                  }
+                ],
+                "reviewReasons": []
+              },
+              {
+                "id": "c2",
+                "required": true,
+                "result": "met",
+                "reason": "解释一人不能并行做裁纸调墨，盖章等两前置完成、装袋等晾干，满足解释要求。",
+                "witnesses": [
+                  {
+                    "id": "e26",
+                    "pointer": "/answer",
+                    "role": "student",
+                    "kind": "text",
+                    "value": "先裁纸0到4，再调墨4到7；盖章7到9，晾干到14，装袋14到15，共15分钟。一个人不能同时全程做裁纸调墨；盖章等两项都完成，装袋等晾干。",
+                    "valueHash": "34accab7968bc0707a122ed587a541eeab95ae31cde0cb7baa3f70221b2e32b9"
+                  },
+                  {
+                    "id": "e21",
+                    "pointer": "/rubric/1/text",
+                    "role": "criterion",
+                    "kind": "text",
+                    "value": "解释裁纸调墨不能并行，盖章须等两前置完成、装袋须等晾干。",
+                    "valueHash": "e36185c69c1d059a17bcbf97c9e8c9021a8745bfa007a9bcc19455fe79298ac7"
+                  }
+                ],
+                "reviewReasons": []
+              },
+              {
+                "id": "c3",
+                "required": false,
+                "result": "not_met",
+                "reason": "未用小标题分开计算和解释，仅连续叙述，未满足可选表达形式。",
+                "witnesses": [
+                  {
+                    "id": "e26",
+                    "pointer": "/answer",
+                    "role": "student",
+                    "kind": "text",
+                    "value": "先裁纸0到4，再调墨4到7；盖章7到9，晾干到14，装袋14到15，共15分钟。一个人不能同时全程做裁纸调墨；盖章等两项都完成，装袋等晾干。",
+                    "valueHash": "34accab7968bc0707a122ed587a541eeab95ae31cde0cb7baa3f70221b2e32b9"
+                  },
+                  {
+                    "id": "e24",
+                    "pointer": "/rubric/2/text",
+                    "role": "criterion",
+                    "kind": "text",
+                    "value": "可选表达：用小标题分开计算和解释。",
+                    "valueHash": "ed58a9e65b5e9c545c19428652cec947f94db416fe4bf8b7812969666b7e080a"
+                  }
+                ],
+                "reviewReasons": []
+              }
+            ],
+            "sufficiency": "sufficient",
+            "reviewReasons": []
+          },
+          {
+            "taskValidity": "valid",
+            "rubricValidity": "valid",
+            "reason": "学生答案合法满足任务，产品评分与独立复核一致。",
+            "validityWitnesses": [
+              {
+                "id": "e26",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "先裁纸0到4，再调墨4到7；盖章7到9，晾干到14，装袋14到15，共15分钟。一个人不能同时全程做裁纸调墨；盖章等两项都完成，装袋等晾干。",
+                "valueHash": "34accab7968bc0707a122ed587a541eeab95ae31cde0cb7baa3f70221b2e32b9"
+              },
+              {
+                "id": "e31",
+                "pointer": "/productJudgment/criteria",
+                "role": "product",
+                "kind": "array_length",
+                "value": 3,
+                "valueHash": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce"
+              }
+            ],
+            "criteria": [
+              {
+                "id": "c1",
+                "required": true,
+                "result": "uncertain",
+                "reason": "Student/criterion evidence is missing or invalid.",
+                "proposed": {
+                  "id": "c1",
+                  "result": "met",
+                  "reason": "顺序0-4裁纸,4-7调墨,7-9盖章,到15分共15，遵守依赖与一人限制(e26,e3)",
+                  "refs": [
+                    "e26",
+                    "e17"
+                  ]
+                },
+                "reviewReasons": [
+                  "CRITERION_STUDENT_GROUNDING_MISSING"
+                ]
+              },
+              {
+                "id": "c2",
+                "required": true,
+                "result": "uncertain",
+                "reason": "Student/criterion evidence is missing or invalid.",
+                "proposed": {
+                  "id": "c2",
+                  "result": "met",
+                  "reason": "解释一人不能同时做裁纸调墨；盖章等两前置，装袋等晾干(e26,e21)",
+                  "refs": [
+                    "e26",
+                    "e20"
+                  ]
+                },
+                "reviewReasons": [
+                  "CRITERION_STUDENT_GROUNDING_MISSING"
+                ]
+              },
+              {
+                "id": "c3",
+                "required": false,
+                "result": "uncertain",
+                "reason": "Student/criterion evidence is missing or invalid.",
+                "proposed": {
+                  "id": "c3",
+                  "result": "not_met",
+                  "reason": "未用小标题分开，但标准可选(e23)",
+                  "refs": [
+                    "e26",
+                    "e23"
+                  ]
+                },
+                "reviewReasons": [
+                  "CRITERION_STUDENT_GROUNDING_MISSING"
+                ]
+              }
+            ],
+            "sufficiency": "uncertain",
+            "reviewReasons": []
+          }
+        ]
+      },
+      "reviewRequired": [
+        {
+          "dimension": "Q5",
+          "reason": "UNRESOLVED"
+        }
+      ]
+    },
+    "resultHash": "64066732d31232a7cfc4b7d708d2d1556a8ea40cebee28c4fe59459dc987b081"
+  }
+}

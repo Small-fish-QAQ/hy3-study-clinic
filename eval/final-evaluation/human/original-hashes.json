@@ -1,0 +1,100 @@
+{
+  "status": "ORIGINALS_HASHED_BEFORE_NORMALIZATION",
+  "frozenAt": "2026-09-12T11:14:05.163233+00:00",
+  "originalCopiesReadOnly": true,
+  "rawOriginalsPublic": false,
+  "reason": "Identifying metadata found in five of six original DOCX packages; originals retained privately as a collection.",
+  "sheets": [
+    {
+      "originalFile": "Human-A-Packet-1-答题表.docx",
+      "originalSha256": "f30166f8eb12800d54be9685f0604b8a17f4fabacaf26193d6d03cc7300375ce",
+      "originalBytes": 38414,
+      "reviewCopy": "human/review-copies/Human-A-Packet-1-答题表.docx",
+      "reviewCopySha256": "2560bc07e25a7d7e32a002cc334f636c813c85b9a13051f35b91c7d875cabf3a",
+      "documentXmlSha256": "fc0d0522973de4e591da1108af5dd6b366057a1540544d34141c4cdc1b5822f7",
+      "originalDisposition": "Immutable original retained privately because the collection includes identifying document metadata.",
+      "transformations": [
+        "Replace core-properties metadata with empty properties.",
+        "Remove custom XML/custom properties and their package relationships/content types.",
+        "Preserve every word/document.xml byte and all word content/layout parts."
+      ],
+      "answerContentChanged": false
+    },
+    {
+      "originalFile": "Human-A-Packet-2-答题表.docx",
+      "originalSha256": "c00362c608cbdd25b99fd7f2bddf22f446397781355adda10d51c82e23b047e1",
+      "originalBytes": 33825,
+      "reviewCopy": "human/review-copies/Human-A-Packet-2-答题表.docx",
+      "reviewCopySha256": "d4a5632d0424427877e53c883648b691a9aa6a45257f39060c16591232bb96d5",
+      "documentXmlSha256": "524e8c6587ef9bdfb72bc2520e9f75d83862ec821111e17a2b900a15c5c64a18",
+      "originalDisposition": "Immutable original retained privately because the collection includes identifying document metadata.",
+      "transformations": [
+        "Replace core-properties metadata with empty properties.",
+        "Remove custom XML/custom properties and their package relationships/content types.",
+        "Preserve every word/document.xml byte and all word content/layout parts."
+      ],
+      "answerContentChanged": false
+    },
+    {
+      "originalFile": "Human-B-Packet-2-答题表.docx",
+      "originalSha256": "0c9043684d6c9c770f7fe4407210cfadd494f2a87beb0b570916b525ff234444",
+      "originalBytes": 32051,
+      "reviewCopy": "human/review-copies/Human-B-Packet-2-答题表.docx",
+      "reviewCopySha256": "09d3e16f0e3ae0f551b386384935fd1f60f90ce17efbd79b2c448bfcea2b9fa7",
+      "documentXmlSha256": "e9cc5291d799f43e62121201d36aa33b8fb45252b535d6144d405a05ef7559a4",
+      "originalDisposition": "Immutable original retained privately because the collection includes identifying document metadata.",
+      "transformations": [
+        "Replace core-properties metadata with empty properties.",
+        "Remove custom XML/custom properties and their package relationships/content types.",
+        "Preserve every word/document.xml byte and all word content/layout parts."
+      ],
+      "answerContentChanged": false
+    },
+    {
+      "originalFile": "Human-B-Packet-3-答题表.docx",
+      "originalSha256": "203a544105f6f96a8d4f78666339a9a186ee8534fb9ffc71b5e5556c6d7753dd",
+      "originalBytes": 32312,
+      "reviewCopy": "human/review-copies/Human-B-Packet-3-答题表.docx",
+      "reviewCopySha256": "851f0124f4054a6c718e24e7bea61caad1a4f738970ff5dfaecbc89c1e8975c8",
+      "documentXmlSha256": "6f0acf8c3553eb1dc04a6ab91848f768b106308957f6e4d59ec0b0c189354cca",
+      "originalDisposition": "Immutable original retained privately because the collection includes identifying document metadata.",
+      "transformations": [
+        "Replace core-properties metadata with empty properties.",
+        "Remove custom XML/custom properties and their package relationships/content types.",
+        "Preserve every word/document.xml byte and all word content/layout parts."
+      ],
+      "answerContentChanged": false
+    },
+    {
+      "originalFile": "Human-C-Packet-1-答题表.docx",
+      "originalSha256": "65676bc7f01fc149cece6458c91a94c348b8564299d1ae6dce7fb43b89ccd230",
+      "originalBytes": 32017,
+      "reviewCopy": "human/review-copies/Human-C-Packet-1-答题表.docx",
+      "reviewCopySha256": "8d110050eb9e52ca1366cba4d7c7bbde49ed160fef7f3f6b8c05c4fae79fee12",
+      "documentXmlSha256": "75f80aacf1cd96df2b63b1a8953be64f447983be1e2da93e03632f10a884c193",
+      "originalDisposition": "Immutable original retained privately because the collection includes identifying document metadata.",
+      "transformations": [
+        "Replace core-properties metadata with empty properties.",
+        "Remove custom XML/custom properties and their package relationships/content types.",
+        "Preserve every word/document.xml byte and all word content/layout parts."
+      ],
+      "answerContentChanged": false
+    },
+    {
+      "originalFile": "Human-C-Packet-3-答题表.docx",
+      "originalSha256": "3a328dd50cbb4a45dc902809706a620a176968735ddba70e581d94985bb90f0b",
+      "originalBytes": 31564,
+      "reviewCopy": "human/review-copies/Human-C-Packet-3-答题表.docx",
+      "reviewCopySha256": "ff573da535140e8209ea334bcaf70ebf3cb089d650eefc20ece6104f2b8dc50e",
+      "documentXmlSha256": "927b4427c10566406c0de4da11716d84b4485cbcf1007346ddfab88a04a80cfa",
+      "originalDisposition": "Immutable original retained privately because the collection includes identifying document metadata.",
+      "transformations": [
+        "Replace core-properties metadata with empty properties.",
+        "Remove custom XML/custom properties and their package relationships/content types.",
+        "Preserve every word/document.xml byte and all word content/layout parts."
+      ],
+      "answerContentChanged": false
+    }
+  ],
+  "metadataPolicy": "Blank annotation start/end times and procedure notes remain not provided. File/package timestamps are not annotation times."
+}

@@ -47,6 +47,59 @@ assert.equal(receipts.replay.identity.productCommit, receipts.identities.product
 
 const rows = read('results/machine-rows.json');
 const expected = read('results/machine-summary.json');
+const originalRows = read('results/complete-rows.json');
+const originalSummary = read('results/complete-results.json');
+const schedule = read('dataset/final-schedule.json');
+assert.equal(jsonSha(schedule), receipts.identities.scheduleHash);
+assert.equal(schedule.length, 279);
+assert.equal(
+  sha(fs.readFileSync(path.join(root, 'results/complete-rows.json'))),
+  receipts.originalRowsSha256,
+);
+assert.equal(
+  sha(fs.readFileSync(path.join(root, 'results/machine-export-v6-manifest.json'))),
+  receipts.originalExport.manifestSha256,
+);
+assert.equal(
+  sha(fs.readFileSync(path.join(root, 'results/release-mapping.json'))),
+  receipts.privateReleaseMappingSha256,
+);
+const mapping = read('results/release-mapping.json');
+const references = new Map(
+  read('dataset/constructor-reference.json').references.map((r) => [r.caseId, r]),
+);
+for (const original of originalRows) {
+  const published = rows.find(
+    (r) =>
+      r.caseId === mapping.cases[original.caseId] &&
+      r.replicate === original.replicate &&
+      r.dimension === original.dimension,
+  );
+  assert(published);
+  for (const key of [
+    'replicate',
+    'collection',
+    'dimension',
+    'level',
+    'status',
+    'referenceLevel',
+    'attackFamily',
+  ]) {
+    assert.deepEqual(published[key], original[key], key);
+  }
+  assert.equal(published.tripletId, mapping.triplets[original.tripletId] ?? null);
+  assert.equal(
+    original.referenceLevel,
+    references.get(original.caseId)?.expected?.[original.dimension] ?? null,
+  );
+  const observation = read(`results/observations/${original.runId}.json`);
+  assert.equal(jsonSha(observation.evaluation), original.resultHash);
+}
+assert.equal(originalRows.length, rows.length);
+const finalCustody = read('results/final-publication-custody.json');
+for (const binding of finalCustody.originalMachineFiles) {
+  assert.equal(sha(fs.readFileSync(path.join(root, binding.file))), binding.sha256, binding.file);
+}
 const primary = rows.filter((r) => r.replicate === 1);
 assert.equal(new Set(rows.map((r) => `${r.runId}/${r.dimension}`)).size, rows.length);
 assert.equal(new Set(rows.map((r) => r.runId)).size, expected.completedObservations);
@@ -145,6 +198,10 @@ for (const entry of registry) {
     const o = read(name);
     assert.equal(o.inputHash, entry.inputHash);
     assert.equal(o.task.caseId, entry.frozenCaseId);
+    assert.deepEqual(
+      o.task,
+      schedule.find((task) => task.runId === o.task.runId),
+    );
     for (const dimension of entry.dimensions) {
       const row = rows.find(
         (r) =>
@@ -165,6 +222,29 @@ assert.equal(registry.length, coverage.publicCases);
 assert.equal(checkedObservations, coverage.publicObservations);
 assert.equal(rows.filter((r) => r.evidenceAvailable).length, coverage.publicDimensionRows);
 assert.equal(new Set(primary.map((r) => r.caseId)).size, coverage.frozenCases);
+const lengthResults = originalSummary.baselines.details.map((group) => {
+  const triplet = originalSummary.discrimination.details.find(
+    (t) => t.tripletId === group.tripletId,
+  );
+  const lengths = triplet.caseIds.map((id) => {
+    const entry = registry.find((r) => r.frozenCaseId === id);
+    return read(entry.file).evidence.artifacts.reduce((n, a) => n + a.text.length, 0);
+  });
+  assert.deepEqual(lengths, group.lengths);
+  assert.equal(lengths[0] > lengths[1] && lengths[1] > lengths[2], group.lengthStrictOrder);
+  return group.lengthStrictOrder;
+});
+assert.equal(lengthResults.filter(Boolean).length, expected.baselines.lengthStrictOrder);
+assert.equal(lengthResults.length, expected.baselines.lengthTriplets);
+assert.equal(
+  registry.filter(
+    (r) =>
+      r.collection === 'controlled' &&
+      read(r.file).evidence.sources.length > 0 &&
+      read(r.file).evidence.artifacts.length > 0,
+  ).length,
+  expected.baselines.structuralPresent,
+);
 assert.equal(read('results/natural-missing.json').length, coverage.unavailableNaturalOpportunities);
 assert.equal(
   coverage.availableNaturalRecords + coverage.unavailableNaturalOpportunities,
@@ -282,7 +362,7 @@ console.log(
       productKnownUsageCostCNY: product.usage.estimatedCNY,
       modelComparisons: models.comparisons,
       scope:
-        'Recomputed saved-row statistics and published joint counts; checked public cases/observations and frozen method hashes. Embargoed inputs, raw wire replay and individual model reviews remain private. No evaluator or model executed.',
+        'Recomputed saved-row statistics, full-corpus length baseline and published model joint counts; checked all 209 inputs/279 observations, schedule and original method hashes. Run verify-human.py to re-extract the six human sheets and compare individual human/model labels. Raw wire replay remains a historical private audit. No evaluator or model executed.',
     },
     null,
     2,

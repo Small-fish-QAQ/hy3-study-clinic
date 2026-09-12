@@ -1,0 +1,38 @@
+{
+  "dimensions": [
+    "Q2"
+  ],
+  "evidence": {
+    "sources": [
+      {
+        "id": "F04",
+        "text": "图表能够帮助人快速比较，但标题、坐标与分母共同决定图表在说什么。读柱形图时，先找每根柱表示的量，再检查纵轴从哪里起、每格代表多少以及比较对象是否使用相同单位。如果纵轴从九十开始，九十五和一百的柱子在画面上可能呈现很大的高度差，但原始数量只相差五。视觉差异不能代替对原始数值的比较。\n这里用文字给出一张“修补活动登记表”。甲点登记一百件旧物，其中八十件完成修补；乙点登记四十件，其中三十六件完成修补。甲点完成的件数多，八十件大于三十六件；乙点的完成比例高，三十六除以四十等于百分之九十，而甲点八十除以一百等于百分之八十。件数和比例回答不同问题。若问哪个点实际完成更多工作，应先看件数；若问本次登记物品中完成的份额，应看比例。\n把两个点合并时，整体比例必须用总完成件数除以总登记件数，即一百一十六除以一百四十，约为百分之八十二点九。不能直接把百分之八十与百分之九十平均成百分之八十五，因为两点分母不同。直接平均只在每组分母相同等特定条件下等于整体比例。解释时最好保留分子、分母，使读者可以独立核对。\n同样，完成比例较高不自动说明工作人员能力较强。乙点可能接收了更容易修补的物品，也可能有更长的处理时间；登记表没有这些信息。我们可以准确报告本次结果，却不能把未观测的原因当成事实。若要公平比较，需要先约定物品难度、统计时段和完成定义等条件。\n在摘要中可以同时写：“甲点完成八十件，乙点完成三十六件；乙点在其登记量中的完成比例更高。”这并不矛盾，因为比较量不同。若只有完成件数而没有登记总数，就能比较完成件数，却不能计算完成比例。若图上省略单位，也应先补齐单位再解释，不要默认柱高就是百分比。\n最后检查结论是否超出材料。一次活动的数据不能自动说明全年趋势；某点表现更好也不等于某项措施导致改善。读图不是寻找最醒目的柱子，而是把图示还原为可核对的量、运算和有条件的陈述。即使没有图片，只要表格和文字给足信息，同样可以完成这些判断。"
+      }
+    ],
+    "goals": [
+      "根据原始数值比较绝对量和比例",
+      "识别纵轴截断与分母差异",
+      "给出有范围限制的数据结论"
+    ],
+    "prerequisites": [
+      "加减乘除",
+      "能读表格行列"
+    ],
+    "desiredDepth": "working_fluency",
+    "authorityBoundaries": [
+      "本次评估只涉及所给来源、明确的教学范围和实际展示的产物；脚本作答用于检查工作流，不代表真实学习者。",
+      "Q2评价提议课程对所注册学习目标的保留和范围；不将尚未发生的教学交付或Formal准入当成已经完成。"
+    ],
+    "artifacts": [
+      {
+        "id": "cun_b117f09b-d442-4190-86a3-564152c2c6d0/title",
+        "text": "从文字登记表还原柱形图：数值比较、轴截断、分母差异与比例合并"
+      },
+      {
+        "id": "cun_b117f09b-d442-4190-86a3-564152c2c6d0/objectives",
+        "text": "[{\"id\":\"obj_e4a26adf-b4f3-4d30-ba12-f1889826d69e\",\"title\":\"应用原始数值比较绝对件数与完成比例并合并不同分母组\",\"description\":\"Given numerators and denominators from the material's repair-activity table (e.g., 甲点 80/100=80%, 乙点 36/40=90%), compute proportions, compare counts (80>36) and proportions (90%>80%), recognizing they answer different questions: actual work done vs share of registered items. Additionally, when merging groups with different denominators, compute overall proportion as total completed divided by total registered (e.g., (80+36)/(100+40)=116/140≈82.9%), not simple percentage average, retaining numerator and denominator for independent checking. Follow source-stated procedures exactly in their stated context.\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_e4bb7557-7c23-4837-a8de-4b19e6413dcb\",\"ta_57cec378-306e-4c17-a589-aea253821502\"],\"authorityClaimIds\":[\"tac_2150e1b1-7450-4141-8bff-123ac8c6744d\",\"tac_2ef40ab9-ca45-4a71-be1b-60e62166a64b\",\"tac_49c4cf53-bc0c-462e-a1e5-fd349968d82d\",\"tac_88d93a07-cd63-41a0-aabb-58c14d3561c2\",\"tac_00b111d3-8a50-4429-926b-be6ae722a3c8\",\"tac_0106328d-0fd0-4c70-bb1c-1e5cedf64423\",\"tac_afbd1eb9-8e12-4b54-83ee-fe07edc2d64d\",\"tac_c638df80-6dc8-4b62-adc8-0c629f34d1fe\"],\"priority\":\"high\",\"priorityRationale\":\"Central apply obligations per coverage; exact evidence supports only identify, so high teaching priority non-credit.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"narrower_formal\",\"authoritySourceBlockIds\":[\"blk_0_cae0b5bf\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_7461f245-c8a8-40be-b4e2-ec94a47ac1d4\",\"title\":\"应用有范围限制的数据结论与条件陈述\",\"description\":\"Report observed results accurately from the material but do not extend beyond it: no inference of annual trend, causal improvement, or staff ability from proportion; state conditional requirements (item difficulty, period, definition) before fair comparison; restore chart to verifiable quantities and conditional statements as taught.\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"Apply scoped conclusion obligation; evidence envelopes unavailable for formal, thus high teaching priority.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_158e4758-7a91-4279-8c2f-d792923f6463\",\"title\":\"识别纵轴截断与视觉差异失真\",\"description\":\"When reading a bar chart, check where y-axis starts, each grid unit, and whether comparison objects use same units; recognize that if y-axis starts at 90, bars for 95 and 100 show large height difference but actual difference is only 5, so visual difference cannot replace original value comparison.\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_e4bb7557-7c23-4837-a8de-4b19e6413dcb\",\"ta_57cec378-306e-4c17-a589-aea253821502\"],\"authorityClaimIds\":[\"tac_174c145f-fc08-4283-94eb-76f245e16028\",\"tac_a2f52df3-c973-4d3f-a659-e6dc0c9569a1\",\"tac_e4e5881c-7d50-4925-b259-ffbb0e39cf5f\",\"tac_027b4c55-98f5-4348-bb4a-4aee7da9b333\",\"tac_77e641fd-8d90-48a3-8e80-1cc9d0fb8c27\",\"tac_7ed07f3b-c057-4737-8052-86bf3088df71\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E1, E9, E10 envelopes support identify with formal authority, fulfilling required Formal path.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_cae0b5bf\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_cae0b5bf\"]},{\"id\":\"obj_a4401417-d896-432e-b119-e6f2990ec38f\",\"title\":\"识别分母差异与直接平均的无效条件\",\"description\":\"Identify that groups may have different denominators (e.g., 100 vs 40 registered); direct average of percentages is invalid because denominators differ; direct averaging equals overall proportion only under specific condition that each group denominator is the same.\",\"subjectClass\":\"general\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"Coverage obligation with identify construct, but sole evidence E15 lacks formal envelope, thus high teaching priority non-credit.\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]}]"
+      }
+    ],
+    "exposure": []
+  }
+}

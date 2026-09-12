@@ -1,0 +1,90 @@
+{
+  "dimensions": [
+    "Q6"
+  ],
+  "evidence": {
+    "sources": [
+      {
+        "id": "F07",
+        "text": "课堂把同一批种子分到两个透明盒中，想比较有水和无水时的发芽情况。为了使比较有意义，应尽量让其他有关条件一致，例如种子数量、来源、温度、光照、观察天数与发芽判定方式。若有水盒放在温暖窗台、无水盒放在冷暗柜里，即使结果不同，也无法把差异单独归因于水，因为温度和光照同时改变了。\n这里把“发芽”操作性地定义为观察到胚根伸出种皮，便于不同记录者使用同一标准。这个定义是本实验的观察规则，不是所有生物过程的完整描述。记录者应按事先约定的时间观察全部种子，而不是只挑成功的那几颗展示。没有发芽的种子也必须计入，才能知道发芽比例。\n设两盒各十粒同批种子，均在同温同光处放置七天。甲盒保持适量湿润，乙盒保持干燥。甲有八粒达到上述标准，乙有一粒。可以说在这批种子和这些条件下，湿润组观察到的发芽比例更高。仅凭这一次观察，还不能断言所有种类的种子只要加水都会发芽；种子活性、温度及其他条件仍可能重要。也不能说乙盒绝对没有任何水分，因为“保持干燥”是操作描述，并未测出零水分。\n重复实验可以帮助检查结果是否稳定，但重复的对象、条件与方法需要记录。把同一张照片复制三次不是三次独立实验。同一盒内种子也共享环境，不能总把它们当成互不影响的完整重复。入门练习无需复杂统计检验，只要能说明为什么重复有用、哪些信息仍然有限。\n好的后续实验应对应目前的疑问。如果怀疑温度造成差异，就应在同一温度下只改变湿润条件，或设计清楚的组合比较；不能一边改变温度，一边换种子品种，再把结果归因于某一个因素。若希望研究“水太多是否也影响发芽”，可以在其他条件一致时增加不同水量组，事先说明每组的水量与观察标准。\n解释实验时，把计划、执行、观察和结论分开写。计划相同不代表执行真的相同，需核对记录；观察不同不自动证明唯一原因。允许结果不支持原假说，并据此修改下一步问题，正是实验学习的一部分。对证据保留限制，不妨碍学生提出清楚、可检验的预测。"
+      }
+    ],
+    "goals": [
+      "针对这次实际错误给出有依据的诊断、补救解释和后续检查"
+    ],
+    "prerequisites": [
+      "理解相同与不同",
+      "能按表格记录观察",
+      "Identify when a comparison simultaneously changes multiple variables (e.g., water, temperature, light) and thus cannot attribute difference to a single factor; keep other relevant conditions consistent for valid comparison.",
+      "Apply operational definition of germination (radicle out of seed coat) and record all seeds including non-germinated at predetermined times to compute germination proportion."
+    ],
+    "desiredDepth": "working_fluency",
+    "authorityBoundaries": [
+      "本次评估只涉及所给来源、明确的教学范围和实际展示的产物；脚本作答用于检查工作流，不代表真实学习者。"
+    ],
+    "artifacts": [
+      {
+        "id": "actual-failed-question",
+        "text": "甲盒（加水+南窗）8/10发芽，乙盒（无水+北柜）1/10发芽；两盒种子同批、各十粒、同观察七天。最合理的是："
+      },
+      {
+        "id": "actual-repair/selectedAnswer",
+        "text": "水是导致甲盒多发芽的唯一因素，因为实验目的为测水"
+      },
+      {
+        "id": "actual-repair/feedback",
+        "text": "错误：虽然目的为测水，但实际光照也不同，不能排除光的影响。"
+      },
+      {
+        "id": "actual-repair/learnerNote",
+        "text": "请根据我刚才选择的答案，解释关键错误，并给我新的检验机会。"
+      },
+      {
+        "id": "actual-repair/diagnosis/observation",
+        "text": "你选择了“水是导致甲盒多发芽的唯一因素，因为实验目的为测水”。在原案例中，甲盒加水且放在南窗，乙盒无水且放在北柜，两盒同批种子各十粒、同观察七天。实际同时改变了水（加vs无）和光照（南窗vs北柜），你却依据实验目的为测水，把发芽差异单独归因为水。"
+      },
+      {
+        "id": "actual-repair/diagnosis/gap",
+        "text": "具体缺失的区别是：在对照比较中，若多个条件同时改变，不能仅因实验目的想测某一因素，就忽略其他实际改变的变量（如光照）而做单一归因。需要识别同时改变的变量并拒绝单一归因。"
+      },
+      {
+        "id": "actual-repair/diagnosis/uncertainty",
+        "text": "这是根据这次回答作出的判断；读题疏漏也可能导致同样的选择。"
+      },
+      {
+        "id": "actual-repair/teaching/explanation",
+        "text": "错误规则是：实验目的想测哪个因素，就可以把结果差异唯一归因为该因素，即使其他条件也变了。正确规则是：要合法地将差异归因于单一因素，必须保持其他有关条件一致；若观察中发现多个变量同时改变（如水与光照），你应拒绝单一归因，直到控制其他变量。因果上，因为甲盒和乙盒在水之外光照也不同，发芽数差异可能来自水、光或两者交互；目的不能消除已发生的混淆，所以你不能把发芽多单独算给水。"
+      },
+      {
+        "id": "actual-repair/teaching/workedExample/prompt",
+        "text": "设想你有两块同品种菜地，A块施了有机肥且每天日照5小时，B块未施肥且每天日照2小时，其他条件（浇水、土壤）相同。一段时间后A块蔬菜平均高度明显大于B块。能否直接说“肥料是导致A块长得更高的唯一原因”？"
+      },
+      {
+        "id": "actual-repair/teaching/workedExample/steps/0",
+        "text": "列出实际改变的条件：A与B相比，肥料不同（有vs无），同时日照时长也不同（5小时vs2小时）。"
+      },
+      {
+        "id": "actual-repair/teaching/workedExample/steps/1",
+        "text": "识别同时改变的变量：肥料和光照两个变量没有保持独立，都随处理组变化。"
+      },
+      {
+        "id": "actual-repair/teaching/workedExample/steps/2",
+        "text": "推理归因合法性：因为高度差异可能来自肥料、光照或两者共同影响，仅凭此观察无法隔离肥料的单独作用。"
+      },
+      {
+        "id": "actual-repair/teaching/workedExample/steps/3",
+        "text": "得出正确结论：不能单一归因，需设计日照相同只变肥料的实验才能检验肥料效果。"
+      },
+      {
+        "id": "actual-repair/teaching/workedExample/conclusion",
+        "text": "当多个条件同时改变时，不能把结果差异单独归因为其中一个因素，即使你原本关心那个因素。"
+      },
+      {
+        "id": "actual-repair/teaching/contrast",
+        "text": "若采用错误规则“因为实验目的是研究肥料，所以高度差就是肥料导致”，在你同时改变日照的例子中就会失败：它可能把光照带来的生长优势误认为肥料效果。正确规则要求控制其他变量，才能避免此类混淆。"
+      }
+    ],
+    "exposure": [],
+    "answer": "水是导致甲盒多发芽的唯一因素，因为实验目的为测水"
+  }
+}

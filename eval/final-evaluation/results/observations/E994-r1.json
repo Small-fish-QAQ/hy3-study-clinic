@@ -1,0 +1,193 @@
+{
+  "task": {
+    "caseId": "E994",
+    "runId": "E994-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E994.json",
+    "inputHash": "e87a9f19ff6c2522e8f7531db6ac923d4ba2e4c6fbe798918dcfd343e1620a5f",
+    "population": "boundary",
+    "sourceId": "F10"
+  },
+  "inputHash": "e87a9f19ff6c2522e8f7531db6ac923d4ba2e4c6fbe798918dcfd343e1620a5f",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "solve-current": "ba8ca6071f4672cd0ea2b1b3676bd3e3cdec851e204fd48ec0beaf64c8a78aff",
+      "correctness": "111ea689a8613af4ff6238ec3679998da34ccc4c25be1b174cf81accd0afa3ac",
+      "artifact-audit": "111ea689a8613af4ff6238ec3679998da34ccc4c25be1b174cf81accd0afa3ac"
+    },
+    "stages": {
+      "solve-current": {
+        "status": "resolved",
+        "solution": "本题(e14)问能否给唯一最短总时间。新情境未提供工作人员数及工具冲突信息，且所附资料不含本境具体时长( e3示例明确无效)。依 e3 逻辑，资源条件决定前置可否并行，从而总时间分叉(如1人15分、2人且不冲突12分，但非本题数据)。故唯一肯定结论为'不能给唯一最短总时间'；欠定分支本身构成 resolved 正确解，不违反 e13 仅依明示题设。",
+        "witnesses": [
+          {
+            "id": "e14",
+            "pointer": "/question/prompt",
+            "role": "question",
+            "kind": "text",
+            "value": "以下是新的独立情境，来源中的示例数字不作为本题未明示的数据。题目给所有时长和依赖，但没有说明有几名工作人员，也没有说明两项前置工具能否同时使用。能否给唯一最短总时间？ 现在必须给出一个确定的数值或唯一肯定结论，不允许说明信息不足、条件分支或另加假设。",
+            "valueHash": "b8d5018f099e06f8af32ab5bc2a9ce3f1d5c82ac44f0ed111690a763785502c5"
+          },
+          {
+            "id": "e3",
+            "pointer": "/sources/0/text",
+            "role": "source",
+            "kind": "text",
+            "value": "制作一份纸质纪念册需要四个步骤：裁纸、调墨、盖章、晾干后装袋。这里约定裁纸需要四分钟，调墨需要三分钟；盖章必须在裁纸和调墨都完成后才能开始，需要两分钟；盖章完成后必须连续晾干五分钟，之后装袋需要一分钟。任务从零时刻开始，纸张和墨水均未准备。所有时长固定，不考虑走动与工具切换的额外时间。\n若有两名工作人员，且裁紙工具与调墨工具互不冲突，就可以一人裁纸、一人调墨，从零时刻并行开始。调墨在第三分钟完成，裁纸在第四分钟完成，盖章最早第四分钟开始，第六分钟完成。晾干到第十一分钟，装袋到第十二分钟结束。两条前置路径汇合时，必须等较晚完成的那条，因此不能把三分钟与四分钟相加，也不能只等较短的一条。\n若只有一名工作人员，裁纸和调墨都需要此人全程操作，二者就不能并行，前两步一共七分钟；之后盖章、晾干和装袋再需八分钟，总计十五分钟。晾干本身不占用工作人员，但没有其他待办步骤可在这段时间提前完成。这里的最短时间来自明确依赖和资源条件，不是见到两步就默认可以同时进行。\n工序的顺序关系与总时间要分别检查。一个方案即使碰巧写出十二分钟，只要它在墨未调好时先盖章，仍不合法。反过来，合法方案不一定最短；两名工作人员也可以选择先裁纸后调墨，但那会闲置可用的并行机会。评价方案时，先检查每一步的开工条件，再讨论是否还有不必要的等待。\n如果材料说明改为“盖章后先观察两分钟，确认印迹无扩散后才进入五分钟晾干”，新增步骤会延后装袋时刻，不能沿用旧总时长。若改用一种允许立即装袋的墨，则又需要依据新的明确条件重算。本单元不对真实墨水安全作建议，只按题设的工艺规则安排时间。\n可以用文字时间表表达方案，每行写步骤、开始时刻、结束时刻和它等待的条件。换一种表格或叙述顺序都可以，只要时刻和依赖一致。对缺少工作人员数量或工具冲突信息的问题，应说明哪些并行安排尚不能确定；如果只要求给出一个合法方案，则可以明确提出足够的资源假设，而不是声称它在任何条件下都最短。",
+            "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+          },
+          {
+            "id": "e13",
+            "pointer": "/authorityBoundaries/0",
+            "role": "boundary",
+            "kind": "text",
+            "value": "仅根据所附资料和明示题设评估教学与作答；不推定真实人物、现实推广效果或未展示的执行。",
+            "valueHash": "4cface20628a03b4cf29045c7acbd1dd8328a70d4a544f5e355b8f1ecf4ffd7a"
+          }
+        ],
+        "reviewReasons": []
+      },
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "clear",
+            "affected": [],
+            "reason": "待评材料作者断言仅e18评分边界'只接受一个确定结论，不接受条件或信息不足'，非教学条件规则；e3源中条件规则未作为本题断言重用。按现有材料核验无实质错误。",
+            "refs": [
+              "e18"
+            ],
+            "challenge": {
+              "status": "not_applicable",
+              "reason": "无教学条件式结论断言，仅评分指令；无法构造相容反例改变教学结论",
+              "refs": [
+                "e18"
+              ]
+            },
+            "witnesses": [
+              {
+                "id": "e18",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "本题作者参考解（未向学习者提前展示）：此题只接受一个确定结论，不接受条件或信息不足。",
+                "valueHash": "fb7dfa3db3f3d397b2de92b75bea658f0970327223dee113ac125695264a3444"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "kind": "quantities",
+            "status": "not_applicable",
+            "affected": [],
+            "reason": "e14明确来源示例数字不作为本题数据且未给具体时长数值；无原始输入重算；rates空",
+            "contextHash": "111ea689a8613af4ff6238ec3679998da34ccc4c25be1b174cf81accd0afa3ac",
+            "proposed": {
+              "kind": "quantities",
+              "status": "not_applicable",
+              "affected": [],
+              "reason": "e14明确来源示例数字不作为本题数据且未给具体时长数值；无原始输入重算；rates空",
+              "refs": [
+                "e14"
+              ]
+            },
+            "reviewReasons": []
+          }
+        ],
+        "keys": [
+          {
+            "taskId": "current",
+            "status": "absent",
+            "reason": "artifact e18仅声明接受确定结论而未指定具体答案键；e15选项空，e21学生答案缺；无当前作者键",
+            "refs": [
+              "e18",
+              "e14"
+            ],
+            "witnesses": [
+              {
+                "id": "e18",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "本题作者参考解（未向学习者提前展示）：此题只接受一个确定结论，不接受条件或信息不足。",
+                "valueHash": "fb7dfa3db3f3d397b2de92b75bea658f0970327223dee113ac125695264a3444"
+              },
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "以下是新的独立情境，来源中的示例数字不作为本题未明示的数据。题目给所有时长和依赖，但没有说明有几名工作人员，也没有说明两项前置工具能否同时使用。能否给唯一最短总时间？ 现在必须给出一个确定的数值或唯一肯定结论，不允许说明信息不足、条件分支或另加假设。",
+                "valueHash": "b8d5018f099e06f8af32ab5bc2a9ce3f1d5c82ac44f0ed111690a763785502c5"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q4",
+            "level": "U",
+            "reason": "The proposed judgment needs evidence review.",
+            "proposed": {
+              "dimension": "Q4",
+              "level": 2,
+              "reason": "题干e14强制唯一肯定结论且未给工人/工具冲突；盲解blindSolutions resolved给出'不能给唯一最短总时间'为可辩护答案集，与题设一致；prior_exposure e19空且artifact e18声明未展示，独立性适当；资源未知足以推出不能唯一，无缺失前提或泄题。",
+              "refs": [
+                "e14",
+                "e18",
+                "e19",
+                "blindSolutions"
+              ],
+              "issue": "none",
+              "exposureEvidence": []
+            },
+            "reviewReasons": [
+              "DIMENSION_TARGET_GROUNDING_MISSING"
+            ]
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q4",
+          "level": "U",
+          "reason": "The proposed judgment needs evidence review.",
+          "proposed": {
+            "dimension": "Q4",
+            "level": 2,
+            "reason": "题干e14强制唯一肯定结论且未给工人/工具冲突；盲解blindSolutions resolved给出'不能给唯一最短总时间'为可辩护答案集，与题设一致；prior_exposure e19空且artifact e18声明未展示，独立性适当；资源未知足以推出不能唯一，无缺失前提或泄题。",
+            "refs": [
+              "e14",
+              "e18",
+              "e19",
+              "blindSolutions"
+            ],
+            "issue": "none",
+            "exposureEvidence": []
+          },
+          "reviewReasons": [
+            "DIMENSION_TARGET_GROUNDING_MISSING"
+          ],
+          "constraints": [],
+          "proposedLevel": "U",
+          "proposedReason": "The proposed judgment needs evidence review."
+        }
+      ],
+      "reviewRequired": [
+        {
+          "dimension": "Q4",
+          "reason": "UNRESOLVED"
+        }
+      ]
+    },
+    "resultHash": "322bf0478414b585fe745788a8b166424adea36dd2b45ebd7a66646a879b0a7a"
+  }
+}

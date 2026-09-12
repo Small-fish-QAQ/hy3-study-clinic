@@ -1,0 +1,236 @@
+{
+  "task": {
+    "caseId": "E413",
+    "runId": "E413-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E413.json",
+    "inputHash": "dd39f264e0fd5760d77195257997a2ffc0d85b3366a467c458f5769bbaf9b980",
+    "population": "controlled",
+    "sourceId": "F10"
+  },
+  "inputHash": "dd39f264e0fd5760d77195257997a2ffc0d85b3366a467c458f5769bbaf9b980",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "correctness": "0de9f480fa54027de7763183d40dd8f1591382467bbf9544da0f4b3edfe04ca4",
+      "artifact-audit": "0de9f480fa54027de7763183d40dd8f1591382467bbf9544da0f4b3edfe04ca4"
+    },
+    "stages": {
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "uncertain",
+            "affected": [
+              "Q3"
+            ],
+            "reason": "The counterexample check is not established.",
+            "proposed": {
+              "kind": "conditions",
+              "status": "defect",
+              "affected": [
+                "Q3"
+              ],
+              "reason": "Artifact (e14) asserts stamping may start once ink-mixing (3 min) finishes, not waiting for cutting, and claims identical timing regardless of worker count. Source e3 explicitly states '盖章必须在裁纸和调墨都完成后才能开始' and shows different totals for 1 vs 2 workers (15 vs 12). Author replaces joint necessary condition with single sufficient condition and ignores resource dependency, altering core mechanism.",
+              "refs": [
+                "e3",
+                "e14"
+              ],
+              "challenge": {
+                "status": "closed",
+                "reason": "Source e3 directly mandates stamping requires both cutting and ink-mixing finished; this explicit rule excludes the claimed possibility of starting stamping with only ink done, so no compatible counterexample can stand.",
+                "refs": [
+                  "e3"
+                ]
+              }
+            },
+            "reviewReasons": [
+              "CONDITIONS_CHALLENGE_UNGROUNDED"
+            ]
+          },
+          {
+            "kind": "quantities",
+            "status": "defect",
+            "affected": [
+              "Q3"
+            ],
+            "reason": "Artifact computes stamp end at minute 5 and bag end at 11 from start at 3. Internal arithmetic (3+2=5, 5+5=10, 10+1=11) is consistent but binds to wrong start time violating e3 dependency. Correct rebind: 2 workers parallel -> stamp 4-6, dry 6-11, bag 11-12; 1 worker serial -> stamp 7-9, dry 9-14, bag 14-15. Core numeric derivation erroneous due to invalid precondition binding.",
+            "refs": [
+              "e3",
+              "e14"
+            ],
+            "witnesses": [
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "制作一份纸质纪念册需要四个步骤：裁纸、调墨、盖章、晾干后装袋。这里约定裁纸需要四分钟，调墨需要三分钟；盖章必须在裁纸和调墨都完成后才能开始，需要两分钟；盖章完成后必须连续晾干五分钟，之后装袋需要一分钟。任务从零时刻开始，纸张和墨水均未准备。所有时长固定，不考虑走动与工具切换的额外时间。\n若有两名工作人员，且裁紙工具与调墨工具互不冲突，就可以一人裁纸、一人调墨，从零时刻并行开始。调墨在第三分钟完成，裁纸在第四分钟完成，盖章最早第四分钟开始，第六分钟完成。晾干到第十一分钟，装袋到第十二分钟结束。两条前置路径汇合时，必须等较晚完成的那条，因此不能把三分钟与四分钟相加，也不能只等较短的一条。\n若只有一名工作人员，裁纸和调墨都需要此人全程操作，二者就不能并行，前两步一共七分钟；之后盖章、晾干和装袋再需八分钟，总计十五分钟。晾干本身不占用工作人员，但没有其他待办步骤可在这段时间提前完成。这里的最短时间来自明确依赖和资源条件，不是见到两步就默认可以同时进行。\n工序的顺序关系与总时间要分别检查。一个方案即使碰巧写出十二分钟，只要它在墨未调好时先盖章，仍不合法。反过来，合法方案不一定最短；两名工作人员也可以选择先裁纸后调墨，但那会闲置可用的并行机会。评价方案时，先检查每一步的开工条件，再讨论是否还有不必要的等待。\n如果材料说明改为“盖章后先观察两分钟，确认印迹无扩散后才进入五分钟晾干”，新增步骤会延后装袋时刻，不能沿用旧总时长。若改用一种允许立即装袋的墨，则又需要依据新的明确条件重算。本单元不对真实墨水安全作建议，只按题设的工艺规则安排时间。\n可以用文字时间表表达方案，每行写步骤、开始时刻、结束时刻和它等待的条件。换一种表格或叙述顺序都可以，只要时刻和依赖一致。对缺少工作人员数量或工具冲突信息的问题，应说明哪些并行安排尚不能确定；如果只要求给出一个合法方案，则可以明确提出足够的资源假设，而不是声称它在任何条件下都最短。",
+                "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+              },
+              {
+                "id": "e14",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "盖章只要等调墨3分钟完成就能开始，不必等裁纸。因此第5分钟盖完，第11分钟结束装袋；任何工作人员数量都一样。",
+                "valueHash": "76700318469aedf9e8629802845116e5adb78030a2aeda7f5e8f9b787211831a"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ],
+        "keys": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q3",
+            "level": 0,
+            "reason": "产物e14声称盖章只需等调墨3分钟而不必等裁纸，且任何工作人员数量结果相同；但e3明确约束盖章必须在裁纸和调墨都完成后开始，并给出两人12分、一人15分的差异。核心依赖推导错误，导致时刻与结论均错。",
+            "refs": [
+              "e14",
+              "e3"
+            ],
+            "issue": "content",
+            "witnesses": [
+              {
+                "id": "e14",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "盖章只要等调墨3分钟完成就能开始，不必等裁纸。因此第5分钟盖完，第11分钟结束装袋；任何工作人员数量都一样。",
+                "valueHash": "76700318469aedf9e8629802845116e5adb78030a2aeda7f5e8f9b787211831a"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "制作一份纸质纪念册需要四个步骤：裁纸、调墨、盖章、晾干后装袋。这里约定裁纸需要四分钟，调墨需要三分钟；盖章必须在裁纸和调墨都完成后才能开始，需要两分钟；盖章完成后必须连续晾干五分钟，之后装袋需要一分钟。任务从零时刻开始，纸张和墨水均未准备。所有时长固定，不考虑走动与工具切换的额外时间。\n若有两名工作人员，且裁紙工具与调墨工具互不冲突，就可以一人裁纸、一人调墨，从零时刻并行开始。调墨在第三分钟完成，裁纸在第四分钟完成，盖章最早第四分钟开始，第六分钟完成。晾干到第十一分钟，装袋到第十二分钟结束。两条前置路径汇合时，必须等较晚完成的那条，因此不能把三分钟与四分钟相加，也不能只等较短的一条。\n若只有一名工作人员，裁纸和调墨都需要此人全程操作，二者就不能并行，前两步一共七分钟；之后盖章、晾干和装袋再需八分钟，总计十五分钟。晾干本身不占用工作人员，但没有其他待办步骤可在这段时间提前完成。这里的最短时间来自明确依赖和资源条件，不是见到两步就默认可以同时进行。\n工序的顺序关系与总时间要分别检查。一个方案即使碰巧写出十二分钟，只要它在墨未调好时先盖章，仍不合法。反过来，合法方案不一定最短；两名工作人员也可以选择先裁纸后调墨，但那会闲置可用的并行机会。评价方案时，先检查每一步的开工条件，再讨论是否还有不必要的等待。\n如果材料说明改为“盖章后先观察两分钟，确认印迹无扩散后才进入五分钟晾干”，新增步骤会延后装袋时刻，不能沿用旧总时长。若改用一种允许立即装袋的墨，则又需要依据新的明确条件重算。本单元不对真实墨水安全作建议，只按题设的工艺规则安排时间。\n可以用文字时间表表达方案，每行写步骤、开始时刻、结束时刻和它等待的条件。换一种表格或叙述顺序都可以，只要时刻和依赖一致。对缺少工作人员数量或工具冲突信息的问题，应说明哪些并行安排尚不能确定；如果只要求给出一个合法方案，则可以明确提出足够的资源假设，而不是声称它在任何条件下都最短。",
+                "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q3",
+          "level": 0,
+          "reason": "Artifact computes stamp end at minute 5 and bag end at 11 from start at 3. Internal arithmetic (3+2=5, 5+5=10, 10+1=11) is consistent but binds to wrong start time violating e3 dependency. Correct rebind: 2 workers parallel -> stamp 4-6, dry 6-11, bag 11-12; 1 worker serial -> stamp 7-9, dry 9-14, bag 14-15. Core numeric derivation erroneous due to invalid precondition binding.",
+          "refs": [
+            "e14",
+            "e3"
+          ],
+          "issue": "content",
+          "witnesses": [
+            {
+              "id": "e14",
+              "pointer": "/artifacts/0/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "盖章只要等调墨3分钟完成就能开始，不必等裁纸。因此第5分钟盖完，第11分钟结束装袋；任何工作人员数量都一样。",
+              "valueHash": "76700318469aedf9e8629802845116e5adb78030a2aeda7f5e8f9b787211831a"
+            },
+            {
+              "id": "e3",
+              "pointer": "/sources/0/text",
+              "role": "source",
+              "kind": "text",
+              "value": "制作一份纸质纪念册需要四个步骤：裁纸、调墨、盖章、晾干后装袋。这里约定裁纸需要四分钟，调墨需要三分钟；盖章必须在裁纸和调墨都完成后才能开始，需要两分钟；盖章完成后必须连续晾干五分钟，之后装袋需要一分钟。任务从零时刻开始，纸张和墨水均未准备。所有时长固定，不考虑走动与工具切换的额外时间。\n若有两名工作人员，且裁紙工具与调墨工具互不冲突，就可以一人裁纸、一人调墨，从零时刻并行开始。调墨在第三分钟完成，裁纸在第四分钟完成，盖章最早第四分钟开始，第六分钟完成。晾干到第十一分钟，装袋到第十二分钟结束。两条前置路径汇合时，必须等较晚完成的那条，因此不能把三分钟与四分钟相加，也不能只等较短的一条。\n若只有一名工作人员，裁纸和调墨都需要此人全程操作，二者就不能并行，前两步一共七分钟；之后盖章、晾干和装袋再需八分钟，总计十五分钟。晾干本身不占用工作人员，但没有其他待办步骤可在这段时间提前完成。这里的最短时间来自明确依赖和资源条件，不是见到两步就默认可以同时进行。\n工序的顺序关系与总时间要分别检查。一个方案即使碰巧写出十二分钟，只要它在墨未调好时先盖章，仍不合法。反过来，合法方案不一定最短；两名工作人员也可以选择先裁纸后调墨，但那会闲置可用的并行机会。评价方案时，先检查每一步的开工条件，再讨论是否还有不必要的等待。\n如果材料说明改为“盖章后先观察两分钟，确认印迹无扩散后才进入五分钟晾干”，新增步骤会延后装袋时刻，不能沿用旧总时长。若改用一种允许立即装袋的墨，则又需要依据新的明确条件重算。本单元不对真实墨水安全作建议，只按题设的工艺规则安排时间。\n可以用文字时间表表达方案，每行写步骤、开始时刻、结束时刻和它等待的条件。换一种表格或叙述顺序都可以，只要时刻和依赖一致。对缺少工作人员数量或工具冲突信息的问题，应说明哪些并行安排尚不能确定；如果只要求给出一个合法方案，则可以明确提出足够的资源假设，而不是声称它在任何条件下都最短。",
+              "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [
+            {
+              "level": "U",
+              "code": "INDEPENDENT_CONDITIONS",
+              "detail": {
+                "kind": "conditions",
+                "status": "uncertain",
+                "affected": [
+                  "Q3"
+                ],
+                "reason": "The counterexample check is not established.",
+                "proposed": {
+                  "kind": "conditions",
+                  "status": "defect",
+                  "affected": [
+                    "Q3"
+                  ],
+                  "reason": "Artifact (e14) asserts stamping may start once ink-mixing (3 min) finishes, not waiting for cutting, and claims identical timing regardless of worker count. Source e3 explicitly states '盖章必须在裁纸和调墨都完成后才能开始' and shows different totals for 1 vs 2 workers (15 vs 12). Author replaces joint necessary condition with single sufficient condition and ignores resource dependency, altering core mechanism.",
+                  "refs": [
+                    "e3",
+                    "e14"
+                  ],
+                  "challenge": {
+                    "status": "closed",
+                    "reason": "Source e3 directly mandates stamping requires both cutting and ink-mixing finished; this explicit rule excludes the claimed possibility of starting stamping with only ink done, so no compatible counterexample can stand.",
+                    "refs": [
+                      "e3"
+                    ]
+                  }
+                },
+                "reviewReasons": [
+                  "CONDITIONS_CHALLENGE_UNGROUNDED"
+                ]
+              }
+            },
+            {
+              "level": 0,
+              "code": "INDEPENDENT_QUANTITIES",
+              "detail": {
+                "kind": "quantities",
+                "status": "defect",
+                "affected": [
+                  "Q3"
+                ],
+                "reason": "Artifact computes stamp end at minute 5 and bag end at 11 from start at 3. Internal arithmetic (3+2=5, 5+5=10, 10+1=11) is consistent but binds to wrong start time violating e3 dependency. Correct rebind: 2 workers parallel -> stamp 4-6, dry 6-11, bag 11-12; 1 worker serial -> stamp 7-9, dry 9-14, bag 14-15. Core numeric derivation erroneous due to invalid precondition binding.",
+                "refs": [
+                  "e3",
+                  "e14"
+                ],
+                "witnesses": [
+                  {
+                    "id": "e3",
+                    "pointer": "/sources/0/text",
+                    "role": "source",
+                    "kind": "text",
+                    "value": "制作一份纸质纪念册需要四个步骤：裁纸、调墨、盖章、晾干后装袋。这里约定裁纸需要四分钟，调墨需要三分钟；盖章必须在裁纸和调墨都完成后才能开始，需要两分钟；盖章完成后必须连续晾干五分钟，之后装袋需要一分钟。任务从零时刻开始，纸张和墨水均未准备。所有时长固定，不考虑走动与工具切换的额外时间。\n若有两名工作人员，且裁紙工具与调墨工具互不冲突，就可以一人裁纸、一人调墨，从零时刻并行开始。调墨在第三分钟完成，裁纸在第四分钟完成，盖章最早第四分钟开始，第六分钟完成。晾干到第十一分钟，装袋到第十二分钟结束。两条前置路径汇合时，必须等较晚完成的那条，因此不能把三分钟与四分钟相加，也不能只等较短的一条。\n若只有一名工作人员，裁纸和调墨都需要此人全程操作，二者就不能并行，前两步一共七分钟；之后盖章、晾干和装袋再需八分钟，总计十五分钟。晾干本身不占用工作人员，但没有其他待办步骤可在这段时间提前完成。这里的最短时间来自明确依赖和资源条件，不是见到两步就默认可以同时进行。\n工序的顺序关系与总时间要分别检查。一个方案即使碰巧写出十二分钟，只要它在墨未调好时先盖章，仍不合法。反过来，合法方案不一定最短；两名工作人员也可以选择先裁纸后调墨，但那会闲置可用的并行机会。评价方案时，先检查每一步的开工条件，再讨论是否还有不必要的等待。\n如果材料说明改为“盖章后先观察两分钟，确认印迹无扩散后才进入五分钟晾干”，新增步骤会延后装袋时刻，不能沿用旧总时长。若改用一种允许立即装袋的墨，则又需要依据新的明确条件重算。本单元不对真实墨水安全作建议，只按题设的工艺规则安排时间。\n可以用文字时间表表达方案，每行写步骤、开始时刻、结束时刻和它等待的条件。换一种表格或叙述顺序都可以，只要时刻和依赖一致。对缺少工作人员数量或工具冲突信息的问题，应说明哪些并行安排尚不能确定；如果只要求给出一个合法方案，则可以明确提出足够的资源假设，而不是声称它在任何条件下都最短。",
+                    "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+                  },
+                  {
+                    "id": "e14",
+                    "pointer": "/artifacts/0/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "盖章只要等调墨3分钟完成就能开始，不必等裁纸。因此第5分钟盖完，第11分钟结束装袋；任何工作人员数量都一样。",
+                    "valueHash": "76700318469aedf9e8629802845116e5adb78030a2aeda7f5e8f9b787211831a"
+                  }
+                ],
+                "reviewReasons": []
+              }
+            }
+          ],
+          "proposedLevel": 0,
+          "proposedReason": "产物e14声称盖章只需等调墨3分钟而不必等裁纸，且任何工作人员数量结果相同；但e3明确约束盖章必须在裁纸和调墨都完成后开始，并给出两人12分、一人15分的差异。核心依赖推导错误，导致时刻与结论均错。",
+          "decidingConstraint": "INDEPENDENT_QUANTITIES"
+        }
+      ],
+      "reviewRequired": [
+        {
+          "dimension": "Q3",
+          "reason": "RESOLVED_DEFECT_WITH_OTHER_UNCERTAINTY"
+        }
+      ]
+    },
+    "resultHash": "d9bd1da08c97b516c7f85f73f5d8193806bf2040973dfbae960abf79c5b00cf8"
+  }
+}

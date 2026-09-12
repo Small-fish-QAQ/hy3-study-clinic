@@ -1,0 +1,1082 @@
+{
+  "task": {
+    "caseId": "E309",
+    "runId": "E309-r3",
+    "replicate": 3,
+    "path": "benchmark/cases/E309.json",
+    "inputHash": "7105a93dd721fe60169ae5806a4f208bebfbe404e243e177144155f3998df88f",
+    "population": "controlled",
+    "sourceId": "F02"
+  },
+  "inputHash": "7105a93dd721fe60169ae5806a4f208bebfbe404e243e177144155f3998df88f",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "solve-current": "040cbc0a321c9cb8f908195d35c04c701193b001cb2fa77c4a214a509558c4c7",
+      "student-criteria": "a2bdd0dfc7118fd3ac674de0959df0c45a17d1c451dd2c9aebcd6b4377458f32",
+      "artifact-audit": "97397c6e4586ea413354307ff84f0a7c813c5429d6ea156d36444711e68a0277",
+      "certification": "97397c6e4586ea413354307ff84f0a7c813c5429d6ea156d36444711e68a0277"
+    },
+    "stages": {
+      "solve-current": {
+        "status": "resolved",
+        "solution": "基数应为降价后现价120元。需补差额160-120=40元，提高百分比=40/120=1/3≈33.33%。算式：120*(1+x)=160 → x=160/120-1=1/3。依e14题设及e3反向基数原则（从差额与当前基数出发，不可机械用降幅25%）。",
+        "witnesses": [
+          {
+            "id": "e14",
+            "pointer": "/question/prompt",
+            "role": "question",
+            "kind": "text",
+            "value": "一件商品原价160元，先降25%后为120元。现在要恢复到160元，应在120元基础上提高百分之几？写出基数和算式；不能把提高幅度直接称为25%。",
+            "valueHash": "c7af57a845f7a65570e8ac77d3002ee4ec7631db0b053cd45a6c0ceb723fe04f"
+          },
+          {
+            "id": "e3",
+            "pointer": "/sources/0/text",
+            "role": "source",
+            "kind": "text",
+            "value": "价格变化中的百分比总要依附一个基数。“降低百分之二十”通常以变化前价格为基数，意味着保留原价的百分之八十。假设原价是一百元，降价后为一百乘零点八，即八十元。这里减少了二十元，但“二十元”和“百分之二十”不是同一种量；只有同时知道基数，才能在金额与比例之间换算。\n连续变化必须按每一步的当前价格计算。例如先降百分之二十，再在降后价格上提高百分之二十，第二步增加的是八十元的百分之二十，即十六元，最后为九十六元，并没有回到一百元。两个百分比相等，基数却不同。可以把全过程写成“原价乘零点八再乘一点二”。若希望八十元恢复到一百元，需要增加二十元，而二十除以八十等于零点二五，所以应提高百分之二十五。反向问题应从目标差额与当前基数出发，不能机械地把降幅换成同样的涨幅。\n比较方案时也要留意固定金额与比例的区别。原价一百元时，减二十元和打八折都得到八十元；原价五十元时，减二十元得到三十元，打八折得到四十元。一次数值碰巧相等并不证明两种规则始终相同。本单元假定没有运费、满减门槛、四舍五入或叠加顺序的特殊限制；若现实广告存在这些条件，应先读清条件，再计算。\n百分比还可以用来描述某个比例自身的变化。若一项活动报名率由百分之四十变成百分之五十，增加了十个百分点；相对于原来的百分之四十，则增长了百分之二十五，因为十除以四十等于四分之一。“百分点”是两个百分率直接相减的差，“相对增长率”则把差再除以原比例。二者回答不同问题，不应省略名称后混为一个数。\n解释计算时，建议先写“这一步把什么当作百分之百”，再列算式，最后做方向检查。降价再涨价后的结果是否符合基数变化？某个提高幅度是相对于原价还是现价？如果只报告“增长百分之十”而不交代基数，读者可能无法复算。原比例为零时，也不能照搬差额除以原比例的相对增长率公式，因为分母为零；仍可以报告增加了多少元、多少人或多少个百分点。清楚说明边界，比强行给出一个不存在的比例更可靠。",
+            "valueHash": "eed51cb255d5d0e12ca505b4c60926d142df7cf81a0f73781aba0593d2870361"
+          }
+        ],
+        "reviewReasons": []
+      },
+      "student-criteria": {
+        "taskValidity": "valid",
+        "rubricValidity": "valid",
+        "reason": "题目e14明确要求恢复基数与算式且禁止直接称25%，量规c1c2必要项正确描述基数120、差额40、40/120=1/3及基数不同，学生e26满足；c3可选未影响有效性。",
+        "validityWitnesses": [
+          {
+            "id": "e14",
+            "pointer": "/question/prompt",
+            "role": "question",
+            "kind": "text",
+            "value": "一件商品原价160元，先降25%后为120元。现在要恢复到160元，应在120元基础上提高百分之几？写出基数和算式；不能把提高幅度直接称为25%。",
+            "valueHash": "c7af57a845f7a65570e8ac77d3002ee4ec7631db0b053cd45a6c0ceb723fe04f"
+          },
+          {
+            "id": "e16",
+            "pointer": "/rubric",
+            "role": "criterion",
+            "kind": "array_length",
+            "value": 3,
+            "valueHash": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce"
+          },
+          {
+            "id": "e26",
+            "pointer": "/answer",
+            "role": "student",
+            "kind": "text",
+            "value": "需要补回40元，恢复时这40元要除以当前120元，所以提高1/3，也就是33又1/3%。原先25%按160元算，不能直接照搬。",
+            "valueHash": "915bc514dd9df58f025b23a4b310e92425aff378a67cf30b67deeba1d12c8f63"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "c1",
+            "required": true,
+            "result": "met",
+            "reason": "学生指明补回40元并除以当前120元，以现价120为基数、差额40元，符合标准。",
+            "witnesses": [
+              {
+                "id": "e26",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "需要补回40元，恢复时这40元要除以当前120元，所以提高1/3，也就是33又1/3%。原先25%按160元算，不能直接照搬。",
+                "valueHash": "915bc514dd9df58f025b23a4b310e92425aff378a67cf30b67deeba1d12c8f63"
+              },
+              {
+                "id": "e18",
+                "pointer": "/rubric/0/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "以现价120元为恢复时涨幅的基数，差额为40元。",
+                "valueHash": "85bf4d0bed129fff736d712ba67eca8b33a0d8473c1fb1f72b2d2d3129a3f8c2"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "id": "c2",
+            "required": true,
+            "result": "met",
+            "reason": "学生由40÷120得1/3即33又1/3%，并说明原先25%按160元算不能直接照搬，满足计算与基数区别。",
+            "witnesses": [
+              {
+                "id": "e26",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "需要补回40元，恢复时这40元要除以当前120元，所以提高1/3，也就是33又1/3%。原先25%按160元算，不能直接照搬。",
+                "valueHash": "915bc514dd9df58f025b23a4b310e92425aff378a67cf30b67deeba1d12c8f63"
+              },
+              {
+                "id": "e21",
+                "pointer": "/rubric/1/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "由40÷120得到1/3或33又1/3%，并说明降幅25%使用不同基数。",
+                "valueHash": "ccd5444a0a21906f1857b47e57958810cdc7c5363d19da045a3cc4d93de3fa50"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "id": "c3",
+            "required": false,
+            "result": "not_met",
+            "reason": "学生未用小标题分开计算和解释，但此为标准可选项(non-required)，不影响核心。",
+            "witnesses": [
+              {
+                "id": "e26",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "需要补回40元，恢复时这40元要除以当前120元，所以提高1/3，也就是33又1/3%。原先25%按160元算，不能直接照搬。",
+                "valueHash": "915bc514dd9df58f025b23a4b310e92425aff378a67cf30b67deeba1d12c8f63"
+              },
+              {
+                "id": "e24",
+                "pointer": "/rubric/2/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "可选表达：用小标题分开计算和解释。",
+                "valueHash": "ed58a9e65b5e9c545c19428652cec947f94db416fe4bf8b7812969666b7e080a"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ],
+        "sufficiency": "sufficient",
+        "reviewReasons": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q5",
+            "level": 2,
+            "reason": "产品判分c1 met(e33), c2 met(e35), c3 not_met(e37)正确；反馈(e38)指出可选不影响通过，后果授予学分(e39)与独立分析一致：学生回答(e26)以120为基数补40(e18)，40/120=1/3且说明25%不同基数(e21)。无本质错判或学分冲突。",
+            "refs": [
+              "e31",
+              "e33",
+              "e35",
+              "e37",
+              "e38",
+              "e39",
+              "e26",
+              "e18",
+              "e21"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e31",
+                "pointer": "/productJudgment/criteria",
+                "role": "product",
+                "kind": "array_length",
+                "value": 3,
+                "valueHash": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce"
+              },
+              {
+                "id": "e33",
+                "pointer": "/productJudgment/criteria/0/result",
+                "role": "product",
+                "kind": "text",
+                "value": "met",
+                "valueHash": "6efcbfb1f9f195ced75feb43f202ab14a8cd87832cef086976b16658e23944a8"
+              },
+              {
+                "id": "e35",
+                "pointer": "/productJudgment/criteria/1/result",
+                "role": "product",
+                "kind": "text",
+                "value": "met",
+                "valueHash": "6efcbfb1f9f195ced75feb43f202ab14a8cd87832cef086976b16658e23944a8"
+              },
+              {
+                "id": "e37",
+                "pointer": "/productJudgment/criteria/2/result",
+                "role": "product",
+                "kind": "text",
+                "value": "not_met",
+                "valueHash": "1fbcf23a28d84c32b3e517b749f865dff62e466f1caa29b50173e236542a8342"
+              },
+              {
+                "id": "e38",
+                "pointer": "/productJudgment/feedback",
+                "role": "product",
+                "kind": "text",
+                "value": "必要含义和运算均已展示；没有小标题只影响可选排版，不影响通过。",
+                "valueHash": "89c727f844ede74e17dcf7aac610663610c531d72c23683c04bcd4f42f1d925e"
+              },
+              {
+                "id": "e39",
+                "pointer": "/productJudgment/consequence",
+                "role": "product",
+                "kind": "text",
+                "value": "已授予本题学分。",
+                "valueHash": "7a46f96ef53640241d47aaf5bf8982277cb8089d4e31cb15b6a2197d05b6c7b9"
+              },
+              {
+                "id": "e26",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "需要补回40元，恢复时这40元要除以当前120元，所以提高1/3，也就是33又1/3%。原先25%按160元算，不能直接照搬。",
+                "valueHash": "915bc514dd9df58f025b23a4b310e92425aff378a67cf30b67deeba1d12c8f63"
+              },
+              {
+                "id": "e18",
+                "pointer": "/rubric/0/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "以现价120元为恢复时涨幅的基数，差额为40元。",
+                "valueHash": "85bf4d0bed129fff736d712ba67eca8b33a0d8473c1fb1f72b2d2d3129a3f8c2"
+              },
+              {
+                "id": "e21",
+                "pointer": "/rubric/1/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "由40÷120得到1/3或33又1/3%，并说明降幅25%使用不同基数。",
+                "valueHash": "ccd5444a0a21906f1857b47e57958810cdc7c5363d19da045a3cc4d93de3fa50"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ],
+        "credit": {
+          "outcome": "granted",
+          "reason": "产品后果已授予学分(e39)，学生必要标准满足，学分与充分表现一致。",
+          "refs": [
+            "e39",
+            "e26",
+            "e18",
+            "e21"
+          ],
+          "witnesses": [
+            {
+              "id": "e39",
+              "pointer": "/productJudgment/consequence",
+              "role": "product",
+              "kind": "text",
+              "value": "已授予本题学分。",
+              "valueHash": "7a46f96ef53640241d47aaf5bf8982277cb8089d4e31cb15b6a2197d05b6c7b9"
+            },
+            {
+              "id": "e26",
+              "pointer": "/answer",
+              "role": "student",
+              "kind": "text",
+              "value": "需要补回40元，恢复时这40元要除以当前120元，所以提高1/3，也就是33又1/3%。原先25%按160元算，不能直接照搬。",
+              "valueHash": "915bc514dd9df58f025b23a4b310e92425aff378a67cf30b67deeba1d12c8f63"
+            },
+            {
+              "id": "e18",
+              "pointer": "/rubric/0/text",
+              "role": "criterion",
+              "kind": "text",
+              "value": "以现价120元为恢复时涨幅的基数，差额为40元。",
+              "valueHash": "85bf4d0bed129fff736d712ba67eca8b33a0d8473c1fb1f72b2d2d3129a3f8c2"
+            },
+            {
+              "id": "e21",
+              "pointer": "/rubric/1/text",
+              "role": "criterion",
+              "kind": "text",
+              "value": "由40÷120得到1/3或33又1/3%，并说明降幅25%使用不同基数。",
+              "valueHash": "ccd5444a0a21906f1857b47e57958810cdc7c5363d19da045a3cc4d93de3fa50"
+            }
+          ],
+          "reviewReasons": []
+        },
+        "studentCheck": {
+          "taskValidity": "valid",
+          "rubricValidity": "valid",
+          "reason": "题目(e14)要求明确基数算式并禁误称25%，标准c1-c2必需含义清晰(e18,e21)，学生(e26)等价满足，c3可选(e24)未用小标题不影响。",
+          "validityWitnesses": [
+            {
+              "id": "e14",
+              "pointer": "/question/prompt",
+              "role": "question",
+              "kind": "text",
+              "value": "一件商品原价160元，先降25%后为120元。现在要恢复到160元，应在120元基础上提高百分之几？写出基数和算式；不能把提高幅度直接称为25%。",
+              "valueHash": "c7af57a845f7a65570e8ac77d3002ee4ec7631db0b053cd45a6c0ceb723fe04f"
+            },
+            {
+              "id": "e18",
+              "pointer": "/rubric/0/text",
+              "role": "criterion",
+              "kind": "text",
+              "value": "以现价120元为恢复时涨幅的基数，差额为40元。",
+              "valueHash": "85bf4d0bed129fff736d712ba67eca8b33a0d8473c1fb1f72b2d2d3129a3f8c2"
+            },
+            {
+              "id": "e21",
+              "pointer": "/rubric/1/text",
+              "role": "criterion",
+              "kind": "text",
+              "value": "由40÷120得到1/3或33又1/3%，并说明降幅25%使用不同基数。",
+              "valueHash": "ccd5444a0a21906f1857b47e57958810cdc7c5363d19da045a3cc4d93de3fa50"
+            },
+            {
+              "id": "e24",
+              "pointer": "/rubric/2/text",
+              "role": "criterion",
+              "kind": "text",
+              "value": "可选表达：用小标题分开计算和解释。",
+              "valueHash": "ed58a9e65b5e9c545c19428652cec947f94db416fe4bf8b7812969666b7e080a"
+            },
+            {
+              "id": "e26",
+              "pointer": "/answer",
+              "role": "student",
+              "kind": "text",
+              "value": "需要补回40元，恢复时这40元要除以当前120元，所以提高1/3，也就是33又1/3%。原先25%按160元算，不能直接照搬。",
+              "valueHash": "915bc514dd9df58f025b23a4b310e92425aff378a67cf30b67deeba1d12c8f63"
+            }
+          ],
+          "criteria": [
+            {
+              "id": "c1",
+              "required": true,
+              "result": "met",
+              "reason": "学生指明补回40元并除以当前120元，以现价为基数，满足差额40与基数120。",
+              "witnesses": [
+                {
+                  "id": "e26",
+                  "pointer": "/answer",
+                  "role": "student",
+                  "kind": "text",
+                  "value": "需要补回40元，恢复时这40元要除以当前120元，所以提高1/3，也就是33又1/3%。原先25%按160元算，不能直接照搬。",
+                  "valueHash": "915bc514dd9df58f025b23a4b310e92425aff378a67cf30b67deeba1d12c8f63"
+                },
+                {
+                  "id": "e18",
+                  "pointer": "/rubric/0/text",
+                  "role": "criterion",
+                  "kind": "text",
+                  "value": "以现价120元为恢复时涨幅的基数，差额为40元。",
+                  "valueHash": "85bf4d0bed129fff736d712ba67eca8b33a0d8473c1fb1f72b2d2d3129a3f8c2"
+                }
+              ],
+              "reviewReasons": []
+            },
+            {
+              "id": "c2",
+              "required": true,
+              "result": "met",
+              "reason": "学生得1/3即33又1/3%，并指出原先25%按160元算，满足运算与基数区分。",
+              "witnesses": [
+                {
+                  "id": "e26",
+                  "pointer": "/answer",
+                  "role": "student",
+                  "kind": "text",
+                  "value": "需要补回40元，恢复时这40元要除以当前120元，所以提高1/3，也就是33又1/3%。原先25%按160元算，不能直接照搬。",
+                  "valueHash": "915bc514dd9df58f025b23a4b310e92425aff378a67cf30b67deeba1d12c8f63"
+                },
+                {
+                  "id": "e21",
+                  "pointer": "/rubric/1/text",
+                  "role": "criterion",
+                  "kind": "text",
+                  "value": "由40÷120得到1/3或33又1/3%，并说明降幅25%使用不同基数。",
+                  "valueHash": "ccd5444a0a21906f1857b47e57958810cdc7c5363d19da045a3cc4d93de3fa50"
+                }
+              ],
+              "reviewReasons": []
+            },
+            {
+              "id": "c3",
+              "required": false,
+              "result": "not_met",
+              "reason": "未用小标题，但标准标明可选不必需，不影响通过。",
+              "witnesses": [
+                {
+                  "id": "e26",
+                  "pointer": "/answer",
+                  "role": "student",
+                  "kind": "text",
+                  "value": "需要补回40元，恢复时这40元要除以当前120元，所以提高1/3，也就是33又1/3%。原先25%按160元算，不能直接照搬。",
+                  "valueHash": "915bc514dd9df58f025b23a4b310e92425aff378a67cf30b67deeba1d12c8f63"
+                },
+                {
+                  "id": "e24",
+                  "pointer": "/rubric/2/text",
+                  "role": "criterion",
+                  "kind": "text",
+                  "value": "可选表达：用小标题分开计算和解释。",
+                  "valueHash": "ed58a9e65b5e9c545c19428652cec947f94db416fe4bf8b7812969666b7e080a"
+                }
+              ],
+              "reviewReasons": []
+            }
+          ],
+          "sufficiency": "sufficient",
+          "reviewReasons": []
+        }
+      },
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q5",
+            "status": "supported",
+            "reason": "产品判分c1 met(e33),c2 met(e35),c3 not_met(e37)正确；反馈(e38)与学分(e39)同独立分析一致：学生(e26)以120为基补40(e18),40/120=1/3且说明25%不同基(e21)。findings各阶段无异议。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e33",
+                "pointer": "/productJudgment/criteria/0/result",
+                "role": "product",
+                "kind": "text",
+                "value": "met",
+                "valueHash": "6efcbfb1f9f195ced75feb43f202ab14a8cd87832cef086976b16658e23944a8"
+              },
+              {
+                "id": "e35",
+                "pointer": "/productJudgment/criteria/1/result",
+                "role": "product",
+                "kind": "text",
+                "value": "met",
+                "valueHash": "6efcbfb1f9f195ced75feb43f202ab14a8cd87832cef086976b16658e23944a8"
+              },
+              {
+                "id": "e37",
+                "pointer": "/productJudgment/criteria/2/result",
+                "role": "product",
+                "kind": "text",
+                "value": "not_met",
+                "valueHash": "1fbcf23a28d84c32b3e517b749f865dff62e466f1caa29b50173e236542a8342"
+              },
+              {
+                "id": "e38",
+                "pointer": "/productJudgment/feedback",
+                "role": "product",
+                "kind": "text",
+                "value": "必要含义和运算均已展示；没有小标题只影响可选排版，不影响通过。",
+                "valueHash": "89c727f844ede74e17dcf7aac610663610c531d72c23683c04bcd4f42f1d925e"
+              },
+              {
+                "id": "e39",
+                "pointer": "/productJudgment/consequence",
+                "role": "product",
+                "kind": "text",
+                "value": "已授予本题学分。",
+                "valueHash": "7a46f96ef53640241d47aaf5bf8982277cb8089d4e31cb15b6a2197d05b6c7b9"
+              },
+              {
+                "id": "e26",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "需要补回40元，恢复时这40元要除以当前120元，所以提高1/3，也就是33又1/3%。原先25%按160元算，不能直接照搬。",
+                "valueHash": "915bc514dd9df58f025b23a4b310e92425aff378a67cf30b67deeba1d12c8f63"
+              },
+              {
+                "id": "e18",
+                "pointer": "/rubric/0/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "以现价120元为恢复时涨幅的基数，差额为40元。",
+                "valueHash": "85bf4d0bed129fff736d712ba67eca8b33a0d8473c1fb1f72b2d2d3129a3f8c2"
+              },
+              {
+                "id": "e21",
+                "pointer": "/rubric/1/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "由40÷120得到1/3或33又1/3%，并说明降幅25%使用不同基数。",
+                "valueHash": "ccd5444a0a21906f1857b47e57958810cdc7c5363d19da045a3cc4d93de3fa50"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q5",
+          "level": 2,
+          "reason": "产品判分c1 met(e33), c2 met(e35), c3 not_met(e37)正确；反馈(e38)指出可选不影响通过，后果授予学分(e39)与独立分析一致：学生回答(e26)以120为基数补40(e18)，40/120=1/3且说明25%不同基数(e21)。无本质错判或学分冲突。",
+          "refs": [
+            "e31",
+            "e33",
+            "e35",
+            "e37",
+            "e38",
+            "e39",
+            "e26",
+            "e18",
+            "e21"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e31",
+              "pointer": "/productJudgment/criteria",
+              "role": "product",
+              "kind": "array_length",
+              "value": 3,
+              "valueHash": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce"
+            },
+            {
+              "id": "e33",
+              "pointer": "/productJudgment/criteria/0/result",
+              "role": "product",
+              "kind": "text",
+              "value": "met",
+              "valueHash": "6efcbfb1f9f195ced75feb43f202ab14a8cd87832cef086976b16658e23944a8"
+            },
+            {
+              "id": "e35",
+              "pointer": "/productJudgment/criteria/1/result",
+              "role": "product",
+              "kind": "text",
+              "value": "met",
+              "valueHash": "6efcbfb1f9f195ced75feb43f202ab14a8cd87832cef086976b16658e23944a8"
+            },
+            {
+              "id": "e37",
+              "pointer": "/productJudgment/criteria/2/result",
+              "role": "product",
+              "kind": "text",
+              "value": "not_met",
+              "valueHash": "1fbcf23a28d84c32b3e517b749f865dff62e466f1caa29b50173e236542a8342"
+            },
+            {
+              "id": "e38",
+              "pointer": "/productJudgment/feedback",
+              "role": "product",
+              "kind": "text",
+              "value": "必要含义和运算均已展示；没有小标题只影响可选排版，不影响通过。",
+              "valueHash": "89c727f844ede74e17dcf7aac610663610c531d72c23683c04bcd4f42f1d925e"
+            },
+            {
+              "id": "e39",
+              "pointer": "/productJudgment/consequence",
+              "role": "product",
+              "kind": "text",
+              "value": "已授予本题学分。",
+              "valueHash": "7a46f96ef53640241d47aaf5bf8982277cb8089d4e31cb15b6a2197d05b6c7b9"
+            },
+            {
+              "id": "e26",
+              "pointer": "/answer",
+              "role": "student",
+              "kind": "text",
+              "value": "需要补回40元，恢复时这40元要除以当前120元，所以提高1/3，也就是33又1/3%。原先25%按160元算，不能直接照搬。",
+              "valueHash": "915bc514dd9df58f025b23a4b310e92425aff378a67cf30b67deeba1d12c8f63"
+            },
+            {
+              "id": "e18",
+              "pointer": "/rubric/0/text",
+              "role": "criterion",
+              "kind": "text",
+              "value": "以现价120元为恢复时涨幅的基数，差额为40元。",
+              "valueHash": "85bf4d0bed129fff736d712ba67eca8b33a0d8473c1fb1f72b2d2d3129a3f8c2"
+            },
+            {
+              "id": "e21",
+              "pointer": "/rubric/1/text",
+              "role": "criterion",
+              "kind": "text",
+              "value": "由40÷120得到1/3或33又1/3%，并说明降幅25%使用不同基数。",
+              "valueHash": "ccd5444a0a21906f1857b47e57958810cdc7c5363d19da045a3cc4d93de3fa50"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [],
+          "proposedLevel": 2,
+          "proposedReason": "产品判分c1 met(e33), c2 met(e35), c3 not_met(e37)正确；反馈(e38)指出可选不影响通过，后果授予学分(e39)与独立分析一致：学生回答(e26)以120为基数补40(e18)，40/120=1/3且说明25%不同基数(e21)。无本质错判或学分冲突。"
+        }
+      ],
+      "studentAssessment": {
+        "taskValidity": "valid",
+        "rubricValidity": "valid",
+        "reason": "题目e14明确要求恢复基数与算式且禁止直接称25%，量规c1c2必要项正确描述基数120、差额40、40/120=1/3及基数不同，学生e26满足；c3可选未影响有效性。",
+        "validityWitnesses": [
+          {
+            "id": "e14",
+            "pointer": "/question/prompt",
+            "role": "question",
+            "kind": "text",
+            "value": "一件商品原价160元，先降25%后为120元。现在要恢复到160元，应在120元基础上提高百分之几？写出基数和算式；不能把提高幅度直接称为25%。",
+            "valueHash": "c7af57a845f7a65570e8ac77d3002ee4ec7631db0b053cd45a6c0ceb723fe04f"
+          },
+          {
+            "id": "e16",
+            "pointer": "/rubric",
+            "role": "criterion",
+            "kind": "array_length",
+            "value": 3,
+            "valueHash": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce"
+          },
+          {
+            "id": "e26",
+            "pointer": "/answer",
+            "role": "student",
+            "kind": "text",
+            "value": "需要补回40元，恢复时这40元要除以当前120元，所以提高1/3，也就是33又1/3%。原先25%按160元算，不能直接照搬。",
+            "valueHash": "915bc514dd9df58f025b23a4b310e92425aff378a67cf30b67deeba1d12c8f63"
+          }
+        ],
+        "criteria": [
+          {
+            "id": "c1",
+            "required": true,
+            "result": "met",
+            "reason": "学生指明补回40元并除以当前120元，以现价120为基数、差额40元，符合标准。",
+            "witnesses": [
+              {
+                "id": "e26",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "需要补回40元，恢复时这40元要除以当前120元，所以提高1/3，也就是33又1/3%。原先25%按160元算，不能直接照搬。",
+                "valueHash": "915bc514dd9df58f025b23a4b310e92425aff378a67cf30b67deeba1d12c8f63"
+              },
+              {
+                "id": "e18",
+                "pointer": "/rubric/0/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "以现价120元为恢复时涨幅的基数，差额为40元。",
+                "valueHash": "85bf4d0bed129fff736d712ba67eca8b33a0d8473c1fb1f72b2d2d3129a3f8c2"
+              }
+            ],
+            "reviewReasons": [],
+            "independentWitnesses": [
+              {
+                "id": "e26",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "需要补回40元，恢复时这40元要除以当前120元，所以提高1/3，也就是33又1/3%。原先25%按160元算，不能直接照搬。",
+                "valueHash": "915bc514dd9df58f025b23a4b310e92425aff378a67cf30b67deeba1d12c8f63"
+              },
+              {
+                "id": "e18",
+                "pointer": "/rubric/0/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "以现价120元为恢复时涨幅的基数，差额为40元。",
+                "valueHash": "85bf4d0bed129fff736d712ba67eca8b33a0d8473c1fb1f72b2d2d3129a3f8c2"
+              }
+            ]
+          },
+          {
+            "id": "c2",
+            "required": true,
+            "result": "met",
+            "reason": "学生由40÷120得1/3即33又1/3%，并说明原先25%按160元算不能直接照搬，满足计算与基数区别。",
+            "witnesses": [
+              {
+                "id": "e26",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "需要补回40元，恢复时这40元要除以当前120元，所以提高1/3，也就是33又1/3%。原先25%按160元算，不能直接照搬。",
+                "valueHash": "915bc514dd9df58f025b23a4b310e92425aff378a67cf30b67deeba1d12c8f63"
+              },
+              {
+                "id": "e21",
+                "pointer": "/rubric/1/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "由40÷120得到1/3或33又1/3%，并说明降幅25%使用不同基数。",
+                "valueHash": "ccd5444a0a21906f1857b47e57958810cdc7c5363d19da045a3cc4d93de3fa50"
+              }
+            ],
+            "reviewReasons": [],
+            "independentWitnesses": [
+              {
+                "id": "e26",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "需要补回40元，恢复时这40元要除以当前120元，所以提高1/3，也就是33又1/3%。原先25%按160元算，不能直接照搬。",
+                "valueHash": "915bc514dd9df58f025b23a4b310e92425aff378a67cf30b67deeba1d12c8f63"
+              },
+              {
+                "id": "e21",
+                "pointer": "/rubric/1/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "由40÷120得到1/3或33又1/3%，并说明降幅25%使用不同基数。",
+                "valueHash": "ccd5444a0a21906f1857b47e57958810cdc7c5363d19da045a3cc4d93de3fa50"
+              }
+            ]
+          },
+          {
+            "id": "c3",
+            "required": false,
+            "result": "not_met",
+            "reason": "学生未用小标题分开计算和解释，但此为标准可选项(non-required)，不影响核心。",
+            "witnesses": [
+              {
+                "id": "e26",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "需要补回40元，恢复时这40元要除以当前120元，所以提高1/3，也就是33又1/3%。原先25%按160元算，不能直接照搬。",
+                "valueHash": "915bc514dd9df58f025b23a4b310e92425aff378a67cf30b67deeba1d12c8f63"
+              },
+              {
+                "id": "e24",
+                "pointer": "/rubric/2/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "可选表达：用小标题分开计算和解释。",
+                "valueHash": "ed58a9e65b5e9c545c19428652cec947f94db416fe4bf8b7812969666b7e080a"
+              }
+            ],
+            "reviewReasons": [],
+            "independentWitnesses": [
+              {
+                "id": "e26",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "需要补回40元，恢复时这40元要除以当前120元，所以提高1/3，也就是33又1/3%。原先25%按160元算，不能直接照搬。",
+                "valueHash": "915bc514dd9df58f025b23a4b310e92425aff378a67cf30b67deeba1d12c8f63"
+              },
+              {
+                "id": "e24",
+                "pointer": "/rubric/2/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "可选表达：用小标题分开计算和解释。",
+                "valueHash": "ed58a9e65b5e9c545c19428652cec947f94db416fe4bf8b7812969666b7e080a"
+              }
+            ]
+          }
+        ],
+        "sufficiency": "sufficient",
+        "reviewReasons": [],
+        "independentAssessments": [
+          {
+            "taskValidity": "valid",
+            "rubricValidity": "valid",
+            "reason": "题目e14明确要求恢复基数与算式且禁止直接称25%，量规c1c2必要项正确描述基数120、差额40、40/120=1/3及基数不同，学生e26满足；c3可选未影响有效性。",
+            "validityWitnesses": [
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "一件商品原价160元，先降25%后为120元。现在要恢复到160元，应在120元基础上提高百分之几？写出基数和算式；不能把提高幅度直接称为25%。",
+                "valueHash": "c7af57a845f7a65570e8ac77d3002ee4ec7631db0b053cd45a6c0ceb723fe04f"
+              },
+              {
+                "id": "e16",
+                "pointer": "/rubric",
+                "role": "criterion",
+                "kind": "array_length",
+                "value": 3,
+                "valueHash": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce"
+              },
+              {
+                "id": "e26",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "需要补回40元，恢复时这40元要除以当前120元，所以提高1/3，也就是33又1/3%。原先25%按160元算，不能直接照搬。",
+                "valueHash": "915bc514dd9df58f025b23a4b310e92425aff378a67cf30b67deeba1d12c8f63"
+              }
+            ],
+            "criteria": [
+              {
+                "id": "c1",
+                "required": true,
+                "result": "met",
+                "reason": "学生指明补回40元并除以当前120元，以现价120为基数、差额40元，符合标准。",
+                "witnesses": [
+                  {
+                    "id": "e26",
+                    "pointer": "/answer",
+                    "role": "student",
+                    "kind": "text",
+                    "value": "需要补回40元，恢复时这40元要除以当前120元，所以提高1/3，也就是33又1/3%。原先25%按160元算，不能直接照搬。",
+                    "valueHash": "915bc514dd9df58f025b23a4b310e92425aff378a67cf30b67deeba1d12c8f63"
+                  },
+                  {
+                    "id": "e18",
+                    "pointer": "/rubric/0/text",
+                    "role": "criterion",
+                    "kind": "text",
+                    "value": "以现价120元为恢复时涨幅的基数，差额为40元。",
+                    "valueHash": "85bf4d0bed129fff736d712ba67eca8b33a0d8473c1fb1f72b2d2d3129a3f8c2"
+                  }
+                ],
+                "reviewReasons": []
+              },
+              {
+                "id": "c2",
+                "required": true,
+                "result": "met",
+                "reason": "学生由40÷120得1/3即33又1/3%，并说明原先25%按160元算不能直接照搬，满足计算与基数区别。",
+                "witnesses": [
+                  {
+                    "id": "e26",
+                    "pointer": "/answer",
+                    "role": "student",
+                    "kind": "text",
+                    "value": "需要补回40元，恢复时这40元要除以当前120元，所以提高1/3，也就是33又1/3%。原先25%按160元算，不能直接照搬。",
+                    "valueHash": "915bc514dd9df58f025b23a4b310e92425aff378a67cf30b67deeba1d12c8f63"
+                  },
+                  {
+                    "id": "e21",
+                    "pointer": "/rubric/1/text",
+                    "role": "criterion",
+                    "kind": "text",
+                    "value": "由40÷120得到1/3或33又1/3%，并说明降幅25%使用不同基数。",
+                    "valueHash": "ccd5444a0a21906f1857b47e57958810cdc7c5363d19da045a3cc4d93de3fa50"
+                  }
+                ],
+                "reviewReasons": []
+              },
+              {
+                "id": "c3",
+                "required": false,
+                "result": "not_met",
+                "reason": "学生未用小标题分开计算和解释，但此为标准可选项(non-required)，不影响核心。",
+                "witnesses": [
+                  {
+                    "id": "e26",
+                    "pointer": "/answer",
+                    "role": "student",
+                    "kind": "text",
+                    "value": "需要补回40元，恢复时这40元要除以当前120元，所以提高1/3，也就是33又1/3%。原先25%按160元算，不能直接照搬。",
+                    "valueHash": "915bc514dd9df58f025b23a4b310e92425aff378a67cf30b67deeba1d12c8f63"
+                  },
+                  {
+                    "id": "e24",
+                    "pointer": "/rubric/2/text",
+                    "role": "criterion",
+                    "kind": "text",
+                    "value": "可选表达：用小标题分开计算和解释。",
+                    "valueHash": "ed58a9e65b5e9c545c19428652cec947f94db416fe4bf8b7812969666b7e080a"
+                  }
+                ],
+                "reviewReasons": []
+              }
+            ],
+            "sufficiency": "sufficient",
+            "reviewReasons": []
+          },
+          {
+            "taskValidity": "valid",
+            "rubricValidity": "valid",
+            "reason": "题目(e14)要求明确基数算式并禁误称25%，标准c1-c2必需含义清晰(e18,e21)，学生(e26)等价满足，c3可选(e24)未用小标题不影响。",
+            "validityWitnesses": [
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "一件商品原价160元，先降25%后为120元。现在要恢复到160元，应在120元基础上提高百分之几？写出基数和算式；不能把提高幅度直接称为25%。",
+                "valueHash": "c7af57a845f7a65570e8ac77d3002ee4ec7631db0b053cd45a6c0ceb723fe04f"
+              },
+              {
+                "id": "e18",
+                "pointer": "/rubric/0/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "以现价120元为恢复时涨幅的基数，差额为40元。",
+                "valueHash": "85bf4d0bed129fff736d712ba67eca8b33a0d8473c1fb1f72b2d2d3129a3f8c2"
+              },
+              {
+                "id": "e21",
+                "pointer": "/rubric/1/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "由40÷120得到1/3或33又1/3%，并说明降幅25%使用不同基数。",
+                "valueHash": "ccd5444a0a21906f1857b47e57958810cdc7c5363d19da045a3cc4d93de3fa50"
+              },
+              {
+                "id": "e24",
+                "pointer": "/rubric/2/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "可选表达：用小标题分开计算和解释。",
+                "valueHash": "ed58a9e65b5e9c545c19428652cec947f94db416fe4bf8b7812969666b7e080a"
+              },
+              {
+                "id": "e26",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "需要补回40元，恢复时这40元要除以当前120元，所以提高1/3，也就是33又1/3%。原先25%按160元算，不能直接照搬。",
+                "valueHash": "915bc514dd9df58f025b23a4b310e92425aff378a67cf30b67deeba1d12c8f63"
+              }
+            ],
+            "criteria": [
+              {
+                "id": "c1",
+                "required": true,
+                "result": "met",
+                "reason": "学生指明补回40元并除以当前120元，以现价为基数，满足差额40与基数120。",
+                "witnesses": [
+                  {
+                    "id": "e26",
+                    "pointer": "/answer",
+                    "role": "student",
+                    "kind": "text",
+                    "value": "需要补回40元，恢复时这40元要除以当前120元，所以提高1/3，也就是33又1/3%。原先25%按160元算，不能直接照搬。",
+                    "valueHash": "915bc514dd9df58f025b23a4b310e92425aff378a67cf30b67deeba1d12c8f63"
+                  },
+                  {
+                    "id": "e18",
+                    "pointer": "/rubric/0/text",
+                    "role": "criterion",
+                    "kind": "text",
+                    "value": "以现价120元为恢复时涨幅的基数，差额为40元。",
+                    "valueHash": "85bf4d0bed129fff736d712ba67eca8b33a0d8473c1fb1f72b2d2d3129a3f8c2"
+                  }
+                ],
+                "reviewReasons": []
+              },
+              {
+                "id": "c2",
+                "required": true,
+                "result": "met",
+                "reason": "学生得1/3即33又1/3%，并指出原先25%按160元算，满足运算与基数区分。",
+                "witnesses": [
+                  {
+                    "id": "e26",
+                    "pointer": "/answer",
+                    "role": "student",
+                    "kind": "text",
+                    "value": "需要补回40元，恢复时这40元要除以当前120元，所以提高1/3，也就是33又1/3%。原先25%按160元算，不能直接照搬。",
+                    "valueHash": "915bc514dd9df58f025b23a4b310e92425aff378a67cf30b67deeba1d12c8f63"
+                  },
+                  {
+                    "id": "e21",
+                    "pointer": "/rubric/1/text",
+                    "role": "criterion",
+                    "kind": "text",
+                    "value": "由40÷120得到1/3或33又1/3%，并说明降幅25%使用不同基数。",
+                    "valueHash": "ccd5444a0a21906f1857b47e57958810cdc7c5363d19da045a3cc4d93de3fa50"
+                  }
+                ],
+                "reviewReasons": []
+              },
+              {
+                "id": "c3",
+                "required": false,
+                "result": "not_met",
+                "reason": "未用小标题，但标准标明可选不必需，不影响通过。",
+                "witnesses": [
+                  {
+                    "id": "e26",
+                    "pointer": "/answer",
+                    "role": "student",
+                    "kind": "text",
+                    "value": "需要补回40元，恢复时这40元要除以当前120元，所以提高1/3，也就是33又1/3%。原先25%按160元算，不能直接照搬。",
+                    "valueHash": "915bc514dd9df58f025b23a4b310e92425aff378a67cf30b67deeba1d12c8f63"
+                  },
+                  {
+                    "id": "e24",
+                    "pointer": "/rubric/2/text",
+                    "role": "criterion",
+                    "kind": "text",
+                    "value": "可选表达：用小标题分开计算和解释。",
+                    "valueHash": "ed58a9e65b5e9c545c19428652cec947f94db416fe4bf8b7812969666b7e080a"
+                  }
+                ],
+                "reviewReasons": []
+              }
+            ],
+            "sufficiency": "sufficient",
+            "reviewReasons": []
+          }
+        ]
+      },
+      "reviewRequired": [],
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q5",
+            "status": "supported",
+            "reason": "产品判分c1 met(e33),c2 met(e35),c3 not_met(e37)正确；反馈(e38)与学分(e39)同独立分析一致：学生(e26)以120为基补40(e18),40/120=1/3且说明25%不同基(e21)。findings各阶段无异议。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e33",
+                "pointer": "/productJudgment/criteria/0/result",
+                "role": "product",
+                "kind": "text",
+                "value": "met",
+                "valueHash": "6efcbfb1f9f195ced75feb43f202ab14a8cd87832cef086976b16658e23944a8"
+              },
+              {
+                "id": "e35",
+                "pointer": "/productJudgment/criteria/1/result",
+                "role": "product",
+                "kind": "text",
+                "value": "met",
+                "valueHash": "6efcbfb1f9f195ced75feb43f202ab14a8cd87832cef086976b16658e23944a8"
+              },
+              {
+                "id": "e37",
+                "pointer": "/productJudgment/criteria/2/result",
+                "role": "product",
+                "kind": "text",
+                "value": "not_met",
+                "valueHash": "1fbcf23a28d84c32b3e517b749f865dff62e466f1caa29b50173e236542a8342"
+              },
+              {
+                "id": "e38",
+                "pointer": "/productJudgment/feedback",
+                "role": "product",
+                "kind": "text",
+                "value": "必要含义和运算均已展示；没有小标题只影响可选排版，不影响通过。",
+                "valueHash": "89c727f844ede74e17dcf7aac610663610c531d72c23683c04bcd4f42f1d925e"
+              },
+              {
+                "id": "e39",
+                "pointer": "/productJudgment/consequence",
+                "role": "product",
+                "kind": "text",
+                "value": "已授予本题学分。",
+                "valueHash": "7a46f96ef53640241d47aaf5bf8982277cb8089d4e31cb15b6a2197d05b6c7b9"
+              },
+              {
+                "id": "e26",
+                "pointer": "/answer",
+                "role": "student",
+                "kind": "text",
+                "value": "需要补回40元，恢复时这40元要除以当前120元，所以提高1/3，也就是33又1/3%。原先25%按160元算，不能直接照搬。",
+                "valueHash": "915bc514dd9df58f025b23a4b310e92425aff378a67cf30b67deeba1d12c8f63"
+              },
+              {
+                "id": "e18",
+                "pointer": "/rubric/0/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "以现价120元为恢复时涨幅的基数，差额为40元。",
+                "valueHash": "85bf4d0bed129fff736d712ba67eca8b33a0d8473c1fb1f72b2d2d3129a3f8c2"
+              },
+              {
+                "id": "e21",
+                "pointer": "/rubric/1/text",
+                "role": "criterion",
+                "kind": "text",
+                "value": "由40÷120得到1/3或33又1/3%，并说明降幅25%使用不同基数。",
+                "valueHash": "ccd5444a0a21906f1857b47e57958810cdc7c5363d19da045a3cc4d93de3fa50"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "resultHash": "efc36daf4d0d2781dc54b09ef151fee9a9e56d47168deb2b0f8a521a7393b512"
+  }
+}

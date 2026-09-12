@@ -2,9 +2,11 @@
 
 The [final-evaluation release](final-evaluation/README.md) contains the completed
 2026-09-12 StudyEval machine results, the frozen method, public sample inputs and
-saved-evidence verification scripts. Independent blinded model reviews are complete;
-genuine human validation is in progress. The complete anonymous machine table is public,
-while inputs related to active human-study source families remain under embargo.
+saved-evidence verification scripts. Independent blinded model reviews and genuine human
+annotation/comparison are complete. All 209 frozen inputs, 279 observations, original and
+anonymous result mappings, model CSVs, six human review copies and normalized scores are
+public. Human originals with identifying document metadata and raw provider/database
+archives remain private; public review copies preserve original answer XML bytes.
 
 The structural-safety evaluation (`eval:fake` and the optional `eval:hy3` adapter run)
 described below is separate from [StudyEval](../docs/EVALUATION.md). These historical

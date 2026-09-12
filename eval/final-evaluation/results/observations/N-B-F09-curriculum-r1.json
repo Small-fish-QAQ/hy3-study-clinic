@@ -1,0 +1,369 @@
+{
+  "task": {
+    "caseId": "N-B-F09-curriculum",
+    "runId": "N-B-F09-curriculum-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-B-F09-curriculum.json",
+    "inputHash": "57f8a4a380fe8fd97471c879220785109b69d4f4e103680f94c417b0993fa5f2",
+    "population": "natural",
+    "sourceId": "B-F09"
+  },
+  "inputHash": "57f8a4a380fe8fd97471c879220785109b69d4f4e103680f94c417b0993fa5f2",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "correctness": "2759ba3522894b5df7a86e5e70f9743f31fb3bbcbe673155c3438782cd1eb380",
+      "artifact-audit": "2759ba3522894b5df7a86e5e70f9743f31fb3bbcbe673155c3438782cd1eb380",
+      "certification": "2759ba3522894b5df7a86e5e70f9743f31fb3bbcbe673155c3438782cd1eb380"
+    },
+    "stages": {
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "clear",
+            "affected": [
+              "Q2"
+            ],
+            "reason": "Artifact obj_fa7d0816 (e20) 描述在独立可加假设（任务可任意分割、互不重复、速度不变、无等待交接）下将个人速度相加得合速度、总工作量除以合速度，非同时开始则分时段计算，与源 e3 明确假设及示例一致；条件式结论按明示假设检查，未混淆充分/必要条件。",
+            "refs": [
+              "e20",
+              "e3"
+            ],
+            "challenge": {
+              "status": "closed",
+              "reason": "四条件全满足时 e3 推导合速度相加及分时段计算成立；尝试补充相容具体情况（如额外收益）使结论改变，但额外收益违反“速度不变”假设，故被已给事实/规则排除。",
+              "refs": [
+                "e3",
+                "e20"
+              ]
+            },
+            "witnesses": [
+              {
+                "id": "e20",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "[{\"id\":\"obj_4f248872-b128-46cd-a5f7-6268c6c8fc06\",\"title\":\"识别工作速度与完成时间为异量纲量\",\"description\":\"识别工作速度（份/小时）与完成时间（小时）为异量纲量，不能直接相加为同一种量\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_448d1690-78bd-46ef-8022-964b39f06361\",\"ta_50bb753f-b4e3-4830-8d11-4eed0b171c52\"],\"authorityClaimIds\":[\"tac_9990df5e-6f07-4b60-bb98-6906f0c34a14\",\"tac_33b808aa-d461-40c8-9f1a-0b5bd416dce2\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E3 provides formal authority for identify construct, matching independently authorized Formal path.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_a0692153\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_a0692153\"]},{\"id\":\"obj_fa7d0816-05c1-4ad1-b23c-8f1d37e020cb\",\"title\":\"在独立可加假设下计算合作用时并分时段处理\",\"description\":\"在明确独立可加假设（任务可任意分割、互不重复、速度不变、无等待交接）下，将个人速度相加得合速度，用总工作量除以合速度计算合作用时；若非同时开始则分时段计算各段完成量与时间，并依次写清总工作量、各段速度、各段完成量和最终时间，验算总量\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_448d1690-78bd-46ef-8022-964b39f06361\",\"ta_50bb753f-b4e3-4830-8d11-4eed0b171c52\"],\"authorityClaimIds\":[\"tac_17b875f1-311f-4001-880d-b24c04a4645c\",\"tac_e217b7ff-0e0e-4cc4-8bd5-9821440c8a20\",\"tac_04b098bf-e748-4945-bfc7-fa4af6165d2d\",\"tac_741b4c2a-4b0e-4911-a1a9-3a97c52ba1ac\"],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation per learner target and coverage requirement; exact evidence lacks apply formal support, so high teaching priority without Formal credit.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_a0692153\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_61a4e314-38fe-46d6-8df9-ecd7ca011e01\",\"title\":\"检验条件改变时独立速度相加假设是否成立\",\"description\":\"当条件改变（如只有一台必需设备无法同时操作、或重复工作）或题目未说明合作方式时，检验独立速度相加假设是否仍成立；若不成立则不能直接使用独立速度相加，若未说明则先指出所需假设再给条件式结果\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"Evaluate is teaching-only construct; central condition-checking obligation requires high teaching priority, not Formal credit.\",\"formalAssessmentConstruct\":\"evaluate\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]}]",
+                "valueHash": "c18d9edab8f4679131f31bac2f237bc8424f8db73afe0379f2987f217c3299c7"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "讨论两个人合作完成一项工作时，先约定“整项工作”为一份。若小岚单独整理一批卡片需要六小时，且全过程速度恒定，那么每小时完成六分之一份；小禾单独需要三小时，每小时完成三分之一份。时间的单位是小时，速度的单位是份每小时，两者不能直接相加成同一种量。\n在以下明确假设下，两人的工作速度可以相加：卡片能够任意分开处理，两人的工作互不重复，合作不会改变各自速度，也没有额外等待或交接开销。此时合速度为六分之一加三分之一，即二分之一份每小时，整份工作需要一除以二分之一，等于两小时。直接把六小时和三小时相加得到九小时，或者取平均得到四点五小时，都没有表示合作每小时完成多少工作。\n若两人不是同时开始，应分时段计算。例如小禾先做一小时，完成三分之一份，还剩三分之二份；随后两人按前述假设共同做，速度仍为二分之一份每小时，剩余时间为三分之二除以二分之一。除以二分之一等于乘二，所以得到三分之四小时，即一又三分之一小时。加上最初一小时，总时长为二又三分之一小时。写分数时要特别检查除法的方向，不能只凭“合作更快”的趋势认可数值。\n为避免口语分数混淆，上面的核心算式可以直接写成：(2/3)÷(1/2)=4/3小时，总计1+4/3=7/3小时。完成量应再验算：第一小时完成1/3，后面4/3小时以1/2的速度完成2/3，两段合计正好一份。把结果代回原始工作量，是发现倒数错误的有效方法。\n这些公式依赖模型条件。若工作只有一台必需设备，两人无法同时操作；或两人都检查同一张卡片导致重复工作，就不能直接使用独立速度相加。题目只给单独用时而未说明合作方式时，应先指出所需假设，再给条件式结果。现实合作可能有额外收益，也可能有协调损失，单独速度不足以确定所有情况。\n回答此类问题时依次写清总工作量、各段速度、各段完成量和最终时间。不要混淆某个人工作了多久与整个任务从开始到结束经过多久。即使最后数值相同，单位与过程仍决定解释是否可靠。",
+                "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "kind": "quantities",
+            "status": "not_applicable",
+            "affected": [],
+            "reason": "待评 artifacts 标题(e18)与 objectives(e20)未包含具体数值、原始输入或单位演算，仅方法条件描述，无数量断言需独立重算。",
+            "contextHash": "2759ba3522894b5df7a86e5e70f9743f31fb3bbcbe673155c3438782cd1eb380",
+            "proposed": {
+              "kind": "quantities",
+              "status": "not_applicable",
+              "affected": [],
+              "reason": "待评 artifacts 标题(e18)与 objectives(e20)未包含具体数值、原始输入或单位演算，仅方法条件描述，无数量断言需独立重算。",
+              "refs": [
+                "e18",
+                "e20"
+              ]
+            },
+            "reviewReasons": []
+          }
+        ],
+        "keys": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 2,
+            "reason": "产物artifacts/0标题(e18)与artifacts/1的objectives(e20)覆盖三个声明目标(e5,e6,e7)：识别异量纲、独立可加假设下计算、条件改变检验。源e3提供对应忠实内容；obj2/obj3标为教学仅高优先级且formalEvidence空，构成合理教学仅边界，无目标消失或扭曲。",
+            "refs": [
+              "e18",
+              "e20",
+              "e5",
+              "e6",
+              "e7",
+              "e3"
+            ],
+            "issue": "none",
+            "exposureEvidence": [],
+            "witnesses": [
+              {
+                "id": "e18",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "工作量基准与合作速度叠加假设的识别、应用与检验",
+                "valueHash": "414f623287a8ef4e6db42f238087900d623be8b2fc3067bb1eaeb91a03c3d4f9"
+              },
+              {
+                "id": "e20",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "[{\"id\":\"obj_4f248872-b128-46cd-a5f7-6268c6c8fc06\",\"title\":\"识别工作速度与完成时间为异量纲量\",\"description\":\"识别工作速度（份/小时）与完成时间（小时）为异量纲量，不能直接相加为同一种量\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_448d1690-78bd-46ef-8022-964b39f06361\",\"ta_50bb753f-b4e3-4830-8d11-4eed0b171c52\"],\"authorityClaimIds\":[\"tac_9990df5e-6f07-4b60-bb98-6906f0c34a14\",\"tac_33b808aa-d461-40c8-9f1a-0b5bd416dce2\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E3 provides formal authority for identify construct, matching independently authorized Formal path.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_a0692153\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_a0692153\"]},{\"id\":\"obj_fa7d0816-05c1-4ad1-b23c-8f1d37e020cb\",\"title\":\"在独立可加假设下计算合作用时并分时段处理\",\"description\":\"在明确独立可加假设（任务可任意分割、互不重复、速度不变、无等待交接）下，将个人速度相加得合速度，用总工作量除以合速度计算合作用时；若非同时开始则分时段计算各段完成量与时间，并依次写清总工作量、各段速度、各段完成量和最终时间，验算总量\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_448d1690-78bd-46ef-8022-964b39f06361\",\"ta_50bb753f-b4e3-4830-8d11-4eed0b171c52\"],\"authorityClaimIds\":[\"tac_17b875f1-311f-4001-880d-b24c04a4645c\",\"tac_e217b7ff-0e0e-4cc4-8bd5-9821440c8a20\",\"tac_04b098bf-e748-4945-bfc7-fa4af6165d2d\",\"tac_741b4c2a-4b0e-4911-a1a9-3a97c52ba1ac\"],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation per learner target and coverage requirement; exact evidence lacks apply formal support, so high teaching priority without Formal credit.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_a0692153\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_61a4e314-38fe-46d6-8df9-ecd7ca011e01\",\"title\":\"检验条件改变时独立速度相加假设是否成立\",\"description\":\"当条件改变（如只有一台必需设备无法同时操作、或重复工作）或题目未说明合作方式时，检验独立速度相加假设是否仍成立；若不成立则不能直接使用独立速度相加，若未说明则先指出所需假设再给条件式结果\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"Evaluate is teaching-only construct; central condition-checking obligation requires high teaching priority, not Formal credit.\",\"formalAssessmentConstruct\":\"evaluate\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]}]",
+                "valueHash": "c18d9edab8f4679131f31bac2f237bc8424f8db73afe0379f2987f217c3299c7"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "区分工作速度与完成时间",
+                "valueHash": "e61d179c6c03e65e7b63287c8b65f8b009c73f5781cb7ae2f7f74ce63c68c49c"
+              },
+              {
+                "id": "e6",
+                "pointer": "/goals/1",
+                "role": "goal",
+                "kind": "text",
+                "value": "在明确独立可加假设下计算合作用时",
+                "valueHash": "3d768de746e8e224b893b5fcbf4418face187b4000b6f3e78cc3152964db8a18"
+              },
+              {
+                "id": "e7",
+                "pointer": "/goals/2",
+                "role": "goal",
+                "kind": "text",
+                "value": "条件改变时检验效率相加是否仍成立",
+                "valueHash": "5b889e463beb802e26dbec3de51d6211cd1548912fa5fb9b27215d30fcf26b96"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "讨论两个人合作完成一项工作时，先约定“整项工作”为一份。若小岚单独整理一批卡片需要六小时，且全过程速度恒定，那么每小时完成六分之一份；小禾单独需要三小时，每小时完成三分之一份。时间的单位是小时，速度的单位是份每小时，两者不能直接相加成同一种量。\n在以下明确假设下，两人的工作速度可以相加：卡片能够任意分开处理，两人的工作互不重复，合作不会改变各自速度，也没有额外等待或交接开销。此时合速度为六分之一加三分之一，即二分之一份每小时，整份工作需要一除以二分之一，等于两小时。直接把六小时和三小时相加得到九小时，或者取平均得到四点五小时，都没有表示合作每小时完成多少工作。\n若两人不是同时开始，应分时段计算。例如小禾先做一小时，完成三分之一份，还剩三分之二份；随后两人按前述假设共同做，速度仍为二分之一份每小时，剩余时间为三分之二除以二分之一。除以二分之一等于乘二，所以得到三分之四小时，即一又三分之一小时。加上最初一小时，总时长为二又三分之一小时。写分数时要特别检查除法的方向，不能只凭“合作更快”的趋势认可数值。\n为避免口语分数混淆，上面的核心算式可以直接写成：(2/3)÷(1/2)=4/3小时，总计1+4/3=7/3小时。完成量应再验算：第一小时完成1/3，后面4/3小时以1/2的速度完成2/3，两段合计正好一份。把结果代回原始工作量，是发现倒数错误的有效方法。\n这些公式依赖模型条件。若工作只有一台必需设备，两人无法同时操作；或两人都检查同一张卡片导致重复工作，就不能直接使用独立速度相加。题目只给单独用时而未说明合作方式时，应先指出所需假设，再给条件式结果。现实合作可能有额外收益，也可能有协调损失，单独速度不足以确定所有情况。\n回答此类问题时依次写清总工作量、各段速度、各段完成量和最终时间。不要混淆某个人工作了多久与整个任务从开始到结束经过多久。即使最后数值相同，单位与过程仍决定解释是否可靠。",
+                "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q2",
+            "status": "supported",
+            "reason": "产物标题(e18)与objectives(e20)覆盖三目标(e5,e6,e7)；e20中obj2/obj3描述为教学仅高优先级且formalEvidence空，与e3内容一致且符合e15教学仅边界评价要求，无目标消失或扭曲，findings审计与条件检查一致。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e18",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "工作量基准与合作速度叠加假设的识别、应用与检验",
+                "valueHash": "414f623287a8ef4e6db42f238087900d623be8b2fc3067bb1eaeb91a03c3d4f9"
+              },
+              {
+                "id": "e20",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "[{\"id\":\"obj_4f248872-b128-46cd-a5f7-6268c6c8fc06\",\"title\":\"识别工作速度与完成时间为异量纲量\",\"description\":\"识别工作速度（份/小时）与完成时间（小时）为异量纲量，不能直接相加为同一种量\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_448d1690-78bd-46ef-8022-964b39f06361\",\"ta_50bb753f-b4e3-4830-8d11-4eed0b171c52\"],\"authorityClaimIds\":[\"tac_9990df5e-6f07-4b60-bb98-6906f0c34a14\",\"tac_33b808aa-d461-40c8-9f1a-0b5bd416dce2\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E3 provides formal authority for identify construct, matching independently authorized Formal path.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_a0692153\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_a0692153\"]},{\"id\":\"obj_fa7d0816-05c1-4ad1-b23c-8f1d37e020cb\",\"title\":\"在独立可加假设下计算合作用时并分时段处理\",\"description\":\"在明确独立可加假设（任务可任意分割、互不重复、速度不变、无等待交接）下，将个人速度相加得合速度，用总工作量除以合速度计算合作用时；若非同时开始则分时段计算各段完成量与时间，并依次写清总工作量、各段速度、各段完成量和最终时间，验算总量\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_448d1690-78bd-46ef-8022-964b39f06361\",\"ta_50bb753f-b4e3-4830-8d11-4eed0b171c52\"],\"authorityClaimIds\":[\"tac_17b875f1-311f-4001-880d-b24c04a4645c\",\"tac_e217b7ff-0e0e-4cc4-8bd5-9821440c8a20\",\"tac_04b098bf-e748-4945-bfc7-fa4af6165d2d\",\"tac_741b4c2a-4b0e-4911-a1a9-3a97c52ba1ac\"],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation per learner target and coverage requirement; exact evidence lacks apply formal support, so high teaching priority without Formal credit.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_a0692153\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_61a4e314-38fe-46d6-8df9-ecd7ca011e01\",\"title\":\"检验条件改变时独立速度相加假设是否成立\",\"description\":\"当条件改变（如只有一台必需设备无法同时操作、或重复工作）或题目未说明合作方式时，检验独立速度相加假设是否仍成立；若不成立则不能直接使用独立速度相加，若未说明则先指出所需假设再给条件式结果\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"Evaluate is teaching-only construct; central condition-checking obligation requires high teaching priority, not Formal credit.\",\"formalAssessmentConstruct\":\"evaluate\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]}]",
+                "valueHash": "c18d9edab8f4679131f31bac2f237bc8424f8db73afe0379f2987f217c3299c7"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "区分工作速度与完成时间",
+                "valueHash": "e61d179c6c03e65e7b63287c8b65f8b009c73f5781cb7ae2f7f74ce63c68c49c"
+              },
+              {
+                "id": "e6",
+                "pointer": "/goals/1",
+                "role": "goal",
+                "kind": "text",
+                "value": "在明确独立可加假设下计算合作用时",
+                "valueHash": "3d768de746e8e224b893b5fcbf4418face187b4000b6f3e78cc3152964db8a18"
+              },
+              {
+                "id": "e7",
+                "pointer": "/goals/2",
+                "role": "goal",
+                "kind": "text",
+                "value": "条件改变时检验效率相加是否仍成立",
+                "valueHash": "5b889e463beb802e26dbec3de51d6211cd1548912fa5fb9b27215d30fcf26b96"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "讨论两个人合作完成一项工作时，先约定“整项工作”为一份。若小岚单独整理一批卡片需要六小时，且全过程速度恒定，那么每小时完成六分之一份；小禾单独需要三小时，每小时完成三分之一份。时间的单位是小时，速度的单位是份每小时，两者不能直接相加成同一种量。\n在以下明确假设下，两人的工作速度可以相加：卡片能够任意分开处理，两人的工作互不重复，合作不会改变各自速度，也没有额外等待或交接开销。此时合速度为六分之一加三分之一，即二分之一份每小时，整份工作需要一除以二分之一，等于两小时。直接把六小时和三小时相加得到九小时，或者取平均得到四点五小时，都没有表示合作每小时完成多少工作。\n若两人不是同时开始，应分时段计算。例如小禾先做一小时，完成三分之一份，还剩三分之二份；随后两人按前述假设共同做，速度仍为二分之一份每小时，剩余时间为三分之二除以二分之一。除以二分之一等于乘二，所以得到三分之四小时，即一又三分之一小时。加上最初一小时，总时长为二又三分之一小时。写分数时要特别检查除法的方向，不能只凭“合作更快”的趋势认可数值。\n为避免口语分数混淆，上面的核心算式可以直接写成：(2/3)÷(1/2)=4/3小时，总计1+4/3=7/3小时。完成量应再验算：第一小时完成1/3，后面4/3小时以1/2的速度完成2/3，两段合计正好一份。把结果代回原始工作量，是发现倒数错误的有效方法。\n这些公式依赖模型条件。若工作只有一台必需设备，两人无法同时操作；或两人都检查同一张卡片导致重复工作，就不能直接使用独立速度相加。题目只给单独用时而未说明合作方式时，应先指出所需假设，再给条件式结果。现实合作可能有额外收益，也可能有协调损失，单独速度不足以确定所有情况。\n回答此类问题时依次写清总工作量、各段速度、各段完成量和最终时间。不要混淆某个人工作了多久与整个任务从开始到结束经过多久。即使最后数值相同，单位与过程仍决定解释是否可靠。",
+                "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+              },
+              {
+                "id": "e15",
+                "pointer": "/authorityBoundaries/1",
+                "role": "boundary",
+                "kind": "text",
+                "value": "Q2评价提议课程对所注册学习目标的保留和范围；不将尚未发生的教学交付或Formal准入当成已经完成。",
+                "valueHash": "fda6a582e8f32aff1fc754c529607badc828976824498d64a102c9649555f08d"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q2",
+          "level": 2,
+          "reason": "产物artifacts/0标题(e18)与artifacts/1的objectives(e20)覆盖三个声明目标(e5,e6,e7)：识别异量纲、独立可加假设下计算、条件改变检验。源e3提供对应忠实内容；obj2/obj3标为教学仅高优先级且formalEvidence空，构成合理教学仅边界，无目标消失或扭曲。",
+          "refs": [
+            "e18",
+            "e20",
+            "e5",
+            "e6",
+            "e7",
+            "e3"
+          ],
+          "issue": "none",
+          "exposureEvidence": [],
+          "witnesses": [
+            {
+              "id": "e18",
+              "pointer": "/artifacts/0/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "工作量基准与合作速度叠加假设的识别、应用与检验",
+              "valueHash": "414f623287a8ef4e6db42f238087900d623be8b2fc3067bb1eaeb91a03c3d4f9"
+            },
+            {
+              "id": "e20",
+              "pointer": "/artifacts/1/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "[{\"id\":\"obj_4f248872-b128-46cd-a5f7-6268c6c8fc06\",\"title\":\"识别工作速度与完成时间为异量纲量\",\"description\":\"识别工作速度（份/小时）与完成时间（小时）为异量纲量，不能直接相加为同一种量\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_448d1690-78bd-46ef-8022-964b39f06361\",\"ta_50bb753f-b4e3-4830-8d11-4eed0b171c52\"],\"authorityClaimIds\":[\"tac_9990df5e-6f07-4b60-bb98-6906f0c34a14\",\"tac_33b808aa-d461-40c8-9f1a-0b5bd416dce2\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E3 provides formal authority for identify construct, matching independently authorized Formal path.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_a0692153\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_a0692153\"]},{\"id\":\"obj_fa7d0816-05c1-4ad1-b23c-8f1d37e020cb\",\"title\":\"在独立可加假设下计算合作用时并分时段处理\",\"description\":\"在明确独立可加假设（任务可任意分割、互不重复、速度不变、无等待交接）下，将个人速度相加得合速度，用总工作量除以合速度计算合作用时；若非同时开始则分时段计算各段完成量与时间，并依次写清总工作量、各段速度、各段完成量和最终时间，验算总量\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_448d1690-78bd-46ef-8022-964b39f06361\",\"ta_50bb753f-b4e3-4830-8d11-4eed0b171c52\"],\"authorityClaimIds\":[\"tac_17b875f1-311f-4001-880d-b24c04a4645c\",\"tac_e217b7ff-0e0e-4cc4-8bd5-9821440c8a20\",\"tac_04b098bf-e748-4945-bfc7-fa4af6165d2d\",\"tac_741b4c2a-4b0e-4911-a1a9-3a97c52ba1ac\"],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation per learner target and coverage requirement; exact evidence lacks apply formal support, so high teaching priority without Formal credit.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_a0692153\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_61a4e314-38fe-46d6-8df9-ecd7ca011e01\",\"title\":\"检验条件改变时独立速度相加假设是否成立\",\"description\":\"当条件改变（如只有一台必需设备无法同时操作、或重复工作）或题目未说明合作方式时，检验独立速度相加假设是否仍成立；若不成立则不能直接使用独立速度相加，若未说明则先指出所需假设再给条件式结果\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"Evaluate is teaching-only construct; central condition-checking obligation requires high teaching priority, not Formal credit.\",\"formalAssessmentConstruct\":\"evaluate\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]}]",
+              "valueHash": "c18d9edab8f4679131f31bac2f237bc8424f8db73afe0379f2987f217c3299c7"
+            },
+            {
+              "id": "e5",
+              "pointer": "/goals/0",
+              "role": "goal",
+              "kind": "text",
+              "value": "区分工作速度与完成时间",
+              "valueHash": "e61d179c6c03e65e7b63287c8b65f8b009c73f5781cb7ae2f7f74ce63c68c49c"
+            },
+            {
+              "id": "e6",
+              "pointer": "/goals/1",
+              "role": "goal",
+              "kind": "text",
+              "value": "在明确独立可加假设下计算合作用时",
+              "valueHash": "3d768de746e8e224b893b5fcbf4418face187b4000b6f3e78cc3152964db8a18"
+            },
+            {
+              "id": "e7",
+              "pointer": "/goals/2",
+              "role": "goal",
+              "kind": "text",
+              "value": "条件改变时检验效率相加是否仍成立",
+              "valueHash": "5b889e463beb802e26dbec3de51d6211cd1548912fa5fb9b27215d30fcf26b96"
+            },
+            {
+              "id": "e3",
+              "pointer": "/sources/0/text",
+              "role": "source",
+              "kind": "text",
+              "value": "讨论两个人合作完成一项工作时，先约定“整项工作”为一份。若小岚单独整理一批卡片需要六小时，且全过程速度恒定，那么每小时完成六分之一份；小禾单独需要三小时，每小时完成三分之一份。时间的单位是小时，速度的单位是份每小时，两者不能直接相加成同一种量。\n在以下明确假设下，两人的工作速度可以相加：卡片能够任意分开处理，两人的工作互不重复，合作不会改变各自速度，也没有额外等待或交接开销。此时合速度为六分之一加三分之一，即二分之一份每小时，整份工作需要一除以二分之一，等于两小时。直接把六小时和三小时相加得到九小时，或者取平均得到四点五小时，都没有表示合作每小时完成多少工作。\n若两人不是同时开始，应分时段计算。例如小禾先做一小时，完成三分之一份，还剩三分之二份；随后两人按前述假设共同做，速度仍为二分之一份每小时，剩余时间为三分之二除以二分之一。除以二分之一等于乘二，所以得到三分之四小时，即一又三分之一小时。加上最初一小时，总时长为二又三分之一小时。写分数时要特别检查除法的方向，不能只凭“合作更快”的趋势认可数值。\n为避免口语分数混淆，上面的核心算式可以直接写成：(2/3)÷(1/2)=4/3小时，总计1+4/3=7/3小时。完成量应再验算：第一小时完成1/3，后面4/3小时以1/2的速度完成2/3，两段合计正好一份。把结果代回原始工作量，是发现倒数错误的有效方法。\n这些公式依赖模型条件。若工作只有一台必需设备，两人无法同时操作；或两人都检查同一张卡片导致重复工作，就不能直接使用独立速度相加。题目只给单独用时而未说明合作方式时，应先指出所需假设，再给条件式结果。现实合作可能有额外收益，也可能有协调损失，单独速度不足以确定所有情况。\n回答此类问题时依次写清总工作量、各段速度、各段完成量和最终时间。不要混淆某个人工作了多久与整个任务从开始到结束经过多久。即使最后数值相同，单位与过程仍决定解释是否可靠。",
+              "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [],
+          "proposedLevel": 2,
+          "proposedReason": "产物artifacts/0标题(e18)与artifacts/1的objectives(e20)覆盖三个声明目标(e5,e6,e7)：识别异量纲、独立可加假设下计算、条件改变检验。源e3提供对应忠实内容；obj2/obj3标为教学仅高优先级且formalEvidence空，构成合理教学仅边界，无目标消失或扭曲。"
+        }
+      ],
+      "reviewRequired": [],
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q2",
+            "status": "supported",
+            "reason": "产物标题(e18)与objectives(e20)覆盖三目标(e5,e6,e7)；e20中obj2/obj3描述为教学仅高优先级且formalEvidence空，与e3内容一致且符合e15教学仅边界评价要求，无目标消失或扭曲，findings审计与条件检查一致。",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e18",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "工作量基准与合作速度叠加假设的识别、应用与检验",
+                "valueHash": "414f623287a8ef4e6db42f238087900d623be8b2fc3067bb1eaeb91a03c3d4f9"
+              },
+              {
+                "id": "e20",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "[{\"id\":\"obj_4f248872-b128-46cd-a5f7-6268c6c8fc06\",\"title\":\"识别工作速度与完成时间为异量纲量\",\"description\":\"识别工作速度（份/小时）与完成时间（小时）为异量纲量，不能直接相加为同一种量\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_448d1690-78bd-46ef-8022-964b39f06361\",\"ta_50bb753f-b4e3-4830-8d11-4eed0b171c52\"],\"authorityClaimIds\":[\"tac_9990df5e-6f07-4b60-bb98-6906f0c34a14\",\"tac_33b808aa-d461-40c8-9f1a-0b5bd416dce2\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E3 provides formal authority for identify construct, matching independently authorized Formal path.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"identify\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_a0692153\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_a0692153\"]},{\"id\":\"obj_fa7d0816-05c1-4ad1-b23c-8f1d37e020cb\",\"title\":\"在独立可加假设下计算合作用时并分时段处理\",\"description\":\"在明确独立可加假设（任务可任意分割、互不重复、速度不变、无等待交接）下，将个人速度相加得合速度，用总工作量除以合速度计算合作用时；若非同时开始则分时段计算各段完成量与时间，并依次写清总工作量、各段速度、各段完成量和最终时间，验算总量\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_448d1690-78bd-46ef-8022-964b39f06361\",\"ta_50bb753f-b4e3-4830-8d11-4eed0b171c52\"],\"authorityClaimIds\":[\"tac_17b875f1-311f-4001-880d-b24c04a4645c\",\"tac_e217b7ff-0e0e-4cc4-8bd5-9821440c8a20\",\"tac_04b098bf-e748-4945-bfc7-fa4af6165d2d\",\"tac_741b4c2a-4b0e-4911-a1a9-3a97c52ba1ac\"],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation per learner target and coverage requirement; exact evidence lacks apply formal support, so high teaching priority without Formal credit.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_a0692153\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_61a4e314-38fe-46d6-8df9-ecd7ca011e01\",\"title\":\"检验条件改变时独立速度相加假设是否成立\",\"description\":\"当条件改变（如只有一台必需设备无法同时操作、或重复工作）或题目未说明合作方式时，检验独立速度相加假设是否仍成立；若不成立则不能直接使用独立速度相加，若未说明则先指出所需假设再给条件式结果\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"Evaluate is teaching-only construct; central condition-checking obligation requires high teaching priority, not Formal credit.\",\"formalAssessmentConstruct\":\"evaluate\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]}]",
+                "valueHash": "c18d9edab8f4679131f31bac2f237bc8424f8db73afe0379f2987f217c3299c7"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "区分工作速度与完成时间",
+                "valueHash": "e61d179c6c03e65e7b63287c8b65f8b009c73f5781cb7ae2f7f74ce63c68c49c"
+              },
+              {
+                "id": "e6",
+                "pointer": "/goals/1",
+                "role": "goal",
+                "kind": "text",
+                "value": "在明确独立可加假设下计算合作用时",
+                "valueHash": "3d768de746e8e224b893b5fcbf4418face187b4000b6f3e78cc3152964db8a18"
+              },
+              {
+                "id": "e7",
+                "pointer": "/goals/2",
+                "role": "goal",
+                "kind": "text",
+                "value": "条件改变时检验效率相加是否仍成立",
+                "valueHash": "5b889e463beb802e26dbec3de51d6211cd1548912fa5fb9b27215d30fcf26b96"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "讨论两个人合作完成一项工作时，先约定“整项工作”为一份。若小岚单独整理一批卡片需要六小时，且全过程速度恒定，那么每小时完成六分之一份；小禾单独需要三小时，每小时完成三分之一份。时间的单位是小时，速度的单位是份每小时，两者不能直接相加成同一种量。\n在以下明确假设下，两人的工作速度可以相加：卡片能够任意分开处理，两人的工作互不重复，合作不会改变各自速度，也没有额外等待或交接开销。此时合速度为六分之一加三分之一，即二分之一份每小时，整份工作需要一除以二分之一，等于两小时。直接把六小时和三小时相加得到九小时，或者取平均得到四点五小时，都没有表示合作每小时完成多少工作。\n若两人不是同时开始，应分时段计算。例如小禾先做一小时，完成三分之一份，还剩三分之二份；随后两人按前述假设共同做，速度仍为二分之一份每小时，剩余时间为三分之二除以二分之一。除以二分之一等于乘二，所以得到三分之四小时，即一又三分之一小时。加上最初一小时，总时长为二又三分之一小时。写分数时要特别检查除法的方向，不能只凭“合作更快”的趋势认可数值。\n为避免口语分数混淆，上面的核心算式可以直接写成：(2/3)÷(1/2)=4/3小时，总计1+4/3=7/3小时。完成量应再验算：第一小时完成1/3，后面4/3小时以1/2的速度完成2/3，两段合计正好一份。把结果代回原始工作量，是发现倒数错误的有效方法。\n这些公式依赖模型条件。若工作只有一台必需设备，两人无法同时操作；或两人都检查同一张卡片导致重复工作，就不能直接使用独立速度相加。题目只给单独用时而未说明合作方式时，应先指出所需假设，再给条件式结果。现实合作可能有额外收益，也可能有协调损失，单独速度不足以确定所有情况。\n回答此类问题时依次写清总工作量、各段速度、各段完成量和最终时间。不要混淆某个人工作了多久与整个任务从开始到结束经过多久。即使最后数值相同，单位与过程仍决定解释是否可靠。",
+                "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+              },
+              {
+                "id": "e15",
+                "pointer": "/authorityBoundaries/1",
+                "role": "boundary",
+                "kind": "text",
+                "value": "Q2评价提议课程对所注册学习目标的保留和范围；不将尚未发生的教学交付或Formal准入当成已经完成。",
+                "valueHash": "fda6a582e8f32aff1fc754c529607badc828976824498d64a102c9649555f08d"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "resultHash": "73ec74e72cec03b40acdd851f6b1369b8cf969a32e389a8b13aed24d245d511f"
+  }
+}

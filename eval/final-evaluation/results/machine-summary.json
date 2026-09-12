@@ -267,7 +267,7 @@
       "max": 71902
     }
   },
-  "publicationStatus": "INTERIM_FINAL_MACHINE_COMPLETE_HUMAN_PENDING",
+  "publicationStatus": "FINAL_MACHINE_MODEL_AND_HUMAN_EVIDENCE_COMPLETE",
   "authority": "public-export-final-v6; no rescoring",
   "allCounts": {
     "0": 93,

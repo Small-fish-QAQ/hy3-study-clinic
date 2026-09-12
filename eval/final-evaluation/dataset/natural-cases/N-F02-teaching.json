@@ -1,0 +1,156 @@
+{
+  "dimensions": [
+    "Q1",
+    "Q3"
+  ],
+  "evidence": {
+    "sources": [
+      {
+        "id": "F02",
+        "text": "价格变化中的百分比总要依附一个基数。“降低百分之二十”通常以变化前价格为基数，意味着保留原价的百分之八十。假设原价是一百元，降价后为一百乘零点八，即八十元。这里减少了二十元，但“二十元”和“百分之二十”不是同一种量；只有同时知道基数，才能在金额与比例之间换算。\n连续变化必须按每一步的当前价格计算。例如先降百分之二十，再在降后价格上提高百分之二十，第二步增加的是八十元的百分之二十，即十六元，最后为九十六元，并没有回到一百元。两个百分比相等，基数却不同。可以把全过程写成“原价乘零点八再乘一点二”。若希望八十元恢复到一百元，需要增加二十元，而二十除以八十等于零点二五，所以应提高百分之二十五。反向问题应从目标差额与当前基数出发，不能机械地把降幅换成同样的涨幅。\n比较方案时也要留意固定金额与比例的区别。原价一百元时，减二十元和打八折都得到八十元；原价五十元时，减二十元得到三十元，打八折得到四十元。一次数值碰巧相等并不证明两种规则始终相同。本单元假定没有运费、满减门槛、四舍五入或叠加顺序的特殊限制；若现实广告存在这些条件，应先读清条件，再计算。\n百分比还可以用来描述某个比例自身的变化。若一项活动报名率由百分之四十变成百分之五十，增加了十个百分点；相对于原来的百分之四十，则增长了百分之二十五，因为十除以四十等于四分之一。“百分点”是两个百分率直接相减的差，“相对增长率”则把差再除以原比例。二者回答不同问题，不应省略名称后混为一个数。\n解释计算时，建议先写“这一步把什么当作百分之百”，再列算式，最后做方向检查。降价再涨价后的结果是否符合基数变化？某个提高幅度是相对于原价还是现价？如果只报告“增长百分之十”而不交代基数，读者可能无法复算。原比例为零时，也不能照搬差额除以原比例的相对增长率公式，因为分母为零；仍可以报告增加了多少元、多少人或多少个百分点。清楚说明边界，比强行给出一个不存在的比例更可靠。"
+      }
+    ],
+    "goals": [
+      "评价本次实际讲解的内容：折扣前后基数识别与连续百分比计算及解释"
+    ],
+    "prerequisites": [
+      "小数乘除",
+      "百分数的含义"
+    ],
+    "desiredDepth": "working_fluency",
+    "authorityBoundaries": [
+      "本次评估只涉及所给来源、明确的教学范围和实际展示的产物；脚本作答用于检查工作流，不代表真实学习者。"
+    ],
+    "artifacts": [
+      {
+        "id": "deliveredLesson/objective/title",
+        "text": "折扣前后基数识别与连续百分比计算及解释"
+      },
+      {
+        "id": "deliveredLesson/objective/whyNow",
+        "text": "商店同时标注“省20%”和“减20元”，顾客难以判断实际付款，需要先建立基数与量纲的区分框架。"
+      },
+      {
+        "id": "deliveredLesson/objective/outcomes/0/title",
+        "text": "识别百分比变化的基数与量纲区别"
+      },
+      {
+        "id": "deliveredLesson/objective/outcomes/0/description",
+        "text": "Identify the base to which a percentage change attaches (e.g., pre-discount original price), recognize that percentage and absolute amount are different quantities requiring the base for conversion, and note that fixed amount versus percentage can coincide only by chance at a specific base."
+      },
+      {
+        "id": "deliveredLesson/objective/outcomes/1/title",
+        "text": "应用连续百分比变动与反向恢复计算"
+      },
+      {
+        "id": "deliveredLesson/objective/outcomes/1/description",
+        "text": "Apply consecutive percentage price change calculations by using the current price as base each step, compute the reverse required percentage from target difference over current base without mechanically swapping equal decrease/increase, and respect the assumption of no extra restrictions (shipping, thresholds, rounding, order) or read conditions first if present."
+      },
+      {
+        "id": "deliveredLesson/segments/0/explanation",
+        "text": "设想一件外套标价150元，广告写“降价20%”。这一步把原价150元当作100%，保留80%，所以计算150×0.8=120元。减少的30元是绝对金额，而“20%”是相对于基数的比例；两者量纲不同，只有在知道基数后才能互相换算。若换一件标价不同的商品，同比例产生的金额会变化，但固定减额不会。"
+      },
+      {
+        "id": "deliveredLesson/segments/1/explanation",
+        "text": "连续百分比变化必须逐步以当前价格为基数。例如原价200元，先降25%得到150元；再提高25%时，基数是150元而非200元。这样两步之后价格不是原价。下面用具体案例检验预测。"
+      },
+      {
+        "id": "deliveredLesson/segments/2/explanation",
+        "text": "当百分比用来描述比例自身的变化时，需注意相对增长率公式的边界。若原比例为0，则“差额除以原比例”的分母为零，无法计算相对增长率；此时只能报告绝对增加量或百分点。清晰说明边界比强行给出比例更可靠。"
+      },
+      {
+        "id": "deliveredLesson/segments/2/contrast/text",
+        "text": "报名率从40%升至50%，可说增加10个百分点，相对增长25%；但若报名率从0%升至5%，相对增长率公式分母为零不可用，只能说增加5个百分点或具体人数，而不能算“增长无穷大比例”。"
+      },
+      {
+        "id": "deliveredLesson/segments/3/explanation",
+        "text": "连续变动后若要反推恢复所需比例，必须以变动后的当前价为基数，用目标差额除以当前价。例如某书原价90元，先打八折到72元；若想从72元涨回90元，差额18元，18÷72=0.25，需提价25%，而非20%的机械互换。下面用新案例检验。"
+      },
+      {
+        "id": "deliveredLesson/segments/3/workedProcess/startingState",
+        "text": "原价90元，先降价20%至72元，现需涨回90元。"
+      },
+      {
+        "id": "deliveredLesson/segments/3/workedProcess/inputs/0",
+        "text": "当前价72元"
+      },
+      {
+        "id": "deliveredLesson/segments/3/workedProcess/inputs/1",
+        "text": "目标价90元"
+      },
+      {
+        "id": "deliveredLesson/segments/3/workedProcess/result",
+        "text": "25%"
+      },
+      {
+        "id": "deliveredLesson/segments/3/workedProcess/whyResultFollows",
+        "text": "因基数变为72而非90，机械用20%会不足"
+      },
+      {
+        "id": "deliveredLesson/segments/3/workedProcess/interaction/activity/prompt",
+        "text": "已知当前价72元，目标恢复90元。所需提价幅度是多少？"
+      },
+      {
+        "id": "deliveredLesson/segments/3/workedProcess/interaction/activity/options/0/text",
+        "text": "25%（(90-72)/72=0.25）"
+      },
+      {
+        "id": "deliveredLesson/segments/3/workedProcess/interaction/activity/options/1/text",
+        "text": "20%（认为降20%则涨20%恢复）"
+      },
+      {
+        "id": "deliveredLesson/segments/3/workedProcess/interaction/activity/options/2/text",
+        "text": "30%（粗略高估）"
+      },
+      {
+        "id": "deliveredLesson/segments/3/workedProcess/interaction/activity/feedback",
+        "text": "正确：以当前价72为基数，差额18占其25%。"
+      },
+      {
+        "id": "deliveredLesson/segments/3/workedProcess/interaction/activity/debrief",
+        "text": "逐步基数变化后，反向比例必须用目标差除以当前基数"
+      },
+      {
+        "id": "deliveredLesson/segments/3/workedProcess/interaction/transfer/prompt",
+        "text": "按此规定，从72元涨到90元，报告提价比例应是多少？"
+      },
+      {
+        "id": "deliveredLesson/segments/3/workedProcess/interaction/transfer/options/0/text",
+        "text": "25%（基于当前72元）"
+      },
+      {
+        "id": "deliveredLesson/segments/3/workedProcess/interaction/transfer/options/1/text",
+        "text": "20%（基于原价90元：18/90）"
+      },
+      {
+        "id": "deliveredLesson/segments/3/workedProcess/interaction/transfer/options/2/text",
+        "text": "30%（基于其他基数）"
+      },
+      {
+        "id": "deliveredLesson/segments/3/workedProcess/interaction/transfer/feedback",
+        "text": "正确：规则改变后基数变为90，差额18占其20%。"
+      },
+      {
+        "id": "deliveredLesson/segments/3/workedProcess/interaction/transfer/debrief",
+        "text": "基数规则变化后，同样差额但分母变大，比例降至20%"
+      },
+      {
+        "id": "deliveredLesson/segments/3/workedProcess/interaction/transfer/changedCondition",
+        "text": "恢复提价基数按原价90元，而非当前价"
+      },
+      {
+        "id": "deliveredLesson/segments/4/explanation",
+        "text": "本单元计算默认无运费、满减门槛、四舍五入或顺序特殊限制。若现实广告附带此类条件，应先读清再算，否则基数或最终价会被额外改变。清楚边界比强行套用比例更可靠。"
+      },
+      {
+        "id": "deliveredLesson/segments/4/contrast/text",
+        "text": "原价90元降20%至72元，若无额外限制，恢复需提价25%；若广告另附“满80元包邮，否则加收5元运费”，则72元恢复时实际支付受运费影响，但百分比基数仍为72。对比可知，读清条件优先于计算，不能把无限制假设套用到有门槛情形。"
+      },
+      {
+        "id": "deliveredLesson/summary/text",
+        "text": "百分比变化必须指明依附的基数，金额与比例需通过基数换算；固定金额与百分比仅在特定原价下巧合相等，连续变化要逐步以当前价为新基数。"
+      }
+    ],
+    "exposure": []
+  }
+}

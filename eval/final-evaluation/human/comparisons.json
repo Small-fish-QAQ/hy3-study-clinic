@@ -1,0 +1,763 @@
+{
+  "status": "COMPLETED_GENUINE_HUMAN_ANNOTATION",
+  "originalSheets": 6,
+  "annotators": 3,
+  "items": 27,
+  "pairedDimensions": 34,
+  "individualRatings": 68,
+  "humanScoreCounts": {
+    "2": 42,
+    "0": 15,
+    "1": 11
+  },
+  "consensusCount": 24,
+  "nonConsensusCount": 10,
+  "consensusDefinition": "Exact same numeric answer from both assigned humans; all disagreements remain unresolved, no majority/tie-break/averaging/model adjudication. Conditional comparison subset, not all 34 items.",
+  "comparisons": {
+    "HumanHuman": {
+      "n": 34,
+      "exact": 24,
+      "adjacent": 9,
+      "polarity": 1,
+      "uncertain": 0,
+      "abstention": 0,
+      "missing": 0,
+      "invalid": 0,
+      "bothNumeric": 34,
+      "leftHigher": 6,
+      "leftLower": 4,
+      "transitions": {
+        "0 -> 0": 7,
+        "1 -> 1": 1,
+        "1 -> 2": 4,
+        "2 -> 0": 1,
+        "2 -> 1": 5,
+        "2 -> 2": 16
+      }
+    },
+    "HumanConsensusVsStudyEval": {
+      "n": 24,
+      "exact": 20,
+      "adjacent": 2,
+      "polarity": 0,
+      "uncertain": 2,
+      "abstention": 0,
+      "missing": 0,
+      "invalid": 0,
+      "bothNumeric": 22,
+      "leftHigher": 2,
+      "leftLower": 0,
+      "transitions": {
+        "0 -> 0": 7,
+        "1 -> 0": 1,
+        "2 -> 1": 1,
+        "2 -> 2": 13,
+        "2 -> U": 2
+      }
+    },
+    "AllHumanRatingsVsStudyEval": {
+      "n": 68,
+      "exact": 49,
+      "adjacent": 12,
+      "polarity": 1,
+      "uncertain": 6,
+      "abstention": 0,
+      "missing": 0,
+      "invalid": 0,
+      "bothNumeric": 62,
+      "leftHigher": 6,
+      "leftLower": 7,
+      "transitions": {
+        "0 -> 0": 14,
+        "0 -> 2": 1,
+        "1 -> 0": 2,
+        "1 -> 1": 2,
+        "1 -> 2": 6,
+        "1 -> U": 1,
+        "2 -> 1": 4,
+        "2 -> 2": 33,
+        "2 -> U": 5
+      }
+    },
+    "HumanConsensusVsMax": {
+      "n": 24,
+      "exact": 24,
+      "adjacent": 0,
+      "polarity": 0,
+      "uncertain": 0,
+      "abstention": 0,
+      "missing": 0,
+      "invalid": 0,
+      "bothNumeric": 24,
+      "leftHigher": 0,
+      "leftLower": 0,
+      "transitions": {
+        "0 -> 0": 7,
+        "1 -> 1": 1,
+        "2 -> 2": 16
+      }
+    },
+    "AllHumanRatingsVsMax": {
+      "n": 68,
+      "exact": 57,
+      "adjacent": 9,
+      "polarity": 0,
+      "uncertain": 2,
+      "abstention": 0,
+      "missing": 0,
+      "invalid": 0,
+      "bothNumeric": 66,
+      "leftHigher": 3,
+      "leftLower": 6,
+      "transitions": {
+        "0 -> 0": 14,
+        "0 -> U": 1,
+        "1 -> 1": 5,
+        "1 -> 2": 6,
+        "2 -> 1": 3,
+        "2 -> 2": 38,
+        "2 -> U": 1
+      }
+    },
+    "HumanConsensusVsFable": {
+      "n": 24,
+      "exact": 23,
+      "adjacent": 1,
+      "polarity": 0,
+      "uncertain": 0,
+      "abstention": 0,
+      "missing": 0,
+      "invalid": 0,
+      "bothNumeric": 24,
+      "leftHigher": 1,
+      "leftLower": 0,
+      "transitions": {
+        "0 -> 0": 7,
+        "1 -> 1": 1,
+        "2 -> 1": 1,
+        "2 -> 2": 15
+      }
+    },
+    "AllHumanRatingsVsFable": {
+      "n": 68,
+      "exact": 55,
+      "adjacent": 13,
+      "polarity": 0,
+      "uncertain": 0,
+      "abstention": 0,
+      "missing": 0,
+      "invalid": 0,
+      "bothNumeric": 68,
+      "leftHigher": 6,
+      "leftLower": 7,
+      "transitions": {
+        "0 -> 0": 14,
+        "0 -> 1": 1,
+        "1 -> 1": 5,
+        "1 -> 2": 6,
+        "2 -> 1": 6,
+        "2 -> 2": 36
+      }
+    },
+    "StudyEvalVsMax": {
+      "n": 34,
+      "exact": 27,
+      "adjacent": 3,
+      "polarity": 0,
+      "uncertain": 4,
+      "abstention": 0,
+      "missing": 0,
+      "invalid": 0,
+      "bothNumeric": 30,
+      "leftHigher": 1,
+      "leftLower": 2,
+      "transitions": {
+        "0 -> 0": 7,
+        "0 -> 1": 1,
+        "1 -> 1": 2,
+        "1 -> 2": 1,
+        "2 -> 1": 1,
+        "2 -> 2": 18,
+        "2 -> U": 1,
+        "U -> 2": 3
+      }
+    },
+    "StudyEvalVsFable": {
+      "n": 34,
+      "exact": 28,
+      "adjacent": 3,
+      "polarity": 0,
+      "uncertain": 3,
+      "abstention": 0,
+      "missing": 0,
+      "invalid": 0,
+      "bothNumeric": 31,
+      "leftHigher": 2,
+      "leftLower": 1,
+      "transitions": {
+        "0 -> 0": 7,
+        "0 -> 1": 1,
+        "1 -> 1": 3,
+        "2 -> 1": 2,
+        "2 -> 2": 18,
+        "U -> 2": 3
+      }
+    },
+    "MaxVsFable": {
+      "n": 34,
+      "exact": 32,
+      "adjacent": 1,
+      "polarity": 0,
+      "uncertain": 1,
+      "abstention": 0,
+      "missing": 0,
+      "invalid": 0,
+      "bothNumeric": 33,
+      "leftHigher": 1,
+      "leftLower": 0,
+      "transitions": {
+        "0 -> 0": 7,
+        "1 -> 1": 4,
+        "2 -> 1": 1,
+        "2 -> 2": 21,
+        "U -> 1": 1
+      }
+    }
+  },
+  "byDimension": {
+    "Q1": {
+      "n": 11,
+      "humanHuman": {
+        "n": 11,
+        "exact": 9,
+        "adjacent": 2,
+        "polarity": 0,
+        "uncertain": 0,
+        "abstention": 0,
+        "missing": 0,
+        "invalid": 0,
+        "bothNumeric": 11,
+        "leftHigher": 0,
+        "leftLower": 2,
+        "transitions": {
+          "0 -> 0": 1,
+          "1 -> 1": 1,
+          "1 -> 2": 2,
+          "2 -> 2": 7
+        }
+      },
+      "consensusCount": 9,
+      "consensusVsStudyEval": {
+        "n": 9,
+        "exact": 7,
+        "adjacent": 1,
+        "polarity": 0,
+        "uncertain": 1,
+        "abstention": 0,
+        "missing": 0,
+        "invalid": 0,
+        "bothNumeric": 8,
+        "leftHigher": 1,
+        "leftLower": 0,
+        "transitions": {
+          "0 -> 0": 1,
+          "1 -> 0": 1,
+          "2 -> 2": 6,
+          "2 -> U": 1
+        }
+      },
+      "consensusVsMax": {
+        "n": 9,
+        "exact": 9,
+        "adjacent": 0,
+        "polarity": 0,
+        "uncertain": 0,
+        "abstention": 0,
+        "missing": 0,
+        "invalid": 0,
+        "bothNumeric": 9,
+        "leftHigher": 0,
+        "leftLower": 0,
+        "transitions": {
+          "0 -> 0": 1,
+          "1 -> 1": 1,
+          "2 -> 2": 7
+        }
+      },
+      "consensusVsFable": {
+        "n": 9,
+        "exact": 9,
+        "adjacent": 0,
+        "polarity": 0,
+        "uncertain": 0,
+        "abstention": 0,
+        "missing": 0,
+        "invalid": 0,
+        "bothNumeric": 9,
+        "leftHigher": 0,
+        "leftLower": 0,
+        "transitions": {
+          "0 -> 0": 1,
+          "1 -> 1": 1,
+          "2 -> 2": 7
+        }
+      }
+    },
+    "Q2": {
+      "n": 4,
+      "humanHuman": {
+        "n": 4,
+        "exact": 2,
+        "adjacent": 2,
+        "polarity": 0,
+        "uncertain": 0,
+        "abstention": 0,
+        "missing": 0,
+        "invalid": 0,
+        "bothNumeric": 4,
+        "leftHigher": 2,
+        "leftLower": 0,
+        "transitions": {
+          "0 -> 0": 2,
+          "2 -> 1": 2
+        }
+      },
+      "consensusCount": 2,
+      "consensusVsStudyEval": {
+        "n": 2,
+        "exact": 2,
+        "adjacent": 0,
+        "polarity": 0,
+        "uncertain": 0,
+        "abstention": 0,
+        "missing": 0,
+        "invalid": 0,
+        "bothNumeric": 2,
+        "leftHigher": 0,
+        "leftLower": 0,
+        "transitions": {
+          "0 -> 0": 2
+        }
+      },
+      "consensusVsMax": {
+        "n": 2,
+        "exact": 2,
+        "adjacent": 0,
+        "polarity": 0,
+        "uncertain": 0,
+        "abstention": 0,
+        "missing": 0,
+        "invalid": 0,
+        "bothNumeric": 2,
+        "leftHigher": 0,
+        "leftLower": 0,
+        "transitions": {
+          "0 -> 0": 2
+        }
+      },
+      "consensusVsFable": {
+        "n": 2,
+        "exact": 2,
+        "adjacent": 0,
+        "polarity": 0,
+        "uncertain": 0,
+        "abstention": 0,
+        "missing": 0,
+        "invalid": 0,
+        "bothNumeric": 2,
+        "leftHigher": 0,
+        "leftLower": 0,
+        "transitions": {
+          "0 -> 0": 2
+        }
+      }
+    },
+    "Q3": {
+      "n": 10,
+      "humanHuman": {
+        "n": 10,
+        "exact": 8,
+        "adjacent": 2,
+        "polarity": 0,
+        "uncertain": 0,
+        "abstention": 0,
+        "missing": 0,
+        "invalid": 0,
+        "bothNumeric": 10,
+        "leftHigher": 1,
+        "leftLower": 1,
+        "transitions": {
+          "0 -> 0": 1,
+          "1 -> 2": 1,
+          "2 -> 1": 1,
+          "2 -> 2": 7
+        }
+      },
+      "consensusCount": 8,
+      "consensusVsStudyEval": {
+        "n": 8,
+        "exact": 6,
+        "adjacent": 1,
+        "polarity": 0,
+        "uncertain": 1,
+        "abstention": 0,
+        "missing": 0,
+        "invalid": 0,
+        "bothNumeric": 7,
+        "leftHigher": 1,
+        "leftLower": 0,
+        "transitions": {
+          "0 -> 0": 1,
+          "2 -> 1": 1,
+          "2 -> 2": 5,
+          "2 -> U": 1
+        }
+      },
+      "consensusVsMax": {
+        "n": 8,
+        "exact": 8,
+        "adjacent": 0,
+        "polarity": 0,
+        "uncertain": 0,
+        "abstention": 0,
+        "missing": 0,
+        "invalid": 0,
+        "bothNumeric": 8,
+        "leftHigher": 0,
+        "leftLower": 0,
+        "transitions": {
+          "0 -> 0": 1,
+          "2 -> 2": 7
+        }
+      },
+      "consensusVsFable": {
+        "n": 8,
+        "exact": 7,
+        "adjacent": 1,
+        "polarity": 0,
+        "uncertain": 0,
+        "abstention": 0,
+        "missing": 0,
+        "invalid": 0,
+        "bothNumeric": 8,
+        "leftHigher": 1,
+        "leftLower": 0,
+        "transitions": {
+          "0 -> 0": 1,
+          "2 -> 1": 1,
+          "2 -> 2": 6
+        }
+      }
+    },
+    "Q4": {
+      "n": 3,
+      "humanHuman": {
+        "n": 3,
+        "exact": 2,
+        "adjacent": 0,
+        "polarity": 1,
+        "uncertain": 0,
+        "abstention": 0,
+        "missing": 0,
+        "invalid": 0,
+        "bothNumeric": 3,
+        "leftHigher": 1,
+        "leftLower": 0,
+        "transitions": {
+          "0 -> 0": 1,
+          "2 -> 0": 1,
+          "2 -> 2": 1
+        }
+      },
+      "consensusCount": 2,
+      "consensusVsStudyEval": {
+        "n": 2,
+        "exact": 2,
+        "adjacent": 0,
+        "polarity": 0,
+        "uncertain": 0,
+        "abstention": 0,
+        "missing": 0,
+        "invalid": 0,
+        "bothNumeric": 2,
+        "leftHigher": 0,
+        "leftLower": 0,
+        "transitions": {
+          "0 -> 0": 1,
+          "2 -> 2": 1
+        }
+      },
+      "consensusVsMax": {
+        "n": 2,
+        "exact": 2,
+        "adjacent": 0,
+        "polarity": 0,
+        "uncertain": 0,
+        "abstention": 0,
+        "missing": 0,
+        "invalid": 0,
+        "bothNumeric": 2,
+        "leftHigher": 0,
+        "leftLower": 0,
+        "transitions": {
+          "0 -> 0": 1,
+          "2 -> 2": 1
+        }
+      },
+      "consensusVsFable": {
+        "n": 2,
+        "exact": 2,
+        "adjacent": 0,
+        "polarity": 0,
+        "uncertain": 0,
+        "abstention": 0,
+        "missing": 0,
+        "invalid": 0,
+        "bothNumeric": 2,
+        "leftHigher": 0,
+        "leftLower": 0,
+        "transitions": {
+          "0 -> 0": 1,
+          "2 -> 2": 1
+        }
+      }
+    },
+    "Q5": {
+      "n": 3,
+      "humanHuman": {
+        "n": 3,
+        "exact": 2,
+        "adjacent": 1,
+        "polarity": 0,
+        "uncertain": 0,
+        "abstention": 0,
+        "missing": 0,
+        "invalid": 0,
+        "bothNumeric": 3,
+        "leftHigher": 1,
+        "leftLower": 0,
+        "transitions": {
+          "0 -> 0": 1,
+          "2 -> 1": 1,
+          "2 -> 2": 1
+        }
+      },
+      "consensusCount": 2,
+      "consensusVsStudyEval": {
+        "n": 2,
+        "exact": 2,
+        "adjacent": 0,
+        "polarity": 0,
+        "uncertain": 0,
+        "abstention": 0,
+        "missing": 0,
+        "invalid": 0,
+        "bothNumeric": 2,
+        "leftHigher": 0,
+        "leftLower": 0,
+        "transitions": {
+          "0 -> 0": 1,
+          "2 -> 2": 1
+        }
+      },
+      "consensusVsMax": {
+        "n": 2,
+        "exact": 2,
+        "adjacent": 0,
+        "polarity": 0,
+        "uncertain": 0,
+        "abstention": 0,
+        "missing": 0,
+        "invalid": 0,
+        "bothNumeric": 2,
+        "leftHigher": 0,
+        "leftLower": 0,
+        "transitions": {
+          "0 -> 0": 1,
+          "2 -> 2": 1
+        }
+      },
+      "consensusVsFable": {
+        "n": 2,
+        "exact": 2,
+        "adjacent": 0,
+        "polarity": 0,
+        "uncertain": 0,
+        "abstention": 0,
+        "missing": 0,
+        "invalid": 0,
+        "bothNumeric": 2,
+        "leftHigher": 0,
+        "leftLower": 0,
+        "transitions": {
+          "0 -> 0": 1,
+          "2 -> 2": 1
+        }
+      }
+    },
+    "Q6": {
+      "n": 3,
+      "humanHuman": {
+        "n": 3,
+        "exact": 1,
+        "adjacent": 2,
+        "polarity": 0,
+        "uncertain": 0,
+        "abstention": 0,
+        "missing": 0,
+        "invalid": 0,
+        "bothNumeric": 3,
+        "leftHigher": 1,
+        "leftLower": 1,
+        "transitions": {
+          "0 -> 0": 1,
+          "1 -> 2": 1,
+          "2 -> 1": 1
+        }
+      },
+      "consensusCount": 1,
+      "consensusVsStudyEval": {
+        "n": 1,
+        "exact": 1,
+        "adjacent": 0,
+        "polarity": 0,
+        "uncertain": 0,
+        "abstention": 0,
+        "missing": 0,
+        "invalid": 0,
+        "bothNumeric": 1,
+        "leftHigher": 0,
+        "leftLower": 0,
+        "transitions": {
+          "0 -> 0": 1
+        }
+      },
+      "consensusVsMax": {
+        "n": 1,
+        "exact": 1,
+        "adjacent": 0,
+        "polarity": 0,
+        "uncertain": 0,
+        "abstention": 0,
+        "missing": 0,
+        "invalid": 0,
+        "bothNumeric": 1,
+        "leftHigher": 0,
+        "leftLower": 0,
+        "transitions": {
+          "0 -> 0": 1
+        }
+      },
+      "consensusVsFable": {
+        "n": 1,
+        "exact": 1,
+        "adjacent": 0,
+        "polarity": 0,
+        "uncertain": 0,
+        "abstention": 0,
+        "missing": 0,
+        "invalid": 0,
+        "bothNumeric": 1,
+        "leftHigher": 0,
+        "leftLower": 0,
+        "transitions": {
+          "0 -> 0": 1
+        }
+      }
+    }
+  },
+  "byPacket": {
+    "1": {
+      "n": 12,
+      "exact": 8,
+      "adjacent": 4,
+      "polarity": 0,
+      "uncertain": 0,
+      "abstention": 0,
+      "missing": 0,
+      "invalid": 0,
+      "bothNumeric": 12,
+      "leftHigher": 3,
+      "leftLower": 1,
+      "transitions": {
+        "0 -> 0": 2,
+        "1 -> 2": 1,
+        "2 -> 1": 3,
+        "2 -> 2": 6
+      }
+    },
+    "2": {
+      "n": 10,
+      "exact": 8,
+      "adjacent": 1,
+      "polarity": 1,
+      "uncertain": 0,
+      "abstention": 0,
+      "missing": 0,
+      "invalid": 0,
+      "bothNumeric": 10,
+      "leftHigher": 2,
+      "leftLower": 0,
+      "transitions": {
+        "0 -> 0": 3,
+        "1 -> 1": 1,
+        "2 -> 0": 1,
+        "2 -> 1": 1,
+        "2 -> 2": 4
+      }
+    },
+    "3": {
+      "n": 12,
+      "exact": 8,
+      "adjacent": 4,
+      "polarity": 0,
+      "uncertain": 0,
+      "abstention": 0,
+      "missing": 0,
+      "invalid": 0,
+      "bothNumeric": 12,
+      "leftHigher": 1,
+      "leftLower": 3,
+      "transitions": {
+        "0 -> 0": 2,
+        "1 -> 2": 3,
+        "2 -> 1": 1,
+        "2 -> 2": 6
+      }
+    }
+  },
+  "ambiguityOverlap": {
+    "humanDisagreementDimensions": 10,
+    "modelFlaggedDimensions": 9,
+    "sameDimensionOverlap": 3,
+    "sameDimensionKeys": [
+      [
+        "P1-03",
+        "Q2"
+      ],
+      [
+        "P2-06",
+        "Q4"
+      ],
+      [
+        "P3-08",
+        "Q1"
+      ]
+    ],
+    "humanDisagreementItems": 10,
+    "modelFlaggedItems": 8,
+    "sameItemOverlap": 5,
+    "sameItemIds": [
+      "P1-03",
+      "P1-08",
+      "P2-06",
+      "P3-02",
+      "P3-08"
+    ],
+    "note": "Same-item overlap can involve different requested dimensions. Do not equate it with same-dimension agreement on ambiguity."
+  },
+  "normalizedSha256": "5c03c298e8a0b6e9455c98d83de1aa2d4c3ea28814c573c4768be6f3b7019f49",
+  "missingTimingSheets": 6,
+  "missingProcedureNotes": 6,
+  "provenance": "User reports six genuine returned sheets complete. Independence instructions were supplied; actual timing and external-help/exposure information were not provided. Those conditions cannot be verified from blank fields."
+}

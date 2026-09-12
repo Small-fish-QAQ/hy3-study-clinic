@@ -1,0 +1,206 @@
+[
+  {
+    "sourceId": "F01",
+    "sourceRootId": "F01",
+    "path": "benchmark/product-inputs/F01.json",
+    "maxTeaching": 2,
+    "maxFormal": 1,
+    "failPractice": true,
+    "tutor": true,
+    "explicitPreparationRetries": 1
+  },
+  {
+    "sourceId": "F02",
+    "sourceRootId": "F02",
+    "path": "benchmark/product-inputs/F02.json",
+    "maxTeaching": 2,
+    "maxFormal": 1,
+    "failPractice": true,
+    "tutor": true,
+    "explicitPreparationRetries": 1
+  },
+  {
+    "sourceId": "F03",
+    "sourceRootId": "F03",
+    "path": "benchmark/product-inputs/F03.json",
+    "maxTeaching": 2,
+    "maxFormal": 1,
+    "failPractice": true,
+    "tutor": true,
+    "explicitPreparationRetries": 1
+  },
+  {
+    "sourceId": "F04",
+    "sourceRootId": "F04",
+    "path": "benchmark/product-inputs/F04.json",
+    "maxTeaching": 2,
+    "maxFormal": 1,
+    "failPractice": true,
+    "tutor": true,
+    "explicitPreparationRetries": 1
+  },
+  {
+    "sourceId": "F05",
+    "sourceRootId": "F05",
+    "path": "benchmark/product-inputs/F05.json",
+    "maxTeaching": 2,
+    "maxFormal": 1,
+    "failPractice": true,
+    "tutor": true,
+    "explicitPreparationRetries": 1
+  },
+  {
+    "sourceId": "F06",
+    "sourceRootId": "F06",
+    "path": "benchmark/product-inputs/F06.json",
+    "maxTeaching": 2,
+    "maxFormal": 1,
+    "failPractice": true,
+    "tutor": true,
+    "explicitPreparationRetries": 1
+  },
+  {
+    "sourceId": "F07",
+    "sourceRootId": "F07",
+    "path": "benchmark/product-inputs/F07.json",
+    "maxTeaching": 2,
+    "maxFormal": 1,
+    "failPractice": true,
+    "tutor": true,
+    "explicitPreparationRetries": 1
+  },
+  {
+    "sourceId": "F08",
+    "sourceRootId": "F08",
+    "path": "benchmark/product-inputs/F08.json",
+    "maxTeaching": 2,
+    "maxFormal": 1,
+    "failPractice": true,
+    "tutor": true,
+    "explicitPreparationRetries": 1
+  },
+  {
+    "sourceId": "F09",
+    "sourceRootId": "F09",
+    "path": "benchmark/product-inputs/F09.json",
+    "maxTeaching": 2,
+    "maxFormal": 1,
+    "failPractice": true,
+    "tutor": true,
+    "explicitPreparationRetries": 1
+  },
+  {
+    "sourceId": "F10",
+    "sourceRootId": "F10",
+    "path": "benchmark/product-inputs/F10.json",
+    "maxTeaching": 2,
+    "maxFormal": 1,
+    "failPractice": true,
+    "tutor": true,
+    "explicitPreparationRetries": 1
+  },
+  {
+    "sourceId": "F11",
+    "sourceRootId": "F11",
+    "path": "benchmark/product-inputs/F11.json",
+    "maxTeaching": 2,
+    "maxFormal": 1,
+    "failPractice": true,
+    "tutor": true,
+    "explicitPreparationRetries": 1
+  },
+  {
+    "sourceId": "F12",
+    "sourceRootId": "F12",
+    "path": "benchmark/product-inputs/F12.json",
+    "maxTeaching": 2,
+    "maxFormal": 1,
+    "failPractice": true,
+    "tutor": true,
+    "explicitPreparationRetries": 1
+  },
+  {
+    "sourceId": "E01",
+    "sourceRootId": "E01",
+    "path": "benchmark/product-inputs/E01.json",
+    "maxTeaching": 2,
+    "maxFormal": 1,
+    "failPractice": true,
+    "tutor": true,
+    "explicitPreparationRetries": 1
+  },
+  {
+    "sourceId": "E02",
+    "sourceRootId": "E02",
+    "path": "benchmark/product-inputs/E02.json",
+    "maxTeaching": 2,
+    "maxFormal": 1,
+    "failPractice": true,
+    "tutor": true,
+    "explicitPreparationRetries": 1
+  },
+  {
+    "sourceId": "E03",
+    "sourceRootId": "E03",
+    "path": "benchmark/product-inputs/E03.json",
+    "maxTeaching": 2,
+    "maxFormal": 1,
+    "failPractice": true,
+    "tutor": true,
+    "explicitPreparationRetries": 1
+  },
+  {
+    "sourceId": "E04",
+    "sourceRootId": "E04",
+    "path": "benchmark/product-inputs/E04.json",
+    "maxTeaching": 2,
+    "maxFormal": 1,
+    "failPractice": true,
+    "tutor": true,
+    "explicitPreparationRetries": 1
+  },
+  {
+    "sourceId": "B-F01",
+    "sourceRootId": "F01",
+    "path": "benchmark/product-inputs/B-F01.json",
+    "maxTeaching": 2,
+    "maxFormal": 1,
+    "failPractice": true,
+    "tutor": true,
+    "explicitPreparationRetries": 1,
+    "pairedDepthControl": true
+  },
+  {
+    "sourceId": "B-F05",
+    "sourceRootId": "F05",
+    "path": "benchmark/product-inputs/B-F05.json",
+    "maxTeaching": 2,
+    "maxFormal": 1,
+    "failPractice": true,
+    "tutor": true,
+    "explicitPreparationRetries": 1,
+    "pairedDepthControl": true
+  },
+  {
+    "sourceId": "B-F09",
+    "sourceRootId": "F09",
+    "path": "benchmark/product-inputs/B-F09.json",
+    "maxTeaching": 2,
+    "maxFormal": 1,
+    "failPractice": true,
+    "tutor": true,
+    "explicitPreparationRetries": 1,
+    "pairedDepthControl": true
+  },
+  {
+    "sourceId": "B-E01",
+    "sourceRootId": "E01",
+    "path": "benchmark/product-inputs/B-E01.json",
+    "maxTeaching": 2,
+    "maxFormal": 1,
+    "failPractice": true,
+    "tutor": true,
+    "explicitPreparationRetries": 1,
+    "pairedDepthControl": true
+  }
+]

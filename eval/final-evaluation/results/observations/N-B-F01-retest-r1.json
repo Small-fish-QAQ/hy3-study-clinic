@@ -1,0 +1,289 @@
+{
+  "task": {
+    "caseId": "N-B-F01-retest",
+    "runId": "N-B-F01-retest-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-B-F01-retest.json",
+    "inputHash": "7ef08789123065243e813a83d1be9917c24f4346567a7cbb00a9e7b14c22a426",
+    "population": "natural",
+    "sourceId": "B-F01"
+  },
+  "inputHash": "7ef08789123065243e813a83d1be9917c24f4346567a7cbb00a9e7b14c22a426",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "prepare-context-current": "8e6ee82b20f9e6ea5b1c89eca8ce6362a0328085d858d44a161004fbaaf531d5",
+      "solve-current": "2d5a28591974ac54252532731106dfd0237158578a937789a500a2087e12de48",
+      "correctness": "c8d30f0afcd897378f80a07653e097d557638de99b5c1911251423021042dab7",
+      "artifact-audit": "c8d30f0afcd897378f80a07653e097d557638de99b5c1911251423021042dab7"
+    },
+    "stages": {
+      "prepare-context-current": {
+        "contexts": [
+          {
+            "taskId": "current",
+            "status": "ready",
+            "reason": "情景来源为historyIds中的h44，包含听风书屋周报原句及摘要者三步处理描述，可分离且不含解答；通用规则由sources B-F01提供无需重复。",
+            "premises": [
+              {
+                "ref": "e89",
+                "quote": "听风书屋周报写道：‘馆员表示将征求读者意见后决定是否延长午休闭馆；本周未发布长期调整公告。’一位摘要者在笔记中写下三步处理：甲：原句含未来动作‘将征求…后决定’→标‘待决定’；乙：原句‘未发布长期调整’→视为‘已发生事实’；丙：面向未读居民，最终写‘馆员已决定延长闭馆’→标‘已发生’。",
+                "proposedRef": "h44",
+                "witness": {
+                  "id": "e89",
+                  "pointer": "/history/43/text",
+                  "role": "prior_exposure",
+                  "kind": "text",
+                  "value": "听风书屋周报写道：‘馆员表示将征求读者意见后决定是否延长午休闭馆；本周未发布长期调整公告。’一位摘要者在笔记中写下三步处理：甲：原句含未来动作‘将征求…后决定’→标‘待决定’；乙：原句‘未发布长期调整’→视为‘已发生事实’；丙：面向未读居民，最终写‘馆员已决定延长闭馆’→标‘已发生’。这三步中，哪一步犯了把待决定误作已发生的错误？",
+                  "valueHash": "93172d32d80e1633a20bc76fd79ce9d7230de0a08cb5468006ea067bfacce8b5"
+                }
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "solve-current": {
+        "status": "resolved",
+        "solution": "依据e3摘要规则：‘将讨论’不等于‘已经决定’，须区分已发生事实与待决定。题目e14/e23中，甲把‘将征求…后决定’标为待决定正确；乙把‘未发布长期调整’视为已发生事实（未发布是事实状态）正确；丙最终写‘馆员已决定延长闭馆’并标已发生，将未定决策误作已发生，犯所指错误。故丙步错误，选C。",
+        "witnesses": [
+          {
+            "id": "e3",
+            "pointer": "/sources/0/text",
+            "role": "source",
+            "kind": "text",
+            "value": "榕树书屋每周公布一页周报，供居民了解试行安排。阅读这类材料时，先问每句话是在报告已经发生的事、提出下一步建议，还是说明目前还不知道的情况。摘要可以压缩例子和修辞，但不能删掉会改变结论的对象、时间范围与限制。“部分读者认为”不等于“全体读者同意”，“将讨论”不等于“已经决定”。写摘要的任务是忠实地缩短材料，不是替作者补完故事。\n下面是一份练习周报。书屋在两个周六试行上午提前半小时开门。第一个周六有十八人提前到馆，第二个周六有十二人提前到馆。这些数字按到馆人次记录，同一个人来两次会被记两次。工作人员在提前到馆的人中收回十份意见卡，其中八份建议继续，另两份希望先看看排班能否承受。周报没有说明未填卡者的意见，也没有统计其他时段的读者。负责人提出再试行两个周六，待核对人员安排后讨论是否长期实行；目前没有宣布永久变更。\n一份合适的摘要可以写：“书屋两个周六试行提前开门，共记录三十个提前到馆人次；十份回收意见卡中八份支持继续。负责人建议延长试行，长期安排尚待讨论。”它保留了事件、有限证据和决策状态。摘要不必复述两次分别有多少人，但不能把“三十人次”写成“三十位不同居民”，因为独立人数没有给出。也不能把意见卡结果外推成全体读者支持率。\n证据与解释还要分开。若周报另提到同一周新增了路边指示牌，这只能说明两件事同时发生；没有比较或其他依据，不能写成“指示牌使提前到馆人数增加”。若有人建议先记录每位到馆者是否重复出现，这是一项改进建议，不是现有统计已经去重的证据。引用原文时，引用片段必须真的支持所写结论；引号本身不会增加证明力。\n练习时可按三个步骤自检。第一，把想保留的句子标为事实、意见、建议或未知；第二，为关键数字写清单位和对象；第三，回到原文寻找每项结论的依据。若依据只能支持较弱说法，就收窄摘要，而不是补上猜测。不同摘要可以有不同句式与顺序，只要核心信息和限制不变，就不必追求唯一范文。面向没读过周报的居民，清楚标明“已发生”和“待决定”通常比堆叠形容词更有用。",
+            "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+          },
+          {
+            "id": "e14",
+            "pointer": "/question/prompt",
+            "role": "question",
+            "kind": "text",
+            "value": "听风书屋周报写道：‘馆员表示将征求读者意见后决定是否延长午休闭馆；本周未发布长期调整公告。’一位摘要者在笔记中写下三步处理：甲：原句含未来动作‘将征求…后决定’→标‘待决定’；乙：原句‘未发布长期调整’→视为‘已发生事实’；丙：面向未读居民，最终写‘馆员已决定延长闭馆’→标‘已发生’。这三步中，哪一步犯了把待决定误作已发生的错误？",
+            "valueHash": "93172d32d80e1633a20bc76fd79ce9d7230de0a08cb5468006ea067bfacce8b5"
+          },
+          {
+            "id": "e23",
+            "pointer": "/scenarioContext/0/text",
+            "role": "context",
+            "kind": "text",
+            "value": "听风书屋周报写道：‘馆员表示将征求读者意见后决定是否延长午休闭馆；本周未发布长期调整公告。’一位摘要者在笔记中写下三步处理：甲：原句含未来动作‘将征求…后决定’→标‘待决定’；乙：原句‘未发布长期调整’→视为‘已发生事实’；丙：面向未读居民，最终写‘馆员已决定延长闭馆’→标‘已发生’。",
+            "valueHash": "1a832f88f097c5c5c6624b0ddb6f735fd14894461f2706ee9206883b589f0eec"
+          }
+        ],
+        "reviewReasons": []
+      },
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "clear",
+            "affected": [],
+            "reason": "产物 e26 断言丙步错误因把未定决策写成已决定，与 e3 规则‘将讨论不等于已经决定’及题目事实 e14/e125 一致：甲标待决定正确，丙将‘将征求后决定’篡改为‘已决定’标已发生，构成待决定误作已发生。乙步产物称另一种误读但未主张其犯所指错误，与题问聚焦一致。",
+            "refs": [
+              "e3",
+              "e14",
+              "e23",
+              "e26",
+              "e125"
+            ],
+            "challenge": {
+              "status": "closed",
+              "reason": "固定事实 e14/e125 中原文含未来动作‘将征求…后决定’且未发布公告，丙输出‘馆员已决定延长闭馆’标已发生，与待决定误作已发生必要条件吻合；无法补充相容反例使结论改变，因原文事实已排除已决定可能。",
+              "refs": [
+                "e14",
+                "e125",
+                "e26"
+              ]
+            },
+            "witnesses": [
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "榕树书屋每周公布一页周报，供居民了解试行安排。阅读这类材料时，先问每句话是在报告已经发生的事、提出下一步建议，还是说明目前还不知道的情况。摘要可以压缩例子和修辞，但不能删掉会改变结论的对象、时间范围与限制。“部分读者认为”不等于“全体读者同意”，“将讨论”不等于“已经决定”。写摘要的任务是忠实地缩短材料，不是替作者补完故事。\n下面是一份练习周报。书屋在两个周六试行上午提前半小时开门。第一个周六有十八人提前到馆，第二个周六有十二人提前到馆。这些数字按到馆人次记录，同一个人来两次会被记两次。工作人员在提前到馆的人中收回十份意见卡，其中八份建议继续，另两份希望先看看排班能否承受。周报没有说明未填卡者的意见，也没有统计其他时段的读者。负责人提出再试行两个周六，待核对人员安排后讨论是否长期实行；目前没有宣布永久变更。\n一份合适的摘要可以写：“书屋两个周六试行提前开门，共记录三十个提前到馆人次；十份回收意见卡中八份支持继续。负责人建议延长试行，长期安排尚待讨论。”它保留了事件、有限证据和决策状态。摘要不必复述两次分别有多少人，但不能把“三十人次”写成“三十位不同居民”，因为独立人数没有给出。也不能把意见卡结果外推成全体读者支持率。\n证据与解释还要分开。若周报另提到同一周新增了路边指示牌，这只能说明两件事同时发生；没有比较或其他依据，不能写成“指示牌使提前到馆人数增加”。若有人建议先记录每位到馆者是否重复出现，这是一项改进建议，不是现有统计已经去重的证据。引用原文时，引用片段必须真的支持所写结论；引号本身不会增加证明力。\n练习时可按三个步骤自检。第一，把想保留的句子标为事实、意见、建议或未知；第二，为关键数字写清单位和对象；第三，回到原文寻找每项结论的依据。若依据只能支持较弱说法，就收窄摘要，而不是补上猜测。不同摘要可以有不同句式与顺序，只要核心信息和限制不变，就不必追求唯一范文。面向没读过周报的居民，清楚标明“已发生”和“待决定”通常比堆叠形容词更有用。",
+                "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+              },
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "听风书屋周报写道：‘馆员表示将征求读者意见后决定是否延长午休闭馆；本周未发布长期调整公告。’一位摘要者在笔记中写下三步处理：甲：原句含未来动作‘将征求…后决定’→标‘待决定’；乙：原句‘未发布长期调整’→视为‘已发生事实’；丙：面向未读居民，最终写‘馆员已决定延长闭馆’→标‘已发生’。这三步中，哪一步犯了把待决定误作已发生的错误？",
+                "valueHash": "93172d32d80e1633a20bc76fd79ce9d7230de0a08cb5468006ea067bfacce8b5"
+              },
+              {
+                "id": "e23",
+                "pointer": "/artifacts/0/id",
+                "role": "artifact",
+                "kind": "text",
+                "value": "current-retest-selected-option",
+                "valueHash": "e616e3a5f76ec84c63d9e263a7a81397d7adc717d7be2dac3334e0d0e5d653fc"
+              },
+              {
+                "id": "e26",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "原题缺失的是区分‘提出下一步评估（待决定）’与‘已经宣布变更（已发生）’。丙步把‘将征求…后决定’的结论篡改为‘已决定’，正是该混淆；甲步正确，乙步是另一种误读。",
+                "valueHash": "5fcabb6d9b3fc14072c75682881386ab9ab95538be9587017e0d89781b24807f"
+              },
+              {
+                "id": "e125",
+                "pointer": "/scenarioContext/0/text",
+                "role": "context",
+                "kind": "text",
+                "value": "听风书屋周报写道：‘馆员表示将征求读者意见后决定是否延长午休闭馆；本周未发布长期调整公告。’一位摘要者在笔记中写下三步处理：甲：原句含未来动作‘将征求…后决定’→标‘待决定’；乙：原句‘未发布长期调整’→视为‘已发生事实’；丙：面向未读居民，最终写‘馆员已决定延长闭馆’→标‘已发生’。",
+                "valueHash": "1a832f88f097c5c5c6624b0ddb6f735fd14894461f2706ee9206883b589f0eec"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "kind": "quantities",
+            "status": "not_applicable",
+            "affected": [],
+            "reason": "题目与产物均无数值、单位或百分比推导断言，rates 为空，无重算需求。",
+            "contextHash": "c8d30f0afcd897378f80a07653e097d557638de99b5c1911251423021042dab7",
+            "proposed": {
+              "kind": "quantities",
+              "status": "not_applicable",
+              "affected": [],
+              "reason": "题目与产物均无数值、单位或百分比推导断言，rates 为空，无重算需求。",
+              "refs": [
+                "e14",
+                "e26"
+              ]
+            },
+            "reviewReasons": []
+          }
+        ],
+        "keys": [
+          {
+            "taskId": "current",
+            "status": "absent",
+            "reason": "当前题目 e14/e15-e21 提供选项但未标记作者指定正确答案键；priorExposure 中类似题目标记 correct 不属于当前题；artifacts e23/e24 为产品选择而非作者键。故无当前作者键。",
+            "refs": [
+              "e14",
+              "e15",
+              "e23"
+            ],
+            "witnesses": [
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "听风书屋周报写道：‘馆员表示将征求读者意见后决定是否延长午休闭馆；本周未发布长期调整公告。’一位摘要者在笔记中写下三步处理：甲：原句含未来动作‘将征求…后决定’→标‘待决定’；乙：原句‘未发布长期调整’→视为‘已发生事实’；丙：面向未读居民，最终写‘馆员已决定延长闭馆’→标‘已发生’。这三步中，哪一步犯了把待决定误作已发生的错误？",
+                "valueHash": "93172d32d80e1633a20bc76fd79ce9d7230de0a08cb5468006ea067bfacce8b5"
+              },
+              {
+                "id": "e15",
+                "pointer": "/question/options",
+                "role": "question",
+                "kind": "array_length",
+                "value": 3,
+                "valueHash": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce"
+              },
+              {
+                "id": "e23",
+                "pointer": "/artifacts/0/id",
+                "role": "artifact",
+                "kind": "text",
+                "value": "current-retest-selected-option",
+                "valueHash": "e616e3a5f76ec84c63d9e263a7a81397d7adc717d7be2dac3334e0d0e5d653fc"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q4",
+            "level": "U",
+            "reason": "The proposed judgment needs evidence review.",
+            "proposed": {
+              "dimension": "Q4",
+              "level": 1,
+              "reason": "题目e14与选项e16-e21前提充足，源e3提供“将讨论≠已经决定”等规则；盲解（resolved）键C与产物e23/e24所选“丙步错误”一致，答案集合理可辩护。但本题prior_exposure中prior-43、prior-44、prior-45、prior-46已完整包含相同题干与全部选项，构成实际先前题目曝光，破坏了appropriate independence，使再测区分度弱（solvable but weakly discriminating）。先前已完成展示题目必要判断，本题仅需学习者选答（无先前响应记录）。无solution disclosure。",
+              "refs": [
+                "e14",
+                "e16",
+                "e21",
+                "e23",
+                "e24",
+                "e3",
+                "prior-43",
+                "prior-44"
+              ],
+              "issue": "exposure",
+              "exposureEvidence": [
+                {
+                  "taskId": "current",
+                  "kind": "question_only",
+                  "ref": "prior-43",
+                  "quote": "听风书屋周报写道：‘馆员表示将征求读者意见后决定是否延长午休闭馆；本周未发布长期调整公告。’一位摘要者在笔记中写下三步处理：…哪一步犯了把待决定误作已发生的错误？"
+                }
+              ]
+            },
+            "reviewReasons": [
+              "EXPOSED_SOLUTION_NOT_ESTABLISHED"
+            ]
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q4",
+          "level": "U",
+          "reason": "The proposed judgment needs evidence review.",
+          "proposed": {
+            "dimension": "Q4",
+            "level": 1,
+            "reason": "题目e14与选项e16-e21前提充足，源e3提供“将讨论≠已经决定”等规则；盲解（resolved）键C与产物e23/e24所选“丙步错误”一致，答案集合理可辩护。但本题prior_exposure中prior-43、prior-44、prior-45、prior-46已完整包含相同题干与全部选项，构成实际先前题目曝光，破坏了appropriate independence，使再测区分度弱（solvable but weakly discriminating）。先前已完成展示题目必要判断，本题仅需学习者选答（无先前响应记录）。无solution disclosure。",
+            "refs": [
+              "e14",
+              "e16",
+              "e21",
+              "e23",
+              "e24",
+              "e3",
+              "prior-43",
+              "prior-44"
+            ],
+            "issue": "exposure",
+            "exposureEvidence": [
+              {
+                "taskId": "current",
+                "kind": "question_only",
+                "ref": "prior-43",
+                "quote": "听风书屋周报写道：‘馆员表示将征求读者意见后决定是否延长午休闭馆；本周未发布长期调整公告。’一位摘要者在笔记中写下三步处理：…哪一步犯了把待决定误作已发生的错误？"
+              }
+            ]
+          },
+          "reviewReasons": [
+            "EXPOSED_SOLUTION_NOT_ESTABLISHED"
+          ],
+          "constraints": [],
+          "proposedLevel": "U",
+          "proposedReason": "The proposed judgment needs evidence review."
+        }
+      ],
+      "reviewRequired": [
+        {
+          "dimension": "Q4",
+          "reason": "UNRESOLVED"
+        }
+      ]
+    },
+    "resultHash": "12df457d86b6c937af5d5880e75764bba2bf0e7f9524c243815799affc26a699"
+  }
+}

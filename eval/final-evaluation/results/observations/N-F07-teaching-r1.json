@@ -1,0 +1,846 @@
+{
+  "task": {
+    "caseId": "N-F07-teaching",
+    "runId": "N-F07-teaching-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-F07-teaching.json",
+    "inputHash": "2c7df843ab28b1ff97ea85fd9758771cc93f3d4c46b072c0d03bf7d2a1aa6502",
+    "population": "natural",
+    "sourceId": "F07"
+  },
+  "inputHash": "2c7df843ab28b1ff97ea85fd9758771cc93f3d4c46b072c0d03bf7d2a1aa6502",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "correctness": "043d949cf2c12efbe7d93011d289d9cb09616dabcde58fca2780c9aeddee94b9",
+      "artifact-audit": "043d949cf2c12efbe7d93011d289d9cb09616dabcde58fca2780c9aeddee94b9"
+    },
+    "stages": {
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "uncertain",
+            "affected": [
+              "Q1",
+              "Q3"
+            ],
+            "reason": "The authored conclusion has a compatible counterexample or an unresolved necessary premise. 固定e26前事实：甲加水温暖窗台、乙无水冷暗柜、甲8乙1(e3,e26)，作者结论'不能单独说是因为水'依赖温度光照为有关且可能影响；补充相容假设温度光照对该批种子发芽实际无影响，则差异可单独归因水，原具体结论未建立，但元规则'归因单一因素必须有关条件一致'仍可作必要要求，反例不推翻元规则。",
+            "refs": [
+              "e3",
+              "e26",
+              "e28",
+              "e30",
+              "e32",
+              "e34",
+              "e44",
+              "e54",
+              "e66",
+              "e76"
+            ],
+            "challenge": {
+              "status": "counterexample",
+              "reason": "固定e26前事实：甲加水温暖窗台、乙无水冷暗柜、甲8乙1(e3,e26)，作者结论'不能单独说是因为水'依赖温度光照为有关且可能影响；补充相容假设温度光照对该批种子发芽实际无影响，则差异可单独归因水，原具体结论未建立，但元规则'归因单一因素必须有关条件一致'仍可作必要要求，反例不推翻元规则。",
+              "refs": [
+                "e3",
+                "e26"
+              ]
+            },
+            "witnesses": [
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "课堂把同一批种子分到两个透明盒中，想比较有水和无水时的发芽情况。为了使比较有意义，应尽量让其他有关条件一致，例如种子数量、来源、温度、光照、观察天数与发芽判定方式。若有水盒放在温暖窗台、无水盒放在冷暗柜里，即使结果不同，也无法把差异单独归因于水，因为温度和光照同时改变了。\n这里把“发芽”操作性地定义为观察到胚根伸出种皮，便于不同记录者使用同一标准。这个定义是本实验的观察规则，不是所有生物过程的完整描述。记录者应按事先约定的时间观察全部种子，而不是只挑成功的那几颗展示。没有发芽的种子也必须计入，才能知道发芽比例。\n设两盒各十粒同批种子，均在同温同光处放置七天。甲盒保持适量湿润，乙盒保持干燥。甲有八粒达到上述标准，乙有一粒。可以说在这批种子和这些条件下，湿润组观察到的发芽比例更高。仅凭这一次观察，还不能断言所有种类的种子只要加水都会发芽；种子活性、温度及其他条件仍可能重要。也不能说乙盒绝对没有任何水分，因为“保持干燥”是操作描述，并未测出零水分。\n重复实验可以帮助检查结果是否稳定，但重复的对象、条件与方法需要记录。把同一张照片复制三次不是三次独立实验。同一盒内种子也共享环境，不能总把它们当成互不影响的完整重复。入门练习无需复杂统计检验，只要能说明为什么重复有用、哪些信息仍然有限。\n好的后续实验应对应目前的疑问。如果怀疑温度造成差异，就应在同一温度下只改变湿润条件，或设计清楚的组合比较；不能一边改变温度，一边换种子品种，再把结果归因于某一个因素。若希望研究“水太多是否也影响发芽”，可以在其他条件一致时增加不同水量组，事先说明每组的水量与观察标准。\n解释实验时，把计划、执行、观察和结论分开写。计划相同不代表执行真的相同，需核对记录；观察不同不自动证明唯一原因。允许结果不支持原假说，并据此修改下一步问题，正是实验学习的一部分。对证据保留限制，不妨碍学生提出清楚、可检验的预测。",
+                "valueHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648"
+              },
+              {
+                "id": "e26",
+                "pointer": "/artifacts/6/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "设想把同批种子分两盒，甲盒加水并放在温暖窗台，乙盒无水并放在冷暗柜。七天後甲盒八粒发芽，乙盒一粒。这里温度和光照都随水一起变了，所以即使发芽数不同，也不能单独说是因为水。这个例子说明：要归因到单一因素，必须让其他有关条件保持一致。",
+                "valueHash": "4f2ab0c8a35554eb88b8157bd6529d4194190a683884a4b28b9815630ada6d8f"
+              },
+              {
+                "id": "e28",
+                "pointer": "/artifacts/7/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "现在看另一个情形：同批种子分两盒，甲盒加水、观察七天，乙盒无水、但只观察四天。发芽判定标准相同。这里除水外，观察天数也不同。",
+                "valueHash": "dead15d9d6326406ad2f2c9e91d7e2d2c2f51d2bdd5061774a18356c40c6f249"
+              },
+              {
+                "id": "e30",
+                "pointer": "/artifacts/8/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "操作定义有边界。‘保持干燥’只是实验中的操作描述，并未测量出零水分。同样，‘发芽’定义为胚根伸出种皮，便于统一标准，但不是所有生物过程的完整描述。",
+                "valueHash": "f3691683de6a7d24123bd3da120d2bd7c0907ffd2084fb9cf3efad14df72ea7e"
+              },
+              {
+                "id": "e32",
+                "pointer": "/artifacts/9/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "把‘干燥’当作绝对无水分，与把‘干燥’当作操作上不额外加水，是不同边界；前者超出本实验证据。",
+                "valueHash": "f6eb47e03ef613078f6f4aa1f6099be044cdeb3cc963672612302a0e51423f07"
+              },
+              {
+                "id": "e34",
+                "pointer": "/artifacts/10/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "要计算发芽比例，必须对每个种子应用同一操作定义，并把所有种子固定在分母中。观察可以分次进行，后续复查只更新达标分子，总数不变。下面用一个新案例展示待定变化如何决定最终结果。",
+                "valueHash": "3e073f86b20329f2531de3dba5cc892405c3ad5213c578c4bf12656fff089c04"
+              },
+              {
+                "id": "e44",
+                "pointer": "/artifacts/15/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "比例由累计达标数除以固定总种子数得出，所有种子始终在记录中",
+                "valueHash": "1ebde095b077c6342fa7365243c14142243e20f15691b7a7b583f27816fe1a84"
+              },
+              {
+                "id": "e54",
+                "pointer": "/artifacts/20/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "正确：所有种子始终在分母，新增达标者使分子增加至7。",
+                "valueHash": "0b3acc4e423fba049fe446c3f6d6e8ba9216b79c3ef4bc0a62cabf470cb5bf3a"
+              },
+              {
+                "id": "e66",
+                "pointer": "/artifacts/26/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "正确：规则变更使分子仅新发芽3，分母仍12。",
+                "valueHash": "7cc36f0d41ac84fd1218aa3a0d24a8ca2511be2145cf08f100122a190bf0a736"
+              },
+              {
+                "id": "e76",
+                "pointer": "/artifacts/31/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "有效对照要求除目标变量外其余相关条件一致；若多个变量同时变，差异不能归于单一因素。观察记录需计入全部种子并明确操作定义。",
+                "valueHash": "e22987069ba47663242d1e8010f118b1fe2856ff0abb9ba1bfa98f21e4a8a57a"
+              }
+            ],
+            "proposed": {
+              "kind": "conditions",
+              "status": "clear",
+              "affected": [],
+              "reason": "作者断言有效对照需除目标变量外有关条件一致(e26,e76)，举例多变量同变不能单一归因(e26,e28)正确表述必要条件；操作定义边界明确(e30,e32,e72,e74)；比例计算规则要求所有种子入分母、累计分子(e34,e44,e54,e56)，规则变更时正确给3/12(e66,e70)。实例对照无混淆充分/必要或联合条件。",
+              "refs": [
+                "e3",
+                "e26",
+                "e28",
+                "e30",
+                "e32",
+                "e34",
+                "e44",
+                "e54",
+                "e66",
+                "e76"
+              ],
+              "challenge": {
+                "status": "counterexample",
+                "reason": "固定e26前事实：甲加水温暖窗台、乙无水冷暗柜、甲8乙1(e3,e26)，作者结论'不能单独说是因为水'依赖温度光照为有关且可能影响；补充相容假设温度光照对该批种子发芽实际无影响，则差异可单独归因水，原具体结论未建立，但元规则'归因单一因素必须有关条件一致'仍可作必要要求，反例不推翻元规则。",
+                "refs": [
+                  "e3",
+                  "e26"
+                ]
+              }
+            },
+            "reviewReasons": [
+              "CONDITIONS_COUNTEREXAMPLE_REVIEW"
+            ]
+          },
+          {
+            "kind": "quantities",
+            "status": "clear",
+            "affected": [],
+            "reason": "独立重算e36:12粒第5天4发芽、第7天新增3达标=>分子7分母12=7/12≈0.583(e42,e48,e62)，与rates 583/1000一致；变更规则e70分子仅新发芽3分母12=>3/12=0.25(e60)与25%一致；错误选项数值亦正确。无单位或公式绑定错误。",
+            "refs": [
+              "e36",
+              "e42",
+              "e48",
+              "e60",
+              "e62",
+              "e70"
+            ],
+            "witnesses": [
+              {
+                "id": "e36",
+                "pointer": "/artifacts/11/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "一盒12粒同批种子，操作定义：胚根伸出种皮为发芽。第5天观察记录4粒发芽，8粒未发芽；第7天再次观察，其中3粒原先未发芽者现胚根伸出。",
+                "valueHash": "806b3b01e5706a040066d6df48129e508a605c2878455543868ca329356b3906"
+              },
+              {
+                "id": "e42",
+                "pointer": "/artifacts/14/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "7/12≈0.583",
+                "valueHash": "31e01463187f3e614230957459a1db6aac39ae91cdbc1c1629955fb2c71e8501"
+              },
+              {
+                "id": "e48",
+                "pointer": "/artifacts/17/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "7/12（约58.3%），因3粒后来达标仍计入总12粒",
+                "valueHash": "992abcb64febea217778c51f3105523b7ef8e245d32496b1c778b77ac211e4c4"
+              },
+              {
+                "id": "e60",
+                "pointer": "/artifacts/23/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "3/12（25%）",
+                "valueHash": "49c7a9ae55d0020017a1d67ce172d641fb431deb1da1fe5829f76223fc58475e"
+              },
+              {
+                "id": "e62",
+                "pointer": "/artifacts/24/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "7/12（58.3%）",
+                "valueHash": "03eca67327aa90f78a03725d52d2fe341a9cadef1a71a6c7844d123360bcdfd5"
+              },
+              {
+                "id": "e70",
+                "pointer": "/artifacts/28/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "若实验规则改为只记录第7天当天新发芽数作为分子，总种子仍为12",
+                "valueHash": "db8f192f8f91f0f517820b964628de550e3046451e610a86fd3b91b7e414ca93"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ],
+        "keys": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 2,
+            "reason": "Authored claims in artifacts (e26,e28,e30,e32,e34,e36-e44,e46-e56,e58-e68,e72,e74,e76) align with source F07 (e3) on variable control, operational-definition boundaries, full seed counting and proportion calculation; no false claim, invented support, or missing condition changes mechanism.",
+            "refs": [
+              "e3",
+              "e26",
+              "e30",
+              "e34",
+              "e36",
+              "e70",
+              "e76"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "课堂把同一批种子分到两个透明盒中，想比较有水和无水时的发芽情况。为了使比较有意义，应尽量让其他有关条件一致，例如种子数量、来源、温度、光照、观察天数与发芽判定方式。若有水盒放在温暖窗台、无水盒放在冷暗柜里，即使结果不同，也无法把差异单独归因于水，因为温度和光照同时改变了。\n这里把“发芽”操作性地定义为观察到胚根伸出种皮，便于不同记录者使用同一标准。这个定义是本实验的观察规则，不是所有生物过程的完整描述。记录者应按事先约定的时间观察全部种子，而不是只挑成功的那几颗展示。没有发芽的种子也必须计入，才能知道发芽比例。\n设两盒各十粒同批种子，均在同温同光处放置七天。甲盒保持适量湿润，乙盒保持干燥。甲有八粒达到上述标准，乙有一粒。可以说在这批种子和这些条件下，湿润组观察到的发芽比例更高。仅凭这一次观察，还不能断言所有种类的种子只要加水都会发芽；种子活性、温度及其他条件仍可能重要。也不能说乙盒绝对没有任何水分，因为“保持干燥”是操作描述，并未测出零水分。\n重复实验可以帮助检查结果是否稳定，但重复的对象、条件与方法需要记录。把同一张照片复制三次不是三次独立实验。同一盒内种子也共享环境，不能总把它们当成互不影响的完整重复。入门练习无需复杂统计检验，只要能说明为什么重复有用、哪些信息仍然有限。\n好的后续实验应对应目前的疑问。如果怀疑温度造成差异，就应在同一温度下只改变湿润条件，或设计清楚的组合比较；不能一边改变温度，一边换种子品种，再把结果归因于某一个因素。若希望研究“水太多是否也影响发芽”，可以在其他条件一致时增加不同水量组，事先说明每组的水量与观察标准。\n解释实验时，把计划、执行、观察和结论分开写。计划相同不代表执行真的相同，需核对记录；观察不同不自动证明唯一原因。允许结果不支持原假说，并据此修改下一步问题，正是实验学习的一部分。对证据保留限制，不妨碍学生提出清楚、可检验的预测。",
+                "valueHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648"
+              },
+              {
+                "id": "e26",
+                "pointer": "/artifacts/6/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "设想把同批种子分两盒，甲盒加水并放在温暖窗台，乙盒无水并放在冷暗柜。七天後甲盒八粒发芽，乙盒一粒。这里温度和光照都随水一起变了，所以即使发芽数不同，也不能单独说是因为水。这个例子说明：要归因到单一因素，必须让其他有关条件保持一致。",
+                "valueHash": "4f2ab0c8a35554eb88b8157bd6529d4194190a683884a4b28b9815630ada6d8f"
+              },
+              {
+                "id": "e30",
+                "pointer": "/artifacts/8/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "操作定义有边界。‘保持干燥’只是实验中的操作描述，并未测量出零水分。同样，‘发芽’定义为胚根伸出种皮，便于统一标准，但不是所有生物过程的完整描述。",
+                "valueHash": "f3691683de6a7d24123bd3da120d2bd7c0907ffd2084fb9cf3efad14df72ea7e"
+              },
+              {
+                "id": "e34",
+                "pointer": "/artifacts/10/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "要计算发芽比例，必须对每个种子应用同一操作定义，并把所有种子固定在分母中。观察可以分次进行，后续复查只更新达标分子，总数不变。下面用一个新案例展示待定变化如何决定最终结果。",
+                "valueHash": "3e073f86b20329f2531de3dba5cc892405c3ad5213c578c4bf12656fff089c04"
+              },
+              {
+                "id": "e36",
+                "pointer": "/artifacts/11/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "一盒12粒同批种子，操作定义：胚根伸出种皮为发芽。第5天观察记录4粒发芽，8粒未发芽；第7天再次观察，其中3粒原先未发芽者现胚根伸出。",
+                "valueHash": "806b3b01e5706a040066d6df48129e508a605c2878455543868ca329356b3906"
+              },
+              {
+                "id": "e70",
+                "pointer": "/artifacts/28/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "若实验规则改为只记录第7天当天新发芽数作为分子，总种子仍为12",
+                "valueHash": "db8f192f8f91f0f517820b964628de550e3046451e610a86fd3b91b7e414ca93"
+              },
+              {
+                "id": "e76",
+                "pointer": "/artifacts/31/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "有效对照要求除目标变量外其余相关条件一致；若多个变量同时变，差异不能归于单一因素。观察记录需计入全部种子并明确操作定义。",
+                "valueHash": "e22987069ba47663242d1e8010f118b1fe2856ff0abb9ba1bfa98f21e4a8a57a"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "dimension": "Q3",
+            "level": 2,
+            "reason": "Explanations use graded examples, worked process, interaction and transfer to show why/how to keep conditions consistent, record all seeds, and respect boundaries; learners with prerequisites (e7,e8) can follow; no central derivation error or irrelevance.",
+            "refs": [
+              "e26",
+              "e34",
+              "e36",
+              "e70",
+              "e76",
+              "e7",
+              "e8"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e26",
+                "pointer": "/artifacts/6/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "设想把同批种子分两盒，甲盒加水并放在温暖窗台，乙盒无水并放在冷暗柜。七天後甲盒八粒发芽，乙盒一粒。这里温度和光照都随水一起变了，所以即使发芽数不同，也不能单独说是因为水。这个例子说明：要归因到单一因素，必须让其他有关条件保持一致。",
+                "valueHash": "4f2ab0c8a35554eb88b8157bd6529d4194190a683884a4b28b9815630ada6d8f"
+              },
+              {
+                "id": "e34",
+                "pointer": "/artifacts/10/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "要计算发芽比例，必须对每个种子应用同一操作定义，并把所有种子固定在分母中。观察可以分次进行，后续复查只更新达标分子，总数不变。下面用一个新案例展示待定变化如何决定最终结果。",
+                "valueHash": "3e073f86b20329f2531de3dba5cc892405c3ad5213c578c4bf12656fff089c04"
+              },
+              {
+                "id": "e36",
+                "pointer": "/artifacts/11/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "一盒12粒同批种子，操作定义：胚根伸出种皮为发芽。第5天观察记录4粒发芽，8粒未发芽；第7天再次观察，其中3粒原先未发芽者现胚根伸出。",
+                "valueHash": "806b3b01e5706a040066d6df48129e508a605c2878455543868ca329356b3906"
+              },
+              {
+                "id": "e70",
+                "pointer": "/artifacts/28/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "若实验规则改为只记录第7天当天新发芽数作为分子，总种子仍为12",
+                "valueHash": "db8f192f8f91f0f517820b964628de550e3046451e610a86fd3b91b7e414ca93"
+              },
+              {
+                "id": "e76",
+                "pointer": "/artifacts/31/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "有效对照要求除目标变量外其余相关条件一致；若多个变量同时变，差异不能归于单一因素。观察记录需计入全部种子并明确操作定义。",
+                "valueHash": "e22987069ba47663242d1e8010f118b1fe2856ff0abb9ba1bfa98f21e4a8a57a"
+              },
+              {
+                "id": "e7",
+                "pointer": "/prerequisites/0",
+                "role": "context",
+                "kind": "text",
+                "value": "理解相同与不同",
+                "valueHash": "5d9f9e41ac5465029c60d930aa3142d5754cdf1f405ba64d86bbc7f24243e226"
+              },
+              {
+                "id": "e8",
+                "pointer": "/prerequisites/1",
+                "role": "context",
+                "kind": "text",
+                "value": "能按表格记录观察",
+                "valueHash": "254ac1098c0f9eca0ffbc4412f39af6c7b3e10d534766eb7d4d700016e6d025e"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q1",
+          "level": "U",
+          "reason": "The authored conclusion has a compatible counterexample or an unresolved necessary premise. 固定e26前事实：甲加水温暖窗台、乙无水冷暗柜、甲8乙1(e3,e26)，作者结论'不能单独说是因为水'依赖温度光照为有关且可能影响；补充相容假设温度光照对该批种子发芽实际无影响，则差异可单独归因水，原具体结论未建立，但元规则'归因单一因素必须有关条件一致'仍可作必要要求，反例不推翻元规则。",
+          "refs": [
+            "e3",
+            "e26",
+            "e30",
+            "e34",
+            "e36",
+            "e70",
+            "e76"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e3",
+              "pointer": "/sources/0/text",
+              "role": "source",
+              "kind": "text",
+              "value": "课堂把同一批种子分到两个透明盒中，想比较有水和无水时的发芽情况。为了使比较有意义，应尽量让其他有关条件一致，例如种子数量、来源、温度、光照、观察天数与发芽判定方式。若有水盒放在温暖窗台、无水盒放在冷暗柜里，即使结果不同，也无法把差异单独归因于水，因为温度和光照同时改变了。\n这里把“发芽”操作性地定义为观察到胚根伸出种皮，便于不同记录者使用同一标准。这个定义是本实验的观察规则，不是所有生物过程的完整描述。记录者应按事先约定的时间观察全部种子，而不是只挑成功的那几颗展示。没有发芽的种子也必须计入，才能知道发芽比例。\n设两盒各十粒同批种子，均在同温同光处放置七天。甲盒保持适量湿润，乙盒保持干燥。甲有八粒达到上述标准，乙有一粒。可以说在这批种子和这些条件下，湿润组观察到的发芽比例更高。仅凭这一次观察，还不能断言所有种类的种子只要加水都会发芽；种子活性、温度及其他条件仍可能重要。也不能说乙盒绝对没有任何水分，因为“保持干燥”是操作描述，并未测出零水分。\n重复实验可以帮助检查结果是否稳定，但重复的对象、条件与方法需要记录。把同一张照片复制三次不是三次独立实验。同一盒内种子也共享环境，不能总把它们当成互不影响的完整重复。入门练习无需复杂统计检验，只要能说明为什么重复有用、哪些信息仍然有限。\n好的后续实验应对应目前的疑问。如果怀疑温度造成差异，就应在同一温度下只改变湿润条件，或设计清楚的组合比较；不能一边改变温度，一边换种子品种，再把结果归因于某一个因素。若希望研究“水太多是否也影响发芽”，可以在其他条件一致时增加不同水量组，事先说明每组的水量与观察标准。\n解释实验时，把计划、执行、观察和结论分开写。计划相同不代表执行真的相同，需核对记录；观察不同不自动证明唯一原因。允许结果不支持原假说，并据此修改下一步问题，正是实验学习的一部分。对证据保留限制，不妨碍学生提出清楚、可检验的预测。",
+              "valueHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648"
+            },
+            {
+              "id": "e26",
+              "pointer": "/artifacts/6/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "设想把同批种子分两盒，甲盒加水并放在温暖窗台，乙盒无水并放在冷暗柜。七天後甲盒八粒发芽，乙盒一粒。这里温度和光照都随水一起变了，所以即使发芽数不同，也不能单独说是因为水。这个例子说明：要归因到单一因素，必须让其他有关条件保持一致。",
+              "valueHash": "4f2ab0c8a35554eb88b8157bd6529d4194190a683884a4b28b9815630ada6d8f"
+            },
+            {
+              "id": "e30",
+              "pointer": "/artifacts/8/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "操作定义有边界。‘保持干燥’只是实验中的操作描述，并未测量出零水分。同样，‘发芽’定义为胚根伸出种皮，便于统一标准，但不是所有生物过程的完整描述。",
+              "valueHash": "f3691683de6a7d24123bd3da120d2bd7c0907ffd2084fb9cf3efad14df72ea7e"
+            },
+            {
+              "id": "e34",
+              "pointer": "/artifacts/10/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "要计算发芽比例，必须对每个种子应用同一操作定义，并把所有种子固定在分母中。观察可以分次进行，后续复查只更新达标分子，总数不变。下面用一个新案例展示待定变化如何决定最终结果。",
+              "valueHash": "3e073f86b20329f2531de3dba5cc892405c3ad5213c578c4bf12656fff089c04"
+            },
+            {
+              "id": "e36",
+              "pointer": "/artifacts/11/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "一盒12粒同批种子，操作定义：胚根伸出种皮为发芽。第5天观察记录4粒发芽，8粒未发芽；第7天再次观察，其中3粒原先未发芽者现胚根伸出。",
+              "valueHash": "806b3b01e5706a040066d6df48129e508a605c2878455543868ca329356b3906"
+            },
+            {
+              "id": "e70",
+              "pointer": "/artifacts/28/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "若实验规则改为只记录第7天当天新发芽数作为分子，总种子仍为12",
+              "valueHash": "db8f192f8f91f0f517820b964628de550e3046451e610a86fd3b91b7e414ca93"
+            },
+            {
+              "id": "e76",
+              "pointer": "/artifacts/31/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "有效对照要求除目标变量外其余相关条件一致；若多个变量同时变，差异不能归于单一因素。观察记录需计入全部种子并明确操作定义。",
+              "valueHash": "e22987069ba47663242d1e8010f118b1fe2856ff0abb9ba1bfa98f21e4a8a57a"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [
+            {
+              "level": "U",
+              "code": "INDEPENDENT_CONDITIONS",
+              "detail": {
+                "kind": "conditions",
+                "status": "uncertain",
+                "affected": [
+                  "Q1",
+                  "Q3"
+                ],
+                "reason": "The authored conclusion has a compatible counterexample or an unresolved necessary premise. 固定e26前事实：甲加水温暖窗台、乙无水冷暗柜、甲8乙1(e3,e26)，作者结论'不能单独说是因为水'依赖温度光照为有关且可能影响；补充相容假设温度光照对该批种子发芽实际无影响，则差异可单独归因水，原具体结论未建立，但元规则'归因单一因素必须有关条件一致'仍可作必要要求，反例不推翻元规则。",
+                "refs": [
+                  "e3",
+                  "e26",
+                  "e28",
+                  "e30",
+                  "e32",
+                  "e34",
+                  "e44",
+                  "e54",
+                  "e66",
+                  "e76"
+                ],
+                "challenge": {
+                  "status": "counterexample",
+                  "reason": "固定e26前事实：甲加水温暖窗台、乙无水冷暗柜、甲8乙1(e3,e26)，作者结论'不能单独说是因为水'依赖温度光照为有关且可能影响；补充相容假设温度光照对该批种子发芽实际无影响，则差异可单独归因水，原具体结论未建立，但元规则'归因单一因素必须有关条件一致'仍可作必要要求，反例不推翻元规则。",
+                  "refs": [
+                    "e3",
+                    "e26"
+                  ]
+                },
+                "witnesses": [
+                  {
+                    "id": "e3",
+                    "pointer": "/sources/0/text",
+                    "role": "source",
+                    "kind": "text",
+                    "value": "课堂把同一批种子分到两个透明盒中，想比较有水和无水时的发芽情况。为了使比较有意义，应尽量让其他有关条件一致，例如种子数量、来源、温度、光照、观察天数与发芽判定方式。若有水盒放在温暖窗台、无水盒放在冷暗柜里，即使结果不同，也无法把差异单独归因于水，因为温度和光照同时改变了。\n这里把“发芽”操作性地定义为观察到胚根伸出种皮，便于不同记录者使用同一标准。这个定义是本实验的观察规则，不是所有生物过程的完整描述。记录者应按事先约定的时间观察全部种子，而不是只挑成功的那几颗展示。没有发芽的种子也必须计入，才能知道发芽比例。\n设两盒各十粒同批种子，均在同温同光处放置七天。甲盒保持适量湿润，乙盒保持干燥。甲有八粒达到上述标准，乙有一粒。可以说在这批种子和这些条件下，湿润组观察到的发芽比例更高。仅凭这一次观察，还不能断言所有种类的种子只要加水都会发芽；种子活性、温度及其他条件仍可能重要。也不能说乙盒绝对没有任何水分，因为“保持干燥”是操作描述，并未测出零水分。\n重复实验可以帮助检查结果是否稳定，但重复的对象、条件与方法需要记录。把同一张照片复制三次不是三次独立实验。同一盒内种子也共享环境，不能总把它们当成互不影响的完整重复。入门练习无需复杂统计检验，只要能说明为什么重复有用、哪些信息仍然有限。\n好的后续实验应对应目前的疑问。如果怀疑温度造成差异，就应在同一温度下只改变湿润条件，或设计清楚的组合比较；不能一边改变温度，一边换种子品种，再把结果归因于某一个因素。若希望研究“水太多是否也影响发芽”，可以在其他条件一致时增加不同水量组，事先说明每组的水量与观察标准。\n解释实验时，把计划、执行、观察和结论分开写。计划相同不代表执行真的相同，需核对记录；观察不同不自动证明唯一原因。允许结果不支持原假说，并据此修改下一步问题，正是实验学习的一部分。对证据保留限制，不妨碍学生提出清楚、可检验的预测。",
+                    "valueHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648"
+                  },
+                  {
+                    "id": "e26",
+                    "pointer": "/artifacts/6/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "设想把同批种子分两盒，甲盒加水并放在温暖窗台，乙盒无水并放在冷暗柜。七天後甲盒八粒发芽，乙盒一粒。这里温度和光照都随水一起变了，所以即使发芽数不同，也不能单独说是因为水。这个例子说明：要归因到单一因素，必须让其他有关条件保持一致。",
+                    "valueHash": "4f2ab0c8a35554eb88b8157bd6529d4194190a683884a4b28b9815630ada6d8f"
+                  },
+                  {
+                    "id": "e28",
+                    "pointer": "/artifacts/7/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "现在看另一个情形：同批种子分两盒，甲盒加水、观察七天，乙盒无水、但只观察四天。发芽判定标准相同。这里除水外，观察天数也不同。",
+                    "valueHash": "dead15d9d6326406ad2f2c9e91d7e2d2c2f51d2bdd5061774a18356c40c6f249"
+                  },
+                  {
+                    "id": "e30",
+                    "pointer": "/artifacts/8/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "操作定义有边界。‘保持干燥’只是实验中的操作描述，并未测量出零水分。同样，‘发芽’定义为胚根伸出种皮，便于统一标准，但不是所有生物过程的完整描述。",
+                    "valueHash": "f3691683de6a7d24123bd3da120d2bd7c0907ffd2084fb9cf3efad14df72ea7e"
+                  },
+                  {
+                    "id": "e32",
+                    "pointer": "/artifacts/9/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "把‘干燥’当作绝对无水分，与把‘干燥’当作操作上不额外加水，是不同边界；前者超出本实验证据。",
+                    "valueHash": "f6eb47e03ef613078f6f4aa1f6099be044cdeb3cc963672612302a0e51423f07"
+                  },
+                  {
+                    "id": "e34",
+                    "pointer": "/artifacts/10/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "要计算发芽比例，必须对每个种子应用同一操作定义，并把所有种子固定在分母中。观察可以分次进行，后续复查只更新达标分子，总数不变。下面用一个新案例展示待定变化如何决定最终结果。",
+                    "valueHash": "3e073f86b20329f2531de3dba5cc892405c3ad5213c578c4bf12656fff089c04"
+                  },
+                  {
+                    "id": "e44",
+                    "pointer": "/artifacts/15/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "比例由累计达标数除以固定总种子数得出，所有种子始终在记录中",
+                    "valueHash": "1ebde095b077c6342fa7365243c14142243e20f15691b7a7b583f27816fe1a84"
+                  },
+                  {
+                    "id": "e54",
+                    "pointer": "/artifacts/20/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "正确：所有种子始终在分母，新增达标者使分子增加至7。",
+                    "valueHash": "0b3acc4e423fba049fe446c3f6d6e8ba9216b79c3ef4bc0a62cabf470cb5bf3a"
+                  },
+                  {
+                    "id": "e66",
+                    "pointer": "/artifacts/26/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "正确：规则变更使分子仅新发芽3，分母仍12。",
+                    "valueHash": "7cc36f0d41ac84fd1218aa3a0d24a8ca2511be2145cf08f100122a190bf0a736"
+                  },
+                  {
+                    "id": "e76",
+                    "pointer": "/artifacts/31/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "有效对照要求除目标变量外其余相关条件一致；若多个变量同时变，差异不能归于单一因素。观察记录需计入全部种子并明确操作定义。",
+                    "valueHash": "e22987069ba47663242d1e8010f118b1fe2856ff0abb9ba1bfa98f21e4a8a57a"
+                  }
+                ],
+                "proposed": {
+                  "kind": "conditions",
+                  "status": "clear",
+                  "affected": [],
+                  "reason": "作者断言有效对照需除目标变量外有关条件一致(e26,e76)，举例多变量同变不能单一归因(e26,e28)正确表述必要条件；操作定义边界明确(e30,e32,e72,e74)；比例计算规则要求所有种子入分母、累计分子(e34,e44,e54,e56)，规则变更时正确给3/12(e66,e70)。实例对照无混淆充分/必要或联合条件。",
+                  "refs": [
+                    "e3",
+                    "e26",
+                    "e28",
+                    "e30",
+                    "e32",
+                    "e34",
+                    "e44",
+                    "e54",
+                    "e66",
+                    "e76"
+                  ],
+                  "challenge": {
+                    "status": "counterexample",
+                    "reason": "固定e26前事实：甲加水温暖窗台、乙无水冷暗柜、甲8乙1(e3,e26)，作者结论'不能单独说是因为水'依赖温度光照为有关且可能影响；补充相容假设温度光照对该批种子发芽实际无影响，则差异可单独归因水，原具体结论未建立，但元规则'归因单一因素必须有关条件一致'仍可作必要要求，反例不推翻元规则。",
+                    "refs": [
+                      "e3",
+                      "e26"
+                    ]
+                  }
+                },
+                "reviewReasons": [
+                  "CONDITIONS_COUNTEREXAMPLE_REVIEW"
+                ]
+              }
+            }
+          ],
+          "proposedLevel": 2,
+          "proposedReason": "Authored claims in artifacts (e26,e28,e30,e32,e34,e36-e44,e46-e56,e58-e68,e72,e74,e76) align with source F07 (e3) on variable control, operational-definition boundaries, full seed counting and proportion calculation; no false claim, invented support, or missing condition changes mechanism.",
+          "decidingConstraint": "INDEPENDENT_CONDITIONS"
+        },
+        {
+          "dimension": "Q3",
+          "level": "U",
+          "reason": "The authored conclusion has a compatible counterexample or an unresolved necessary premise. 固定e26前事实：甲加水温暖窗台、乙无水冷暗柜、甲8乙1(e3,e26)，作者结论'不能单独说是因为水'依赖温度光照为有关且可能影响；补充相容假设温度光照对该批种子发芽实际无影响，则差异可单独归因水，原具体结论未建立，但元规则'归因单一因素必须有关条件一致'仍可作必要要求，反例不推翻元规则。",
+          "refs": [
+            "e26",
+            "e34",
+            "e36",
+            "e70",
+            "e76",
+            "e7",
+            "e8"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e26",
+              "pointer": "/artifacts/6/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "设想把同批种子分两盒，甲盒加水并放在温暖窗台，乙盒无水并放在冷暗柜。七天後甲盒八粒发芽，乙盒一粒。这里温度和光照都随水一起变了，所以即使发芽数不同，也不能单独说是因为水。这个例子说明：要归因到单一因素，必须让其他有关条件保持一致。",
+              "valueHash": "4f2ab0c8a35554eb88b8157bd6529d4194190a683884a4b28b9815630ada6d8f"
+            },
+            {
+              "id": "e34",
+              "pointer": "/artifacts/10/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "要计算发芽比例，必须对每个种子应用同一操作定义，并把所有种子固定在分母中。观察可以分次进行，后续复查只更新达标分子，总数不变。下面用一个新案例展示待定变化如何决定最终结果。",
+              "valueHash": "3e073f86b20329f2531de3dba5cc892405c3ad5213c578c4bf12656fff089c04"
+            },
+            {
+              "id": "e36",
+              "pointer": "/artifacts/11/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "一盒12粒同批种子，操作定义：胚根伸出种皮为发芽。第5天观察记录4粒发芽，8粒未发芽；第7天再次观察，其中3粒原先未发芽者现胚根伸出。",
+              "valueHash": "806b3b01e5706a040066d6df48129e508a605c2878455543868ca329356b3906"
+            },
+            {
+              "id": "e70",
+              "pointer": "/artifacts/28/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "若实验规则改为只记录第7天当天新发芽数作为分子，总种子仍为12",
+              "valueHash": "db8f192f8f91f0f517820b964628de550e3046451e610a86fd3b91b7e414ca93"
+            },
+            {
+              "id": "e76",
+              "pointer": "/artifacts/31/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "有效对照要求除目标变量外其余相关条件一致；若多个变量同时变，差异不能归于单一因素。观察记录需计入全部种子并明确操作定义。",
+              "valueHash": "e22987069ba47663242d1e8010f118b1fe2856ff0abb9ba1bfa98f21e4a8a57a"
+            },
+            {
+              "id": "e7",
+              "pointer": "/prerequisites/0",
+              "role": "context",
+              "kind": "text",
+              "value": "理解相同与不同",
+              "valueHash": "5d9f9e41ac5465029c60d930aa3142d5754cdf1f405ba64d86bbc7f24243e226"
+            },
+            {
+              "id": "e8",
+              "pointer": "/prerequisites/1",
+              "role": "context",
+              "kind": "text",
+              "value": "能按表格记录观察",
+              "valueHash": "254ac1098c0f9eca0ffbc4412f39af6c7b3e10d534766eb7d4d700016e6d025e"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [
+            {
+              "level": "U",
+              "code": "INDEPENDENT_CONDITIONS",
+              "detail": {
+                "kind": "conditions",
+                "status": "uncertain",
+                "affected": [
+                  "Q1",
+                  "Q3"
+                ],
+                "reason": "The authored conclusion has a compatible counterexample or an unresolved necessary premise. 固定e26前事实：甲加水温暖窗台、乙无水冷暗柜、甲8乙1(e3,e26)，作者结论'不能单独说是因为水'依赖温度光照为有关且可能影响；补充相容假设温度光照对该批种子发芽实际无影响，则差异可单独归因水，原具体结论未建立，但元规则'归因单一因素必须有关条件一致'仍可作必要要求，反例不推翻元规则。",
+                "refs": [
+                  "e3",
+                  "e26",
+                  "e28",
+                  "e30",
+                  "e32",
+                  "e34",
+                  "e44",
+                  "e54",
+                  "e66",
+                  "e76"
+                ],
+                "challenge": {
+                  "status": "counterexample",
+                  "reason": "固定e26前事实：甲加水温暖窗台、乙无水冷暗柜、甲8乙1(e3,e26)，作者结论'不能单独说是因为水'依赖温度光照为有关且可能影响；补充相容假设温度光照对该批种子发芽实际无影响，则差异可单独归因水，原具体结论未建立，但元规则'归因单一因素必须有关条件一致'仍可作必要要求，反例不推翻元规则。",
+                  "refs": [
+                    "e3",
+                    "e26"
+                  ]
+                },
+                "witnesses": [
+                  {
+                    "id": "e3",
+                    "pointer": "/sources/0/text",
+                    "role": "source",
+                    "kind": "text",
+                    "value": "课堂把同一批种子分到两个透明盒中，想比较有水和无水时的发芽情况。为了使比较有意义，应尽量让其他有关条件一致，例如种子数量、来源、温度、光照、观察天数与发芽判定方式。若有水盒放在温暖窗台、无水盒放在冷暗柜里，即使结果不同，也无法把差异单独归因于水，因为温度和光照同时改变了。\n这里把“发芽”操作性地定义为观察到胚根伸出种皮，便于不同记录者使用同一标准。这个定义是本实验的观察规则，不是所有生物过程的完整描述。记录者应按事先约定的时间观察全部种子，而不是只挑成功的那几颗展示。没有发芽的种子也必须计入，才能知道发芽比例。\n设两盒各十粒同批种子，均在同温同光处放置七天。甲盒保持适量湿润，乙盒保持干燥。甲有八粒达到上述标准，乙有一粒。可以说在这批种子和这些条件下，湿润组观察到的发芽比例更高。仅凭这一次观察，还不能断言所有种类的种子只要加水都会发芽；种子活性、温度及其他条件仍可能重要。也不能说乙盒绝对没有任何水分，因为“保持干燥”是操作描述，并未测出零水分。\n重复实验可以帮助检查结果是否稳定，但重复的对象、条件与方法需要记录。把同一张照片复制三次不是三次独立实验。同一盒内种子也共享环境，不能总把它们当成互不影响的完整重复。入门练习无需复杂统计检验，只要能说明为什么重复有用、哪些信息仍然有限。\n好的后续实验应对应目前的疑问。如果怀疑温度造成差异，就应在同一温度下只改变湿润条件，或设计清楚的组合比较；不能一边改变温度，一边换种子品种，再把结果归因于某一个因素。若希望研究“水太多是否也影响发芽”，可以在其他条件一致时增加不同水量组，事先说明每组的水量与观察标准。\n解释实验时，把计划、执行、观察和结论分开写。计划相同不代表执行真的相同，需核对记录；观察不同不自动证明唯一原因。允许结果不支持原假说，并据此修改下一步问题，正是实验学习的一部分。对证据保留限制，不妨碍学生提出清楚、可检验的预测。",
+                    "valueHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648"
+                  },
+                  {
+                    "id": "e26",
+                    "pointer": "/artifacts/6/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "设想把同批种子分两盒，甲盒加水并放在温暖窗台，乙盒无水并放在冷暗柜。七天後甲盒八粒发芽，乙盒一粒。这里温度和光照都随水一起变了，所以即使发芽数不同，也不能单独说是因为水。这个例子说明：要归因到单一因素，必须让其他有关条件保持一致。",
+                    "valueHash": "4f2ab0c8a35554eb88b8157bd6529d4194190a683884a4b28b9815630ada6d8f"
+                  },
+                  {
+                    "id": "e28",
+                    "pointer": "/artifacts/7/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "现在看另一个情形：同批种子分两盒，甲盒加水、观察七天，乙盒无水、但只观察四天。发芽判定标准相同。这里除水外，观察天数也不同。",
+                    "valueHash": "dead15d9d6326406ad2f2c9e91d7e2d2c2f51d2bdd5061774a18356c40c6f249"
+                  },
+                  {
+                    "id": "e30",
+                    "pointer": "/artifacts/8/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "操作定义有边界。‘保持干燥’只是实验中的操作描述，并未测量出零水分。同样，‘发芽’定义为胚根伸出种皮，便于统一标准，但不是所有生物过程的完整描述。",
+                    "valueHash": "f3691683de6a7d24123bd3da120d2bd7c0907ffd2084fb9cf3efad14df72ea7e"
+                  },
+                  {
+                    "id": "e32",
+                    "pointer": "/artifacts/9/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "把‘干燥’当作绝对无水分，与把‘干燥’当作操作上不额外加水，是不同边界；前者超出本实验证据。",
+                    "valueHash": "f6eb47e03ef613078f6f4aa1f6099be044cdeb3cc963672612302a0e51423f07"
+                  },
+                  {
+                    "id": "e34",
+                    "pointer": "/artifacts/10/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "要计算发芽比例，必须对每个种子应用同一操作定义，并把所有种子固定在分母中。观察可以分次进行，后续复查只更新达标分子，总数不变。下面用一个新案例展示待定变化如何决定最终结果。",
+                    "valueHash": "3e073f86b20329f2531de3dba5cc892405c3ad5213c578c4bf12656fff089c04"
+                  },
+                  {
+                    "id": "e44",
+                    "pointer": "/artifacts/15/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "比例由累计达标数除以固定总种子数得出，所有种子始终在记录中",
+                    "valueHash": "1ebde095b077c6342fa7365243c14142243e20f15691b7a7b583f27816fe1a84"
+                  },
+                  {
+                    "id": "e54",
+                    "pointer": "/artifacts/20/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "正确：所有种子始终在分母，新增达标者使分子增加至7。",
+                    "valueHash": "0b3acc4e423fba049fe446c3f6d6e8ba9216b79c3ef4bc0a62cabf470cb5bf3a"
+                  },
+                  {
+                    "id": "e66",
+                    "pointer": "/artifacts/26/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "正确：规则变更使分子仅新发芽3，分母仍12。",
+                    "valueHash": "7cc36f0d41ac84fd1218aa3a0d24a8ca2511be2145cf08f100122a190bf0a736"
+                  },
+                  {
+                    "id": "e76",
+                    "pointer": "/artifacts/31/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "有效对照要求除目标变量外其余相关条件一致；若多个变量同时变，差异不能归于单一因素。观察记录需计入全部种子并明确操作定义。",
+                    "valueHash": "e22987069ba47663242d1e8010f118b1fe2856ff0abb9ba1bfa98f21e4a8a57a"
+                  }
+                ],
+                "proposed": {
+                  "kind": "conditions",
+                  "status": "clear",
+                  "affected": [],
+                  "reason": "作者断言有效对照需除目标变量外有关条件一致(e26,e76)，举例多变量同变不能单一归因(e26,e28)正确表述必要条件；操作定义边界明确(e30,e32,e72,e74)；比例计算规则要求所有种子入分母、累计分子(e34,e44,e54,e56)，规则变更时正确给3/12(e66,e70)。实例对照无混淆充分/必要或联合条件。",
+                  "refs": [
+                    "e3",
+                    "e26",
+                    "e28",
+                    "e30",
+                    "e32",
+                    "e34",
+                    "e44",
+                    "e54",
+                    "e66",
+                    "e76"
+                  ],
+                  "challenge": {
+                    "status": "counterexample",
+                    "reason": "固定e26前事实：甲加水温暖窗台、乙无水冷暗柜、甲8乙1(e3,e26)，作者结论'不能单独说是因为水'依赖温度光照为有关且可能影响；补充相容假设温度光照对该批种子发芽实际无影响，则差异可单独归因水，原具体结论未建立，但元规则'归因单一因素必须有关条件一致'仍可作必要要求，反例不推翻元规则。",
+                    "refs": [
+                      "e3",
+                      "e26"
+                    ]
+                  }
+                },
+                "reviewReasons": [
+                  "CONDITIONS_COUNTEREXAMPLE_REVIEW"
+                ]
+              }
+            }
+          ],
+          "proposedLevel": 2,
+          "proposedReason": "Explanations use graded examples, worked process, interaction and transfer to show why/how to keep conditions consistent, record all seeds, and respect boundaries; learners with prerequisites (e7,e8) can follow; no central derivation error or irrelevance.",
+          "decidingConstraint": "INDEPENDENT_CONDITIONS"
+        }
+      ],
+      "reviewRequired": [
+        {
+          "dimension": "Q1",
+          "reason": "UNRESOLVED"
+        },
+        {
+          "dimension": "Q3",
+          "reason": "UNRESOLVED"
+        }
+      ]
+    },
+    "resultHash": "08b90bab3ac1251a8b0d9ae4f4523c089b4ff1cfe3b34076bb2fc259dbda10f1"
+  }
+}

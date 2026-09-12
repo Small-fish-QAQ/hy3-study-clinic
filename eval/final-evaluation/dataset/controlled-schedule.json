@@ -1,0 +1,974 @@
+[
+  {
+    "caseId": "E047",
+    "runId": "E047-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E047.json",
+    "inputHash": "ef8d7792ebda61812466b1f13a52756fbd35b533c300c281e79d0828bb15cf92",
+    "population": "controlled",
+    "sourceId": "F01"
+  },
+  {
+    "caseId": "E094",
+    "runId": "E094-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E094.json",
+    "inputHash": "e8edfc4e6a7f698db1c4caa1e95476f9689a95e6b87d32336d8d0af4d8c95adb",
+    "population": "controlled",
+    "sourceId": "F01"
+  },
+  {
+    "caseId": "E141",
+    "runId": "E141-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E141.json",
+    "inputHash": "e1769cd39c01d626137a2c86d3a4d3f6cd710fed1646fb2e8570eb901c076049",
+    "population": "controlled",
+    "sourceId": "F01"
+  },
+  {
+    "caseId": "E188",
+    "runId": "E188-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E188.json",
+    "inputHash": "222b31d2153532a999df5cf83e41a67045edb254cdb10e7472b614b1e76bb785",
+    "population": "controlled",
+    "sourceId": "F02"
+  },
+  {
+    "caseId": "E235",
+    "runId": "E235-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E235.json",
+    "inputHash": "457a7c428e8b179218b9920ceb2cd22e7350fb763c51d7eb8878ac0d01b806d7",
+    "population": "controlled",
+    "sourceId": "F02"
+  },
+  {
+    "caseId": "E282",
+    "runId": "E282-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E282.json",
+    "inputHash": "b48e713a68a82214d7905509ea3b4627a1d368f23047892d02a1d9009fb1ac4d",
+    "population": "controlled",
+    "sourceId": "F02"
+  },
+  {
+    "caseId": "E329",
+    "runId": "E329-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E329.json",
+    "inputHash": "18ca687777fd8b4a9a858a881564b46fabae2dee4251bfc9c5681c7e19870fa6",
+    "population": "controlled",
+    "sourceId": "F03"
+  },
+  {
+    "caseId": "E376",
+    "runId": "E376-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E376.json",
+    "inputHash": "14bdbfd9ec186f3d8310a16991e0e8f7a35cc630148f33794b1ebadd23f6ce4b",
+    "population": "controlled",
+    "sourceId": "F03"
+  },
+  {
+    "caseId": "E423",
+    "runId": "E423-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E423.json",
+    "inputHash": "b3a6e3d7c7a72fa63c2ca2f9e757cc8fac3571def1736a9b0fea58104e54bf97",
+    "population": "controlled",
+    "sourceId": "F03"
+  },
+  {
+    "caseId": "E470",
+    "runId": "E470-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E470.json",
+    "inputHash": "dd377a458a8db124d451ed2aa0b7d3fef555e62146877d4dff5b197694b0c452",
+    "population": "controlled",
+    "sourceId": "F04"
+  },
+  {
+    "caseId": "E517",
+    "runId": "E517-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E517.json",
+    "inputHash": "993a0e845e6ff6f0b03767f4502697b1bbdbc307b9cb89d940f1b8d874bfbc07",
+    "population": "controlled",
+    "sourceId": "F04"
+  },
+  {
+    "caseId": "E564",
+    "runId": "E564-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E564.json",
+    "inputHash": "7a24d388223e55515f4fdb45b980a92f9f150e92cc69dc5ab6c05bfc2ea3501c",
+    "population": "controlled",
+    "sourceId": "F04"
+  },
+  {
+    "caseId": "E611",
+    "runId": "E611-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E611.json",
+    "inputHash": "c0bfa347bcd1a8f2d3751c2acebc48d79c8b1403697b7568a78e5134036941fb",
+    "population": "controlled",
+    "sourceId": "F05"
+  },
+  {
+    "caseId": "E658",
+    "runId": "E658-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E658.json",
+    "inputHash": "07fa108a650e1ccbcbd3dfcd13915bffcb5d1d9464320760a4ea5542d2c8ea6f",
+    "population": "controlled",
+    "sourceId": "F05"
+  },
+  {
+    "caseId": "E705",
+    "runId": "E705-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E705.json",
+    "inputHash": "5b3183984d363b1023add0b5e9f28080511e53612f4a5411d761d0860cd94626",
+    "population": "controlled",
+    "sourceId": "F05"
+  },
+  {
+    "caseId": "E752",
+    "runId": "E752-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E752.json",
+    "inputHash": "8a9b208ac998fcbdbfe18f1af872bdef8f2a140d8f657bdba1f93febc45b4d2c",
+    "population": "controlled",
+    "sourceId": "F06"
+  },
+  {
+    "caseId": "E799",
+    "runId": "E799-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E799.json",
+    "inputHash": "da087a787eac649ac914a5af9f24a83efd0be1b28a4f76a15983cca49a2134a5",
+    "population": "controlled",
+    "sourceId": "F06"
+  },
+  {
+    "caseId": "E846",
+    "runId": "E846-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E846.json",
+    "inputHash": "d057f1ff411a69d4352c3da1c03e896e7b571ef9e91c4eea6add8b4dbf731e9b",
+    "population": "controlled",
+    "sourceId": "F06"
+  },
+  {
+    "caseId": "E893",
+    "runId": "E893-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E893.json",
+    "inputHash": "7f2f5451533561d177fac18c8313131da7caa81ec1e2501fd5de00cb2d42cf75",
+    "population": "controlled",
+    "sourceId": "F07"
+  },
+  {
+    "caseId": "E940",
+    "runId": "E940-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E940.json",
+    "inputHash": "628313c8f41739a2749de4f07c780903f3c98a6507ec88c29b3c6e524b661f5b",
+    "population": "controlled",
+    "sourceId": "F07"
+  },
+  {
+    "caseId": "E987",
+    "runId": "E987-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E987.json",
+    "inputHash": "9eeb65608e14e6a8a173dec4825fce020188cbddc1f28361dc86585ea221f6a3",
+    "population": "controlled",
+    "sourceId": "F07"
+  },
+  {
+    "caseId": "E037",
+    "runId": "E037-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E037.json",
+    "inputHash": "455f072764a7d09d5c752c6fb7bbe3c4a69bd70f65323350abcc00f3c1f0faa8",
+    "population": "controlled",
+    "sourceId": "F08"
+  },
+  {
+    "caseId": "E084",
+    "runId": "E084-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E084.json",
+    "inputHash": "ab60898f6fda545f46e5ca615ec492cfef189d4114ef775d22b0e1ec9c268112",
+    "population": "controlled",
+    "sourceId": "F08"
+  },
+  {
+    "caseId": "E131",
+    "runId": "E131-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E131.json",
+    "inputHash": "9883cf51a7c76e6cac38c4537bdf039287e9f527ded148d459beaf309f8d63fa",
+    "population": "controlled",
+    "sourceId": "F08"
+  },
+  {
+    "caseId": "E178",
+    "runId": "E178-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E178.json",
+    "inputHash": "e7d30d53e477425f78e38e34094a347d8b3ab0f76e60d13bb42c956aaf630201",
+    "population": "controlled",
+    "sourceId": "F09"
+  },
+  {
+    "caseId": "E225",
+    "runId": "E225-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E225.json",
+    "inputHash": "743a52160e17bac1e408e8464f50a036c77bafb8132bb53b5bffec3e6d8ab900",
+    "population": "controlled",
+    "sourceId": "F09"
+  },
+  {
+    "caseId": "E272",
+    "runId": "E272-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E272.json",
+    "inputHash": "696447accfa71a2507c81c14a3da492ca6cdfdacfba3a32d028f31a22c424a69",
+    "population": "controlled",
+    "sourceId": "F09"
+  },
+  {
+    "caseId": "E319",
+    "runId": "E319-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E319.json",
+    "inputHash": "1feb5f7c0f6db7f0655e47ce7b2776808e02b38f107576a096b6800295819796",
+    "population": "controlled",
+    "sourceId": "F10"
+  },
+  {
+    "caseId": "E366",
+    "runId": "E366-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E366.json",
+    "inputHash": "9ddec8a0080a675ad35184be3719fb2aa7c0dea1fa6ed89b489fda08842779ba",
+    "population": "controlled",
+    "sourceId": "F10"
+  },
+  {
+    "caseId": "E413",
+    "runId": "E413-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E413.json",
+    "inputHash": "dd39f264e0fd5760d77195257997a2ffc0d85b3366a467c458f5769bbaf9b980",
+    "population": "controlled",
+    "sourceId": "F10"
+  },
+  {
+    "caseId": "E460",
+    "runId": "E460-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E460.json",
+    "inputHash": "fee2ffa9a36d2da6578ffc5d0281f1e84212c7d699c7a8b76cb52ca9fffec7d3",
+    "population": "controlled",
+    "sourceId": "F11"
+  },
+  {
+    "caseId": "E507",
+    "runId": "E507-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E507.json",
+    "inputHash": "ae6240554fae2de073e1f02e7a2730aea46dd388e99514ad62bbf754166220cd",
+    "population": "controlled",
+    "sourceId": "F11"
+  },
+  {
+    "caseId": "E554",
+    "runId": "E554-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E554.json",
+    "inputHash": "9e87358de6ebe5eb3ee661c38bf7c3a499ec7d0ee259b40fde874949f0cbb8e0",
+    "population": "controlled",
+    "sourceId": "F11"
+  },
+  {
+    "caseId": "E601",
+    "runId": "E601-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E601.json",
+    "inputHash": "72d8cb130c4b4dd3e2726bfd24ea575d97211ba3a469b763a927d2f4d12d48b5",
+    "population": "controlled",
+    "sourceId": "F12"
+  },
+  {
+    "caseId": "E648",
+    "runId": "E648-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E648.json",
+    "inputHash": "db1551052004ca35828adb374f329fdcf5c51ef7f0b86eb2b22c98ecd0444bc0",
+    "population": "controlled",
+    "sourceId": "F12"
+  },
+  {
+    "caseId": "E695",
+    "runId": "E695-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E695.json",
+    "inputHash": "62e6e0caba101371846ed98c02af1af3424cf808dd14087b2d2983860c2ba06c",
+    "population": "controlled",
+    "sourceId": "F12"
+  },
+  {
+    "caseId": "E742",
+    "runId": "E742-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E742.json",
+    "inputHash": "78f53cfb384f989958e539d6394a714690e2f878927dfa19a4227e756661e6f5",
+    "population": "controlled",
+    "sourceId": "F01"
+  },
+  {
+    "caseId": "E789",
+    "runId": "E789-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E789.json",
+    "inputHash": "b0063d59e16f434eb0b619dbe77b048e3bed409b72e476410482488a986219b0",
+    "population": "controlled",
+    "sourceId": "F01"
+  },
+  {
+    "caseId": "E836",
+    "runId": "E836-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E836.json",
+    "inputHash": "8c983a87db2c534ab99dbf9b432b3a253345aed5602a87751cbf8bb7f35272ba",
+    "population": "controlled",
+    "sourceId": "F01"
+  },
+  {
+    "caseId": "E883",
+    "runId": "E883-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E883.json",
+    "inputHash": "a8b2abace0cad5374bad7496baa8bbcf6d76582c5fcc024c7559e4f8e84e0cc9",
+    "population": "controlled",
+    "sourceId": "F05"
+  },
+  {
+    "caseId": "E930",
+    "runId": "E930-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E930.json",
+    "inputHash": "84f66442b2327addcc6d3c323cdc0a26d0217e2937a173be3c5d396af0d024b8",
+    "population": "controlled",
+    "sourceId": "F05"
+  },
+  {
+    "caseId": "E977",
+    "runId": "E977-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E977.json",
+    "inputHash": "a78575d1167f7f44b6d37640a1bb8582ead359707eb4ddeeb77997cde88df78e",
+    "population": "controlled",
+    "sourceId": "F05"
+  },
+  {
+    "caseId": "E027",
+    "runId": "E027-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E027.json",
+    "inputHash": "27e79ead871b1233fce22af4b7cd122a02e4e7a93fd14ff2f25e1b52c25d10ae",
+    "population": "controlled",
+    "sourceId": "F09"
+  },
+  {
+    "caseId": "E074",
+    "runId": "E074-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E074.json",
+    "inputHash": "1db95a987151a3b0561e54505a5d3699184d1f70508076077aa6d3cbb4ace9ce",
+    "population": "controlled",
+    "sourceId": "F09"
+  },
+  {
+    "caseId": "E121",
+    "runId": "E121-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E121.json",
+    "inputHash": "d4898bde5060ba76dd1d8f0f6f416c0e9fcc9b0b2206f38b77bd52cfe57af386",
+    "population": "controlled",
+    "sourceId": "F09"
+  },
+  {
+    "caseId": "E168",
+    "runId": "E168-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E168.json",
+    "inputHash": "eaf089768463859decf488c2cfa7894970359a1089a9776e882cadc28c817ba9",
+    "population": "controlled",
+    "sourceId": "F10"
+  },
+  {
+    "caseId": "E215",
+    "runId": "E215-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E215.json",
+    "inputHash": "288c826f428974398698d3abfb1ccdf788d36c6386e5adc1c91a5b957281dbc0",
+    "population": "controlled",
+    "sourceId": "F10"
+  },
+  {
+    "caseId": "E262",
+    "runId": "E262-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E262.json",
+    "inputHash": "a4466636711a63807fec4d020666dd7b56173398f68083336bb6669630f971fc",
+    "population": "controlled",
+    "sourceId": "F10"
+  },
+  {
+    "caseId": "E309",
+    "runId": "E309-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E309.json",
+    "inputHash": "7105a93dd721fe60169ae5806a4f208bebfbe404e243e177144155f3998df88f",
+    "population": "controlled",
+    "sourceId": "F02"
+  },
+  {
+    "caseId": "E356",
+    "runId": "E356-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E356.json",
+    "inputHash": "fce942ac0eddadccd1f8c9dec053fdc069f7f792b65532ffb93d465bb17b1d87",
+    "population": "controlled",
+    "sourceId": "F02"
+  },
+  {
+    "caseId": "E403",
+    "runId": "E403-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E403.json",
+    "inputHash": "b5ac42e2e36dbc4b32a1c18b8b9921291ae6d692c79aad642f877c3aa792cb4d",
+    "population": "controlled",
+    "sourceId": "F02"
+  },
+  {
+    "caseId": "E450",
+    "runId": "E450-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E450.json",
+    "inputHash": "ad04afa5a152f413121e43ba12b56273f0397aa1c6c32440892a06adae83a5ee",
+    "population": "controlled",
+    "sourceId": "F06"
+  },
+  {
+    "caseId": "E497",
+    "runId": "E497-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E497.json",
+    "inputHash": "b62b6128a5713adcb245bf537cd8bf0d306cd2e799a3fb5928a50de4353169ed",
+    "population": "controlled",
+    "sourceId": "F06"
+  },
+  {
+    "caseId": "E544",
+    "runId": "E544-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E544.json",
+    "inputHash": "6ff2484f2b7fe1767ca3c539a575aa55551c2125913b7c1cf1c42f5c766b07a3",
+    "population": "controlled",
+    "sourceId": "F06"
+  },
+  {
+    "caseId": "E591",
+    "runId": "E591-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E591.json",
+    "inputHash": "635e3e52ad63ecf1fa1b4c1f07f306bd212df0b1c8a66ae3f8c94dadcf067bb9",
+    "population": "controlled",
+    "sourceId": "F10"
+  },
+  {
+    "caseId": "E638",
+    "runId": "E638-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E638.json",
+    "inputHash": "a572dfe8041931bbcd135266b8bf332ef78851823d45317fe6dce1066ed1ae5d",
+    "population": "controlled",
+    "sourceId": "F10"
+  },
+  {
+    "caseId": "E685",
+    "runId": "E685-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E685.json",
+    "inputHash": "2109ea9ab5c57cb69cce0ce031b624f31819276084de94eec615cffa063708ec",
+    "population": "controlled",
+    "sourceId": "F10"
+  },
+  {
+    "caseId": "E732",
+    "runId": "E732-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E732.json",
+    "inputHash": "fb7313458bb7ade1e772497c87192680d8b6ac6a2243a679729ac38b30d014dc",
+    "population": "controlled",
+    "sourceId": "F11"
+  },
+  {
+    "caseId": "E779",
+    "runId": "E779-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E779.json",
+    "inputHash": "3bfa84fe3486c20b5366824ab7364875f27c0074358b1ef08de7ecf651830dc4",
+    "population": "controlled",
+    "sourceId": "F11"
+  },
+  {
+    "caseId": "E826",
+    "runId": "E826-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E826.json",
+    "inputHash": "f63bcd01076bac596f25a6492ff58dabcd97da8eece7f2b1246fc6336a88ec9c",
+    "population": "controlled",
+    "sourceId": "F11"
+  },
+  {
+    "caseId": "E873",
+    "runId": "E873-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E873.json",
+    "inputHash": "1a75e7d9d68339a276ef3b9675f67332307ea9ae90fb1136a5b54b8b1fcf4106",
+    "population": "controlled",
+    "sourceId": "F03"
+  },
+  {
+    "caseId": "E920",
+    "runId": "E920-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E920.json",
+    "inputHash": "1cab0ebc541b0976c5c908c3d469d391c15ea2d9e8a5605ad9a520b45bb66302",
+    "population": "controlled",
+    "sourceId": "F03"
+  },
+  {
+    "caseId": "E967",
+    "runId": "E967-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E967.json",
+    "inputHash": "57247b05dcd3b0c88d34f5a5a5e57eeff3904547f864dbc3a87c803f7680f8be",
+    "population": "controlled",
+    "sourceId": "F03"
+  },
+  {
+    "caseId": "E017",
+    "runId": "E017-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E017.json",
+    "inputHash": "5cc5ff04f5891b864d55df9b83abdb90c8cb13454e82a3ca64a6c17e37e23fd1",
+    "population": "controlled",
+    "sourceId": "F07"
+  },
+  {
+    "caseId": "E064",
+    "runId": "E064-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E064.json",
+    "inputHash": "a8a3ee60f60987d9cd006c28ddfaf90a4156d7e0653e10cbc4fb2e616ff428b5",
+    "population": "controlled",
+    "sourceId": "F07"
+  },
+  {
+    "caseId": "E111",
+    "runId": "E111-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E111.json",
+    "inputHash": "4ae53073bf9a2437f0890be7a5babeb96042ec1fae5645f1c6da5089a93b281a",
+    "population": "controlled",
+    "sourceId": "F07"
+  },
+  {
+    "caseId": "E158",
+    "runId": "E158-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E158.json",
+    "inputHash": "bdfd1c4c9f4eb06d297fbe9df8dd5c26583b386c37c2d41dd94d1b953db7890d",
+    "population": "controlled",
+    "sourceId": "F08"
+  },
+  {
+    "caseId": "E205",
+    "runId": "E205-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E205.json",
+    "inputHash": "aea4a00103b4bcf9cbd1a15dc14e8a690eaa89f64557f61fe3a895bfb79bfd92",
+    "population": "controlled",
+    "sourceId": "F08"
+  },
+  {
+    "caseId": "E252",
+    "runId": "E252-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E252.json",
+    "inputHash": "bfd787803dbd26759ecc9621b4b27d5eef6a073fe1f63af2c209c43acf4009d2",
+    "population": "controlled",
+    "sourceId": "F08"
+  },
+  {
+    "caseId": "E299",
+    "runId": "E299-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E299.json",
+    "inputHash": "bc670d38a2b3289b1d6f6790e5966311c62b1ef3fdf97150d6763abd9ba15dfc",
+    "population": "controlled",
+    "sourceId": "F12"
+  },
+  {
+    "caseId": "E346",
+    "runId": "E346-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E346.json",
+    "inputHash": "4d15ad69f5f90308ace99331cb0165c1efeff65add932869e1930e26ef505d53",
+    "population": "controlled",
+    "sourceId": "F12"
+  },
+  {
+    "caseId": "E393",
+    "runId": "E393-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E393.json",
+    "inputHash": "38a460f82ed4ff36a74566bc5d0af3664bb4a15da17c8f380a03ab7613e95448",
+    "population": "controlled",
+    "sourceId": "F12"
+  },
+  {
+    "caseId": "E440",
+    "runId": "E440-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E440.json",
+    "inputHash": "b53a0a9a53fe70eef19de931a53dda77365907701e90fa02356f673c3f409ca6",
+    "population": "adversarial",
+    "sourceId": "F01"
+  },
+  {
+    "caseId": "E487",
+    "runId": "E487-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E487.json",
+    "inputHash": "6082c44750cd8e893f4caf1af0b23b250049012f676baeb5a774c9376a83360a",
+    "population": "adversarial",
+    "sourceId": "F02"
+  },
+  {
+    "caseId": "E534",
+    "runId": "E534-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E534.json",
+    "inputHash": "123da3146f182bec93e0d1fbc85232a813331e5fd23f1c0906e72689e18c7d84",
+    "population": "adversarial",
+    "sourceId": "F03"
+  },
+  {
+    "caseId": "E581",
+    "runId": "E581-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E581.json",
+    "inputHash": "05b73860258b577e7fcd6e11e6c23efab72b2df8c6ea580740ed13132251b962",
+    "population": "adversarial",
+    "sourceId": "F04"
+  },
+  {
+    "caseId": "E628",
+    "runId": "E628-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E628.json",
+    "inputHash": "dd740f051725b3d470b20179c1c4bbf855394d47440d5e2e78d76c6ce95c3694",
+    "population": "adversarial",
+    "sourceId": "F01"
+  },
+  {
+    "caseId": "E675",
+    "runId": "E675-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E675.json",
+    "inputHash": "f176cee6948aef087f7c6d3d45923916513f7aa24b515a9db09fea2e80048e61",
+    "population": "adversarial",
+    "sourceId": "F02"
+  },
+  {
+    "caseId": "E722",
+    "runId": "E722-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E722.json",
+    "inputHash": "58eea04c39d04e76a993865533d2473c72338e560b35c2da93e62272e5bedead",
+    "population": "adversarial",
+    "sourceId": "F03"
+  },
+  {
+    "caseId": "E769",
+    "runId": "E769-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E769.json",
+    "inputHash": "284154cb776187f5b735848465bead584b21c4aa0550d7d3025e29b89d9aaf66",
+    "population": "adversarial",
+    "sourceId": "F04"
+  },
+  {
+    "caseId": "E816",
+    "runId": "E816-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E816.json",
+    "inputHash": "ac8038cf62ccd1ffc79ed0ed75e13906ccc52c0c3ff03d80973856d3679d0efc",
+    "population": "adversarial",
+    "sourceId": "F01"
+  },
+  {
+    "caseId": "E863",
+    "runId": "E863-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E863.json",
+    "inputHash": "4a1060db1e4cf37b5b18aa46efc4de521c67f368011a7939e9b16c1203e41a98",
+    "population": "adversarial",
+    "sourceId": "F02"
+  },
+  {
+    "caseId": "E910",
+    "runId": "E910-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E910.json",
+    "inputHash": "faf56c9ce437d40384ade0220ba2af106e0332bdea8c77bb890e8dd343928dac",
+    "population": "adversarial",
+    "sourceId": "F03"
+  },
+  {
+    "caseId": "E957",
+    "runId": "E957-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E957.json",
+    "inputHash": "06703f6d4e8eddcad607466ed927acf6dd1437696bee5316db705d21991d725c",
+    "population": "adversarial",
+    "sourceId": "F04"
+  },
+  {
+    "caseId": "E007",
+    "runId": "E007-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E007.json",
+    "inputHash": "d508b705a553d05c0512045c76b814a5eda8eacc7cac13f622a5518b52658724",
+    "population": "adversarial",
+    "sourceId": "F01"
+  },
+  {
+    "caseId": "E054",
+    "runId": "E054-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E054.json",
+    "inputHash": "2d4312a8e6bf9c82d2816172f6f3e43ac2f0a23acad6852983f4384bee8178ce",
+    "population": "adversarial",
+    "sourceId": "F02"
+  },
+  {
+    "caseId": "E101",
+    "runId": "E101-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E101.json",
+    "inputHash": "a94795b081b198eaa79f3d0d08cfa1db3c13e023942c20d62262af89114d3b85",
+    "population": "adversarial",
+    "sourceId": "F03"
+  },
+  {
+    "caseId": "E148",
+    "runId": "E148-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E148.json",
+    "inputHash": "03281d868ec65d88c827c7cf8a954071bb2aa098c59402fa5c25399396e10b68",
+    "population": "adversarial",
+    "sourceId": "F04"
+  },
+  {
+    "caseId": "E195",
+    "runId": "E195-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E195.json",
+    "inputHash": "4b22eef7b08994bb00c276d989b673958f5d6351efc8ef8a7a2e05c7103b15ff",
+    "population": "adversarial",
+    "sourceId": "F01"
+  },
+  {
+    "caseId": "E242",
+    "runId": "E242-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E242.json",
+    "inputHash": "a5ca6415be58205abcd9227d133972a6b651405d67049bea1ca019a43cbd21b7",
+    "population": "adversarial",
+    "sourceId": "F05"
+  },
+  {
+    "caseId": "E289",
+    "runId": "E289-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E289.json",
+    "inputHash": "58da1e8b3979bc060f389aa0ff7f30be197193ad0939297132f58f70251cc2d4",
+    "population": "adversarial",
+    "sourceId": "F09"
+  },
+  {
+    "caseId": "E336",
+    "runId": "E336-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E336.json",
+    "inputHash": "01254a968c1f35de3633a72fe389b10e212b8f2f7f45f341560c0c9ca7d3b10a",
+    "population": "adversarial",
+    "sourceId": "F10"
+  },
+  {
+    "caseId": "E383",
+    "runId": "E383-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E383.json",
+    "inputHash": "53bcdf76cabb136019c1b5ee7f4b1b1dad99308f5ce627921b3887991833a56e",
+    "population": "adversarial",
+    "sourceId": "F01"
+  },
+  {
+    "caseId": "E430",
+    "runId": "E430-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E430.json",
+    "inputHash": "54f45216afb5a7a832f4066758f21ceec7ccedf97ed5dea1f0487393c86b41f1",
+    "population": "adversarial",
+    "sourceId": "F05"
+  },
+  {
+    "caseId": "E477",
+    "runId": "E477-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E477.json",
+    "inputHash": "9fac89dc51ebe47de8b6a4a6e52f0f526e631cea6e15f9a75269761cc2013398",
+    "population": "adversarial",
+    "sourceId": "F09"
+  },
+  {
+    "caseId": "E524",
+    "runId": "E524-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E524.json",
+    "inputHash": "ebbda33d7599042cd4c9e4d5a89072146438c0b0f90adb95c083a6acd5c9661f",
+    "population": "adversarial",
+    "sourceId": "F10"
+  },
+  {
+    "caseId": "E571",
+    "runId": "E571-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E571.json",
+    "inputHash": "f8bc4e1d5fe33704e0430a412e44dfa6efde4fcd2909983e6ca979ca4ab98915",
+    "population": "boundary",
+    "sourceId": "F01"
+  },
+  {
+    "caseId": "E618",
+    "runId": "E618-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E618.json",
+    "inputHash": "2da07415b4993ba27c578f275f231021d85c01267bc2ee844d25d69265852c44",
+    "population": "boundary",
+    "sourceId": "F02"
+  },
+  {
+    "caseId": "E665",
+    "runId": "E665-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E665.json",
+    "inputHash": "c02b371809a2d6c29863067cdca0ae4b9fcc9045e0ab411f66a3d825b6adc579",
+    "population": "boundary",
+    "sourceId": "F03"
+  },
+  {
+    "caseId": "E712",
+    "runId": "E712-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E712.json",
+    "inputHash": "8522602410817f5b63c13e676c270b8b055b8d495ba1b4b0f1021573fa9b1702",
+    "population": "boundary",
+    "sourceId": "F04"
+  },
+  {
+    "caseId": "E759",
+    "runId": "E759-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E759.json",
+    "inputHash": "0287bfc766d195d95389794f83ee363aed42692f88a98f94c8bc521ab9ad6164",
+    "population": "boundary",
+    "sourceId": "F05"
+  },
+  {
+    "caseId": "E806",
+    "runId": "E806-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E806.json",
+    "inputHash": "e25d37fdf42fe47487dcfd05efdc9bbf4d5d146799de8a686012f5cb2d648a43",
+    "population": "boundary",
+    "sourceId": "F06"
+  },
+  {
+    "caseId": "E853",
+    "runId": "E853-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E853.json",
+    "inputHash": "b9c903cd99347d5eb5a690b194fb429b683c150bb7ecadeadab073a494adc5e3",
+    "population": "boundary",
+    "sourceId": "F07"
+  },
+  {
+    "caseId": "E900",
+    "runId": "E900-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E900.json",
+    "inputHash": "12d813f686c2bfce95724c524837a898b438e72e66b8e234dd8ee6729c555a5f",
+    "population": "boundary",
+    "sourceId": "F08"
+  },
+  {
+    "caseId": "E947",
+    "runId": "E947-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E947.json",
+    "inputHash": "f2f0bb068332271c5a74f7873a5767409e37d5a8816d66616c36e6dccd195583",
+    "population": "boundary",
+    "sourceId": "F09"
+  },
+  {
+    "caseId": "E994",
+    "runId": "E994-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E994.json",
+    "inputHash": "e87a9f19ff6c2522e8f7531db6ac923d4ba2e4c6fbe798918dcfd343e1620a5f",
+    "population": "boundary",
+    "sourceId": "F10"
+  },
+  {
+    "caseId": "E044",
+    "runId": "E044-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E044.json",
+    "inputHash": "ef399e8aa0b5461d4b08e34afd4c68781fda869767320c56bc9f35d79e9609ce",
+    "population": "boundary",
+    "sourceId": "F11"
+  },
+  {
+    "caseId": "E091",
+    "runId": "E091-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E091.json",
+    "inputHash": "d84e56c73f66220fb8cdee2f52c120768c3769efc8e368931b2926ddf8b96dd5",
+    "population": "boundary",
+    "sourceId": "F12"
+  }
+]

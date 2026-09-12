@@ -1,0 +1,108 @@
+"""Independent exact-arithmetic/enumeration audit; does not read evaluator output."""
+import hashlib
+import json
+from collections import Counter
+from fractions import Fraction as F
+from pathlib import Path
+from statistics import median
+
+ROOT = Path(__file__).resolve().parent
+load = lambda name: json.loads((ROOT / name).read_text(encoding='utf-8'))
+sources = load('sources.json')
+records = load('records.json')
+registry = load('case-registry.json')['cases']
+references = load('constructor-reference.json')
+selection = load('human-selection.json')
+checks = []
+
+def check(name, actual, expected, explanation):
+    assert actual == expected, (name, actual, expected)
+    checks.append(dict(name=name, actual=str(actual), expected=str(expected), explanation=explanation))
+
+check('source_count', len(sources), 12, 'Twelve independent source IDs.')
+check('source_size_bounds', all(700 <= len(s['text']) <= 1500 for s in sources), True, 'Character count includes Chinese punctuation and paragraph breaks.')
+check('unique_records', len(set(r['id'] for r in records)), 108, 'Every controlled, adversarial and boundary record has a unique neutral ID.')
+check('collection_counts', Counter(r['collection'] for r in registry), Counter(controlled=72, adversarial=24, boundary=12), 'The official campaign denominators are explicit.')
+check('dimension_triplets', Counter(t['dimension'] for t in references['triplets']), Counter({f'Q{i}':4 for i in range(1,7)}), 'Four source triplets per quality dimension.')
+check('attack_family_counts', set(Counter(r.get('attackFamily') for r in registry if r['collection']=='adversarial').values()), {4}, 'Six attack families have four examples each.')
+reference_by_id = {r['caseId']:r for r in references['references']}
+record_by_id = {r['id']:r for r in records}
+for record in records:
+    assert set(record) == {'id','dimensions','evidence'}, record['id']
+    assert len(record['dimensions']) == 1
+    assert not {'expected','quality','referenceSolution','tripletId','collection'} & record['evidence'].keys()
+    assert all(a['id'] in {'lesson','reference','support'} for a in record['evidence']['artifacts'])
+    if record['dimensions'] == ['Q5']:
+        assert [c['id'] for c in record['evidence']['rubric']] == ['c1','c2','c3']
+        assert [c['id'] for c in record['evidence']['productJudgment']['criteria']] == ['c1','c2','c3']
+        assert isinstance(record['evidence']['answer'],str)
+        assert all(record['evidence']['answer'] != a['text'] for a in record['evidence']['artifacts'])
+check('records_without_label_fields', len(records), 108, 'Reference labels and construction metadata are absent from evaluator records.')
+
+# Recompute quantities from original givens, not from authored intermediate results.
+check('F01_visits',18+12,30,'Thirty visits do not identify thirty different people.')
+check('F02_price_roundtrip',100*F(4,5)*F(6,5),F(96),'Each percentage uses the current price.')
+check('F02_recovery_original',F(100-80,80),F(1,4),'Restore twenty yuan relative to current eighty yuan.')
+check('F02_recovery_task',F(160-120,120),F(1,3),'Current 120 is the recovery denominator.')
+check('F02_percentage_points',F(50-40),F(10),'Ten percentage points.')
+check('F02_relative_growth',F(50-40,40),F(1,4),'Twenty-five percent relative growth.')
+check('F04_source_aggregate',F(80+36,100+40),F(29,35),'Weighted count-based overall rate, about 82.857%.')
+check('F04_task_aggregate',F(24+42,30+70),F(33,50),'Overall task rate 66%; source subgroup rates are not copied.')
+check('F04_task_rates',(F(24,30),F(42,70)),(F(4,5),F(3,5)),'Higher completed count and higher completion proportion belong to different groups.')
+check('F05_source_interval',(F('12.4')-F('.2'),F('12.4')+F('.2')),(F('12.2'),F('12.6')),'Closed interval includes both endpoints.')
+check('F05_task_counterexample',F('9.7')>F('9.6') and abs(F('9.7')-F('9.5'))<=F('.2') and abs(F('9.6')-F('9.8'))<=F('.2'),True,'A longer than B remains compatible with all task bounds.')
+check('F05_changed_premise',F('9.5')+F('.02')<F('9.8')-F('.02'),True,'With narrower errors A must be shorter; old answer is invalid.')
+check('F05_touching_intervals',F('6.4')<F('6.4'),False,'Touching closed intervals do not guarantee strict inequality.')
+check('F06_source_statistics',(F(sum([1,2,2,3,12]),5),median([1,2,2,3,12])),(F(4),2),'Mean and median are independent descriptive statistics.')
+check('F06_task_statistics',(F(2+4+4+14,4),median([2,4,4,14]),F(2+4+4+22,4),median([2,4,4,22])),(F(6),4,F(8),4),'Changed maximum affects total but not middle positions.')
+check('F06_source_group_aggregate',F(4*3+2*9,6),F(5),'Combine individual waiting totals, not unweighted day averages.')
+check('F06_repair_statistics',(F(3+3+7+15,4),median([3,3,7,15]),F(3+9+7+15,4),median([3,9,7,15])),(F(7),5,F(17,2),8),'New median task requires reordering.')
+check('F07_observed_rates',(F(8,10),F(1,10)),(F(4,5),F(1,10)),'Observed rates do not by themselves establish unique causation.')
+allowed=[(star,blue) for star in (False,True) for blue in (False,True) if (not star or blue)]
+check('F08_forward_counterexample',(False,True) in allowed,True,'A nonstar blue card defeats the converse while satisfying original rule.')
+check('F08_contrapositive',all(not star for star,blue in allowed if not blue),True,'All nonblue models are nonstar.')
+check('F08_existence',all(not star or blue for star,blue in [(False,False)]),True,'A box with only a nonstar red card satisfies the universal statement without stars.')
+check('F09_source_simultaneous',1/(F(1,6)+F(1,3)),F(2),'Under explicit additive-rate assumptions.')
+check('F09_source_staggered',1+(1-F(1,3))/(F(1,6)+F(1,3)),F(7,3),'After one hour by the faster person, both continue.')
+check('F09_task_departure',1+(1-F(1,4))/F(1,8),F(7),'After first hour the faster person leaves, so only slower rate applies.')
+check('F09_task_together',1/(F(1,8)+F(1,4)),F(8,3),'Counterfactual simultaneous arrangement.')
+check('F09_changed_premise',1+(1-F(1,4))/(F(1,8)+F(1,4)),F(3),'Changed condition retains faster person, so total becomes three hours.')
+check('F09_repair_departure',2+(1-2*F(1,8))/F(1,4),F(5),'Two hours by slower person then faster person alone.')
+check('F10_two_workers',max(4,3)+2+5+1,12,'Independent resources allow parallel predecessors, both must complete.')
+check('F10_one_worker',4+3+2+5+1,15,'Two active predecessor jobs cannot overlap on one worker.')
+check('F10_shared_tool',4+3+2+5+1,15,'Two workers still cannot overlap jobs on one exclusive tool.')
+check('F11_source_solution',(2*3+2,3+2),(8,5),'Candidate satisfies both original constraints and is nonnegative.')
+task_solutions=[(x,y) for x in range(13) for y in range(13) if 3*x+y==12 and x+y==6]
+check('F11_task_integer_enumeration',task_solutions,[(3,3)],'Independent finite enumeration confirms the candidate remains integer-feasible.')
+check('F11_task_real_elimination',F(12-6,3-1),F(3),'Subtracting equations independently proves real uniqueness, not just integer uniqueness.')
+check('F11_redundant_constraint',all(6*x+2*y==24 for x,y in [(0,12),(1,9),(4,0)]),True,'Multiple nonnegative candidates satisfy doubled source equation.')
+check('F12_source_four_cells',90+10+45+855,1000,'Disjoint truth/prediction cells exhaust source population.')
+check('F12_source_reverse_ratio',F(90,90+45),F(2,3),'Reverse question includes false positives in denominator.')
+check('F12_source_changed_base',F(18,18+49),F(18,67),'Unchanged conditional detection rates do not fix positive predictive proportion.')
+check('F12_task_two_ratios',(F(40,50),F(40,40+60)),(F(4,5),F(2,5)),'Task answers 80% and 40% condition on different groups.')
+check('F12_repair_two_ratios',(F(18,18+2),F(18,18+42)),(F(9,10),F(3,10)),'New check changes both denominators while retaining group identities.')
+
+for packet in selection['packets']:
+    ids=packet['caseIds']
+    assert len(ids)==6 and len(packet['naturalSlots'])==3
+    assert Counter(reference_by_id[i]['quality'] for i in ids)==Counter(strong=2,middle=2,poor=2)
+    assert set(record_by_id[i]['dimensions'][0] for i in ids)=={f'Q{i}' for i in range(1,7)}
+    assert all(slot['fallback2CaseId'] not in ids for slot in packet['naturalSlots'])
+check('human_prescore_design',selection['controlledCount']+selection['slotsReservedForNatural'],27,'Six controls across all dimensions plus three prespecified natural slots per packet.')
+
+manual = [
+ {'sourceId':'F01','scope':'Observed visit counts, sampled opinions and pending decisions remain distinct; current summary task uses a new 40/12/9 scenario while no-question teaching references use original 30/10/8.'},
+ {'sourceId':'F03','scope':'Sleep or interest is a possible compatible confound, not a proven true cause; random assignment does not cure an extra-time implementation difference.'},
+ {'sourceId':'F05','scope':'Error bounds are explicit model inputs, not inferred from display precision; overlapping intervals establish non-guarantee, not actual equality.'},
+ {'sourceId':'F07','scope':'Temperature and water both change in flawed comparison; controlled follow-up addresses the actual confound, not a student personality claim.'},
+ {'sourceId':'F08','scope':'Counterexample possibility does not assert actual card existence; only biconditional rules allow reverse implication.'},
+ {'sourceId':'F09','scope':'Rate addition is always conditional on independent, constant, nonoverlapping work; Chinese fraction wording corrected to 三分之四小时 before final use.'},
+ {'sourceId':'F10','scope':'A resource constraint changes feasible overlap; dependencies and elapsed time are checked separately.'},
+ {'sourceId':'F11','scope':'Nonnegative real variables are explicit; integer restriction is checked only where introduced.'},
+ {'sourceId':'F12','scope':'Nonmedical quality screening uses complete artificial counts; changed-batch calculation explicitly assumes conditional rates stable.'},
+]
+out={'status':'PASS','method':'Exact Fraction arithmetic, explicit finite model enumeration, schema/label separation checks, and source-scope review. No evaluator requests or outcomes accessed. This is constructor-side validation, not genuine human annotation.',
+     'checkCount':len(checks),'checks':checks,'manualScopeReview':manual,
+     'files':{name:hashlib.sha256((ROOT/name).read_bytes()).hexdigest() for name in ['sources.json','records.json','constructor-reference.json','human-selection.json']}}
+(ROOT/'reference-audit.json').write_text(json.dumps(out,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+print(json.dumps({'status':out['status'],'checks':out['checkCount'],'manualScopeReviews':len(manual)}))

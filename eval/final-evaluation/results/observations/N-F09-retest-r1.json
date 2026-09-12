@@ -1,0 +1,487 @@
+{
+  "task": {
+    "caseId": "N-F09-retest",
+    "runId": "N-F09-retest-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-F09-retest.json",
+    "inputHash": "c8db90196f7eb2771db49fdbd5a66a6753415e6119b66aaad48a11094ab4eb4d",
+    "population": "natural",
+    "sourceId": "F09"
+  },
+  "inputHash": "c8db90196f7eb2771db49fdbd5a66a6753415e6119b66aaad48a11094ab4eb4d",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "prepare-context-current": "d7cc1f3c19fd4790e4928ef2a19de0cff314b1cb0621ec2035cd01081d1c86fe",
+      "solve-current": "7c7034f13b578a9e90b34f71e740b54e8cb76d8c9832114d503921d104a3fea0",
+      "correctness": "1e7ce20c36e4c2961eadca8004c597f00e3b1f078ebbb30a704a1984ed1b9fa0",
+      "artifact-audit": "1e7ce20c36e4c2961eadca8004c597f00e3b1f078ebbb30a704a1984ed1b9fa0"
+    },
+    "stages": {
+      "prepare-context-current": {
+        "contexts": [
+          {
+            "taskId": "current",
+            "status": "ready",
+            "reason": "题干（history h51及task question）明示三组数据均记为整项工作1份并列出两人单独用时与同时开工实测总时长；具体数据行在后续盲解question选项中提供，不提取选项，情景可分离。",
+            "premises": [
+              {
+                "ref": "e103",
+                "quote": "三组数据均记为整项工作1份",
+                "proposedRef": "h51",
+                "witness": {
+                  "id": "e103",
+                  "pointer": "/history/50/text",
+                  "role": "prior_exposure",
+                  "kind": "text",
+                  "value": "下表将三组数据均记为整项工作1份，列出两人单独用时与“同时开工实测总时长”。请选择哪一行数据本身最能支持“合作时因唯一必需设备冲突，导致一人全程闲置、速度不可直接相加”这一解释。",
+                  "valueHash": "bc6e7bd244715ba1dceccd91028a870f844d429d3c6e176199a5544ee4ebced0"
+                }
+              },
+              {
+                "ref": "e103",
+                "quote": "列出两人单独用时与“同时开工实测总时长”",
+                "proposedRef": "h51",
+                "witness": {
+                  "id": "e103",
+                  "pointer": "/history/50/text",
+                  "role": "prior_exposure",
+                  "kind": "text",
+                  "value": "下表将三组数据均记为整项工作1份，列出两人单独用时与“同时开工实测总时长”。请选择哪一行数据本身最能支持“合作时因唯一必需设备冲突，导致一人全程闲置、速度不可直接相加”这一解释。",
+                  "valueHash": "bc6e7bd244715ba1dceccd91028a870f844d429d3c6e176199a5544ee4ebced0"
+                }
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "solve-current": {
+        "status": "resolved",
+        "solution": "甲、乙单独均4小时，各自速度1/4份/小时。若唯一必需设备冲突致一人全程闲置，则合作等效单人作业，总时应为4小时。选项A实测4小时与此一致；B实测2小时符合独立速度相加（1/4+1/4=1/2，时=2）；C实测3小时非全程闲置。故A数据本身最能支持“一人全程闲置、速度不可直接相加”解释。根据题设e15,e18,e24及来源e3中设备冲突原则。",
+        "witnesses": [
+          {
+            "id": "e15",
+            "pointer": "/question/prompt",
+            "role": "question",
+            "kind": "text",
+            "value": "下表将三组数据均记为整项工作1份，列出两人单独用时与“同时开工实测总时长”。请选择哪一行数据本身最能支持“合作时因唯一必需设备冲突，导致一人全程闲置、速度不可直接相加”这一解释。",
+            "valueHash": "bc6e7bd244715ba1dceccd91028a870f844d429d3c6e176199a5544ee4ebced0"
+          },
+          {
+            "id": "e18",
+            "pointer": "/question/options/0/text",
+            "role": "question",
+            "kind": "text",
+            "value": "甲单独4小时，乙单独4小时，实测合作4小时。",
+            "valueHash": "e1ca91f4235d8002601403f36886782b5ea100cec0528f4908279bc99f0340eb"
+          },
+          {
+            "id": "e24",
+            "pointer": "/scenarioContext/0/text",
+            "role": "context",
+            "kind": "text",
+            "value": "三组数据均记为整项工作1份",
+            "valueHash": "a685c983c3dbb7f3bdd96d469d0864548c20e8a32455b40d3954eab7bb583cd4"
+          },
+          {
+            "id": "e3",
+            "pointer": "/sources/0/text",
+            "role": "source",
+            "kind": "text",
+            "value": "讨论两个人合作完成一项工作时，先约定“整项工作”为一份。若小岚单独整理一批卡片需要六小时，且全过程速度恒定，那么每小时完成六分之一份；小禾单独需要三小时，每小时完成三分之一份。时间的单位是小时，速度的单位是份每小时，两者不能直接相加成同一种量。\n在以下明确假设下，两人的工作速度可以相加：卡片能够任意分开处理，两人的工作互不重复，合作不会改变各自速度，也没有额外等待或交接开销。此时合速度为六分之一加三分之一，即二分之一份每小时，整份工作需要一除以二分之一，等于两小时。直接把六小时和三小时相加得到九小时，或者取平均得到四点五小时，都没有表示合作每小时完成多少工作。\n若两人不是同时开始，应分时段计算。例如小禾先做一小时，完成三分之一份，还剩三分之二份；随后两人按前述假设共同做，速度仍为二分之一份每小时，剩余时间为三分之二除以二分之一。除以二分之一等于乘二，所以得到三分之四小时，即一又三分之一小时。加上最初一小时，总时长为二又三分之一小时。写分数时要特别检查除法的方向，不能只凭“合作更快”的趋势认可数值。\n为避免口语分数混淆，上面的核心算式可以直接写成：(2/3)÷(1/2)=4/3小时，总计1+4/3=7/3小时。完成量应再验算：第一小时完成1/3，后面4/3小时以1/2的速度完成2/3，两段合计正好一份。把结果代回原始工作量，是发现倒数错误的有效方法。\n这些公式依赖模型条件。若工作只有一台必需设备，两人无法同时操作；或两人都检查同一张卡片导致重复工作，就不能直接使用独立速度相加。题目只给单独用时而未说明合作方式时，应先指出所需假设，再给条件式结果。现实合作可能有额外收益，也可能有协调损失，单独速度不足以确定所有情况。\n回答此类问题时依次写清总工作量、各段速度、各段完成量和最终时间。不要混淆某个人工作了多久与整个任务从开始到结束经过多久。即使最后数值相同，单位与过程仍决定解释是否可靠。",
+            "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+          }
+        ],
+        "reviewReasons": []
+      },
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "uncertain",
+            "affected": [
+              "Q4"
+            ],
+            "reason": "The authored conclusion has a compatible counterexample or an unresolved necessary premise. 相容反例：甲4乙4实测4h下，可假设重复工作致乙零净贡献而非设备冲突，原条件满足但‘最符合设备闲置约束’未建立，证明结论非必然。",
+            "refs": [
+              "e27",
+              "e18",
+              "e25",
+              "e3"
+            ],
+            "challenge": {
+              "status": "counterexample",
+              "reason": "相容反例：甲4乙4实测4h下，可假设重复工作致乙零净贡献而非设备冲突，原条件满足但‘最符合设备闲置约束’未建立，证明结论非必然。",
+              "refs": [
+                "e27",
+                "e3",
+                "e18"
+              ]
+            },
+            "witnesses": [
+              {
+                "id": "e27",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "当实测同时开工时长等于某一单人时长，且两人单独用时相同，说明另一人零贡献，最符合唯一设备导致闲置的约束。",
+                "valueHash": "697508769f546ca406fb45215fc58ffd561e9dfe107db616890ffd9307b14be6"
+              },
+              {
+                "id": "e18",
+                "pointer": "/question/options/0/text",
+                "role": "question",
+                "kind": "text",
+                "value": "甲单独4小时，乙单独4小时，实测合作4小时。",
+                "valueHash": "e1ca91f4235d8002601403f36886782b5ea100cec0528f4908279bc99f0340eb"
+              },
+              {
+                "id": "e25",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "甲单独4小时，乙单独4小时，实测合作4小时。",
+                "valueHash": "e1ca91f4235d8002601403f36886782b5ea100cec0528f4908279bc99f0340eb"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "讨论两个人合作完成一项工作时，先约定“整项工作”为一份。若小岚单独整理一批卡片需要六小时，且全过程速度恒定，那么每小时完成六分之一份；小禾单独需要三小时，每小时完成三分之一份。时间的单位是小时，速度的单位是份每小时，两者不能直接相加成同一种量。\n在以下明确假设下，两人的工作速度可以相加：卡片能够任意分开处理，两人的工作互不重复，合作不会改变各自速度，也没有额外等待或交接开销。此时合速度为六分之一加三分之一，即二分之一份每小时，整份工作需要一除以二分之一，等于两小时。直接把六小时和三小时相加得到九小时，或者取平均得到四点五小时，都没有表示合作每小时完成多少工作。\n若两人不是同时开始，应分时段计算。例如小禾先做一小时，完成三分之一份，还剩三分之二份；随后两人按前述假设共同做，速度仍为二分之一份每小时，剩余时间为三分之二除以二分之一。除以二分之一等于乘二，所以得到三分之四小时，即一又三分之一小时。加上最初一小时，总时长为二又三分之一小时。写分数时要特别检查除法的方向，不能只凭“合作更快”的趋势认可数值。\n为避免口语分数混淆，上面的核心算式可以直接写成：(2/3)÷(1/2)=4/3小时，总计1+4/3=7/3小时。完成量应再验算：第一小时完成1/3，后面4/3小时以1/2的速度完成2/3，两段合计正好一份。把结果代回原始工作量，是发现倒数错误的有效方法。\n这些公式依赖模型条件。若工作只有一台必需设备，两人无法同时操作；或两人都检查同一张卡片导致重复工作，就不能直接使用独立速度相加。题目只给单独用时而未说明合作方式时，应先指出所需假设，再给条件式结果。现实合作可能有额外收益，也可能有协调损失，单独速度不足以确定所有情况。\n回答此类问题时依次写清总工作量、各段速度、各段完成量和最终时间。不要混淆某个人工作了多久与整个任务从开始到结束经过多久。即使最后数值相同，单位与过程仍决定解释是否可靠。",
+                "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+              }
+            ],
+            "proposed": {
+              "kind": "conditions",
+              "status": "uncertain",
+              "affected": [
+                "Q4"
+              ],
+              "reason": "产品解释(e27)断言：实测同时开工时长=某单人时长且两人单独用时相同→另一人零贡献且最符合唯一设备闲置约束。固定选项A事实(甲4乙4实测4h, e18,e25)，补充相容情况：两人同时开工但乙重复甲卡片致净贡献零(来源e3提重复工作亦使速度不可加)，此时条件满足但数据同样符合重复约束而非必然设备冲突，故‘最符合设备闲置’适用结论条件不明未建立。",
+              "refs": [
+                "e27",
+                "e18",
+                "e25",
+                "e3"
+              ],
+              "challenge": {
+                "status": "counterexample",
+                "reason": "相容反例：甲4乙4实测4h下，可假设重复工作致乙零净贡献而非设备冲突，原条件满足但‘最符合设备闲置约束’未建立，证明结论非必然。",
+                "refs": [
+                  "e27",
+                  "e3",
+                  "e18"
+                ]
+              }
+            },
+            "reviewReasons": [
+              "CONDITIONS_COUNTEREXAMPLE_REVIEW"
+            ]
+          },
+          {
+            "kind": "quantities",
+            "status": "not_applicable",
+            "affected": [],
+            "reason": "artifact(current-retest-explanation e27)仅文字选A，未做数值演算或单位重算，无数量核验需求。",
+            "contextHash": "1e7ce20c36e4c2961eadca8004c597f00e3b1f078ebbb30a704a1984ed1b9fa0",
+            "proposed": {
+              "kind": "quantities",
+              "status": "not_applicable",
+              "affected": [],
+              "reason": "artifact(current-retest-explanation e27)仅文字选A，未做数值演算或单位重算，无数量核验需求。",
+              "refs": [
+                "e27"
+              ]
+            },
+            "reviewReasons": []
+          }
+        ],
+        "keys": [
+          {
+            "taskId": "current",
+            "status": "uncertain",
+            "reason": "Current-key correspondence is unestablished.",
+            "proposed": {
+              "taskId": "current",
+              "status": "absent",
+              "reason": "当前题(e15)无作者指定答案：/rubric absent(e142)、/answer absent(e143)、/productJudgment absent(e144)；e24/e25为产品自选选项而非键。",
+              "refs": [
+                "e142",
+                "e143",
+                "e144",
+                "e15"
+              ]
+            },
+            "reviewReasons": [
+              "CURRENT_KEY_BINDING_MISSING"
+            ]
+          }
+        ]
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q4",
+            "level": 2,
+            "reason": "当前题 e15 含完整题干与选项 e18/e20/e22，scenarioContext e140-141 与 source e3 提供工作量单位化及设备冲突致速度不可加原则，前提充分；blindSolutions 确认 A（e18）为可辩护键，artifact e24/e25 选 A、e27 解释符合盲解逻辑；priorExposure e130-136 仅先前展示题干选项无选定答案或推理，不构成 solution disclosure，任务对实际先前曝光保持适当独立，符合 Q4 的2级标准。",
+            "refs": [
+              "e15",
+              "e18",
+              "e24",
+              "e27",
+              "e3",
+              "e130"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e15",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "下表将三组数据均记为整项工作1份，列出两人单独用时与“同时开工实测总时长”。请选择哪一行数据本身最能支持“合作时因唯一必需设备冲突，导致一人全程闲置、速度不可直接相加”这一解释。",
+                "valueHash": "bc6e7bd244715ba1dceccd91028a870f844d429d3c6e176199a5544ee4ebced0"
+              },
+              {
+                "id": "e18",
+                "pointer": "/question/options/0/text",
+                "role": "question",
+                "kind": "text",
+                "value": "甲单独4小时，乙单独4小时，实测合作4小时。",
+                "valueHash": "e1ca91f4235d8002601403f36886782b5ea100cec0528f4908279bc99f0340eb"
+              },
+              {
+                "id": "e24",
+                "pointer": "/artifacts/0/id",
+                "role": "artifact",
+                "kind": "text",
+                "value": "current-retest-selected-option",
+                "valueHash": "e616e3a5f76ec84c63d9e263a7a81397d7adc717d7be2dac3334e0d0e5d653fc"
+              },
+              {
+                "id": "e27",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "当实测同时开工时长等于某一单人时长，且两人单独用时相同，说明另一人零贡献，最符合唯一设备导致闲置的约束。",
+                "valueHash": "697508769f546ca406fb45215fc58ffd561e9dfe107db616890ffd9307b14be6"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "讨论两个人合作完成一项工作时，先约定“整项工作”为一份。若小岚单独整理一批卡片需要六小时，且全过程速度恒定，那么每小时完成六分之一份；小禾单独需要三小时，每小时完成三分之一份。时间的单位是小时，速度的单位是份每小时，两者不能直接相加成同一种量。\n在以下明确假设下，两人的工作速度可以相加：卡片能够任意分开处理，两人的工作互不重复，合作不会改变各自速度，也没有额外等待或交接开销。此时合速度为六分之一加三分之一，即二分之一份每小时，整份工作需要一除以二分之一，等于两小时。直接把六小时和三小时相加得到九小时，或者取平均得到四点五小时，都没有表示合作每小时完成多少工作。\n若两人不是同时开始，应分时段计算。例如小禾先做一小时，完成三分之一份，还剩三分之二份；随后两人按前述假设共同做，速度仍为二分之一份每小时，剩余时间为三分之二除以二分之一。除以二分之一等于乘二，所以得到三分之四小时，即一又三分之一小时。加上最初一小时，总时长为二又三分之一小时。写分数时要特别检查除法的方向，不能只凭“合作更快”的趋势认可数值。\n为避免口语分数混淆，上面的核心算式可以直接写成：(2/3)÷(1/2)=4/3小时，总计1+4/3=7/3小时。完成量应再验算：第一小时完成1/3，后面4/3小时以1/2的速度完成2/3，两段合计正好一份。把结果代回原始工作量，是发现倒数错误的有效方法。\n这些公式依赖模型条件。若工作只有一台必需设备，两人无法同时操作；或两人都检查同一张卡片导致重复工作，就不能直接使用独立速度相加。题目只给单独用时而未说明合作方式时，应先指出所需假设，再给条件式结果。现实合作可能有额外收益，也可能有协调损失，单独速度不足以确定所有情况。\n回答此类问题时依次写清总工作量、各段速度、各段完成量和最终时间。不要混淆某个人工作了多久与整个任务从开始到结束经过多久。即使最后数值相同，单位与过程仍决定解释是否可靠。",
+                "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+              },
+              {
+                "id": "e130",
+                "pointer": "/priorExposure/50/text",
+                "role": "prior_exposure",
+                "kind": "text",
+                "value": "下表将三组数据均记为整项工作1份，列出两人单独用时与“同时开工实测总时长”。请选择哪一行数据本身最能支持“合作时因唯一必需设备冲突，导致一人全程闲置、速度不可直接相加”这一解释。",
+                "valueHash": "bc6e7bd244715ba1dceccd91028a870f844d429d3c6e176199a5544ee4ebced0"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q4",
+          "level": "U",
+          "reason": "The authored conclusion has a compatible counterexample or an unresolved necessary premise. 相容反例：甲4乙4实测4h下，可假设重复工作致乙零净贡献而非设备冲突，原条件满足但‘最符合设备闲置约束’未建立，证明结论非必然。",
+          "refs": [
+            "e15",
+            "e18",
+            "e24",
+            "e27",
+            "e3",
+            "e130"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e15",
+              "pointer": "/question/prompt",
+              "role": "question",
+              "kind": "text",
+              "value": "下表将三组数据均记为整项工作1份，列出两人单独用时与“同时开工实测总时长”。请选择哪一行数据本身最能支持“合作时因唯一必需设备冲突，导致一人全程闲置、速度不可直接相加”这一解释。",
+              "valueHash": "bc6e7bd244715ba1dceccd91028a870f844d429d3c6e176199a5544ee4ebced0"
+            },
+            {
+              "id": "e18",
+              "pointer": "/question/options/0/text",
+              "role": "question",
+              "kind": "text",
+              "value": "甲单独4小时，乙单独4小时，实测合作4小时。",
+              "valueHash": "e1ca91f4235d8002601403f36886782b5ea100cec0528f4908279bc99f0340eb"
+            },
+            {
+              "id": "e24",
+              "pointer": "/artifacts/0/id",
+              "role": "artifact",
+              "kind": "text",
+              "value": "current-retest-selected-option",
+              "valueHash": "e616e3a5f76ec84c63d9e263a7a81397d7adc717d7be2dac3334e0d0e5d653fc"
+            },
+            {
+              "id": "e27",
+              "pointer": "/artifacts/1/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "当实测同时开工时长等于某一单人时长，且两人单独用时相同，说明另一人零贡献，最符合唯一设备导致闲置的约束。",
+              "valueHash": "697508769f546ca406fb45215fc58ffd561e9dfe107db616890ffd9307b14be6"
+            },
+            {
+              "id": "e3",
+              "pointer": "/sources/0/text",
+              "role": "source",
+              "kind": "text",
+              "value": "讨论两个人合作完成一项工作时，先约定“整项工作”为一份。若小岚单独整理一批卡片需要六小时，且全过程速度恒定，那么每小时完成六分之一份；小禾单独需要三小时，每小时完成三分之一份。时间的单位是小时，速度的单位是份每小时，两者不能直接相加成同一种量。\n在以下明确假设下，两人的工作速度可以相加：卡片能够任意分开处理，两人的工作互不重复，合作不会改变各自速度，也没有额外等待或交接开销。此时合速度为六分之一加三分之一，即二分之一份每小时，整份工作需要一除以二分之一，等于两小时。直接把六小时和三小时相加得到九小时，或者取平均得到四点五小时，都没有表示合作每小时完成多少工作。\n若两人不是同时开始，应分时段计算。例如小禾先做一小时，完成三分之一份，还剩三分之二份；随后两人按前述假设共同做，速度仍为二分之一份每小时，剩余时间为三分之二除以二分之一。除以二分之一等于乘二，所以得到三分之四小时，即一又三分之一小时。加上最初一小时，总时长为二又三分之一小时。写分数时要特别检查除法的方向，不能只凭“合作更快”的趋势认可数值。\n为避免口语分数混淆，上面的核心算式可以直接写成：(2/3)÷(1/2)=4/3小时，总计1+4/3=7/3小时。完成量应再验算：第一小时完成1/3，后面4/3小时以1/2的速度完成2/3，两段合计正好一份。把结果代回原始工作量，是发现倒数错误的有效方法。\n这些公式依赖模型条件。若工作只有一台必需设备，两人无法同时操作；或两人都检查同一张卡片导致重复工作，就不能直接使用独立速度相加。题目只给单独用时而未说明合作方式时，应先指出所需假设，再给条件式结果。现实合作可能有额外收益，也可能有协调损失，单独速度不足以确定所有情况。\n回答此类问题时依次写清总工作量、各段速度、各段完成量和最终时间。不要混淆某个人工作了多久与整个任务从开始到结束经过多久。即使最后数值相同，单位与过程仍决定解释是否可靠。",
+              "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+            },
+            {
+              "id": "e130",
+              "pointer": "/priorExposure/50/text",
+              "role": "prior_exposure",
+              "kind": "text",
+              "value": "下表将三组数据均记为整项工作1份，列出两人单独用时与“同时开工实测总时长”。请选择哪一行数据本身最能支持“合作时因唯一必需设备冲突，导致一人全程闲置、速度不可直接相加”这一解释。",
+              "valueHash": "bc6e7bd244715ba1dceccd91028a870f844d429d3c6e176199a5544ee4ebced0"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [
+            {
+              "level": "U",
+              "code": "INDEPENDENT_CONDITIONS",
+              "detail": {
+                "kind": "conditions",
+                "status": "uncertain",
+                "affected": [
+                  "Q4"
+                ],
+                "reason": "The authored conclusion has a compatible counterexample or an unresolved necessary premise. 相容反例：甲4乙4实测4h下，可假设重复工作致乙零净贡献而非设备冲突，原条件满足但‘最符合设备闲置约束’未建立，证明结论非必然。",
+                "refs": [
+                  "e27",
+                  "e18",
+                  "e25",
+                  "e3"
+                ],
+                "challenge": {
+                  "status": "counterexample",
+                  "reason": "相容反例：甲4乙4实测4h下，可假设重复工作致乙零净贡献而非设备冲突，原条件满足但‘最符合设备闲置约束’未建立，证明结论非必然。",
+                  "refs": [
+                    "e27",
+                    "e3",
+                    "e18"
+                  ]
+                },
+                "witnesses": [
+                  {
+                    "id": "e27",
+                    "pointer": "/artifacts/1/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "当实测同时开工时长等于某一单人时长，且两人单独用时相同，说明另一人零贡献，最符合唯一设备导致闲置的约束。",
+                    "valueHash": "697508769f546ca406fb45215fc58ffd561e9dfe107db616890ffd9307b14be6"
+                  },
+                  {
+                    "id": "e18",
+                    "pointer": "/question/options/0/text",
+                    "role": "question",
+                    "kind": "text",
+                    "value": "甲单独4小时，乙单独4小时，实测合作4小时。",
+                    "valueHash": "e1ca91f4235d8002601403f36886782b5ea100cec0528f4908279bc99f0340eb"
+                  },
+                  {
+                    "id": "e25",
+                    "pointer": "/artifacts/0/text",
+                    "role": "artifact",
+                    "kind": "text",
+                    "value": "甲单独4小时，乙单独4小时，实测合作4小时。",
+                    "valueHash": "e1ca91f4235d8002601403f36886782b5ea100cec0528f4908279bc99f0340eb"
+                  },
+                  {
+                    "id": "e3",
+                    "pointer": "/sources/0/text",
+                    "role": "source",
+                    "kind": "text",
+                    "value": "讨论两个人合作完成一项工作时，先约定“整项工作”为一份。若小岚单独整理一批卡片需要六小时，且全过程速度恒定，那么每小时完成六分之一份；小禾单独需要三小时，每小时完成三分之一份。时间的单位是小时，速度的单位是份每小时，两者不能直接相加成同一种量。\n在以下明确假设下，两人的工作速度可以相加：卡片能够任意分开处理，两人的工作互不重复，合作不会改变各自速度，也没有额外等待或交接开销。此时合速度为六分之一加三分之一，即二分之一份每小时，整份工作需要一除以二分之一，等于两小时。直接把六小时和三小时相加得到九小时，或者取平均得到四点五小时，都没有表示合作每小时完成多少工作。\n若两人不是同时开始，应分时段计算。例如小禾先做一小时，完成三分之一份，还剩三分之二份；随后两人按前述假设共同做，速度仍为二分之一份每小时，剩余时间为三分之二除以二分之一。除以二分之一等于乘二，所以得到三分之四小时，即一又三分之一小时。加上最初一小时，总时长为二又三分之一小时。写分数时要特别检查除法的方向，不能只凭“合作更快”的趋势认可数值。\n为避免口语分数混淆，上面的核心算式可以直接写成：(2/3)÷(1/2)=4/3小时，总计1+4/3=7/3小时。完成量应再验算：第一小时完成1/3，后面4/3小时以1/2的速度完成2/3，两段合计正好一份。把结果代回原始工作量，是发现倒数错误的有效方法。\n这些公式依赖模型条件。若工作只有一台必需设备，两人无法同时操作；或两人都检查同一张卡片导致重复工作，就不能直接使用独立速度相加。题目只给单独用时而未说明合作方式时，应先指出所需假设，再给条件式结果。现实合作可能有额外收益，也可能有协调损失，单独速度不足以确定所有情况。\n回答此类问题时依次写清总工作量、各段速度、各段完成量和最终时间。不要混淆某个人工作了多久与整个任务从开始到结束经过多久。即使最后数值相同，单位与过程仍决定解释是否可靠。",
+                    "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+                  }
+                ],
+                "proposed": {
+                  "kind": "conditions",
+                  "status": "uncertain",
+                  "affected": [
+                    "Q4"
+                  ],
+                  "reason": "产品解释(e27)断言：实测同时开工时长=某单人时长且两人单独用时相同→另一人零贡献且最符合唯一设备闲置约束。固定选项A事实(甲4乙4实测4h, e18,e25)，补充相容情况：两人同时开工但乙重复甲卡片致净贡献零(来源e3提重复工作亦使速度不可加)，此时条件满足但数据同样符合重复约束而非必然设备冲突，故‘最符合设备闲置’适用结论条件不明未建立。",
+                  "refs": [
+                    "e27",
+                    "e18",
+                    "e25",
+                    "e3"
+                  ],
+                  "challenge": {
+                    "status": "counterexample",
+                    "reason": "相容反例：甲4乙4实测4h下，可假设重复工作致乙零净贡献而非设备冲突，原条件满足但‘最符合设备闲置约束’未建立，证明结论非必然。",
+                    "refs": [
+                      "e27",
+                      "e3",
+                      "e18"
+                    ]
+                  }
+                },
+                "reviewReasons": [
+                  "CONDITIONS_COUNTEREXAMPLE_REVIEW"
+                ]
+              }
+            },
+            {
+              "level": "U",
+              "code": "CURRENT_KEY",
+              "detail": {
+                "taskId": "current",
+                "status": "uncertain",
+                "reason": "Current-key correspondence is unestablished.",
+                "proposed": {
+                  "taskId": "current",
+                  "status": "absent",
+                  "reason": "当前题(e15)无作者指定答案：/rubric absent(e142)、/answer absent(e143)、/productJudgment absent(e144)；e24/e25为产品自选选项而非键。",
+                  "refs": [
+                    "e142",
+                    "e143",
+                    "e144",
+                    "e15"
+                  ]
+                },
+                "reviewReasons": [
+                  "CURRENT_KEY_BINDING_MISSING"
+                ]
+              }
+            }
+          ],
+          "proposedLevel": 2,
+          "proposedReason": "当前题 e15 含完整题干与选项 e18/e20/e22，scenarioContext e140-141 与 source e3 提供工作量单位化及设备冲突致速度不可加原则，前提充分；blindSolutions 确认 A（e18）为可辩护键，artifact e24/e25 选 A、e27 解释符合盲解逻辑；priorExposure e130-136 仅先前展示题干选项无选定答案或推理，不构成 solution disclosure，任务对实际先前曝光保持适当独立，符合 Q4 的2级标准。",
+          "decidingConstraint": "INDEPENDENT_CONDITIONS"
+        }
+      ],
+      "reviewRequired": [
+        {
+          "dimension": "Q4",
+          "reason": "UNRESOLVED"
+        }
+      ]
+    },
+    "resultHash": "b10b5a6fd53015a36fe9b43b129db4a834b145c929846ddbb729084464d932d5"
+  }
+}

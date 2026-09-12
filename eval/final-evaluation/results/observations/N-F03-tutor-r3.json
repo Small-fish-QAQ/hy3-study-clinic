@@ -1,0 +1,425 @@
+{
+  "task": {
+    "caseId": "N-F03-tutor",
+    "runId": "N-F03-tutor-r3",
+    "replicate": 3,
+    "path": "runs/final/cases/N-F03-tutor.json",
+    "inputHash": "278275b2f9f3d606ff2afde4dad0d40a93eb9aca4c40947e15619b0fdc9b9c57",
+    "population": "natural",
+    "sourceId": "F03"
+  },
+  "inputHash": "278275b2f9f3d606ff2afde4dad0d40a93eb9aca4c40947e15619b0fdc9b9c57",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "correctness": "e32e210fbb69805e81fa4570a0a743b111dc5e9ff6574d1e0de04f89676898fe",
+      "artifact-audit": "e32e210fbb69805e81fa4570a0a743b111dc5e9ff6574d1e0de04f89676898fe",
+      "certification": "e32e210fbb69805e81fa4570a0a743b111dc5e9ff6574d1e0de04f89676898fe"
+    },
+    "stages": {
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "clear",
+            "affected": [],
+            "reason": "作者tutor-reply总结观察性研究两组平均数差异不自动证明因果，以运动鞋自然观察例子（未随机分配鞋类、未控制训练）说明不能断定换鞋提高，边界明确限定于自然观察情景且指出随机且保证同条件时依据变，与资料F03无随机无控制故不能断因果及随机不自动修复实施差别的断言一致。反例挑战：固定例子事实（观察差异、可能混杂、未随机未控制），补充混杂因素碰巧均衡的相容情况，结论'不能断定'仍成立（作者仅称不自动证明，非否定因果），边界假设已排除推翻。",
+            "refs": [
+              "e16",
+              "e3"
+            ],
+            "challenge": {
+              "status": "closed",
+              "reason": "相容补充（未随机但混杂因素实际均衡）不推翻'不能断定'结论，因作者结论为证据不足而非因果不存在；边界条件由e16自身明示假设排除反例。",
+              "refs": [
+                "e16"
+              ]
+            },
+            "witnesses": [
+              {
+                "id": "e16",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "课程资料《早餐调查能说明什么》中提到：“没有随机决定谁吃早餐，也没有控制其他生活安排，因此不能仅凭这项记录断定早餐造成了两题的提高。”这揭示了关键关系：观察性研究中两组平均数的差异，本身只证明差异存在，不自动证明某因素造成提升。\n\n举例：设想学校运动会前，我们发现穿运动鞋的学生跑步成绩平均比穿凉鞋的好。这只是一个观察差异，但可能混杂了平时训练量、身体素质等；不能断定换运动鞋就直接提高成绩。这个例子的适用边界是：它只适用于未随机分配鞋类、未控制训练等的自然观察情景；若教师随机让半数学生穿运动鞋且保证其他条件相同，那比较依据就变了。此为举例，非资料原文。\n\n借助资料的三层评价框架，对这个例子也应先述“穿运动鞋组成绩更高”，再提“可能由于训练更多”的假说，最后说明因果主张未被简单观察支持。",
+                "valueHash": "f653eac8024e376cef6ce8bcbe3cb4d70ebdcd1f839018aaf4434efdb4a309e6"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "学校想了解早餐与上午阅读表现的关系，于是请一个班的学生自行记录一周早餐情况，并完成同一套阅读练习。记录显示，经常吃早餐的学生平均答对八题，较少吃早餐的学生平均答对六题。这里观察到了两个组的差异，但没有随机决定谁吃早餐，也没有控制其他生活安排，因此不能仅凭这项记录断定早餐造成了两题的提高。\n一种与结果相容的解释是睡眠习惯不同：睡得规律的学生可能既容易按时吃早餐，也更容易在上午集中注意力。另一种解释是家庭安排同时影响早餐和阅读练习时间。这些都是可检验的替代解释，不是已经证明发生的事实。指出混杂的意思是原因果结论尚未建立，不是反过来证明早餐完全无效。观察数据仍然有价值，例如提示值得进一步调查的关系。\n若要改进研究，可以先明确希望比较的因素和测量方式。在伦理和现实条件允许的普通活动研究中，随机分配某个可操作安排能够减少分组选择的影响。对早餐问题也可以增加睡眠、平时阅读水平等记录，或用更合适的前后比较设计；但测量了若干变量不等于排除了所有差异。研究设计越接近只改变目标因素，因果解释通常越有依据；具体能支持到什么范围，还取决于实际执行和数据。\n一个简单的课堂演示可以用两种纸面提示卡而不用改变饮食。把参加者随机分到甲、乙两组，两组做相同难度、相同时间的任务，唯一计划中的差别是是否获得提示卡。若甲组还多得到十分钟，结果就无法单独归因于提示卡。随机分组是一项设计措施，不会自动修复实施时又加入的差别；必须同时检查实际比较条件。\n评价论证可以分三层。第一层只陈述本次样本发生了什么，例如两个组的平均答对数不同。第二层讨论可能解释，清楚标为假说。第三层判断某种因果主张是否被设计和结果支持。把第一层直接改写成第三层，往往会遗漏关键前提。还要留意样本范围：一个班的一周记录不能直接代表所有年龄、所有学校或长期效果。\n遇到“这项调查证明了什么”的问题，不必在“绝对有效”和“完全无效”之间硬选。可以写出观察到的差异、尚未排除的替代解释，以及下一步应补充的比较。这样的回答既尊重证据，也给出可操作的后续行动。它不是回避判断，而是在区分已经建立的结论与仍待检验的主张。",
+                "valueHash": "944a460c4eccfdbd61d456dc9fc3969b0ed10c585ea05e87ccfe3e9b93549680"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "kind": "quantities",
+            "status": "not_applicable",
+            "affected": [],
+            "reason": "产物tutor-reply仅引用资料中八题与六题差异及'两题提高'表述，无独立数量演算、单位转换或公式绑定，无数量断言需重算。",
+            "contextHash": "e32e210fbb69805e81fa4570a0a743b111dc5e9ff6574d1e0de04f89676898fe",
+            "proposed": {
+              "kind": "quantities",
+              "status": "not_applicable",
+              "affected": [],
+              "reason": "产物tutor-reply仅引用资料中八题与六题差异及'两题提高'表述，无独立数量演算、单位转换或公式绑定，无数量断言需重算。",
+              "refs": [
+                "e16",
+                "e3"
+              ]
+            },
+            "reviewReasons": []
+          }
+        ],
+        "keys": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 2,
+            "reason": "Artifact e16 quotes source e3 accurately on no random assignment => no causation, correctly generalizes observational difference not automatic causation; example boundary consistent with source random condition. No false claim or invented support.",
+            "refs": [
+              "e16",
+              "e3"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e16",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "课程资料《早餐调查能说明什么》中提到：“没有随机决定谁吃早餐，也没有控制其他生活安排，因此不能仅凭这项记录断定早餐造成了两题的提高。”这揭示了关键关系：观察性研究中两组平均数的差异，本身只证明差异存在，不自动证明某因素造成提升。\n\n举例：设想学校运动会前，我们发现穿运动鞋的学生跑步成绩平均比穿凉鞋的好。这只是一个观察差异，但可能混杂了平时训练量、身体素质等；不能断定换运动鞋就直接提高成绩。这个例子的适用边界是：它只适用于未随机分配鞋类、未控制训练等的自然观察情景；若教师随机让半数学生穿运动鞋且保证其他条件相同，那比较依据就变了。此为举例，非资料原文。\n\n借助资料的三层评价框架，对这个例子也应先述“穿运动鞋组成绩更高”，再提“可能由于训练更多”的假说，最后说明因果主张未被简单观察支持。",
+                "valueHash": "f653eac8024e376cef6ce8bcbe3cb4d70ebdcd1f839018aaf4434efdb4a309e6"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "学校想了解早餐与上午阅读表现的关系，于是请一个班的学生自行记录一周早餐情况，并完成同一套阅读练习。记录显示，经常吃早餐的学生平均答对八题，较少吃早餐的学生平均答对六题。这里观察到了两个组的差异，但没有随机决定谁吃早餐，也没有控制其他生活安排，因此不能仅凭这项记录断定早餐造成了两题的提高。\n一种与结果相容的解释是睡眠习惯不同：睡得规律的学生可能既容易按时吃早餐，也更容易在上午集中注意力。另一种解释是家庭安排同时影响早餐和阅读练习时间。这些都是可检验的替代解释，不是已经证明发生的事实。指出混杂的意思是原因果结论尚未建立，不是反过来证明早餐完全无效。观察数据仍然有价值，例如提示值得进一步调查的关系。\n若要改进研究，可以先明确希望比较的因素和测量方式。在伦理和现实条件允许的普通活动研究中，随机分配某个可操作安排能够减少分组选择的影响。对早餐问题也可以增加睡眠、平时阅读水平等记录，或用更合适的前后比较设计；但测量了若干变量不等于排除了所有差异。研究设计越接近只改变目标因素，因果解释通常越有依据；具体能支持到什么范围，还取决于实际执行和数据。\n一个简单的课堂演示可以用两种纸面提示卡而不用改变饮食。把参加者随机分到甲、乙两组，两组做相同难度、相同时间的任务，唯一计划中的差别是是否获得提示卡。若甲组还多得到十分钟，结果就无法单独归因于提示卡。随机分组是一项设计措施，不会自动修复实施时又加入的差别；必须同时检查实际比较条件。\n评价论证可以分三层。第一层只陈述本次样本发生了什么，例如两个组的平均答对数不同。第二层讨论可能解释，清楚标为假说。第三层判断某种因果主张是否被设计和结果支持。把第一层直接改写成第三层，往往会遗漏关键前提。还要留意样本范围：一个班的一周记录不能直接代表所有年龄、所有学校或长期效果。\n遇到“这项调查证明了什么”的问题，不必在“绝对有效”和“完全无效”之间硬选。可以写出观察到的差异、尚未排除的替代解释，以及下一步应补充的比较。这样的回答既尊重证据，也给出可操作的后续行动。它不是回避判断，而是在区分已经建立的结论与仍待检验的主张。",
+                "valueHash": "944a460c4eccfdbd61d456dc9fc3969b0ed10c585ea05e87ccfe3e9b93549680"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "dimension": "Q3",
+            "level": 2,
+            "reason": "With prerequisites e7-e10, learner can follow shoe example explaining key relation (observational diff not causation) and boundary (natural observation vs randomized). Three-layer frame applied correctly; no central derivation error.",
+            "refs": [
+              "e16",
+              "e7",
+              "e8",
+              "e9",
+              "e10"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e16",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "课程资料《早餐调查能说明什么》中提到：“没有随机决定谁吃早餐，也没有控制其他生活安排，因此不能仅凭这项记录断定早餐造成了两题的提高。”这揭示了关键关系：观察性研究中两组平均数的差异，本身只证明差异存在，不自动证明某因素造成提升。\n\n举例：设想学校运动会前，我们发现穿运动鞋的学生跑步成绩平均比穿凉鞋的好。这只是一个观察差异，但可能混杂了平时训练量、身体素质等；不能断定换运动鞋就直接提高成绩。这个例子的适用边界是：它只适用于未随机分配鞋类、未控制训练等的自然观察情景；若教师随机让半数学生穿运动鞋且保证其他条件相同，那比较依据就变了。此为举例，非资料原文。\n\n借助资料的三层评价框架，对这个例子也应先述“穿运动鞋组成绩更高”，再提“可能由于训练更多”的假说，最后说明因果主张未被简单观察支持。",
+                "valueHash": "f653eac8024e376cef6ce8bcbe3cb4d70ebdcd1f839018aaf4434efdb4a309e6"
+              },
+              {
+                "id": "e7",
+                "pointer": "/prerequisites/0",
+                "role": "context",
+                "kind": "text",
+                "value": "能比较两个数量",
+                "valueHash": "17596967bdd44f0a999231d127d4fa47b96b73b90100d03d50d5c10666941bb9"
+              },
+              {
+                "id": "e8",
+                "pointer": "/prerequisites/1",
+                "role": "context",
+                "kind": "text",
+                "value": "理解观察和主动改变的区别",
+                "valueHash": "ebe2541502ea658cd0e305ca6ff18a9e087b990cbe812c24840cc56362abe196"
+              },
+              {
+                "id": "e9",
+                "pointer": "/prerequisites/2",
+                "role": "context",
+                "kind": "text",
+                "value": "Identify that the observational breakfast survey shows a group difference but lacks random assignment/control, so cannot conclude causation; confounding means causal conclusion not established, not proof of ineffectiveness. Also identify that random grouping is a design measure that does not automatically fix implementation differences; must check actual comparison conditions.",
+                "valueHash": "a2e6ab4de33a2b18cbe9e277d76a33cc127f49297b21d81fc01f8f2d24120d01"
+              },
+              {
+                "id": "e10",
+                "pointer": "/prerequisites/3",
+                "role": "context",
+                "kind": "text",
+                "value": "Design alternative explanations compatible with observed data (e.g., sleep habits, family arrangements) and note they are testable rather than proven facts. Design comparisons that reduce confounding (clarify factors/measures, random assign operable arrangement, add covariates/pre-post) while preserving conclusion scope and noting measuring variables does not eliminate all differences.",
+                "valueHash": "cf2117d510dedf6bb4cc93c6eba60fc3bec33719bdbb8078a4eaaa57be8941ab"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q1",
+            "status": "supported",
+            "reason": "Artifact e16 accurately quotes e3 (no random assignment => no causation), correctly generalizes observational difference not automatic causation, shoe example boundary consistent with source random condition; prior audit and correctness checks show no objection.",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e16",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "课程资料《早餐调查能说明什么》中提到：“没有随机决定谁吃早餐，也没有控制其他生活安排，因此不能仅凭这项记录断定早餐造成了两题的提高。”这揭示了关键关系：观察性研究中两组平均数的差异，本身只证明差异存在，不自动证明某因素造成提升。\n\n举例：设想学校运动会前，我们发现穿运动鞋的学生跑步成绩平均比穿凉鞋的好。这只是一个观察差异，但可能混杂了平时训练量、身体素质等；不能断定换运动鞋就直接提高成绩。这个例子的适用边界是：它只适用于未随机分配鞋类、未控制训练等的自然观察情景；若教师随机让半数学生穿运动鞋且保证其他条件相同，那比较依据就变了。此为举例，非资料原文。\n\n借助资料的三层评价框架，对这个例子也应先述“穿运动鞋组成绩更高”，再提“可能由于训练更多”的假说，最后说明因果主张未被简单观察支持。",
+                "valueHash": "f653eac8024e376cef6ce8bcbe3cb4d70ebdcd1f839018aaf4434efdb4a309e6"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "学校想了解早餐与上午阅读表现的关系，于是请一个班的学生自行记录一周早餐情况，并完成同一套阅读练习。记录显示，经常吃早餐的学生平均答对八题，较少吃早餐的学生平均答对六题。这里观察到了两个组的差异，但没有随机决定谁吃早餐，也没有控制其他生活安排，因此不能仅凭这项记录断定早餐造成了两题的提高。\n一种与结果相容的解释是睡眠习惯不同：睡得规律的学生可能既容易按时吃早餐，也更容易在上午集中注意力。另一种解释是家庭安排同时影响早餐和阅读练习时间。这些都是可检验的替代解释，不是已经证明发生的事实。指出混杂的意思是原因果结论尚未建立，不是反过来证明早餐完全无效。观察数据仍然有价值，例如提示值得进一步调查的关系。\n若要改进研究，可以先明确希望比较的因素和测量方式。在伦理和现实条件允许的普通活动研究中，随机分配某个可操作安排能够减少分组选择的影响。对早餐问题也可以增加睡眠、平时阅读水平等记录，或用更合适的前后比较设计；但测量了若干变量不等于排除了所有差异。研究设计越接近只改变目标因素，因果解释通常越有依据；具体能支持到什么范围，还取决于实际执行和数据。\n一个简单的课堂演示可以用两种纸面提示卡而不用改变饮食。把参加者随机分到甲、乙两组，两组做相同难度、相同时间的任务，唯一计划中的差别是是否获得提示卡。若甲组还多得到十分钟，结果就无法单独归因于提示卡。随机分组是一项设计措施，不会自动修复实施时又加入的差别；必须同时检查实际比较条件。\n评价论证可以分三层。第一层只陈述本次样本发生了什么，例如两个组的平均答对数不同。第二层讨论可能解释，清楚标为假说。第三层判断某种因果主张是否被设计和结果支持。把第一层直接改写成第三层，往往会遗漏关键前提。还要留意样本范围：一个班的一周记录不能直接代表所有年龄、所有学校或长期效果。\n遇到“这项调查证明了什么”的问题，不必在“绝对有效”和“完全无效”之间硬选。可以写出观察到的差异、尚未排除的替代解释，以及下一步应补充的比较。这样的回答既尊重证据，也给出可操作的后续行动。它不是回避判断，而是在区分已经建立的结论与仍待检验的主张。",
+                "valueHash": "944a460c4eccfdbd61d456dc9fc3969b0ed10c585ea05e87ccfe3e9b93549680"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "dimension": "Q3",
+            "status": "supported",
+            "reason": "With prerequisites e7-e10, e16 shoe example explains key relation (observational diff not causation) and boundary (natural vs randomized), three-layer frame applied; prior audit level2 and no defect found.",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e16",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "课程资料《早餐调查能说明什么》中提到：“没有随机决定谁吃早餐，也没有控制其他生活安排，因此不能仅凭这项记录断定早餐造成了两题的提高。”这揭示了关键关系：观察性研究中两组平均数的差异，本身只证明差异存在，不自动证明某因素造成提升。\n\n举例：设想学校运动会前，我们发现穿运动鞋的学生跑步成绩平均比穿凉鞋的好。这只是一个观察差异，但可能混杂了平时训练量、身体素质等；不能断定换运动鞋就直接提高成绩。这个例子的适用边界是：它只适用于未随机分配鞋类、未控制训练等的自然观察情景；若教师随机让半数学生穿运动鞋且保证其他条件相同，那比较依据就变了。此为举例，非资料原文。\n\n借助资料的三层评价框架，对这个例子也应先述“穿运动鞋组成绩更高”，再提“可能由于训练更多”的假说，最后说明因果主张未被简单观察支持。",
+                "valueHash": "f653eac8024e376cef6ce8bcbe3cb4d70ebdcd1f839018aaf4434efdb4a309e6"
+              },
+              {
+                "id": "e7",
+                "pointer": "/prerequisites/0",
+                "role": "context",
+                "kind": "text",
+                "value": "能比较两个数量",
+                "valueHash": "17596967bdd44f0a999231d127d4fa47b96b73b90100d03d50d5c10666941bb9"
+              },
+              {
+                "id": "e8",
+                "pointer": "/prerequisites/1",
+                "role": "context",
+                "kind": "text",
+                "value": "理解观察和主动改变的区别",
+                "valueHash": "ebe2541502ea658cd0e305ca6ff18a9e087b990cbe812c24840cc56362abe196"
+              },
+              {
+                "id": "e9",
+                "pointer": "/prerequisites/2",
+                "role": "context",
+                "kind": "text",
+                "value": "Identify that the observational breakfast survey shows a group difference but lacks random assignment/control, so cannot conclude causation; confounding means causal conclusion not established, not proof of ineffectiveness. Also identify that random grouping is a design measure that does not automatically fix implementation differences; must check actual comparison conditions.",
+                "valueHash": "a2e6ab4de33a2b18cbe9e277d76a33cc127f49297b21d81fc01f8f2d24120d01"
+              },
+              {
+                "id": "e10",
+                "pointer": "/prerequisites/3",
+                "role": "context",
+                "kind": "text",
+                "value": "Design alternative explanations compatible with observed data (e.g., sleep habits, family arrangements) and note they are testable rather than proven facts. Design comparisons that reduce confounding (clarify factors/measures, random assign operable arrangement, add covariates/pre-post) while preserving conclusion scope and noting measuring variables does not eliminate all differences.",
+                "valueHash": "cf2117d510dedf6bb4cc93c6eba60fc3bec33719bdbb8078a4eaaa57be8941ab"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q1",
+          "level": 2,
+          "reason": "Artifact e16 quotes source e3 accurately on no random assignment => no causation, correctly generalizes observational difference not automatic causation; example boundary consistent with source random condition. No false claim or invented support.",
+          "refs": [
+            "e16",
+            "e3"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e16",
+              "pointer": "/artifacts/0/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "课程资料《早餐调查能说明什么》中提到：“没有随机决定谁吃早餐，也没有控制其他生活安排，因此不能仅凭这项记录断定早餐造成了两题的提高。”这揭示了关键关系：观察性研究中两组平均数的差异，本身只证明差异存在，不自动证明某因素造成提升。\n\n举例：设想学校运动会前，我们发现穿运动鞋的学生跑步成绩平均比穿凉鞋的好。这只是一个观察差异，但可能混杂了平时训练量、身体素质等；不能断定换运动鞋就直接提高成绩。这个例子的适用边界是：它只适用于未随机分配鞋类、未控制训练等的自然观察情景；若教师随机让半数学生穿运动鞋且保证其他条件相同，那比较依据就变了。此为举例，非资料原文。\n\n借助资料的三层评价框架，对这个例子也应先述“穿运动鞋组成绩更高”，再提“可能由于训练更多”的假说，最后说明因果主张未被简单观察支持。",
+              "valueHash": "f653eac8024e376cef6ce8bcbe3cb4d70ebdcd1f839018aaf4434efdb4a309e6"
+            },
+            {
+              "id": "e3",
+              "pointer": "/sources/0/text",
+              "role": "source",
+              "kind": "text",
+              "value": "学校想了解早餐与上午阅读表现的关系，于是请一个班的学生自行记录一周早餐情况，并完成同一套阅读练习。记录显示，经常吃早餐的学生平均答对八题，较少吃早餐的学生平均答对六题。这里观察到了两个组的差异，但没有随机决定谁吃早餐，也没有控制其他生活安排，因此不能仅凭这项记录断定早餐造成了两题的提高。\n一种与结果相容的解释是睡眠习惯不同：睡得规律的学生可能既容易按时吃早餐，也更容易在上午集中注意力。另一种解释是家庭安排同时影响早餐和阅读练习时间。这些都是可检验的替代解释，不是已经证明发生的事实。指出混杂的意思是原因果结论尚未建立，不是反过来证明早餐完全无效。观察数据仍然有价值，例如提示值得进一步调查的关系。\n若要改进研究，可以先明确希望比较的因素和测量方式。在伦理和现实条件允许的普通活动研究中，随机分配某个可操作安排能够减少分组选择的影响。对早餐问题也可以增加睡眠、平时阅读水平等记录，或用更合适的前后比较设计；但测量了若干变量不等于排除了所有差异。研究设计越接近只改变目标因素，因果解释通常越有依据；具体能支持到什么范围，还取决于实际执行和数据。\n一个简单的课堂演示可以用两种纸面提示卡而不用改变饮食。把参加者随机分到甲、乙两组，两组做相同难度、相同时间的任务，唯一计划中的差别是是否获得提示卡。若甲组还多得到十分钟，结果就无法单独归因于提示卡。随机分组是一项设计措施，不会自动修复实施时又加入的差别；必须同时检查实际比较条件。\n评价论证可以分三层。第一层只陈述本次样本发生了什么，例如两个组的平均答对数不同。第二层讨论可能解释，清楚标为假说。第三层判断某种因果主张是否被设计和结果支持。把第一层直接改写成第三层，往往会遗漏关键前提。还要留意样本范围：一个班的一周记录不能直接代表所有年龄、所有学校或长期效果。\n遇到“这项调查证明了什么”的问题，不必在“绝对有效”和“完全无效”之间硬选。可以写出观察到的差异、尚未排除的替代解释，以及下一步应补充的比较。这样的回答既尊重证据，也给出可操作的后续行动。它不是回避判断，而是在区分已经建立的结论与仍待检验的主张。",
+              "valueHash": "944a460c4eccfdbd61d456dc9fc3969b0ed10c585ea05e87ccfe3e9b93549680"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [],
+          "proposedLevel": 2,
+          "proposedReason": "Artifact e16 quotes source e3 accurately on no random assignment => no causation, correctly generalizes observational difference not automatic causation; example boundary consistent with source random condition. No false claim or invented support."
+        },
+        {
+          "dimension": "Q3",
+          "level": 2,
+          "reason": "With prerequisites e7-e10, learner can follow shoe example explaining key relation (observational diff not causation) and boundary (natural observation vs randomized). Three-layer frame applied correctly; no central derivation error.",
+          "refs": [
+            "e16",
+            "e7",
+            "e8",
+            "e9",
+            "e10"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e16",
+              "pointer": "/artifacts/0/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "课程资料《早餐调查能说明什么》中提到：“没有随机决定谁吃早餐，也没有控制其他生活安排，因此不能仅凭这项记录断定早餐造成了两题的提高。”这揭示了关键关系：观察性研究中两组平均数的差异，本身只证明差异存在，不自动证明某因素造成提升。\n\n举例：设想学校运动会前，我们发现穿运动鞋的学生跑步成绩平均比穿凉鞋的好。这只是一个观察差异，但可能混杂了平时训练量、身体素质等；不能断定换运动鞋就直接提高成绩。这个例子的适用边界是：它只适用于未随机分配鞋类、未控制训练等的自然观察情景；若教师随机让半数学生穿运动鞋且保证其他条件相同，那比较依据就变了。此为举例，非资料原文。\n\n借助资料的三层评价框架，对这个例子也应先述“穿运动鞋组成绩更高”，再提“可能由于训练更多”的假说，最后说明因果主张未被简单观察支持。",
+              "valueHash": "f653eac8024e376cef6ce8bcbe3cb4d70ebdcd1f839018aaf4434efdb4a309e6"
+            },
+            {
+              "id": "e7",
+              "pointer": "/prerequisites/0",
+              "role": "context",
+              "kind": "text",
+              "value": "能比较两个数量",
+              "valueHash": "17596967bdd44f0a999231d127d4fa47b96b73b90100d03d50d5c10666941bb9"
+            },
+            {
+              "id": "e8",
+              "pointer": "/prerequisites/1",
+              "role": "context",
+              "kind": "text",
+              "value": "理解观察和主动改变的区别",
+              "valueHash": "ebe2541502ea658cd0e305ca6ff18a9e087b990cbe812c24840cc56362abe196"
+            },
+            {
+              "id": "e9",
+              "pointer": "/prerequisites/2",
+              "role": "context",
+              "kind": "text",
+              "value": "Identify that the observational breakfast survey shows a group difference but lacks random assignment/control, so cannot conclude causation; confounding means causal conclusion not established, not proof of ineffectiveness. Also identify that random grouping is a design measure that does not automatically fix implementation differences; must check actual comparison conditions.",
+              "valueHash": "a2e6ab4de33a2b18cbe9e277d76a33cc127f49297b21d81fc01f8f2d24120d01"
+            },
+            {
+              "id": "e10",
+              "pointer": "/prerequisites/3",
+              "role": "context",
+              "kind": "text",
+              "value": "Design alternative explanations compatible with observed data (e.g., sleep habits, family arrangements) and note they are testable rather than proven facts. Design comparisons that reduce confounding (clarify factors/measures, random assign operable arrangement, add covariates/pre-post) while preserving conclusion scope and noting measuring variables does not eliminate all differences.",
+              "valueHash": "cf2117d510dedf6bb4cc93c6eba60fc3bec33719bdbb8078a4eaaa57be8941ab"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [],
+          "proposedLevel": 2,
+          "proposedReason": "With prerequisites e7-e10, learner can follow shoe example explaining key relation (observational diff not causation) and boundary (natural observation vs randomized). Three-layer frame applied correctly; no central derivation error."
+        }
+      ],
+      "reviewRequired": [],
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q1",
+            "status": "supported",
+            "reason": "Artifact e16 accurately quotes e3 (no random assignment => no causation), correctly generalizes observational difference not automatic causation, shoe example boundary consistent with source random condition; prior audit and correctness checks show no objection.",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e16",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "课程资料《早餐调查能说明什么》中提到：“没有随机决定谁吃早餐，也没有控制其他生活安排，因此不能仅凭这项记录断定早餐造成了两题的提高。”这揭示了关键关系：观察性研究中两组平均数的差异，本身只证明差异存在，不自动证明某因素造成提升。\n\n举例：设想学校运动会前，我们发现穿运动鞋的学生跑步成绩平均比穿凉鞋的好。这只是一个观察差异，但可能混杂了平时训练量、身体素质等；不能断定换运动鞋就直接提高成绩。这个例子的适用边界是：它只适用于未随机分配鞋类、未控制训练等的自然观察情景；若教师随机让半数学生穿运动鞋且保证其他条件相同，那比较依据就变了。此为举例，非资料原文。\n\n借助资料的三层评价框架，对这个例子也应先述“穿运动鞋组成绩更高”，再提“可能由于训练更多”的假说，最后说明因果主张未被简单观察支持。",
+                "valueHash": "f653eac8024e376cef6ce8bcbe3cb4d70ebdcd1f839018aaf4434efdb4a309e6"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "学校想了解早餐与上午阅读表现的关系，于是请一个班的学生自行记录一周早餐情况，并完成同一套阅读练习。记录显示，经常吃早餐的学生平均答对八题，较少吃早餐的学生平均答对六题。这里观察到了两个组的差异，但没有随机决定谁吃早餐，也没有控制其他生活安排，因此不能仅凭这项记录断定早餐造成了两题的提高。\n一种与结果相容的解释是睡眠习惯不同：睡得规律的学生可能既容易按时吃早餐，也更容易在上午集中注意力。另一种解释是家庭安排同时影响早餐和阅读练习时间。这些都是可检验的替代解释，不是已经证明发生的事实。指出混杂的意思是原因果结论尚未建立，不是反过来证明早餐完全无效。观察数据仍然有价值，例如提示值得进一步调查的关系。\n若要改进研究，可以先明确希望比较的因素和测量方式。在伦理和现实条件允许的普通活动研究中，随机分配某个可操作安排能够减少分组选择的影响。对早餐问题也可以增加睡眠、平时阅读水平等记录，或用更合适的前后比较设计；但测量了若干变量不等于排除了所有差异。研究设计越接近只改变目标因素，因果解释通常越有依据；具体能支持到什么范围，还取决于实际执行和数据。\n一个简单的课堂演示可以用两种纸面提示卡而不用改变饮食。把参加者随机分到甲、乙两组，两组做相同难度、相同时间的任务，唯一计划中的差别是是否获得提示卡。若甲组还多得到十分钟，结果就无法单独归因于提示卡。随机分组是一项设计措施，不会自动修复实施时又加入的差别；必须同时检查实际比较条件。\n评价论证可以分三层。第一层只陈述本次样本发生了什么，例如两个组的平均答对数不同。第二层讨论可能解释，清楚标为假说。第三层判断某种因果主张是否被设计和结果支持。把第一层直接改写成第三层，往往会遗漏关键前提。还要留意样本范围：一个班的一周记录不能直接代表所有年龄、所有学校或长期效果。\n遇到“这项调查证明了什么”的问题，不必在“绝对有效”和“完全无效”之间硬选。可以写出观察到的差异、尚未排除的替代解释，以及下一步应补充的比较。这样的回答既尊重证据，也给出可操作的后续行动。它不是回避判断，而是在区分已经建立的结论与仍待检验的主张。",
+                "valueHash": "944a460c4eccfdbd61d456dc9fc3969b0ed10c585ea05e87ccfe3e9b93549680"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "dimension": "Q3",
+            "status": "supported",
+            "reason": "With prerequisites e7-e10, e16 shoe example explains key relation (observational diff not causation) and boundary (natural vs randomized), three-layer frame applied; prior audit level2 and no defect found.",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e16",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "课程资料《早餐调查能说明什么》中提到：“没有随机决定谁吃早餐，也没有控制其他生活安排，因此不能仅凭这项记录断定早餐造成了两题的提高。”这揭示了关键关系：观察性研究中两组平均数的差异，本身只证明差异存在，不自动证明某因素造成提升。\n\n举例：设想学校运动会前，我们发现穿运动鞋的学生跑步成绩平均比穿凉鞋的好。这只是一个观察差异，但可能混杂了平时训练量、身体素质等；不能断定换运动鞋就直接提高成绩。这个例子的适用边界是：它只适用于未随机分配鞋类、未控制训练等的自然观察情景；若教师随机让半数学生穿运动鞋且保证其他条件相同，那比较依据就变了。此为举例，非资料原文。\n\n借助资料的三层评价框架，对这个例子也应先述“穿运动鞋组成绩更高”，再提“可能由于训练更多”的假说，最后说明因果主张未被简单观察支持。",
+                "valueHash": "f653eac8024e376cef6ce8bcbe3cb4d70ebdcd1f839018aaf4434efdb4a309e6"
+              },
+              {
+                "id": "e7",
+                "pointer": "/prerequisites/0",
+                "role": "context",
+                "kind": "text",
+                "value": "能比较两个数量",
+                "valueHash": "17596967bdd44f0a999231d127d4fa47b96b73b90100d03d50d5c10666941bb9"
+              },
+              {
+                "id": "e8",
+                "pointer": "/prerequisites/1",
+                "role": "context",
+                "kind": "text",
+                "value": "理解观察和主动改变的区别",
+                "valueHash": "ebe2541502ea658cd0e305ca6ff18a9e087b990cbe812c24840cc56362abe196"
+              },
+              {
+                "id": "e9",
+                "pointer": "/prerequisites/2",
+                "role": "context",
+                "kind": "text",
+                "value": "Identify that the observational breakfast survey shows a group difference but lacks random assignment/control, so cannot conclude causation; confounding means causal conclusion not established, not proof of ineffectiveness. Also identify that random grouping is a design measure that does not automatically fix implementation differences; must check actual comparison conditions.",
+                "valueHash": "a2e6ab4de33a2b18cbe9e277d76a33cc127f49297b21d81fc01f8f2d24120d01"
+              },
+              {
+                "id": "e10",
+                "pointer": "/prerequisites/3",
+                "role": "context",
+                "kind": "text",
+                "value": "Design alternative explanations compatible with observed data (e.g., sleep habits, family arrangements) and note they are testable rather than proven facts. Design comparisons that reduce confounding (clarify factors/measures, random assign operable arrangement, add covariates/pre-post) while preserving conclusion scope and noting measuring variables does not eliminate all differences.",
+                "valueHash": "cf2117d510dedf6bb4cc93c6eba60fc3bec33719bdbb8078a4eaaa57be8941ab"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "resultHash": "c8c46babd47348563bdadc8c045eb5b2126dbcfecb71847f3a7ebdb851d66b4b"
+  }
+}

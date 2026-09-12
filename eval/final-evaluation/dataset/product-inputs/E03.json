@@ -1,0 +1,99 @@
+{
+  "sourceId": "E03",
+  "title": "OpenStax：平均数、中位数与众数",
+  "domain": "statistics_descriptive_measures",
+  "prerequisites": [
+    "能够排序数字并做简单加减乘除",
+    "知道次数或频数的含义"
+  ],
+  "goals": [
+    "用中文解释平均数、中位数与众数回答的不同问题",
+    "说明存在极端值时中位数与平均数的不同表现",
+    "保留奇偶样本量、最高频数并列与定性数据众数的条件"
+  ],
+  "intendedDepth": "working_fluency",
+  "text": "The \"center\" of a data set is also a way of describing location. The two most widely used measures of the \"center\" of the data are the mean (average) and the median. To calculate the mean weight of 50 people, add the 50 weights together and divide by 50. To find the median weight of the 50 people, order the data and find the number that splits the data into two equal parts. The median is generally a better measure of the center when there are extreme values or outliers because it is not affected by the precise numerical values of the outliers. The mean is the most common measure of the center.\n\nThe words “mean” and “average” are often used interchangeably. The substitution of one word for the other is common practice. The technical term is “arithmetic mean” and “average” is technically a center location. However, in practice among non-statisticians, “average\" is commonly accepted for “arithmetic mean.”\n\nWhen each value in the data set is not unique, the mean can be calculated by multiplying each distinct value by its frequency and then dividing the sum by the total number of data values.\n\nThe letter n is the total number of data values in the sample. If n is an odd number, the median is the middle value of the ordered data (ordered smallest to largest). If n is an even number, the median is equal to the two middle values added together and divided by two after the data has been ordered.\n\nAnother measure of the center is the mode. The mode is the most frequent value. There can be more than one mode in a data set as long as those values have the same frequency and that frequency is the highest. A data set with two modes is called bimodal.\n\nThe mode can be calculated for qualitative data as well as for quantitative data. For example, if the data set is: red, red, red, green, green, yellow, purple, black, blue, the mode is red.",
+  "formalFit": {
+    "eligible": true,
+    "rationale": "来源明确支持概念解释；具体 Formal 准入仍由生产应用依据当前目标和权限决定。"
+  },
+  "formalGoodAnswer": "算术平均数把全部数值相加后除以数据个数；重复值也可先按频数相乘求和，再除以总个数。中位数先将数据从小到大排序：个数为奇数时取中间值，偶数时取中间两个值的平均。极端值的大小会明显影响平均数，而中位数不依赖极端值的精确大小，因此有极端值时常更适合描述中间位置。众数是出现次数最多的值，最高频数并列时可以有多个众数，两个时称双峰。众数既可以用于数值，也可以用于颜色等定性数据。",
+  "formalInsufficientAnswer": "我只根据结果作判断，不需要解释资料中的关系、定义或适用条件。",
+  "provenance": {
+    "kind": "external_textbook_excerpt",
+    "publisher": "OpenStax, Rice University",
+    "bookTitle": "Introductory Statistics 2e",
+    "section": "2.5 Measures of the Center of the Data",
+    "sourceLanguage": "en",
+    "teachingLanguage": "zh-CN",
+    "canonicalUrl": "https://raw.githubusercontent.com/openstax/osbooks-introductory-statistics-bundle/77ae6260c6dc0903baf7a6dc748feb69f8a85122/modules/m46928/index.cnxml",
+    "currentReadablePageUrl": "https://openstax.org/books/introductory-statistics-2e/pages/2-5-measures-of-the-center-of-the-data",
+    "retrievedAt": "2026-09-11T18:52:37.563Z",
+    "sourceRepository": "https://github.com/openstax/osbooks-introductory-statistics-bundle",
+    "sourceCommit": "77ae6260c6dc0903baf7a6dc748feb69f8a85122",
+    "sourceCommitDate": "2025-12-04T20:36:22Z",
+    "documentUuid": "d9656d2a-5f02-4142-8bc1-8b5cb8feedf9",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+    "licenseEvidenceUrl": "https://raw.githubusercontent.com/openstax/osbooks-introductory-statistics-bundle/77ae6260c6dc0903baf7a6dc748feb69f8a85122/LICENSE",
+    "collectionLicenseEvidenceUrl": "https://raw.githubusercontent.com/openstax/osbooks-introductory-statistics-bundle/77ae6260c6dc0903baf7a6dc748feb69f8a85122/collections/introductory-statistics-2e.collection.xml",
+    "attribution": "Excerpted from OpenStax, Introductory Statistics 2e, 2.5 Measures of the Center of the Data, source revision 77ae6260c6dc0903baf7a6dc748feb69f8a85122, licensed CC BY 4.0. Whitespace normalized; selected paragraphs or exact sentence spans; no substantive paraphrase. Chinese goals and scripted answer controls authored for this evaluation.",
+    "modifications": "Extracted XML textContent, collapsed runs of whitespace to one space, selected specified full paragraphs/exact sentence spans, and joined with blank lines. Equations, figure-dependent references and omitted surrounding material are outside excerpt scope.",
+    "currentPageLicenseNotice": "Live HTML retrieved in 2026 displays CC BY-NC-SA 4.0. The evaluation excerpt is sourced from the separately retrieved, pinned pre-2026 CC BY 4.0 publisher repository revision; the live page is contextual provenance, not the license grant for this excerpt.",
+    "rawCnxmlSha256": "70d12ef42cd48e5d55ec52fde4f5c1c58f2df172dc14351bec7a5a242552b0f5",
+    "rawHtmlSha256": "3db7201522811bab87e82c7df52dad4e357ec01c694ad7fdca70be1295fc032b",
+    "licenseSha256": "0ff174546cbe3dd1287da231f9796618ac2f6e6595b2d11f567b2c9790f64868",
+    "collectionSha256": "8b9dde8c3c4ad1cd3c35f59a7e5c664e3834284f975300fa8e653b72f82ade35",
+    "extractionSpans": [
+      {
+        "paragraphId": "element-848",
+        "normalizedStart": 0,
+        "normalizedEnd": 600,
+        "paragraphSha256": "6baa51adb9cbf909f25da4ddda76752be27d560b4ac3a1d6b0c041d6981ac9a8",
+        "excerptSha256": "6baa51adb9cbf909f25da4ddda76752be27d560b4ac3a1d6b0c041d6981ac9a8"
+      },
+      {
+        "paragraphId": "fs-idp62684352",
+        "normalizedStart": 0,
+        "normalizedEnd": 313,
+        "paragraphSha256": "19be2a716bb91fe07decad4f20f53a46ca2df65a6ca58a88145599e3f2632032",
+        "excerptSha256": "19be2a716bb91fe07decad4f20f53a46ca2df65a6ca58a88145599e3f2632032"
+      },
+      {
+        "paragraphId": "element-44",
+        "normalizedStart": 0,
+        "normalizedEnd": 187,
+        "paragraphSha256": "a8519138839eed8cb1d44a279a34663cff0a5c10a7e03520cee36062f885841f",
+        "excerptSha256": "93f5b9141f1a526bcdfbceebdf88ca0b70b1291d822409cae87bfc74b2ccd28e"
+      },
+      {
+        "paragraphId": "element-860",
+        "normalizedStart": 0,
+        "normalizedEnd": 303,
+        "paragraphSha256": "08d270987909c8d1b5a9dd024feec4abc699a10aad0d68bc9e4ef3312d39886a",
+        "excerptSha256": "eb3f1dae370d501ba42f4fdaf4a65a9097d8c41e801361246b2f722dccc5efa6"
+      },
+      {
+        "paragraphId": "element-584",
+        "normalizedStart": 0,
+        "normalizedEnd": 253,
+        "paragraphSha256": "f29e481b2b8031b69a33cd404d6cfa10096e8bfc4ff54274f3e2738b0c00f1c1",
+        "excerptSha256": "f29e481b2b8031b69a33cd404d6cfa10096e8bfc4ff54274f3e2738b0c00f1c1"
+      },
+      {
+        "paragraphId": "fs-idm78257648",
+        "normalizedStart": 0,
+        "normalizedEnd": 189,
+        "paragraphSha256": "63a0c0f20181860e5637d2041e8cc2e2b95d41e1eeab13375f5ca5e3b2b856b2",
+        "excerptSha256": "63a0c0f20181860e5637d2041e8cc2e2b95d41e1eeab13375f5ca5e3b2b856b2"
+      }
+    ],
+    "limitations": [
+      "Exact prose spans are selected to avoid incomplete MathML flattening and medical examples; numerical display equations are not included.",
+      "The outlier statement concerns the precise numerical magnitude of existing extreme values; it is not a universal claim that adding observations cannot change the median."
+    ],
+    "humanPacketEligible": false
+  },
+  "textHash": "d472be8e4d1e92054873fa9ae01fc466643fca58c527774d10170357a96d3f79",
+  "triggerPracticeRepair": true
+}

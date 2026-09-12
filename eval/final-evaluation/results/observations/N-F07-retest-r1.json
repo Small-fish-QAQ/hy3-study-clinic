@@ -1,0 +1,696 @@
+{
+  "task": {
+    "caseId": "N-F07-retest",
+    "runId": "N-F07-retest-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-F07-retest.json",
+    "inputHash": "04e2d63686fba7b1fd9345305122df62ff3248e9797c7489df9f9519f0fe53a9",
+    "population": "natural",
+    "sourceId": "F07"
+  },
+  "inputHash": "04e2d63686fba7b1fd9345305122df62ff3248e9797c7489df9f9519f0fe53a9",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "prepare-context-current": "379c4fbfab033a42f56b58879521fb4dbaea8d908bda159021f5844c488974e6",
+      "solve-current": "f41b794264880a09d66e4e3f1e74354dde760df837c8551c4f52f16f7dca2895",
+      "correctness": "82ea6dd26b9cd4d379d1aafb76351a543fbfb23a618687047438789b4d326b26",
+      "artifact-audit": "82ea6dd26b9cd4d379d1aafb76351a543fbfb23a618687047438789b4d326b26"
+    },
+    "stages": {
+      "prepare-context-current": {
+        "contexts": [
+          {
+            "taskId": "current",
+            "status": "ready",
+            "reason": "情景事实取自 history h47 (e95) 中与题干完全相同的观察记录与研究者推理行为描述，已剔除提问句及后续选项/解答，可独立分离供盲解使用。",
+            "premises": [
+              {
+                "ref": "e95",
+                "quote": "窝甲（含糖食物+温暖处）10只中8只活跃，窝乙（无糖食物+阴凉处）10只中2只活跃",
+                "proposedRef": "h47",
+                "witness": {
+                  "id": "e95",
+                  "pointer": "/history/46/text",
+                  "role": "prior_exposure",
+                  "kind": "text",
+                  "value": "下表记录两个蚂蚁窝的观察：窝甲（含糖食物+温暖处）10只中8只活跃，窝乙（无糖食物+阴凉处）10只中2只活跃。研究者写下一步推理：“因为本实验想测试食物糖分的影响，所以活跃差异唯一来自糖，忽略温度。” 请判断这个中间步骤属于哪类？",
+                  "valueHash": "a6483e43edbc0d87dd770c8b47f1b30f2b83e7123cf1d49ef910f3a319a020be"
+                }
+              },
+              {
+                "ref": "e95",
+                "quote": "研究者写下一步推理：“因为本实验想测试食物糖分的影响，所以活跃差异唯一来自糖，忽略温度。”",
+                "proposedRef": "h47",
+                "witness": {
+                  "id": "e95",
+                  "pointer": "/history/46/text",
+                  "role": "prior_exposure",
+                  "kind": "text",
+                  "value": "下表记录两个蚂蚁窝的观察：窝甲（含糖食物+温暖处）10只中8只活跃，窝乙（无糖食物+阴凉处）10只中2只活跃。研究者写下一步推理：“因为本实验想测试食物糖分的影响，所以活跃差异唯一来自糖，忽略温度。” 请判断这个中间步骤属于哪类？",
+                  "valueHash": "a6483e43edbc0d87dd770c8b47f1b30f2b83e7123cf1d49ef910f3a319a020be"
+                }
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "solve-current": {
+        "status": "resolved",
+        "solution": "该中间步骤属于错误步骤，对应选项B。题目情景（e23-e24）显示窝甲（含糖+温暖）与窝乙（无糖+阴凉）同时改变了糖分与温度；依据来源e3（F07）及先决e9，比较中多变量同时改变时不能把差异唯一归因于单一因素，故研究者“忽略温度、唯一归因为糖”的推理不成立。",
+        "witnesses": [
+          {
+            "id": "e14",
+            "pointer": "/question/prompt",
+            "role": "question",
+            "kind": "text",
+            "value": "下表记录两个蚂蚁窝的观察：窝甲（含糖食物+温暖处）10只中8只活跃，窝乙（无糖食物+阴凉处）10只中2只活跃。研究者写下一步推理：“因为本实验想测试食物糖分的影响，所以活跃差异唯一来自糖，忽略温度。” 请判断这个中间步骤属于哪类？",
+            "valueHash": "a6483e43edbc0d87dd770c8b47f1b30f2b83e7123cf1d49ef910f3a319a020be"
+          },
+          {
+            "id": "e3",
+            "pointer": "/sources/0/text",
+            "role": "source",
+            "kind": "text",
+            "value": "课堂把同一批种子分到两个透明盒中，想比较有水和无水时的发芽情况。为了使比较有意义，应尽量让其他有关条件一致，例如种子数量、来源、温度、光照、观察天数与发芽判定方式。若有水盒放在温暖窗台、无水盒放在冷暗柜里，即使结果不同，也无法把差异单独归因于水，因为温度和光照同时改变了。\n这里把“发芽”操作性地定义为观察到胚根伸出种皮，便于不同记录者使用同一标准。这个定义是本实验的观察规则，不是所有生物过程的完整描述。记录者应按事先约定的时间观察全部种子，而不是只挑成功的那几颗展示。没有发芽的种子也必须计入，才能知道发芽比例。\n设两盒各十粒同批种子，均在同温同光处放置七天。甲盒保持适量湿润，乙盒保持干燥。甲有八粒达到上述标准，乙有一粒。可以说在这批种子和这些条件下，湿润组观察到的发芽比例更高。仅凭这一次观察，还不能断言所有种类的种子只要加水都会发芽；种子活性、温度及其他条件仍可能重要。也不能说乙盒绝对没有任何水分，因为“保持干燥”是操作描述，并未测出零水分。\n重复实验可以帮助检查结果是否稳定，但重复的对象、条件与方法需要记录。把同一张照片复制三次不是三次独立实验。同一盒内种子也共享环境，不能总把它们当成互不影响的完整重复。入门练习无需复杂统计检验，只要能说明为什么重复有用、哪些信息仍然有限。\n好的后续实验应对应目前的疑问。如果怀疑温度造成差异，就应在同一温度下只改变湿润条件，或设计清楚的组合比较；不能一边改变温度，一边换种子品种，再把结果归因于某一个因素。若希望研究“水太多是否也影响发芽”，可以在其他条件一致时增加不同水量组，事先说明每组的水量与观察标准。\n解释实验时，把计划、执行、观察和结论分开写。计划相同不代表执行真的相同，需核对记录；观察不同不自动证明唯一原因。允许结果不支持原假说，并据此修改下一步问题，正是实验学习的一部分。对证据保留限制，不妨碍学生提出清楚、可检验的预测。",
+            "valueHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648"
+          },
+          {
+            "id": "e9",
+            "pointer": "/prerequisites/2",
+            "role": "context",
+            "kind": "text",
+            "value": "Identify when a comparison simultaneously changes multiple variables (e.g., water, temperature, light) and thus cannot attribute difference to a single factor; keep other relevant conditions consistent for valid comparison.",
+            "valueHash": "cef7aea2f520a0d199cbc174d7b6b0e4ed7d5f340ad09bc94b602df813939a81"
+          },
+          {
+            "id": "e23",
+            "pointer": "/scenarioContext/0/text",
+            "role": "context",
+            "kind": "text",
+            "value": "窝甲（含糖食物+温暖处）10只中8只活跃，窝乙（无糖食物+阴凉处）10只中2只活跃",
+            "valueHash": "f9b5681ee0b089db9abf2b3254c8e72763b220d0056222845eec8cbae6d2ce6f"
+          }
+        ],
+        "reviewReasons": []
+      },
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "uncertain",
+            "affected": [
+              "Q4"
+            ],
+            "reason": "The counterexample check is not established.",
+            "proposed": {
+              "kind": "conditions",
+              "status": "clear",
+              "affected": [],
+              "reason": "来源 e3 与先决 e9 规定比较中多变量同时改变时不能单一归因。当前题 e14/e131 窝甲含糖+温暖、窝乙无糖+阴凉，糖与温度同时改变；artifact e23/e24 选 B 称错误步骤因温暖阴凉同时改变不能排除温度，e26 解释一致，规则应用正确，无充分/必要混淆。",
+              "refs": [
+                "e3",
+                "e9",
+                "e14",
+                "e23",
+                "e26"
+              ],
+              "challenge": {
+                "status": "closed",
+                "reason": "固定 e3 情景（同批种子，水/温度/光照同时变）并补充相容假设（如温度光照实际无影响），作者结论“无法单独归因”仍指设计混淆致证据不足，不推翻；构造同时改变却能合法单一归因的情况与 e3 明示规则直接矛盾，故被给定规则排除。",
+                "refs": [
+                  "e3",
+                  "e9"
+                ]
+              }
+            },
+            "reviewReasons": [
+              "CONDITIONS_CHALLENGE_UNGROUNDED"
+            ]
+          },
+          {
+            "kind": "quantities",
+            "status": "not_applicable",
+            "affected": [],
+            "reason": "本题及 artifact 无数量公式/单位重算断言，仅含观察计数未参与错误推导。",
+            "contextHash": "82ea6dd26b9cd4d379d1aafb76351a543fbfb23a618687047438789b4d326b26",
+            "proposed": {
+              "kind": "quantities",
+              "status": "not_applicable",
+              "affected": [],
+              "reason": "本题及 artifact 无数量公式/单位重算断言，仅含观察计数未参与错误推导。",
+              "refs": [
+                "e14",
+                "e23"
+              ]
+            },
+            "reviewReasons": []
+          }
+        ],
+        "keys": [
+          {
+            "taskId": "current",
+            "status": "absent",
+            "reason": "rubric absent (e133) 无作者指定答案键；artifacts e23/e26 为产品/脚本作答而非作者键，不能视为当前键。盲解选 B 与 artifact 同但无键可比对。",
+            "refs": [
+              "e133",
+              "e23"
+            ],
+            "witnesses": [
+              {
+                "id": "e133",
+                "pointer": "/rubric",
+                "role": "criterion",
+                "kind": "absent",
+                "value": null,
+                "valueHash": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+              },
+              {
+                "id": "e23",
+                "pointer": "/artifacts/0/id",
+                "role": "artifact",
+                "kind": "text",
+                "value": "current-retest-selected-option",
+                "valueHash": "e616e3a5f76ec84c63d9e263a7a81397d7adc717d7be2dac3334e0d0e5d653fc"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q4",
+            "level": 2,
+            "reason": "题目前提充分：source e3与prereq e9阐明多变量同时改变不能单一归因，scenarioContext e131-132与prompt e14给出蚂蚁窝情景及研究者错误推理，options e16-21完整。盲解current resolved指定选B，artifact e24选定B文本一致，键一致。prior_exposure e120-e127包含本题题干与选项但未给出答案，e129明确'我不替你选'，故先前仅question_only曝光，未完成本题必要判断（选择类别），本题artifact e23-e26已完成选择与解释，独立性适当。无泄题或前提缺失。",
+            "refs": [
+              "e14",
+              "e16",
+              "e17",
+              "e18",
+              "e19",
+              "e20",
+              "e21",
+              "e23",
+              "e24",
+              "e25",
+              "e26",
+              "e3",
+              "e9",
+              "e131",
+              "e132",
+              "e120",
+              "e121",
+              "e122",
+              "e123",
+              "e124",
+              "e125",
+              "e126",
+              "e127",
+              "e129"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "下表记录两个蚂蚁窝的观察：窝甲（含糖食物+温暖处）10只中8只活跃，窝乙（无糖食物+阴凉处）10只中2只活跃。研究者写下一步推理：“因为本实验想测试食物糖分的影响，所以活跃差异唯一来自糖，忽略温度。” 请判断这个中间步骤属于哪类？",
+                "valueHash": "a6483e43edbc0d87dd770c8b47f1b30f2b83e7123cf1d49ef910f3a319a020be"
+              },
+              {
+                "id": "e16",
+                "pointer": "/question/options/0/id",
+                "role": "question",
+                "kind": "text",
+                "value": "A",
+                "valueHash": "559aead08264d5795d3909718cdd05abd49572e84fe55590eef31a88a08fdffd"
+              },
+              {
+                "id": "e17",
+                "pointer": "/question/options/0/text",
+                "role": "question",
+                "kind": "text",
+                "value": "正确步骤，因为本实验目的为测糖分，所以可把活跃差异唯一归因为糖",
+                "valueHash": "ad88e555b2bbb2faa9c67e9bc613b72ffe4207790783a88ec0c815bf4572e757"
+              },
+              {
+                "id": "e18",
+                "pointer": "/question/options/1/id",
+                "role": "question",
+                "kind": "text",
+                "value": "B",
+                "valueHash": "df7e70e5021544f4834bbee64a9e3789febc4be81470df629cad6ddb03320a5c"
+              },
+              {
+                "id": "e19",
+                "pointer": "/question/options/1/text",
+                "role": "question",
+                "kind": "text",
+                "value": "错误步骤，因为温暖与阴凉也同时改变，不能排除温度影响",
+                "valueHash": "4b66ce478927252d76ace02203c844d80ed1f82fe069c7b8566b01fbb973adc1"
+              },
+              {
+                "id": "e20",
+                "pointer": "/question/options/2/id",
+                "role": "question",
+                "kind": "text",
+                "value": "C",
+                "valueHash": "6b23c0d5f35d1b11f9b683f0b0a617355deb11277d91ae091d399c655b87940d"
+              },
+              {
+                "id": "e21",
+                "pointer": "/question/options/2/text",
+                "role": "question",
+                "kind": "text",
+                "value": "正确步骤，因为记录中只标记了糖的有无，未标记温度，所以温度不是变量",
+                "valueHash": "2a5cfc4cb95503ce87114d7ffa38709ebee15114fa3443416cc5060c37045344"
+              },
+              {
+                "id": "e23",
+                "pointer": "/artifacts/0/id",
+                "role": "artifact",
+                "kind": "text",
+                "value": "current-retest-selected-option",
+                "valueHash": "e616e3a5f76ec84c63d9e263a7a81397d7adc717d7be2dac3334e0d0e5d653fc"
+              },
+              {
+                "id": "e24",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "错误步骤，因为温暖与阴凉也同时改变，不能排除温度影响",
+                "valueHash": "4b66ce478927252d76ace02203c844d80ed1f82fe069c7b8566b01fbb973adc1"
+              },
+              {
+                "id": "e25",
+                "pointer": "/artifacts/1/id",
+                "role": "artifact",
+                "kind": "text",
+                "value": "current-retest-explanation",
+                "valueHash": "34540f995976899a21be89eab6fc090a5f36522f666e368318ecf5433eee72eb"
+              },
+              {
+                "id": "e26",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "窝甲温暖、窝乙阴凉，温度随食物处理同时改变。因此推理步骤忽略温度是错误的，不能因目的而单一归因。",
+                "valueHash": "066b59d88e6ff30de60920cdde5f5097c1572aea153a32f0b9207f851445986d"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "课堂把同一批种子分到两个透明盒中，想比较有水和无水时的发芽情况。为了使比较有意义，应尽量让其他有关条件一致，例如种子数量、来源、温度、光照、观察天数与发芽判定方式。若有水盒放在温暖窗台、无水盒放在冷暗柜里，即使结果不同，也无法把差异单独归因于水，因为温度和光照同时改变了。\n这里把“发芽”操作性地定义为观察到胚根伸出种皮，便于不同记录者使用同一标准。这个定义是本实验的观察规则，不是所有生物过程的完整描述。记录者应按事先约定的时间观察全部种子，而不是只挑成功的那几颗展示。没有发芽的种子也必须计入，才能知道发芽比例。\n设两盒各十粒同批种子，均在同温同光处放置七天。甲盒保持适量湿润，乙盒保持干燥。甲有八粒达到上述标准，乙有一粒。可以说在这批种子和这些条件下，湿润组观察到的发芽比例更高。仅凭这一次观察，还不能断言所有种类的种子只要加水都会发芽；种子活性、温度及其他条件仍可能重要。也不能说乙盒绝对没有任何水分，因为“保持干燥”是操作描述，并未测出零水分。\n重复实验可以帮助检查结果是否稳定，但重复的对象、条件与方法需要记录。把同一张照片复制三次不是三次独立实验。同一盒内种子也共享环境，不能总把它们当成互不影响的完整重复。入门练习无需复杂统计检验，只要能说明为什么重复有用、哪些信息仍然有限。\n好的后续实验应对应目前的疑问。如果怀疑温度造成差异，就应在同一温度下只改变湿润条件，或设计清楚的组合比较；不能一边改变温度，一边换种子品种，再把结果归因于某一个因素。若希望研究“水太多是否也影响发芽”，可以在其他条件一致时增加不同水量组，事先说明每组的水量与观察标准。\n解释实验时，把计划、执行、观察和结论分开写。计划相同不代表执行真的相同，需核对记录；观察不同不自动证明唯一原因。允许结果不支持原假说，并据此修改下一步问题，正是实验学习的一部分。对证据保留限制，不妨碍学生提出清楚、可检验的预测。",
+                "valueHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648"
+              },
+              {
+                "id": "e9",
+                "pointer": "/prerequisites/2",
+                "role": "context",
+                "kind": "text",
+                "value": "Identify when a comparison simultaneously changes multiple variables (e.g., water, temperature, light) and thus cannot attribute difference to a single factor; keep other relevant conditions consistent for valid comparison.",
+                "valueHash": "cef7aea2f520a0d199cbc174d7b6b0e4ed7d5f340ad09bc94b602df813939a81"
+              },
+              {
+                "id": "e131",
+                "pointer": "/scenarioContext/0/text",
+                "role": "context",
+                "kind": "text",
+                "value": "窝甲（含糖食物+温暖处）10只中8只活跃，窝乙（无糖食物+阴凉处）10只中2只活跃",
+                "valueHash": "f9b5681ee0b089db9abf2b3254c8e72763b220d0056222845eec8cbae6d2ce6f"
+              },
+              {
+                "id": "e132",
+                "pointer": "/scenarioContext/1/text",
+                "role": "context",
+                "kind": "text",
+                "value": "研究者写下一步推理：“因为本实验想测试食物糖分的影响，所以活跃差异唯一来自糖，忽略温度。”",
+                "valueHash": "b09cbe57007fc1bcf1c334c54b29e5a73d0f27dd32db363e97fc73e07302414e"
+              },
+              {
+                "id": "e120",
+                "pointer": "/priorExposure/46/id",
+                "role": "prior_exposure",
+                "kind": "text",
+                "value": "prior-46",
+                "valueHash": "0475f607806e1b7da1e610393cca22d99a5b97bbed2d592777161e3aa6cab31e"
+              },
+              {
+                "id": "e121",
+                "pointer": "/priorExposure/46/text",
+                "role": "prior_exposure",
+                "kind": "text",
+                "value": "下表记录两个蚂蚁窝的观察：窝甲（含糖食物+温暖处）10只中8只活跃，窝乙（无糖食物+阴凉处）10只中2只活跃。研究者写下一步推理：“因为本实验想测试食物糖分的影响，所以活跃差异唯一来自糖，忽略温度。” 请判断这个中间步骤属于哪类？",
+                "valueHash": "a6483e43edbc0d87dd770c8b47f1b30f2b83e7123cf1d49ef910f3a319a020be"
+              },
+              {
+                "id": "e122",
+                "pointer": "/priorExposure/47/id",
+                "role": "prior_exposure",
+                "kind": "text",
+                "value": "prior-47",
+                "valueHash": "db6afb47ee1b27141b50d3619fa18e1098b11282e80a5a22aef7b7f69592a58e"
+              },
+              {
+                "id": "e123",
+                "pointer": "/priorExposure/47/text",
+                "role": "prior_exposure",
+                "kind": "text",
+                "value": "正确步骤，因为本实验目的为测糖分，所以可把活跃差异唯一归因为糖",
+                "valueHash": "ad88e555b2bbb2faa9c67e9bc613b72ffe4207790783a88ec0c815bf4572e757"
+              },
+              {
+                "id": "e124",
+                "pointer": "/priorExposure/48/id",
+                "role": "prior_exposure",
+                "kind": "text",
+                "value": "prior-48",
+                "valueHash": "e7fce2e38e139c0853e0e1e5ef64c679e5ccbb2312df9024f34d4b8a62f9802f"
+              },
+              {
+                "id": "e125",
+                "pointer": "/priorExposure/48/text",
+                "role": "prior_exposure",
+                "kind": "text",
+                "value": "错误步骤，因为温暖与阴凉也同时改变，不能排除温度影响",
+                "valueHash": "4b66ce478927252d76ace02203c844d80ed1f82fe069c7b8566b01fbb973adc1"
+              },
+              {
+                "id": "e126",
+                "pointer": "/priorExposure/49/id",
+                "role": "prior_exposure",
+                "kind": "text",
+                "value": "prior-49",
+                "valueHash": "9e06ed0a1083bc2cc5de99367a674f74a3f2c37bf735611ae775cd1835c04320"
+              },
+              {
+                "id": "e127",
+                "pointer": "/priorExposure/49/text",
+                "role": "prior_exposure",
+                "kind": "text",
+                "value": "正确步骤，因为记录中只标记了糖的有无，未标记温度，所以温度不是变量",
+                "valueHash": "2a5cfc4cb95503ce87114d7ffa38709ebee15114fa3443416cc5060c37045344"
+              },
+              {
+                "id": "e129",
+                "pointer": "/priorExposure/50/text",
+                "role": "prior_exposure",
+                "kind": "text",
+                "value": "课程资料指出，比较两个条件时应尽量让其他有关条件一致，例如观察天数与发芽判定方式；若甲盒加水观察7天、乙盒无水观察4天，除水外观察天数也不同，就不能把发芽差异单独归因于水（见资料原句列举观察天数等需一致）。这正是当前练习的关键关系：单一因素归因要求其他变量受控。\n\n举例（补充说明）：想象比较两款手机哪款触屏更灵敏，却让一款在干燥环境测、另一款在潮湿环境测，结果响应不同，你不能只说是手机型号导致，因为环境湿度也变了。这个例子的适用边界是：它仅用来直观展示“额外变量未控制则无法归因”的逻辑，不涉及真实触屏复杂的硬件差异；且若实际测试时两款都在同湿度下，该类比就不适用，那时才可考察手机本身。当前题目留给你判断选项，我不替你选。",
+                "valueHash": "98463466492601085e31eabda2920d8153801ad49d3f58ed0283684b400c9ded"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q4",
+          "level": "U",
+          "reason": "The counterexample check is not established.",
+          "refs": [
+            "e14",
+            "e16",
+            "e17",
+            "e18",
+            "e19",
+            "e20",
+            "e21",
+            "e23",
+            "e24",
+            "e25",
+            "e26",
+            "e3",
+            "e9",
+            "e131",
+            "e132",
+            "e120",
+            "e121",
+            "e122",
+            "e123",
+            "e124",
+            "e125",
+            "e126",
+            "e127",
+            "e129"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e14",
+              "pointer": "/question/prompt",
+              "role": "question",
+              "kind": "text",
+              "value": "下表记录两个蚂蚁窝的观察：窝甲（含糖食物+温暖处）10只中8只活跃，窝乙（无糖食物+阴凉处）10只中2只活跃。研究者写下一步推理：“因为本实验想测试食物糖分的影响，所以活跃差异唯一来自糖，忽略温度。” 请判断这个中间步骤属于哪类？",
+              "valueHash": "a6483e43edbc0d87dd770c8b47f1b30f2b83e7123cf1d49ef910f3a319a020be"
+            },
+            {
+              "id": "e16",
+              "pointer": "/question/options/0/id",
+              "role": "question",
+              "kind": "text",
+              "value": "A",
+              "valueHash": "559aead08264d5795d3909718cdd05abd49572e84fe55590eef31a88a08fdffd"
+            },
+            {
+              "id": "e17",
+              "pointer": "/question/options/0/text",
+              "role": "question",
+              "kind": "text",
+              "value": "正确步骤，因为本实验目的为测糖分，所以可把活跃差异唯一归因为糖",
+              "valueHash": "ad88e555b2bbb2faa9c67e9bc613b72ffe4207790783a88ec0c815bf4572e757"
+            },
+            {
+              "id": "e18",
+              "pointer": "/question/options/1/id",
+              "role": "question",
+              "kind": "text",
+              "value": "B",
+              "valueHash": "df7e70e5021544f4834bbee64a9e3789febc4be81470df629cad6ddb03320a5c"
+            },
+            {
+              "id": "e19",
+              "pointer": "/question/options/1/text",
+              "role": "question",
+              "kind": "text",
+              "value": "错误步骤，因为温暖与阴凉也同时改变，不能排除温度影响",
+              "valueHash": "4b66ce478927252d76ace02203c844d80ed1f82fe069c7b8566b01fbb973adc1"
+            },
+            {
+              "id": "e20",
+              "pointer": "/question/options/2/id",
+              "role": "question",
+              "kind": "text",
+              "value": "C",
+              "valueHash": "6b23c0d5f35d1b11f9b683f0b0a617355deb11277d91ae091d399c655b87940d"
+            },
+            {
+              "id": "e21",
+              "pointer": "/question/options/2/text",
+              "role": "question",
+              "kind": "text",
+              "value": "正确步骤，因为记录中只标记了糖的有无，未标记温度，所以温度不是变量",
+              "valueHash": "2a5cfc4cb95503ce87114d7ffa38709ebee15114fa3443416cc5060c37045344"
+            },
+            {
+              "id": "e23",
+              "pointer": "/artifacts/0/id",
+              "role": "artifact",
+              "kind": "text",
+              "value": "current-retest-selected-option",
+              "valueHash": "e616e3a5f76ec84c63d9e263a7a81397d7adc717d7be2dac3334e0d0e5d653fc"
+            },
+            {
+              "id": "e24",
+              "pointer": "/artifacts/0/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "错误步骤，因为温暖与阴凉也同时改变，不能排除温度影响",
+              "valueHash": "4b66ce478927252d76ace02203c844d80ed1f82fe069c7b8566b01fbb973adc1"
+            },
+            {
+              "id": "e25",
+              "pointer": "/artifacts/1/id",
+              "role": "artifact",
+              "kind": "text",
+              "value": "current-retest-explanation",
+              "valueHash": "34540f995976899a21be89eab6fc090a5f36522f666e368318ecf5433eee72eb"
+            },
+            {
+              "id": "e26",
+              "pointer": "/artifacts/1/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "窝甲温暖、窝乙阴凉，温度随食物处理同时改变。因此推理步骤忽略温度是错误的，不能因目的而单一归因。",
+              "valueHash": "066b59d88e6ff30de60920cdde5f5097c1572aea153a32f0b9207f851445986d"
+            },
+            {
+              "id": "e3",
+              "pointer": "/sources/0/text",
+              "role": "source",
+              "kind": "text",
+              "value": "课堂把同一批种子分到两个透明盒中，想比较有水和无水时的发芽情况。为了使比较有意义，应尽量让其他有关条件一致，例如种子数量、来源、温度、光照、观察天数与发芽判定方式。若有水盒放在温暖窗台、无水盒放在冷暗柜里，即使结果不同，也无法把差异单独归因于水，因为温度和光照同时改变了。\n这里把“发芽”操作性地定义为观察到胚根伸出种皮，便于不同记录者使用同一标准。这个定义是本实验的观察规则，不是所有生物过程的完整描述。记录者应按事先约定的时间观察全部种子，而不是只挑成功的那几颗展示。没有发芽的种子也必须计入，才能知道发芽比例。\n设两盒各十粒同批种子，均在同温同光处放置七天。甲盒保持适量湿润，乙盒保持干燥。甲有八粒达到上述标准，乙有一粒。可以说在这批种子和这些条件下，湿润组观察到的发芽比例更高。仅凭这一次观察，还不能断言所有种类的种子只要加水都会发芽；种子活性、温度及其他条件仍可能重要。也不能说乙盒绝对没有任何水分，因为“保持干燥”是操作描述，并未测出零水分。\n重复实验可以帮助检查结果是否稳定，但重复的对象、条件与方法需要记录。把同一张照片复制三次不是三次独立实验。同一盒内种子也共享环境，不能总把它们当成互不影响的完整重复。入门练习无需复杂统计检验，只要能说明为什么重复有用、哪些信息仍然有限。\n好的后续实验应对应目前的疑问。如果怀疑温度造成差异，就应在同一温度下只改变湿润条件，或设计清楚的组合比较；不能一边改变温度，一边换种子品种，再把结果归因于某一个因素。若希望研究“水太多是否也影响发芽”，可以在其他条件一致时增加不同水量组，事先说明每组的水量与观察标准。\n解释实验时，把计划、执行、观察和结论分开写。计划相同不代表执行真的相同，需核对记录；观察不同不自动证明唯一原因。允许结果不支持原假说，并据此修改下一步问题，正是实验学习的一部分。对证据保留限制，不妨碍学生提出清楚、可检验的预测。",
+              "valueHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648"
+            },
+            {
+              "id": "e9",
+              "pointer": "/prerequisites/2",
+              "role": "context",
+              "kind": "text",
+              "value": "Identify when a comparison simultaneously changes multiple variables (e.g., water, temperature, light) and thus cannot attribute difference to a single factor; keep other relevant conditions consistent for valid comparison.",
+              "valueHash": "cef7aea2f520a0d199cbc174d7b6b0e4ed7d5f340ad09bc94b602df813939a81"
+            },
+            {
+              "id": "e131",
+              "pointer": "/scenarioContext/0/text",
+              "role": "context",
+              "kind": "text",
+              "value": "窝甲（含糖食物+温暖处）10只中8只活跃，窝乙（无糖食物+阴凉处）10只中2只活跃",
+              "valueHash": "f9b5681ee0b089db9abf2b3254c8e72763b220d0056222845eec8cbae6d2ce6f"
+            },
+            {
+              "id": "e132",
+              "pointer": "/scenarioContext/1/text",
+              "role": "context",
+              "kind": "text",
+              "value": "研究者写下一步推理：“因为本实验想测试食物糖分的影响，所以活跃差异唯一来自糖，忽略温度。”",
+              "valueHash": "b09cbe57007fc1bcf1c334c54b29e5a73d0f27dd32db363e97fc73e07302414e"
+            },
+            {
+              "id": "e120",
+              "pointer": "/priorExposure/46/id",
+              "role": "prior_exposure",
+              "kind": "text",
+              "value": "prior-46",
+              "valueHash": "0475f607806e1b7da1e610393cca22d99a5b97bbed2d592777161e3aa6cab31e"
+            },
+            {
+              "id": "e121",
+              "pointer": "/priorExposure/46/text",
+              "role": "prior_exposure",
+              "kind": "text",
+              "value": "下表记录两个蚂蚁窝的观察：窝甲（含糖食物+温暖处）10只中8只活跃，窝乙（无糖食物+阴凉处）10只中2只活跃。研究者写下一步推理：“因为本实验想测试食物糖分的影响，所以活跃差异唯一来自糖，忽略温度。” 请判断这个中间步骤属于哪类？",
+              "valueHash": "a6483e43edbc0d87dd770c8b47f1b30f2b83e7123cf1d49ef910f3a319a020be"
+            },
+            {
+              "id": "e122",
+              "pointer": "/priorExposure/47/id",
+              "role": "prior_exposure",
+              "kind": "text",
+              "value": "prior-47",
+              "valueHash": "db6afb47ee1b27141b50d3619fa18e1098b11282e80a5a22aef7b7f69592a58e"
+            },
+            {
+              "id": "e123",
+              "pointer": "/priorExposure/47/text",
+              "role": "prior_exposure",
+              "kind": "text",
+              "value": "正确步骤，因为本实验目的为测糖分，所以可把活跃差异唯一归因为糖",
+              "valueHash": "ad88e555b2bbb2faa9c67e9bc613b72ffe4207790783a88ec0c815bf4572e757"
+            },
+            {
+              "id": "e124",
+              "pointer": "/priorExposure/48/id",
+              "role": "prior_exposure",
+              "kind": "text",
+              "value": "prior-48",
+              "valueHash": "e7fce2e38e139c0853e0e1e5ef64c679e5ccbb2312df9024f34d4b8a62f9802f"
+            },
+            {
+              "id": "e125",
+              "pointer": "/priorExposure/48/text",
+              "role": "prior_exposure",
+              "kind": "text",
+              "value": "错误步骤，因为温暖与阴凉也同时改变，不能排除温度影响",
+              "valueHash": "4b66ce478927252d76ace02203c844d80ed1f82fe069c7b8566b01fbb973adc1"
+            },
+            {
+              "id": "e126",
+              "pointer": "/priorExposure/49/id",
+              "role": "prior_exposure",
+              "kind": "text",
+              "value": "prior-49",
+              "valueHash": "9e06ed0a1083bc2cc5de99367a674f74a3f2c37bf735611ae775cd1835c04320"
+            },
+            {
+              "id": "e127",
+              "pointer": "/priorExposure/49/text",
+              "role": "prior_exposure",
+              "kind": "text",
+              "value": "正确步骤，因为记录中只标记了糖的有无，未标记温度，所以温度不是变量",
+              "valueHash": "2a5cfc4cb95503ce87114d7ffa38709ebee15114fa3443416cc5060c37045344"
+            },
+            {
+              "id": "e129",
+              "pointer": "/priorExposure/50/text",
+              "role": "prior_exposure",
+              "kind": "text",
+              "value": "课程资料指出，比较两个条件时应尽量让其他有关条件一致，例如观察天数与发芽判定方式；若甲盒加水观察7天、乙盒无水观察4天，除水外观察天数也不同，就不能把发芽差异单独归因于水（见资料原句列举观察天数等需一致）。这正是当前练习的关键关系：单一因素归因要求其他变量受控。\n\n举例（补充说明）：想象比较两款手机哪款触屏更灵敏，却让一款在干燥环境测、另一款在潮湿环境测，结果响应不同，你不能只说是手机型号导致，因为环境湿度也变了。这个例子的适用边界是：它仅用来直观展示“额外变量未控制则无法归因”的逻辑，不涉及真实触屏复杂的硬件差异；且若实际测试时两款都在同湿度下，该类比就不适用，那时才可考察手机本身。当前题目留给你判断选项，我不替你选。",
+              "valueHash": "98463466492601085e31eabda2920d8153801ad49d3f58ed0283684b400c9ded"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [
+            {
+              "level": "U",
+              "code": "INDEPENDENT_CONDITIONS",
+              "detail": {
+                "kind": "conditions",
+                "status": "uncertain",
+                "affected": [
+                  "Q4"
+                ],
+                "reason": "The counterexample check is not established.",
+                "proposed": {
+                  "kind": "conditions",
+                  "status": "clear",
+                  "affected": [],
+                  "reason": "来源 e3 与先决 e9 规定比较中多变量同时改变时不能单一归因。当前题 e14/e131 窝甲含糖+温暖、窝乙无糖+阴凉，糖与温度同时改变；artifact e23/e24 选 B 称错误步骤因温暖阴凉同时改变不能排除温度，e26 解释一致，规则应用正确，无充分/必要混淆。",
+                  "refs": [
+                    "e3",
+                    "e9",
+                    "e14",
+                    "e23",
+                    "e26"
+                  ],
+                  "challenge": {
+                    "status": "closed",
+                    "reason": "固定 e3 情景（同批种子，水/温度/光照同时变）并补充相容假设（如温度光照实际无影响），作者结论“无法单独归因”仍指设计混淆致证据不足，不推翻；构造同时改变却能合法单一归因的情况与 e3 明示规则直接矛盾，故被给定规则排除。",
+                    "refs": [
+                      "e3",
+                      "e9"
+                    ]
+                  }
+                },
+                "reviewReasons": [
+                  "CONDITIONS_CHALLENGE_UNGROUNDED"
+                ]
+              }
+            }
+          ],
+          "proposedLevel": 2,
+          "proposedReason": "题目前提充分：source e3与prereq e9阐明多变量同时改变不能单一归因，scenarioContext e131-132与prompt e14给出蚂蚁窝情景及研究者错误推理，options e16-21完整。盲解current resolved指定选B，artifact e24选定B文本一致，键一致。prior_exposure e120-e127包含本题题干与选项但未给出答案，e129明确'我不替你选'，故先前仅question_only曝光，未完成本题必要判断（选择类别），本题artifact e23-e26已完成选择与解释，独立性适当。无泄题或前提缺失。",
+          "decidingConstraint": "INDEPENDENT_CONDITIONS"
+        }
+      ],
+      "reviewRequired": [
+        {
+          "dimension": "Q4",
+          "reason": "UNRESOLVED"
+        }
+      ]
+    },
+    "resultHash": "afbdc0abbf54ab4740f0118d6e7e9f3ad309208497ced3a848c1d23b82a0816d"
+  }
+}

@@ -1,0 +1,290 @@
+{
+  "task": {
+    "caseId": "E319",
+    "runId": "E319-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E319.json",
+    "inputHash": "1feb5f7c0f6db7f0655e47ce7b2776808e02b38f107576a096b6800295819796",
+    "population": "controlled",
+    "sourceId": "F10"
+  },
+  "inputHash": "1feb5f7c0f6db7f0655e47ce7b2776808e02b38f107576a096b6800295819796",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "correctness": "6dc87065747804dde518e1e01081a67b8ac66f55a938c9b86f8b035dc6354990",
+      "artifact-audit": "6dc87065747804dde518e1e01081a67b8ac66f55a938c9b86f8b035dc6354990",
+      "certification": "6dc87065747804dde518e1e01081a67b8ac66f55a938c9b86f8b035dc6354990"
+    },
+    "stages": {
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "clear",
+            "affected": [],
+            "reason": "artifact(e14)总结规则：盖章需两前置都结束，开工取max，与source(e3)一致。实例'两人独立裁4调3'时间线4-6-11-12与source并行场景一致；'一人全程操作'7+8=15一致。作者表达条件与实例对照无实质错误。",
+            "refs": [
+              "e3",
+              "e14"
+            ],
+            "challenge": {
+              "status": "closed",
+              "reason": "若仅取artifact文字'两人独立'未明工具不冲突，补充冲突致不能并行则结论变；但source(e3)明示并行需两名工作人员且工具互不冲突，artifact总结依赖该上下文，反例与给定事实不容，排除。",
+              "refs": [
+                "e3",
+                "e14"
+              ]
+            },
+            "witnesses": [
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "制作一份纸质纪念册需要四个步骤：裁纸、调墨、盖章、晾干后装袋。这里约定裁纸需要四分钟，调墨需要三分钟；盖章必须在裁纸和调墨都完成后才能开始，需要两分钟；盖章完成后必须连续晾干五分钟，之后装袋需要一分钟。任务从零时刻开始，纸张和墨水均未准备。所有时长固定，不考虑走动与工具切换的额外时间。\n若有两名工作人员，且裁紙工具与调墨工具互不冲突，就可以一人裁纸、一人调墨，从零时刻并行开始。调墨在第三分钟完成，裁纸在第四分钟完成，盖章最早第四分钟开始，第六分钟完成。晾干到第十一分钟，装袋到第十二分钟结束。两条前置路径汇合时，必须等较晚完成的那条，因此不能把三分钟与四分钟相加，也不能只等较短的一条。\n若只有一名工作人员，裁纸和调墨都需要此人全程操作，二者就不能并行，前两步一共七分钟；之后盖章、晾干和装袋再需八分钟，总计十五分钟。晾干本身不占用工作人员，但没有其他待办步骤可在这段时间提前完成。这里的最短时间来自明确依赖和资源条件，不是见到两步就默认可以同时进行。\n工序的顺序关系与总时间要分别检查。一个方案即使碰巧写出十二分钟，只要它在墨未调好时先盖章，仍不合法。反过来，合法方案不一定最短；两名工作人员也可以选择先裁纸后调墨，但那会闲置可用的并行机会。评价方案时，先检查每一步的开工条件，再讨论是否还有不必要的等待。\n如果材料说明改为“盖章后先观察两分钟，确认印迹无扩散后才进入五分钟晾干”，新增步骤会延后装袋时刻，不能沿用旧总时长。若改用一种允许立即装袋的墨，则又需要依据新的明确条件重算。本单元不对真实墨水安全作建议，只按题设的工艺规则安排时间。\n可以用文字时间表表达方案，每行写步骤、开始时刻、结束时刻和它等待的条件。换一种表格或叙述顺序都可以，只要时刻和依赖一致。对缺少工作人员数量或工具冲突信息的问题，应说明哪些并行安排尚不能确定；如果只要求给出一个合法方案，则可以明确提出足够的资源假设，而不是声称它在任何条件下都最短。",
+                "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+              },
+              {
+                "id": "e14",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "两名前置操作都结束才能盖章，最早开工时刻取两者完成时刻的较大值。若两人独立完成裁纸4分钟、调墨3分钟，盖章从4到6，晾干到11，装袋到12。只有一人且前两步必须全程操作时，就先花7分钟再进行后续，最早15分钟。先检查依赖与资源，再检查是否有无谓等待；合法不等于最快。",
+                "valueHash": "33824fb66056692a54116221be7ec4cd5e188b08312f05d3d6de83b6860bc990"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "kind": "quantities",
+            "status": "clear",
+            "affected": [],
+            "reason": "独立重算：两人并行从0，裁完4调完3，max=4，盖章4-6，晾6-11，装11-12；一人串行0-4裁,4-7调,7-9盖,9-14晾,14-15装。与e14数值一致，无单位转换。",
+            "refs": [
+              "e3",
+              "e14"
+            ],
+            "witnesses": [
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "制作一份纸质纪念册需要四个步骤：裁纸、调墨、盖章、晾干后装袋。这里约定裁纸需要四分钟，调墨需要三分钟；盖章必须在裁纸和调墨都完成后才能开始，需要两分钟；盖章完成后必须连续晾干五分钟，之后装袋需要一分钟。任务从零时刻开始，纸张和墨水均未准备。所有时长固定，不考虑走动与工具切换的额外时间。\n若有两名工作人员，且裁紙工具与调墨工具互不冲突，就可以一人裁纸、一人调墨，从零时刻并行开始。调墨在第三分钟完成，裁纸在第四分钟完成，盖章最早第四分钟开始，第六分钟完成。晾干到第十一分钟，装袋到第十二分钟结束。两条前置路径汇合时，必须等较晚完成的那条，因此不能把三分钟与四分钟相加，也不能只等较短的一条。\n若只有一名工作人员，裁纸和调墨都需要此人全程操作，二者就不能并行，前两步一共七分钟；之后盖章、晾干和装袋再需八分钟，总计十五分钟。晾干本身不占用工作人员，但没有其他待办步骤可在这段时间提前完成。这里的最短时间来自明确依赖和资源条件，不是见到两步就默认可以同时进行。\n工序的顺序关系与总时间要分别检查。一个方案即使碰巧写出十二分钟，只要它在墨未调好时先盖章，仍不合法。反过来，合法方案不一定最短；两名工作人员也可以选择先裁纸后调墨，但那会闲置可用的并行机会。评价方案时，先检查每一步的开工条件，再讨论是否还有不必要的等待。\n如果材料说明改为“盖章后先观察两分钟，确认印迹无扩散后才进入五分钟晾干”，新增步骤会延后装袋时刻，不能沿用旧总时长。若改用一种允许立即装袋的墨，则又需要依据新的明确条件重算。本单元不对真实墨水安全作建议，只按题设的工艺规则安排时间。\n可以用文字时间表表达方案，每行写步骤、开始时刻、结束时刻和它等待的条件。换一种表格或叙述顺序都可以，只要时刻和依赖一致。对缺少工作人员数量或工具冲突信息的问题，应说明哪些并行安排尚不能确定；如果只要求给出一个合法方案，则可以明确提出足够的资源假设，而不是声称它在任何条件下都最短。",
+                "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+              },
+              {
+                "id": "e14",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "两名前置操作都结束才能盖章，最早开工时刻取两者完成时刻的较大值。若两人独立完成裁纸4分钟、调墨3分钟，盖章从4到6，晾干到11，装袋到12。只有一人且前两步必须全程操作时，就先花7分钟再进行后续，最早15分钟。先检查依赖与资源，再检查是否有无谓等待；合法不等于最快。",
+                "valueHash": "33824fb66056692a54116221be7ec4cd5e188b08312f05d3d6de83b6860bc990"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ],
+        "keys": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q3",
+            "level": 2,
+            "reason": "Artifact e14 correctly derives start time as max of prerequisite finish times (e3 confirms), shows two bounded cases: parallel 2-worker 12min and serial 1-worker 15min, consistent with source times. It states relevant boundary '合法不等于最快' (legal not necessarily fastest) matching e3 evaluation guidance. Learner with prerequisites e7/e8 can follow. Goal e5 local example scope satisfied. No central derivation error or missing link.",
+            "refs": [
+              "e14",
+              "e3",
+              "e5"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e14",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "两名前置操作都结束才能盖章，最早开工时刻取两者完成时刻的较大值。若两人独立完成裁纸4分钟、调墨3分钟，盖章从4到6，晾干到11，装袋到12。只有一人且前两步必须全程操作时，就先花7分钟再进行后续，最早15分钟。先检查依赖与资源，再检查是否有无谓等待；合法不等于最快。",
+                "valueHash": "33824fb66056692a54116221be7ec4cd5e188b08312f05d3d6de83b6860bc990"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "制作一份纸质纪念册需要四个步骤：裁纸、调墨、盖章、晾干后装袋。这里约定裁纸需要四分钟，调墨需要三分钟；盖章必须在裁纸和调墨都完成后才能开始，需要两分钟；盖章完成后必须连续晾干五分钟，之后装袋需要一分钟。任务从零时刻开始，纸张和墨水均未准备。所有时长固定，不考虑走动与工具切换的额外时间。\n若有两名工作人员，且裁紙工具与调墨工具互不冲突，就可以一人裁纸、一人调墨，从零时刻并行开始。调墨在第三分钟完成，裁纸在第四分钟完成，盖章最早第四分钟开始，第六分钟完成。晾干到第十一分钟，装袋到第十二分钟结束。两条前置路径汇合时，必须等较晚完成的那条，因此不能把三分钟与四分钟相加，也不能只等较短的一条。\n若只有一名工作人员，裁纸和调墨都需要此人全程操作，二者就不能并行，前两步一共七分钟；之后盖章、晾干和装袋再需八分钟，总计十五分钟。晾干本身不占用工作人员，但没有其他待办步骤可在这段时间提前完成。这里的最短时间来自明确依赖和资源条件，不是见到两步就默认可以同时进行。\n工序的顺序关系与总时间要分别检查。一个方案即使碰巧写出十二分钟，只要它在墨未调好时先盖章，仍不合法。反过来，合法方案不一定最短；两名工作人员也可以选择先裁纸后调墨，但那会闲置可用的并行机会。评价方案时，先检查每一步的开工条件，再讨论是否还有不必要的等待。\n如果材料说明改为“盖章后先观察两分钟，确认印迹无扩散后才进入五分钟晾干”，新增步骤会延后装袋时刻，不能沿用旧总时长。若改用一种允许立即装袋的墨，则又需要依据新的明确条件重算。本单元不对真实墨水安全作建议，只按题设的工艺规则安排时间。\n可以用文字时间表表达方案，每行写步骤、开始时刻、结束时刻和它等待的条件。换一种表格或叙述顺序都可以，只要时刻和依赖一致。对缺少工作人员数量或工具冲突信息的问题，应说明哪些并行安排尚不能确定；如果只要求给出一个合法方案，则可以明确提出足够的资源假设，而不是声称它在任何条件下都最短。",
+                "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "讲清当前所示局部例子的推理步骤与适用边界；不要求覆盖整份教材。",
+                "valueHash": "9993d328e7a9560cdfb74d56adf9b1d8c9f4a1c7c71c80ed3120d850114e0ea2"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q3",
+            "status": "supported",
+            "reason": "Artifact e14 derives stamp start as max of prerequisite finishes (e3), gives parallel 2-worker 12min and serial 1-worker 15min consistent with e3; boundary '合法不等于最快' matches e3 guidance; scope meets goal e5; prerequisites e7/e8 adequate. Findings audit and correctness clear, no open dependency.",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e14",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "两名前置操作都结束才能盖章，最早开工时刻取两者完成时刻的较大值。若两人独立完成裁纸4分钟、调墨3分钟，盖章从4到6，晾干到11，装袋到12。只有一人且前两步必须全程操作时，就先花7分钟再进行后续，最早15分钟。先检查依赖与资源，再检查是否有无谓等待；合法不等于最快。",
+                "valueHash": "33824fb66056692a54116221be7ec4cd5e188b08312f05d3d6de83b6860bc990"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "制作一份纸质纪念册需要四个步骤：裁纸、调墨、盖章、晾干后装袋。这里约定裁纸需要四分钟，调墨需要三分钟；盖章必须在裁纸和调墨都完成后才能开始，需要两分钟；盖章完成后必须连续晾干五分钟，之后装袋需要一分钟。任务从零时刻开始，纸张和墨水均未准备。所有时长固定，不考虑走动与工具切换的额外时间。\n若有两名工作人员，且裁紙工具与调墨工具互不冲突，就可以一人裁纸、一人调墨，从零时刻并行开始。调墨在第三分钟完成，裁纸在第四分钟完成，盖章最早第四分钟开始，第六分钟完成。晾干到第十一分钟，装袋到第十二分钟结束。两条前置路径汇合时，必须等较晚完成的那条，因此不能把三分钟与四分钟相加，也不能只等较短的一条。\n若只有一名工作人员，裁纸和调墨都需要此人全程操作，二者就不能并行，前两步一共七分钟；之后盖章、晾干和装袋再需八分钟，总计十五分钟。晾干本身不占用工作人员，但没有其他待办步骤可在这段时间提前完成。这里的最短时间来自明确依赖和资源条件，不是见到两步就默认可以同时进行。\n工序的顺序关系与总时间要分别检查。一个方案即使碰巧写出十二分钟，只要它在墨未调好时先盖章，仍不合法。反过来，合法方案不一定最短；两名工作人员也可以选择先裁纸后调墨，但那会闲置可用的并行机会。评价方案时，先检查每一步的开工条件，再讨论是否还有不必要的等待。\n如果材料说明改为“盖章后先观察两分钟，确认印迹无扩散后才进入五分钟晾干”，新增步骤会延后装袋时刻，不能沿用旧总时长。若改用一种允许立即装袋的墨，则又需要依据新的明确条件重算。本单元不对真实墨水安全作建议，只按题设的工艺规则安排时间。\n可以用文字时间表表达方案，每行写步骤、开始时刻、结束时刻和它等待的条件。换一种表格或叙述顺序都可以，只要时刻和依赖一致。对缺少工作人员数量或工具冲突信息的问题，应说明哪些并行安排尚不能确定；如果只要求给出一个合法方案，则可以明确提出足够的资源假设，而不是声称它在任何条件下都最短。",
+                "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "讲清当前所示局部例子的推理步骤与适用边界；不要求覆盖整份教材。",
+                "valueHash": "9993d328e7a9560cdfb74d56adf9b1d8c9f4a1c7c71c80ed3120d850114e0ea2"
+              },
+              {
+                "id": "e7",
+                "pointer": "/prerequisites/0",
+                "role": "context",
+                "kind": "text",
+                "value": "读取时间表",
+                "valueHash": "19f91e1cab4bc12dbd63222c350be985b3643c87fb4e0deb617dab6ab81ebc48"
+              },
+              {
+                "id": "e8",
+                "pointer": "/prerequisites/1",
+                "role": "context",
+                "kind": "text",
+                "value": "加减分钟",
+                "valueHash": "edb1c8405351f528e83d87be8cbf57d4d39ec8d891eb37bc4c02f947b7fd6fa7"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q3",
+          "level": 2,
+          "reason": "Artifact e14 correctly derives start time as max of prerequisite finish times (e3 confirms), shows two bounded cases: parallel 2-worker 12min and serial 1-worker 15min, consistent with source times. It states relevant boundary '合法不等于最快' (legal not necessarily fastest) matching e3 evaluation guidance. Learner with prerequisites e7/e8 can follow. Goal e5 local example scope satisfied. No central derivation error or missing link.",
+          "refs": [
+            "e14",
+            "e3",
+            "e5"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e14",
+              "pointer": "/artifacts/0/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "两名前置操作都结束才能盖章，最早开工时刻取两者完成时刻的较大值。若两人独立完成裁纸4分钟、调墨3分钟，盖章从4到6，晾干到11，装袋到12。只有一人且前两步必须全程操作时，就先花7分钟再进行后续，最早15分钟。先检查依赖与资源，再检查是否有无谓等待；合法不等于最快。",
+              "valueHash": "33824fb66056692a54116221be7ec4cd5e188b08312f05d3d6de83b6860bc990"
+            },
+            {
+              "id": "e3",
+              "pointer": "/sources/0/text",
+              "role": "source",
+              "kind": "text",
+              "value": "制作一份纸质纪念册需要四个步骤：裁纸、调墨、盖章、晾干后装袋。这里约定裁纸需要四分钟，调墨需要三分钟；盖章必须在裁纸和调墨都完成后才能开始，需要两分钟；盖章完成后必须连续晾干五分钟，之后装袋需要一分钟。任务从零时刻开始，纸张和墨水均未准备。所有时长固定，不考虑走动与工具切换的额外时间。\n若有两名工作人员，且裁紙工具与调墨工具互不冲突，就可以一人裁纸、一人调墨，从零时刻并行开始。调墨在第三分钟完成，裁纸在第四分钟完成，盖章最早第四分钟开始，第六分钟完成。晾干到第十一分钟，装袋到第十二分钟结束。两条前置路径汇合时，必须等较晚完成的那条，因此不能把三分钟与四分钟相加，也不能只等较短的一条。\n若只有一名工作人员，裁纸和调墨都需要此人全程操作，二者就不能并行，前两步一共七分钟；之后盖章、晾干和装袋再需八分钟，总计十五分钟。晾干本身不占用工作人员，但没有其他待办步骤可在这段时间提前完成。这里的最短时间来自明确依赖和资源条件，不是见到两步就默认可以同时进行。\n工序的顺序关系与总时间要分别检查。一个方案即使碰巧写出十二分钟，只要它在墨未调好时先盖章，仍不合法。反过来，合法方案不一定最短；两名工作人员也可以选择先裁纸后调墨，但那会闲置可用的并行机会。评价方案时，先检查每一步的开工条件，再讨论是否还有不必要的等待。\n如果材料说明改为“盖章后先观察两分钟，确认印迹无扩散后才进入五分钟晾干”，新增步骤会延后装袋时刻，不能沿用旧总时长。若改用一种允许立即装袋的墨，则又需要依据新的明确条件重算。本单元不对真实墨水安全作建议，只按题设的工艺规则安排时间。\n可以用文字时间表表达方案，每行写步骤、开始时刻、结束时刻和它等待的条件。换一种表格或叙述顺序都可以，只要时刻和依赖一致。对缺少工作人员数量或工具冲突信息的问题，应说明哪些并行安排尚不能确定；如果只要求给出一个合法方案，则可以明确提出足够的资源假设，而不是声称它在任何条件下都最短。",
+              "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+            },
+            {
+              "id": "e5",
+              "pointer": "/goals/0",
+              "role": "goal",
+              "kind": "text",
+              "value": "讲清当前所示局部例子的推理步骤与适用边界；不要求覆盖整份教材。",
+              "valueHash": "9993d328e7a9560cdfb74d56adf9b1d8c9f4a1c7c71c80ed3120d850114e0ea2"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [],
+          "proposedLevel": 2,
+          "proposedReason": "Artifact e14 correctly derives start time as max of prerequisite finish times (e3 confirms), shows two bounded cases: parallel 2-worker 12min and serial 1-worker 15min, consistent with source times. It states relevant boundary '合法不等于最快' (legal not necessarily fastest) matching e3 evaluation guidance. Learner with prerequisites e7/e8 can follow. Goal e5 local example scope satisfied. No central derivation error or missing link."
+        }
+      ],
+      "reviewRequired": [],
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q3",
+            "status": "supported",
+            "reason": "Artifact e14 derives stamp start as max of prerequisite finishes (e3), gives parallel 2-worker 12min and serial 1-worker 15min consistent with e3; boundary '合法不等于最快' matches e3 guidance; scope meets goal e5; prerequisites e7/e8 adequate. Findings audit and correctness clear, no open dependency.",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e14",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "两名前置操作都结束才能盖章，最早开工时刻取两者完成时刻的较大值。若两人独立完成裁纸4分钟、调墨3分钟，盖章从4到6，晾干到11，装袋到12。只有一人且前两步必须全程操作时，就先花7分钟再进行后续，最早15分钟。先检查依赖与资源，再检查是否有无谓等待；合法不等于最快。",
+                "valueHash": "33824fb66056692a54116221be7ec4cd5e188b08312f05d3d6de83b6860bc990"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "制作一份纸质纪念册需要四个步骤：裁纸、调墨、盖章、晾干后装袋。这里约定裁纸需要四分钟，调墨需要三分钟；盖章必须在裁纸和调墨都完成后才能开始，需要两分钟；盖章完成后必须连续晾干五分钟，之后装袋需要一分钟。任务从零时刻开始，纸张和墨水均未准备。所有时长固定，不考虑走动与工具切换的额外时间。\n若有两名工作人员，且裁紙工具与调墨工具互不冲突，就可以一人裁纸、一人调墨，从零时刻并行开始。调墨在第三分钟完成，裁纸在第四分钟完成，盖章最早第四分钟开始，第六分钟完成。晾干到第十一分钟，装袋到第十二分钟结束。两条前置路径汇合时，必须等较晚完成的那条，因此不能把三分钟与四分钟相加，也不能只等较短的一条。\n若只有一名工作人员，裁纸和调墨都需要此人全程操作，二者就不能并行，前两步一共七分钟；之后盖章、晾干和装袋再需八分钟，总计十五分钟。晾干本身不占用工作人员，但没有其他待办步骤可在这段时间提前完成。这里的最短时间来自明确依赖和资源条件，不是见到两步就默认可以同时进行。\n工序的顺序关系与总时间要分别检查。一个方案即使碰巧写出十二分钟，只要它在墨未调好时先盖章，仍不合法。反过来，合法方案不一定最短；两名工作人员也可以选择先裁纸后调墨，但那会闲置可用的并行机会。评价方案时，先检查每一步的开工条件，再讨论是否还有不必要的等待。\n如果材料说明改为“盖章后先观察两分钟，确认印迹无扩散后才进入五分钟晾干”，新增步骤会延后装袋时刻，不能沿用旧总时长。若改用一种允许立即装袋的墨，则又需要依据新的明确条件重算。本单元不对真实墨水安全作建议，只按题设的工艺规则安排时间。\n可以用文字时间表表达方案，每行写步骤、开始时刻、结束时刻和它等待的条件。换一种表格或叙述顺序都可以，只要时刻和依赖一致。对缺少工作人员数量或工具冲突信息的问题，应说明哪些并行安排尚不能确定；如果只要求给出一个合法方案，则可以明确提出足够的资源假设，而不是声称它在任何条件下都最短。",
+                "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "讲清当前所示局部例子的推理步骤与适用边界；不要求覆盖整份教材。",
+                "valueHash": "9993d328e7a9560cdfb74d56adf9b1d8c9f4a1c7c71c80ed3120d850114e0ea2"
+              },
+              {
+                "id": "e7",
+                "pointer": "/prerequisites/0",
+                "role": "context",
+                "kind": "text",
+                "value": "读取时间表",
+                "valueHash": "19f91e1cab4bc12dbd63222c350be985b3643c87fb4e0deb617dab6ab81ebc48"
+              },
+              {
+                "id": "e8",
+                "pointer": "/prerequisites/1",
+                "role": "context",
+                "kind": "text",
+                "value": "加减分钟",
+                "valueHash": "edb1c8405351f528e83d87be8cbf57d4d39ec8d891eb37bc4c02f947b7fd6fa7"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "resultHash": "e575e623b81ce8de6a977b11b0972a3631ed85860e46525ba64a012609126b4d"
+  }
+}

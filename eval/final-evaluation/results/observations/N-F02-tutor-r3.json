@@ -1,0 +1,326 @@
+{
+  "task": {
+    "caseId": "N-F02-tutor",
+    "runId": "N-F02-tutor-r3",
+    "replicate": 3,
+    "path": "runs/final/cases/N-F02-tutor.json",
+    "inputHash": "03d50ecde50ddf9d85d9caf6ceb17427a247f4de31d09bd49f793bc33dc9fb65",
+    "population": "natural",
+    "sourceId": "F02"
+  },
+  "inputHash": "03d50ecde50ddf9d85d9caf6ceb17427a247f4de31d09bd49f793bc33dc9fb65",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "correctness": "bf64fdfc776c50e44c8baa14d2cb8902ee66e30f39e7780af0f57867422ff727",
+      "artifact-audit": "bf64fdfc776c50e44c8baa14d2cb8902ee66e30f39e7780af0f57867422ff727",
+      "certification": "bf64fdfc776c50e44c8baa14d2cb8902ee66e30f39e7780af0f57867422ff727"
+    },
+    "stages": {
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "clear",
+            "affected": [],
+            "reason": "作者(e16)总结连续百分比增减不简单抵消因第二次作用新基数，举500箱减20%增20%得480例，并明示边界(连续按比例、无取整门槛)。与e3规则一致，多条件边界清晰，无充分/必要混淆。反例挑战：固定前提(连续按比例基于新基数、无门槛)下构造等量抵消情况，被e3公式 base*(1-r)*(1+r)=base*(1-r^2)≠base (r=0.2)及e16算例排除。",
+            "refs": [
+              "e16",
+              "e3"
+            ],
+            "challenge": {
+              "status": "closed",
+              "reason": "固定前提为产量连续按比例(每步基于当前基数)、无包装取整或政策门槛。在此前提下数学上500*0.8*1.2=480≠500，等量百分比必不抵消，由e3明示计算与e16实例数值排除相容反例。",
+              "refs": [
+                "e3",
+                "e16"
+              ]
+            },
+            "witnesses": [
+              {
+                "id": "e16",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "课程资料里讲到：“连续变化必须按每一步的当前价格计算……两个百分比相等，基数却不同。”这正说明当前关键关系——连续百分比增减不能简单抵消，因为第二次的百分比是作用在新的基数上。\n\n举例：设想一片果园去年产苹果500箱，先遭灾减产20%，剩下400箱；今年又增产20%，增加的是400箱的20%即80箱，最终480箱，并没有回到500箱。这个非价格的例子同样显示了等量百分比因基数变动而不抵消。\n\n该例子适用边界：仅假设产量连续按比例变化、无包装取整或政策门槛；若现实里有满减、四舍五入等限制，正如课程资料提醒应先读清条件再计算。举例部分是为辅助理解，实际规则以课程资料为准。",
+                "valueHash": "954d89e64d4ec170f31ac4dfe06ad06321e1631999a560553b02e626afa69d41"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "价格变化中的百分比总要依附一个基数。“降低百分之二十”通常以变化前价格为基数，意味着保留原价的百分之八十。假设原价是一百元，降价后为一百乘零点八，即八十元。这里减少了二十元，但“二十元”和“百分之二十”不是同一种量；只有同时知道基数，才能在金额与比例之间换算。\n连续变化必须按每一步的当前价格计算。例如先降百分之二十，再在降后价格上提高百分之二十，第二步增加的是八十元的百分之二十，即十六元，最后为九十六元，并没有回到一百元。两个百分比相等，基数却不同。可以把全过程写成“原价乘零点八再乘一点二”。若希望八十元恢复到一百元，需要增加二十元，而二十除以八十等于零点二五，所以应提高百分之二十五。反向问题应从目标差额与当前基数出发，不能机械地把降幅换成同样的涨幅。\n比较方案时也要留意固定金额与比例的区别。原价一百元时，减二十元和打八折都得到八十元；原价五十元时，减二十元得到三十元，打八折得到四十元。一次数值碰巧相等并不证明两种规则始终相同。本单元假定没有运费、满减门槛、四舍五入或叠加顺序的特殊限制；若现实广告存在这些条件，应先读清条件，再计算。\n百分比还可以用来描述某个比例自身的变化。若一项活动报名率由百分之四十变成百分之五十，增加了十个百分点；相对于原来的百分之四十，则增长了百分之二十五，因为十除以四十等于四分之一。“百分点”是两个百分率直接相减的差，“相对增长率”则把差再除以原比例。二者回答不同问题，不应省略名称后混为一个数。\n解释计算时，建议先写“这一步把什么当作百分之百”，再列算式，最后做方向检查。降价再涨价后的结果是否符合基数变化？某个提高幅度是相对于原价还是现价？如果只报告“增长百分之十”而不交代基数，读者可能无法复算。原比例为零时，也不能照搬差额除以原比例的相对增长率公式，因为分母为零；仍可以报告增加了多少元、多少人或多少个百分点。清楚说明边界，比强行给出一个不存在的比例更可靠。",
+                "valueHash": "eed51cb255d5d0e12ca505b4c60926d142df7cf81a0f73781aba0593d2870361"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "kind": "quantities",
+            "status": "clear",
+            "affected": [],
+            "reason": "独立重算e16：原始500箱，减20%(rates给e16中20%=0.2)得500*(1-0.2)=400箱；增20%得400*(1+0.2)=480箱，与作者400、80、480一致。单位统一为箱，数量级正确，无推导错误。",
+            "refs": [
+              "e16"
+            ],
+            "witnesses": [
+              {
+                "id": "e16",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "课程资料里讲到：“连续变化必须按每一步的当前价格计算……两个百分比相等，基数却不同。”这正说明当前关键关系——连续百分比增减不能简单抵消，因为第二次的百分比是作用在新的基数上。\n\n举例：设想一片果园去年产苹果500箱，先遭灾减产20%，剩下400箱；今年又增产20%，增加的是400箱的20%即80箱，最终480箱，并没有回到500箱。这个非价格的例子同样显示了等量百分比因基数变动而不抵消。\n\n该例子适用边界：仅假设产量连续按比例变化、无包装取整或政策门槛；若现实里有满减、四舍五入等限制，正如课程资料提醒应先读清条件再计算。举例部分是为辅助理解，实际规则以课程资料为准。",
+                "valueHash": "954d89e64d4ec170f31ac4dfe06ad06321e1631999a560553b02e626afa69d41"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ],
+        "keys": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 2,
+            "reason": "Artifact e16 correctly references source e3's claim that consecutive percentage changes use current base and equal percentages differ by base; its orchard example (500->400->480) correctly demonstrates non-cancellation and states boundary matching e3's no-extra-restriction assumption. No false or missing condition.",
+            "refs": [
+              "e16",
+              "e3"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e16",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "课程资料里讲到：“连续变化必须按每一步的当前价格计算……两个百分比相等，基数却不同。”这正说明当前关键关系——连续百分比增减不能简单抵消，因为第二次的百分比是作用在新的基数上。\n\n举例：设想一片果园去年产苹果500箱，先遭灾减产20%，剩下400箱；今年又增产20%，增加的是400箱的20%即80箱，最终480箱，并没有回到500箱。这个非价格的例子同样显示了等量百分比因基数变动而不抵消。\n\n该例子适用边界：仅假设产量连续按比例变化、无包装取整或政策门槛；若现实里有满减、四舍五入等限制，正如课程资料提醒应先读清条件再计算。举例部分是为辅助理解，实际规则以课程资料为准。",
+                "valueHash": "954d89e64d4ec170f31ac4dfe06ad06321e1631999a560553b02e626afa69d41"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "价格变化中的百分比总要依附一个基数。“降低百分之二十”通常以变化前价格为基数，意味着保留原价的百分之八十。假设原价是一百元，降价后为一百乘零点八，即八十元。这里减少了二十元，但“二十元”和“百分之二十”不是同一种量；只有同时知道基数，才能在金额与比例之间换算。\n连续变化必须按每一步的当前价格计算。例如先降百分之二十，再在降后价格上提高百分之二十，第二步增加的是八十元的百分之二十，即十六元，最后为九十六元，并没有回到一百元。两个百分比相等，基数却不同。可以把全过程写成“原价乘零点八再乘一点二”。若希望八十元恢复到一百元，需要增加二十元，而二十除以八十等于零点二五，所以应提高百分之二十五。反向问题应从目标差额与当前基数出发，不能机械地把降幅换成同样的涨幅。\n比较方案时也要留意固定金额与比例的区别。原价一百元时，减二十元和打八折都得到八十元；原价五十元时，减二十元得到三十元，打八折得到四十元。一次数值碰巧相等并不证明两种规则始终相同。本单元假定没有运费、满减门槛、四舍五入或叠加顺序的特殊限制；若现实广告存在这些条件，应先读清条件，再计算。\n百分比还可以用来描述某个比例自身的变化。若一项活动报名率由百分之四十变成百分之五十，增加了十个百分点；相对于原来的百分之四十，则增长了百分之二十五，因为十除以四十等于四分之一。“百分点”是两个百分率直接相减的差，“相对增长率”则把差再除以原比例。二者回答不同问题，不应省略名称后混为一个数。\n解释计算时，建议先写“这一步把什么当作百分之百”，再列算式，最后做方向检查。降价再涨价后的结果是否符合基数变化？某个提高幅度是相对于原价还是现价？如果只报告“增长百分之十”而不交代基数，读者可能无法复算。原比例为零时，也不能照搬差额除以原比例的相对增长率公式，因为分母为零；仍可以报告增加了多少元、多少人或多少个百分点。清楚说明边界，比强行给出一个不存在的比例更可靠。",
+                "valueHash": "eed51cb255d5d0e12ca505b4c60926d142df7cf81a0f73781aba0593d2870361"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "dimension": "Q3",
+            "level": 2,
+            "reason": "Given prerequisites e7-e10, the orchard walkthrough (500*0.8=400, 400*1.2=480) lets learner follow why equal % don't cancel due to base change; boundary of no rounding/policy limits is relevant per e3. Explanation correct and usable.",
+            "refs": [
+              "e16",
+              "e10"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e16",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "课程资料里讲到：“连续变化必须按每一步的当前价格计算……两个百分比相等，基数却不同。”这正说明当前关键关系——连续百分比增减不能简单抵消，因为第二次的百分比是作用在新的基数上。\n\n举例：设想一片果园去年产苹果500箱，先遭灾减产20%，剩下400箱；今年又增产20%，增加的是400箱的20%即80箱，最终480箱，并没有回到500箱。这个非价格的例子同样显示了等量百分比因基数变动而不抵消。\n\n该例子适用边界：仅假设产量连续按比例变化、无包装取整或政策门槛；若现实里有满减、四舍五入等限制，正如课程资料提醒应先读清条件再计算。举例部分是为辅助理解，实际规则以课程资料为准。",
+                "valueHash": "954d89e64d4ec170f31ac4dfe06ad06321e1631999a560553b02e626afa69d41"
+              },
+              {
+                "id": "e10",
+                "pointer": "/prerequisites/3",
+                "role": "context",
+                "kind": "text",
+                "value": "Apply consecutive percentage price change calculations by using the current price as base each step, compute the reverse required percentage from target difference over current base without mechanically swapping equal decrease/increase, and respect the assumption of no extra restrictions (shipping, thresholds, rounding, order) or read conditions first if present.",
+                "valueHash": "f366f1c31de2a6539d8cf96dbc2e51c0014d6f862f031eafd0e49112e7e59d2d"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q1",
+            "status": "supported",
+            "reason": "Artifact e16 correctly references e3's claim that consecutive percentage changes use current base and equal percentages differ by base; orchard example (500->400->480) correctly demonstrates non-cancellation and states boundary matching e3's no-extra-restriction assumption, consistent with audit and correctness findings (no unresolved异议).",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e16",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "课程资料里讲到：“连续变化必须按每一步的当前价格计算……两个百分比相等，基数却不同。”这正说明当前关键关系——连续百分比增减不能简单抵消，因为第二次的百分比是作用在新的基数上。\n\n举例：设想一片果园去年产苹果500箱，先遭灾减产20%，剩下400箱；今年又增产20%，增加的是400箱的20%即80箱，最终480箱，并没有回到500箱。这个非价格的例子同样显示了等量百分比因基数变动而不抵消。\n\n该例子适用边界：仅假设产量连续按比例变化、无包装取整或政策门槛；若现实里有满减、四舍五入等限制，正如课程资料提醒应先读清条件再计算。举例部分是为辅助理解，实际规则以课程资料为准。",
+                "valueHash": "954d89e64d4ec170f31ac4dfe06ad06321e1631999a560553b02e626afa69d41"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "价格变化中的百分比总要依附一个基数。“降低百分之二十”通常以变化前价格为基数，意味着保留原价的百分之八十。假设原价是一百元，降价后为一百乘零点八，即八十元。这里减少了二十元，但“二十元”和“百分之二十”不是同一种量；只有同时知道基数，才能在金额与比例之间换算。\n连续变化必须按每一步的当前价格计算。例如先降百分之二十，再在降后价格上提高百分之二十，第二步增加的是八十元的百分之二十，即十六元，最后为九十六元，并没有回到一百元。两个百分比相等，基数却不同。可以把全过程写成“原价乘零点八再乘一点二”。若希望八十元恢复到一百元，需要增加二十元，而二十除以八十等于零点二五，所以应提高百分之二十五。反向问题应从目标差额与当前基数出发，不能机械地把降幅换成同样的涨幅。\n比较方案时也要留意固定金额与比例的区别。原价一百元时，减二十元和打八折都得到八十元；原价五十元时，减二十元得到三十元，打八折得到四十元。一次数值碰巧相等并不证明两种规则始终相同。本单元假定没有运费、满减门槛、四舍五入或叠加顺序的特殊限制；若现实广告存在这些条件，应先读清条件，再计算。\n百分比还可以用来描述某个比例自身的变化。若一项活动报名率由百分之四十变成百分之五十，增加了十个百分点；相对于原来的百分之四十，则增长了百分之二十五，因为十除以四十等于四分之一。“百分点”是两个百分率直接相减的差，“相对增长率”则把差再除以原比例。二者回答不同问题，不应省略名称后混为一个数。\n解释计算时，建议先写“这一步把什么当作百分之百”，再列算式，最后做方向检查。降价再涨价后的结果是否符合基数变化？某个提高幅度是相对于原价还是现价？如果只报告“增长百分之十”而不交代基数，读者可能无法复算。原比例为零时，也不能照搬差额除以原比例的相对增长率公式，因为分母为零；仍可以报告增加了多少元、多少人或多少个百分点。清楚说明边界，比强行给出一个不存在的比例更可靠。",
+                "valueHash": "eed51cb255d5d0e12ca505b4c60926d142df7cf81a0f73781aba0593d2870361"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "dimension": "Q3",
+            "status": "supported",
+            "reason": "Given prerequisites e7-e10, e16's orchard walkthrough (500*0.8=400, 400*1.2=480) lets learner follow why equal % don't cancel due to base change; boundary of no rounding/policy limits relevant per e3, explanation correct and usable, consistent with findings (quantities and conditions clear).",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e16",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "课程资料里讲到：“连续变化必须按每一步的当前价格计算……两个百分比相等，基数却不同。”这正说明当前关键关系——连续百分比增减不能简单抵消，因为第二次的百分比是作用在新的基数上。\n\n举例：设想一片果园去年产苹果500箱，先遭灾减产20%，剩下400箱；今年又增产20%，增加的是400箱的20%即80箱，最终480箱，并没有回到500箱。这个非价格的例子同样显示了等量百分比因基数变动而不抵消。\n\n该例子适用边界：仅假设产量连续按比例变化、无包装取整或政策门槛；若现实里有满减、四舍五入等限制，正如课程资料提醒应先读清条件再计算。举例部分是为辅助理解，实际规则以课程资料为准。",
+                "valueHash": "954d89e64d4ec170f31ac4dfe06ad06321e1631999a560553b02e626afa69d41"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "价格变化中的百分比总要依附一个基数。“降低百分之二十”通常以变化前价格为基数，意味着保留原价的百分之八十。假设原价是一百元，降价后为一百乘零点八，即八十元。这里减少了二十元，但“二十元”和“百分之二十”不是同一种量；只有同时知道基数，才能在金额与比例之间换算。\n连续变化必须按每一步的当前价格计算。例如先降百分之二十，再在降后价格上提高百分之二十，第二步增加的是八十元的百分之二十，即十六元，最后为九十六元，并没有回到一百元。两个百分比相等，基数却不同。可以把全过程写成“原价乘零点八再乘一点二”。若希望八十元恢复到一百元，需要增加二十元，而二十除以八十等于零点二五，所以应提高百分之二十五。反向问题应从目标差额与当前基数出发，不能机械地把降幅换成同样的涨幅。\n比较方案时也要留意固定金额与比例的区别。原价一百元时，减二十元和打八折都得到八十元；原价五十元时，减二十元得到三十元，打八折得到四十元。一次数值碰巧相等并不证明两种规则始终相同。本单元假定没有运费、满减门槛、四舍五入或叠加顺序的特殊限制；若现实广告存在这些条件，应先读清条件，再计算。\n百分比还可以用来描述某个比例自身的变化。若一项活动报名率由百分之四十变成百分之五十，增加了十个百分点；相对于原来的百分之四十，则增长了百分之二十五，因为十除以四十等于四分之一。“百分点”是两个百分率直接相减的差，“相对增长率”则把差再除以原比例。二者回答不同问题，不应省略名称后混为一个数。\n解释计算时，建议先写“这一步把什么当作百分之百”，再列算式，最后做方向检查。降价再涨价后的结果是否符合基数变化？某个提高幅度是相对于原价还是现价？如果只报告“增长百分之十”而不交代基数，读者可能无法复算。原比例为零时，也不能照搬差额除以原比例的相对增长率公式，因为分母为零；仍可以报告增加了多少元、多少人或多少个百分点。清楚说明边界，比强行给出一个不存在的比例更可靠。",
+                "valueHash": "eed51cb255d5d0e12ca505b4c60926d142df7cf81a0f73781aba0593d2870361"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q1",
+          "level": 2,
+          "reason": "Artifact e16 correctly references source e3's claim that consecutive percentage changes use current base and equal percentages differ by base; its orchard example (500->400->480) correctly demonstrates non-cancellation and states boundary matching e3's no-extra-restriction assumption. No false or missing condition.",
+          "refs": [
+            "e16",
+            "e3"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e16",
+              "pointer": "/artifacts/0/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "课程资料里讲到：“连续变化必须按每一步的当前价格计算……两个百分比相等，基数却不同。”这正说明当前关键关系——连续百分比增减不能简单抵消，因为第二次的百分比是作用在新的基数上。\n\n举例：设想一片果园去年产苹果500箱，先遭灾减产20%，剩下400箱；今年又增产20%，增加的是400箱的20%即80箱，最终480箱，并没有回到500箱。这个非价格的例子同样显示了等量百分比因基数变动而不抵消。\n\n该例子适用边界：仅假设产量连续按比例变化、无包装取整或政策门槛；若现实里有满减、四舍五入等限制，正如课程资料提醒应先读清条件再计算。举例部分是为辅助理解，实际规则以课程资料为准。",
+              "valueHash": "954d89e64d4ec170f31ac4dfe06ad06321e1631999a560553b02e626afa69d41"
+            },
+            {
+              "id": "e3",
+              "pointer": "/sources/0/text",
+              "role": "source",
+              "kind": "text",
+              "value": "价格变化中的百分比总要依附一个基数。“降低百分之二十”通常以变化前价格为基数，意味着保留原价的百分之八十。假设原价是一百元，降价后为一百乘零点八，即八十元。这里减少了二十元，但“二十元”和“百分之二十”不是同一种量；只有同时知道基数，才能在金额与比例之间换算。\n连续变化必须按每一步的当前价格计算。例如先降百分之二十，再在降后价格上提高百分之二十，第二步增加的是八十元的百分之二十，即十六元，最后为九十六元，并没有回到一百元。两个百分比相等，基数却不同。可以把全过程写成“原价乘零点八再乘一点二”。若希望八十元恢复到一百元，需要增加二十元，而二十除以八十等于零点二五，所以应提高百分之二十五。反向问题应从目标差额与当前基数出发，不能机械地把降幅换成同样的涨幅。\n比较方案时也要留意固定金额与比例的区别。原价一百元时，减二十元和打八折都得到八十元；原价五十元时，减二十元得到三十元，打八折得到四十元。一次数值碰巧相等并不证明两种规则始终相同。本单元假定没有运费、满减门槛、四舍五入或叠加顺序的特殊限制；若现实广告存在这些条件，应先读清条件，再计算。\n百分比还可以用来描述某个比例自身的变化。若一项活动报名率由百分之四十变成百分之五十，增加了十个百分点；相对于原来的百分之四十，则增长了百分之二十五，因为十除以四十等于四分之一。“百分点”是两个百分率直接相减的差，“相对增长率”则把差再除以原比例。二者回答不同问题，不应省略名称后混为一个数。\n解释计算时，建议先写“这一步把什么当作百分之百”，再列算式，最后做方向检查。降价再涨价后的结果是否符合基数变化？某个提高幅度是相对于原价还是现价？如果只报告“增长百分之十”而不交代基数，读者可能无法复算。原比例为零时，也不能照搬差额除以原比例的相对增长率公式，因为分母为零；仍可以报告增加了多少元、多少人或多少个百分点。清楚说明边界，比强行给出一个不存在的比例更可靠。",
+              "valueHash": "eed51cb255d5d0e12ca505b4c60926d142df7cf81a0f73781aba0593d2870361"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [],
+          "proposedLevel": 2,
+          "proposedReason": "Artifact e16 correctly references source e3's claim that consecutive percentage changes use current base and equal percentages differ by base; its orchard example (500->400->480) correctly demonstrates non-cancellation and states boundary matching e3's no-extra-restriction assumption. No false or missing condition."
+        },
+        {
+          "dimension": "Q3",
+          "level": 2,
+          "reason": "Given prerequisites e7-e10, the orchard walkthrough (500*0.8=400, 400*1.2=480) lets learner follow why equal % don't cancel due to base change; boundary of no rounding/policy limits is relevant per e3. Explanation correct and usable.",
+          "refs": [
+            "e16",
+            "e10"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e16",
+              "pointer": "/artifacts/0/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "课程资料里讲到：“连续变化必须按每一步的当前价格计算……两个百分比相等，基数却不同。”这正说明当前关键关系——连续百分比增减不能简单抵消，因为第二次的百分比是作用在新的基数上。\n\n举例：设想一片果园去年产苹果500箱，先遭灾减产20%，剩下400箱；今年又增产20%，增加的是400箱的20%即80箱，最终480箱，并没有回到500箱。这个非价格的例子同样显示了等量百分比因基数变动而不抵消。\n\n该例子适用边界：仅假设产量连续按比例变化、无包装取整或政策门槛；若现实里有满减、四舍五入等限制，正如课程资料提醒应先读清条件再计算。举例部分是为辅助理解，实际规则以课程资料为准。",
+              "valueHash": "954d89e64d4ec170f31ac4dfe06ad06321e1631999a560553b02e626afa69d41"
+            },
+            {
+              "id": "e10",
+              "pointer": "/prerequisites/3",
+              "role": "context",
+              "kind": "text",
+              "value": "Apply consecutive percentage price change calculations by using the current price as base each step, compute the reverse required percentage from target difference over current base without mechanically swapping equal decrease/increase, and respect the assumption of no extra restrictions (shipping, thresholds, rounding, order) or read conditions first if present.",
+              "valueHash": "f366f1c31de2a6539d8cf96dbc2e51c0014d6f862f031eafd0e49112e7e59d2d"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [],
+          "proposedLevel": 2,
+          "proposedReason": "Given prerequisites e7-e10, the orchard walkthrough (500*0.8=400, 400*1.2=480) lets learner follow why equal % don't cancel due to base change; boundary of no rounding/policy limits is relevant per e3. Explanation correct and usable."
+        }
+      ],
+      "reviewRequired": [],
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q1",
+            "status": "supported",
+            "reason": "Artifact e16 correctly references e3's claim that consecutive percentage changes use current base and equal percentages differ by base; orchard example (500->400->480) correctly demonstrates non-cancellation and states boundary matching e3's no-extra-restriction assumption, consistent with audit and correctness findings (no unresolved异议).",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e16",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "课程资料里讲到：“连续变化必须按每一步的当前价格计算……两个百分比相等，基数却不同。”这正说明当前关键关系——连续百分比增减不能简单抵消，因为第二次的百分比是作用在新的基数上。\n\n举例：设想一片果园去年产苹果500箱，先遭灾减产20%，剩下400箱；今年又增产20%，增加的是400箱的20%即80箱，最终480箱，并没有回到500箱。这个非价格的例子同样显示了等量百分比因基数变动而不抵消。\n\n该例子适用边界：仅假设产量连续按比例变化、无包装取整或政策门槛；若现实里有满减、四舍五入等限制，正如课程资料提醒应先读清条件再计算。举例部分是为辅助理解，实际规则以课程资料为准。",
+                "valueHash": "954d89e64d4ec170f31ac4dfe06ad06321e1631999a560553b02e626afa69d41"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "价格变化中的百分比总要依附一个基数。“降低百分之二十”通常以变化前价格为基数，意味着保留原价的百分之八十。假设原价是一百元，降价后为一百乘零点八，即八十元。这里减少了二十元，但“二十元”和“百分之二十”不是同一种量；只有同时知道基数，才能在金额与比例之间换算。\n连续变化必须按每一步的当前价格计算。例如先降百分之二十，再在降后价格上提高百分之二十，第二步增加的是八十元的百分之二十，即十六元，最后为九十六元，并没有回到一百元。两个百分比相等，基数却不同。可以把全过程写成“原价乘零点八再乘一点二”。若希望八十元恢复到一百元，需要增加二十元，而二十除以八十等于零点二五，所以应提高百分之二十五。反向问题应从目标差额与当前基数出发，不能机械地把降幅换成同样的涨幅。\n比较方案时也要留意固定金额与比例的区别。原价一百元时，减二十元和打八折都得到八十元；原价五十元时，减二十元得到三十元，打八折得到四十元。一次数值碰巧相等并不证明两种规则始终相同。本单元假定没有运费、满减门槛、四舍五入或叠加顺序的特殊限制；若现实广告存在这些条件，应先读清条件，再计算。\n百分比还可以用来描述某个比例自身的变化。若一项活动报名率由百分之四十变成百分之五十，增加了十个百分点；相对于原来的百分之四十，则增长了百分之二十五，因为十除以四十等于四分之一。“百分点”是两个百分率直接相减的差，“相对增长率”则把差再除以原比例。二者回答不同问题，不应省略名称后混为一个数。\n解释计算时，建议先写“这一步把什么当作百分之百”，再列算式，最后做方向检查。降价再涨价后的结果是否符合基数变化？某个提高幅度是相对于原价还是现价？如果只报告“增长百分之十”而不交代基数，读者可能无法复算。原比例为零时，也不能照搬差额除以原比例的相对增长率公式，因为分母为零；仍可以报告增加了多少元、多少人或多少个百分点。清楚说明边界，比强行给出一个不存在的比例更可靠。",
+                "valueHash": "eed51cb255d5d0e12ca505b4c60926d142df7cf81a0f73781aba0593d2870361"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "dimension": "Q3",
+            "status": "supported",
+            "reason": "Given prerequisites e7-e10, e16's orchard walkthrough (500*0.8=400, 400*1.2=480) lets learner follow why equal % don't cancel due to base change; boundary of no rounding/policy limits relevant per e3, explanation correct and usable, consistent with findings (quantities and conditions clear).",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e16",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "课程资料里讲到：“连续变化必须按每一步的当前价格计算……两个百分比相等，基数却不同。”这正说明当前关键关系——连续百分比增减不能简单抵消，因为第二次的百分比是作用在新的基数上。\n\n举例：设想一片果园去年产苹果500箱，先遭灾减产20%，剩下400箱；今年又增产20%，增加的是400箱的20%即80箱，最终480箱，并没有回到500箱。这个非价格的例子同样显示了等量百分比因基数变动而不抵消。\n\n该例子适用边界：仅假设产量连续按比例变化、无包装取整或政策门槛；若现实里有满减、四舍五入等限制，正如课程资料提醒应先读清条件再计算。举例部分是为辅助理解，实际规则以课程资料为准。",
+                "valueHash": "954d89e64d4ec170f31ac4dfe06ad06321e1631999a560553b02e626afa69d41"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "价格变化中的百分比总要依附一个基数。“降低百分之二十”通常以变化前价格为基数，意味着保留原价的百分之八十。假设原价是一百元，降价后为一百乘零点八，即八十元。这里减少了二十元，但“二十元”和“百分之二十”不是同一种量；只有同时知道基数，才能在金额与比例之间换算。\n连续变化必须按每一步的当前价格计算。例如先降百分之二十，再在降后价格上提高百分之二十，第二步增加的是八十元的百分之二十，即十六元，最后为九十六元，并没有回到一百元。两个百分比相等，基数却不同。可以把全过程写成“原价乘零点八再乘一点二”。若希望八十元恢复到一百元，需要增加二十元，而二十除以八十等于零点二五，所以应提高百分之二十五。反向问题应从目标差额与当前基数出发，不能机械地把降幅换成同样的涨幅。\n比较方案时也要留意固定金额与比例的区别。原价一百元时，减二十元和打八折都得到八十元；原价五十元时，减二十元得到三十元，打八折得到四十元。一次数值碰巧相等并不证明两种规则始终相同。本单元假定没有运费、满减门槛、四舍五入或叠加顺序的特殊限制；若现实广告存在这些条件，应先读清条件，再计算。\n百分比还可以用来描述某个比例自身的变化。若一项活动报名率由百分之四十变成百分之五十，增加了十个百分点；相对于原来的百分之四十，则增长了百分之二十五，因为十除以四十等于四分之一。“百分点”是两个百分率直接相减的差，“相对增长率”则把差再除以原比例。二者回答不同问题，不应省略名称后混为一个数。\n解释计算时，建议先写“这一步把什么当作百分之百”，再列算式，最后做方向检查。降价再涨价后的结果是否符合基数变化？某个提高幅度是相对于原价还是现价？如果只报告“增长百分之十”而不交代基数，读者可能无法复算。原比例为零时，也不能照搬差额除以原比例的相对增长率公式，因为分母为零；仍可以报告增加了多少元、多少人或多少个百分点。清楚说明边界，比强行给出一个不存在的比例更可靠。",
+                "valueHash": "eed51cb255d5d0e12ca505b4c60926d142df7cf81a0f73781aba0593d2870361"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "resultHash": "9fad999ea17ef2ec5f60ce00761b685e19ef543e3f984804381767cfc5b92e1e"
+  }
+}

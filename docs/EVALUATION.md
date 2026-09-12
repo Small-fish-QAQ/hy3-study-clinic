@@ -4,9 +4,9 @@
 
 ## 当前状态
 
-**最终机器评估已完成；两位盲评独立模型审阅已完成；真实人类验证进行中。** 2026-09-12 冻结运行的 279 次观察全部完成；首次判断、重复观察、U、无效输出及未生成产品机会分别报告。具体分母、结果和失败归因见 [EVALUATION_RESULTS.md](EVALUATION_RESULTS.md)。
+**最终机器评估、两位盲评独立模型审阅和真实人类标注均已完成。** 2026-09-12 冻结运行的 279 次观察全部完成；六份人类答卷提供 68 条评分，对 34 个维度形成 24 个相同判断。首次判断、重复观察、U、无效输出、未生成产品机会及人类分歧分别报告。具体分母见 [EVALUATION_RESULTS.md](EVALUATION_RESULTS.md)，人工来源与逐题分析见 [HUMAN_VALIDATION.md](HUMAN_VALIDATION.md)。
 
-StudyEval 固定为 `studyeval-v1.5-micro-closure`（candidate SHA-256：`e088e986a5c968febcaf51f99511258fd452759b935fd454327f61dcaa38dfdb`），评估器开发已永久关闭。[评测材料](../eval/final-evaluation/README.md)公开原样冻结的八个模块、完整匿名结果表、51 个可公开原始案例及只读重算脚本；其余输入因进行中的人类盲评暂缓公开。唯一权威来源为 `public-export-final-v6`。
+StudyEval 固定为 `studyeval-v1.5-micro-closure`（candidate SHA-256：`e088e986a5c968febcaf51f99511258fd452759b935fd454327f61dcaa38dfdb`），评估器开发已永久关闭。[评测材料](../eval/final-evaluation/README.md)公开原样冻结的八个模块、全部 209 个输入/279 次观察及完整结果，并提供模型原始评分、人类去元数据答卷和只读重算脚本。临时盲评禁运已在人类答卷冻结后解除；机器证据唯一权威来源仍为 `public-export-final-v6`。
 
 下面给出六个维度的阅读摘要，精确判定以冻结的 [rubric](../eval/final-evaluation/method/src/rubric.mjs)、[prompts](../eval/final-evaluation/method/src/prompts.mjs)和证据约束实现为准。现有 `eval:fake` / `eval:hy3` 仍是另一组结构与接口检查，不能替代 StudyEval 教学质量评估。
 
@@ -65,8 +65,8 @@ StudyEval 固定为 `studyeval-v1.5-micro-closure`（candidate SHA-256：`e088e9
 
 人工或模型审阅者都需要区分正确的等价推理与逐字答案匹配，对未确立的适用条件保留不确定性。问题难度、措辞好听或输出长度不能代替事实和能力检查。
 
-## 复现与剩余工作
+## 复现与解释边界
 
 完整机器表格和聚合结果、来源与构造覆盖、执行方法、公开样本、成本记录和身份哈希均已提供。执行 `node eval/final-evaluation/scripts/verify-publication.mjs` 可无密钥重算已保存结果，检查可公开输入与观察及冻结方法哈希；该命令不运行评估器。已完成的原始响应重放属于冻结运行的历史审计，公开包不包含私有数据库、原始网络报文或完整付费运行驱动。
 
-人类答卷尚未冻结。下一次只需整合真实标注及来源、报告人工一致性与分歧，并释放通过隐私检查的剩余输入和映射。当前模型比较、构造预期和机器自洽都不是人类真值，也不能证明成绩、记忆保持或长期掌握提升。
+人类答卷已经先行冻结并完成归一化，`python eval/final-evaluation/scripts/verify-human.py` 可从去元数据副本重算配对、二人相同判断子集和全部 68 条人类评分的比较。十个未达共识维度保留未裁决，空白时间和外部帮助元数据保持“未提供”；标注完成不等于执行条件完全可核实。模型比较、构造预期与机器自洽仍不作为人类真值，也不能证明成绩、记忆保持或长期掌握提升。

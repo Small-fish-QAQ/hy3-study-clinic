@@ -1,0 +1,249 @@
+{
+  "task": {
+    "caseId": "N-F10-curriculum",
+    "runId": "N-F10-curriculum-r2",
+    "replicate": 2,
+    "path": "runs/final/cases/N-F10-curriculum.json",
+    "inputHash": "b05cfc5c0f5c71aa44896c5c22d0faf5979a5cc09bdf3979e4ff0c3ed46ff991",
+    "population": "natural",
+    "sourceId": "F10"
+  },
+  "inputHash": "b05cfc5c0f5c71aa44896c5c22d0faf5979a5cc09bdf3979e4ff0c3ed46ff991",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "correctness": "f02645a747203a54377a16636805e5eae33886b276bb10eeb6944286fbfb2aab",
+      "artifact-audit": "f02645a747203a54377a16636805e5eae33886b276bb10eeb6944286fbfb2aab"
+    },
+    "stages": {
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "uncertain",
+            "affected": [
+              "Q2"
+            ],
+            "reason": "The counterexample check is not established.",
+            "proposed": {
+              "kind": "conditions",
+              "status": "clear",
+              "affected": [],
+              "reason": "artifact(e19)中obj_4db18b3f与obj_68fc35e1描述的条件式规则（两工人且工具不冲突可并行、依赖顺序固定、非法方案即使时间匹配也不合法）与来源e3明示假设和实例一致；多条件未混淆，充分必要条件区分正确。",
+              "refs": [
+                "e3",
+                "e19"
+              ],
+              "challenge": {
+                "status": "closed",
+                "reason": "固定e3事实：时长固定、依赖明确、两工人工具不冲突则从零并行，汇合取较晚路径，推导唯一得12分；无法补充相容具体情况使必要条件不成立或结论改变，反例被给定规则排除。",
+                "refs": [
+                  "e3"
+                ]
+              }
+            },
+            "reviewReasons": [
+              "CONDITIONS_CHALLENGE_UNGROUNDED"
+            ]
+          },
+          {
+            "kind": "quantities",
+            "status": "clear",
+            "affected": [],
+            "reason": "独立重算：并行max(4,3)=4+2+5+1=12；串行4+3+2+5+1=15，与e19中obj_68fc35e1数值及e3一致，单位统一为分钟，数量级正确。",
+            "refs": [
+              "e3",
+              "e19"
+            ],
+            "witnesses": [
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "制作一份纸质纪念册需要四个步骤：裁纸、调墨、盖章、晾干后装袋。这里约定裁纸需要四分钟，调墨需要三分钟；盖章必须在裁纸和调墨都完成后才能开始，需要两分钟；盖章完成后必须连续晾干五分钟，之后装袋需要一分钟。任务从零时刻开始，纸张和墨水均未准备。所有时长固定，不考虑走动与工具切换的额外时间。\n若有两名工作人员，且裁紙工具与调墨工具互不冲突，就可以一人裁纸、一人调墨，从零时刻并行开始。调墨在第三分钟完成，裁纸在第四分钟完成，盖章最早第四分钟开始，第六分钟完成。晾干到第十一分钟，装袋到第十二分钟结束。两条前置路径汇合时，必须等较晚完成的那条，因此不能把三分钟与四分钟相加，也不能只等较短的一条。\n若只有一名工作人员，裁纸和调墨都需要此人全程操作，二者就不能并行，前两步一共七分钟；之后盖章、晾干和装袋再需八分钟，总计十五分钟。晾干本身不占用工作人员，但没有其他待办步骤可在这段时间提前完成。这里的最短时间来自明确依赖和资源条件，不是见到两步就默认可以同时进行。\n工序的顺序关系与总时间要分别检查。一个方案即使碰巧写出十二分钟，只要它在墨未调好时先盖章，仍不合法。反过来，合法方案不一定最短；两名工作人员也可以选择先裁纸后调墨，但那会闲置可用的并行机会。评价方案时，先检查每一步的开工条件，再讨论是否还有不必要的等待。\n如果材料说明改为“盖章后先观察两分钟，确认印迹无扩散后才进入五分钟晾干”，新增步骤会延后装袋时刻，不能沿用旧总时长。若改用一种允许立即装袋的墨，则又需要依据新的明确条件重算。本单元不对真实墨水安全作建议，只按题设的工艺规则安排时间。\n可以用文字时间表表达方案，每行写步骤、开始时刻、结束时刻和它等待的条件。换一种表格或叙述顺序都可以，只要时刻和依赖一致。对缺少工作人员数量或工具冲突信息的问题，应说明哪些并行安排尚不能确定；如果只要求给出一个合法方案，则可以明确提出足够的资源假设，而不是声称它在任何条件下都最短。",
+                "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+              },
+              {
+                "id": "e19",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "[{\"id\":\"obj_4db18b3f-e1e0-4055-b2fe-63bd698646d6\",\"title\":\"设计合法工序序列与时间表\",\"description\":\"Design legal step sequence (cut, mix, stamp, dry, bag) per dependencies: stamp after cut&mix, dry after stamp, bag after dry; prioritize legality by checking start conditions (reject stamp before ink ready even if time matches); express plan as timetable with step, start, end, wait condition.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_39fd8946-1641-4e0d-b9b8-63cd1740f504\",\"ta_af8888e6-6076-4167-96a8-82e4c67aa5d7\"],\"authorityClaimIds\":[\"tac_aad3dee1-f616-4d2e-b7ba-f2e09ef923bb\",\"tac_8bec82d6-9b2a-4f16-9a0d-9005067c3814\"],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation with design construct lacking Formal authority; teaching-only non-credit.\",\"formalAssessmentConstruct\":\"design\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_5b8f6a10\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_68fc35e1-b7d0-44f6-91dd-b29c64ec88d4\",\"title\":\"应用计算给定资源下可并行步骤的最短完成时刻\",\"description\":\"Apply calculation of the shortest completion time for parallelizable steps under given resource conditions: with two workers and non-conflicting tools, start cutting (4 min) and ink mixing (3 min) in parallel at t=0, wait for the later finishing prerequisite path at convergence (not summing or taking shorter), then stamp 2 min (end t=6), dry 5 min (end t=11), bag 1 min (end t=12); with one worker, sequence takes 15 min because the first two steps cannot parallel.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_39fd8946-1641-4e0d-b9b8-63cd1740f504\",\"ta_af8888e6-6076-4167-96a8-82e4c67aa5d7\"],\"authorityClaimIds\":[\"tac_64c4188b-53d5-4fa6-947f-84c9c7946bde\",\"tac_e333fe02-3505-4c8d-a608-f6fabb177e21\",\"tac_f3039939-3c29-4073-9357-0e0ebb72bd3f\",\"tac_30ddd42a-dd73-452e-9ed0-51a55211c97b\",\"tac_525246f5-9e93-46b2-a27b-0a24c3ab0ae1\",\"tac_65c1c9c3-d938-4b98-ac3a-22190dc42486\"],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation with apply construct lacking Formal evidence support; retained as high teaching priority.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_5b8f6a10\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_90c53cc7-6266-4e96-bcdd-fa5e445b8f67\",\"title\":\"解释资源条件决定的并行能力及假设说明\",\"description\":\"Explain how resource conditions determine parallel capability and the need to state assumptions or uncertainties: with two workers and non-conflicting tools cutting and ink mixing can start parallel from zero; with one worker they cannot; when worker count or tool conflict info is missing, explain which parallel arrangements are undetermined or propose sufficient resource assumptions for a legal plan rather than claiming universal shortest.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_39fd8946-1641-4e0d-b9b8-63cd1740f504\",\"ta_af8888e6-6076-4167-96a8-82e4c67aa5d7\"],\"authorityClaimIds\":[\"tac_7ecaff39-d00c-47bd-9299-89947b3dc979\",\"tac_e17ecd02-ad0b-4add-baa4-3f7bf23b702d\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E2 envelope is formal_sufficient supporting explain construct, fulfilling Formal path.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"explain\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_5b8f6a10\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_5b8f6a10\"]},{\"id\":\"obj_3caac9e5-aff0-41f4-987e-508b81f01af1\",\"title\":\"设计工艺规则变化后的重算方案\",\"description\":\"Design a revised process sequence and recompute completion times when stated craft rules change (e.g., add observation step before drying, or ink allows immediate bagging), using only the new explicit conditions and not reusing old total durations.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation with design construct lacking Formal authority; teaching-only non-credit.\",\"formalAssessmentConstruct\":\"design\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]}]",
+                "valueHash": "57ddba629efa740809f25b581f9ad5139256d366af93c5e90ff9edf35f07341c"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ],
+        "keys": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 2,
+            "reason": "产物 artifacts 的 objectives(e19) 中 obj_4db18b3f 覆盖 goal e5（合法工序依赖），obj_68fc35e1 覆盖 goal e6（并行最短时刻计算），obj_3caac9e5 与 obj_90c53cc7 共同覆盖 goal e7（变化重算与资源限制说明）；各描述与源 e3 的工艺规则、时间计算及资源条件解释一致，声明的三个本质目标均保留且未扭曲或消失，符合 Q2 的2分标准（本质目标有忠实可用处理）。",
+            "refs": [
+              "e19",
+              "e5",
+              "e6",
+              "e7",
+              "e3"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e19",
+                "pointer": "/artifacts/1/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "[{\"id\":\"obj_4db18b3f-e1e0-4055-b2fe-63bd698646d6\",\"title\":\"设计合法工序序列与时间表\",\"description\":\"Design legal step sequence (cut, mix, stamp, dry, bag) per dependencies: stamp after cut&mix, dry after stamp, bag after dry; prioritize legality by checking start conditions (reject stamp before ink ready even if time matches); express plan as timetable with step, start, end, wait condition.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_39fd8946-1641-4e0d-b9b8-63cd1740f504\",\"ta_af8888e6-6076-4167-96a8-82e4c67aa5d7\"],\"authorityClaimIds\":[\"tac_aad3dee1-f616-4d2e-b7ba-f2e09ef923bb\",\"tac_8bec82d6-9b2a-4f16-9a0d-9005067c3814\"],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation with design construct lacking Formal authority; teaching-only non-credit.\",\"formalAssessmentConstruct\":\"design\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_5b8f6a10\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_68fc35e1-b7d0-44f6-91dd-b29c64ec88d4\",\"title\":\"应用计算给定资源下可并行步骤的最短完成时刻\",\"description\":\"Apply calculation of the shortest completion time for parallelizable steps under given resource conditions: with two workers and non-conflicting tools, start cutting (4 min) and ink mixing (3 min) in parallel at t=0, wait for the later finishing prerequisite path at convergence (not summing or taking shorter), then stamp 2 min (end t=6), dry 5 min (end t=11), bag 1 min (end t=12); with one worker, sequence takes 15 min because the first two steps cannot parallel.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_39fd8946-1641-4e0d-b9b8-63cd1740f504\",\"ta_af8888e6-6076-4167-96a8-82e4c67aa5d7\"],\"authorityClaimIds\":[\"tac_64c4188b-53d5-4fa6-947f-84c9c7946bde\",\"tac_e333fe02-3505-4c8d-a608-f6fabb177e21\",\"tac_f3039939-3c29-4073-9357-0e0ebb72bd3f\",\"tac_30ddd42a-dd73-452e-9ed0-51a55211c97b\",\"tac_525246f5-9e93-46b2-a27b-0a24c3ab0ae1\",\"tac_65c1c9c3-d938-4b98-ac3a-22190dc42486\"],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation with apply construct lacking Formal evidence support; retained as high teaching priority.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_5b8f6a10\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_90c53cc7-6266-4e96-bcdd-fa5e445b8f67\",\"title\":\"解释资源条件决定的并行能力及假设说明\",\"description\":\"Explain how resource conditions determine parallel capability and the need to state assumptions or uncertainties: with two workers and non-conflicting tools cutting and ink mixing can start parallel from zero; with one worker they cannot; when worker count or tool conflict info is missing, explain which parallel arrangements are undetermined or propose sufficient resource assumptions for a legal plan rather than claiming universal shortest.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_39fd8946-1641-4e0d-b9b8-63cd1740f504\",\"ta_af8888e6-6076-4167-96a8-82e4c67aa5d7\"],\"authorityClaimIds\":[\"tac_7ecaff39-d00c-47bd-9299-89947b3dc979\",\"tac_e17ecd02-ad0b-4add-baa4-3f7bf23b702d\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E2 envelope is formal_sufficient supporting explain construct, fulfilling Formal path.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"explain\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_5b8f6a10\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_5b8f6a10\"]},{\"id\":\"obj_3caac9e5-aff0-41f4-987e-508b81f01af1\",\"title\":\"设计工艺规则变化后的重算方案\",\"description\":\"Design a revised process sequence and recompute completion times when stated craft rules change (e.g., add observation step before drying, or ink allows immediate bagging), using only the new explicit conditions and not reusing old total durations.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation with design construct lacking Formal authority; teaching-only non-credit.\",\"formalAssessmentConstruct\":\"design\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]}]",
+                "valueHash": "57ddba629efa740809f25b581f9ad5139256d366af93c5e90ff9edf35f07341c"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "根据前置依赖安排合法工序",
+                "valueHash": "3af016eb4a048460c3eb60ed077a59e164d265a34d14f99582a4d767b51b10d7"
+              },
+              {
+                "id": "e6",
+                "pointer": "/goals/1",
+                "role": "goal",
+                "kind": "text",
+                "value": "计算可并行步骤的最短完成时刻",
+                "valueHash": "47bcfce938b78449005ae24422677fdb99eea853292738ba1ec5e478acb07e28"
+              },
+              {
+                "id": "e7",
+                "pointer": "/goals/2",
+                "role": "goal",
+                "kind": "text",
+                "value": "条件变化时修订顺序并说明资源限制",
+                "valueHash": "4398b4c104899ed8c129b32ab5ccee3bc2b345d08931eda0c2d8b72c0a29bc20"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "制作一份纸质纪念册需要四个步骤：裁纸、调墨、盖章、晾干后装袋。这里约定裁纸需要四分钟，调墨需要三分钟；盖章必须在裁纸和调墨都完成后才能开始，需要两分钟；盖章完成后必须连续晾干五分钟，之后装袋需要一分钟。任务从零时刻开始，纸张和墨水均未准备。所有时长固定，不考虑走动与工具切换的额外时间。\n若有两名工作人员，且裁紙工具与调墨工具互不冲突，就可以一人裁纸、一人调墨，从零时刻并行开始。调墨在第三分钟完成，裁纸在第四分钟完成，盖章最早第四分钟开始，第六分钟完成。晾干到第十一分钟，装袋到第十二分钟结束。两条前置路径汇合时，必须等较晚完成的那条，因此不能把三分钟与四分钟相加，也不能只等较短的一条。\n若只有一名工作人员，裁纸和调墨都需要此人全程操作，二者就不能并行，前两步一共七分钟；之后盖章、晾干和装袋再需八分钟，总计十五分钟。晾干本身不占用工作人员，但没有其他待办步骤可在这段时间提前完成。这里的最短时间来自明确依赖和资源条件，不是见到两步就默认可以同时进行。\n工序的顺序关系与总时间要分别检查。一个方案即使碰巧写出十二分钟，只要它在墨未调好时先盖章，仍不合法。反过来，合法方案不一定最短；两名工作人员也可以选择先裁纸后调墨，但那会闲置可用的并行机会。评价方案时，先检查每一步的开工条件，再讨论是否还有不必要的等待。\n如果材料说明改为“盖章后先观察两分钟，确认印迹无扩散后才进入五分钟晾干”，新增步骤会延后装袋时刻，不能沿用旧总时长。若改用一种允许立即装袋的墨，则又需要依据新的明确条件重算。本单元不对真实墨水安全作建议，只按题设的工艺规则安排时间。\n可以用文字时间表表达方案，每行写步骤、开始时刻、结束时刻和它等待的条件。换一种表格或叙述顺序都可以，只要时刻和依赖一致。对缺少工作人员数量或工具冲突信息的问题，应说明哪些并行安排尚不能确定；如果只要求给出一个合法方案，则可以明确提出足够的资源假设，而不是声称它在任何条件下都最短。",
+                "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q2",
+          "level": "U",
+          "reason": "The counterexample check is not established.",
+          "refs": [
+            "e19",
+            "e5",
+            "e6",
+            "e7",
+            "e3"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e19",
+              "pointer": "/artifacts/1/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "[{\"id\":\"obj_4db18b3f-e1e0-4055-b2fe-63bd698646d6\",\"title\":\"设计合法工序序列与时间表\",\"description\":\"Design legal step sequence (cut, mix, stamp, dry, bag) per dependencies: stamp after cut&mix, dry after stamp, bag after dry; prioritize legality by checking start conditions (reject stamp before ink ready even if time matches); express plan as timetable with step, start, end, wait condition.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_39fd8946-1641-4e0d-b9b8-63cd1740f504\",\"ta_af8888e6-6076-4167-96a8-82e4c67aa5d7\"],\"authorityClaimIds\":[\"tac_aad3dee1-f616-4d2e-b7ba-f2e09ef923bb\",\"tac_8bec82d6-9b2a-4f16-9a0d-9005067c3814\"],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation with design construct lacking Formal authority; teaching-only non-credit.\",\"formalAssessmentConstruct\":\"design\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_5b8f6a10\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_68fc35e1-b7d0-44f6-91dd-b29c64ec88d4\",\"title\":\"应用计算给定资源下可并行步骤的最短完成时刻\",\"description\":\"Apply calculation of the shortest completion time for parallelizable steps under given resource conditions: with two workers and non-conflicting tools, start cutting (4 min) and ink mixing (3 min) in parallel at t=0, wait for the later finishing prerequisite path at convergence (not summing or taking shorter), then stamp 2 min (end t=6), dry 5 min (end t=11), bag 1 min (end t=12); with one worker, sequence takes 15 min because the first two steps cannot parallel.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[\"ta_39fd8946-1641-4e0d-b9b8-63cd1740f504\",\"ta_af8888e6-6076-4167-96a8-82e4c67aa5d7\"],\"authorityClaimIds\":[\"tac_64c4188b-53d5-4fa6-947f-84c9c7946bde\",\"tac_e333fe02-3505-4c8d-a608-f6fabb177e21\",\"tac_f3039939-3c29-4073-9357-0e0ebb72bd3f\",\"tac_30ddd42a-dd73-452e-9ed0-51a55211c97b\",\"tac_525246f5-9e93-46b2-a27b-0a24c3ab0ae1\",\"tac_65c1c9c3-d938-4b98-ac3a-22190dc42486\"],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation with apply construct lacking Formal evidence support; retained as high teaching priority.\",\"formalAssessmentConstruct\":\"apply\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_5b8f6a10\"],\"formalEvidenceSourceBlockIds\":[]},{\"id\":\"obj_90c53cc7-6266-4e96-bcdd-fa5e445b8f67\",\"title\":\"解释资源条件决定的并行能力及假设说明\",\"description\":\"Explain how resource conditions determine parallel capability and the need to state assumptions or uncertainties: with two workers and non-conflicting tools cutting and ink mixing can start parallel from zero; with one worker they cannot; when worker count or tool conflict info is missing, explain which parallel arrangements are undetermined or propose sufficient resource assumptions for a legal plan rather than claiming universal shortest.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"independently_verified\",\"truthAuthorityRecordIds\":[\"ta_39fd8946-1641-4e0d-b9b8-63cd1740f504\",\"ta_af8888e6-6076-4167-96a8-82e4c67aa5d7\"],\"authorityClaimIds\":[\"tac_7ecaff39-d00c-47bd-9299-89947b3dc979\",\"tac_e17ecd02-ad0b-4add-baa4-3f7bf23b702d\"],\"priority\":\"required\",\"priorityRationale\":\"Exact evidence E2 envelope is formal_sufficient supporting explain construct, fulfilling Formal path.\",\"formalAssessmentReady\":true,\"formalAssessmentReadinessRationale\":\"当前版本存在已验证且无冲突的精确来源权威。\",\"formalAssessmentConstruct\":\"explain\",\"authorityEnvelopeTier\":\"formal_sufficient\",\"authoritySourceBlockIds\":[\"blk_0_5b8f6a10\"],\"formalEvidenceSourceBlockIds\":[\"blk_0_5b8f6a10\"]},{\"id\":\"obj_3caac9e5-aff0-41f4-987e-508b81f01af1\",\"title\":\"设计工艺规则变化后的重算方案\",\"description\":\"Design a revised process sequence and recompute completion times when stated craft rules change (e.g., add observation step before drying, or ink allows immediate bagging), using only the new explicit conditions and not reusing old total durations.\",\"subjectClass\":\"source_specific\",\"scopeOrigin\":\"anchored\",\"truthPremiseStatus\":\"unverified\",\"truthAuthorityRecordIds\":[],\"authorityClaimIds\":[],\"priority\":\"high\",\"priorityRationale\":\"Central teaching obligation with design construct lacking Formal authority; teaching-only non-credit.\",\"formalAssessmentConstruct\":\"design\",\"authorityEnvelopeTier\":\"unavailable\",\"authoritySourceBlockIds\":[],\"formalEvidenceSourceBlockIds\":[]}]",
+              "valueHash": "57ddba629efa740809f25b581f9ad5139256d366af93c5e90ff9edf35f07341c"
+            },
+            {
+              "id": "e5",
+              "pointer": "/goals/0",
+              "role": "goal",
+              "kind": "text",
+              "value": "根据前置依赖安排合法工序",
+              "valueHash": "3af016eb4a048460c3eb60ed077a59e164d265a34d14f99582a4d767b51b10d7"
+            },
+            {
+              "id": "e6",
+              "pointer": "/goals/1",
+              "role": "goal",
+              "kind": "text",
+              "value": "计算可并行步骤的最短完成时刻",
+              "valueHash": "47bcfce938b78449005ae24422677fdb99eea853292738ba1ec5e478acb07e28"
+            },
+            {
+              "id": "e7",
+              "pointer": "/goals/2",
+              "role": "goal",
+              "kind": "text",
+              "value": "条件变化时修订顺序并说明资源限制",
+              "valueHash": "4398b4c104899ed8c129b32ab5ccee3bc2b345d08931eda0c2d8b72c0a29bc20"
+            },
+            {
+              "id": "e3",
+              "pointer": "/sources/0/text",
+              "role": "source",
+              "kind": "text",
+              "value": "制作一份纸质纪念册需要四个步骤：裁纸、调墨、盖章、晾干后装袋。这里约定裁纸需要四分钟，调墨需要三分钟；盖章必须在裁纸和调墨都完成后才能开始，需要两分钟；盖章完成后必须连续晾干五分钟，之后装袋需要一分钟。任务从零时刻开始，纸张和墨水均未准备。所有时长固定，不考虑走动与工具切换的额外时间。\n若有两名工作人员，且裁紙工具与调墨工具互不冲突，就可以一人裁纸、一人调墨，从零时刻并行开始。调墨在第三分钟完成，裁纸在第四分钟完成，盖章最早第四分钟开始，第六分钟完成。晾干到第十一分钟，装袋到第十二分钟结束。两条前置路径汇合时，必须等较晚完成的那条，因此不能把三分钟与四分钟相加，也不能只等较短的一条。\n若只有一名工作人员，裁纸和调墨都需要此人全程操作，二者就不能并行，前两步一共七分钟；之后盖章、晾干和装袋再需八分钟，总计十五分钟。晾干本身不占用工作人员，但没有其他待办步骤可在这段时间提前完成。这里的最短时间来自明确依赖和资源条件，不是见到两步就默认可以同时进行。\n工序的顺序关系与总时间要分别检查。一个方案即使碰巧写出十二分钟，只要它在墨未调好时先盖章，仍不合法。反过来，合法方案不一定最短；两名工作人员也可以选择先裁纸后调墨，但那会闲置可用的并行机会。评价方案时，先检查每一步的开工条件，再讨论是否还有不必要的等待。\n如果材料说明改为“盖章后先观察两分钟，确认印迹无扩散后才进入五分钟晾干”，新增步骤会延后装袋时刻，不能沿用旧总时长。若改用一种允许立即装袋的墨，则又需要依据新的明确条件重算。本单元不对真实墨水安全作建议，只按题设的工艺规则安排时间。\n可以用文字时间表表达方案，每行写步骤、开始时刻、结束时刻和它等待的条件。换一种表格或叙述顺序都可以，只要时刻和依赖一致。对缺少工作人员数量或工具冲突信息的问题，应说明哪些并行安排尚不能确定；如果只要求给出一个合法方案，则可以明确提出足够的资源假设，而不是声称它在任何条件下都最短。",
+              "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [
+            {
+              "level": "U",
+              "code": "INDEPENDENT_CONDITIONS",
+              "detail": {
+                "kind": "conditions",
+                "status": "uncertain",
+                "affected": [
+                  "Q2"
+                ],
+                "reason": "The counterexample check is not established.",
+                "proposed": {
+                  "kind": "conditions",
+                  "status": "clear",
+                  "affected": [],
+                  "reason": "artifact(e19)中obj_4db18b3f与obj_68fc35e1描述的条件式规则（两工人且工具不冲突可并行、依赖顺序固定、非法方案即使时间匹配也不合法）与来源e3明示假设和实例一致；多条件未混淆，充分必要条件区分正确。",
+                  "refs": [
+                    "e3",
+                    "e19"
+                  ],
+                  "challenge": {
+                    "status": "closed",
+                    "reason": "固定e3事实：时长固定、依赖明确、两工人工具不冲突则从零并行，汇合取较晚路径，推导唯一得12分；无法补充相容具体情况使必要条件不成立或结论改变，反例被给定规则排除。",
+                    "refs": [
+                      "e3"
+                    ]
+                  }
+                },
+                "reviewReasons": [
+                  "CONDITIONS_CHALLENGE_UNGROUNDED"
+                ]
+              }
+            }
+          ],
+          "proposedLevel": 2,
+          "proposedReason": "产物 artifacts 的 objectives(e19) 中 obj_4db18b3f 覆盖 goal e5（合法工序依赖），obj_68fc35e1 覆盖 goal e6（并行最短时刻计算），obj_3caac9e5 与 obj_90c53cc7 共同覆盖 goal e7（变化重算与资源限制说明）；各描述与源 e3 的工艺规则、时间计算及资源条件解释一致，声明的三个本质目标均保留且未扭曲或消失，符合 Q2 的2分标准（本质目标有忠实可用处理）。",
+          "decidingConstraint": "INDEPENDENT_CONDITIONS"
+        }
+      ],
+      "reviewRequired": [
+        {
+          "dimension": "Q2",
+          "reason": "UNRESOLVED"
+        }
+      ]
+    },
+    "resultHash": "597bbd3124d500c607dd04c1d257e3d1735c705f1337ed1e376d5813778d55cc"
+  }
+}

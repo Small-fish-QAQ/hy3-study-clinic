@@ -1,0 +1,310 @@
+{
+  "task": {
+    "caseId": "E940",
+    "runId": "E940-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E940.json",
+    "inputHash": "628313c8f41739a2749de4f07c780903f3c98a6507ec88c29b3c6e524b661f5b",
+    "population": "controlled",
+    "sourceId": "F07"
+  },
+  "inputHash": "628313c8f41739a2749de4f07c780903f3c98a6507ec88c29b3c6e524b661f5b",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "correctness": "2d74c2404efc5a5d88743f12829a6dcc2be8e67bf9da79b45adddb839e1b276f",
+      "artifact-audit": "2d74c2404efc5a5d88743f12829a6dcc2be8e67bf9da79b45adddb839e1b276f",
+      "certification": "2d74c2404efc5a5d88743f12829a6dcc2be8e67bf9da79b45adddb839e1b276f"
+    },
+    "stages": {
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "clear",
+            "affected": [],
+            "reason": "artifact(e17)总结研究水分时保持种子来源、数量、温度、光照和观察时间一致并用同一标准记录全部种子，只报告本批8/10高于1/10且不保证所有种子加水都发芽，后续同温同光比水量并重复。与e3中课堂实例及明示原则（尽量保持一致、单独归因需控变量、不推广普遍规律、重复检查稳定性）逐一对照一致，无混淆充分必要。",
+            "refs": [
+              "e3",
+              "e17"
+            ],
+            "challenge": {
+              "status": "closed",
+              "reason": "固定e3给定事实（同批各10粒、同温同光七天、甲润乙干、标准记录全部、得8和1），尝试补充相容反例：如仅改变数量或温度等，但artifact自身条件要求保持一致，且e3明确若温度光照同时变则无法单独归因，故反例或被artifact条件排除或违背e3事实，无法推翻结论。",
+              "refs": [
+                "e3",
+                "e17"
+              ]
+            },
+            "witnesses": [
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "课堂把同一批种子分到两个透明盒中，想比较有水和无水时的发芽情况。为了使比较有意义，应尽量让其他有关条件一致，例如种子数量、来源、温度、光照、观察天数与发芽判定方式。若有水盒放在温暖窗台、无水盒放在冷暗柜里，即使结果不同，也无法把差异单独归因于水，因为温度和光照同时改变了。\n这里把“发芽”操作性地定义为观察到胚根伸出种皮，便于不同记录者使用同一标准。这个定义是本实验的观察规则，不是所有生物过程的完整描述。记录者应按事先约定的时间观察全部种子，而不是只挑成功的那几颗展示。没有发芽的种子也必须计入，才能知道发芽比例。\n设两盒各十粒同批种子，均在同温同光处放置七天。甲盒保持适量湿润，乙盒保持干燥。甲有八粒达到上述标准，乙有一粒。可以说在这批种子和这些条件下，湿润组观察到的发芽比例更高。仅凭这一次观察，还不能断言所有种类的种子只要加水都会发芽；种子活性、温度及其他条件仍可能重要。也不能说乙盒绝对没有任何水分，因为“保持干燥”是操作描述，并未测出零水分。\n重复实验可以帮助检查结果是否稳定，但重复的对象、条件与方法需要记录。把同一张照片复制三次不是三次独立实验。同一盒内种子也共享环境，不能总把它们当成互不影响的完整重复。入门练习无需复杂统计检验，只要能说明为什么重复有用、哪些信息仍然有限。\n好的后续实验应对应目前的疑问。如果怀疑温度造成差异，就应在同一温度下只改变湿润条件，或设计清楚的组合比较；不能一边改变温度，一边换种子品种，再把结果归因于某一个因素。若希望研究“水太多是否也影响发芽”，可以在其他条件一致时增加不同水量组，事先说明每组的水量与观察标准。\n解释实验时，把计划、执行、观察和结论分开写。计划相同不代表执行真的相同，需核对记录；观察不同不自动证明唯一原因。允许结果不支持原假说，并据此修改下一步问题，正是实验学习的一部分。对证据保留限制，不妨碍学生提出清楚、可检验的预测。",
+                "valueHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648"
+              },
+              {
+                "id": "e17",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "研究水分时保持种子来源、数量、温度、光照和观察时间一致，并用同一发芽标准记录全部种子；只报告本批湿润组8/10高于干燥组1/10，不保证所有种子加水都会发芽。后续在同温同光下比较不同水量，并按同一标准记录。还应重复实验来检查稳定性。",
+                "valueHash": "b304d125e8accd4ea413b3752fb72482b7ad6aba0dd9323de8092cb8fe5c1bc8"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "kind": "quantities",
+            "status": "clear",
+            "affected": [],
+            "reason": "从e3原始输入独立重算：两盒各10粒，甲8粒达标=>8/10，乙1粒=>1/10，湿润组比例高于干燥组，与e17中'8/10高于1/10'一致，无单位转换错误。",
+            "refs": [
+              "e3",
+              "e17"
+            ],
+            "witnesses": [
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "课堂把同一批种子分到两个透明盒中，想比较有水和无水时的发芽情况。为了使比较有意义，应尽量让其他有关条件一致，例如种子数量、来源、温度、光照、观察天数与发芽判定方式。若有水盒放在温暖窗台、无水盒放在冷暗柜里，即使结果不同，也无法把差异单独归因于水，因为温度和光照同时改变了。\n这里把“发芽”操作性地定义为观察到胚根伸出种皮，便于不同记录者使用同一标准。这个定义是本实验的观察规则，不是所有生物过程的完整描述。记录者应按事先约定的时间观察全部种子，而不是只挑成功的那几颗展示。没有发芽的种子也必须计入，才能知道发芽比例。\n设两盒各十粒同批种子，均在同温同光处放置七天。甲盒保持适量湿润，乙盒保持干燥。甲有八粒达到上述标准，乙有一粒。可以说在这批种子和这些条件下，湿润组观察到的发芽比例更高。仅凭这一次观察，还不能断言所有种类的种子只要加水都会发芽；种子活性、温度及其他条件仍可能重要。也不能说乙盒绝对没有任何水分，因为“保持干燥”是操作描述，并未测出零水分。\n重复实验可以帮助检查结果是否稳定，但重复的对象、条件与方法需要记录。把同一张照片复制三次不是三次独立实验。同一盒内种子也共享环境，不能总把它们当成互不影响的完整重复。入门练习无需复杂统计检验，只要能说明为什么重复有用、哪些信息仍然有限。\n好的后续实验应对应目前的疑问。如果怀疑温度造成差异，就应在同一温度下只改变湿润条件，或设计清楚的组合比较；不能一边改变温度，一边换种子品种，再把结果归因于某一个因素。若希望研究“水太多是否也影响发芽”，可以在其他条件一致时增加不同水量组，事先说明每组的水量与观察标准。\n解释实验时，把计划、执行、观察和结论分开写。计划相同不代表执行真的相同，需核对记录；观察不同不自动证明唯一原因。允许结果不支持原假说，并据此修改下一步问题，正是实验学习的一部分。对证据保留限制，不妨碍学生提出清楚、可检验的预测。",
+                "valueHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648"
+              },
+              {
+                "id": "e17",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "研究水分时保持种子来源、数量、温度、光照和观察时间一致，并用同一发芽标准记录全部种子；只报告本批湿润组8/10高于干燥组1/10，不保证所有种子加水都会发芽。后续在同温同光下比较不同水量，并按同一标准记录。还应重复实验来检查稳定性。",
+                "valueHash": "b304d125e8accd4ea413b3752fb72482b7ad6aba0dd9323de8092cb8fe5c1bc8"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ],
+        "keys": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 2,
+            "reason": "Artifact e17 faithfully treats essential goals: e5 by stating kept sources, count, temp, light, time consistent (control of simultaneous variables); e6 by reporting only this batch 8/10 vs 1/10 and explicitly '不保证所有种子加水都会发芽'; e7 by proposing follow-up comparing water amounts under same temp/light with same standard. Secondary e8 is thin (mentions repeat but not independent vs copy), but essential requirements met, no distortion.",
+            "refs": [
+              "e17",
+              "e5",
+              "e6",
+              "e7",
+              "e8"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e17",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "研究水分时保持种子来源、数量、温度、光照和观察时间一致，并用同一发芽标准记录全部种子；只报告本批湿润组8/10高于干燥组1/10，不保证所有种子加水都会发芽。后续在同温同光下比较不同水量，并按同一标准记录。还应重复实验来检查稳定性。",
+                "valueHash": "b304d125e8accd4ea413b3752fb72482b7ad6aba0dd9323de8092cb8fe5c1bc8"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "识别比较中同时改变的变量",
+                "valueHash": "8f35b76ddbb2d39b143a056910fd5c72261ea91f448cbff63ee0837fc75620be"
+              },
+              {
+                "id": "e6",
+                "pointer": "/goals/1",
+                "role": "goal",
+                "kind": "text",
+                "value": "区分实验观察与普遍规律",
+                "valueHash": "3530eeb6511b1a1073a57fcc7c5ff49dd8215420d9858326aa5a667bce47c295"
+              },
+              {
+                "id": "e7",
+                "pointer": "/goals/2",
+                "role": "goal",
+                "kind": "text",
+                "value": "设计保留对照并能检验假说的后续实验",
+                "valueHash": "94c5bc19e0ee073f20331276617163f9935e201c9de4be6e7dd58a97ac8d211b"
+              },
+              {
+                "id": "e8",
+                "pointer": "/goals/3",
+                "role": "goal",
+                "kind": "text",
+                "value": "次要延伸：区分实际独立重复与同一观察的复制。",
+                "valueHash": "537d3bda324c47f9a8a49e7b0ba3159ad5645810b8bddfb8088e623d0219c334"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q2",
+            "status": "supported",
+            "reason": "Artifact e17 controls simultaneous variables per e5, limits claim to batch observation per e6, and designs same-condition follow-up per e7; findings audit and correctness clear/closed confirm consistent faithful treatment with no distortion.",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e17",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "研究水分时保持种子来源、数量、温度、光照和观察时间一致，并用同一发芽标准记录全部种子；只报告本批湿润组8/10高于干燥组1/10，不保证所有种子加水都会发芽。后续在同温同光下比较不同水量，并按同一标准记录。还应重复实验来检查稳定性。",
+                "valueHash": "b304d125e8accd4ea413b3752fb72482b7ad6aba0dd9323de8092cb8fe5c1bc8"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "识别比较中同时改变的变量",
+                "valueHash": "8f35b76ddbb2d39b143a056910fd5c72261ea91f448cbff63ee0837fc75620be"
+              },
+              {
+                "id": "e6",
+                "pointer": "/goals/1",
+                "role": "goal",
+                "kind": "text",
+                "value": "区分实验观察与普遍规律",
+                "valueHash": "3530eeb6511b1a1073a57fcc7c5ff49dd8215420d9858326aa5a667bce47c295"
+              },
+              {
+                "id": "e7",
+                "pointer": "/goals/2",
+                "role": "goal",
+                "kind": "text",
+                "value": "设计保留对照并能检验假说的后续实验",
+                "valueHash": "94c5bc19e0ee073f20331276617163f9935e201c9de4be6e7dd58a97ac8d211b"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q2",
+          "level": 2,
+          "reason": "Artifact e17 faithfully treats essential goals: e5 by stating kept sources, count, temp, light, time consistent (control of simultaneous variables); e6 by reporting only this batch 8/10 vs 1/10 and explicitly '不保证所有种子加水都会发芽'; e7 by proposing follow-up comparing water amounts under same temp/light with same standard. Secondary e8 is thin (mentions repeat but not independent vs copy), but essential requirements met, no distortion.",
+          "refs": [
+            "e17",
+            "e5",
+            "e6",
+            "e7",
+            "e8"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e17",
+              "pointer": "/artifacts/0/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "研究水分时保持种子来源、数量、温度、光照和观察时间一致，并用同一发芽标准记录全部种子；只报告本批湿润组8/10高于干燥组1/10，不保证所有种子加水都会发芽。后续在同温同光下比较不同水量，并按同一标准记录。还应重复实验来检查稳定性。",
+              "valueHash": "b304d125e8accd4ea413b3752fb72482b7ad6aba0dd9323de8092cb8fe5c1bc8"
+            },
+            {
+              "id": "e5",
+              "pointer": "/goals/0",
+              "role": "goal",
+              "kind": "text",
+              "value": "识别比较中同时改变的变量",
+              "valueHash": "8f35b76ddbb2d39b143a056910fd5c72261ea91f448cbff63ee0837fc75620be"
+            },
+            {
+              "id": "e6",
+              "pointer": "/goals/1",
+              "role": "goal",
+              "kind": "text",
+              "value": "区分实验观察与普遍规律",
+              "valueHash": "3530eeb6511b1a1073a57fcc7c5ff49dd8215420d9858326aa5a667bce47c295"
+            },
+            {
+              "id": "e7",
+              "pointer": "/goals/2",
+              "role": "goal",
+              "kind": "text",
+              "value": "设计保留对照并能检验假说的后续实验",
+              "valueHash": "94c5bc19e0ee073f20331276617163f9935e201c9de4be6e7dd58a97ac8d211b"
+            },
+            {
+              "id": "e8",
+              "pointer": "/goals/3",
+              "role": "goal",
+              "kind": "text",
+              "value": "次要延伸：区分实际独立重复与同一观察的复制。",
+              "valueHash": "537d3bda324c47f9a8a49e7b0ba3159ad5645810b8bddfb8088e623d0219c334"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [],
+          "proposedLevel": 2,
+          "proposedReason": "Artifact e17 faithfully treats essential goals: e5 by stating kept sources, count, temp, light, time consistent (control of simultaneous variables); e6 by reporting only this batch 8/10 vs 1/10 and explicitly '不保证所有种子加水都会发芽'; e7 by proposing follow-up comparing water amounts under same temp/light with same standard. Secondary e8 is thin (mentions repeat but not independent vs copy), but essential requirements met, no distortion."
+        }
+      ],
+      "reviewRequired": [],
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q2",
+            "status": "supported",
+            "reason": "Artifact e17 controls simultaneous variables per e5, limits claim to batch observation per e6, and designs same-condition follow-up per e7; findings audit and correctness clear/closed confirm consistent faithful treatment with no distortion.",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e17",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "研究水分时保持种子来源、数量、温度、光照和观察时间一致，并用同一发芽标准记录全部种子；只报告本批湿润组8/10高于干燥组1/10，不保证所有种子加水都会发芽。后续在同温同光下比较不同水量，并按同一标准记录。还应重复实验来检查稳定性。",
+                "valueHash": "b304d125e8accd4ea413b3752fb72482b7ad6aba0dd9323de8092cb8fe5c1bc8"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "识别比较中同时改变的变量",
+                "valueHash": "8f35b76ddbb2d39b143a056910fd5c72261ea91f448cbff63ee0837fc75620be"
+              },
+              {
+                "id": "e6",
+                "pointer": "/goals/1",
+                "role": "goal",
+                "kind": "text",
+                "value": "区分实验观察与普遍规律",
+                "valueHash": "3530eeb6511b1a1073a57fcc7c5ff49dd8215420d9858326aa5a667bce47c295"
+              },
+              {
+                "id": "e7",
+                "pointer": "/goals/2",
+                "role": "goal",
+                "kind": "text",
+                "value": "设计保留对照并能检验假说的后续实验",
+                "valueHash": "94c5bc19e0ee073f20331276617163f9935e201c9de4be6e7dd58a97ac8d211b"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "resultHash": "58d5a4c447e48ae620315d2c9c2646247bb29ea78ad6ee9bfc107a4324fb780a"
+  }
+}

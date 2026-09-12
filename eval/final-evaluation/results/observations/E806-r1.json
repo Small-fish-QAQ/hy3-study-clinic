@@ -1,0 +1,305 @@
+{
+  "task": {
+    "caseId": "E806",
+    "runId": "E806-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E806.json",
+    "inputHash": "e25d37fdf42fe47487dcfd05efdc9bbf4d5d146799de8a686012f5cb2d648a43",
+    "population": "boundary",
+    "sourceId": "F06"
+  },
+  "inputHash": "e25d37fdf42fe47487dcfd05efdc9bbf4d5d146799de8a686012f5cb2d648a43",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "solve-current": "40a3df788d203fa8bbc73046b5f66fed25a89c8cd246e5d68fb53a9d6b4281a1",
+      "correctness": "33dc9ed1224e58f75b2bca8c1df5121d1db629823164c9e51ee9f5d9f8085da2",
+      "artifact-audit": "33dc9ed1224e58f75b2bca8c1df5121d1db629823164c9e51ee9f5d9f8085da2"
+    },
+    "stages": {
+      "solve-current": {
+        "status": "resolved",
+        "solution": "不能断定两天最长等待相同（唯一肯定结论）。反例：甲组[6,6]平均6、最大6；乙组[5,7]平均6、最大7。题目问“能否断定”可 resolved 答“不能断定”并给出两组平均6但最大值不同的数据，符合e14；e3明示平均相同不能断言最长相同。",
+        "witnesses": [
+          {
+            "id": "e14",
+            "pointer": "/question/prompt",
+            "role": "question",
+            "kind": "text",
+            "value": "以下是新的独立情境，来源中的示例数字不作为本题未明示的数据。甲、乙两天平均等待都为六分钟。能否断定两天最长等待相同？给出两组平均都为六但最大值不同的数据。 现在必须给出一个确定的数值或唯一肯定结论，不允许说明信息不足、条件分支或另加假设。",
+            "valueHash": "520796a563f35239d2072457548c2f08908aa0f6b9d92e9e874922a049f0e896"
+          },
+          {
+            "id": "e3",
+            "pointer": "/sources/0/text",
+            "role": "source",
+            "kind": "text",
+            "value": "服务台记录了一组等待时间，想向居民说明排队体验。平均数的计算方法是把所有等待时间相加，再除以记录条数。中位数则先把时间从小到大排列；条数为奇数时取最中间一个，条数为偶数时取中间两个数的平均。它们都可以描述数据，但强调的方面不同，不存在离开问题就永远最好的一个指标。\n例如五位居民的等待时间依次为一、二、二、三、十二分钟。总和为二十分钟，平均数为四分钟；排序后中间一个数是二，所以中位数为二分钟。十二分钟的记录把平均数向上拉，但没有改变位于中间的二。说“平均等待四分钟”不意味着每个人都等了四分钟，也不意味着有一半人恰好等四分钟。说“中位数二分钟”也不意味着最长等待只有二分钟。\n若把最长那次十二分钟改成二十二分钟，其余四次不变，总和增加十分钟，平均数增加两分钟，变为六分钟；中位数仍是二分钟。这个例子说明单个很大的数能够明显影响平均数。但不能由此说中位数不受任何数据变化影响：若中间位置的数据或排序结构改变，中位数也可能改变。\n向公众介绍“典型一次等待”时，可以同时报告中位数和范围；计算整个服务台累计占用的等待分钟数时，平均数乘记录条数可以恢复总和，中位数一般不能这样使用。选择指标取决于所要回答的问题。若两天的平均数相同，不能断言两天每位居民的体验相同；它们可能有不同的最短、最长与分布形状。\n合并两天数据时，还要考虑记录条数。第一天四条记录的平均数为三分钟，第二天两条记录的平均数为九分钟。总等待时间为四乘三加二乘九，共三十分钟；总记录数六条，合并平均数为五分钟。直接平均三和九得到六分钟，相当于把两天当成同样大小的组，未反映实际记录人数。本单元的“每次等待”都按一条记录计，不讨论同一个人多次到访是否应另行去重。\n写解释时建议附上必要运算和指标名称，并把数据范围与结论范围对齐。样本只有几次记录时，可以描述这几次，不宜保证未来总是如此。数据缺了几条，或“等待”的起止定义发生变化，也会改变比较意义；这些条件应在计算前先说明。",
+            "valueHash": "a43f09ae51e1a19e3e4fe7ef6283f10eab5bf8c071e52a5d86e3c347cdbc2311"
+          }
+        ],
+        "reviewReasons": []
+      },
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "uncertain",
+            "affected": [
+              "Q4"
+            ],
+            "reason": "The counterexample check is not established.",
+            "proposed": {
+              "kind": "conditions",
+              "status": "clear",
+              "affected": [
+                "Q4"
+              ],
+              "reason": "作者于e3总结：若两天平均数相同，不能断言最长相同（可能有不同）。题目e14给定平均都为六分钟，问能否断定最长相同并要求给反例，与该总结一致；artifact e18要求确定结论，未冲突。核验实例无矛盾。",
+              "refs": [
+                "e3",
+                "e14",
+                "e18"
+              ],
+              "challenge": {
+                "status": "counterexample",
+                "reason": "固定e3结论前事实仅'平均数相同'，无明示记录条数>1。补充相容情况：两天各仅一条记录，则平均=该记录，平均相同推出记录相同，最长必相同，使'不能断言最长相同'不成立。作者未排除此最弱必要条件，故原普遍结论未建立。",
+                "refs": [
+                  "e3"
+                ]
+              }
+            },
+            "reviewReasons": [
+              "CONDITIONS_CHALLENGE_UNGROUNDED"
+            ]
+          },
+          {
+            "kind": "quantities",
+            "status": "uncertain",
+            "affected": [
+              "Q4"
+            ],
+            "reason": "Correctness check cannot be grounded.",
+            "proposed": {
+              "kind": "quantities",
+              "status": "clear",
+              "affected": [],
+              "reason": "独立重算e3中示例：1,2,2,3,12和=20/5=4；改22后和=30/5=6；合并4条均3与2条均9得(12+18)/6=5。均与文本一致，无数值推导错误。题目e14无作者数值断言需重算。",
+              "refs": [
+                "e3"
+              ]
+            },
+            "reviewReasons": [
+              "CORRECTNESS_EVIDENCE_OR_SCOPE_MISSING"
+            ]
+          }
+        ],
+        "keys": [
+          {
+            "taskId": "current",
+            "status": "absent",
+            "reason": "当前题目e14及artifacts中e18仅说明'只接受确定结论'，未给出具体作者指定答案键（如'不能断定'或数值）。无当前键，故absent。盲解非键。",
+            "refs": [
+              "e14",
+              "e18"
+            ],
+            "witnesses": [
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "以下是新的独立情境，来源中的示例数字不作为本题未明示的数据。甲、乙两天平均等待都为六分钟。能否断定两天最长等待相同？给出两组平均都为六但最大值不同的数据。 现在必须给出一个确定的数值或唯一肯定结论，不允许说明信息不足、条件分支或另加假设。",
+                "valueHash": "520796a563f35239d2072457548c2f08908aa0f6b9d92e9e874922a049f0e896"
+              },
+              {
+                "id": "e18",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "本题作者参考解（未向学习者提前展示）：此题只接受一个确定结论，不接受条件或信息不足。",
+                "valueHash": "fb7dfa3db3f3d397b2de92b75bea658f0970327223dee113ac125695264a3444"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q4",
+            "level": 2,
+            "reason": "题干e14要求基于平均同为6分钟判断最长等待是否相同并给出反例，来源e3明示平均相同不能断言最长相同，前提充分；盲解current（resolved）给出'不能断定'及两组平均6但最大不同的数据，答案集可辩护；priorExposure e19为空，artifact e18标明未向学习者提前展示，无solution disclosure，独立性满足。符合Q4的2分标准。",
+            "refs": [
+              "e14",
+              "e3",
+              "e19",
+              "e18"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e14",
+                "pointer": "/question/prompt",
+                "role": "question",
+                "kind": "text",
+                "value": "以下是新的独立情境，来源中的示例数字不作为本题未明示的数据。甲、乙两天平均等待都为六分钟。能否断定两天最长等待相同？给出两组平均都为六但最大值不同的数据。 现在必须给出一个确定的数值或唯一肯定结论，不允许说明信息不足、条件分支或另加假设。",
+                "valueHash": "520796a563f35239d2072457548c2f08908aa0f6b9d92e9e874922a049f0e896"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "服务台记录了一组等待时间，想向居民说明排队体验。平均数的计算方法是把所有等待时间相加，再除以记录条数。中位数则先把时间从小到大排列；条数为奇数时取最中间一个，条数为偶数时取中间两个数的平均。它们都可以描述数据，但强调的方面不同，不存在离开问题就永远最好的一个指标。\n例如五位居民的等待时间依次为一、二、二、三、十二分钟。总和为二十分钟，平均数为四分钟；排序后中间一个数是二，所以中位数为二分钟。十二分钟的记录把平均数向上拉，但没有改变位于中间的二。说“平均等待四分钟”不意味着每个人都等了四分钟，也不意味着有一半人恰好等四分钟。说“中位数二分钟”也不意味着最长等待只有二分钟。\n若把最长那次十二分钟改成二十二分钟，其余四次不变，总和增加十分钟，平均数增加两分钟，变为六分钟；中位数仍是二分钟。这个例子说明单个很大的数能够明显影响平均数。但不能由此说中位数不受任何数据变化影响：若中间位置的数据或排序结构改变，中位数也可能改变。\n向公众介绍“典型一次等待”时，可以同时报告中位数和范围；计算整个服务台累计占用的等待分钟数时，平均数乘记录条数可以恢复总和，中位数一般不能这样使用。选择指标取决于所要回答的问题。若两天的平均数相同，不能断言两天每位居民的体验相同；它们可能有不同的最短、最长与分布形状。\n合并两天数据时，还要考虑记录条数。第一天四条记录的平均数为三分钟，第二天两条记录的平均数为九分钟。总等待时间为四乘三加二乘九，共三十分钟；总记录数六条，合并平均数为五分钟。直接平均三和九得到六分钟，相当于把两天当成同样大小的组，未反映实际记录人数。本单元的“每次等待”都按一条记录计，不讨论同一个人多次到访是否应另行去重。\n写解释时建议附上必要运算和指标名称，并把数据范围与结论范围对齐。样本只有几次记录时，可以描述这几次，不宜保证未来总是如此。数据缺了几条，或“等待”的起止定义发生变化，也会改变比较意义；这些条件应在计算前先说明。",
+                "valueHash": "a43f09ae51e1a19e3e4fe7ef6283f10eab5bf8c071e52a5d86e3c347cdbc2311"
+              },
+              {
+                "id": "e19",
+                "pointer": "/priorExposure",
+                "role": "prior_exposure",
+                "kind": "array_length",
+                "value": 0,
+                "valueHash": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+              },
+              {
+                "id": "e18",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "本题作者参考解（未向学习者提前展示）：此题只接受一个确定结论，不接受条件或信息不足。",
+                "valueHash": "fb7dfa3db3f3d397b2de92b75bea658f0970327223dee113ac125695264a3444"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q4",
+          "level": "U",
+          "reason": "The counterexample check is not established.",
+          "refs": [
+            "e14",
+            "e3",
+            "e19",
+            "e18"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e14",
+              "pointer": "/question/prompt",
+              "role": "question",
+              "kind": "text",
+              "value": "以下是新的独立情境，来源中的示例数字不作为本题未明示的数据。甲、乙两天平均等待都为六分钟。能否断定两天最长等待相同？给出两组平均都为六但最大值不同的数据。 现在必须给出一个确定的数值或唯一肯定结论，不允许说明信息不足、条件分支或另加假设。",
+              "valueHash": "520796a563f35239d2072457548c2f08908aa0f6b9d92e9e874922a049f0e896"
+            },
+            {
+              "id": "e3",
+              "pointer": "/sources/0/text",
+              "role": "source",
+              "kind": "text",
+              "value": "服务台记录了一组等待时间，想向居民说明排队体验。平均数的计算方法是把所有等待时间相加，再除以记录条数。中位数则先把时间从小到大排列；条数为奇数时取最中间一个，条数为偶数时取中间两个数的平均。它们都可以描述数据，但强调的方面不同，不存在离开问题就永远最好的一个指标。\n例如五位居民的等待时间依次为一、二、二、三、十二分钟。总和为二十分钟，平均数为四分钟；排序后中间一个数是二，所以中位数为二分钟。十二分钟的记录把平均数向上拉，但没有改变位于中间的二。说“平均等待四分钟”不意味着每个人都等了四分钟，也不意味着有一半人恰好等四分钟。说“中位数二分钟”也不意味着最长等待只有二分钟。\n若把最长那次十二分钟改成二十二分钟，其余四次不变，总和增加十分钟，平均数增加两分钟，变为六分钟；中位数仍是二分钟。这个例子说明单个很大的数能够明显影响平均数。但不能由此说中位数不受任何数据变化影响：若中间位置的数据或排序结构改变，中位数也可能改变。\n向公众介绍“典型一次等待”时，可以同时报告中位数和范围；计算整个服务台累计占用的等待分钟数时，平均数乘记录条数可以恢复总和，中位数一般不能这样使用。选择指标取决于所要回答的问题。若两天的平均数相同，不能断言两天每位居民的体验相同；它们可能有不同的最短、最长与分布形状。\n合并两天数据时，还要考虑记录条数。第一天四条记录的平均数为三分钟，第二天两条记录的平均数为九分钟。总等待时间为四乘三加二乘九，共三十分钟；总记录数六条，合并平均数为五分钟。直接平均三和九得到六分钟，相当于把两天当成同样大小的组，未反映实际记录人数。本单元的“每次等待”都按一条记录计，不讨论同一个人多次到访是否应另行去重。\n写解释时建议附上必要运算和指标名称，并把数据范围与结论范围对齐。样本只有几次记录时，可以描述这几次，不宜保证未来总是如此。数据缺了几条，或“等待”的起止定义发生变化，也会改变比较意义；这些条件应在计算前先说明。",
+              "valueHash": "a43f09ae51e1a19e3e4fe7ef6283f10eab5bf8c071e52a5d86e3c347cdbc2311"
+            },
+            {
+              "id": "e19",
+              "pointer": "/priorExposure",
+              "role": "prior_exposure",
+              "kind": "array_length",
+              "value": 0,
+              "valueHash": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+            },
+            {
+              "id": "e18",
+              "pointer": "/artifacts/0/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "本题作者参考解（未向学习者提前展示）：此题只接受一个确定结论，不接受条件或信息不足。",
+              "valueHash": "fb7dfa3db3f3d397b2de92b75bea658f0970327223dee113ac125695264a3444"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [
+            {
+              "level": "U",
+              "code": "INDEPENDENT_CONDITIONS",
+              "detail": {
+                "kind": "conditions",
+                "status": "uncertain",
+                "affected": [
+                  "Q4"
+                ],
+                "reason": "The counterexample check is not established.",
+                "proposed": {
+                  "kind": "conditions",
+                  "status": "clear",
+                  "affected": [
+                    "Q4"
+                  ],
+                  "reason": "作者于e3总结：若两天平均数相同，不能断言最长相同（可能有不同）。题目e14给定平均都为六分钟，问能否断定最长相同并要求给反例，与该总结一致；artifact e18要求确定结论，未冲突。核验实例无矛盾。",
+                  "refs": [
+                    "e3",
+                    "e14",
+                    "e18"
+                  ],
+                  "challenge": {
+                    "status": "counterexample",
+                    "reason": "固定e3结论前事实仅'平均数相同'，无明示记录条数>1。补充相容情况：两天各仅一条记录，则平均=该记录，平均相同推出记录相同，最长必相同，使'不能断言最长相同'不成立。作者未排除此最弱必要条件，故原普遍结论未建立。",
+                    "refs": [
+                      "e3"
+                    ]
+                  }
+                },
+                "reviewReasons": [
+                  "CONDITIONS_CHALLENGE_UNGROUNDED"
+                ]
+              }
+            },
+            {
+              "level": "U",
+              "code": "INDEPENDENT_QUANTITIES",
+              "detail": {
+                "kind": "quantities",
+                "status": "uncertain",
+                "affected": [
+                  "Q4"
+                ],
+                "reason": "Correctness check cannot be grounded.",
+                "proposed": {
+                  "kind": "quantities",
+                  "status": "clear",
+                  "affected": [],
+                  "reason": "独立重算e3中示例：1,2,2,3,12和=20/5=4；改22后和=30/5=6；合并4条均3与2条均9得(12+18)/6=5。均与文本一致，无数值推导错误。题目e14无作者数值断言需重算。",
+                  "refs": [
+                    "e3"
+                  ]
+                },
+                "reviewReasons": [
+                  "CORRECTNESS_EVIDENCE_OR_SCOPE_MISSING"
+                ]
+              }
+            }
+          ],
+          "proposedLevel": 2,
+          "proposedReason": "题干e14要求基于平均同为6分钟判断最长等待是否相同并给出反例，来源e3明示平均相同不能断言最长相同，前提充分；盲解current（resolved）给出'不能断定'及两组平均6但最大不同的数据，答案集可辩护；priorExposure e19为空，artifact e18标明未向学习者提前展示，无solution disclosure，独立性满足。符合Q4的2分标准。",
+          "decidingConstraint": "INDEPENDENT_CONDITIONS"
+        }
+      ],
+      "reviewRequired": [
+        {
+          "dimension": "Q4",
+          "reason": "UNRESOLVED"
+        }
+      ]
+    },
+    "resultHash": "4566709ed3414eb1f7fee3907d62c0df37901b8457840625f139cf78c0931d80"
+  }
+}

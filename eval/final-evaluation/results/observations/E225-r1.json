@@ -1,0 +1,267 @@
+{
+  "task": {
+    "caseId": "E225",
+    "runId": "E225-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E225.json",
+    "inputHash": "743a52160e17bac1e408e8464f50a036c77bafb8132bb53b5bffec3e6d8ab900",
+    "population": "controlled",
+    "sourceId": "F09"
+  },
+  "inputHash": "743a52160e17bac1e408e8464f50a036c77bafb8132bb53b5bffec3e6d8ab900",
+  "identityHash": "19e12335f8406ecdd191323bafff0bd082e44f56770a8e1e0f24de4c9c74aa49",
+  "evaluation": {
+    "version": "studyeval-v1.5-micro-closure",
+    "packets": {
+      "correctness": "d3cf11cb77176205281a7301551523f4f000fa1a898a6269b9b9a5179909bc1a",
+      "artifact-audit": "d3cf11cb77176205281a7301551523f4f000fa1a898a6269b9b9a5179909bc1a",
+      "certification": "d3cf11cb77176205281a7301551523f4f000fa1a898a6269b9b9a5179909bc1a"
+    },
+    "stages": {
+      "correctness": {
+        "checks": [
+          {
+            "kind": "conditions",
+            "status": "clear",
+            "affected": [],
+            "reason": "artifact e15给出条件式结论：在可分工、无重复、各自恒速且无等待条件下，甲1/8乙1/4合计3/8，剩余3/4需2小时；并指只有一台设备不能同时使用则不能直接相加。与source e3一般规则一致，条件式推导正确，无混淆充分必要。",
+            "refs": [
+              "e15",
+              "e3"
+            ],
+            "challenge": {
+              "status": "closed",
+              "reason": "固定明示假设与给定速度、剩余量，计算必然为2小时；否定假设不影响条件式真值。另一断言与e3中'一台必需设备不能直接相加'一致，无法构造相容反例推翻。",
+              "refs": [
+                "e15",
+                "e3"
+              ]
+            },
+            "witnesses": [
+              {
+                "id": "e15",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "在可分工、无重复、各自恒速且无等待的条件下，甲每小时1/8份、乙1/4份，合计3/8份每小时。剩余3/4份，需要2小时。只有一台设备导致不能同时使用时，不能直接相加。",
+                "valueHash": "a73a824b6b43232c208dad618486fd57a3efd808dc50298461445da75048f0ff"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "讨论两个人合作完成一项工作时，先约定“整项工作”为一份。若小岚单独整理一批卡片需要六小时，且全过程速度恒定，那么每小时完成六分之一份；小禾单独需要三小时，每小时完成三分之一份。时间的单位是小时，速度的单位是份每小时，两者不能直接相加成同一种量。\n在以下明确假设下，两人的工作速度可以相加：卡片能够任意分开处理，两人的工作互不重复，合作不会改变各自速度，也没有额外等待或交接开销。此时合速度为六分之一加三分之一，即二分之一份每小时，整份工作需要一除以二分之一，等于两小时。直接把六小时和三小时相加得到九小时，或者取平均得到四点五小时，都没有表示合作每小时完成多少工作。\n若两人不是同时开始，应分时段计算。例如小禾先做一小时，完成三分之一份，还剩三分之二份；随后两人按前述假设共同做，速度仍为二分之一份每小时，剩余时间为三分之二除以二分之一。除以二分之一等于乘二，所以得到三分之四小时，即一又三分之一小时。加上最初一小时，总时长为二又三分之一小时。写分数时要特别检查除法的方向，不能只凭“合作更快”的趋势认可数值。\n为避免口语分数混淆，上面的核心算式可以直接写成：(2/3)÷(1/2)=4/3小时，总计1+4/3=7/3小时。完成量应再验算：第一小时完成1/3，后面4/3小时以1/2的速度完成2/3，两段合计正好一份。把结果代回原始工作量，是发现倒数错误的有效方法。\n这些公式依赖模型条件。若工作只有一台必需设备，两人无法同时操作；或两人都检查同一张卡片导致重复工作，就不能直接使用独立速度相加。题目只给单独用时而未说明合作方式时，应先指出所需假设，再给条件式结果。现实合作可能有额外收益，也可能有协调损失，单独速度不足以确定所有情况。\n回答此类问题时依次写清总工作量、各段速度、各段完成量和最终时间。不要混淆某个人工作了多久与整个任务从开始到结束经过多久。即使最后数值相同，单位与过程仍决定解释是否可靠。",
+                "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+              }
+            ],
+            "reviewReasons": []
+          },
+          {
+            "kind": "quantities",
+            "status": "clear",
+            "affected": [],
+            "reason": "独立重算：速度1/8+1/4=3/8份/小时，时间(3/4)/(3/8)=2小时，单位统一为份和小时，数量级合理，无核心数值错误。",
+            "refs": [
+              "e15"
+            ],
+            "witnesses": [
+              {
+                "id": "e15",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "在可分工、无重复、各自恒速且无等待的条件下，甲每小时1/8份、乙1/4份，合计3/8份每小时。剩余3/4份，需要2小时。只有一台设备导致不能同时使用时，不能直接相加。",
+                "valueHash": "a73a824b6b43232c208dad618486fd57a3efd808dc50298461445da75048f0ff"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ],
+        "keys": []
+      },
+      "artifact-audit": {
+        "dimensions": [
+          {
+            "dimension": "Q3",
+            "level": 2,
+            "reason": "Artifact e15 provides a local example with stated assumptions (divisible, no overlap, constant speed, no wait), correct fractional speed sum 1/8+1/4=3/8 and time (3/4)/(3/8)=2h, plus relevant boundary (one device prevents addition). Goal e5 requires only steps/boundary of shown local example, not full coverage. Source e3 confirms consistent assumptions/boundary. No central derivation error or missing link for prerequisite learner.",
+            "refs": [
+              "e15",
+              "e5",
+              "e3",
+              "e12"
+            ],
+            "issue": "none",
+            "witnesses": [
+              {
+                "id": "e15",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "在可分工、无重复、各自恒速且无等待的条件下，甲每小时1/8份、乙1/4份，合计3/8份每小时。剩余3/4份，需要2小时。只有一台设备导致不能同时使用时，不能直接相加。",
+                "valueHash": "a73a824b6b43232c208dad618486fd57a3efd808dc50298461445da75048f0ff"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "讲清当前所示局部例子的推理步骤与适用边界；不要求覆盖整份教材。",
+                "valueHash": "9993d328e7a9560cdfb74d56adf9b1d8c9f4a1c7c71c80ed3120d850114e0ea2"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "讨论两个人合作完成一项工作时，先约定“整项工作”为一份。若小岚单独整理一批卡片需要六小时，且全过程速度恒定，那么每小时完成六分之一份；小禾单独需要三小时，每小时完成三分之一份。时间的单位是小时，速度的单位是份每小时，两者不能直接相加成同一种量。\n在以下明确假设下，两人的工作速度可以相加：卡片能够任意分开处理，两人的工作互不重复，合作不会改变各自速度，也没有额外等待或交接开销。此时合速度为六分之一加三分之一，即二分之一份每小时，整份工作需要一除以二分之一，等于两小时。直接把六小时和三小时相加得到九小时，或者取平均得到四点五小时，都没有表示合作每小时完成多少工作。\n若两人不是同时开始，应分时段计算。例如小禾先做一小时，完成三分之一份，还剩三分之二份；随后两人按前述假设共同做，速度仍为二分之一份每小时，剩余时间为三分之二除以二分之一。除以二分之一等于乘二，所以得到三分之四小时，即一又三分之一小时。加上最初一小时，总时长为二又三分之一小时。写分数时要特别检查除法的方向，不能只凭“合作更快”的趋势认可数值。\n为避免口语分数混淆，上面的核心算式可以直接写成：(2/3)÷(1/2)=4/3小时，总计1+4/3=7/3小时。完成量应再验算：第一小时完成1/3，后面4/3小时以1/2的速度完成2/3，两段合计正好一份。把结果代回原始工作量，是发现倒数错误的有效方法。\n这些公式依赖模型条件。若工作只有一台必需设备，两人无法同时操作；或两人都检查同一张卡片导致重复工作，就不能直接使用独立速度相加。题目只给单独用时而未说明合作方式时，应先指出所需假设，再给条件式结果。现实合作可能有额外收益，也可能有协调损失，单独速度不足以确定所有情况。\n回答此类问题时依次写清总工作量、各段速度、各段完成量和最终时间。不要混淆某个人工作了多久与整个任务从开始到结束经过多久。即使最后数值相同，单位与过程仍决定解释是否可靠。",
+                "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+              },
+              {
+                "id": "e12",
+                "pointer": "/authorityBoundaries/0",
+                "role": "boundary",
+                "kind": "text",
+                "value": "仅根据所附资料和明示题设评估教学与作答；不推定真实人物、现实推广效果或未展示的执行。",
+                "valueHash": "4cface20628a03b4cf29045c7acbd1dd8328a70d4a544f5e355b8f1ecf4ffd7a"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      },
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q3",
+            "status": "supported",
+            "reason": "Artifact e15 under goal e5 gives conditional local example with correct sum 1/8+1/4=3/8 and time (3/4)/(3/8)=2h, plus boundary; source e3 confirms consistent assumptions. Prior findings clear, no unresolved dependency.",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e15",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "在可分工、无重复、各自恒速且无等待的条件下，甲每小时1/8份、乙1/4份，合计3/8份每小时。剩余3/4份，需要2小时。只有一台设备导致不能同时使用时，不能直接相加。",
+                "valueHash": "a73a824b6b43232c208dad618486fd57a3efd808dc50298461445da75048f0ff"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "讲清当前所示局部例子的推理步骤与适用边界；不要求覆盖整份教材。",
+                "valueHash": "9993d328e7a9560cdfb74d56adf9b1d8c9f4a1c7c71c80ed3120d850114e0ea2"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "讨论两个人合作完成一项工作时，先约定“整项工作”为一份。若小岚单独整理一批卡片需要六小时，且全过程速度恒定，那么每小时完成六分之一份；小禾单独需要三小时，每小时完成三分之一份。时间的单位是小时，速度的单位是份每小时，两者不能直接相加成同一种量。\n在以下明确假设下，两人的工作速度可以相加：卡片能够任意分开处理，两人的工作互不重复，合作不会改变各自速度，也没有额外等待或交接开销。此时合速度为六分之一加三分之一，即二分之一份每小时，整份工作需要一除以二分之一，等于两小时。直接把六小时和三小时相加得到九小时，或者取平均得到四点五小时，都没有表示合作每小时完成多少工作。\n若两人不是同时开始，应分时段计算。例如小禾先做一小时，完成三分之一份，还剩三分之二份；随后两人按前述假设共同做，速度仍为二分之一份每小时，剩余时间为三分之二除以二分之一。除以二分之一等于乘二，所以得到三分之四小时，即一又三分之一小时。加上最初一小时，总时长为二又三分之一小时。写分数时要特别检查除法的方向，不能只凭“合作更快”的趋势认可数值。\n为避免口语分数混淆，上面的核心算式可以直接写成：(2/3)÷(1/2)=4/3小时，总计1+4/3=7/3小时。完成量应再验算：第一小时完成1/3，后面4/3小时以1/2的速度完成2/3，两段合计正好一份。把结果代回原始工作量，是发现倒数错误的有效方法。\n这些公式依赖模型条件。若工作只有一台必需设备，两人无法同时操作；或两人都检查同一张卡片导致重复工作，就不能直接使用独立速度相加。题目只给单独用时而未说明合作方式时，应先指出所需假设，再给条件式结果。现实合作可能有额外收益，也可能有协调损失，单独速度不足以确定所有情况。\n回答此类问题时依次写清总工作量、各段速度、各段完成量和最终时间。不要混淆某个人工作了多久与整个任务从开始到结束经过多久。即使最后数值相同，单位与过程仍决定解释是否可靠。",
+                "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q3",
+          "level": 2,
+          "reason": "Artifact e15 provides a local example with stated assumptions (divisible, no overlap, constant speed, no wait), correct fractional speed sum 1/8+1/4=3/8 and time (3/4)/(3/8)=2h, plus relevant boundary (one device prevents addition). Goal e5 requires only steps/boundary of shown local example, not full coverage. Source e3 confirms consistent assumptions/boundary. No central derivation error or missing link for prerequisite learner.",
+          "refs": [
+            "e15",
+            "e5",
+            "e3",
+            "e12"
+          ],
+          "issue": "none",
+          "witnesses": [
+            {
+              "id": "e15",
+              "pointer": "/artifacts/0/text",
+              "role": "artifact",
+              "kind": "text",
+              "value": "在可分工、无重复、各自恒速且无等待的条件下，甲每小时1/8份、乙1/4份，合计3/8份每小时。剩余3/4份，需要2小时。只有一台设备导致不能同时使用时，不能直接相加。",
+              "valueHash": "a73a824b6b43232c208dad618486fd57a3efd808dc50298461445da75048f0ff"
+            },
+            {
+              "id": "e5",
+              "pointer": "/goals/0",
+              "role": "goal",
+              "kind": "text",
+              "value": "讲清当前所示局部例子的推理步骤与适用边界；不要求覆盖整份教材。",
+              "valueHash": "9993d328e7a9560cdfb74d56adf9b1d8c9f4a1c7c71c80ed3120d850114e0ea2"
+            },
+            {
+              "id": "e3",
+              "pointer": "/sources/0/text",
+              "role": "source",
+              "kind": "text",
+              "value": "讨论两个人合作完成一项工作时，先约定“整项工作”为一份。若小岚单独整理一批卡片需要六小时，且全过程速度恒定，那么每小时完成六分之一份；小禾单独需要三小时，每小时完成三分之一份。时间的单位是小时，速度的单位是份每小时，两者不能直接相加成同一种量。\n在以下明确假设下，两人的工作速度可以相加：卡片能够任意分开处理，两人的工作互不重复，合作不会改变各自速度，也没有额外等待或交接开销。此时合速度为六分之一加三分之一，即二分之一份每小时，整份工作需要一除以二分之一，等于两小时。直接把六小时和三小时相加得到九小时，或者取平均得到四点五小时，都没有表示合作每小时完成多少工作。\n若两人不是同时开始，应分时段计算。例如小禾先做一小时，完成三分之一份，还剩三分之二份；随后两人按前述假设共同做，速度仍为二分之一份每小时，剩余时间为三分之二除以二分之一。除以二分之一等于乘二，所以得到三分之四小时，即一又三分之一小时。加上最初一小时，总时长为二又三分之一小时。写分数时要特别检查除法的方向，不能只凭“合作更快”的趋势认可数值。\n为避免口语分数混淆，上面的核心算式可以直接写成：(2/3)÷(1/2)=4/3小时，总计1+4/3=7/3小时。完成量应再验算：第一小时完成1/3，后面4/3小时以1/2的速度完成2/3，两段合计正好一份。把结果代回原始工作量，是发现倒数错误的有效方法。\n这些公式依赖模型条件。若工作只有一台必需设备，两人无法同时操作；或两人都检查同一张卡片导致重复工作，就不能直接使用独立速度相加。题目只给单独用时而未说明合作方式时，应先指出所需假设，再给条件式结果。现实合作可能有额外收益，也可能有协调损失，单独速度不足以确定所有情况。\n回答此类问题时依次写清总工作量、各段速度、各段完成量和最终时间。不要混淆某个人工作了多久与整个任务从开始到结束经过多久。即使最后数值相同，单位与过程仍决定解释是否可靠。",
+              "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+            },
+            {
+              "id": "e12",
+              "pointer": "/authorityBoundaries/0",
+              "role": "boundary",
+              "kind": "text",
+              "value": "仅根据所附资料和明示题设评估教学与作答；不推定真实人物、现实推广效果或未展示的执行。",
+              "valueHash": "4cface20628a03b4cf29045c7acbd1dd8328a70d4a544f5e355b8f1ecf4ffd7a"
+            }
+          ],
+          "reviewReasons": [],
+          "constraints": [],
+          "proposedLevel": 2,
+          "proposedReason": "Artifact e15 provides a local example with stated assumptions (divisible, no overlap, constant speed, no wait), correct fractional speed sum 1/8+1/4=3/8 and time (3/4)/(3/8)=2h, plus relevant boundary (one device prevents addition). Goal e5 requires only steps/boundary of shown local example, not full coverage. Source e3 confirms consistent assumptions/boundary. No central derivation error or missing link for prerequisite learner."
+        }
+      ],
+      "reviewRequired": [],
+      "certification": {
+        "certifications": [
+          {
+            "dimension": "Q3",
+            "status": "supported",
+            "reason": "Artifact e15 under goal e5 gives conditional local example with correct sum 1/8+1/4=3/8 and time (3/4)/(3/8)=2h, plus boundary; source e3 confirms consistent assumptions. Prior findings clear, no unresolved dependency.",
+            "dependencies": [],
+            "witnesses": [
+              {
+                "id": "e15",
+                "pointer": "/artifacts/0/text",
+                "role": "artifact",
+                "kind": "text",
+                "value": "在可分工、无重复、各自恒速且无等待的条件下，甲每小时1/8份、乙1/4份，合计3/8份每小时。剩余3/4份，需要2小时。只有一台设备导致不能同时使用时，不能直接相加。",
+                "valueHash": "a73a824b6b43232c208dad618486fd57a3efd808dc50298461445da75048f0ff"
+              },
+              {
+                "id": "e5",
+                "pointer": "/goals/0",
+                "role": "goal",
+                "kind": "text",
+                "value": "讲清当前所示局部例子的推理步骤与适用边界；不要求覆盖整份教材。",
+                "valueHash": "9993d328e7a9560cdfb74d56adf9b1d8c9f4a1c7c71c80ed3120d850114e0ea2"
+              },
+              {
+                "id": "e3",
+                "pointer": "/sources/0/text",
+                "role": "source",
+                "kind": "text",
+                "value": "讨论两个人合作完成一项工作时，先约定“整项工作”为一份。若小岚单独整理一批卡片需要六小时，且全过程速度恒定，那么每小时完成六分之一份；小禾单独需要三小时，每小时完成三分之一份。时间的单位是小时，速度的单位是份每小时，两者不能直接相加成同一种量。\n在以下明确假设下，两人的工作速度可以相加：卡片能够任意分开处理，两人的工作互不重复，合作不会改变各自速度，也没有额外等待或交接开销。此时合速度为六分之一加三分之一，即二分之一份每小时，整份工作需要一除以二分之一，等于两小时。直接把六小时和三小时相加得到九小时，或者取平均得到四点五小时，都没有表示合作每小时完成多少工作。\n若两人不是同时开始，应分时段计算。例如小禾先做一小时，完成三分之一份，还剩三分之二份；随后两人按前述假设共同做，速度仍为二分之一份每小时，剩余时间为三分之二除以二分之一。除以二分之一等于乘二，所以得到三分之四小时，即一又三分之一小时。加上最初一小时，总时长为二又三分之一小时。写分数时要特别检查除法的方向，不能只凭“合作更快”的趋势认可数值。\n为避免口语分数混淆，上面的核心算式可以直接写成：(2/3)÷(1/2)=4/3小时，总计1+4/3=7/3小时。完成量应再验算：第一小时完成1/3，后面4/3小时以1/2的速度完成2/3，两段合计正好一份。把结果代回原始工作量，是发现倒数错误的有效方法。\n这些公式依赖模型条件。若工作只有一台必需设备，两人无法同时操作；或两人都检查同一张卡片导致重复工作，就不能直接使用独立速度相加。题目只给单独用时而未说明合作方式时，应先指出所需假设，再给条件式结果。现实合作可能有额外收益，也可能有协调损失，单独速度不足以确定所有情况。\n回答此类问题时依次写清总工作量、各段速度、各段完成量和最终时间。不要混淆某个人工作了多久与整个任务从开始到结束经过多久。即使最后数值相同，单位与过程仍决定解释是否可靠。",
+                "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+              }
+            ],
+            "reviewReasons": []
+          }
+        ]
+      }
+    },
+    "resultHash": "fa655b36b9aefe058448f407605c68750924034c1a2fed7176cdbf723b9d4138"
+  }
+}
