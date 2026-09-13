@@ -1,0 +1,86 @@
+{
+  "version": "studyeval-v2.0",
+  "frozenAt": "2026-09-13T05:25:08.429Z",
+  "status": "FROZEN_BEFORE_COMPLETE_DEVELOPMENT_CAMPAIGN",
+  "selectedCandidate": "o01",
+  "selectionGate": "o01-absence-witness",
+  "selectionGateMetricsHash": "f677255968fc6bc30c552290ae33a2712a11af8b29f27b62febc053f716fb38f",
+  "selectionReason": "The compatible development gates separate all 52 controlled cases and retain all 20 adversarial zeros; middle-quality repeats remain stable. O01 passes 25 supplemental behavioral observations while preserving genuine U and verifying absent-field evidence. Further dependency and criterion-sufficiency extensions did not resolve ambiguously specified natural cases and were reverted. Remaining interpretation and severity differences are documented rather than forced with case-specific scoring.",
+  "selectionEvidence": {
+    "decisionHash": "0b0ab82cc43ae520803fb452c803b5327193429826779b3b5ce696e43a52db71",
+    "gateVerificationHash": "74c2c02b19c549a04963d065ac6849324574a9665637f6927e4cfe142408554d",
+    "behaviorProbeHash": "ab39235c873784aca85ed1adf7bb31232c0f7d4daaaf123594c6736ba91fcb7b",
+    "behaviorProbeVerificationHash": "7bb5d8fe9776544f4bc32a2837c9b06a796e0e674a402987285f9242898dc59a"
+  },
+  "candidate": "final-v2-0",
+  "runtime": {
+    "contracts.mjs": "fc77d2e5a88d72b3233770ae084cfa2999590e1e7cb0e79f21d4d6693438842e",
+    "evaluator.mjs": "069654d6745be557050982f9586aa9eb41e68fce6aee7a00a7198a63c462285a",
+    "prompts.mjs": "9a71aedd3ed4eb49cb64f4a85592b0c5e8d409d89800dabcda262be41af362df",
+    "provider.mjs": "77782d6ec2426c90f9fef59da9ed770dc9076295f36e0e11b003a38b6c5851c3",
+    "rubric.mjs": "4c301ef2f1391a1054fdd721127d0e49d39ada9d95e609423bfa409a712ed27a",
+    "run.mjs": "cc9a8ea0bf8897aeaee811082c1ad26c0f4488896558b6f030c1f3b43c2f1ff4"
+  },
+  "runtimeTreeHash": "2066c31b19485aa6b8bcea79288e3ed51ba138cc078bbe85dd3d66558a04692b",
+  "promptHash": "16adb07384f3e6972bef58770e408785e6098a787460a5f3de2a31e51f036f59",
+  "rubricHash": "19bce3b9305f3835f6e2912c43df8d4eebca31d2e1607a97ffe6a3aab3a1fd30",
+  "schemaFileHash": "fc77d2e5a88d72b3233770ae084cfa2999590e1e7cb0e79f21d4d6693438842e",
+  "config": {
+    "version": "studyeval-v2.0",
+    "design": "evidence-gap-adjudication-with-verified-absence-witnesses",
+    "reviews": 2,
+    "blindSolve": true,
+    "blindStudent": true,
+    "adjudicateNonperfect": true,
+    "verifyDefectQuotes": true,
+    "goalMapping": true,
+    "mappingAdvisoryOnly": true,
+    "reviewRelatedDimensionsOnMaterial": true,
+    "temperature": 0,
+    "maxTokens": 16384,
+    "truncationMaxTokens": 32768,
+    "timeoutMs": 180000,
+    "maxTransportAttempts": 5,
+    "requestsPerMinute": 45,
+    "retryBaseMs": 3000,
+    "maxOutputAttempts": 4,
+    "responseFormat": null,
+    "concurrency": 8,
+    "responseCache": false
+  },
+  "configHash": "83d74a73641c29daf5caa112dae616f82d74f1168973fa99a2259fe276785c57",
+  "provider": {
+    "model": "hy3",
+    "endpointHost": "tokenhub.tencentmaas.com",
+    "endpointIdentityHash": "55d8daa779c2677950284ca29b3592b00ba33aa642800c819b5a63f23675965d",
+    "credentialSource": "complete_environment_or_dotenv",
+    "immutableWeightsVerified": false
+  },
+  "nodeVersion": "v24.14.1",
+  "nodeExecutableHash": "58e74bf02fc5bbacc41dcb8bef089961cd5bddd37830b87784e4fc624d145d1f",
+  "publicCommit": "df280b19686197c6bba281876e9ae6982fc1ed67",
+  "holdout": {
+    "manifestHash": "33fcb3dc1ffbccf4decacc177e2b3723f0fb90c0b3362c921de4fb29ed6a71bd",
+    "humanSelectedCases": 27,
+    "derivativeExclusions": 4,
+    "status": "NOT_INSPECTED_NOT_USED_NOT_RUN; separate post-freeze user review required"
+  },
+  "development": {
+    "scheduleHash": "dab10694893031f3d99fcb721dcaa0e8a4fd84edab9d20720d380f3171b7813d",
+    "metadataHash": "4e8834e91640c0af7a008db69727e46af1c6407b73b495a49d2f511fdb4b2954",
+    "referenceHash": "3a9007b945457b13d8da057e853963a29f6a577d11ce4ffc248782c768d5f633",
+    "cases": 178,
+    "runs": 214,
+    "primaryDimensionSlots": 201,
+    "totalDimensionSlots": 241
+  },
+  "harness": {
+    "run.mjs": "dd6d99aae77c8a12e8bb2346b4726716ac681a0d0b0aa4eeeb5a7d24e60baee5",
+    "analyze.mjs": "25d40a33c76d4918a367f30094ab5f4270f676a05fe00780849dff49d64b1448",
+    "holdout-guard.mjs": "1b1a20ab9a4864249510f9b96141c98d505acbb60b76c7a2c3a35e308c3f7e5a",
+    "verify-campaign.mjs": "ac1b602e4ed42537ac24cb9feceaae4c3a361d061dbb00fe282168530347ed03",
+    "freeze.mjs": "e6002903e4c52a490bc18819998db557264f390307f5378a5a132141246f45a5"
+  },
+  "privateFreezeHash": "e97211292774ef4b78e5f90e22f9845f09a92b103f4c211e5e89c09e2a7e50b3",
+  "publicManifestHash": "935701dfa82a23c17e4a3ed913b163a5d003bd80a79b0c7ca59c2b2b5b4a343d"
+}

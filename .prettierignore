@@ -8,3 +8,5 @@ data
 *.sqlite
 # Frozen evaluation inputs and captured outputs retain their audited bytes.
 eval/final-evaluation
+# Frozen StudyEval runtime bytes are checked against eval/studyeval/FREEZE.json.
+eval/studyeval/*.mjs
