@@ -74,9 +74,11 @@ export type Importance = z.infer<typeof ImportanceSchema>;
  * Models are never trusted with character offsets — the server verifies the
  * quote against the original text and computes offsets itself.
  */
+export const MAX_GROUNDING_QUOTE_CHARS = 2000;
+
 export const ProposedGroundingSchema = z.object({
   blockId: z.string().min(1),
-  quote: z.string().min(1).max(2000),
+  quote: z.string().min(1).max(MAX_GROUNDING_QUOTE_CHARS),
 });
 export type ProposedGrounding = z.infer<typeof ProposedGroundingSchema>;
 

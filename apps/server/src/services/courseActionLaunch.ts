@@ -824,59 +824,11 @@ export function createCourseActionLaunchService({
           at: clock.now().toISOString(),
           confirmedPolicyIds: parsed.confirmedCostPolicyIds ?? [],
         });
-        const creation = await runTrackedAgentProviderOperation({
-          repos,
-          clock,
-          provider,
-          providerModel: provider.name === 'hy3' ? (provider.model ?? providerModel ?? null) : null,
-          operationId: claim.operationId,
-          fencingToken: claim.fencingToken,
-          workspaceId: parsed.command.workspaceId,
-          studySessionId: parsed.studySessionId ?? null,
-          learningUnitId: item.learningUnitId,
-          assessmentId: null,
-          operationType,
-          schemaFingerprint: 'formal-assessment-proposal-v3-exact-scoring-catalogue',
-          policyFingerprint,
-          sourceFingerprint: parsed.expectedExecutionSourceManifestFingerprint,
-          providerOptions: opts,
-          invoke: (options) =>
-            assessment.prepare(parsed.command.workspaceId, assessmentRequest, options, {
-              requiredRepresentation: assessmentDiversity.selection.requestedRepresentation,
-              requestedChallengeFamily: assessmentDiversity.selection.requestedChallengeFamily,
-              objectiveCatalogue: proposalCatalogue?.objectiveCatalogue,
-              scoringAuthorityCatalogue: proposalCatalogue?.scoringAuthorityCatalogue,
-              teachingSurfaceCatalogue: proposalCatalogue?.teachingSurfaceCatalogue,
-              previousPrompts: unitTransfer ? undefined : previousPrompts,
-              learnerGeneratedTransfer: unitTransfer,
-            }),
-        });
-        if (previousPrompts && !unitTransfer) {
-          const normalize = (value: string) => value.replace(/[\s\p{P}\p{S}]/gu, '').toLowerCase();
-          if (
-            creation.quiz.questions.some((question) =>
-              previousPrompts.some((prompt) =>
-                normalize(question.stem).includes(normalize(prompt)),
-              ),
-            )
-          )
-            throw new AppError(
-              ApiErrorCode.GroundingFailed,
-              '验证题重复了已经见过的问题，请重新准备。',
-            );
-        }
-        if (unitTransfer) {
+        const learnerTransfer = (() => {
+          if (!unitTransfer) return undefined;
           const objective = proposalCatalogue.objectiveCatalogue[0];
-          if (
-            !objective ||
-            creation.quiz.questions.some(
-              (question) => question.formalProposal?.objectiveRef !== objective.objectiveRef,
-            )
-          )
-            throw new AppError(
-              ApiErrorCode.GroundingFailed,
-              '综合迁移题未绑定当前目标，请重新准备。',
-            );
+          if (!objective)
+            throw new AppError(ApiErrorCode.GroundingFailed, '综合迁移缺少当前目标。');
           const priorResponses = repos.formalAssessments
             .listAttemptsForWorkspace(parsed.command.workspaceId)
             .filter((attempt) => attempt.status === 'submitted')
@@ -933,16 +885,56 @@ export function createCourseActionLaunchService({
             ].slice(-100),
             priorResponses,
           });
-          // The provider supplies only source-bound grading content. Local policy
-          // authors the learner's generative task and separately grades its performance.
-          creation.quiz.questions = creation.quiz.questions.slice(0, 1).map((question) => ({
-            ...question,
-            stem: unitTransferPrompt(objective.title, priorResponses.length),
-            transferTask: task,
-          }));
-          creation.blueprints = creation.blueprints.filter((blueprint) =>
-            creation.quiz.questions.some((question) => question.blueprintId === blueprint.id),
-          );
+          return {
+            prompt: unitTransferPrompt(
+              objective.title,
+              priorResponses.length,
+              objective.description,
+            ),
+            task,
+          };
+        })();
+        const creation = await runTrackedAgentProviderOperation({
+          repos,
+          clock,
+          provider,
+          providerModel: provider.name === 'hy3' ? (provider.model ?? providerModel ?? null) : null,
+          operationId: claim.operationId,
+          fencingToken: claim.fencingToken,
+          workspaceId: parsed.command.workspaceId,
+          studySessionId: parsed.studySessionId ?? null,
+          learningUnitId: item.learningUnitId,
+          assessmentId: null,
+          operationType,
+          schemaFingerprint: 'formal-assessment-proposal-v3-exact-scoring-catalogue',
+          policyFingerprint,
+          sourceFingerprint: parsed.expectedExecutionSourceManifestFingerprint,
+          providerOptions: opts,
+          invoke: (options) =>
+            assessment.prepare(parsed.command.workspaceId, assessmentRequest, options, {
+              requiredRepresentation: assessmentDiversity.selection.requestedRepresentation,
+              requestedChallengeFamily: assessmentDiversity.selection.requestedChallengeFamily,
+              objectiveCatalogue: proposalCatalogue?.objectiveCatalogue,
+              scoringAuthorityCatalogue: proposalCatalogue?.scoringAuthorityCatalogue,
+              teachingSurfaceCatalogue: proposalCatalogue?.teachingSurfaceCatalogue,
+              previousPrompts: unitTransfer ? undefined : previousPrompts,
+              learnerGeneratedTransfer: unitTransfer,
+              learnerTransfer,
+            }),
+        });
+        if (previousPrompts && !unitTransfer) {
+          const normalize = (value: string) => value.replace(/[\s\p{P}\p{S}]/gu, '').toLowerCase();
+          if (
+            creation.quiz.questions.some((question) =>
+              previousPrompts.some((prompt) =>
+                normalize(question.stem).includes(normalize(prompt)),
+              ),
+            )
+          )
+            throw new AppError(
+              ApiErrorCode.GroundingFailed,
+              '验证题重复了已经见过的问题，请重新准备。',
+            );
         }
         return commands.complete(claim, () => {
           assertFormalContextCurrent();
@@ -1122,10 +1114,7 @@ export function createCourseActionLaunchService({
                 workspaceId: parsed.command.workspaceId,
                 quiz: creation.quiz,
                 logicalKey: `agenda:${currentAgenda.id}:${currentItem.id}`,
-                title:
-                  assessmentKind === 'due_review' && objectiveTitle
-                    ? `到期复习：${objectiveTitle}`
-                    : currentPlanItem.rationale || '理解检查',
+                title: `${assessmentKind === 'due_review' ? '到期复习' : assessmentKind === 'targeted_repair' ? '修复检查' : assessmentKind === 'synthesis' ? '综合迁移' : '独立检查'}：${objectiveTitle || '理解检查'}`,
                 targetLearningUnitId,
                 targetObjectiveId,
                 representation: assessmentDiversity.evidenceRepresentation,

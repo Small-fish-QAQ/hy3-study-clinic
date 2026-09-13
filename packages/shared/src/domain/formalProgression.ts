@@ -46,7 +46,7 @@ export const EvidenceProvenanceSchema = z
     materialRevisionId: z.string().min(1),
     sourceBlockId: z.string().min(1),
     sourceBlockRevisionFingerprint: z.string().min(1).nullable(),
-    truthAuthorityClaimIds: z.array(z.string().min(1)).max(20),
+    truthAuthorityClaimIds: z.array(z.string().min(1)).max(200),
   })
   .strict();
 export type EvidenceProvenance = z.infer<typeof EvidenceProvenanceSchema>;
@@ -72,6 +72,19 @@ export const FormalAssessmentPremiseBindingSchema = z
     premiseFingerprint: z.string().min(1),
     truthAuthorityRecordId: z.string().min(1),
     truthAuthorityClaimIds: z.array(z.string().min(1)).min(1).max(10),
+    supportMode: z.enum(['exact_claim', 'reviewed_derivation']).optional(),
+    scoringReviewFingerprint: z.string().length(64).optional(),
+    supportingAuthority: z
+      .array(
+        z
+          .object({
+            truthAuthorityRecordId: z.string().min(1),
+            truthAuthorityClaimIds: z.array(z.string().min(1)).min(1).max(10),
+          })
+          .strict(),
+      )
+      .max(12)
+      .optional(),
   })
   .strict();
 export type FormalAssessmentPremiseBinding = z.infer<typeof FormalAssessmentPremiseBindingSchema>;

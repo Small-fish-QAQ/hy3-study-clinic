@@ -17,12 +17,6 @@ export interface CurriculumAuthorityEnvelopeInput {
   isBlockingEligible: (authorityRecordId: string) => boolean;
 }
 
-function supportsExplain(claim: string): boolean {
-  return /(?:\b(?:role|purpose|means|consists?|includes?|relationship|because|explain|describe|is|are|has|have|can|supports?|uses?|provides?|requires?|depends?)\b|作用|职责|关系|包括|包含|表示|说明|解释|原理|依赖|是|有|支持|使用|提供|需要)/iu.test(
-    claim,
-  );
-}
-
 function normalizedExactClaim(value: string): string {
   return value.normalize('NFKC').replace(/\s+/gu, ' ').trim();
 }
@@ -160,17 +154,23 @@ export function buildCurriculumAuthorityEnvelope(
   const supportedConstructs = new Set<FormalSupportedConstruct>();
   const procedureClaim = pairedProcedureClaims(formalClaims)[0];
   if (formalClaims.length > 0) {
-    supportedConstructs.add('identify');
-    if (procedureClaim || formalClaims.some(({ claim }) => supportsExplain(claim.claim))) {
-      supportedConstructs.add('explain');
-    }
-    if (procedureClaim) supportedConstructs.add('apply');
+    // Occurrence records establish the evidence available for review. Whether
+    // it supports a calculation, explanation or constrained judgment is a
+    // semantic question, not an arrow/verb detection rule. Formal launch still
+    // requires independent construct-specific support; a question additionally
+    // needs its own independently checked scoring premises.
+    for (const construct of ['identify', 'explain', 'apply', 'design', 'evaluate'] as const)
+      supportedConstructs.add(construct);
   }
-  // Ordered weakest-to-strongest over the FORMAL-SUPPORTED vocabulary only.
-  // `design`/`evaluate` are deliberately absent: no local predicate can decide
-  // them, so listing them here would imply an authority rung that cannot be
-  // reached. They remain available as teaching constructs elsewhere.
-  const orderedConstructs: FormalSupportedConstruct[] = ['identify', 'explain', 'apply'];
+  // Planning vocabulary only. Actual semantic support is checked independently
+  // for the exact objective and scoring contract at the Formal boundary.
+  const orderedConstructs: FormalSupportedConstruct[] = [
+    'identify',
+    'explain',
+    'apply',
+    'design',
+    'evaluate',
+  ];
   const constructs = orderedConstructs.filter((construct) => supportedConstructs.has(construct));
   const tier =
     formalClaims.length === 0
@@ -186,7 +186,7 @@ export function buildCurriculumAuthorityEnvelope(
     tier === 'formal_sufficient'
       ? procedureClaim
         ? '当前来源同时提供已验证的精确预期答案与评分点，并明确给出有序操作流程；正式应用仅限按原流程及原语境执行。'
-        : '当前来源存在已验证的精确权威，可支持识别并在来源明确说明时解释。'
+        : '当前来源有可核查的原文命题；目标是否可正式考查须通过独立语义审核，具体题目还须具备完整评分依据。'
       : tier === 'narrower_formal'
         ? '当前来源存在精确权威，但正式构念应收窄到来源明确陈述的内容。'
         : tier === 'teaching_only'

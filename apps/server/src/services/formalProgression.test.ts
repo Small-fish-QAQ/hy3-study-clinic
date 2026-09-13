@@ -38,6 +38,8 @@ import {
 import { createServices, type Services } from './index.js';
 import { createReviewBackfillService } from './reviewBackfill.js';
 import { buildFormalAssessmentProposalCatalogue } from './formalProgression.js';
+import { scoringFingerprint, scoringQuestionFingerprint } from './formalScoringReview.js';
+import { FormalScoringReviewSchema } from '@hy3-clinic/shared';
 
 const T1 = '2026-01-01T00:01:00.000Z';
 const T2 = '2026-01-01T00:02:00.000Z';
@@ -1439,6 +1441,99 @@ function authoritativeState(targetId: string) {
 }
 
 describe('formal progression service', () => {
+  it.each(['key', 'rubric', 'review', 'source', 'authority'])(
+    'admits an independently reviewed paraphrase and revokes eligibility after %s changes',
+    (tamper) => {
+      const { quizId, questionId } = insertGrade(`reviewed_${tamper}`, 1);
+      const question = repos.quizzes.get(quizId)!.questions[0]!;
+      const objective = repos.curricula
+        .get('curriculum_1')!
+        .nodes.flatMap((n) => n.learningUnit?.objectives ?? [])[0]!;
+      const block = repos.materials.getBlock('blk_1')!;
+      question.expectedAnswer = '工作记忆能同时容纳的信息很少。';
+      question.rubric!.keyPoints[0]!.text = '说明工作记忆的信息容量有限。';
+      question.formalProposal!.rubricSourceRefs[0]!.text = question.rubric!.keyPoints[0]!.text;
+      question.formalScoringReview = FormalScoringReviewSchema.parse({
+        policyVersion: 'formal-scoring-independent-review-v1',
+        provider: 'hy3',
+        questionFingerprint: scoringQuestionFingerprint(question),
+        objectiveFingerprint: scoringFingerprint({
+          title: objective.title,
+          description: objective.description,
+        }),
+        sources: [
+          {
+            sourceBlockId: block.id,
+            materialRevisionId: block.materialRevisionId,
+            contentFingerprint: scoringFingerprint(block.content),
+          },
+        ],
+        blindSolution: { answerable: true, solution: '容量有限。', limitations: [] },
+        review: {
+          answerable: true,
+          objectiveAligned: true,
+          unseenAssessment: true,
+          keyCorrect: true,
+          requiredCriteriaAppropriate: true,
+          premises: ['expected_answer', 'rubric_point:0'].map((p) => ({
+            premiseKey: p,
+            supported: true,
+            claimRefs: ['P1'],
+            rationale: '忠实改写资料明确说明的容量限制。',
+          })),
+          issues: [],
+        },
+        claims: [{ ref: 'P1', sourceBlockId: block.id, text: block.content }],
+        reviewedAt: T3,
+      });
+      db.prepare('UPDATE questions SET payload = ? WHERE id = ?').run(
+        JSON.stringify(question),
+        questionId,
+      );
+      const contracts = services.formalProgression.registerAssessmentContracts({
+        workspaceId: 'ws_1',
+        quizId,
+        agendaId: 'agenda_1',
+        agendaItemId: 'agenda_item_1',
+        assessmentKind: 'formal_checkpoint',
+        contractVersionId: 'contract_1',
+        curriculumVersionId: 'curriculum_1',
+        studyPlanVersionId: 'plan_1',
+        executionSourceManifestFingerprint: 'manifest-fp',
+      });
+      expect(contracts[0]!.admissibilityTier).toBe('tier_2_validated_representation');
+      expect(
+        contracts[0]!.assessmentPremiseBindings.every(
+          (b) => b.supportMode === 'reviewed_derivation',
+        ),
+      ).toBe(true);
+      expect(services.formalProgression.stateCreditingQuestionIdsForQuiz(quizId)).toEqual([
+        questionId,
+      ]);
+      if (tamper === 'key') question.expectedAnswer = '容量无限。';
+      if (tamper === 'rubric') question.rubric!.keyPoints[0]!.text = '声称容量无限。';
+      if (tamper === 'review')
+        question.formalScoringReview.review.premises[0]!.rationale = 'Changed review receipt';
+      db.prepare('UPDATE questions SET payload = ? WHERE id = ?').run(
+        JSON.stringify(question),
+        questionId,
+      );
+      if (tamper === 'source')
+        db.prepare('UPDATE source_blocks SET content = ? WHERE id = ?').run(
+          '工作记忆容量无限。',
+          block.id,
+        );
+      if (tamper === 'authority')
+        db.prepare(
+          "UPDATE truth_authority_records SET validation_state = 'stale' WHERE id = ?",
+        ).run(authorityId);
+      if (tamper === 'source') {
+        expect(() => services.formalProgression.stateCreditingQuestionIdsForQuiz(quizId)).toThrow();
+        return;
+      }
+      expect(services.formalProgression.stateCreditingQuestionIdsForQuiz(quizId)).toEqual([]);
+    },
+  );
   it('offers only the objective-bound scoring claims with their separate permissions', () => {
     const catalog = formalCatalogue().scoringAuthorityCatalogue;
     expect(catalog[0]).toEqual({

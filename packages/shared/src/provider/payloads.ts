@@ -1,6 +1,11 @@
 import { z } from 'zod';
 import { MAX_RUBRIC_POINT_CHARS } from '../domain/quiz.js';
-import { DifficultySchema, ImportanceSchema, QuestionTypeSchema } from '../domain/material.js';
+import {
+  DifficultySchema,
+  ImportanceSchema,
+  QuestionTypeSchema,
+  MAX_GROUNDING_QUOTE_CHARS,
+} from '../domain/material.js';
 import { GraphRelationSchema } from '../domain/graph.js';
 import { PlanStrategySchema } from '../domain/plan.js';
 import { AlignmentLanguageSchema, AlignmentRelationSchema } from '../domain/alignment.js';
@@ -235,7 +240,7 @@ const StrictProposedQuestionSchema = z
     rubricKeyPoints: z.array(ProposedRubricPointSchema).min(1).max(6).optional(),
     conceptId: z.string().min(1),
     blockId: z.string().min(1),
-    quote: z.string().min(1).max(500),
+    quote: z.string().min(1).max(MAX_GROUNDING_QUOTE_CHARS),
     explanation: z.string().min(1).max(1000),
   })
   .superRefine((q, ctx) => {
@@ -310,7 +315,7 @@ export type QuizGenerationPayload = z.infer<typeof QuizGenerationPayloadSchema>;
  */
 export const ProposedEvidenceSchema = z.object({
   blockId: z.string().min(1),
-  quote: z.string().min(1).max(500),
+  quote: z.string().min(1).max(MAX_GROUNDING_QUOTE_CHARS),
 });
 export type ProposedEvidence = z.infer<typeof ProposedEvidenceSchema>;
 

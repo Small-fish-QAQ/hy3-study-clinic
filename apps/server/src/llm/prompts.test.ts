@@ -251,11 +251,10 @@ describe('Objective-authority semantic prompts', () => {
     expect(content).toContain('Exact provenance or quotation existence is not semantic entailment');
     expect(content).toContain('Topic or keyword overlap never establishes group support');
     expect(content).toContain('IDENTIFY requires meaningful recognition');
-    expect(content).toContain('EXPLAIN requires authority for the actual relationship');
+    expect(content).toContain('EXPLAIN includes accurately unpacking a concept definition');
+    expect(content).toContain('A definition is not automatically evidence for a causal mechanism');
     expect(content).toContain('APPLY requires a source-stated procedure');
-    expect(content).toContain(
-      'DESIGN and EVALUATE are not authorized by the current source-authority policy',
-    );
+    expect(content).toContain('DESIGN requires source-stated constraints, rules or criteria');
     expect(content).toContain('Only when requiredCapabilityPreservation is present, partition');
     expect(content).toContain('Same topic, verb, construct, or broad domain is not preservation');
     expect(content).toContain('one ordered mapping for every offered originalFragment');

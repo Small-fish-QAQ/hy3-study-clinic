@@ -214,7 +214,7 @@ describe('Curriculum source-authority envelope', () => {
       isBlockingEligible: () => true,
     });
     expect(formal.tier).toBe('formal_sufficient');
-    expect(formal.supportedConstructs).toEqual(['identify', 'explain']);
+    expect(formal.supportedConstructs).toEqual([...FORMAL_SUPPORTED_CONSTRUCTS]);
     expect(formal.formalEvidenceIds).toEqual(['evidence-1']);
 
     const stale = buildCurriculumAuthorityEnvelope({
@@ -229,7 +229,7 @@ describe('Curriculum source-authority envelope', () => {
     expect(stale.supportedConstructs).toEqual([]);
   });
 
-  it('admits apply only for an exact locally validated ordered procedure pair', () => {
+  it('retains the exact procedure selector while separating it from semantic assessment eligibility', () => {
     const procedure = '必须：先检索 → 按权限过滤 → 再给模型。';
     const procedureBundles = procedureAuthorityBundles(procedure);
     expect(isExplicitSourceProcedure(procedure)).toBe(true);
@@ -271,8 +271,8 @@ describe('Curriculum source-authority envelope', () => {
     });
     expect(authority).toMatchObject({
       tier: 'formal_sufficient',
-      supportedConstructs: ['identify', 'explain', 'apply'],
-      strongestSupportedConstruct: 'apply',
+      supportedConstructs: [...FORMAL_SUPPORTED_CONSTRUCTS],
+      strongestSupportedConstruct: 'evaluate',
       narrowerClaim: procedure,
     });
 
@@ -283,14 +283,15 @@ describe('Curriculum source-authority envelope', () => {
       authorityBundles: procedureBundles.slice(0, 1),
       isBlockingEligible: () => true,
     });
-    expect(onlyExpected.supportedConstructs).not.toContain('apply');
+    expect(onlyExpected.supportedConstructs).toContain('apply');
+    // This is a source opportunity; the missing rubric binding still cannot grant credit.
   });
 
   it('accepts broad apply wording unchanged when exact selected evidence supports apply', () => {
     const procedure = '查询流程：识别实体 → 定位节点 → 结合原文。';
     const authority = envelope({
-      supportedConstructs: ['identify', 'explain', 'apply'],
-      strongestSupportedConstruct: 'apply',
+      supportedConstructs: [...FORMAL_SUPPORTED_CONSTRUCTS],
+      strongestSupportedConstruct: 'evaluate',
       narrowerClaim: procedure,
     });
     const input = detailInput(authority);
@@ -326,7 +327,7 @@ describe('Curriculum source-authority envelope', () => {
     });
   });
 
-  it('requires the learner-visible unit title to cover every required objective', () => {
+  it('leaves title-topic semantics to quality review while preserving structural source checks', () => {
     const input = detailInput(envelope());
     const candidate = detailCandidate(
       'Explain the knowledge rebuild workflow',
@@ -362,16 +363,13 @@ describe('Curriculum source-authority envelope', () => {
       ],
     });
 
-    expect(validateCurriculumDetailCandidate(candidate, input)).toMatchObject({
-      valid: false,
-      diagnosticCodes: expect.arrayContaining(['required_objective_parent_topic_mismatch']),
-    });
+    expect(validateCurriculumDetailCandidate(candidate, input).valid).toBe(true);
 
     candidate.units[0]!.title = 'RBAC roles and knowledge rebuild workflow';
     expect(validateCurriculumDetailCandidate(candidate, input).valid).toBe(true);
   });
 
-  it('rejects a unit title that anchors none of its required objectives', () => {
+  it('does not treat lexical title overlap as an authoritative semantic test', () => {
     const input = detailInput(envelope());
     const candidate = detailCandidate(
       'Explain IVF vector retrieval',
@@ -380,10 +378,10 @@ describe('Curriculum source-authority envelope', () => {
     );
     candidate.units[0]!.title = 'RBAC roles and backend security';
 
-    expect(validateCurriculumDetailCandidate(candidate, input)).toMatchObject({
-      valid: false,
-      diagnosticCodes: expect.arrayContaining(['required_objective_parent_topic_mismatch']),
-    });
+    expect(validateCurriculumDetailCandidate(candidate, input).valid).toBe(true);
+
+    candidate.units[0]!.title = '向量检索的候选桶选择';
+    expect(validateCurriculumDetailCandidate(candidate, input).valid).toBe(true);
 
     candidate.units[0]!.title = 'IVF vector retrieval';
     expect(validateCurriculumDetailCandidate(candidate, input).valid).toBe(true);
@@ -541,7 +539,7 @@ describe('Curriculum source-authority envelope', () => {
     expect(envelopes.get('course_map_region_000000000000000000000001')).toMatchObject({
       sourceRegionId: 'course_map_region_000000000000000000000001',
       sourceBlockIds: ['block-1'],
-      supportedConstructs: ['identify', 'explain'],
+      supportedConstructs: [...FORMAL_SUPPORTED_CONSTRUCTS],
       tier: 'formal_sufficient',
     });
   });
@@ -639,142 +637,76 @@ describe('Curriculum source-authority envelope', () => {
   });
 });
 
-/**
- * Slice 5B. The teaching vocabulary admits five constructs; only three have a
- * deterministic local evidence predicate. These controls prove the boundary
- * holds from both ends: a supported construct is still accepted on real
- * evidence, and a teaching-only construct is refused no matter how strong the
- * evidence, how high the priority, or how ambitious the wording.
- */
+/** Source envelopes describe reviewable evidence; neither an enum nor source shape is a verdict. */
 describe('Formal construct authority boundary', () => {
-  const TEACHING_ONLY = FormalAssessmentConstructSchema.options.filter(
-    (option) => !(FORMAL_SUPPORTED_CONSTRUCTS as readonly string[]).includes(option),
-  );
-
-  it('splits the shared teaching vocabulary into exactly one supported and one teaching-only set', () => {
-    expect([...FORMAL_SUPPORTED_CONSTRUCTS]).toEqual(['identify', 'explain', 'apply']);
-    expect(TEACHING_ONLY).toEqual(['design', 'evaluate']);
-    for (const construct of FORMAL_SUPPORTED_CONSTRUCTS) {
+  it('permits all five bounded learning constructs to reach independent review', () => {
+    expect([...FORMAL_SUPPORTED_CONSTRUCTS]).toEqual(FormalAssessmentConstructSchema.options);
+    for (const construct of ['identify', 'explain', 'apply', 'design', 'evaluate'] as const)
       expect(classifyConstructAuthority(construct)).toBe('formal_supported');
-    }
-    for (const construct of TEACHING_ONLY) {
-      expect(classifyConstructAuthority(construct)).toBe('teaching_only');
-    }
   });
 
-  it('cannot even express a teaching-only construct as source-supported authority', () => {
-    for (const construct of TEACHING_ONLY) {
-      expect(() =>
-        CurriculumAuthorityEnvelopeSchema.parse({
-          ...envelope(),
-          supportedConstructs: ['identify', construct],
-          strongestSupportedConstruct: construct,
-        }),
-      ).toThrow();
-    }
+  it('rejects invented construct vocabulary rather than treating it as permission', () => {
     expect(() =>
       CurriculumAuthorityEnvelopeSchema.parse({
         ...envelope(),
-        supportedConstructs: ['identify', 'explain', 'apply'],
-        strongestSupportedConstruct: 'apply',
+        supportedConstructs: ['guarantee'],
       }),
-    ).not.toThrow();
+    ).toThrow();
   });
 
-  it('never derives a teaching-only construct from any evidence class', () => {
-    const procedure = '必须：先检索 → 按权限过滤 → 再给模型。';
-    const designShaped = 'Design a production deployment that balances every bounded layer.';
-    const evaluateShaped = 'Evaluate whether a proposed deployment is appropriate in production.';
-    const kitchenSink = [
-      ...procedureAuthorityBundles(procedure),
-      authorityBundle(),
-      ...procedureAuthorityBundles(designShaped),
-      ...procedureAuthorityBundles(evaluateShaped),
-    ];
-    const authority = buildCurriculumAuthorityEnvelope({
+  it('offers ordinary rules and conditions without demanding arrow syntax', () => {
+    const rule = 'When the latch is open, the valve must remain closed.';
+    const available = buildCurriculumAuthorityEnvelope({
       sourceRegionId: 'region-1',
       sourceBlockIds: ['block-1'],
-      evidence: [offer(procedure), offer(), offer(designShaped), offer(evaluateShaped)],
-      authorityBundles: kitchenSink,
+      evidence: [offer(rule)],
+      authorityBundles: procedureAuthorityBundles(rule),
       isBlockingEligible: () => true,
     });
-    // The strongest reachable rung is `apply`, and the design/evaluate-shaped
-    // claims contribute nothing beyond it.
-    expect(authority.strongestSupportedConstruct).toBe('apply');
-    for (const construct of TEACHING_ONLY) {
-      expect(authority.supportedConstructs).not.toContain(construct);
-      expect(isConstructSupported(construct, authority)).toBe(false);
-    }
+    expect(isExplicitSourceProcedure(rule)).toBe(false);
+    expect(available.supportedConstructs).toContain('apply');
+    expect(available.formalEvidenceIds.length).toBeGreaterThan(0);
   });
 
-  it('refuses a teaching-only construct independently of the envelope contents', () => {
-    // Second, independent guard: even if an envelope somehow carried the value,
-    // the predicate refuses it. Bypassing one layer does not grant authority.
-    const forged = {
-      ...envelope(),
-      supportedConstructs: ['identify', 'design'],
-    } as unknown as CurriculumAuthorityEnvelope;
-    expect(isConstructSupported('design', forged)).toBe(false);
-    expect(isConstructSupported('identify', forged)).toBe(true);
+  it('does not infer permission for a construct omitted by the supplied envelope', () => {
+    expect(isConstructSupported('design', envelope())).toBe(false);
+    expect(isConstructSupported('identify', envelope())).toBe(true);
   });
 
-  it('refuses a required teaching-only objective end to end on the strongest real evidence', () => {
-    const procedure = '必须：先检索 → 按权限过滤 → 再给模型。';
-    const authority = buildCurriculumAuthorityEnvelope({
+  it('does not infer an evidence opportunity from stale source authority', () => {
+    const available = buildCurriculumAuthorityEnvelope({
       sourceRegionId: 'region-1',
       sourceBlockIds: ['block-1'],
-      evidence: [offer(procedure)],
-      authorityBundles: procedureAuthorityBundles(procedure),
+      evidence: [offer()],
+      authorityBundles: [authorityBundle('stale')],
+      isBlockingEligible: () => false,
+    });
+    expect(available.supportedConstructs).toEqual([]);
+    expect(available.formalEvidenceIds).toEqual([]);
+    for (const construct of FORMAL_SUPPORTED_CONSTRUCTS)
+      expect(isConstructSupported(construct, available)).toBe(false);
+  });
+
+  it('preserves design and evaluation objectives unchanged for the source-support reviewer', () => {
+    const rule = 'A valid schedule completes every dependency before the dependent task begins.';
+    const available = buildCurriculumAuthorityEnvelope({
+      sourceRegionId: 'region-1',
+      sourceBlockIds: ['block-1'],
+      evidence: [offer(rule)],
+      authorityBundles: procedureAuthorityBundles(rule),
       isBlockingEligible: () => true,
     });
-    expect(authority.supportedConstructs).toEqual(['identify', 'explain', 'apply']);
-
-    for (const construct of TEACHING_ONLY) {
-      const input = detailInput(authority);
-      input.regions[0]!.evidence[0]!.authorityEnvelope = authority;
+    for (const construct of ['design', 'evaluate'] as const) {
+      const input = detailInput(available);
+      input.regions[0]!.evidence[0]!.authorityEnvelope = available;
       const candidate = detailCandidate(
-        `${construct} the source-stated workflow`,
-        'The most ambitious wording the material could plausibly justify.',
+        `${construct} a schedule`,
+        'Use the stated dependency constraint.',
         construct,
       );
-      const original = structuredClone(candidate.units[0]!.objectives[0]!);
-
-      expect(validateCurriculumDetailCandidate(candidate, input)).toMatchObject({
-        valid: false,
-        diagnosticCodes: expect.arrayContaining(['required_objective_formal_authority_missing']),
-      });
-      // Fail closed: the refused proposal is left byte-identical, so no partial
-      // authority is written and the accepted predecessor is untouched.
-      expect(candidate.units[0]!.objectives[0]).toEqual(original);
-      expect(candidate.units[0]!.objectives[0]!.construct).toBe(construct);
-    }
-  });
-
-  it('still accepts every supported construct that its evidence genuinely backs', () => {
-    const procedure = '必须：先检索 → 按权限过滤 → 再给模型。';
-    const authority = buildCurriculumAuthorityEnvelope({
-      sourceRegionId: 'region-1',
-      sourceBlockIds: ['block-1'],
-      evidence: [offer(procedure)],
-      authorityBundles: procedureAuthorityBundles(procedure),
-      isBlockingEligible: () => true,
-    });
-    const accepted: Array<[FormalAssessmentConstruct, string, string]> = [
-      ['identify', `Identify: ${procedure}`, 'Identify only what the source states.'],
-      ['explain', `Explain: ${procedure}`, 'Explain only what the source states.'],
-      [
-        'apply',
-        `Apply: ${procedure}`,
-        `Apply only the source-stated procedure in its stated context. Source-supported procedure: ${procedure}`,
-      ],
-    ];
-    for (const [construct, title, description] of accepted) {
-      const input = detailInput(authority);
-      input.regions[0]!.evidence[0]!.authorityEnvelope = authority;
-      const candidate = detailCandidate(title, description, construct);
-      expect(
-        validateCurriculumDetailCandidate(candidate, input).diagnosticCodes ?? [],
-      ).not.toContain('required_objective_formal_authority_missing');
+      const before = structuredClone(candidate);
+      expect(validateCurriculumDetailCandidate(candidate, input).valid).toBe(true);
+      expect(candidate).toEqual(before);
     }
   });
 });

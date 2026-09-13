@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { SourceBlock } from '@hy3-clinic/shared';
+import { MAX_GROUNDING_QUOTE_CHARS, type SourceBlock } from '@hy3-clinic/shared';
 import { verifyGrounding } from './verify.js';
 
 function block(id: string, content: string): SourceBlock {
@@ -22,6 +22,23 @@ const blocks: SourceBlock[] = [
 ];
 
 describe('verifyGrounding', () => {
+  it('preserves a long exact quotation and still rejects altered or oversized evidence', () => {
+    const quote = 'A complete source statement keeps its conditions. '.repeat(15).trim();
+    const content = `Introduction. ${quote} Closing note.`;
+    const source = block('long_source', content);
+    const result = verifyGrounding([source], { blockId: source.id, quote });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(content.slice(result.grounding.startOffset, result.grounding.endOffset)).toBe(quote);
+      expect(result.grounding.quote).toBe(quote);
+    }
+    const altered = verifyGrounding([source], { blockId: source.id, quote: `${quote} Invented.` });
+    expect(altered).toMatchObject({ ok: false, reason: 'quote_not_found' });
+    const oversized = 'x'.repeat(MAX_GROUNDING_QUOTE_CHARS + 1);
+    expect(
+      verifyGrounding([block('large', oversized)], { blockId: 'large', quote: oversized }),
+    ).toMatchObject({ ok: false, reason: 'quote_too_long' });
+  });
   it('verifies an exact quote and computes offsets itself', () => {
     const result = verifyGrounding(blocks, { blockId: 'blk_0', quote: '容量十分有限' });
     expect(result.ok).toBe(true);

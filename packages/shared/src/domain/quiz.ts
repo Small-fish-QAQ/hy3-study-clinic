@@ -1,4 +1,5 @@
 import { TransferTaskSchema } from './transferAssessment.js';
+import { FormalScoringReviewSchema } from './formalScoring.js';
 import { z } from 'zod';
 import {
   DifficultySchema,
@@ -168,6 +169,7 @@ export const QuestionSchema = z
     sourceMistakeIds: z.array(z.string()).optional(),
     /** Server-only declaration metadata retained for formal contract registration. */
     formalProposal: FormalProposalMetadataSchema.optional(),
+    formalScoringReview: FormalScoringReviewSchema.optional(),
   })
   .superRefine((q, ctx) => {
     if (isTextAnswerType(q.type)) {

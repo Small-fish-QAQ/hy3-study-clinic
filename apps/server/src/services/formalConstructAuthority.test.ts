@@ -32,9 +32,7 @@ const DEPTHS: readonly DesiredDepth[] = [
 const CONSTRUCTS = FormalAssessmentConstructSchema.options;
 const MODES = ['exact_source', 'advisory_visual', 'unavailable'] as const;
 const PRIORITIES = ['required', 'high', 'normal', 'optional'] as const;
-const TEACHING_ONLY = CONSTRUCTS.filter(
-  (construct) => !(FORMAL_SUPPORTED_CONSTRUCTS as readonly string[]).includes(construct),
-);
+const HIGHER_CONSTRUCTS: FormalAssessmentConstruct[] = ['design', 'evaluate'];
 
 function plan(
   construct: FormalAssessmentConstruct,
@@ -69,25 +67,21 @@ function plan(
   }
 }
 
-/**
- * Slice 5B. OQ-2: the teaching vocabulary stays wide and Formal authority
- * narrows. `design`/`evaluate` must therefore remain fully usable as teaching
- * constructs - a learner goal must never silently disappear - while being
- * unable to acquire Formal authority by any route.
- */
-describe('teaching-only constructs stay teachable', () => {
+/** Constructs describe the learner capability; current source and scoring
+ * review determine whether a particular objective earns Formal authority. */
+describe('all supported constructs stay teachable', () => {
   it('keeps every construct in the shared teaching vocabulary', () => {
     expect([...CONSTRUCTS]).toEqual(['identify', 'explain', 'apply', 'design', 'evaluate']);
-    for (const construct of TEACHING_ONLY) {
+    for (const construct of HIGHER_CONSTRUCTS) {
       // Still parseable everywhere the shared vocabulary is used, so accepted
       // history containing these values stays readable.
       expect(FormalAssessmentConstructSchema.parse(construct)).toBe(construct);
-      expect(isFormalSupportedConstruct(construct)).toBe(false);
+      expect(isFormalSupportedConstruct(construct)).toBe(true);
     }
   });
 
-  it('plans a teaching-only construct with exact teaching evidence', () => {
-    for (const construct of TEACHING_ONLY) {
+  it('plans a higher construct with exact teaching evidence', () => {
+    for (const construct of HIGHER_CONSTRUCTS) {
       for (const priority of PRIORITIES) {
         for (const targetDepth of DEPTHS) {
           expect(plan(construct, 'exact_source', priority, targetDepth).planned).toBe(true);
@@ -97,17 +91,16 @@ describe('teaching-only constructs stay teachable', () => {
   });
 
   it('keeps its teaching obligations rather than downgrading it to a weaker construct', () => {
-    // A teaching-only construct still earns real teaching contracts. Narrowing
-    // Formal authority must not quietly rewrite what the lesson must contain.
-    for (const construct of TEACHING_ONLY) {
+    // Formal eligibility never lowers the requested teaching capability.
+    for (const construct of HIGHER_CONSTRUCTS) {
       expect(requiredDepthContracts('deep_transfer', construct)).toContain('semantic_relation');
       expect(requiredDepthContracts('pass_oriented', construct)).toEqual([]);
     }
   });
 });
 
-describe('Formal authority cannot be reached through the teaching lane', () => {
-  it('classifies exactly the constructs with a local evidence predicate as supported', () => {
+describe('construct eligibility preserves source authority boundaries', () => {
+  it('classifies constructs eligible for independent Formal review', () => {
     for (const construct of CONSTRUCTS) {
       expect(classifyConstructAuthority(construct)).toBe(
         (FORMAL_SUPPORTED_CONSTRUCTS as readonly string[]).includes(construct)
@@ -117,7 +110,7 @@ describe('Formal authority cannot be reached through the teaching lane', () => {
     }
   });
 
-  it('keeps the planner refusing every case it refused before', () => {
+  it('refuses unavailable sources and stronger constructs on advisory visuals', () => {
     const cells = CONSTRUCTS.flatMap((construct) =>
       MODES.flatMap((mode) =>
         PRIORITIES.flatMap((priority) =>
@@ -138,9 +131,7 @@ describe('Formal authority cannot be reached through the teaching lane', () => {
 
     // The refusals are exactly the pre-existing authority-mode refusals:
     // every `unavailable` cell, plus every `advisory_visual` cell whose
-    // construct is stronger than `explain`. 5B added no new planner refusal
-    // and removed none, so the leak is closed downstream, not by deleting a
-    // learner goal here.
+    // construct is stronger than `explain`; source permission stays bounded.
     const perPriorityDepth = PRIORITIES.length * DEPTHS.length;
     const strongerThanExplain = CONSTRUCTS.filter(
       (construct) => construct !== 'identify' && construct !== 'explain',
@@ -154,25 +145,23 @@ describe('Formal authority cannot be reached through the teaching lane', () => {
     ]);
     expect(refused.every((cell) => cell.mode !== 'exact_source')).toBe(true);
 
-    // N-U11T's 24 leak cells - teaching-only construct, exact teaching
-    // evidence, non-required priority - are still PLANNED, by owner decision
-    // OQ-2. Teaching intent survives; Formal authority is what narrowed.
+    // Higher constructs remain available at every ordinary priority.
     const leak = cells.filter(
       (cell) =>
-        TEACHING_ONLY.includes(cell.construct) &&
+        HIGHER_CONSTRUCTS.includes(cell.construct) &&
         cell.mode === 'exact_source' &&
         cell.priority !== 'required',
     );
     expect(leak).toHaveLength(24);
     expect(leak.every((cell) => cell.planned)).toBe(true);
     expect(
-      leak.every((cell) => classifyConstructAuthority(cell.construct) === 'teaching_only'),
+      leak.every((cell) => classifyConstructAuthority(cell.construct) === 'formal_supported'),
     ).toBe(true);
   });
 
-  it('refuses to promote a teaching-only construct to application-level Formal demand', () => {
-    for (const construct of TEACHING_ONLY) {
-      expect(supportsFormalApplicationDemand(construct)).toBe(false);
+  it('can request application-level demand for higher constructs while unknown constructs remain unavailable', () => {
+    for (const construct of HIGHER_CONSTRUCTS) {
+      expect(supportsFormalApplicationDemand(construct)).toBe(true);
     }
     expect(supportsFormalApplicationDemand('apply')).toBe(true);
     expect(supportsFormalApplicationDemand(null)).toBe(false);
@@ -198,12 +187,11 @@ describe('depth is orthogonal to Formal construct authority', () => {
     expect(depthSensitive).toBe(0);
   });
 
-  it('leaves a teaching-only construct unsupported at the deepest target depth', () => {
-    for (const construct of TEACHING_ONLY) {
-      expect(classifyConstructAuthority(construct)).toBe('teaching_only');
-      expect(supportsFormalApplicationDemand(construct)).toBe(false);
-      // Depth still adds a real teaching obligation, so the goal is not lost -
-      // it simply is not formally certifiable.
+  it('keeps higher constructs eligible at the deepest target depth', () => {
+    for (const construct of HIGHER_CONSTRUCTS) {
+      expect(classifyConstructAuthority(construct)).toBe('formal_supported');
+      expect(supportsFormalApplicationDemand(construct)).toBe(true);
+      // Depth adds teaching obligations, without certifying source support.
       expect(requiredDepthContracts('deep_transfer', construct).length).toBeGreaterThan(0);
     }
   });
@@ -290,17 +278,19 @@ describe('the Formal provider contract states its own limits', () => {
       .map((message) => message.content)
       .join('\n');
 
-  it('names the supported constructs and the teaching-only ones separately', () => {
+  it('distinguishes review eligibility from semantic and scoring approval', () => {
     const text = prompt();
-    expect(text).toContain('Only these constructs can currently carry Formal assessment authority');
+    expect(text).toContain('These constructs may be independently reviewed for Formal assessment');
     expect(text).toContain(FORMAL_SUPPORTED_CONSTRUCTS.join(' | '));
-    expect(text).toContain('teaching-only for now');
-    expect(text).toContain(TEACHING_ONLY.join(' | '));
+    expect(text).toContain('not a semantic approval');
+    expect(text).toContain('question-specific scoring authority');
   });
 
   it('does not tell the provider that design or evaluate are impossible learning goals', () => {
     const text = prompt();
-    expect(text).toContain('They are valid learning goals and valid teaching intent');
+    expect(text).toContain(
+      'A goal without sufficient source rules or criteria remains teaching-only regardless of its construct',
+    );
     expect(text).toContain('Depth, difficulty, and learner ambition never widen this set');
   });
 });
@@ -383,7 +373,7 @@ describe('FakeProvider general lane exercises the real refusal', () => {
     );
   });
 
-  it.each(TEACHING_ONLY)(
+  it.each(HIGHER_CONSTRUCTS)(
     'refuses a provider-authored %s objective without corrupting the proposal',
     async (curriculumObjectiveConstructFixture) => {
       const input = detailInput();
@@ -411,21 +401,13 @@ describe('FakeProvider general lane exercises the real refusal', () => {
   );
 });
 
-/**
- * N-EXPLAINLEX, recorded 2026-09-01 and NOT fixed in this Slice. `supportsExplain`
- * matches bare copulas, so the `explain` rung is granted by almost any validated
- * formal claim - an evaluate-shaped claim earns it on the word "is" alone.
- *
- * This is a CHARACTERISATION test, not an endorsement. It exists so that
- * tightening the predicate makes a test fail loudly instead of silently moving
- * an authority boundary, and so 5B's narrowing is not mistaken for a fix.
- */
-describe('N-EXPLAINLEX: the explain rung is currently near-vacuous lexically', () => {
+/** Occurrence authority records available premises, not semantic proof. */
+describe('the source envelope leaves semantic adequacy to independent review', () => {
   const NOW = '2026-09-02T00:00:00.000Z';
   const evaluateShaped =
     'Evaluate whether a proposed retrieval configuration is appropriate for production.';
 
-  it('grants explain to an evaluate-shaped claim on the copula alone', () => {
+  it('offers all constructs for review even when a statement alone proves no capability', () => {
     const authority = buildCurriculumAuthorityEnvelope({
       sourceRegionId: 'region-1',
       sourceBlockIds: ['block-1'],
@@ -483,10 +465,9 @@ describe('N-EXPLAINLEX: the explain rung is currently near-vacuous lexically', (
       ],
       isBlockingEligible: () => true,
     });
-    expect(authority.supportedConstructs).toEqual(['identify', 'explain']);
-    // The claim is evaluate-SHAPED, and `evaluate` is still refused. The loose
-    // predicate widens `explain`, never the teaching-only rungs.
-    expect(authority.supportedConstructs).not.toContain('evaluate');
-    expect(authority.strongestSupportedConstruct).toBe('explain');
+    expect(authority.supportedConstructs).toEqual([...FORMAL_SUPPORTED_CONSTRUCTS]);
+    // These are candidate constructs, never an approval of this objective.
+    expect(authority.supportedConstructs).toContain('evaluate');
+    expect(authority.strongestSupportedConstruct).toBe('evaluate');
   });
 });

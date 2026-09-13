@@ -144,7 +144,7 @@ export const ObjectiveAuthoritySemanticEvaluationObjectiveInputSchema = z
     objectiveRef: z.string().min(1).max(100),
     proposition: z.string().min(1).max(1_500),
     construct: FormalAssessmentConstructSchema,
-    candidates: z.array(ObjectiveAuthoritySemanticCandidateOfferSchema).max(12),
+    candidates: z.array(ObjectiveAuthoritySemanticCandidateOfferSchema).max(64),
     requiredCapabilityPreservation:
       ObjectiveAuthorityRequiredCapabilityPreservationSchema.optional(),
   })
@@ -391,7 +391,7 @@ export type ObjectiveAuthoritySemanticCandidateLabelProposal = z.infer<
 
 export const ObjectiveAuthoritySemanticSupportGroupProposalSchema = z
   .object({
-    evidenceRefs: z.array(z.string().min(1).max(100)).min(1).max(5),
+    evidenceRefs: z.array(z.string().min(1).max(100)).min(1).max(12),
     supportType: ObjectiveAuthoritySupportTypeSchema,
     rationale: z.string().min(1).max(200).optional(),
   })
@@ -412,8 +412,8 @@ const ObjectiveAuthoritySemanticObjectiveProposalBaseSchema = z.object({
   objectiveRef: z.string().min(1).max(100),
   subjectDependency: ObjectiveAuthoritySubjectDependencySchema,
   subjectDependencyRationale: z.string().min(1).max(300),
-  candidateLabels: z.array(ObjectiveAuthoritySemanticCandidateLabelProposalSchema).max(12),
-  supportGroups: z.array(ObjectiveAuthoritySemanticSupportGroupProposalSchema).max(4),
+  candidateLabels: z.array(ObjectiveAuthoritySemanticCandidateLabelProposalSchema).max(64),
+  supportGroups: z.array(ObjectiveAuthoritySemanticSupportGroupProposalSchema).max(8),
 });
 
 const ObjectiveAuthoritySemanticNormalObjectiveProposalSchema =
@@ -797,7 +797,7 @@ export type ObjectiveAuthoritySemanticSupportV1 = z.infer<
 
 const ObjectiveAuthoritySemanticPersistedCandidateIdentitySchema = z
   .object({
-    candidateIndex: z.number().int().min(0).max(11),
+    candidateIndex: z.number().int().min(0).max(63),
     evidenceId: z.string().min(1).max(100),
     sourceBlockId: z.string().min(1),
     authorityRecordIds: z.array(z.string().min(1)).min(1).max(20),
@@ -838,7 +838,7 @@ export type ObjectiveAuthoritySemanticPersistedCandidate = z.infer<
 
 export const ObjectiveAuthoritySemanticPersistedSupportGroupSchema = z
   .object({
-    candidateIndexes: z.array(z.number().int().min(0).max(11)).min(1).max(5),
+    candidateIndexes: z.array(z.number().int().min(0).max(63)).min(1).max(12),
     supportType: ObjectiveAuthoritySupportTypeSchema,
     rationale: z.string().min(1).max(200).optional(),
   })
@@ -886,12 +886,12 @@ const ObjectiveAuthoritySemanticSupportV2BaseSchema = z.object({
   candidateWindow: z
     .object({
       totalCandidateCount: z.number().int().nonnegative(),
-      offeredCandidateCount: z.number().int().min(0).max(12),
+      offeredCandidateCount: z.number().int().min(0).max(64),
       truncated: z.boolean(),
     })
     .strict(),
-  candidateLabels: z.array(ObjectiveAuthoritySemanticPersistedCandidateSchema).max(12),
-  supportGroups: z.array(ObjectiveAuthoritySemanticPersistedSupportGroupSchema).max(4),
+  candidateLabels: z.array(ObjectiveAuthoritySemanticPersistedCandidateSchema).max(64),
+  supportGroups: z.array(ObjectiveAuthoritySemanticPersistedSupportGroupSchema).max(8),
   validationDiagnosticCodes: z.array(z.string().min(1).max(100)).max(100),
   verdict: z.enum(['pass', 'fail']),
   evaluatedAt: z.string().datetime(),

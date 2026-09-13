@@ -28,7 +28,6 @@ import {
   assertCourseMapSourceAllocationIntegrity,
   type CurriculumCapabilityRecoveryRequirement,
 } from './courseMap.js';
-import { hasCurriculumSemanticAnchor } from './curriculumSemanticEvaluator.js';
 import {
   curriculumTargetRequestsApplication,
   isConstructSupported,
@@ -1171,15 +1170,6 @@ export function validateCurriculumDetailCandidate(
         const envelope = evidenceById.get(selection.evidenceId)?.authorityEnvelope;
         return envelope ? [envelope] : [];
       });
-    const siblingUnitTitles = payload.units
-      .filter((candidate) => candidate.regionId !== unit.regionId)
-      .map((candidate) => candidate.title);
-    const requiredObjectives = unit.objectives.filter(
-      (objective) => objective.priority === 'required',
-    );
-    const ownAnchoredRequiredObjectiveCount = requiredObjectives.filter((objective) =>
-      hasCurriculumSemanticAnchor(`${objective.title} ${objective.description}`, [unit.title]),
-    ).length;
     for (const objective of unit.objectives) {
       const capabilityRef = objective.capabilityRequirementRef;
       if (capabilityRef) {
@@ -1285,25 +1275,10 @@ export function validateCurriculumDetailCandidate(
           }
         }
       }
-      if (objective.priority !== 'required') continue;
-      const objectiveClaim = `${objective.title} ${objective.description}`;
-      const matchingSiblingUnitTitles = siblingUnitTitles.filter((title) =>
-        hasCurriculumSemanticAnchor(objectiveClaim, [title]),
-      );
-      if (!hasCurriculumSemanticAnchor(objectiveClaim, [unit.title])) {
-        addDiagnostic(
-          'required_objective_parent_topic_mismatch',
-          `Required objective ${objective.key} has no meaningful semantic anchor in its own learner-visible LearningUnit title. Rename or regroup the unit so its title covers every required objective.`,
-          {
-            courseMapRegionId: region.regionId,
-            learningUnitTitle: unit.title,
-            objectiveKey: objective.key,
-            objectiveTitle: objective.title,
-            ownAnchoredRequiredObjectiveCount,
-            matchingSiblingUnitTitles: matchingSiblingUnitTitles.slice(0, 20),
-          },
-        );
-      }
+      // Lexical title overlap is an advisory quality signal, not a semantic
+      // proof. Multilingual titles and ordinary synonyms may share no tokens.
+      // The quality report retains the warning; source/identity checks above
+      // and independent objective support at Formal remain authoritative.
     }
     for (const capabilityRef of capabilityRequirementByRef.keys()) {
       const useCount = capabilityUseCount.get(capabilityRef) ?? 0;

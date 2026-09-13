@@ -1,4 +1,9 @@
-import type { ProposedGrounding, SourceBlock, VerifiedGrounding } from '@hy3-clinic/shared';
+import {
+  MAX_GROUNDING_QUOTE_CHARS,
+  type ProposedGrounding,
+  type SourceBlock,
+  type VerifiedGrounding,
+} from '@hy3-clinic/shared';
 
 /**
  * Deterministic grounding verification — the trust boundary between model
@@ -32,8 +37,6 @@ export type GroundingVerification =
   | { ok: true; grounding: VerifiedGrounding }
   | { ok: false; reason: GroundingFailureReason; message: string };
 
-const MAX_QUOTE_CHARS = 500;
-
 function countOccurrences(haystack: string, needle: string): number {
   let count = 0;
   let pos = haystack.indexOf(needle);
@@ -52,11 +55,11 @@ export function verifyGrounding(
   if (quote.length === 0) {
     return { ok: false, reason: 'empty_quote', message: '引文为空。' };
   }
-  if (quote.length > MAX_QUOTE_CHARS) {
+  if (quote.length > MAX_GROUNDING_QUOTE_CHARS) {
     return {
       ok: false,
       reason: 'quote_too_long',
-      message: `引文过长(${quote.length} 字,上限 ${MAX_QUOTE_CHARS})。`,
+      message: `引文过长(${quote.length} 字,上限 ${MAX_GROUNDING_QUOTE_CHARS})。`,
     };
   }
 

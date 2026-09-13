@@ -105,6 +105,61 @@ const response = (content: string, finish_reason = 'stop') =>
     headers: { 'content-type': 'application/json' },
   });
 describe('compact teaching generation', () => {
+  it('offers the required worked process in a later capsule even when the shared interaction owner is earlier', () => {
+    const fixture = input();
+    fixture.authoringStrategy = 'authored';
+    const continued = fixture.lesson.skeleton.lessonSlots.find((s) => s.learnerActionRequired)!;
+    continued.qualityContract = 'worked_process';
+    fixture.lesson.skeleton.lessonSlots = [continued];
+    fixture.lesson.workedInteractionSlotId = 'L99';
+    fixture.includeNarrative = false;
+    const messages = teachingCapsuleMessages(fixture);
+    const shape = JSON.parse(
+      messages[1]!.content.split('\n').find((line) => line.startsWith('{"practice":'))!,
+    );
+    expect(shape.lesson.slots[0].workedProcess.interaction.activity.options).toHaveLength(3);
+    expect(shape.lesson.slots[0].informalCheck).toBeUndefined();
+    const context = JSON.parse(messages[1]!.content.split('\n')[1]!);
+    expect(context.slots[0].action).toBe('worked interaction');
+    const computed = compileTeachingKernel(deriveTeachingKernel(blueprint), fixture);
+    expect(computed.lesson.slots[0]!.workedProcess?.interaction).toBeDefined();
+    expect(computed.lesson.slots[0]!.informalCheck).toBeUndefined();
+  });
+  it.each([true, false])(
+    'validates a newly exposed semantic defect after capsule schema repair (fixed=%s)',
+    async (fixed) => {
+      const fixture = input();
+      fixture.authoringStrategy = 'authored';
+      const valid = compileTeachingKernel(deriveTeachingKernel(blueprint), fixture);
+      const aliasLeak = structuredClone(valid);
+      aliasLeak.lesson.slots[0]!.explanation += '根据S1规则进行检查。';
+      const malformed = JSON.parse(JSON.stringify(aliasLeak));
+      malformed.practice.items[0].initial.options[0].feedbackIfSelected = null;
+      const fetchImpl = vi
+        .fn()
+        .mockResolvedValueOnce(response(JSON.stringify(malformed)))
+        .mockResolvedValueOnce(response(JSON.stringify(aliasLeak)))
+        .mockResolvedValueOnce(response(JSON.stringify(fixed ? valid : aliasLeak)));
+      const provider = new Hy3Provider({
+        baseUrl: 'https://example.test/v1',
+        apiKey: 'test-key',
+        model: 'test-model',
+        timeoutMs: 30_000,
+        fetchImpl: fetchImpl as typeof fetch,
+      });
+      const result = provider.generateTeachingCapsule(fixture, {
+        validateCandidate: (candidate) => validateTeachingCapsule(candidate, fixture),
+      });
+      if (fixed) {
+        expect(validateTeachingCapsule(await result, fixture).valid).toBe(true);
+      } else {
+        await expect(result).rejects.toThrow();
+      }
+      expect(fetchImpl).toHaveBeenCalledTimes(3);
+      const repair = JSON.parse(String(fetchImpl.mock.calls[2]![1].body));
+      expect(repair.messages.at(-1).content).toContain('lesson_internal_alias_leak');
+    },
+  );
   it('keeps generated examples supplementary while retaining only complete verbatim component citations', () => {
     const context = input();
     const payload = compileTeachingKernel(deriveTeachingKernel(blueprint), context);
@@ -168,7 +223,7 @@ describe('compact teaching generation', () => {
         expect(fixture.lesson.courseDesign).toEqual({ desiredDepth, unitFocus });
       }
   });
-  it('cleanly regenerates a truncated mechanism once and compiles full Lesson/Practice without increasing its request budget', async () => {
+  it('cleanly regenerates a truncated mechanism once and compiles full Lesson/Practice with increased output headroom', async () => {
     const fixture = input();
     const fetchImpl = vi
       .fn()
@@ -191,7 +246,7 @@ describe('compact teaching generation', () => {
     expect(recoveries).toEqual(['clean_regeneration']);
     const body = JSON.parse(String(fetchImpl.mock.calls[1]![1].body));
     const prompt = body.messages.map((m: { content: string }) => m.content).join('\n');
-    expect(body.max_tokens).toBe(16000);
+    expect(body.max_tokens).toBe(32000);
     expect(prompt).not.toContain('PARTIAL_DO_NOT_REPLAY');
     expect(prompt).toContain('working_fluency');
     expect(prompt).toContain('focused');

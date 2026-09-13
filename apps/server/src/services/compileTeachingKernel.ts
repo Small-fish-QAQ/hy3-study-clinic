@@ -336,8 +336,14 @@ export function compileTeachingKernel(
                 },
               ]
             : [],
-        workedProcess: slot.slotId === input.lesson.workedInteractionSlotId ? wp : null,
-        ...(slot.learnerActionRequired && slot.slotId !== input.lesson.workedInteractionSlotId
+        workedProcess:
+          slot.qualityContract === 'worked_process' ||
+          slot.slotId === input.lesson.workedInteractionSlotId
+            ? wp
+            : null,
+        ...(slot.learnerActionRequired &&
+        slot.qualityContract !== 'worked_process' &&
+        slot.slotId !== input.lesson.workedInteractionSlotId
           ? {
               informalCheck: {
                 kind: 'choose_alternative' as const,

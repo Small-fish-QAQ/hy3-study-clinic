@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import {
   TeachingContentReviewSchema,
+  MAX_TEACHING_CONTENT_REVIEWS,
   type LessonSlotContentProposalPayload,
   type PracticeContentProposalPayload,
   type TeachingContentReview,
@@ -59,6 +60,9 @@ function withoutAuthorDeclarations(value: unknown): unknown {
     };
     delete result.result;
     delete result.whyResultFollows;
+    // The actual worked-interaction projection always sets this author-only
+    // description to null, including before the guided response.
+    delete result.learnerDecision;
   }
   if (Array.isArray(original.options)) {
     result.options = original.options.map((option: Record<string, unknown>) => ({
@@ -109,7 +113,8 @@ export async function verifyPreparedTeaching<
   computedItemIds: ReadonlySet<string> = new Set(),
 ) {
   const receipts = [];
-  for (let round = 0; round < 2; round += 1) {
+  let previousFindings: TeachingContentReview['findings'] | undefined;
+  for (let round = 0; round < MAX_TEACHING_CONTENT_REVIEWS; round += 1) {
     const prepared = prepareTeachingReview(context, candidate, computedItemIds);
     const reviewed = await review(prepared, round);
     if (!prepared.validate(reviewed.result).valid)
@@ -122,7 +127,19 @@ export async function verifyPreparedTeaching<
     receipts.push({ ...reviewed, candidateHash: prepared.candidateHash });
     const findings = prepared.findings(reviewed.result);
     if (!findings.length) return { candidate, receipts };
-    if (round === 1)
+    const findingKey = (finding: TeachingContentReview['findings'][number]) =>
+      `${finding.itemId}\u0000${finding.code}`;
+    const resolvedPriorDefect = previousFindings?.some(
+      (prior) => !findings.some((current) => findingKey(current) === findingKey(prior)),
+    );
+    const changedDraft = round > 0 && receipts[round - 1]!.candidateHash !== prepared.candidateHash;
+    // One extra correction is worthwhile when the first revision demonstrably
+    // resolved a defect and revealed another. Never reroll unchanged material
+    // or keep asking the reviewer until a still-failing draft gets a pass.
+    if (
+      round === MAX_TEACHING_CONTENT_REVIEWS - 1 ||
+      (round === 1 && (!changedDraft || !resolvedPriorDefect))
+    )
       throw ProviderError.invalidOutput(
         'Teaching content still has material defects after its bounded revision.',
         'candidate',
@@ -133,6 +150,7 @@ export async function verifyPreparedTeaching<
           diagnostics: findings.map(({ code, problem }) => ({ code, message: problem })),
         },
       );
+    previousFindings = findings;
     candidate = await revise(candidate, findings);
   }
   throw new Error('Unreachable teaching review state.');

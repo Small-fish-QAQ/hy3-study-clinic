@@ -90,7 +90,7 @@ function sentenceLikeSpans(content: string): string[] {
 function verbatimClaimsForBlock(block: SourceBlock): string[] {
   // Expected answers and rubric points must be able to bind the same exact
   // proposition. Their former unequal prefix lengths prevented that pairing.
-  return sentenceLikeSpans(block.content).slice(0, 10);
+  return sentenceLikeSpans(block.content);
 }
 
 /**
@@ -262,72 +262,79 @@ export function createSourceAuthorityService({
         // Null is retained for legacy rows; explicit derived origins are never
         // admitted until the material is reprocessed with modern lineage.
         if (block.contentOrigin && block.contentOrigin !== 'extracted_original') continue;
-        for (const premiseKind of ['expected_answer', 'rubric_point'] as const) {
-          const logicalSourceId = `local-verbatim-v2:${materialRevisionId}:${block.id}:${premiseKind}`;
-          const existing = sourceAuthority.listHistory(logicalSourceId).at(-1);
-          if (existing) {
-            admitted.push(existing);
-            continue;
-          }
+        // Preserve every complete statement, including conditions at the end of
+        // a block. Batches respect the existing ten-claim record contract; old
+        // first-batch identities remain readable and idempotent.
+        const spans = verbatimClaimsForBlock(block);
+        for (let offset = 0; offset < spans.length; offset += 10) {
+          for (const premiseKind of ['expected_answer', 'rubric_point'] as const) {
+            const suffix = offset === 0 ? '' : `:part-${offset / 10 + 1}`;
+            const logicalSourceId = `local-verbatim-v2:${materialRevisionId}:${block.id}:${premiseKind}${suffix}`;
+            const existing = sourceAuthority.listHistory(logicalSourceId).at(-1);
+            if (existing) {
+              admitted.push(existing);
+              continue;
+            }
 
-          const now = clock.now().toISOString();
-          const claims: Array<Omit<SourceAuthorityClaim, 'authorityRecordId'>> = [];
-          for (const claim of verbatimClaimsForBlock(block)) {
-            const verification = verifyGrounding(revision.blocks, {
-              blockId: block.id,
-              quote: claim,
-            });
-            if (!verification.ok || verification.grounding.blockId !== block.id) continue;
-            claims.push({
-              id: newId('tac'),
-              sourceBlockId: block.id,
-              claim,
-              quote: verification.grounding.quote,
-              startOffset: verification.grounding.startOffset,
-              endOffset: verification.grounding.endOffset,
-              occurrenceCount: verification.grounding.occurrenceCount,
-              createdAt: now,
-            });
-          }
-          if (claims.length === 0) continue;
-
-          admitted.push(
-            sourceAuthority.createVersion({
-              id: newId('ta'),
-              workspaceId,
-              logicalSourceId,
-              materialId,
-              materialRevisionId,
-              predecessorId: null,
-              premiseScope: `verbatim-source:${block.id}`,
-              policyBasis: {
-                policyVersion: 'local-verbatim-source-v2',
-                premiseKind,
-                basis:
-                  'Exact source occurrence only; model paraphrase and semantic entailment are not admitted.',
-              },
-              validationState: 'validated',
-              conflictState: 'none',
-              actor: 'local_validator',
-              createdAt: now,
-              updatedAt: now,
-              claims,
-              event: {
-                id: newId('tae'),
-                eventType: 'verbatim_source_validated',
-                actor: 'local_validator',
-                payload: {
-                  materialId,
-                  materialRevisionId,
-                  sourceBlockId: block.id,
-                  premiseKind,
-                  claimCount: claims.length,
-                  limitation: 'occurrence_only',
-                },
+            const now = clock.now().toISOString();
+            const claims: Array<Omit<SourceAuthorityClaim, 'authorityRecordId'>> = [];
+            for (const claim of spans.slice(offset, offset + 10)) {
+              const verification = verifyGrounding(revision.blocks, {
+                blockId: block.id,
+                quote: claim,
+              });
+              if (!verification.ok || verification.grounding.blockId !== block.id) continue;
+              claims.push({
+                id: newId('tac'),
+                sourceBlockId: block.id,
+                claim,
+                quote: verification.grounding.quote,
+                startOffset: verification.grounding.startOffset,
+                endOffset: verification.grounding.endOffset,
+                occurrenceCount: verification.grounding.occurrenceCount,
                 createdAt: now,
-              },
-            }),
-          );
+              });
+            }
+            if (claims.length === 0) continue;
+
+            admitted.push(
+              sourceAuthority.createVersion({
+                id: newId('ta'),
+                workspaceId,
+                logicalSourceId,
+                materialId,
+                materialRevisionId,
+                predecessorId: null,
+                premiseScope: `verbatim-source:${block.id}`,
+                policyBasis: {
+                  policyVersion: 'local-verbatim-source-v2',
+                  premiseKind,
+                  basis:
+                    'Exact source occurrence only; model paraphrase and semantic entailment are not admitted.',
+                },
+                validationState: 'validated',
+                conflictState: 'none',
+                actor: 'local_validator',
+                createdAt: now,
+                updatedAt: now,
+                claims,
+                event: {
+                  id: newId('tae'),
+                  eventType: 'verbatim_source_validated',
+                  actor: 'local_validator',
+                  payload: {
+                    materialId,
+                    materialRevisionId,
+                    sourceBlockId: block.id,
+                    premiseKind,
+                    claimCount: claims.length,
+                    limitation: 'occurrence_only',
+                  },
+                  createdAt: now,
+                },
+              }),
+            );
+          }
         }
       }
       return admitted;

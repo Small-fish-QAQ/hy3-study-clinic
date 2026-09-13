@@ -26,6 +26,56 @@ import type { SourceAuthorityBundle } from '../repositories/sourceAuthority.js';
 import type { CurriculumEvidenceOffer } from '../llm/provider.js';
 import { newId } from '../util/ids.js';
 import { buildCurriculumAuthorityEnvelope, isConstructSupported } from './curriculumAuthority.js';
+import { OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_CANDIDATES } from './objectiveAuthoritySemanticSupport.js';
+
+const evidenceKey = (item: {
+  blockId: string;
+  quote: string;
+  startOffset: number;
+  endOffset: number;
+}): string => `${item.blockId}\u0000${item.startOffset}\u0000${item.endOffset}\u0000${item.quote}`;
+
+/** A bounded retrieval window, anchored at every authored citation. Source
+ * ingestion keeps the complete text; this only limits one review request. */
+export function objectiveEvidenceEnvelope(
+  selected: readonly VerifiedGrounding[],
+  catalog: readonly CurriculumEvidenceOffer[],
+  allocatedSourceBlockIds: readonly string[] = [],
+): CurriculumEvidenceOffer[] {
+  if (selected.length === 0) return [];
+  const selectedKeys = new Set(selected.map(evidenceKey));
+  const blockIds = [
+    ...new Set([...allocatedSourceBlockIds, ...selected.map((item) => item.blockId)]),
+  ];
+  const blockPositions = new Map(blockIds.map((id, index) => [id, index]));
+  const blockDistance = (offer: CurriculumEvidenceOffer): number =>
+    Math.min(
+      ...selected.map((item) =>
+        Math.abs(blockPositions.get(item.blockId)! - blockPositions.get(offer.blockId)!),
+      ),
+    );
+  const distance = (offer: CurriculumEvidenceOffer): number =>
+    Math.min(
+      ...selected
+        .filter((s) => s.blockId === offer.blockId)
+        .map((s) => Math.abs(s.startOffset - offer.startOffset)),
+    );
+  const unique = new Map(
+    catalog
+      .filter((offer) => blockPositions.has(offer.blockId))
+      .map((offer) => [evidenceKey(offer), offer]),
+  );
+  return [...unique.values()]
+    .sort(
+      (a, b) =>
+        Number(selectedKeys.has(evidenceKey(b))) - Number(selectedKeys.has(evidenceKey(a))) ||
+        blockDistance(a) - blockDistance(b) ||
+        distance(a) - distance(b) ||
+        a.startOffset - b.startOffset ||
+        a.id.localeCompare(b.id),
+    )
+    .slice(0, OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_CANDIDATES);
+}
 
 export interface CurriculumStructuralUnitOwner {
   materialId: string;
@@ -224,15 +274,18 @@ function authorityStatus(
   evidence: VerifiedGrounding[],
   ctx: CurriculumValidationContext,
   nodeId: string,
+  allocatedSourceBlockIds: readonly string[] = [],
 ): AuthorityAssessment {
-  const evidenceKey = (item: {
-    blockId: string;
-    quote: string;
-    startOffset: number;
-    endOffset: number;
-  }): string =>
-    `${item.blockId}\u0000${item.startOffset}\u0000${item.endOffset}\u0000${item.quote}`;
-  const evidenceKeys = new Set(evidence.map(evidenceKey));
+  // A citation chosen while drafting an objective is a source locator, not an
+  // exhaustive proof. Keep a bounded window of current original statements
+  // from this allocated LearningUnit available to the independent reviewer. It selects actual
+  // sufficient support groups before any Formal question can be admitted.
+  const evidenceKeys = new Set([
+    ...evidence.map(evidenceKey),
+    ...objectiveEvidenceEnvelope(evidence, ctx.evidenceCatalog, allocatedSourceBlockIds).map(
+      evidenceKey,
+    ),
+  ]);
   const exactSelectedClaims = (bundle: SourceAuthorityBundle) => {
     const revision = ctx.executionSourceManifest.revisions.find(
       (candidate) => candidate.materialRevisionId === bundle.record.materialRevisionId,
@@ -245,17 +298,24 @@ function authorityStatus(
         normalize(claim.claim) === normalize(claim.quote),
     );
   };
-  const matched = ctx.authorityBundles.filter((bundle) => {
-    const record = bundle.record;
-    if (record.workspaceId !== ctx.workspaceId || record.validationState === 'rejected') {
-      return false;
-    }
-    // `truthPremiseStatus` describes the exact cited source premises, never
-    // the model-authored objective title or description. A locally admitted
-    // verbatim claim may support formal premise binding while the learner-
-    // visible instructional wording remains ordinary AI-authored structure.
-    return exactSelectedClaims(bundle).length > 0;
-  });
+  const selectedKeys = new Set(evidence.map(evidenceKey));
+  const directlySelected = (bundle: SourceAuthorityBundle) =>
+    exactSelectedClaims(bundle).some((claim) =>
+      selectedKeys.has(evidenceKey({ blockId: claim.sourceBlockId, ...claim })),
+    );
+  const matched = ctx.authorityBundles
+    .filter((bundle) => {
+      const record = bundle.record;
+      if (record.workspaceId !== ctx.workspaceId || record.validationState === 'rejected') {
+        return false;
+      }
+      // `truthPremiseStatus` describes the exact cited source premises, never
+      // the model-authored objective title or description. A locally admitted
+      // verbatim claim may support formal premise binding while the learner-
+      // visible instructional wording remains ordinary AI-authored structure.
+      return exactSelectedClaims(bundle).length > 0;
+    })
+    .sort((a, b) => Number(directlySelected(b)) - Number(directlySelected(a)));
   const evidenceOffers = ctx.evidenceCatalog.filter((offer) =>
     evidenceKeys.has(evidenceKey(offer)),
   );
@@ -742,7 +802,13 @@ export function materializeCurriculumProposal(
             selectedEvidence.push(verified);
           }
         }
-        const authority = authorityStatus(objective, evidence, ctx, id);
+        const authority = authorityStatus(
+          objective,
+          evidence,
+          ctx,
+          id,
+          ctx.deterministicCoverageByNodeKey?.get(proposed.key)?.sourceBlockIds,
+        );
         if (authority.critique) {
           authority.critique.objectiveId = objectiveId;
           authorityCritiques.push(authority.critique);

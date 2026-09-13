@@ -4,6 +4,10 @@ import type {
   CurriculumCoverageReviewInput,
 } from './curriculumCoverage.js';
 import type {
+  FormalScoringReviewInput,
+  FormalBlindSolution,
+  FormalScoringReviewProposal,
+  FormalScoringChallenges,
   AlignmentLanguage,
   AlignmentProposalPayload,
   AssessmentMode,
@@ -148,6 +152,7 @@ export type ProviderNormalizationActionCode =
   | 'nullable_field_defaulted'
   | 'unsupported_optional_mapping_removed'
   | 'worked_interaction_fields_relocated'
+  | 'opaque_identity_expanded'
   | 'supplementary_citation_demoted';
 
 export interface ProviderNormalizationAction {
@@ -179,6 +184,8 @@ export interface ProviderCallOptions {
   validateCandidate?: ((candidate: unknown) => ProviderCandidateValidation) | undefined;
   /** Internal telemetry hook fired immediately before a physical request is sent. */
   onRequestSent?: (() => void) | undefined;
+  /** A failed transport is retained before starting a fresh physical attempt. */
+  onTransportRetry?: ((error: Error) => void) | undefined;
   /** Internal telemetry hook for provider-reported usage of the current request. */
   onUsage?: ((usage: ProviderUsage) => void) | undefined;
   /**
@@ -606,6 +613,19 @@ export interface AssessmentTargetSummary {
   openMistakes: number;
 }
 
+/** Private revision context. Rejected drafts and audit witnesses are never authority. */
+export interface FormalAssessmentReviewFeedback {
+  stem: string;
+  reason: string;
+  draft?: AssessmentProposalPayload['items'][number];
+  independentReview?: {
+    question: FormalScoringReviewInput['question'];
+    blindSolution: FormalBlindSolution;
+    challenges?: FormalScoringChallenges;
+    review: FormalScoringReviewProposal;
+  };
+}
+
 export interface AssessmentProposalInput {
   /** Local task asks the learner to construct the scenario; author source criteria only. */
   learnerGeneratedTransfer?: boolean;
@@ -636,6 +656,9 @@ export interface AssessmentProposalInput {
       premiseKinds: Array<'expected_answer' | 'rubric_point'>;
     }>;
   }>;
+  /** Enable derived scoring only when a separate blind solve and review will run. */
+  semanticScoringReview?: boolean;
+  formalReviewFeedback?: FormalAssessmentReviewFeedback[];
   teachingSurfaceCatalogue?: Array<{
     teachingSurfaceRef: string;
     surfaceKind:
@@ -1329,6 +1352,20 @@ export interface TeachingStrategyInput {
 }
 
 export interface LlmProvider extends VisualDescriptionProvider {
+  solveFormalAssessment?(
+    input: FormalScoringReviewInput,
+    opts?: ProviderCallOptions,
+  ): Promise<FormalBlindSolution>;
+  challengeFormalScoring?(
+    input: FormalScoringReviewInput,
+    opts?: ProviderCallOptions,
+  ): Promise<FormalScoringChallenges>;
+  reviewFormalScoring?(
+    input: FormalScoringReviewInput & {
+      blindSolution: FormalBlindSolution;
+    },
+    opts?: ProviderCallOptions,
+  ): Promise<FormalScoringReviewProposal>;
   planTeachingStrategies?(
     input: TeachingStrategyInput,
     opts?: ProviderCallOptions,

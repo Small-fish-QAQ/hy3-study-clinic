@@ -121,6 +121,113 @@ function makeProvider(fetchImpl: typeof fetch, timeoutMs = 30_000): Hy3Provider 
   });
 }
 
+describe('bounded provider transport and output recovery', () => {
+  it('increases output headroom after truncation and does not reuse partial JSON', async () => {
+    const requests: Record<string, unknown>[] = [];
+    const fetchImpl = vi.fn(async (_url: string, init?: RequestInit) => {
+      requests.push(JSON.parse(String(init!.body)));
+      return requests.length === 1
+        ? new Response(
+            JSON.stringify({
+              choices: [{ message: { content: '{"items":' }, finish_reason: 'length' }],
+            }),
+            { status: 200 },
+          )
+        : jsonResponse(JSON.stringify(genericAssessmentProposal));
+    }) as unknown as typeof fetch;
+    await makeProvider(fetchImpl).proposeAssessment(assessmentInput);
+    expect(requests).toHaveLength(2);
+    expect(requests.map((r) => r.max_tokens)).toEqual([16_384, 32_768]);
+    expect(JSON.stringify(requests[1]!.messages)).not.toContain('"role":"assistant"');
+  });
+  it('records a transient transport retry before accepting the successful response', async () => {
+    const retry = vi.fn();
+    const fetchImpl = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('temporary socket loss'))
+      .mockResolvedValueOnce(
+        jsonResponse(JSON.stringify(genericAssessmentProposal)),
+      ) as unknown as typeof fetch;
+    await makeProvider(fetchImpl).proposeAssessment(assessmentInput, { onTransportRetry: retry });
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(retry).toHaveBeenCalledTimes(1);
+  });
+  it.each([true, false])(
+    'preserves a content repair after clean output recovery, success=%s',
+    async (success) => {
+      const invalid = structuredClone(genericAssessmentProposal);
+      invalid.items[0]!.question.stem = '';
+      const partial = '{"items":[{"partialMarker":"discard-me"';
+      const fetchImpl = vi
+        .fn()
+        .mockResolvedValueOnce(
+          new Response(
+            JSON.stringify({
+              choices: [{ message: { content: partial }, finish_reason: 'length' }],
+            }),
+            { status: 200 },
+          ),
+        )
+        .mockResolvedValueOnce(jsonResponse(JSON.stringify(invalid)))
+        .mockResolvedValueOnce(
+          jsonResponse(JSON.stringify(success ? genericAssessmentProposal : invalid)),
+        );
+      const diagnostics: StructuredOutputDiagnostic[] = [];
+      const pending = makeProvider(fetchImpl as unknown as typeof fetch).proposeAssessment(
+        assessmentInput,
+        {
+          onStructuredOutputDiagnostic: (diagnostic) => diagnostics.push(diagnostic),
+        },
+      );
+      if (success) await expect(pending).resolves.toMatchObject(genericAssessmentProposal);
+      else
+        await expect(pending).rejects.toMatchObject({
+          technicalFailureCode: 'REPAIR_EXHAUSTED:SCHEMA_VALIDATION_FAILURE',
+        });
+      expect(fetchImpl).toHaveBeenCalledTimes(3);
+      const bodies = fetchImpl.mock.calls.map((call) =>
+        JSON.parse(String((call[1] as RequestInit).body)),
+      );
+      expect(bodies.map((body) => body.max_tokens)).toEqual([16_384, 32_768, 32_768]);
+      expect(JSON.stringify(bodies.slice(1))).not.toContain('discard-me');
+      expect(
+        bodies[2].messages.find((message: { role: string }) => message.role === 'assistant')
+          .content,
+      ).toBe(JSON.stringify(invalid));
+      expect(diagnostics.map((diagnostic) => diagnostic.attemptKind)).toEqual([
+        'original',
+        'retry',
+        'repair',
+      ]);
+      expect(diagnostics[1]?.repairAction).toBe('requested');
+    },
+  );
+  it('allows clean output recovery when a content correction is truncated', async () => {
+    const invalid = structuredClone(genericAssessmentProposal);
+    invalid.items[0]!.question.stem = '';
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse(JSON.stringify(invalid)))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            choices: [{ message: { content: '{"items":' }, finish_reason: 'length' }],
+          }),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(jsonResponse(JSON.stringify(genericAssessmentProposal)));
+    await expect(
+      makeProvider(fetchImpl as unknown as typeof fetch).proposeAssessment(assessmentInput),
+    ).resolves.toMatchObject(genericAssessmentProposal);
+    expect(fetchImpl).toHaveBeenCalledTimes(3);
+    const last = JSON.parse(String(fetchImpl.mock.calls[2]![1].body));
+    expect(last.messages.some((message: { role: string }) => message.role === 'assistant')).toBe(
+      false,
+    );
+  });
+});
+
 it('accepts a concise Tutor reply without model-authored workflow metadata and validates its sources', async () => {
   const input: TutorTurnInput = {
     workspaceName: 'Course',
@@ -466,7 +573,7 @@ describe('Hy3Provider objective-authority semantic methods', () => {
       }),
     ).resolves.toEqual(semanticRepairProposal);
     expect(schemaNames).toEqual([
-      'objective-authority-semantic-evaluation-v4',
+      'objective-authority-semantic-evaluation-v5-conceptual-explanation',
       'objective-authority-semantic-repair-v2-claim-scope',
     ]);
     const calls = (fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls;

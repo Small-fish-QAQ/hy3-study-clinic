@@ -14,6 +14,7 @@ import { ProviderError } from '../llm/errors.js';
 import type {
   LessonSlotContentGenerationInput,
   PracticeContentGenerationInput,
+  PracticeRepairInput,
   ProviderCallOptions,
   StructuredOutputDiagnostic,
   TutorTurnInput,
@@ -4509,6 +4510,35 @@ async function failedPracticeHarness() {
 }
 
 describe('Post-Practice recovery', () => {
+  it('corrects one independently rejected repair within the same preparation without granting credit', async () => {
+    const { harness, get, act } = await failedPracticeHarness();
+    const author = harness.provider.generatePracticeRepair.bind(harness.provider);
+    const review = harness.provider.reviewTeachingContent.bind(harness.provider);
+    const requests: PracticeRepairInput[] = [];
+    let reviews = 0;
+    harness.provider.generatePracticeRepair = async (input, opts) => {
+      requests.push(structuredClone(input));
+      const content = await author(input, opts);
+      if (input.revision) content.explanation += ' 必须同时满足两项条件。';
+      return content;
+    };
+    harness.provider.reviewTeachingContent = async (input, opts) => {
+      const result = await review(input, opts);
+      if (reviews++ === 0)
+        result.findings.push({
+          itemId: 'repair',
+          code: 'insufficient_evidence',
+          problem: 'The explanation omitted the necessary condition.',
+          repairInstruction: 'State the missing condition in the explanation.',
+        });
+      return result;
+    };
+    await act({ kind: 'prepare_practice_repair', learnerNote: 'I confused the conditions.' });
+    expect(requests).toHaveLength(2);
+    expect(requests[1]!.revision?.findings.join(' ')).toContain('necessary condition');
+    expect(get().practice?.recovery?.phase).toBe('repair');
+    expect(harness.repos.mastery.listByWorkspace('ws_1')).toHaveLength(0);
+  });
   it('recovers the accepted author stage after review interruption and fences concurrent preparation', async () => {
     const { harness, get, act } = await failedPracticeHarness();
     const original = harness.provider.generatePracticeRepair.bind(harness.provider);

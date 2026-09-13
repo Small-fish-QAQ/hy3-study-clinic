@@ -331,6 +331,40 @@ describe('source truth/premise authority', () => {
     ).toEqual([]);
   });
 
+  it('retains late source conditions in bounded idempotent authority batches', () => {
+    const statements = Array.from(
+      { length: 24 },
+      (_, index) => `Valve ${index + 1} stays closed unless its own latch is verified.`,
+    );
+    const content = statements.join(' ');
+    db.prepare('UPDATE source_blocks SET content = ?, end_offset = ? WHERE id = ?').run(
+      content,
+      content.length,
+      BLOCK_ID,
+    );
+    const active = db
+      .prepare('SELECT active_revision_id FROM materials WHERE id = ?')
+      .get(MATERIAL_ID) as { active_revision_id: string };
+    const first = service.ensureVerbatimAssessmentAuthority(
+      'ws_1',
+      MATERIAL_ID,
+      active.active_revision_id,
+    );
+    const second = service.ensureVerbatimAssessmentAuthority(
+      'ws_1',
+      MATERIAL_ID,
+      active.active_revision_id,
+    );
+    expect(second.map((b) => b.record.id)).toEqual(first.map((b) => b.record.id));
+    for (const kind of ['expected_answer', 'rubric_point']) {
+      const batches = first.filter((b) => b.record.policyBasis.premiseKind === kind);
+      expect(batches.every((b) => b.claims.length <= 10)).toBe(true);
+      expect(new Set(batches.flatMap((b) => b.claims.map((c) => c.quote)))).toEqual(
+        new Set(statements),
+      );
+    }
+  });
+
   it('never admits explicitly derived text as blocking source authority', () => {
     const active = db
       .prepare('SELECT active_revision_id FROM materials WHERE id = ?')

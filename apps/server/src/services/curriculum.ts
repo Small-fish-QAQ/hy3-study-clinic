@@ -42,6 +42,7 @@ import {
   CURRICULUM_COVERAGE_REGIONS_PER_REVIEW,
   CurriculumCoverageReviewSchema,
   curriculumCoverageGaps,
+  curriculumCoverageSchemaName,
   partitionCurriculumCoverageInput,
   validateCurriculumCoverageReview,
   validateCurriculumCoverageRepair,
@@ -2183,7 +2184,7 @@ export function createCurriculumService({
               const result = await runRecoverableGenerationStage({
                 ...coverageStage,
                 stageIdentity: { ...generationIdentity, input },
-                schemaFingerprint: 'curriculum-teaching-coverage-v2-constructs',
+                schemaFingerprint: curriculumCoverageSchemaName(input),
                 validateResult: (raw) => {
                   if (!validateCurriculumCoverageReview(raw, input).valid)
                     throw ProviderError.invalidOutput(
@@ -2282,6 +2283,7 @@ export function createCurriculumService({
                 return validateCurriculumCoverageRepair(
                   CurriculumDetailProposalPayloadSchema.parse(raw),
                   original,
+                  coverage,
                 );
               };
               repairAttempted = true;

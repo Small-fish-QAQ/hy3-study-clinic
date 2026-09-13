@@ -36,7 +36,7 @@ export const OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_ACCEPTED_POLICIES = new Set([
   OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_POLICY,
 ]);
 export const OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_BATCH = 24;
-export const OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_CANDIDATES = 12;
+export const OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_CANDIDATES = 64;
 /** Eight fixed evaluator batches; detail generation must stay below this before evaluation. */
 export const OBJECTIVE_AUTHORITY_SEMANTIC_SUPPORT_MAX_OBJECTIVES = 192;
 
@@ -555,6 +555,11 @@ const IDENTIFY_CORE = new Set<ObjectiveAuthoritySupportType>([
   'definition',
 ]);
 const EXPLAIN_CORE = new Set<ObjectiveAuthoritySupportType>([
+  // A sufficient definition can ground conceptual explanation. The independent
+  // review still has to attest the entire objective; a definition cannot supply
+  // a missing mechanism merely because it concerns the same topic.
+  'definition',
+  'discrimination',
   'relationship',
   'mechanism',
   'reason',
@@ -738,6 +743,8 @@ function requiredCore(
   if (construct === 'identify') return IDENTIFY_CORE;
   if (construct === 'explain') return EXPLAIN_CORE;
   if (construct === 'apply') return APPLY_CORE;
+  if (construct === 'design') return new Set([...APPLY_CORE, 'comparison']);
+  if (construct === 'evaluate') return new Set([...APPLY_CORE, 'comparison', 'discrimination']);
   return new Set();
 }
 
@@ -854,6 +861,7 @@ function resolveObjectiveAuthoritySemanticEvaluation(
     return !structurallyConsistentGroups.some(
       (other, otherIndex) =>
         otherIndex !== groupIndex &&
+        other.supportType === group.supportType &&
         other.evidenceRefs.length < group.evidenceRefs.length &&
         other.evidenceRefs.every((evidenceRef) => refs.has(evidenceRef)),
     );
@@ -1237,7 +1245,10 @@ function validatePersistedConstructMapping(
         fragment.status === 'supported' && fragment.supportType ? [fragment.supportType] : [],
       )
     : artifact.supportGroups.map((group) => group.supportType);
-  if (artifact.construct === 'design' || artifact.construct === 'evaluate') {
+  if (
+    isV1SemanticSupport(artifact) &&
+    (artifact.construct === 'design' || artifact.construct === 'evaluate')
+  ) {
     add(
       'semantic_construct_prohibited_v1',
       `Objective ${objectiveId} uses a construct prohibited by the v1 semantic-support gate.`,
@@ -1522,7 +1533,9 @@ function validateCurriculumObjectiveAuthoritySemanticSupportScope(
       if (
         requiresFormalSemanticAuthority &&
         artifact.verdict !== 'pass' &&
-        (!confinedGeneralFailure || diagnostics.length > objectiveDiagnosticStart)
+        (['formal_provider', 'formal_admission', 'formal_credit'].includes(boundary) ||
+          !confinedGeneralFailure ||
+          diagnostics.length > objectiveDiagnosticStart)
       ) {
         add(
           'semantic_support_failed',

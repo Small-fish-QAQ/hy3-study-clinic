@@ -39,9 +39,10 @@ export function transferPerformancePassed(result: TransferPerformance | undefine
   );
 }
 
-export function unitTransferPrompt(objective: string, round: number): string {
+export function unitTransferPrompt(objective: string, round: number, description?: string): string {
   return (
     `综合迁移检查：${objective}\n` +
+    (description ? `本次需要展示的能力：${description}\n` : '') +
     (round > 0 ? '请换一个与之前作答不同的情境，重新完成以下任务。\n' : '') +
     '1. 自己构造一个课堂示例之外的具体新情境，写清已知条件和需要作出的判断。\n' +
     '2. 结合资料说明你如何把这个目标涉及的概念、关系或规则用于该情境，并解释判断依据。\n' +

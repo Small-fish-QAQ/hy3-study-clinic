@@ -91,6 +91,9 @@ export const TeachingContentReviewSchema = z
   .strict();
 export type TeachingContentReview = z.infer<typeof TeachingContentReviewSchema>;
 
+/** One initial review plus at most two corrections when concrete defects improve. */
+export const MAX_TEACHING_CONTENT_REVIEWS = 3;
+
 const TeachingContentReviewReceiptSchema = z
   .object({
     logicalCallId: z.string().min(1),
@@ -116,7 +119,11 @@ export const LessonPedagogyEvaluationSchema = z
     claimedAgendaMinutes: z.number().int().positive(),
     findings: z.array(LessonPedagogyFindingSchema).max(100),
     evaluatedAt: z.string().datetime(),
-    contentReview: z.array(TeachingContentReviewReceiptSchema).min(1).max(2).optional(),
+    contentReview: z
+      .array(TeachingContentReviewReceiptSchema)
+      .min(1)
+      .max(MAX_TEACHING_CONTENT_REVIEWS)
+      .optional(),
     teachingDesign: z
       .object({
         logicalCallId: z.string().min(1),
@@ -149,7 +156,11 @@ export const PracticeQualityEvaluationSchema = z
     boundedRepairAttempted: z.boolean(),
     findings: z.array(PracticeQualityFindingSchema).max(100),
     evaluatedAt: z.string().datetime(),
-    contentReview: z.array(TeachingContentReviewReceiptSchema).min(1).max(2).optional(),
+    contentReview: z
+      .array(TeachingContentReviewReceiptSchema)
+      .min(1)
+      .max(MAX_TEACHING_CONTENT_REVIEWS)
+      .optional(),
   })
   .strict();
 export type PracticeQualityEvaluation = z.infer<typeof PracticeQualityEvaluationSchema>;

@@ -64,3 +64,4 @@ export * from './provider/payloads.js';
 
 export { SAMPLE_MATERIAL_CONTENT, SAMPLE_MATERIAL_TITLE } from './sampleMaterial.js';
 export * from './domain/transferAssessment.js';
+export * from './domain/formalScoring.js';

@@ -14,6 +14,9 @@ import {
   type Quiz,
   type Rubric,
   type VerifiedGrounding,
+  FormalScoringReviewSchema,
+  type FormalScoringReviewInput,
+  type TransferTask,
 } from '@hy3-clinic/shared';
 import { AppError, notFound } from '../errors.js';
 import { verifyGrounding } from '../grounding/verify.js';
@@ -23,6 +26,7 @@ import { alignRubricToQuestion } from '../grading/rubricAlignment.js';
 import type {
   AssessmentProposalInput,
   AssessmentTargetSummary,
+  FormalAssessmentReviewFeedback,
   LlmProvider,
   ProviderCallOptions,
 } from '../llm/provider.js';
@@ -32,6 +36,12 @@ import { newId } from '../util/ids.js';
 import type { MisconceptionsService } from './misconceptions.js';
 import { createTelemetryProvider } from './providerTelemetry.js';
 import { resolveReviewTargetContext } from './reviewSuccessor.js';
+import {
+  scoringFingerprint,
+  scoringQuestionFingerprint,
+  scoringReviewPassed,
+  validateScoringReviewProposal,
+} from './formalScoringReview.js';
 
 export interface AssessmentServiceDeps {
   repos: Repositories;
@@ -47,7 +57,9 @@ export interface AssessmentCreation {
 }
 
 interface AssessmentGenerationPolicy {
+  formalReviewFeedback?: FormalAssessmentReviewFeedback[];
   learnerGeneratedTransfer?: boolean;
+  learnerTransfer?: { prompt: string; task: TransferTask };
   previousPrompts?: string[];
   requiredRepresentation: EvidenceRepresentation | null;
   requestedChallengeFamily: MasteryChallengeFamily | null;
@@ -314,6 +326,13 @@ export function createAssessmentService({
           ? Math.min(MAX_ASSESSMENT_QUESTIONS, generationPolicy.objectiveCatalogue.length)
           : Math.min(MAX_ASSESSMENT_QUESTIONS, Math.max(3, targetSummaries.length));
 
+    const semanticScoringReview = Boolean(
+      request.formalOnly &&
+      generationPolicy.scoringAuthorityCatalogue?.length &&
+      inferenceProvider.solveFormalAssessment &&
+      inferenceProvider.reviewFormalScoring,
+    );
+
     const providerInput: AssessmentProposalInput = {
       workspaceName: workspace.name,
       learnerGeneratedTransfer: generationPolicy.learnerGeneratedTransfer,
@@ -329,6 +348,8 @@ export function createAssessmentService({
       scoringAuthorityCatalogue: generationPolicy.scoringAuthorityCatalogue,
       teachingSurfaceCatalogue: generationPolicy.teachingSurfaceCatalogue,
       previousPrompts: generationPolicy.previousPrompts,
+      semanticScoringReview,
+      formalReviewFeedback: generationPolicy.formalReviewFeedback,
     };
     const payload = await inferenceProvider.proposeAssessment(providerInput, {
       ...opts,
@@ -354,6 +375,7 @@ export function createAssessmentService({
     const questions: Question[] = [];
     const blueprints: QuestionBlueprint[] = [];
     const rejected: Array<{ stem: string; reason: string }> = [];
+    const revisionFeedback: FormalAssessmentReviewFeedback[] = [];
 
     // Documented rule (mirrors remediation quizzes): practice-oriented
     // assessment questions re-test the open mistakes of their concept, so
@@ -370,7 +392,18 @@ export function createAssessmentService({
 
     for (const item of payload.items.slice(0, questionCount)) {
       const q = item.question;
-      const rejectItem = (reason: string) => rejected.push({ stem: q.stem, reason });
+      const rejectItem = (
+        reason: string,
+        independentReview?: FormalAssessmentReviewFeedback['independentReview'],
+      ) => {
+        rejected.push({ stem: q.stem, reason });
+        revisionFeedback.push({
+          stem: q.stem,
+          reason,
+          draft: structuredClone(item),
+          ...(independentReview ? { independentReview: structuredClone(independentReview) } : {}),
+        });
+      };
 
       if (!allowedTypes.includes(q.type) || q.type !== item.blueprint.questionType) {
         rejectItem(`题型不允许或与蓝图不一致:${q.type}`);
@@ -398,11 +431,14 @@ export function createAssessmentService({
         continue;
       }
       const evidence: VerifiedGrounding[] = [primary.grounding];
-      let droppedEvidence = false;
-      for (const extra of item.extraEvidence.slice(0, 3)) {
+      const evidenceIndexMap = new Map([[0, 0]]);
+      const evidenceFailures = new Map<number, string>();
+      for (const [index, extra] of item.extraEvidence.slice(0, 3).entries()) {
         const verification = verifyGrounding(blocks, extra);
-        if (verification.ok) evidence.push(verification.grounding);
-        else droppedEvidence = true;
+        if (verification.ok) {
+          evidenceIndexMap.set(index + 1, evidence.length);
+          evidence.push(verification.grounding);
+        } else evidenceFailures.set(index + 1, `${extra.blockId}: ${verification.message}`);
       }
 
       const blockMaterial = (blockId: string) =>
@@ -418,15 +454,15 @@ export function createAssessmentService({
         continue;
       }
 
-      const stepInvalid = item.blueprint.reasoningSteps.some((step) =>
-        step.evidenceIndexes.some((index) => index >= evidence.length),
+      const invalidStepIndex = item.blueprint.reasoningSteps.flatMap((step) =>
+        step.evidenceIndexes.filter((index) => !evidenceIndexMap.has(index)),
       );
-      if (stepInvalid) {
-        if (droppedEvidence) {
-          rejectItem('推理步骤引用的证据未通过原文校验。');
-          continue;
-        }
-        rejectItem('推理步骤引用了不存在的证据序号。');
+      if (invalidStepIndex.length) {
+        rejectItem(
+          `推理步骤引用的证据无效：${[...new Set(invalidStepIndex)]
+            .map((index) => `${index} (${evidenceFailures.get(index) ?? '不存在的证据序号'})`)
+            .join('；')}`,
+        );
         continue;
       }
 
@@ -449,7 +485,7 @@ export function createAssessmentService({
         learningObjective: item.blueprint.learningObjective,
         expectedReasoningSteps: item.blueprint.reasoningSteps.map((step) => ({
           description: step.description,
-          evidenceIndexes: [...step.evidenceIndexes],
+          evidenceIndexes: step.evidenceIndexes.map((index) => evidenceIndexMap.get(index)!),
         })),
         misconceptionId: misconceptionTarget,
         evidence,
@@ -467,7 +503,12 @@ export function createAssessmentService({
         const evidenceTexts = evidence.map(
           (e) => blocks.find((b) => b.id === e.blockId)?.content ?? e.quote,
         );
-        const aligned = alignRubricToQuestion(q.stem, q.rubricKeyPoints, evidenceTexts);
+        const aligned = semanticScoringReview
+          ? {
+              ok: true as const,
+              keyPoints: q.rubricKeyPoints.map((p) => ({ text: p.text, required: p.required })),
+            }
+          : alignRubricToQuestion(q.stem, q.rubricKeyPoints, evidenceTexts);
         if (!aligned.ok) {
           rejectItem(aligned.message);
           continue;
@@ -480,7 +521,10 @@ export function createAssessmentService({
         quizId,
         index: questions.length,
         type: q.type,
-        stem: q.stem,
+        stem: generationPolicy.learnerTransfer?.prompt ?? q.stem,
+        ...(generationPolicy.learnerTransfer
+          ? { transferTask: generationPolicy.learnerTransfer.task }
+          : {}),
         conceptId: concept.id,
         conceptName: concept.name,
         grounding: primary.grounding,
@@ -525,11 +569,133 @@ export function createAssessmentService({
           : {}),
       };
 
+      if (semanticScoringReview) {
+        const objective = generationPolicy.objectiveCatalogue?.find(
+          (o) => o.objectiveRef === item.objectiveRef,
+        );
+        if (!objective) {
+          rejectItem('独立评分审核缺少当前目标。');
+          continue;
+        }
+        const evidenceBlockIds = new Set(evidence.map((e) => e.blockId));
+        // Review with the same original source context available to the
+        // author, including qualifications outside its chosen quotation.
+        // Supporting claim references remain restricted to the cited scope.
+        const sourceBlocks = blocks.filter(
+          (b) => !b.contentOrigin || b.contentOrigin === 'extracted_original',
+        );
+        const claims = (
+          generationPolicy.scoringAuthorityCatalogue?.find(
+            (c) => c.objectiveRef === item.objectiveRef,
+          )?.claims ?? []
+        )
+          .filter((c) => evidenceBlockIds.has(c.sourceBlockId))
+          .map((c, i) => ({ ref: `P${i + 1}`, sourceBlockId: c.sourceBlockId, text: c.text }));
+        if (!claims.length) {
+          rejectItem('独立评分审核缺少实际来源命题。');
+          continue;
+        }
+        const reviewInput: FormalScoringReviewInput = {
+          question: {
+            type: question.type,
+            stem: question.stem,
+            expectedAnswer: question.expectedAnswer,
+            rubric: question.rubric,
+            transferTask: question.transferTask,
+          },
+          objective: { title: objective.title, description: objective.description },
+          sources: sourceBlocks.map((b) => ({
+            sourceBlockId: b.id,
+            materialRevisionId: b.materialRevisionId!,
+            content: b.content,
+          })),
+          claims,
+          priorExposure: [
+            ...(generationPolicy.teachingSurfaceCatalogue ?? []).map((s) => s.text),
+            ...(generationPolicy.previousPrompts ?? []),
+          ],
+        };
+        // These checks have isolated inputs and do not consume each other's
+        // output. Settle both before returning or failing so no in-flight
+        // telemetry can outlive this assessment operation.
+        const [blindResult, challengeResult] = await Promise.allSettled([
+          inferenceProvider.solveFormalAssessment!(reviewInput, {
+            ...opts,
+            telemetry: { ...opts?.telemetry, workspaceId, operationType: 'formal_blind_solution' },
+          }),
+          inferenceProvider.challengeFormalScoring
+            ? inferenceProvider.challengeFormalScoring(reviewInput, {
+                ...opts,
+                telemetry: {
+                  ...opts?.telemetry,
+                  workspaceId,
+                  operationType: 'formal_scoring_challenges',
+                },
+              })
+            : Promise.resolve(undefined),
+        ]);
+        if (blindResult.status === 'rejected') throw blindResult.reason;
+        if (challengeResult.status === 'rejected') throw challengeResult.reason;
+        const blindSolution = blindResult.value;
+        const challenges = challengeResult.value;
+        if (challenges) reviewInput.challenges = challenges;
+        const review = await inferenceProvider.reviewFormalScoring!(
+          { ...reviewInput, blindSolution },
+          {
+            ...opts,
+            telemetry: { ...opts?.telemetry, workspaceId, operationType: 'formal_scoring_review' },
+          },
+        );
+        const reviewDiagnostics = validateScoringReviewProposal(review, reviewInput);
+        if (!blindSolution.answerable || !scoringReviewPassed(review) || reviewDiagnostics.length) {
+          rejectItem(
+            `独立评分审核未通过：${
+              [
+                ...blindSolution.limitations,
+                ...review.issues,
+                ...reviewDiagnostics,
+                ...(review.challengeResolutions ?? [])
+                  .filter((r) => r.valid)
+                  .map((r) => r.rationale),
+                ...review.premises.filter((p) => !p.supported).map((p) => p.rationale),
+              ].join('；') || '题目、目标或评分依据不充分'
+            }`,
+            { question: reviewInput.question, blindSolution, challenges, review },
+          );
+          continue;
+        }
+        question.formalScoringReview = FormalScoringReviewSchema.parse({
+          policyVersion: challenges
+            ? 'formal-scoring-independent-review-v2'
+            : 'formal-scoring-independent-review-v1',
+          provider: provider.name,
+          questionFingerprint: scoringQuestionFingerprint(question),
+          objectiveFingerprint: scoringFingerprint(reviewInput.objective),
+          sources: sourceBlocks.map((b) => ({
+            sourceBlockId: b.id,
+            materialRevisionId: b.materialRevisionId,
+            contentFingerprint: scoringFingerprint(b.content),
+          })),
+          blindSolution,
+          ...(challenges
+            ? { challenges, challengeFingerprint: scoringFingerprint(challenges) }
+            : {}),
+          review,
+          claims,
+          reviewedAt: clock.now().toISOString(),
+        });
+      }
       questions.push(question);
       blueprints.push(blueprint);
     }
 
     if (questions.length === 0) {
+      if (semanticScoringReview && rejected.length && !generationPolicy.formalReviewFeedback) {
+        return prepare(workspaceId, input, opts, {
+          ...generationPolicy,
+          formalReviewFeedback: revisionFeedback,
+        });
+      }
       throw new AppError(
         ApiErrorCode.GroundingFailed,
         '生成的评估题均未通过本地校验(概念、题型或证据不合法),请重试。',

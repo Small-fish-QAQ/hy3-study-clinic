@@ -764,31 +764,31 @@ describe('objective-authority semantic evaluation scope', () => {
   });
 
   it('retains every bound candidate and reports non-fatal candidate-window truncation', () => {
-    const blocks = Array.from({ length: 14 }, (_, index) =>
+    const blocks = Array.from({ length: 66 }, (_, index) =>
       block(`block_${index + 1}`, `Exact candidate ${index + 1}.`),
     );
     const bundles = blocks.map((sourceBlock, index) =>
       authority(`authority_${index + 1}`, sourceBlock.id, sourceBlock.content),
     );
     const bound = objective({
-      truthAuthorityRecordIds: ['authority_14'],
-      authorityClaimIds: ['claim_authority_14'],
-      authoritySourceBlockIds: ['block_14'],
-      formalEvidenceSourceBlockIds: ['block_14'],
+      truthAuthorityRecordIds: ['authority_66'],
+      authorityClaimIds: ['claim_authority_66'],
+      authoritySourceBlockIds: ['block_66'],
+      formalEvidenceSourceBlockIds: ['block_66'],
     });
     const [batch] = batchesFor({ objectives: [bound], blocks, bundles });
     const input = batch!.input.objectives[0]!;
     const binding = batch!.aliasBindings.get(input.objectiveRef)!;
 
-    expect(input.candidates).toHaveLength(12);
+    expect(input.candidates).toHaveLength(64);
     expect(input.candidates.map((candidate) => candidate.text)).toEqual([
-      ...blocks.slice(0, 11).map((sourceBlock) => sourceBlock.content),
-      blocks[13]!.content,
+      ...blocks.slice(0, 63).map((sourceBlock) => sourceBlock.content),
+      blocks[65]!.content,
     ]);
     expect(binding).toMatchObject({
-      totalCandidateCount: 14,
+      totalCandidateCount: 66,
       candidateWindowTruncated: true,
-      boundEvidenceRefs: ['evidence_12'],
+      boundEvidenceRefs: ['evidence_64'],
     });
     const noCoverage = singleEvaluation(batch!, { verdict: 'fail' });
     const decision = deriveObjectiveAuthoritySemanticEvaluationDecision(
@@ -805,7 +805,7 @@ describe('objective-authority semantic evaluation scope', () => {
         evaluatedAt: NOW,
       }).get(bound.id),
     ).toMatchObject({
-      candidateWindow: { totalCandidateCount: 14, offeredCandidateCount: 12, truncated: true },
+      candidateWindow: { totalCandidateCount: 66, offeredCandidateCount: 64, truncated: true },
       verdict: 'fail',
     });
   });
@@ -1097,7 +1097,7 @@ describe('objective-authority semantic proposal validation', () => {
     expect(validateObjectiveAuthoritySemanticEvaluationProposal(batch!, pass).valid).toBe(true);
   });
 
-  it('locally fails definition-only EXPLAIN and explanation-only APPLY support', () => {
+  it('accepts independently sufficient definitions for EXPLAIN but not explanation-only APPLY', () => {
     const [explainBatch] = batchesFor();
     const definitionOnly = singleEvaluation(explainBatch!, { supportType: 'definition' });
     const explainValidation = validateObjectiveAuthoritySemanticEvaluationProposal(
@@ -1115,7 +1115,7 @@ describe('objective-authority semantic proposal validation', () => {
         evaluatedAt: NOW,
       },
     ).get('objective_1')!;
-    expect(explainSupport.verdict).toBe('fail');
+    expect(explainSupport.verdict).toBe('pass');
 
     const applyObjective = objective({ formalAssessmentConstruct: 'apply' });
     const [applyBatch] = batchesFor({ objectives: [applyObjective] });
@@ -1457,10 +1457,12 @@ describe('persisted objective-authority semantic support', () => {
       designBatch!,
       designFailure,
     );
-    const designValidation = validateCurriculumObjectiveAuthoritySemanticSupport(
+    const designValidation = validateObjectiveAuthoritySemanticSupport(
       curriculum(designNodes),
+      [designNodes[0]!.learningUnit!.objectives[0]!],
+      {},
+      'formal_provider',
     );
-    expect(designValidation.diagnosticCodes).toContain('semantic_construct_prohibited_v1');
     expect(designValidation.diagnosticCodes).toContain('semantic_support_failed');
 
     const unsupportedFailure = singleEvaluation(batch!, {

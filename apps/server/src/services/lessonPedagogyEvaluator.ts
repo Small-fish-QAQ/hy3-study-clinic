@@ -1233,10 +1233,15 @@ function cognitiveLessonFindings(
       );
       inspectEvidence(
         interaction.activity,
-        process.steps
-          .slice(0, interaction.pauseAfterStepIndex + 1)
-          .map((step) => step.resultingState),
-        'activity.evidenceContrast must quote the modelled resultingState',
+        [
+          process.startingState,
+          ...(process.inputs ?? []),
+          interaction.activity.prompt,
+          ...process.steps
+            .slice(0, interaction.pauseAfterStepIndex + 1)
+            .map((step) => step.resultingState),
+        ],
+        'activity.evidenceContrast must quote an actual visible case fact',
       );
       inspectEvidence(
         interaction.transfer,
@@ -1759,6 +1764,9 @@ function workedProcessIssueCodes(
     ...process.steps.flatMap((step) => [step.action, step.reason, step.resultingState]),
   ];
   const substantiveWorkedText = (value: string) =>
+    /^(?:约|大约|approximately|about|≈|~)?\s*[+−-]?\d[\d.,%/÷×+−=≈<>≤≥()\s]*[\p{L}°℃℉%]*$/iu.test(
+      value.normalize('NFKC').trim(),
+    ) ||
     /^\s*\{[\p{L}\p{N}_ ,.-]*\}\s*$/u.test(value) ||
     // A labelled quantity or equation is an observable state too. This checks
     // representation only; the independent teaching review checks correctness.

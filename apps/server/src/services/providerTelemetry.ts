@@ -271,6 +271,18 @@ export function createTelemetryProvider<TProvider extends TelemetryProviderSurfa
           ...supplied,
           onRejectedCandidate: captureRejectedCandidate,
           onRequestSent: markSent,
+          onTransportRetry: (error) => {
+            supplied.onTransportRetry?.(error);
+            const retryStartedAt = clock.now().toISOString();
+            finishAttempt('failed', retryStartedAt, 'TRANSPORT_RETRY', error.message);
+            attemptNumber += 1;
+            attemptId = newId('llm_attempt');
+            attemptStartedAt = retryStartedAt;
+            usage = unknownUsage();
+            usageReported = false;
+            sent = false;
+            insertAttempt('retry');
+          },
           onUsage: (reported) => {
             usage = reported;
             usageReported = true;

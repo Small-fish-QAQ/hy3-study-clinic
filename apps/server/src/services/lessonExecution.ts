@@ -1411,114 +1411,127 @@ export function createLessonExecutionService({
               'Practice repair lost its current Lesson binding.',
             );
         };
-        const logicalCallId = newId('llm_call');
-        const content = await runRecoverableGenerationStage({
-          repos,
-          clock,
-          provider,
-          providerModel: provider.model ?? null,
-          operationId: claim.operationId,
-          owner: claim.owner,
-          fencingToken: claim.fencingToken,
-          workspaceId,
-          studySessionId: sessionId,
-          learningUnitId: current.learningUnitId,
-          assessmentId: null,
-          operationType: 'prepare_practice_repair',
-          schemaFingerprint: 'practice-repair-v6-complete-failed-case',
-          policyFingerprint: null,
-          sourceFingerprint: current.sourceContextFingerprint,
-          logicalCallId,
-          providerOptions: opts,
-          stageIdentity: {
-            briefId: brief.id,
-            stateId: current.id,
-            itemIndex: index,
-            round: ordinal,
-            request,
-            version: 'practice-repair-v6-complete-failed-case',
-          },
-          assertCurrent,
-          beforeGenerate: () =>
-            enforceAgentCostPolicies(repos, {
+        const { content, logicalCallId, reviewLogicalCallId } = await (async () => {
+          for (let contentAttempt = 0; contentAttempt < 2; contentAttempt++) {
+            commands.renew(claim, 5 * 60 * 1000);
+            const logicalCallId = newId('llm_call');
+            const content = await runRecoverableGenerationStage({
+              repos,
+              clock,
+              provider,
+              providerModel: provider.model ?? null,
+              operationId: claim.operationId,
+              owner: claim.owner,
+              fencingToken: claim.fencingToken,
               workspaceId,
+              studySessionId: sessionId,
+              learningUnitId: current.learningUnitId,
+              assessmentId: null,
               operationType: 'prepare_practice_repair',
-              studySessionId: sessionId,
-              at: clock.now().toISOString(),
-              confirmedPolicyIds: [],
-            }),
-          validateResult: (value) => validatePracticeRepair(value, noveltyInput),
-          invoke: (options) =>
-            provider.generatePracticeRepair!(structuredClone(request), {
-              ...options,
-              validateCandidate: (value) => {
-                try {
-                  validatePracticeRepair(value, noveltyInput);
-                  return { valid: true, diagnostics: [], diagnosticCodes: [] };
-                } catch (error) {
-                  return {
-                    valid: false,
-                    diagnostics: [error instanceof Error ? error.message : 'Invalid repair'],
-                    diagnosticCodes: ['practice_repair_invalid'],
-                  };
-                }
+              schemaFingerprint: 'practice-repair-v6-complete-failed-case',
+              policyFingerprint: null,
+              sourceFingerprint: current.sourceContextFingerprint,
+              logicalCallId,
+              providerOptions: opts,
+              stageIdentity: {
+                briefId: brief.id,
+                stateId: current.id,
+                itemIndex: index,
+                round: ordinal,
+                request,
+                version: 'practice-repair-v6-complete-failed-case',
               },
-            }),
-        });
-        const reviewLogicalCallId = newId('llm_call');
-        const reviewInput = practiceRepairReview(request, content);
-        commands.renew(claim, 5 * 60 * 1000);
-        const reviewed = await runRecoverableGenerationStage({
-          repos,
-          clock,
-          provider,
-          providerModel: provider.model ?? null,
-          operationId: claim.operationId,
-          owner: claim.owner,
-          fencingToken: claim.fencingToken,
-          workspaceId,
-          studySessionId: sessionId,
-          learningUnitId: current.learningUnitId,
-          assessmentId: null,
-          operationType: 'review_practice_repair',
-          schemaFingerprint: 'practice-repair-review-v1',
-          policyFingerprint: null,
-          sourceFingerprint: current.sourceContextFingerprint,
-          logicalCallId: reviewLogicalCallId,
-          providerOptions: opts,
-          stageIdentity: { briefId: brief.id, input: reviewInput },
-          assertCurrent,
-          beforeGenerate: () =>
-            enforceAgentCostPolicies(repos, {
+              assertCurrent,
+              beforeGenerate: () =>
+                enforceAgentCostPolicies(repos, {
+                  workspaceId,
+                  operationType: 'prepare_practice_repair',
+                  studySessionId: sessionId,
+                  at: clock.now().toISOString(),
+                  confirmedPolicyIds: [],
+                }),
+              validateResult: (value) => validatePracticeRepair(value, noveltyInput),
+              invoke: (options) =>
+                provider.generatePracticeRepair!(structuredClone(request), {
+                  ...options,
+                  validateCandidate: (value) => {
+                    try {
+                      validatePracticeRepair(value, noveltyInput);
+                      return { valid: true, diagnostics: [], diagnosticCodes: [] };
+                    } catch (error) {
+                      return {
+                        valid: false,
+                        diagnostics: [error instanceof Error ? error.message : 'Invalid repair'],
+                        diagnosticCodes: ['practice_repair_invalid'],
+                      };
+                    }
+                  },
+                }),
+            });
+            const reviewLogicalCallId = newId('llm_call');
+            const reviewInput = practiceRepairReview(request, content);
+            commands.renew(claim, 5 * 60 * 1000);
+            const reviewed = await runRecoverableGenerationStage({
+              repos,
+              clock,
+              provider,
+              providerModel: provider.model ?? null,
+              operationId: claim.operationId,
+              owner: claim.owner,
+              fencingToken: claim.fencingToken,
               workspaceId,
-              operationType: 'review_practice_repair',
               studySessionId: sessionId,
-              at: clock.now().toISOString(),
-              confirmedPolicyIds: [],
-            }),
-          validateResult: (value) => TeachingContentReviewSchema.parse(value),
-          invoke: (options) => reviewRepair.call(provider, structuredClone(reviewInput), options),
-        });
-        const findings = reviewed.findings
-          .filter((finding) => finding.code !== 'shallow_task')
-          .map((finding) => `${finding.problem} ${finding.repairInstruction}`);
-        for (const [i, question] of content.retest.entries()) {
-          const decisions = reviewed.decisions.filter(
-            (decision) => decision.actionId === `retest${i}.check`,
-          );
-          if (decisions.length !== 1 || decisions[0]!.answerId !== question.correctOptionId)
-            findings.push(
-              `Retest ${i + 1} lacks a unique independently confirmed answer. ${decisions[0]?.evidenceUsed ?? ''}`,
-            );
-        }
-        if (findings.length) {
-          invalidateGenerationDependency(repos, logicalCallId, clock.now().toISOString());
-          commands.appendEvent(claim, 'practice_repair_rejected', { draft: content, findings });
-          throw new AppError(
-            ApiErrorCode.ValidationError,
-            'The repair needs a content correction. Please retry.',
-          );
-        }
+              learningUnitId: current.learningUnitId,
+              assessmentId: null,
+              operationType: 'review_practice_repair',
+              schemaFingerprint: 'practice-repair-review-v1',
+              policyFingerprint: null,
+              sourceFingerprint: current.sourceContextFingerprint,
+              logicalCallId: reviewLogicalCallId,
+              providerOptions: opts,
+              stageIdentity: { briefId: brief.id, input: reviewInput },
+              assertCurrent,
+              beforeGenerate: () =>
+                enforceAgentCostPolicies(repos, {
+                  workspaceId,
+                  operationType: 'review_practice_repair',
+                  studySessionId: sessionId,
+                  at: clock.now().toISOString(),
+                  confirmedPolicyIds: [],
+                }),
+              validateResult: (value) => TeachingContentReviewSchema.parse(value),
+              invoke: (options) =>
+                reviewRepair.call(provider, structuredClone(reviewInput), options),
+            });
+            const findings = reviewed.findings
+              .filter((finding) => finding.code !== 'shallow_task')
+              .map((finding) => `${finding.problem} ${finding.repairInstruction}`);
+            for (const [i, question] of content.retest.entries()) {
+              const decisions = reviewed.decisions.filter(
+                (decision) => decision.actionId === `retest${i}.check`,
+              );
+              if (decisions.length !== 1 || decisions[0]!.answerId !== question.correctOptionId)
+                findings.push(
+                  `Retest ${i + 1} lacks a unique independently confirmed answer. ${decisions[0]?.evidenceUsed ?? ''}`,
+                );
+            }
+            if (findings.length) {
+              invalidateGenerationDependency(repos, logicalCallId, clock.now().toISOString());
+              commands.appendEvent(claim, 'practice_repair_rejected', { draft: content, findings });
+              if (contentAttempt === 0) {
+                request.revision = { draft: content, findings };
+                continue;
+              }
+              throw new AppError(
+                ApiErrorCode.ValidationError,
+                'The repair needs a content correction. Please retry.',
+                { kind: 'practice_repair_content_rejected', findings },
+              );
+            }
+            return { content, logicalCallId, reviewLogicalCallId };
+          }
+          throw new Error('Practice content review exhausted.');
+        })();
         return commands.complete(claim, () => {
           if (opts?.signal?.aborted) throw ProviderError.cancelled();
           assertCurrent();

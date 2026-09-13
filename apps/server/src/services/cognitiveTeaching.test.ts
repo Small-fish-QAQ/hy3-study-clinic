@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   LessonSlotContentProposalPayloadSchema,
   PracticeContentProposalPayloadSchema,
+  LessonPedagogyEvaluationSchema,
+  PracticeQualityEvaluationSchema,
   projectAcceptedLessonSegments,
   type DesiredDepth,
 } from '@hy3-clinic/shared';
@@ -122,8 +124,10 @@ describe('calibrated cognitive teaching contract', () => {
   });
   it('reviews visible content without author labels or answer keys and requires exact coverage', async () => {
     const f = await fixture();
+    f.process.learnerDecision = 'PRIVATE_GUIDED_RESULT_36_OVER_84';
     const prepared = prepareTeachingReview(f.lessonInput, f.lesson);
     const serialized = JSON.stringify(prepared.input);
+    expect(serialized).not.toContain('PRIVATE_GUIDED_RESULT_36_OVER_84');
     for (const key of [
       'reasoningOperation',
       'requiredInference',
@@ -169,6 +173,7 @@ describe('calibrated cognitive teaching contract', () => {
       (slot) => slot.workedProcess?.interaction,
     )!.workedProcess!;
     expect(reviewedProcess).not.toHaveProperty('result');
+    expect(reviewedProcess).not.toHaveProperty('learnerDecision');
     expect(reviewedProcess).not.toHaveProperty('whyResultFollows');
     expect(reviewedProcess).not.toHaveProperty('afterGuidedResponse.result');
     expect(reviewedProcess).not.toHaveProperty('afterTransferResponse.whyResultFollows');
@@ -299,6 +304,65 @@ describe('calibrated cognitive teaching contract', () => {
       }),
     });
     expect(failures).toBe(1);
+  });
+  it('permits a second content correction only after an actual draft change resolves a prior defect', async () => {
+    const f = await fixture();
+    let revisions = 0;
+    const verified = await verifyPreparedTeaching(
+      f.lessonInput,
+      f.lesson,
+      async (prepared, round) => ({
+        logicalCallId: `progressive-review-${round}`,
+        result: {
+          decisions: prepared.input.actionIds.map((actionId) => ({
+            actionId,
+            answerId: actionId.endsWith('.transfer') ? 'B' : 'A',
+            requiresCaseInference: true,
+            evidenceUsed: 'Visible case premises.',
+          })),
+          findings:
+            round < 2
+              ? [
+                  {
+                    itemId: f.worked.slotId,
+                    code: round === 0 ? 'accuracy' : 'insufficient_evidence',
+                    problem:
+                      round === 0
+                        ? 'Incorrect state update.'
+                        : 'A comparison still lacks a needed parameter.',
+                    repairInstruction: 'Correct the concrete case premise.',
+                  },
+                ]
+              : [],
+        },
+      }),
+      async (draft) => {
+        revisions++;
+        return {
+          ...draft,
+          narrative: { ...draft.narrative!, summary: `Corrected case premises ${revisions}.` },
+        };
+      },
+    );
+    expect(revisions).toBe(2);
+    expect(verified.receipts).toHaveLength(3);
+    expect(new Set(verified.receipts.map((r) => r.candidateHash)).size).toBe(3);
+    const lessonReceipt = LessonPedagogyEvaluationSchema.parse({
+      ...f.lessonEvaluation(),
+      contentReview: verified.receipts,
+    });
+    const practiceReceipt = PracticeQualityEvaluationSchema.parse({
+      ...f.practiceEvaluation(),
+      contentReview: verified.receipts,
+    });
+    expect(lessonReceipt.contentReview).toEqual(verified.receipts);
+    expect(practiceReceipt.contentReview).toEqual(verified.receipts);
+    expect(
+      LessonPedagogyEvaluationSchema.safeParse({
+        ...lessonReceipt,
+        contentReview: [...verified.receipts, verified.receipts[0]],
+      }).success,
+    ).toBe(false);
   });
   it('requires the worked interaction and evidence choices for normal Units at working fluency', async () => {
     const f = await fixture();

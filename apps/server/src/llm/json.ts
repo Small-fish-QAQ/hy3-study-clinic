@@ -35,7 +35,11 @@ function appearsIncompleteJson(text: string): boolean {
       stack.push(character);
     } else if (character === '}' || character === ']') {
       const expected = character === '}' ? '{' : '[';
-      if (stack.at(-1) === expected) stack.pop();
+      // A closing delimiter that contradicts the open container is a syntax
+      // error within the response. More output cannot complete this prefix;
+      // report the parse error so recovery can repair the actual structure.
+      if (stack.at(-1) !== expected) return false;
+      stack.pop();
     }
   }
   return inString || stack.length > 0;

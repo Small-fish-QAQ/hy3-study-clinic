@@ -1054,7 +1054,7 @@ describe('CourseHomeView action and authority rendering', () => {
 
     render(<CourseHomeView {...homeProps(value)} />);
 
-    const progress = screen.getByLabelText('目标与正式进度');
+    const progress = screen.getByLabelText('目标与学习路线进度');
     expect(progress).not.toHaveTextContent('截止时间');
     expect(progress).not.toHaveTextContent('Asia/Shanghai');
     expect(progress).toHaveTextContent('已完成 2 / 5 · 进行中 1 · 待修复 1 · 已延期 1');

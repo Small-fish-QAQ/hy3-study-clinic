@@ -932,6 +932,9 @@ describe('compositional Teaching providers', () => {
       recoveryAction: 'clean_regeneration',
     });
     expect(diagnostics[1]).toMatchObject({ attemptKind: 'retry' });
+    for (const call of (fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls) {
+      expect(JSON.parse(String(call[1]!.body))).not.toHaveProperty('response_format');
+    }
     const secondBody = JSON.parse(
       String((fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls[1]![1]!.body),
     ) as { messages: Array<{ content: string }> };
@@ -967,12 +970,51 @@ describe('compositional Teaching providers', () => {
     });
   });
 
-  it('T8/T14 exhausts after one clean regeneration even when it omits PR1', async () => {
+  it('repairs a middle-of-response delimiter error with its actual bytes and parse diagnostic', async () => {
+    const malformed =
+      '{"slots":[{"workedProcess":{"result":"COMPLETE_BUT_MALFORMED"},{"slotId":"L2"}]}';
+    const diagnostics: Array<{
+      possiblyIncomplete: boolean;
+      preparationFailure?: { failureCode: string };
+      recoveryAction?: string;
+    }> = [];
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(response(malformed))
+      .mockResolvedValueOnce(response(JSON.stringify(lessonPayload()))) as unknown as typeof fetch;
+
+    const result = await hy3(fetchImpl).generateLessonSlotContent(lessonInput(), {
+      validateCandidate: lessonValidation,
+      onStructuredOutputDiagnostic: (diagnostic) => diagnostics.push(diagnostic),
+    });
+
+    expect(result.slots.map((slot) => slot.slotId)).toEqual(['L1', 'L2']);
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(diagnostics[0]).toMatchObject({
+      possiblyIncomplete: false,
+      preparationFailure: { failureCode: 'malformed_json' },
+      recoveryAction: 'structured_repair',
+    });
+    const secondBody = JSON.parse(
+      String((fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls[1]![1]!.body),
+    ) as { messages: Array<{ role: string; content: string }> };
+    expect(secondBody.messages.some((m) => m.role === 'assistant' && m.content === malformed)).toBe(
+      true,
+    );
+    expect(secondBody.messages.at(-1)!.content).toContain('JSON 解析失败');
+    expect(secondBody.messages.at(-1)!.content).not.toContain('Discard its partial bytes');
+    for (const call of (fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls) {
+      expect(JSON.parse(String(call[1]!.body)).response_format).toEqual({ type: 'json_object' });
+    }
+  });
+
+  it('T8/T14 exhausts after output recovery and one content correction still omit PR1', async () => {
     const partial = '{"items":[{"practiceSlotId":"PR1"';
     const diagnostics: Array<{ attemptKind: string; recoveryAction?: string }> = [];
     const fetchImpl = vi
       .fn()
       .mockResolvedValueOnce(response(partial, 'length'))
+      .mockResolvedValueOnce(response(JSON.stringify({ items: [practicePayload().items[1]] })))
       .mockResolvedValueOnce(
         response(JSON.stringify({ items: [practicePayload().items[1]] })),
       ) as unknown as typeof fetch;
@@ -985,17 +1027,19 @@ describe('compositional Teaching providers', () => {
       }),
     ).rejects.toMatchObject({ code: 'PROVIDER_INVALID_OUTPUT' });
 
-    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(fetchImpl).toHaveBeenCalledTimes(3);
     expect(diagnostics).toEqual([
       expect.objectContaining({ attemptKind: 'original', recoveryAction: 'clean_regeneration' }),
-      expect.objectContaining({ attemptKind: 'retry', recoveryAction: 'exhausted' }),
+      expect.objectContaining({ attemptKind: 'retry', recoveryAction: 'targeted_repair' }),
+      expect.objectContaining({ attemptKind: 'repair', recoveryAction: 'exhausted' }),
     ]);
   });
 
-  it('permits only original plus one compositional repair even when failure kinds differ', async () => {
+  it('permits one compositional content correction after output recovery but no fourth generation', async () => {
     const fetchImpl = vi
       .fn()
       .mockResolvedValueOnce(response('{"slots":'))
+      .mockResolvedValueOnce(response(JSON.stringify(lessonPayload('valid', 'still invalid'))))
       .mockResolvedValueOnce(
         response(JSON.stringify(lessonPayload('valid', 'still invalid'))),
       ) as unknown as typeof fetch;
@@ -1005,7 +1049,7 @@ describe('compositional Teaching providers', () => {
         validateCandidate: lessonValidation,
       }),
     ).rejects.toMatchObject({ code: 'PROVIDER_INVALID_OUTPUT' });
-    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(fetchImpl).toHaveBeenCalledTimes(3);
   });
 
   it('keeps Fake and Hy3 compositional contracts compatible', async () => {

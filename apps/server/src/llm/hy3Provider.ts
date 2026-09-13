@@ -2,10 +2,16 @@ import { inferRequestedTutorMove } from '../tutor/pedagogy.js';
 import {
   FORMAL_PROPOSAL_DECLARATIONS,
   validateFormalScoringProposal,
+  normalizeFormalConceptRefs,
 } from './formalAssessmentProposal.js';
 import {
   CurriculumCoverageReviewSchema,
+  CurriculumCoverageMappingSchema,
+  curriculumCoverageSchemaName,
+  validateCurriculumCoverageMapping,
+  materializeCurriculumCoverageMapping,
   curriculumCoverageMessages,
+  reanchorCoverageQuotes,
   type CurriculumCoverageReviewInput,
 } from './curriculumCoverage.js';
 import {
@@ -70,6 +76,24 @@ import {
   type ObjectiveAuthoritySemanticRepairInput,
 } from '@hy3-clinic/shared';
 import { createHash } from 'node:crypto';
+import { setTimeout as waitForRetry } from 'node:timers/promises';
+import {
+  FormalBlindSolutionSchema,
+  FormalScoringChallengesSchema,
+  FormalScoringReviewProposalSchema,
+  type FormalScoringReviewInput,
+  type FormalBlindSolution,
+} from '@hy3-clinic/shared';
+import {
+  formalBlindSolutionMessages,
+  formalScoringReviewMessages,
+  formalScoringChallengeMessages,
+} from './formalScoringReview.js';
+import {
+  normalizeScoringPremiseKeys,
+  validateScoringReviewProposal,
+  validateScoringChallenges,
+} from '../services/formalScoringReview.js';
 import { practiceRepairMessages } from './practiceRepair.js';
 import type { PracticeRepairInput } from './provider.js';
 import { z, type ZodType, type ZodTypeDef } from 'zod';
@@ -278,6 +302,7 @@ export const OBJECTIVE_AUTHORITY_SEMANTIC_EVALUATION_MAX_OUTPUT_TOKENS =
   CURRICULUM_MAX_OUTPUT_TOKENS;
 
 interface ChatCompletionResponse {
+  model?: string;
   choices?: Array<{ message?: { content?: unknown }; finish_reason?: unknown }>;
   usage?: {
     prompt_tokens?: number;
@@ -890,7 +915,7 @@ export class Hy3Provider implements LlmProvider {
       opts,
       'Repair only the reported defects. Keep the same failed capability and return the complete packet.',
       {
-        maxTokens: 8000,
+        maxTokens: 16_384,
         schemaName: 'practice-repair-v1',
         immutableItemIds: [],
         allowIndependentRepair: false,
@@ -944,6 +969,64 @@ export class Hy3Provider implements LlmProvider {
         },
       },
       input.objectiveCatalogue?.length ? FORMAL_PROPOSAL_DECLARATIONS : undefined,
+      input.objectiveCatalogue?.length
+        ? {
+            candidateNormalizer: (raw) => normalizeFormalConceptRefs(raw, input),
+          }
+        : {},
+    );
+  }
+
+  async solveFormalAssessment(input: FormalScoringReviewInput, opts?: ProviderCallOptions) {
+    return this.complete(
+      formalBlindSolutionMessages(input),
+      FormalBlindSolutionSchema,
+      opts,
+      'Preserve the original task and provide the complete blind solution or genuine missing premises.',
+      { maxTokens: 16_384, schemaName: 'formal-blind-solution-v1' },
+    );
+  }
+
+  async reviewFormalScoring(
+    input: FormalScoringReviewInput & { blindSolution: FormalBlindSolution },
+    opts?: ProviderCallOptions,
+  ) {
+    return this.complete(
+      formalScoringReviewMessages(input, input.blindSolution),
+      FormalScoringReviewProposalSchema,
+      {
+        ...opts,
+        validateCandidate: (raw) => {
+          const review = FormalScoringReviewProposalSchema.parse(raw);
+          const diagnostics = validateScoringReviewProposal(review, input);
+          return { valid: diagnostics.length === 0, diagnostics };
+        },
+      },
+      'Preserve the semantic findings; correct only missing inventory or invalid claim references.',
+      {
+        maxTokens: 16_384,
+        schemaName: 'formal-scoring-review-v1',
+        candidatePreprocessor: (raw) => normalizeScoringPremiseKeys(raw, input),
+      },
+    );
+  }
+
+  async challengeFormalScoring(input: FormalScoringReviewInput, opts?: ProviderCallOptions) {
+    return this.complete(
+      formalScoringChallengeMessages(input),
+      FormalScoringChallengesSchema,
+      {
+        ...opts,
+        validateCandidate: (raw) => {
+          const diagnostics = validateScoringChallenges(
+            FormalScoringChallengesSchema.parse(raw),
+            input,
+          );
+          return { valid: diagnostics.length === 0, diagnostics };
+        },
+      },
+      'Preserve the actual objections and concrete witnesses; repair only malformed fields or unknown premise keys.',
+      { maxTokens: 16_384, schemaName: 'formal-scoring-challenges-v1' },
     );
   }
 
@@ -1089,7 +1172,11 @@ export class Hy3Provider implements LlmProvider {
           ...input.lesson.skeleton.lessonSlots.map((s) => s.slotId),
           ...input.practiceSlots.map((s) => s.practiceSlotId),
         ],
-        allowIndependentRepair: false,
+        // A malformed field prevents semantic validation from running. Allow
+        // one newly exposed candidate defect to be corrected after schema
+        // repair; every attempt still passes the complete contract and the
+        // independent teaching review before anything reaches the learner.
+        allowIndependentRepair: true,
       },
     );
   }
@@ -1134,6 +1221,7 @@ export class Hy3Provider implements LlmProvider {
         // Hy3 counts internal reasoning against this same output budget.
         maxTokens: 16_000,
         schemaName: 'lesson-slot-content-v5-evidence-decisions',
+        jsonObjectOutput: true,
         candidateNormalizer: normalizeLessonPreparationCandidate,
         immutableItemIds: input.skeleton.lessonSlots.map((slot) => slot.slotId),
         targetedRepairCollection: {
@@ -1292,12 +1380,36 @@ export class Hy3Provider implements LlmProvider {
   }
 
   async reviewCurriculumCoverage(input: CurriculumCoverageReviewInput, opts?: ProviderCallOptions) {
+    if (input.requiredCoverage) {
+      const mapping = await this.complete(
+        curriculumCoverageMessages(input),
+        CurriculumCoverageMappingSchema,
+        {
+          ...opts,
+          validateCandidate: (raw) => {
+            const validation = validateCurriculumCoverageMapping(raw, input);
+            if (!validation.valid) return validation;
+            return (
+              opts?.validateCandidate?.(materializeCurriculumCoverageMapping(raw, input)) ??
+              validation
+            );
+          },
+        },
+        'Return only regionId and ordered obligationIndex/objectiveIndexes mappings. Keep every frozen obligation, including missing coverage as []. Do not output capability, construct or evidence fields.',
+        { maxTokens: 16000, schemaName: curriculumCoverageSchemaName(input) },
+      );
+      return materializeCurriculumCoverageMapping(mapping, input);
+    }
     return this.complete(
       curriculumCoverageMessages(input),
       CurriculumCoverageReviewSchema,
       opts,
       'Repair only malformed fields and exact region/evidence/index bindings. Preserve substantive coverage findings.',
-      { maxTokens: 16000, schemaName: 'curriculum-teaching-coverage-v2-constructs' },
+      {
+        maxTokens: 16000,
+        schemaName: curriculumCoverageSchemaName(input),
+        candidatePreprocessor: (raw) => reanchorCoverageQuotes(raw, input),
+      },
     );
   }
 
@@ -1313,7 +1425,7 @@ export class Hy3Provider implements LlmProvider {
         'Repair only the malformed or locally rejected semantic evaluation fields.',
         'Keep objectiveRef and the exact ordered per-objective candidate boundary unchanged. Do not add proposition, construct, verdict, binding, selection, conflicts, overreach, or normal-path fragments.',
         'Return exactly one relevant, unrelated, or contradicts_claim label for every candidate in offered order. Relevant is relational, not a whole-claim support verdict.',
-        'Support groups assert that one to five relevant candidates jointly support the claim; keep groups minimal and return at most four.',
+        'Support groups assert that one to twelve relevant candidates jointly support the claim; keep groups minimal and return at most eight.',
         'Return subjectDependency and subjectDependencyRationale for every objective. Decide dependency only from proposition plus construct, independently of candidate support; strong support does not imply source-specific, absent support does not imply general, and mixed or uncertain objectives are source_specific_required.',
         'Never cite a candidate from another objective or invent an alias. Return the complete corrected evaluation object. Include fragments and capabilityPreservation only when requiredCapabilityPreservation was offered.',
         OBJECTIVE_AUTHORITY_SEMANTIC_CLOSED_KEY_RULES,
@@ -1321,7 +1433,7 @@ export class Hy3Provider implements LlmProvider {
       ].join('\n'),
       {
         maxTokens: OBJECTIVE_AUTHORITY_SEMANTIC_EVALUATION_MAX_OUTPUT_TOKENS,
-        schemaName: 'objective-authority-semantic-evaluation-v4',
+        schemaName: 'objective-authority-semantic-evaluation-v5-conceptual-explanation',
         targetedRepairCollection: {
           collectionKey: 'evaluations',
           identityKey: 'objectiveRef',
@@ -1479,9 +1591,12 @@ export class Hy3Provider implements LlmProvider {
   /**
    * Core request/validate loop with fixed, failure-class-specific budgets.
    * Truncation regenerates cleanly without feeding partial bytes back. Current
-   * compositional calls normally stop after one recovery; the only third-call
-   * exception is the observed structural-repair -> alias-only localized repair.
-   * Legacy calls retain their independently bounded schema/candidate behavior.
+   * compositional calls normally stop after one recovery. Authored capsules
+   * and legacy calls permit one different-class follow-up because malformed
+   * structure prevents the first semantic validation from running. Localized
+   * alias repairs retain their separately scoped exception. Output recovery
+   * does not spend the first content correction, or vice versa. All paths stop
+   * after at most three physical generations (excluding transport retries).
    */
   private async complete<T>(
     messages: ChatMessage[],
@@ -1490,6 +1605,8 @@ export class Hy3Provider implements LlmProvider {
     repairGuidance?: string,
     requestOptions: {
       maxTokens?: number;
+      /** Opt in only for operations verified with this endpoint's JSON mode. */
+      jsonObjectOutput?: boolean;
       schemaName?: string;
       targetedRepairCollection?: TargetedRepairCollection;
       candidatePreprocessor?: ProviderCandidatePreprocessor;
@@ -1561,13 +1678,16 @@ export class Hy3Provider implements LlmProvider {
           : null;
     const firstRecoveryAction = first.ok
       ? ('none' as const)
-      : preparationRecoveryEnabled
-        ? selectRecoveryAction(first, targetedRepairBase?.scope)
-        : first.repairable
-          ? targetedRepairBase
-            ? ('targeted_repair' as const)
-            : ('structured_repair' as const)
-          : ('none' as const);
+      : first.repairable &&
+          (first.category === 'TRUNCATED_OUTPUT' || first.category === 'EMPTY_RESPONSE')
+        ? ('clean_regeneration' as const)
+        : preparationRecoveryEnabled
+          ? selectRecoveryAction(first, targetedRepairBase?.scope)
+          : first.repairable
+            ? targetedRepairBase
+              ? ('targeted_repair' as const)
+              : ('structured_repair' as const)
+            : ('none' as const);
     const firstDiagnostic = buildStructuredOutputDiagnostic({
       schemaName,
       operationType: opts?.telemetry?.operationType ?? null,
@@ -1653,7 +1773,7 @@ export class Hy3Provider implements LlmProvider {
             },
           ];
     if (opts?.signal?.aborted) throw ProviderError.cancelled();
-    if (preparationRecoveryEnabled) {
+    if (preparationRecoveryEnabled || firstRecoveryAction === 'clean_regeneration') {
       opts?.onRepairAttempt?.(first.reason, first.category, firstRecoveryAction);
     } else {
       opts?.onRepairAttempt?.(first.reason, first.category);
@@ -1711,12 +1831,22 @@ export class Hy3Provider implements LlmProvider {
       !second.ok &&
       second.repairable &&
       second.reason !== first.reason;
+    const isOutputFailure = (category: string | null) =>
+      category === 'TRUNCATED_OUTPUT' || category === 'EMPTY_RESPONSE';
+    const outputContentFollowupAllowed =
+      !second.ok &&
+      second.repairable &&
+      isOutputFailure(first.category) !== isOutputFailure(second.category);
     const independentRepairAllowed =
-      localizedAliasFollowupAllowed || legacyIndependentRepairAllowed;
+      localizedAliasFollowupAllowed ||
+      legacyIndependentRepairAllowed ||
+      outputContentFollowupAllowed;
     const secondRecoveryAction = second.ok
       ? ('none' as const)
       : independentRepairAllowed
-        ? preparationRecoveryEnabled
+        ? preparationRecoveryEnabled ||
+          second.category === 'TRUNCATED_OUTPUT' ||
+          second.category === 'EMPTY_RESPONSE'
           ? selectRecoveryAction(second, targetedRepairBase?.scope)
           : targetedRepairBase
             ? ('targeted_repair' as const)
@@ -1806,7 +1936,15 @@ export class Hy3Provider implements LlmProvider {
       const independentlyRepaired = await this.chatWithDiagnostic(
         independentRepairMessages,
         opts,
-        requestOptions,
+        secondAttemptKind === 'retry'
+          ? {
+              ...requestOptions,
+              maxTokens: Math.min(
+                32_768,
+                Math.max(16_384, (requestOptions.maxTokens ?? 16_384) * 2),
+              ),
+            }
+          : requestOptions,
         schemaName,
         3,
         thirdAttemptKind,
@@ -2092,13 +2230,46 @@ export class Hy3Provider implements LlmProvider {
   private async chatWithDiagnostic(
     messages: ChatMessage[],
     opts: ProviderCallOptions | undefined,
-    requestOptions: { maxTokens?: number },
+    requestOptions: { maxTokens?: number; jsonObjectOutput?: boolean },
     schemaName: string,
     attemptNumber: 1 | 2 | 3,
     attemptKind: 'original' | 'repair' | 'retry',
   ): Promise<ChatCompletionResult> {
+    // Output recovery needs headroom. Repeating a truncated request at the same
+    // implicit provider cap cannot reliably close a structured teaching response.
+    const baseMaxTokens = requestOptions.maxTokens ?? 16_384;
+    const outputOptions = {
+      ...requestOptions,
+      maxTokens:
+        attemptKind === 'retry'
+          ? Math.min(32_768, Math.max(16_384, baseMaxTokens * 2))
+          : baseMaxTokens,
+    };
     try {
-      return await this.chat(messages, opts, requestOptions);
+      for (let transportAttempt = 1; ; transportAttempt++) {
+        try {
+          return await this.chat(messages, opts, outputOptions);
+        } catch (error) {
+          const retryable =
+            error instanceof ProviderError &&
+            error.code === 'PROVIDER_ERROR' &&
+            !error.technicalFailureCode &&
+            (error.technicalHttpStatus === undefined ||
+              error.technicalHttpStatus === 429 ||
+              error.technicalHttpStatus >= 500);
+          if (!retryable || transportAttempt >= 3 || opts?.signal?.aborted) throw error;
+          opts?.onTransportRetry?.(error);
+          try {
+            await waitForRetry(
+              error.technicalHttpStatus === 429 ? 15_000 : 1_000 * 2 ** (transportAttempt - 1),
+              undefined,
+              { signal: opts?.signal },
+            );
+          } catch {
+            throw ProviderError.cancelled();
+          }
+        }
+      }
     } catch (error) {
       this.emitDiagnostic(
         opts,
@@ -2139,6 +2310,7 @@ export class Hy3Provider implements LlmProvider {
     requestOptions: {
       temperature?: number;
       maxTokens?: number;
+      jsonObjectOutput?: boolean;
     } = {},
   ): Promise<ChatCompletionResult> {
     if (opts?.signal?.aborted) throw ProviderError.cancelled();
@@ -2176,6 +2348,11 @@ export class Hy3Provider implements LlmProvider {
           body: JSON.stringify({
             model: this.config.model,
             messages,
+            // Scope native JSON mode to the operation with observed syntax
+            // benefit. It constrains syntax, never schema or content validity.
+            ...(requestOptions.jsonObjectOutput
+              ? { response_format: { type: 'json_object' } }
+              : {}),
             temperature: requestOptions.temperature ?? 0.2,
             ...(requestOptions.maxTokens !== undefined
               ? { max_tokens: requestOptions.maxTokens }
@@ -2244,6 +2421,15 @@ export class Hy3Provider implements LlmProvider {
         pricingSource: null,
         pricingVersion: null,
       });
+
+      if (data.model && data.model !== this.config.model) {
+        throw new ProviderError(
+          'PROVIDER_ERROR',
+          '模型服务返回了与当前配置不同的模型。',
+          undefined,
+          'RETURNED_MODEL_MISMATCH',
+        );
+      }
 
       const choice = data.choices?.[0];
       const content = choice?.message?.content;

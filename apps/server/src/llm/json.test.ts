@@ -37,6 +37,23 @@ describe('extractJson', () => {
     expect(() => extractJson('{"a": [1, 2')).toThrowError(JsonExtractionError);
   });
 
+  it.each([
+    '{"slots":[{"nested":{"value":1},{"slotId":"L2"}]}',
+    '{"a":[1,2}}',
+    '```json\n{"a":[1,2}}\n```',
+  ])('classifies mismatched containers as malformed, not an incomplete prefix: %s', (raw) => {
+    expect(() => extractJson(raw)).toThrowError(expect.objectContaining({ kind: 'invalid_json' }));
+  });
+
+  it.each(['{"slots":[{"nested":{"value":1}', '{"text":"unfinished'])(
+    'preserves clean output recovery for an actually unfinished prefix: %s',
+    (raw) => {
+      expect(() => extractJson(raw)).toThrowError(
+        expect.objectContaining({ kind: 'incomplete_json' }),
+      );
+    },
+  );
+
   it('leaves a wrong top-level wrapper intact for schema rejection', () => {
     expect(extractJson('{"data":{"a":1}}')).toEqual({ data: { a: 1 } });
   });

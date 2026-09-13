@@ -326,7 +326,7 @@ export function CourseHomeView({
         {contract ? (
           <div
             className="course-state-grid"
-            aria-label={simplifiedCourseDesign ? '课程设计与正式进度' : '目标与正式进度'}
+            aria-label={simplifiedCourseDesign ? '课程设计与学习路线进度' : '目标与学习路线进度'}
           >
             <div>
               <span className="small muted">
@@ -346,7 +346,7 @@ export function CourseHomeView({
               ) : null}
             </div>
             <div>
-              <span className="small muted">正式进度</span>
+              <span className="small muted">学习路线进度</span>
               <strong>
                 {progress.planItemCount === 0
                   ? '尚未开始学习'
@@ -361,6 +361,7 @@ export function CourseHomeView({
                   ? ` · 已延期 ${progress.deferredPlanItemCount}`
                   : ''}
               </strong>
+              <span className="small muted">包含讲解、练习与测评；正式通过证据请查看进展。</span>
             </div>
           </div>
         ) : null}

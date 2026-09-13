@@ -87,10 +87,6 @@ describe('assessment diversity policy', () => {
     });
   });
 
-  // Slice 5B: the construct here is scaffolding for the no-rotation rule, not
-  // its subject. It used to be `evaluate`, which no longer claims application
-  // demand; `apply` keeps the assertion identical. The dropped `evaluate`
-  // behaviour is now pinned explicitly by the authority-boundary tests below.
   it('does not rotate challenges once a qualifying transfer request was demonstrated', () => {
     expect(
       selectAssessmentDiversityIntent({
@@ -128,13 +124,8 @@ describe('assessment diversity policy', () => {
   });
 });
 
-/**
- * Slice 5B. `design`/`evaluate` are teaching constructs with no deterministic
- * Formal evidence predicate behind them. Before this Slice they were treated as
- * application-capable here, which recorded their Review evidence at the
- * `application` rung and let teaching vocabulary alone satisfy the durable
- * mastery application demand.
- */
+/** Application demand describes accepted, supported evidence. The admission
+ * and progression services independently check its source and scoring receipt. */
 describe('Formal application demand follows construct authority, not ambition', () => {
   const dueReview = (objectiveConstruct: FormalAssessmentConstruct) =>
     selectAssessmentDiversityIntent({
@@ -149,13 +140,13 @@ describe('Formal application demand follows construct authority, not ambition', 
   });
 
   it.each(['design', 'evaluate'] as const)(
-    'refuses the application rung to the teaching-only %s construct',
+    'can request application demand for a supported bounded %s assessment',
     (objectiveConstruct) => {
-      expect(classifyConstructAuthority(objectiveConstruct)).toBe('teaching_only');
-      expect(supportsFormalApplicationDemand(objectiveConstruct)).toBe(false);
+      expect(classifyConstructAuthority(objectiveConstruct)).toBe('formal_supported');
+      expect(supportsFormalApplicationDemand(objectiveConstruct)).toBe(true);
       expect(dueReview(objectiveConstruct)).toMatchObject({
-        selection: { selectionReason: 'no_supported_alternative' },
-        evidenceRepresentation: 'recall',
+        selection: { requestedRepresentation: 'application' },
+        evidenceRepresentation: 'application',
       });
     },
   );
@@ -168,7 +159,7 @@ describe('Formal application demand follows construct authority, not ambition', 
     }
   });
 
-  it('never lets a teaching-only construct satisfy the durable mastery application demand', () => {
+  it('counts supported reconciled higher-construct evidence toward application demand', () => {
     const policy = {
       minimumRepresentationCount: 1,
       minimumDemand: 'application' as const,
@@ -193,8 +184,10 @@ describe('Formal application demand follows construct authority, not ambition', 
 
     expect(masteryFor('apply').reasonCodes).not.toContain('application_demand_missing');
     for (const objectiveConstruct of ['design', 'evaluate'] as const) {
-      expect(masteryFor(objectiveConstruct).reasonCodes).toContain('application_demand_missing');
-      expect(masteryFor(objectiveConstruct).status).toBe('evidence_backed');
+      expect(masteryFor(objectiveConstruct).reasonCodes).not.toContain(
+        'application_demand_missing',
+      );
+      expect(masteryFor(objectiveConstruct).status).toBe('mastered');
     }
   });
 
@@ -214,7 +207,7 @@ describe('Formal application demand follows construct authority, not ambition', 
             objectiveConstruct,
             priorEvidence,
           }).evidenceRepresentation,
-        ).toBe('recall');
+        ).toBe('application');
       }
     }
   });

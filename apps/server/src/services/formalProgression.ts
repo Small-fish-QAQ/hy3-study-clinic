@@ -18,6 +18,7 @@ import {
   type CompletionPolicy,
   type CoverageRiskEntry,
   type Curriculum,
+  type CurriculumObjective,
   type FormalAssessmentPremiseBinding,
   type FormalAssessmentPremiseKind,
   type FormalEvidenceRecord,
@@ -49,6 +50,7 @@ import {
 } from './studyPlanValidation.js';
 import { createHash } from 'node:crypto';
 import { projectTaughtExposure, type PresentedTeachingSurface } from '@hy3-clinic/shared';
+import { currentScoringReview, scoringFingerprint } from './formalScoringReview.js';
 
 interface FormalProgressionDeps {
   repos: Repositories;
@@ -351,6 +353,7 @@ function buildAssessmentPremiseBindings(input: {
   authorityIds: string[];
   question: Question;
   relevantBlockIds: Set<string>;
+  objective: CurriculumObjective;
 }): {
   required: RequiredAssessmentPremise[];
   bindings: FormalAssessmentPremiseBinding[];
@@ -364,7 +367,71 @@ function buildAssessmentPremiseBindings(input: {
     .sort((left, right) => left.record.id.localeCompare(right.record.id));
   let usesRepresentationEquivalence = false;
   const bindings: FormalAssessmentPremiseBinding[] = [];
+  const review = input.question.formalScoringReview
+    ? currentScoringReview(
+        input.question,
+        input.objective,
+        [
+          ...new Set([
+            ...input.relevantBlockIds,
+            ...input.question.formalScoringReview.sources.map((source) => source.sourceBlockId),
+          ]),
+        ].flatMap((id) => {
+          const b = input.repos.materials.getBlock(id);
+          return b ? [b] : [];
+        }),
+      )
+    : null;
+  // A present but stale/failed review can never fall back to string equality.
+  if (input.question.formalScoringReview && !review)
+    return { required, bindings, usesRepresentationEquivalence };
   for (const premise of required) {
+    if (review) {
+      const proof = review.review.premises.find((p) => p.premiseKey === premise.premiseKey);
+      if (!proof?.supported) continue;
+      const matches = proof.claimRefs.map((ref) => {
+        const witness = review.claims.find((c) => c.ref === ref);
+        return candidates.flatMap((bundle) =>
+          authorityKindPermitsPremise(bundle, premise)
+            ? bundle.claims
+                .filter(
+                  (claim) =>
+                    witness &&
+                    claim.sourceBlockId === witness.sourceBlockId &&
+                    claim.claim === witness.text &&
+                    input.relevantBlockIds.has(claim.sourceBlockId),
+                )
+                .map((claim) => ({ bundle, claim }))
+            : [],
+        )[0];
+      });
+      if (!matches.length || matches.some((m) => !m)) continue;
+      const byAuthority = new Map<string, string[]>();
+      for (const match of matches) {
+        const list = byAuthority.get(match!.bundle.record.id) ?? [];
+        if (!list.includes(match!.claim.id)) list.push(match!.claim.id);
+        byAuthority.set(match!.bundle.record.id, list);
+      }
+      const supportingAuthority = [...byAuthority].map(
+        ([truthAuthorityRecordId, truthAuthorityClaimIds]) => ({
+          truthAuthorityRecordId,
+          truthAuthorityClaimIds,
+        }),
+      );
+      const primary = supportingAuthority[0]!;
+      bindings.push({
+        id: newId('premise_binding'),
+        premiseKey: premise.premiseKey,
+        premiseKind: premise.premiseKind,
+        premiseFingerprint: premise.premiseFingerprint,
+        ...primary,
+        supportMode: 'reviewed_derivation',
+        scoringReviewFingerprint: scoringFingerprint(review),
+        supportingAuthority,
+      });
+      usesRepresentationEquivalence = true;
+      continue;
+    }
     const match = candidates.flatMap((bundle) =>
       authorityKindPermitsPremise(bundle, premise)
         ? bundle.claims
@@ -486,6 +553,11 @@ function contractHasCurrentPremiseAuthority(
     (candidate) => candidate.id === contract.primaryObjectiveId,
   );
   if (!question || !objective || (question.options && question.correctOptionIds)) return false;
+  if (
+    ['design', 'evaluate'].includes(objective.formalAssessmentConstruct ?? '') &&
+    !question.formalScoringReview
+  )
+    return false;
   const semanticAuthority = validateObjectiveAuthoritySemanticSupport(
     curriculum!,
     [objective],
@@ -497,12 +569,45 @@ function contractHasCurrentPremiseAuthority(
   );
   if (!semanticAuthority.valid) return false;
   const required = requiredAssessmentPremises(question);
+  const reviewBindings = question.formalScoringReview
+    ? buildAssessmentPremiseBindings({
+        repos,
+        authorityIds: objective.truthAuthorityRecordIds,
+        question,
+        objective,
+        relevantBlockIds: new Set([
+          question.grounding.blockId,
+          ...(question.supplementaryEvidence ?? []).map((e) => e.blockId),
+        ]),
+      }).bindings
+    : null;
+  if (reviewBindings && reviewBindings.length !== required.length) return false;
   if (
     required.length === 0 ||
     contract.assessmentPremiseBindings.length !== required.length ||
     contract.assessmentPremiseBindings.some((binding) => {
       const premise = required.find((candidate) => candidate.premiseKey === binding.premiseKey);
       if (!premise || premise.premiseFingerprint !== binding.premiseFingerprint) return true;
+      if (binding.supportMode === 'reviewed_derivation') {
+        const verified = reviewBindings?.find((b) => b.premiseKey === binding.premiseKey);
+        if (
+          !verified ||
+          verified.scoringReviewFingerprint !== binding.scoringReviewFingerprint ||
+          verified.truthAuthorityRecordId !== binding.truthAuthorityRecordId ||
+          JSON.stringify(verified.truthAuthorityClaimIds) !==
+            JSON.stringify(binding.truthAuthorityClaimIds) ||
+          JSON.stringify(verified.supportingAuthority) !==
+            JSON.stringify(binding.supportingAuthority)
+        )
+          return true;
+        return verified.supportingAuthority!.some((a) =>
+          a.truthAuthorityClaimIds.some(
+            (claimId) =>
+              !contract.provenance.some((p) => p.truthAuthorityClaimIds.includes(claimId)),
+          ),
+        );
+      }
+      if (question.formalScoringReview) return true;
       if (!objective.truthAuthorityRecordIds.includes(binding.truthAuthorityRecordId)) return true;
       const bundle = repos.sourceAuthority.getBundle(binding.truthAuthorityRecordId);
       if (
@@ -711,6 +816,7 @@ function contractHasCurrentPremiseAuthority(
     return false;
   }
   const usesRepresentationEquivalence = contract.assessmentPremiseBindings.some((binding) => {
+    if (binding.supportMode === 'reviewed_derivation') return true;
     const bundle = repos.sourceAuthority.getBundle(binding.truthAuthorityRecordId);
     return bundle ? authorityPremiseKind(bundle) === 'representation_equivalence' : false;
   });
@@ -1219,9 +1325,14 @@ export function createFormalProgressionService({
         authorityIds: objective.truthAuthorityRecordIds,
         question,
         relevantBlockIds,
+        objective,
       });
       const boundClaimIds = new Set(
-        premiseResolution.bindings.flatMap((binding) => binding.truthAuthorityClaimIds),
+        premiseResolution.bindings.flatMap(
+          (binding) =>
+            binding.supportingAuthority?.flatMap((a) => a.truthAuthorityClaimIds) ??
+            binding.truthAuthorityClaimIds,
+        ),
       );
       const allProvenance = refs.map((reference) => ({
         materialId: reference.materialId,
@@ -1258,8 +1369,21 @@ export function createFormalProgressionService({
         },
         'formal_admission',
       ).valid;
+      const higherConstructScoringReady =
+        !['design', 'evaluate'].includes(objective.formalAssessmentConstruct ?? '') ||
+        Boolean(
+          currentScoringReview(
+            question,
+            objective,
+            [...relevantBlockIds].flatMap((id) => {
+              const block = repos.materials.getBlock(id);
+              return block ? [block] : [];
+            }),
+          ),
+        );
       const tier =
         semanticAuthorityReady &&
+        higherConstructScoringReady &&
         (!unitTransfer || question.transferTask?.version === 'unit-transfer-v1') &&
         objectiveAttributionVerified &&
         taughtExposureBindings.length > 0 &&

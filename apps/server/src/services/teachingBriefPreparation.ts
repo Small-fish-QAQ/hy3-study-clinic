@@ -1583,6 +1583,7 @@ export function createTeachingBriefPreparationService({
           // only asking the reviewer to solve actions not already computed.
           const reviewContext = compositionalLessonInput;
           const reviewScope = (payload: LessonSlotContentProposalPayload) => payload;
+          let contentRevision = 0;
           const verified = await verifyPreparedTeaching(
             reviewContext,
             reviewScope(lessonPayload),
@@ -1601,6 +1602,7 @@ export function createTeachingBriefPreparationService({
               return { logicalCallId, result };
             },
             async (draft, findings) => {
+              contentRevision += 1;
               if (jointAuthoring && inferenceProvider.generateTeachingCapsule) {
                 const revised = {
                   ...structuredClone(lessonPayload),
@@ -1637,7 +1639,7 @@ export function createTeachingBriefPreparationService({
                       part.lesson.skeleton.lessonSlots.some((p) => p.slotId === s.slotId),
                     ),
                   };
-                  lessonLogicalCallId = `${operationKey}:capsule-revision-${index + 1}`;
+                  lessonLogicalCallId = `${operationKey}:capsule-revision-${index + 1}${contentRevision > 1 ? `-round-${contentRevision}` : ''}`;
                   const result = await trackedReviewCall(
                     lessonLogicalCallId,
                     'teaching-capsule-v1',
@@ -1689,7 +1691,7 @@ export function createTeachingBriefPreparationService({
                   );
                 return reviewScope(revised);
               }
-              lessonLogicalCallId = `${operationKey}:lesson-revision`;
+              lessonLogicalCallId = `${operationKey}:lesson-revision${contentRevision > 1 ? `-${contentRevision}` : ''}`;
               return trackedReviewCall(
                 lessonLogicalCallId,
                 'lesson-slot-content-proposal-v1',
@@ -1893,6 +1895,7 @@ export function createTeachingBriefPreparationService({
       }
       let contentReview: PracticeQualityEvaluation['contentReview'];
       if (provider.name === 'hy3' && inferenceProvider.reviewTeachingContent) {
+        let contentRevision = 0;
         const verified = await verifyPreparedTeaching(
           compositionalPracticeInput,
           practicePayload,
@@ -1910,6 +1913,7 @@ export function createTeachingBriefPreparationService({
             return { logicalCallId, result };
           },
           async (draft, findings) => {
+            contentRevision += 1;
             if (compositionalPracticeInput.computedCases) {
               throw ProviderError.invalidOutput(
                 'Computed Practice has a material teaching defect; preserve its Lesson and refuse an unverified prose rewrite.',
@@ -1923,7 +1927,7 @@ export function createTeachingBriefPreparationService({
               );
             }
             compositionalPracticeInput.computedCases = false;
-            practiceLogicalCallId = `${operationKey}:practice-revision`;
+            practiceLogicalCallId = `${operationKey}:practice-revision${contentRevision > 1 ? `-${contentRevision}` : ''}`;
             return trackedReviewCall(
               practiceLogicalCallId,
               'practice-content-proposal-v1',

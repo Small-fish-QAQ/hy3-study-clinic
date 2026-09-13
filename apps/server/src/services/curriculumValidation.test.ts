@@ -9,6 +9,8 @@ import type {
 import {
   materializeCurriculumProposal,
   normalizeDuplicateLearningUnitTitles,
+  objectiveEvidenceEnvelope,
+  type CurriculumValidationContext,
 } from './curriculumValidation.js';
 
 const concept = (id: string, name: string, blockId: string): Concept => ({
@@ -139,6 +141,38 @@ describe('Curriculum learner-visible title quality', () => {
 });
 
 describe('Curriculum objective authority materialization', () => {
+  it('retains late authored anchors and their neighbors when a source exceeds the review window', () => {
+    const catalog = Array.from({ length: 100 }, (_, i) => ({
+      id: `evidence_${i}`,
+      materialId: 'material_1',
+      materialRevisionId: 'revision_1',
+      blockId: 'block_1',
+      quote: `Independent source statement ${i}.`,
+      startOffset: i * 100,
+      endOffset: i * 100 + 30,
+      headingPath: [],
+      pageNumber: null,
+    }));
+    const selected = [0, 98].map((i) => ({
+      ...catalog[i]!,
+      occurrenceCount: 1,
+      reanchored: false,
+    }));
+    const foreign = { ...catalog[1]!, id: 'foreign', blockId: 'block_2' };
+    const retained = objectiveEvidenceEnvelope(selected, [...catalog, foreign]);
+    expect(retained).toHaveLength(64);
+    expect(retained.map((x) => x.id)).toEqual(
+      expect.arrayContaining([
+        'evidence_0',
+        'evidence_1',
+        'evidence_97',
+        'evidence_98',
+        'evidence_99',
+      ]),
+    );
+    expect(retained).not.toContainEqual(foreign);
+    expect(catalog).toHaveLength(100);
+  });
   it('aligns Formal semantic authority exactly while preserving non-Formal teaching authority', () => {
     const selectedFormalQuote = 'A bounded source statement identifies working memory.';
     const convenientUnselectedQuote =
@@ -292,7 +326,7 @@ describe('Curriculum objective authority materialization', () => {
       synthesisGroups: [],
     };
 
-    const materialized = materializeCurriculumProposal(payload, {
+    const validationContext: CurriculumValidationContext = {
       workspaceId: 'workspace_1',
       courseTitle: 'Authority course',
       executionSourceManifest: {
@@ -323,7 +357,24 @@ describe('Curriculum objective authority materialization', () => {
       ],
       isAuthorityBlockingEligible: (authorityRecordId) =>
         authorityRecordId === 'authority_formal' || authorityRecordId === 'authority_teaching',
+    };
+    const materialized = materializeCurriculumProposal(payload, validationContext);
+    const allocated = materializeCurriculumProposal(payload, {
+      ...validationContext,
+      deterministicCoverageByNodeKey: new Map([
+        ['unit', { structuralUnitIds: [], sourceBlockIds: [formalBlock.id, teachingBlock.id] }],
+      ]),
     });
+    const allocatedObjective = allocated.nodes.find((node) => node.learningUnit)!.learningUnit!
+      .objectives[0]!;
+    expect(allocatedObjective.authoritySourceBlockIds).toEqual(['block_1', 'block_2']);
+    expect(allocatedObjective.authorityClaimIds).toEqual([
+      'claim_authority_formal_selected',
+      'claim_authority_teaching',
+    ]);
+    expect(allocatedObjective.authorityClaimIds).not.toContain('claim_authority_excluded');
+    // Source availability does not synthesize a semantic verdict or learner evidence.
+    expect(allocatedObjective.semanticSupport).toBeUndefined();
     const objectives = materialized.nodes.find((node) => node.learningUnit)!.learningUnit!
       .objectives;
 
@@ -340,13 +391,14 @@ describe('Curriculum objective authority materialization', () => {
     expect(objectives[1]).toMatchObject({
       subjectClass: 'source_specific',
       scopeOrigin: 'anchored',
-      truthPremiseStatus: 'unverified',
+      truthPremiseStatus: 'independently_verified',
       truthAuthorityRecordIds: ['authority_teaching'],
       authorityClaimIds: ['claim_authority_teaching'],
-      authorityEnvelopeTier: 'narrower_formal',
+      authorityEnvelopeTier: 'formal_sufficient',
       authoritySourceBlockIds: ['block_2'],
-      formalEvidenceSourceBlockIds: [],
+      formalEvidenceSourceBlockIds: ['block_2'],
     });
+    expect(objectives[1]!.semanticSupport).toBeUndefined();
     expect(JSON.stringify(objectives[0])).not.toContain('claim_authority_formal_unselected');
   });
 });
