@@ -1,0 +1,320 @@
+{
+  "task": {
+    "caseId": "S078",
+    "runId": "S078-r2",
+    "replicate": 2,
+    "path": "dataset/studyeval/S078.json",
+    "inputHash": "35e2cebff6d8560d462945c74de6ad7f00f936eb55d88f69e2ec6d41e5a89a44"
+  },
+  "inputHash": "35e2cebff6d8560d462945c74de6ad7f00f936eb55d88f69e2ec6d41e5a89a44",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "c91afc0c887e09b526484b5ec0edefeeef54a603677479ee46e888410c0e56aa",
+    "stages": {
+      "goal-mapping": {
+        "goals": [
+          {
+            "index": 0,
+            "importance": "essential",
+            "status": "usable",
+            "reason": "产物通过具体例子A→C→B可行与B→A不可行，依据有向边方向检查路线可行性，与源规则一致，核心用途成立且无缺陷。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/0"
+            ],
+            "quote": "A到C再到B可行，每一步都有同方向边；B到A不可行，B没有出边。",
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "e1c8a829755e32077d2dc8bf44f0f2383fe25eb46dc4accb4e2a8ff2055aa8ea"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "a51f21939f83eed1ca93d3681f208fb694af3488648930ef9519d1d81a501862"
+              }
+            ]
+          },
+          {
+            "index": 1,
+            "importance": "essential",
+            "status": "partial",
+            "reason": "给出了入度出度区分定义并正确计算A和B的入度出度，但未计算节点C的入度出度，图中所有节点演示不完整，局部连接不充分。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/1"
+            ],
+            "quote": "入度数箭头指入，出度数箭头指外，A入度0出度2，B入度2出度0。",
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "e1c8a829755e32077d2dc8bf44f0f2383fe25eb46dc4accb4e2a8ff2055aa8ea"
+              },
+              {
+                "pointer": "/goals/1",
+                "valueHash": "a63e5ea68b90b2ab60576d7e6f1c219c31f7b0a1e90a3e147a04d87b392c0399"
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "importance": "secondary",
+            "status": "missing",
+            "reason": "产物文本中未提及边标签及其用途，源中讲解未被纳入artifact交付，确实没有相关处理。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/2"
+            ],
+            "quote": "",
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "e1c8a829755e32077d2dc8bf44f0f2383fe25eb46dc4accb4e2a8ff2055aa8ea"
+              },
+              {
+                "pointer": "/goals/2",
+                "valueHash": "5971c156642542bafa467de656a783fad331d9b9629086ebfc96e501de760b60"
+              }
+            ]
+          }
+        ]
+      },
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "核心目标（按边检查路线、区分计算入出度）均有准确操作演示；但次要目标‘解释边标签的用途’在课文中完全未提及，属局部遗漏，核心用途成立。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/2"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "次要目标‘解释边标签的用途’未被处理",
+                "impact": "核心学习目标（有向边路线检查与入出度计算）仍可用，不影响主要教学目的",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/goals/2"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "e1c8a829755e32077d2dc8bf44f0f2383fe25eb46dc4accb4e2a8ff2055aa8ea"
+                  },
+                  {
+                    "pointer": "/goals/2",
+                    "valueHash": "5971c156642542bafa467de656a783fad331d9b9629086ebfc96e501de760b60"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "e1c8a829755e32077d2dc8bf44f0f2383fe25eb46dc4accb4e2a8ff2055aa8ea"
+              },
+              {
+                "pointer": "/goals/2",
+                "valueHash": "5971c156642542bafa467de656a783fad331d9b9629086ebfc96e501de760b60"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "核心目标（路线可行性检查、入度出度区分计算）均有可操作演示；但次要目标'解释边标签的用途'在产物中完全省略，未提及标签，属于局部缺失。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text",
+              "/goals/2"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "次要目标'解释边标签的用途'未在任何产物文本中出现，既无解释也无提醒。",
+                "impact": "核心路线检查和入度出度计算仍可用，不影响主要学习用途，但次要目标未覆盖。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/goals/2"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "e1c8a829755e32077d2dc8bf44f0f2383fe25eb46dc4accb4e2a8ff2055aa8ea"
+                  },
+                  {
+                    "pointer": "/goals/2",
+                    "valueHash": "5971c156642542bafa467de656a783fad331d9b9629086ebfc96e501de760b60"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "e1c8a829755e32077d2dc8bf44f0f2383fe25eb46dc4accb4e2a8ff2055aa8ea"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "4a1ff16d1619a7f4b64cc932d8257c0a3341f94daa68120cf944ecd4a83e3b93"
+              },
+              {
+                "pointer": "/goals/2",
+                "valueHash": "5971c156642542bafa467de656a783fad331d9b9629086ebfc96e501de760b60"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "核心目标（按边检查路线、区分计算入出度）均有准确操作演示；但次要目标'解释边标签的用途'在产物中完全省略，属局部遗漏，核心用途成立。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/2"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "次要目标'解释边标签的用途'未被处理",
+                "impact": "核心路线检查和入度出度计算仍可用，不影响主要学习用途，但次要目标未覆盖。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/goals/2"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "e1c8a829755e32077d2dc8bf44f0f2383fe25eb46dc4accb4e2a8ff2055aa8ea"
+                  },
+                  {
+                    "pointer": "/goals/2",
+                    "valueHash": "5971c156642542bafa467de656a783fad331d9b9629086ebfc96e501de760b60"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "e1c8a829755e32077d2dc8bf44f0f2383fe25eb46dc4accb4e2a8ff2055aa8ea"
+              },
+              {
+                "pointer": "/goals/2",
+                "valueHash": "5971c156642542bafa467de656a783fad331d9b9629086ebfc96e501de760b60"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q2:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "A到C再到B可行，每一步都有同方向边；B到A不可行，B没有出边。入度数箭头指入，出度数箭头指外，A入度0出度2，B入度2出度0。",
+              "valueHash": "e1c8a829755e32077d2dc8bf44f0f2383fe25eb46dc4accb4e2a8ff2055aa8ea"
+            },
+            "reason": "产物文本未出现任何边标签或用途解释，而/goals/2明确要求解释边标签用途，指控成立；仅次要目标缺失，核心用途未损，故local。"
+          },
+          {
+            "id": "review2:Q2:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "A到C再到B可行，每一步都有同方向边；B到A不可行，B没有出边。入度数箭头指入，出度数箭头指外，A入度0出度2，B入度2出度0。",
+              "valueHash": "e1c8a829755e32077d2dc8bf44f0f2383fe25eb46dc4accb4e2a8ff2055aa8ea"
+            },
+            "reason": "同前，/artifacts/0/text无标签内容，/goals/2为次要目标，省略不影响核心，local。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q2",
+          "level": 1,
+          "evidence": "sufficient",
+          "reason": "核心目标（按边检查路线、区分计算入出度）均有准确操作演示；但次要目标'解释边标签的用途'在产物中完全省略，属局部遗漏，核心用途成立。",
+          "refs": [
+            "/artifacts/0/text",
+            "/goals/2"
+          ],
+          "defects": [
+            {
+              "severity": "local",
+              "description": "次要目标'解释边标签的用途'未被处理",
+              "impact": "核心路线检查和入度出度计算仍可用，不影响主要学习用途，但次要目标未覆盖。",
+              "refs": [
+                "/artifacts/0/text",
+                "/goals/2"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "e1c8a829755e32077d2dc8bf44f0f2383fe25eb46dc4accb4e2a8ff2055aa8ea"
+                },
+                {
+                  "pointer": "/goals/2",
+                  "valueHash": "5971c156642542bafa467de656a783fad331d9b9629086ebfc96e501de760b60"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "e1c8a829755e32077d2dc8bf44f0f2383fe25eb46dc4accb4e2a8ff2055aa8ea"
+            },
+            {
+              "pointer": "/goals/2",
+              "valueHash": "5971c156642542bafa467de656a783fad331d9b9629086ebfc96e501de760b60"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "111c2741ade0eb3d7d94000c5424dc2f6772e1f49ca039c1ad4b63d04ad230ea"
+  }
+}

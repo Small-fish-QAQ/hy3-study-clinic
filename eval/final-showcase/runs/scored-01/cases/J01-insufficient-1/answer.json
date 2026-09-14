@@ -1,0 +1,71 @@
+{
+  "answerPolicy": "preregistered-insufficient",
+  "answers": {
+    "assessment_item_718850f2-a257-41b8-ba3c-20815d2ae1e1": "我不知道这道题的答案，也没有完成所要求的推理或计算。"
+  },
+  "result": {
+    "assessmentVersionId": "assessment_version_87ae9ea6-1722-4f32-8a9a-5e2b2a0e0b87",
+    "title": "独立检查：解释公因数与最大公因数定义及常见误解",
+    "attempt": {
+      "id": "assessment_attempt_791fcef7-c8df-424b-a301-f9b7b46ca96e",
+      "assessmentVersionId": "assessment_version_87ae9ea6-1722-4f32-8a9a-5e2b2a0e0b87",
+      "workspaceId": "ws_0659984a-faa1-4224-bfd3-0ead42873177",
+      "ordinal": 1,
+      "status": "submitted",
+      "responses": {
+        "assessment_item_718850f2-a257-41b8-ba3c-20815d2ae1e1": "我不知道这道题的答案，也没有完成所要求的推理或计算。"
+      },
+      "startedAt": "2026-09-14T11:29:54.300Z",
+      "submittedAt": "2026-09-14T11:29:54.408Z",
+      "cancelledAt": null
+    },
+    "items": [
+      {
+        "itemId": "assessment_item_718850f2-a257-41b8-ba3c-20815d2ae1e1",
+        "prompt": "两个正整数的公因数，是能同时把两个数整除的正整数；其中最大的叫最大公因数。给定正整数15和25。学习者乙说：“最大公因数就是两数中较小的那个，所以结果是15。”请依据公因数的定义解释该说法为什么不正确，并给出正确的最大公因数。",
+        "purpose": "检验你是否能在自己的表述中说明这个关键能力。",
+        "sourceReferences": [
+          {
+            "materialTitle": "最大公因数与整块铺砖",
+            "locationLabel": "第 1 段",
+            "excerpt": "最大公因数是一个共同的整除尺度，不是把两个数相加，也不是选择较小数就一定正确。",
+            "advisory": false
+          }
+        ]
+      }
+    ],
+    "result": {
+      "gradeRecordId": "grade_b7e93cc3-cf9b-41af-88aa-f66c7945390c",
+      "demonstrated": false,
+      "summary": "这次回答还没有回应题目要求的关键内容。",
+      "minorNotice": null,
+      "criteria": [
+        {
+          "criterionId": "criterion_05ef1e2d-bb27-4fa0-b6cf-bdf11a136e90",
+          "label": "指出15不能整除25，因此15不满足同时整除两数的公因数定义，故不能是最大公因数。",
+          "result": "not_met",
+          "message": "这一点还没有在回答中体现。"
+        },
+        {
+          "criterionId": "criterion_bc5f72b4-fea0-4b3c-8ca1-ab6deadcd607",
+          "label": "正确得出15与25的最大公因数为5（可列举公因数1、5或说明5同时整除两者且最大）。",
+          "result": "not_met",
+          "message": "这一点还没有在回答中体现。"
+        }
+      ],
+      "sourceReferences": [
+        {
+          "materialTitle": "最大公因数与整块铺砖",
+          "locationLabel": "第 1 段",
+          "excerpt": "最大公因数是一个共同的整除尺度，不是把两个数相加，也不是选择较小数就一定正确。",
+          "advisory": false
+        }
+      ],
+      "evidenceStatus": "unavailable",
+      "repairEpisodeId": "repair_e9b71038-2997-432c-aa7c-b763eb8fdd8c",
+      "progressionPending": false,
+      "reviewSchedulingPending": false
+    },
+    "review": null
+  }
+}

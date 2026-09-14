@@ -1,0 +1,97 @@
+{
+  "inputIdentity": "9996982bce3aec032fc39d092cf65a846493bbee42725eff466512d73b320023",
+  "attempts": [
+    {
+      "physicalId": "2ca29ef4-6594-4777-9596-3f8b107bfbea",
+      "caseId": "S068",
+      "runId": "S068-r3",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q4",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "任务要求抄写激活起终点，作者键正确未披露，但仅检索不符working_fluency深度意图，判别力弱为局部缺陷。",
+        "refs": [
+          "/question/prompt",
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "问题仅要求从资料抄出状态，未要求执行或解释状态转换方法，而desiredDepth为working_fluency。",
+            "impact": "核心用途（抽测状态规则认知）成立，但未达到声明深度，判别力弱。",
+            "refs": [
+              "/question/prompt",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "f2cd6c08b9d046cedf630b82184bd09b37a81beb527ef9e494a6f6b2afc6fc14"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "694fcf138ee515172ab2dd1c3a0a59baef8e0ee6b25086ed04ce3845111041ea"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "assessment": {
+          "key": "correct",
+          "validity": "valid",
+          "exposure": "none",
+          "discrimination": "weak",
+          "demand": "retrieval",
+          "demandReason": "学生仅需从资料中抄写“激活只能把未激活变为有效”的起终点，无超出复述的操作。",
+          "reason": "题目抄状态；作者键“未激活到有效”正确；priorExposure空无曝光；仅检索不符working_fluency故判别弱。",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text"
+          ],
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "f2cd6c08b9d046cedf630b82184bd09b37a81beb527ef9e494a6f6b2afc6fc14"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "05fae2f96046c439a12189503a85befc635039e3ffe61cf823fdc83dced5bca5"
+            }
+          ]
+        },
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "f2cd6c08b9d046cedf630b82184bd09b37a81beb527ef9e494a6f6b2afc6fc14"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "05fae2f96046c439a12189503a85befc635039e3ffe61cf823fdc83dced5bca5"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "694fcf138ee515172ab2dd1c3a0a59baef8e0ee6b25086ed04ce3845111041ea"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

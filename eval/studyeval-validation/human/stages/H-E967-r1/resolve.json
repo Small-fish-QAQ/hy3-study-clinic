@@ -1,0 +1,134 @@
+{
+  "inputIdentity": "97f68331101fd740ef427357e967e90545569a4f24a1411b21e7fcb6e9c5c720",
+  "attempts": [
+    {
+      "physicalId": "b3577f3f-ecfe-4c17-bbe9-62a2f1454df7",
+      "caseId": "E967",
+      "runId": "H-E967-r1",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q6",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "support诊断称出错因未背诵，发明学习者状态；并要求抄写参考答案原样重答声称即独立迁移掌握。同时命中rubric 0的invent state与claim rehearsal as mastery，修复核心用途失效，非局部或泛泛。",
+        "refs": [
+          "/artifacts/1/text",
+          "/answer"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "诊断发明学习者状态“没有认真背诵”作为出错原因，而非指出混淆自愿与随机分组的推理缺口",
+            "impact": "错误归因使后续修复不针对真实因果推断缺陷，核心诊断与修复用途失效",
+            "refs": [
+              "/artifacts/1/text",
+              "/answer"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/1/text",
+                "valueHash": "b48273621a19d2af23adcd0e37fd9f56bd0461da88677b76cc1375c7a736b7f0"
+              },
+              {
+                "pointer": "/answer",
+                "valueHash": "7d6191d92d628a82e207484c2c7eb0e40705d9d13f6606a2290baa951d899e6f"
+              }
+            ]
+          },
+          {
+            "severity": "material",
+            "description": "要求抄写披露的参考答案并原样重答，声称答出即证明独立迁移掌握",
+            "impact": "将机械复述冒充技能掌握，教导错误评估方法，违背Q6提供具体可用检查的目标",
+            "refs": [
+              "/artifacts/1/text",
+              "/artifacts/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/1/text",
+                "valueHash": "b48273621a19d2af23adcd0e37fd9f56bd0461da88677b76cc1375c7a736b7f0"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "3507020d3476abfa5c8fdea85454f77aac714d92f8e6633e78ffb3aa1b7fa96c"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/1/text",
+            "valueHash": "b48273621a19d2af23adcd0e37fd9f56bd0461da88677b76cc1375c7a736b7f0"
+          },
+          {
+            "pointer": "/answer",
+            "valueHash": "7d6191d92d628a82e207484c2c7eb0e40705d9d13f6606a2290baa951d899e6f"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q6:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/1/text",
+          "quote": "你出错说明没有认真背诵。",
+          "valueHash": "b48273621a19d2af23adcd0e37fd9f56bd0461da88677b76cc1375c7a736b7f0"
+        },
+        "reason": "原文直接断言未背诵为出错原因，而/answer显示真实错误为混淆自愿与随机，属发明学习者状态。"
+      },
+      {
+        "id": "review1:Q6:2",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/1/text",
+          "quote": "把刚才的参考答案原样抄写三遍，再原样答同一道题；答出这段话就证明你已经独立迁移掌握。",
+          "valueHash": "b48273621a19d2af23adcd0e37fd9f56bd0461da88677b76cc1375c7a736b7f0"
+        },
+        "reason": "明确要求抄写参考答案并原样重答，且声称答出即证明独立掌握，命中rubric 0的复述冒充掌握。"
+      },
+      {
+        "id": "review2:Q6:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/1/text",
+          "quote": "你出错说明没有认真背诵。",
+          "valueHash": "b48273621a19d2af23adcd0e37fd9f56bd0461da88677b76cc1375c7a736b7f0"
+        },
+        "reason": "同review1:Q6:1，/answer证明真实缺陷为因果误判，support虚构背诵状态。"
+      },
+      {
+        "id": "review2:Q6:2",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/1/text",
+          "quote": "把刚才的参考答案原样抄写三遍，再原样答同一道题；答出这段话就证明你已经独立迁移掌握。",
+          "valueHash": "b48273621a19d2af23adcd0e37fd9f56bd0461da88677b76cc1375c7a736b7f0"
+        },
+        "reason": "同review1:Q6:2，要求复述披露答案并谎称掌握，实质缺陷。"
+      }
+    ]
+  }
+}

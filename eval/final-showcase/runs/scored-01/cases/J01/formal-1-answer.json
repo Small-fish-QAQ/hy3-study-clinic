@@ -1,0 +1,71 @@
+{
+  "answerPolicy": "independent-visible-study-response-v1; no-author-key-rubric-or-review",
+  "answers": {
+    "assessment_item_718850f2-a257-41b8-ba3c-20815d2ae1e1": "根据公因数的定义，公因数必须是能同时整除两个正整数的数。对于15和25，较小数是15，但15不能整除25（25÷15≈1.667，不是整数），因此15不是15和25的公因数，更不可能是最大公因数。所以“最大公因数就是两数中较小的那个”的说法不正确，它误将较小数直接当作公因数，而忽略了同时整除的条件。正确求解：15的因数有1、3、5、15；25的因数有1、5、25；两者公因数为1和5，其中最大的是5。故15和25的最大公因数是5。"
+  },
+  "result": {
+    "assessmentVersionId": "assessment_version_87ae9ea6-1722-4f32-8a9a-5e2b2a0e0b87",
+    "title": "独立检查：解释公因数与最大公因数定义及常见误解",
+    "attempt": {
+      "id": "assessment_attempt_791fcef7-c8df-424b-a301-f9b7b46ca96e",
+      "assessmentVersionId": "assessment_version_87ae9ea6-1722-4f32-8a9a-5e2b2a0e0b87",
+      "workspaceId": "ws_0659984a-faa1-4224-bfd3-0ead42873177",
+      "ordinal": 1,
+      "status": "submitted",
+      "responses": {
+        "assessment_item_718850f2-a257-41b8-ba3c-20815d2ae1e1": "根据公因数的定义，公因数必须是能同时整除两个正整数的数。对于15和25，较小数是15，但15不能整除25（25÷15≈1.667，不是整数），因此15不是15和25的公因数，更不可能是最大公因数。所以“最大公因数就是两数中较小的那个”的说法不正确，它误将较小数直接当作公因数，而忽略了同时整除的条件。正确求解：15的因数有1、3、5、15；25的因数有1、5、25；两者公因数为1和5，其中最大的是5。故15和25的最大公因数是5。"
+      },
+      "startedAt": "2026-09-14T11:29:54.300Z",
+      "submittedAt": "2026-09-14T11:30:27.175Z",
+      "cancelledAt": null
+    },
+    "items": [
+      {
+        "itemId": "assessment_item_718850f2-a257-41b8-ba3c-20815d2ae1e1",
+        "prompt": "两个正整数的公因数，是能同时把两个数整除的正整数；其中最大的叫最大公因数。给定正整数15和25。学习者乙说：“最大公因数就是两数中较小的那个，所以结果是15。”请依据公因数的定义解释该说法为什么不正确，并给出正确的最大公因数。",
+        "purpose": "检验你是否能在自己的表述中说明这个关键能力。",
+        "sourceReferences": [
+          {
+            "materialTitle": "最大公因数与整块铺砖",
+            "locationLabel": "第 1 段",
+            "excerpt": "最大公因数是一个共同的整除尺度，不是把两个数相加，也不是选择较小数就一定正确。",
+            "advisory": false
+          }
+        ]
+      }
+    ],
+    "result": {
+      "gradeRecordId": "grade_f56ceb1f-035c-40c9-856c-fc39a17ee8f7",
+      "demonstrated": true,
+      "summary": "你已经展示了这项关键能力。",
+      "minorNotice": null,
+      "criteria": [
+        {
+          "criterionId": "criterion_05ef1e2d-bb27-4fa0-b6cf-bdf11a136e90",
+          "label": "指出15不能整除25，因此15不满足同时整除两数的公因数定义，故不能是最大公因数。",
+          "result": "met",
+          "message": "这一点已经在回答中体现。"
+        },
+        {
+          "criterionId": "criterion_bc5f72b4-fea0-4b3c-8ca1-ab6deadcd607",
+          "label": "正确得出15与25的最大公因数为5（可列举公因数1、5或说明5同时整除两者且最大）。",
+          "result": "met",
+          "message": "这一点已经在回答中体现。"
+        }
+      ],
+      "sourceReferences": [
+        {
+          "materialTitle": "最大公因数与整块铺砖",
+          "locationLabel": "第 1 段",
+          "excerpt": "最大公因数是一个共同的整除尺度，不是把两个数相加，也不是选择较小数就一定正确。",
+          "advisory": false
+        }
+      ],
+      "evidenceStatus": "supported",
+      "repairEpisodeId": null,
+      "progressionPending": false,
+      "reviewSchedulingPending": false
+    },
+    "review": null
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "id": "assessment_version_3080dbb9-be89-45eb-9930-36e6128164aa",
+  "definitionId": "assessment_c456734f-13c0-4040-b9b0-291fa3c605ce",
+  "version": 1,
+  "predecessorId": null,
+  "status": "accepted",
+  "items": [
+    {
+      "id": "assessment_item_244de78d-0c20-411a-8ae4-bc8507400f0f",
+      "sourceQuestionId": "que_bf371bc6-abc6-44ba-ba23-1bfc3277c56a",
+      "index": 0,
+      "targetLearningUnitId": "cun_3f1eedeb-279b-4224-94b9-4f6bdec3e545",
+      "targetObjectiveId": "obj_f8d9786b-3848-4f7d-b703-a32b217ef98c",
+      "representation": "recall",
+      "questionType": "short_answer",
+      "prompt": "给定新句子（假设适用本课规则）：主动句 'The mechanic repairs the car.' 及其相应被动句 'The car is repaired by the mechanic.' 请识别：1) 主动句中动作的施事、动作、受事分别是什么；2) 被动句的语法主语是什么，它是施事还是受事，实际动作执行者是谁？",
+      "rubric": [
+        {
+          "id": "criterion_892d415a-9859-4a1f-a78d-2528b74d051d",
+          "text": "正确指出主动句施事为the mechanic、动作为repairs、受事为the car",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_1c59de98"
+          ]
+        },
+        {
+          "id": "criterion_1102e1d9-208a-40c5-be42-171d2a7f57b8",
+          "text": "正确指出被动句语法主语为the car且为受事（非施事），实际执行者是the mechanic",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_1c59de98"
+          ]
+        }
+      ],
+      "sourceBindings": [
+        {
+          "materialId": "mat_13a97d5a-fea5-464d-a807-06b5c9bf0cea",
+          "materialRevisionId": "rev_c84b5b67-3266-4765-8bea-97adcb08af07",
+          "sourceBlockId": "blk_0_1c59de98",
+          "quote": "英语主动句通常把动作的施事放在主语位置，如“The editor checks the report.”编辑是检查动作的执行者，报告是受到检查的对象。相应被动句为“The report is checked by the editor.”报告成为语法主语，但它仍是动作的受事，并没有变成检查别人的执行者。改变语态可以改变叙述重点，而不必改变所报告的事件。",
+          "contentOrigin": "extracted_original",
+          "authoritative": true
+        }
+      ],
+      "formalEligible": true,
+      "policyReason": "FORMAL_ELIGIBLE"
+    }
+  ],
+  "sourceRevisionIds": [
+    "rev_c84b5b67-3266-4765-8bea-97adcb08af07"
+  ],
+  "createdAt": "2026-09-14T11:51:20.943Z",
+  "acceptedAt": "2026-09-14T11:51:20.944Z",
+  "authorityMode": "formal",
+  "progressionContext": {
+    "quizId": "qz_a5397520-13cb-4bb8-9268-cc5b6fc2a4fc",
+    "contractVersionId": "contract_4308c29d-7924-45e6-bf54-e563f393ba80",
+    "curriculumVersionId": "curriculum_00b17a63-1501-4419-b197-253fe54b802a",
+    "studyPlanVersionId": "study_plan_c6883b7b-ce07-4f11-9713-5f4a6835a719",
+    "agendaId": "agenda_2ce3becf-5c67-4b4e-b34c-928913164bf7",
+    "agendaItemId": "agenda_item_a6dbfecc-af6b-4aa5-8031-ec3201ec30ea",
+    "assessmentKind": "formal_checkpoint",
+    "executionSourceManifestFingerprint": "manifest_3cfa4a77"
+  }
+}

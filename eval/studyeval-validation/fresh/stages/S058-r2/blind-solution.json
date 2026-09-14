@@ -1,0 +1,36 @@
+{
+  "inputIdentity": "ad0beef21801602b375ae3f4fdb38e69b792bf3a050f4da25e2fe6766b415495",
+  "attempts": [
+    {
+      "physicalId": "ab99143a-029e-4077-a38d-861c07939876",
+      "caseId": "S058",
+      "runId": "S058-r2",
+      "stage": "blind-solution",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "status": "resolved",
+    "solution": "依据/sources/0/text，XOR(1,1)两输入均为1，输出0；再将结果0与1送入XOR门，恰好一个输入为1，输出1。最终输出为1。两步均严格按给定异或定义，输入限定0/1，推导无歧义。",
+    "refs": [
+      "/question/prompt",
+      "/sources/0/text"
+    ],
+    "witnesses": [
+      {
+        "pointer": "/question/prompt",
+        "valueHash": "5758ea989ce8c301f73b0ed45829a3609edbc221481bcd3270fc98a8791ac7a6"
+      },
+      {
+        "pointer": "/sources/0/text",
+        "valueHash": "abe0ee3fc063cc9ca8e5695fcc7196cbc85922a703ddb540aee12d9b2456e392"
+      }
+    ]
+  }
+}

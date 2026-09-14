@@ -1,0 +1,143 @@
+{
+  "inputIdentity": "3da82793d543852f0a4b8f5cd72e2eaf86cf6d4e20e5ca8e61610758c1540ffb",
+  "attempts": [
+    {
+      "physicalId": "6ecc923e-5cf9-4762-b932-f90dcd05ebee",
+      "caseId": "S060",
+      "runId": "S060-r1",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q2",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "artifact断言第一人称总是作者本人且一定知道所有人物思想，直接矛盾核心目标区分叙述者/作者及解释第一人称限制（source明确要求限制）。错误教导改变核心学习用途，次要目标引用标记无法补救。故评0。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/0",
+          "/goals/1",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "Lesson声称第一人称“我”总是作者本人，矛盾核心目标区分叙述者与现实作者，错误合并二者。",
+            "impact": "改变核心学习用途，学习者建立相反错误认知，无法达成区分目标。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/0",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "a750d065c5417fa7e4b648d56cbe226380a18cdd6674a5a2ae6c5682c51c6b91"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "2b41e2bf08ab98b4ef000c50cebd55a20f14a001d93a4acdd0bee2a73360a806"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "bae368a359568cf22d196cf95dd79a50368bc21f0e49042a004744bc3b0af43c"
+              }
+            ]
+          },
+          {
+            "severity": "material",
+            "description": "Lesson称“一定知道所有人物思想”，矛盾核心目标解释第一人称限制，未教限制反而否认限制。",
+            "impact": "核心推导错误，学习者误以为无限制，违背working_fluency深度要求。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/1",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "a750d065c5417fa7e4b648d56cbe226380a18cdd6674a5a2ae6c5682c51c6b91"
+              },
+              {
+                "pointer": "/goals/1",
+                "valueHash": "22d8faa697faa2a740550cc0d1cafef65fe438b94828227c311203c1333a76d9"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "bae368a359568cf22d196cf95dd79a50368bc21f0e49042a004744bc3b0af43c"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "a750d065c5417fa7e4b648d56cbe226380a18cdd6674a5a2ae6c5682c51c6b91"
+          },
+          {
+            "pointer": "/goals/0",
+            "valueHash": "2b41e2bf08ab98b4ef000c50cebd55a20f14a001d93a4acdd0bee2a73360a806"
+          },
+          {
+            "pointer": "/goals/1",
+            "valueHash": "22d8faa697faa2a740550cc0d1cafef65fe438b94828227c311203c1333a76d9"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "bae368a359568cf22d196cf95dd79a50368bc21f0e49042a004744bc3b0af43c"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q2:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "第一人称“我”总是作者本人",
+          "valueHash": "a750d065c5417fa7e4b648d56cbe226380a18cdd6674a5a2ae6c5682c51c6b91"
+        },
+        "reason": "该句将叙述者等同现实作者，矛盾目标0与source正确规则，错误合并二者，改变核心用途。"
+      },
+      {
+        "id": "review1:Q2:2",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "也一定知道所有人物思想",
+          "valueHash": "a750d065c5417fa7e4b648d56cbe226380a18cdd6674a5a2ae6c5682c51c6b91"
+        },
+        "reason": "断言全知否认限制，矛盾目标1与source中不能知未表达心思，核心目标被矛盾。"
+      },
+      {
+        "id": "review2:Q2:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "第一人称“我”总是作者本人，因此它讲的每一件事都是现实作者亲历，也一定知道所有人物思想。",
+          "valueHash": "a750d065c5417fa7e4b648d56cbe226380a18cdd6674a5a2ae6c5682c51c6b91"
+        },
+        "reason": "同时矛盾两个核心目标，错误核心方法改变学习用途，指控成立。"
+      }
+    ]
+  }
+}

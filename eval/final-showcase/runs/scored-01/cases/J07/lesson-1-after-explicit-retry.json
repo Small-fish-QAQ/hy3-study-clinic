@@ -1,0 +1,208 @@
+{
+  "status": "practice_retry_available",
+  "message": "The accepted Lesson is preserved. Retry preparation to generate only its informal Practice.",
+  "course": {
+    "title": "弹簧的伸长量与总长度"
+  },
+  "session": {
+    "status": "active",
+    "version": 1
+  },
+  "agenda": {
+    "version": 1,
+    "itemState": "queued"
+  },
+  "lesson": {
+    "objective": {
+      "title": "伸长量定义与胡克定律应用及弹簧软硬比较",
+      "whyNow": "若把总长度当作伸长量，或忽略弹性范围边界，就会算出荒谬拉力；需要先建立原长、总长、伸长量三者关系并能在边界前止步。",
+      "outcomes": [
+        {
+          "title": "识别原长、受拉总长度与伸长量及其区别",
+          "description": "能够区分弹簧原长L0、受拉后总长度L与伸长量x=L-L0；认识到三者数值不同，总长度不是伸长量，原长段不能算作变形，且因回复方向而不能将伸长量任意写为负数（即伸长量为正）。"
+        },
+        {
+          "title": "在弹性范围内应用胡克定律计算伸长量与总长并核验",
+          "description": "在静止轴向拉伸且变形未超过题目给定弹性范围的条件下，应用胡克定律F=kx（使用伸长量x而非总长度L）并统一单位（如牛顿与米或厘米一致），由给定劲度系数k与拉力F计算伸长量x及受拉总长度L=L0+x；核对结果是否在模型范围内，若超出则视线性预测无效且不猜测断裂等未提供信息。"
+        }
+      ]
+    },
+    "prerequisites": [],
+    "segments": [
+      {
+        "index": 0,
+        "purpose": "orientation",
+        "explanation": "设想一个未受拉时长为10厘米的轻弹簧，沿轴线施加拉力后静止，测得总长12厘米。按定义，伸长量是受拉后多出原长的那段变形，即x=12−10=2厘米，而不是12厘米本身。原长那10厘米早已存在，不能算作本次拉伸产生的新长度。若劲度系数k=100牛顿每米，由F=kx可得拉力为100×0.02=2牛顿；若误把总长0.12米代入，会得12牛顿，显然错。这显示总长、原长、伸长量是三个不同数值，且伸长量取正。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 1,
+        "purpose": "guided_practice",
+        "explanation": "再用一个不同例子巩固：已知弹簧原长25厘米，劲度系数200牛顿每米，在4牛顿拉力下静止且处于弹性范围内。我们先用x=F/k求伸长量，再算总长，注意厘米与米的换算。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": {
+          "kind": "choose",
+          "prompt": "原长25厘米，拉力4牛，k=200牛/米，弹性范围未超限。受拉后总长度应为多少？",
+          "guidance": null,
+          "options": [
+            {
+              "id": "A",
+              "text": "总长27厘米（x=4/200=0.02米=2厘米，25+2=27）"
+            },
+            {
+              "id": "B",
+              "text": "总长25.02厘米（误将0.02米当作0.02厘米直接加）"
+            }
+          ],
+          "presented": false,
+          "response": null,
+          "respondedAt": null,
+          "correct": null,
+          "feedback": null,
+          "credit": "none"
+        }
+      },
+      {
+        "index": 2,
+        "purpose": "comparison",
+        "explanation": "前面例子都在弹性范围内。若题目明确给出伸长量上限，例如不超过5厘米，则一旦算得伸长量超出该值，F=kx就不再被授权使用。此时不能为了凑数仍用公式，也不能凭空猜测弹簧断裂或塑性值，因为那些信息未提供。边界的作用是暂停线性预测，而不是改变伸长量本身的定义。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": {
+          "text": "未给弹性范围时，不可自行假设线性无限成立；但给定“不超过5厘米”后，算得6厘米就必须停用公式，二者区别在于是否有明确边界条件，而非伸长量计算方式不同。",
+          "origin": "hy3_synthesis",
+          "sources": []
+        },
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 3,
+        "purpose": "worked_example",
+        "explanation": "下面用一个新例子展示如何把拉力、劲度系数与原长三步结合：先由F=kx求伸长量并统一单位，再把伸长量加到原长得总长。若题目未给弹性上限，我们只做算术核算，不额外假设失效；后续若补充边界则另作判断。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": {
+          "startingState": "弹簧原长30厘米，劲度系数500牛顿每米，受沿轴线静止拉力10牛顿，题目未给弹性范围上限（即暂默认在模型内）。",
+          "inputs": [
+            "原长30厘米",
+            "k=500牛/米",
+            "F=10牛"
+          ],
+          "ruleOrProcedure": "胡克定律F=kx，伸长量x=F/k；总长L=L0+x；单位统一为米或厘米后相加。",
+          "steps": [
+            {
+              "action": "由F=10牛、k=500牛/米，计算伸长量x=F/k=10/500=0.02米",
+              "reason": "统一单位，拉力用牛顿、k用牛顿每米，得x为米",
+              "resultingState": "伸长量x=0.02米（即2厘米）"
+            }
+          ],
+          "learnerDecision": null,
+          "result": null,
+          "whyResultFollows": null,
+          "origin": "hy3_synthesis",
+          "sources": [],
+          "interaction": {
+            "stage": "guided",
+            "modelledStepCount": 1,
+            "origin": "hy3_synthesis",
+            "sources": [],
+            "activity": {
+              "prompt": "弹簧原长30厘米，劲度系数500牛顿每米，受10牛顿静止拉力且未给弹性上限（即默认在范围内）。已算得伸长量0.02米=2厘米。受拉后总长度应为多少？",
+              "options": [
+                {
+                  "id": "A",
+                  "text": "总长32厘米（30厘米+2厘米）"
+                },
+                {
+                  "id": "B",
+                  "text": "总长30.02厘米（误将0.02米当作0.02厘米直接加）"
+                },
+                {
+                  "id": "C",
+                  "text": "总长50厘米（误将0.02米当作20厘米相加）"
+                }
+              ],
+              "response": null,
+              "respondedAt": null,
+              "correct": null,
+              "feedback": null,
+              "debrief": null,
+              "credit": "none",
+              "misconception": null
+            },
+            "hint": null,
+            "scaffold": null,
+            "transfer": null
+          }
+        },
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 4,
+        "purpose": "comparison",
+        "explanation": "边界条件是题目各自授权的限制，不是伸长量定义的一部分。明确上限后，超出则线性预测不被授权，但算术伸长量仍可按公式算出；未超限时则正常沿用。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": {
+          "text": "若题目对弹簧甲规定伸长量不超过5厘米、对弹簧乙规定不超过10厘米，二者在算得均为6厘米时，甲须停用线性预测而乙仍可沿用；边界是各自独立授权条件，不是由伸长量数值本身自动决定模型失效。",
+          "origin": "hy3_synthesis",
+          "sources": []
+        },
+        "possibleMisconception": null,
+        "informalCheck": null
+      }
+    ],
+    "sourceReferencesAvailable": true,
+    "visuals": [],
+    "summary": {
+      "available": true,
+      "text": "伸长量x是原长L0与受拉总长L之差且为正；可由x=F/k交叉验证；任何计算须先统一单位并核对题目给定的弹性范围，超出则公式停用。",
+      "nextConnection": null,
+      "formalOpportunities": []
+    },
+    "plannedTime": {
+      "agendaMinutes": 19,
+      "activeMinutesMin": 22,
+      "activeMinutesMax": 36,
+      "basis": "locally_evaluated_learning_actions"
+    }
+  },
+  "progress": {
+    "stateVersion": 4,
+    "stateId": "lesson_execution_c7fb3070-ddcf-4d04-955c-516eac5ccd73",
+    "currentSegmentIndex": 0,
+    "segmentCount": 5,
+    "presentedSegmentIndexes": [],
+    "presentationStatus": "not_started",
+    "presentationCompletedAt": null
+  },
+  "currentInformalCheck": null,
+  "practice": null,
+  "allowedActions": [
+    "retry_preparation"
+  ]
+}

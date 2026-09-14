@@ -1,0 +1,114 @@
+{
+  "inputIdentity": "cd701fff33d835116e0e931e567ea5cdbc646986314dfa649b823b8b6e591b84",
+  "attempts": [
+    {
+      "physicalId": "b0fb647d-604c-4333-82e0-a5873bedc538",
+      "caseId": "S035",
+      "runId": "S035-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q5",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "学生提交为空字符串，未写出并集{1,2,3}，必需要求未满足；产品误判required为met并授予信用，错误接受空答。",
+        "refs": [
+          "/answer",
+          "/rubric/0",
+          "/productJudgment/criteria/0",
+          "/productJudgment/consequence"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "产品将空白答案判定为满足required并集输出并授予信用",
+            "impact": "改变核心评分用途：必需要求被虚假接受，实际学分granted与应得withheld冲突",
+            "refs": [
+              "/answer",
+              "/productJudgment/criteria/0",
+              "/productJudgment/consequence"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/answer",
+                "valueHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+              },
+              {
+                "pointer": "/productJudgment/criteria/0",
+                "valueHash": "bbdd989d920e7cbf5b63f26f5559d0c3c7645cb712c6ed1b9e2f872e4b937fbd"
+              },
+              {
+                "pointer": "/productJudgment/consequence",
+                "valueHash": "dd515d1975b8e5a83bab3420bea5dacefe5451ac7cf617d23c4393cc79e4db99"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "grading": {
+          "criteria": [
+            {
+              "id": "required",
+              "result": "not_met",
+              "reason": "学生全答为空字符串，未包含{1,2,3}或任何并集结果，不满足写出并集的必需要求",
+              "refs": [
+                "/answer",
+                "/rubric/0"
+              ],
+              "required": true,
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                {
+                  "pointer": "/rubric/0",
+                  "valueHash": "41e3e9993ea73d3924609af1ca9150dfde326067be5fc53a6f4aec3ca0e10258"
+                }
+              ]
+            }
+          ],
+          "warrantedCredit": "withheld",
+          "actualCredit": "granted",
+          "actualCreditWitness": {
+            "pointer": "/productJudgment/consequence",
+            "valueHash": "dd515d1975b8e5a83bab3420bea5dacefe5451ac7cf617d23c4393cc79e4db99"
+          }
+        },
+        "witnesses": [
+          {
+            "pointer": "/answer",
+            "valueHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "pointer": "/rubric/0",
+            "valueHash": "41e3e9993ea73d3924609af1ca9150dfde326067be5fc53a6f4aec3ca0e10258"
+          },
+          {
+            "pointer": "/productJudgment/criteria/0",
+            "valueHash": "bbdd989d920e7cbf5b63f26f5559d0c3c7645cb712c6ed1b9e2f872e4b937fbd"
+          },
+          {
+            "pointer": "/productJudgment/consequence",
+            "valueHash": "dd515d1975b8e5a83bab3420bea5dacefe5451ac7cf617d23c4393cc79e4db99"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

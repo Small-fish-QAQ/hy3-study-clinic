@@ -1,0 +1,49 @@
+{
+  "inputIdentity": "4c3cca16e22937370ed814ab38712a7b2eeebd544d2273c1a27c32762dcf3bac",
+  "attempts": [
+    {
+      "physicalId": "74098566-1c3e-4610-b478-9a53602bc6aa",
+      "caseId": "S001",
+      "runId": "S001-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q2",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "产物准确演示复制后双路径存在且内容同、移动后原路径消失；次要目标改扩展名不证格式转换以改名规则准确说明，达所需深度，无缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "73f1127c4c7350fb2bd6bd1e59bb68d183be28b5bf45308cea179236756823d5"
+          },
+          {
+            "pointer": "/goals",
+            "valueHash": "7a932054b76cbcdb228151a74683dc39d2febf3e855646878abc67edfe487d53"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

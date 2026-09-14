@@ -1,0 +1,76 @@
+{
+  "inputIdentity": "379212749f692bf09ab533d3cb595c787db638690a6459e012db0c5a26c32e2e",
+  "attempts": [
+    {
+      "physicalId": "13eaabe3-a3a5-45da-9447-d72951f5c7a5",
+      "caseId": "N-F09-tutor",
+      "runId": "H-N-F09-tutor-r3",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "产物准确归属来源关于单位不可加与速度相加假设，自举粉刷例子计算全部正确，适用边界类比来源条件，无事实或归属缺陷。",
+        "refs": [
+          "/sources/0/text",
+          "/artifacts/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "aff18385f24a6c262c334211a2f0b4cf24274b0ced6c491758a119a614223f39"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      },
+      {
+        "dimension": "Q3",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "局部例子从给定单独用时推速度，分段算完成量与合速，用除法求剩余时间并总计时长，明确假设与适用边界，解释连接充分。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "aff18385f24a6c262c334211a2f0b4cf24274b0ced6c491758a119a614223f39"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,97 @@
+{
+  "inputIdentity": "99eb3309963f47f0029d939988acdee0decc6e9b14d1ca23e12a947a2286a0a7",
+  "attempts": [
+    {
+      "physicalId": "080ef748-8a7d-436c-9193-2274dd63055f",
+      "caseId": "E121",
+      "runId": "H-E121-r2",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q4",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "作者参考解错误称乙离开后两人仍合作总3h，违背题设且数值错；按规作者答案错误即material，level=0。题目本身可答需应用，未提前曝光。",
+        "refs": [
+          "/question/prompt",
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "artifact参考解称乙先做1h后两人仍合作余下2h总3h，但题设乙离开甲独做，正确总时应为7h。",
+            "impact": "若依此评分将拒正确解，实质破坏评估核心用途。",
+            "refs": [
+              "/artifacts/0/text",
+              "/question/prompt"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "c813eecfe1ed8f2d322598191e2436097e00eeb26fd1eb5b5fe1aef361a5c4a6"
+              },
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "dcf5dd89a64f0379c2a16c155095996cbf9b1dfd98e7b21c0cebe9fb5974918a"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "assessment": {
+          "key": "incorrect",
+          "validity": "valid",
+          "exposure": "none",
+          "discrimination": "adequate",
+          "demand": "application",
+          "demandReason": "学生须由单独用时求速，分段算乙做1/4后甲独做3/4需6h总7h，并算合作8/3h比较，超出抄写。",
+          "reason": "题干条件清可推blindSolution；artifact参考解矛盾题设致key=incorrect material。无曝光，题需应用计算判别力足。",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text"
+          ],
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "dcf5dd89a64f0379c2a16c155095996cbf9b1dfd98e7b21c0cebe9fb5974918a"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "c813eecfe1ed8f2d322598191e2436097e00eeb26fd1eb5b5fe1aef361a5c4a6"
+            }
+          ]
+        },
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "dcf5dd89a64f0379c2a16c155095996cbf9b1dfd98e7b21c0cebe9fb5974918a"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "c813eecfe1ed8f2d322598191e2436097e00eeb26fd1eb5b5fe1aef361a5c4a6"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

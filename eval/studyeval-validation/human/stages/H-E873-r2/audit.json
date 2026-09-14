@@ -1,0 +1,54 @@
+{
+  "inputIdentity": "a8b5457db3dd765dec92888dd3596d3ffb5df451512cdfe8dd8038d9c80f1157",
+  "attempts": [
+    {
+      "physicalId": "692cded0-b060-4e50-8a87-27be4896ba36",
+      "caseId": "E873",
+      "runId": "H-E873-r2",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q6",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "支持材料准确诊断学生将自愿误作随机的推理缺口，用反例说明混杂，并提供具体下一题（抽签分卡但甲组多练十分钟）检查同一推理技能，符合Q6二级标准。",
+        "refs": [
+          "/artifacts/1/text",
+          "/answer",
+          "/question/prompt"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/1/text",
+            "valueHash": "92b176354da78b28cb5522dcba0ee9141d78651ee215f63b5167216fd3796daf"
+          },
+          {
+            "pointer": "/answer",
+            "valueHash": "7d6191d92d628a82e207484c2c7eb0e40705d9d13f6606a2290baa951d899e6f"
+          },
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "40515ddefe7144a8c80977cc79f59af6231fa3747b5a992a6434f6ea76b34d40"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

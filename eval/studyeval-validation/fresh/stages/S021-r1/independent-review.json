@@ -1,0 +1,49 @@
+{
+  "inputIdentity": "d713c1e1cc07fc4e697fcc9e56f0312d63b07edeaa4021bc7b7aa2743dbead96",
+  "attempts": [
+    {
+      "physicalId": "e5a5ca1a-dedb-40eb-b107-119ea1162601",
+      "caseId": "S021",
+      "runId": "S021-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "artifact正确计算3072字节为3 KiB与3.072 kB，依据来源给出的二进制与十进制基数差异，并正确指出同字节量不同数值表示不代表文件变大或变好，符合核对换算及来源的goal，无事实或归属缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "8afdc8a16be985b2b672462a1afa0e0f087f5b87a37356f6bfa6cf393136a011"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "9962889a586bcebaf05685b990e16a73f43aca209ab59334e74cf9c8606897a1"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

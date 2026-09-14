@@ -1,0 +1,82 @@
+{
+  "inputIdentity": "bb00f1a923a5cfd03b71e0657498cacf045f5477a127686c9869082ad60fadcf",
+  "attempts": [
+    {
+      "physicalId": "1bde2df1-4033-4407-8ad4-af731c101f64",
+      "caseId": "S006",
+      "runId": "S006-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q4",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "题目在给定规则下可答，要求应用状态转换并说明依据，符合working_fluency深度；作者答案正确且未泄露，有效抽样目标技能。",
+        "refs": [
+          "/question/prompt",
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "assessment": {
+          "key": "correct",
+          "validity": "valid",
+          "exposure": "none",
+          "discrimination": "adequate",
+          "demand": "application",
+          "demandReason": "学生必须根据来源规则逐步推导状态变化并解释每步依据，非抄写现成公式。",
+          "reason": "题干要求执行序列并说明依据；作者键给出正确结论且与盲解一致，无矛盾；priorExposure空无泄露；需应用规则解释，判别力足。",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "5df22305082ed220c0e2918db98b043b6e7635d8494521996b06981567b53a53"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "28304bf086083ba25f5bb5967980735bb14b47a3eee96a43a719cc790ce2b2da"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "694fcf138ee515172ab2dd1c3a0a59baef8e0ee6b25086ed04ce3845111041ea"
+            }
+          ]
+        },
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "5df22305082ed220c0e2918db98b043b6e7635d8494521996b06981567b53a53"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "28304bf086083ba25f5bb5967980735bb14b47a3eee96a43a719cc790ce2b2da"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "694fcf138ee515172ab2dd1c3a0a59baef8e0ee6b25086ed04ce3845111041ea"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

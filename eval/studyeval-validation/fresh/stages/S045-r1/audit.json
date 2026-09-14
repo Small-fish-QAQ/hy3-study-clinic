@@ -1,0 +1,107 @@
+{
+  "inputIdentity": "0c4ebb1a4674515d38e83ab7809edb437275ebabd5f227df3a37ecb78b106810",
+  "attempts": [
+    {
+      "physicalId": "737dfc51-f2da-4a3e-a6bc-fa40779347c2",
+      "caseId": "S045",
+      "runId": "S045-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q4",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "题目禁言信息不足强令唯一终高，与明示有符号高度规则矛盾；作者键错称终高3米；无提前曝光；判别力弱拒正确解，核心用途失效。",
+        "refs": [
+          "/question/prompt",
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "题干要求初始未知时给唯一最终绝对高度且禁止说信息不足，违背来源规则导致的欠定性，构成强制错误键。",
+            "impact": "改变核心用途：无法合法评估连续变化应用技能，正确回答被禁，测试无效。",
+            "refs": [
+              "/question/prompt",
+              "/sources/0/text",
+              "/artifacts/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "678fa04269e5dd9e77c27b3e192985ba0156440a8c8ece76a99a362a20b654b1"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "1df9950edf389e68cc4353ad1c364ae71b323e3e1d130830ce39d9c5e25fe7f3"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "bb2d3c1987e82276f2054a2116dce18217820b6fa22681b3be43cd98fd24d8a3"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "assessment": {
+          "key": "incorrect",
+          "validity": "invalid",
+          "exposure": "none",
+          "discrimination": "weak",
+          "demand": "reasoning",
+          "demandReason": "学生须计算上升7下降4净变+3，并本应结合未知初高得出终高欠定；题目却禁此结论强令唯一值，任务矛盾需识别冲突。",
+          "reason": "题目强令唯一终高禁言不足，与/sources/0/text矛盾；作者键/artifacts/0/text称唯一3米错误；priorExposure空无泄露；判别弱因拒正确解。",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "678fa04269e5dd9e77c27b3e192985ba0156440a8c8ece76a99a362a20b654b1"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "bb2d3c1987e82276f2054a2116dce18217820b6fa22681b3be43cd98fd24d8a3"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "1df9950edf389e68cc4353ad1c364ae71b323e3e1d130830ce39d9c5e25fe7f3"
+            }
+          ]
+        },
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "678fa04269e5dd9e77c27b3e192985ba0156440a8c8ece76a99a362a20b654b1"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "bb2d3c1987e82276f2054a2116dce18217820b6fa22681b3be43cd98fd24d8a3"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "1df9950edf389e68cc4353ad1c364ae71b323e3e1d130830ce39d9c5e25fe7f3"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

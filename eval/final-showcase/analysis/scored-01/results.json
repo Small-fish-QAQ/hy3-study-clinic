@@ -1,0 +1,710 @@
+{
+  "at": "2026-09-14T12:23:18.221Z",
+  "suite": "fresh-showcase",
+  "partial": false,
+  "n": 20,
+  "completed": 20,
+  "funnel": {
+    "imported": 20,
+    "prepared": 20,
+    "lessonReady": 18,
+    "teachingComplete": 17,
+    "allTeachingComplete": 17,
+    "formalAttempted": 17,
+    "candidateReturned": 17,
+    "admitted": 15,
+    "submitted": 15,
+    "supportedEvidence": 15,
+    "durableCredit": 15,
+    "responsiveEvidence": 0,
+    "completeJourney": 15
+  },
+  "teaching": {
+    "attempted": 36,
+    "completed": 33
+  },
+  "controls": [
+    {
+      "id": "J01",
+      "kind": "insufficient",
+      "caseId": "J01-insufficient-1",
+      "submitted": true,
+      "credited": 0
+    },
+    {
+      "id": "J01",
+      "kind": "authority",
+      "caseId": "J01-authority-1",
+      "submitted": true,
+      "credited": 0
+    },
+    {
+      "id": "J02",
+      "kind": "insufficient",
+      "caseId": "J02-insufficient-1",
+      "submitted": true,
+      "credited": 0
+    },
+    {
+      "id": "J02",
+      "kind": "authority",
+      "caseId": "J02-authority-1",
+      "submitted": true,
+      "credited": 0
+    },
+    {
+      "id": "J04",
+      "kind": "insufficient",
+      "caseId": "J04-insufficient-1",
+      "submitted": true,
+      "credited": 0
+    },
+    {
+      "id": "J04",
+      "kind": "authority",
+      "caseId": "J04-authority-1",
+      "submitted": true,
+      "credited": 0
+    },
+    {
+      "id": "J06",
+      "kind": "insufficient",
+      "caseId": "J06-insufficient-1",
+      "submitted": true,
+      "credited": 0
+    },
+    {
+      "id": "J06",
+      "kind": "authority",
+      "caseId": "J06-authority-1",
+      "submitted": true,
+      "credited": 0
+    },
+    {
+      "id": "J08",
+      "kind": "insufficient",
+      "caseId": "J08-insufficient-1",
+      "submitted": true,
+      "credited": 0
+    },
+    {
+      "id": "J08",
+      "kind": "authority",
+      "caseId": "J08-authority-1",
+      "submitted": true,
+      "credited": 0
+    },
+    {
+      "id": "J09",
+      "kind": "insufficient",
+      "caseId": "J09-insufficient-1",
+      "submitted": true,
+      "credited": 0
+    },
+    {
+      "id": "J09",
+      "kind": "authority",
+      "caseId": "J09-authority-1",
+      "submitted": true,
+      "credited": 0
+    },
+    {
+      "id": "J11",
+      "kind": "insufficient",
+      "caseId": "J11-insufficient-1",
+      "submitted": true,
+      "credited": 0
+    },
+    {
+      "id": "J11",
+      "kind": "authority",
+      "caseId": "J11-authority-1",
+      "submitted": true,
+      "credited": 0
+    },
+    {
+      "id": "J12",
+      "kind": "insufficient",
+      "caseId": "J12-insufficient-1",
+      "submitted": true,
+      "credited": 0
+    },
+    {
+      "id": "J12",
+      "kind": "authority",
+      "caseId": "J12-authority-1",
+      "submitted": true,
+      "credited": 0
+    },
+    {
+      "id": "J13",
+      "kind": "insufficient",
+      "caseId": "J13-insufficient-1",
+      "submitted": true,
+      "credited": 0
+    },
+    {
+      "id": "J13",
+      "kind": "authority",
+      "caseId": "J13-authority-1",
+      "submitted": true,
+      "credited": 0
+    },
+    {
+      "id": "J14",
+      "kind": "insufficient",
+      "caseId": "J14-insufficient-1",
+      "submitted": true,
+      "credited": 0
+    },
+    {
+      "id": "J14",
+      "kind": "authority",
+      "caseId": "J14-authority-1",
+      "submitted": true,
+      "credited": 0
+    },
+    {
+      "id": "J15",
+      "kind": "insufficient",
+      "caseId": "J15-insufficient-1",
+      "submitted": true,
+      "credited": 0
+    },
+    {
+      "id": "J15",
+      "kind": "authority",
+      "caseId": "J15-authority-1",
+      "submitted": true,
+      "credited": 0
+    },
+    {
+      "id": "J16",
+      "kind": "insufficient",
+      "caseId": "J16-insufficient-1",
+      "submitted": true,
+      "credited": 0
+    },
+    {
+      "id": "J16",
+      "kind": "authority",
+      "caseId": "J16-authority-1",
+      "submitted": true,
+      "credited": 0
+    },
+    {
+      "id": "J17",
+      "kind": "insufficient",
+      "caseId": "J17-insufficient-1",
+      "submitted": true,
+      "credited": 0
+    },
+    {
+      "id": "J17",
+      "kind": "authority",
+      "caseId": "J17-authority-1",
+      "submitted": true,
+      "credited": 0
+    },
+    {
+      "id": "J19",
+      "kind": "insufficient",
+      "caseId": "J19-insufficient-1",
+      "submitted": true,
+      "credited": 0
+    },
+    {
+      "id": "J19",
+      "kind": "authority",
+      "caseId": "J19-authority-1",
+      "submitted": true,
+      "credited": 0
+    },
+    {
+      "id": "J20",
+      "kind": "insufficient",
+      "caseId": "J20-insufficient-1",
+      "submitted": true,
+      "credited": 0
+    },
+    {
+      "id": "J20",
+      "kind": "authority",
+      "caseId": "J20-authority-1",
+      "submitted": true,
+      "credited": 0
+    }
+  ],
+  "costs": {
+    "requests": 659,
+    "received": 659,
+    "unfinished": 0,
+    "transportFailures": 0,
+    "httpErrors": 0,
+    "truncated": 0,
+    "missingUsage": 0,
+    "inputTokens": 2508314,
+    "outputTokens": 2504588,
+    "totalTokens": 5012902
+  },
+  "rows": [
+    {
+      "id": "J01",
+      "imported": true,
+      "prepared": true,
+      "lessonReady": true,
+      "teachingComplete": true,
+      "allTeachingComplete": true,
+      "formalAttempted": true,
+      "candidateReturned": true,
+      "admitted": true,
+      "submitted": true,
+      "supportedEvidence": true,
+      "durableCredit": true,
+      "responsiveEvidence": false,
+      "attemptedTeaching": 2,
+      "completedTeaching": 2,
+      "demonstrated": true,
+      "failure": null,
+      "completeJourney": true
+    },
+    {
+      "id": "J02",
+      "imported": true,
+      "prepared": true,
+      "lessonReady": true,
+      "teachingComplete": true,
+      "allTeachingComplete": true,
+      "formalAttempted": true,
+      "candidateReturned": true,
+      "admitted": true,
+      "submitted": true,
+      "supportedEvidence": true,
+      "durableCredit": true,
+      "responsiveEvidence": false,
+      "attemptedTeaching": 2,
+      "completedTeaching": 2,
+      "demonstrated": true,
+      "failure": null,
+      "completeJourney": true
+    },
+    {
+      "id": "J03",
+      "imported": true,
+      "prepared": true,
+      "lessonReady": false,
+      "teachingComplete": false,
+      "allTeachingComplete": false,
+      "formalAttempted": false,
+      "candidateReturned": false,
+      "admitted": false,
+      "submitted": false,
+      "supportedEvidence": false,
+      "durableCredit": false,
+      "responsiveEvidence": false,
+      "attemptedTeaching": 1,
+      "completedTeaching": 0,
+      "demonstrated": false,
+      "failure": {
+        "at": "2026-09-14T11:23:33.705Z",
+        "stage": "teaching",
+        "status": "failed",
+        "error": {
+          "name": "Error",
+          "message": "Lesson unavailable: retry_available Lesson preparation can be retried."
+        }
+      },
+      "completeJourney": false
+    },
+    {
+      "id": "J04",
+      "imported": true,
+      "prepared": true,
+      "lessonReady": true,
+      "teachingComplete": true,
+      "allTeachingComplete": true,
+      "formalAttempted": true,
+      "candidateReturned": true,
+      "admitted": true,
+      "submitted": true,
+      "supportedEvidence": true,
+      "durableCredit": true,
+      "responsiveEvidence": false,
+      "attemptedTeaching": 2,
+      "completedTeaching": 2,
+      "demonstrated": true,
+      "failure": null,
+      "completeJourney": true
+    },
+    {
+      "id": "J05",
+      "imported": true,
+      "prepared": true,
+      "lessonReady": true,
+      "teachingComplete": true,
+      "allTeachingComplete": true,
+      "formalAttempted": true,
+      "candidateReturned": true,
+      "admitted": false,
+      "submitted": false,
+      "supportedEvidence": false,
+      "durableCredit": false,
+      "responsiveEvidence": false,
+      "attemptedTeaching": 2,
+      "completedTeaching": 2,
+      "demonstrated": false,
+      "failure": {
+        "at": "2026-09-14T11:33:54.921Z",
+        "stage": "formal",
+        "status": "failed",
+        "error": {
+          "name": "AppError",
+          "code": "GROUNDING_FAILED",
+          "message": "生成的评估题均未通过本地校验(概念、题型或证据不合法),请重试。",
+          "details": {
+            "rejected": [
+              {
+                "stem": "水平轻杆，支点O固定，忽略杆重，所有挂载力均竖直向下。左侧有 9 N 向下力，距支点水平距离 0.2 m；右侧有 5 N 向下力，距支点水平距离 0.3 m。请回答杆会向哪个方向转动，并解释为什么不能仅通过比较两个力的大小来判断转动效果。需说明力臂的定义以及转动效果由什么决定。",
+                "reason": "独立评分审核未通过：结论限于题干所给轻杆模型（忽略杆重、支点固定、竖直向下力），依据blk_5不代替真实设备安全设计；未考虑杆重、摩擦、斜向力或空间约束等其他可能。；rubric_point:1 将“不是任意选取的杆长”作为必需定义的一部分，但题干仅要求“需说明力臂的定义”，未要求排除误解的否定句；该额外细节非题目明确要求或逻辑必要，构成隐藏必需要求，故requiredCriteriaAppropriate=false；替代答案在缺失否定细节情况下仍完整满足题干实质任务，证明将该否定细节设为必需评分点过强，属于题干未要求的隐藏必需，与requiredCriteriaAppropriate=false一致。"
+              }
+            ]
+          }
+        }
+      },
+      "completeJourney": false
+    },
+    {
+      "id": "J06",
+      "imported": true,
+      "prepared": true,
+      "lessonReady": true,
+      "teachingComplete": true,
+      "allTeachingComplete": true,
+      "formalAttempted": true,
+      "candidateReturned": true,
+      "admitted": true,
+      "submitted": true,
+      "supportedEvidence": true,
+      "durableCredit": true,
+      "responsiveEvidence": false,
+      "attemptedTeaching": 2,
+      "completedTeaching": 2,
+      "demonstrated": true,
+      "failure": null,
+      "completeJourney": true
+    },
+    {
+      "id": "J07",
+      "imported": true,
+      "prepared": true,
+      "lessonReady": false,
+      "teachingComplete": false,
+      "allTeachingComplete": false,
+      "formalAttempted": false,
+      "candidateReturned": false,
+      "admitted": false,
+      "submitted": false,
+      "supportedEvidence": false,
+      "durableCredit": false,
+      "responsiveEvidence": false,
+      "attemptedTeaching": 1,
+      "completedTeaching": 0,
+      "demonstrated": false,
+      "failure": {
+        "at": "2026-09-14T11:37:55.409Z",
+        "stage": "teaching",
+        "status": "failed",
+        "error": {
+          "name": "Error",
+          "message": "Lesson unavailable: practice_retry_available The accepted Lesson is preserved. Retry preparation to generate only its informal Practice."
+        }
+      },
+      "completeJourney": false
+    },
+    {
+      "id": "J08",
+      "imported": true,
+      "prepared": true,
+      "lessonReady": true,
+      "teachingComplete": true,
+      "allTeachingComplete": true,
+      "formalAttempted": true,
+      "candidateReturned": true,
+      "admitted": true,
+      "submitted": true,
+      "supportedEvidence": true,
+      "durableCredit": true,
+      "responsiveEvidence": false,
+      "attemptedTeaching": 2,
+      "completedTeaching": 2,
+      "demonstrated": true,
+      "failure": null,
+      "completeJourney": true
+    },
+    {
+      "id": "J09",
+      "imported": true,
+      "prepared": true,
+      "lessonReady": true,
+      "teachingComplete": true,
+      "allTeachingComplete": true,
+      "formalAttempted": true,
+      "candidateReturned": true,
+      "admitted": true,
+      "submitted": true,
+      "supportedEvidence": true,
+      "durableCredit": true,
+      "responsiveEvidence": false,
+      "attemptedTeaching": 2,
+      "completedTeaching": 2,
+      "demonstrated": true,
+      "failure": null,
+      "completeJourney": true
+    },
+    {
+      "id": "J10",
+      "imported": true,
+      "prepared": true,
+      "lessonReady": true,
+      "teachingComplete": true,
+      "allTeachingComplete": true,
+      "formalAttempted": true,
+      "candidateReturned": true,
+      "admitted": false,
+      "submitted": false,
+      "supportedEvidence": false,
+      "durableCredit": false,
+      "responsiveEvidence": false,
+      "attemptedTeaching": 2,
+      "completedTeaching": 2,
+      "demonstrated": false,
+      "failure": {
+        "at": "2026-09-14T11:53:41.025Z",
+        "stage": "formal",
+        "status": "failed",
+        "error": {
+          "name": "AppError",
+          "code": "GROUNDING_FAILED",
+          "message": "生成的评估题均未通过本地校验(概念、题型或证据不合法),请重试。",
+          "details": {
+            "rejected": [
+              {
+                "stem": "假设一个正常体细胞有3条染色体，每条含一个DNA分子。根据本课模型，细胞先在分裂前的间期复制DNA，随后在有丝分裂过程中分配复制后的染色体，通常再经细胞质分裂形成两个细胞。请解释为什么说“DNA复制”和“染色体分配”是两个不同的动作，并说明它们分别导致了什么变化以及发生的先后顺序。",
+                "reason": "独立评分审核未通过：requiredCriteriaAppropriate=false: 评分点rubric_point:0将‘通常再经细胞质分裂形成两个细胞’作为必需说明部分，但题干仅要求解释‘DNA复制’和‘染色体分配’两个动作的不同、分别导致的变化及先后顺序，并未要求必须提及细胞质分裂；scoringChallenges中C1的替代答案未提胞质分裂仍完整满足题目任务，证明该细节非必需，属于过宽要求。；质疑成立：题目仅要求说明DNA复制和染色体分配两个动作的不同、变化及先后顺序，细胞质分裂是背景中提及的后续动作而非被解释对象；替代答案未包含该细节却已充分完成任务，证明评分点将其设为必需过于宽泛，非问题明确要求或逻辑必要。"
+              }
+            ]
+          }
+        }
+      },
+      "completeJourney": false
+    },
+    {
+      "id": "J11",
+      "imported": true,
+      "prepared": true,
+      "lessonReady": true,
+      "teachingComplete": true,
+      "allTeachingComplete": true,
+      "formalAttempted": true,
+      "candidateReturned": true,
+      "admitted": true,
+      "submitted": true,
+      "supportedEvidence": true,
+      "durableCredit": true,
+      "responsiveEvidence": false,
+      "attemptedTeaching": 2,
+      "completedTeaching": 2,
+      "demonstrated": true,
+      "failure": null,
+      "completeJourney": true
+    },
+    {
+      "id": "J12",
+      "imported": true,
+      "prepared": true,
+      "lessonReady": true,
+      "teachingComplete": true,
+      "allTeachingComplete": true,
+      "formalAttempted": true,
+      "candidateReturned": true,
+      "admitted": true,
+      "submitted": true,
+      "supportedEvidence": true,
+      "durableCredit": true,
+      "responsiveEvidence": false,
+      "attemptedTeaching": 2,
+      "completedTeaching": 2,
+      "demonstrated": true,
+      "failure": null,
+      "completeJourney": true
+    },
+    {
+      "id": "J13",
+      "imported": true,
+      "prepared": true,
+      "lessonReady": true,
+      "teachingComplete": true,
+      "allTeachingComplete": true,
+      "formalAttempted": true,
+      "candidateReturned": true,
+      "admitted": true,
+      "submitted": true,
+      "supportedEvidence": true,
+      "durableCredit": true,
+      "responsiveEvidence": false,
+      "attemptedTeaching": 2,
+      "completedTeaching": 2,
+      "demonstrated": true,
+      "failure": null,
+      "completeJourney": true
+    },
+    {
+      "id": "J14",
+      "imported": true,
+      "prepared": true,
+      "lessonReady": true,
+      "teachingComplete": true,
+      "allTeachingComplete": true,
+      "formalAttempted": true,
+      "candidateReturned": true,
+      "admitted": true,
+      "submitted": true,
+      "supportedEvidence": true,
+      "durableCredit": true,
+      "responsiveEvidence": false,
+      "attemptedTeaching": 2,
+      "completedTeaching": 2,
+      "demonstrated": true,
+      "failure": null,
+      "completeJourney": true
+    },
+    {
+      "id": "J15",
+      "imported": true,
+      "prepared": true,
+      "lessonReady": true,
+      "teachingComplete": true,
+      "allTeachingComplete": true,
+      "formalAttempted": true,
+      "candidateReturned": true,
+      "admitted": true,
+      "submitted": true,
+      "supportedEvidence": true,
+      "durableCredit": true,
+      "responsiveEvidence": false,
+      "attemptedTeaching": 1,
+      "completedTeaching": 1,
+      "demonstrated": true,
+      "failure": null,
+      "completeJourney": true
+    },
+    {
+      "id": "J16",
+      "imported": true,
+      "prepared": true,
+      "lessonReady": true,
+      "teachingComplete": true,
+      "allTeachingComplete": true,
+      "formalAttempted": true,
+      "candidateReturned": true,
+      "admitted": true,
+      "submitted": true,
+      "supportedEvidence": true,
+      "durableCredit": true,
+      "responsiveEvidence": false,
+      "attemptedTeaching": 2,
+      "completedTeaching": 2,
+      "demonstrated": true,
+      "failure": null,
+      "completeJourney": true
+    },
+    {
+      "id": "J17",
+      "imported": true,
+      "prepared": true,
+      "lessonReady": true,
+      "teachingComplete": true,
+      "allTeachingComplete": true,
+      "formalAttempted": true,
+      "candidateReturned": true,
+      "admitted": true,
+      "submitted": true,
+      "supportedEvidence": true,
+      "durableCredit": true,
+      "responsiveEvidence": false,
+      "attemptedTeaching": 2,
+      "completedTeaching": 2,
+      "demonstrated": true,
+      "failure": null,
+      "completeJourney": true
+    },
+    {
+      "id": "J18",
+      "imported": true,
+      "prepared": true,
+      "lessonReady": true,
+      "teachingComplete": false,
+      "allTeachingComplete": false,
+      "formalAttempted": false,
+      "candidateReturned": false,
+      "admitted": false,
+      "submitted": false,
+      "supportedEvidence": false,
+      "durableCredit": false,
+      "responsiveEvidence": false,
+      "attemptedTeaching": 1,
+      "completedTeaching": 0,
+      "demonstrated": false,
+      "failure": {
+        "at": "2026-09-14T12:05:59.634Z",
+        "stage": "teaching",
+        "status": "failed",
+        "error": {
+          "name": "Error",
+          "message": "Learner returned an unknown choice id"
+        }
+      },
+      "completeJourney": false
+    },
+    {
+      "id": "J19",
+      "imported": true,
+      "prepared": true,
+      "lessonReady": true,
+      "teachingComplete": true,
+      "allTeachingComplete": true,
+      "formalAttempted": true,
+      "candidateReturned": true,
+      "admitted": true,
+      "submitted": true,
+      "supportedEvidence": true,
+      "durableCredit": true,
+      "responsiveEvidence": false,
+      "attemptedTeaching": 2,
+      "completedTeaching": 2,
+      "demonstrated": true,
+      "failure": null,
+      "completeJourney": true
+    },
+    {
+      "id": "J20",
+      "imported": true,
+      "prepared": true,
+      "lessonReady": true,
+      "teachingComplete": true,
+      "allTeachingComplete": true,
+      "formalAttempted": true,
+      "candidateReturned": true,
+      "admitted": true,
+      "submitted": true,
+      "supportedEvidence": true,
+      "durableCredit": true,
+      "responsiveEvidence": false,
+      "attemptedTeaching": 2,
+      "completedTeaching": 2,
+      "demonstrated": true,
+      "failure": null,
+      "completeJourney": true
+    }
+  ]
+}

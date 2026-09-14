@@ -1,0 +1,49 @@
+{
+  "inputIdentity": "1c5b22ca3e2c45edfc479396dfade1a681ce00e6bf07b6af50edc6489c1d277d",
+  "attempts": [
+    {
+      "physicalId": "6381d3b5-3450-4f1f-8a03-c9a96326d08c",
+      "caseId": "E319",
+      "runId": "H-E319-r3",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q3",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "artifact对两人并行取max、一人串行求和的关键操作及步骤时长连接均已展示，并给出依赖与资源、合法不等于最快的边界，无错误且覆盖局部例子目标。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "33824fb66056692a54116221be7ec4cd5e188b08312f05d3d6de83b6860bc990"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

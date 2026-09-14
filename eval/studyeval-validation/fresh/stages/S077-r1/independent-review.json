@@ -1,0 +1,69 @@
+{
+  "inputIdentity": "fcb6839bb7869bc744577327c88cb38ccf1dfe7cdf3ca062cccadb7334c63e9f",
+  "attempts": [
+    {
+      "physicalId": "39a502cf-9d7b-4886-8343-25d03f4821d9",
+      "caseId": "S077",
+      "runId": "S077-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q3",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "解释声称0.6秒为单程时间并直接乘速度得墙距204米，无视来源中‘行程是墙距两倍’的前提，教给错误方法且得出错误答案，实质破坏教学目标。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "Artifact claims 0.6s is one-way time and computes wall distance as 340*0.6=204m, ignoring return path contrary to source stating total travel is twice wall distance.",
+            "impact": "Core explanation directly contradicts given premise and produces incorrect result, failing goal of explaining how to derive wall distance from echo time.",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "3bbce2de2fe1eeb758a911865d1912be311746bdcab655ec42447c7ca0aebbb0"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "79185b54dfbddde1df8e87303862dd09dbc298fe4bf0af82dc4cd087114a46d8"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "3bbce2de2fe1eeb758a911865d1912be311746bdcab655ec42447c7ca0aebbb0"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "79185b54dfbddde1df8e87303862dd09dbc298fe4bf0af82dc4cd087114a46d8"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

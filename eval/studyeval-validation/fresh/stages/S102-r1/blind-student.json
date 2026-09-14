@@ -1,0 +1,83 @@
+{
+  "inputIdentity": "df712e4691456623f99e5a80389755e1b541b33cac264b1c539acce597d57a2a",
+  "attempts": [
+    {
+      "physicalId": "0698291b-e204-4253-8391-095921392bae",
+      "caseId": "S102",
+      "runId": "S102-r1",
+      "stage": "blind-student",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "criteria": [
+      {
+        "id": "c1",
+        "result": "met",
+        "reason": "学生作答'乙地是周二晚上九点'，晚上九点即21:00，与标准'乙地周二21:00'含义一致",
+        "refs": [
+          "/answer",
+          "/rubric/0"
+        ],
+        "required": true,
+        "witnesses": [
+          {
+            "pointer": "/answer",
+            "valueHash": "89ca6d97fa4baf8d416204a00d7657425f1bcd562a92c2bab5ad336d10a0053d"
+          },
+          {
+            "pointer": "/rubric/0",
+            "valueHash": "04f832a6f433402126f73019928e65619c2b73270b9e40a1d1c1455b9aaf9762"
+          }
+        ]
+      },
+      {
+        "id": "c2",
+        "result": "met",
+        "reason": "学生写'甲比乙快五小时，所以把周三凌晨两点往回拨五小时，跨回周二'，表达了从甲到乙减5小时并回到前一天（周二为周三前一天）的换算，满足'由甲到乙减5小时并回到前一天'",
+        "refs": [
+          "/answer",
+          "/rubric/1"
+        ],
+        "required": true,
+        "witnesses": [
+          {
+            "pointer": "/answer",
+            "valueHash": "89ca6d97fa4baf8d416204a00d7657425f1bcd562a92c2bab5ad336d10a0053d"
+          },
+          {
+            "pointer": "/rubric/1",
+            "valueHash": "9a4b846117363f96775f4de0256f3f77d03902a9507d0ec35e62f3817f0bf1be"
+          }
+        ]
+      },
+      {
+        "id": "c3",
+        "result": "not_met",
+        "reason": "标准为非必需（required:false），要求学生列两列表格，但答案仅自然语言描述未列表格；不影响必要credit授予",
+        "refs": [
+          "/answer",
+          "/rubric/2"
+        ],
+        "required": false,
+        "witnesses": [
+          {
+            "pointer": "/answer",
+            "valueHash": "89ca6d97fa4baf8d416204a00d7657425f1bcd562a92c2bab5ad336d10a0053d"
+          },
+          {
+            "pointer": "/rubric/2",
+            "valueHash": "c7dc0b88c588fc4f0e46e820834b1da7c4e8c69e5d2f4cf691ca19b9bdbeccc8"
+          }
+        ]
+      }
+    ],
+    "warrantedCredit": "granted"
+  }
+}

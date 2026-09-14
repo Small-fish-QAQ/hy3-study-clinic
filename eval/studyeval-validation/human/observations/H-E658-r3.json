@@ -1,0 +1,348 @@
+{
+  "task": {
+    "caseId": "E658",
+    "runId": "H-E658-r3",
+    "replicate": 3,
+    "path": "benchmark/cases/E658.json",
+    "inputHash": "07fa108a650e1ccbcbd3dfcd13915bffcb5d1d9464320760a4ea5542d2c8ea6f",
+    "population": "controlled",
+    "sourceId": "F05"
+  },
+  "inputHash": "07fa108a650e1ccbcbd3dfcd13915bffcb5d1d9464320760a4ea5542d2c8ea6f",
+  "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "37fa3022715fbe6b8620046a547af38947ceb0ea8a1c1cebbbb9fd159d628273",
+    "stages": {
+      "goal-mapping": {
+        "goals": [
+          {
+            "index": 0,
+            "importance": "essential",
+            "status": "usable",
+            "reason": "artifact中明确声明'刻度细不等于准确'，直接区分了读数分辨率（刻度细）与真实准确程度，符合目标要求。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/0"
+            ],
+            "quote": "刻度细不等于准确",
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "9f85ff5b494d6fb3aa0a5fc03f7b2cba0075759e5a444afa89829072dffa4a9b"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "974f091625a397eadb261006f5285e9c63c7ca6b839e6bdbb8c41f4bfff75e27"
+              }
+            ]
+          },
+          {
+            "index": 1,
+            "importance": "essential",
+            "status": "usable",
+            "reason": "artifact提供了从读数r和误差上界e形成闭区间[r-e,r+e]的规则，并给出具体例子7.2±0.1对应[7.1,7.3]，实现了使用给定误差界限形成区间的目标。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/1"
+            ],
+            "quote": "读数r、已知误差上界e给出闭区间[r-e,r+e]。7.2±0.1厘米对应[7.1,7.3]。",
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "9f85ff5b494d6fb3aa0a5fc03f7b2cba0075759e5a444afa89829072dffa4a9b"
+              },
+              {
+                "pointer": "/goals/1",
+                "valueHash": "b948cbdb264205a71c39bbf43fca64b81f119fd6bce83afbff737e5a078063b3"
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "importance": "essential",
+            "status": "usable",
+            "reason": "artifact中明确给出了区间比较规则：与[7.5,7.7]比较可保证更短（即区间不重叠且完全小于），与重叠区间比较不能保证顺序，实现了判断多个测量区间是否支持大小关系的目标。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/2"
+            ],
+            "quote": "与[7.5,7.7]比较可保证更短，与重叠区间比较不能保证顺序。",
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "9f85ff5b494d6fb3aa0a5fc03f7b2cba0075759e5a444afa89829072dffa4a9b"
+              },
+              {
+                "pointer": "/goals/2",
+                "valueHash": "a63a83b2364923d8e078ddf815b65a88e03ab9e5b2b372710e75e020c2056d1a"
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "importance": "secondary",
+            "status": "mentioned",
+            "reason": "artifact仅提及'重复测量时也要留意共同偏差'，但未说明重复平均不能自动消除共同方向偏差的具体机制或断言，仅相当于提醒注意，未实现说明该延伸目标。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/3"
+            ],
+            "quote": "重复测量时也要留意共同偏差。",
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "9f85ff5b494d6fb3aa0a5fc03f7b2cba0075759e5a444afa89829072dffa4a9b"
+              },
+              {
+                "pointer": "/goals/3",
+                "valueHash": "714460aff55596ab6a2b0d42615a21b9c5be82487f745a68d7ee18049f26f951"
+              }
+            ]
+          }
+        ]
+      },
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "核心目标1-3均给出可操作规则或示例，但次要目标‘重复平均不能自动消除共同偏差’仅以‘留意共同偏差’提醒，未解释，属局部缺陷。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/3"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "次要延伸目标仅简化为未解释提醒‘重复测量时也要留意共同偏差’，未说明共同方向偏差不被平均消除的机制。",
+                "impact": "不改变核心教学用途，因核心区间与比较目标已可用，次要延伸非必需核心。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/goals/3"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "9f85ff5b494d6fb3aa0a5fc03f7b2cba0075759e5a444afa89829072dffa4a9b"
+                  },
+                  {
+                    "pointer": "/goals/3",
+                    "valueHash": "714460aff55596ab6a2b0d42615a21b9c5be82487f745a68d7ee18049f26f951"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "9f85ff5b494d6fb3aa0a5fc03f7b2cba0075759e5a444afa89829072dffa4a9b"
+              },
+              {
+                "pointer": "/goals/3",
+                "valueHash": "714460aff55596ab6a2b0d42615a21b9c5be82487f745a68d7ee18049f26f951"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "核心三目标均给出准确可操作规则与示例：区间公式、比较非重叠与重叠区间。但次要延伸目标仅以'留意共同偏差'提醒出现，未解释平均不能消除共同偏差，符合局部缺陷1分。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text",
+              "/goals/3"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "次要延伸目标'说明重复平均不能自动消除共同方向的偏差'在lesson中仅简化为'重复测量时也要留意共同偏差'的未解释提醒，未展示原因或示例。",
+                "impact": "核心区间形成与比较用途成立，此局部缺口仅削弱次要目标深度，不改核心学习目的。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/goals/3",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "9f85ff5b494d6fb3aa0a5fc03f7b2cba0075759e5a444afa89829072dffa4a9b"
+                  },
+                  {
+                    "pointer": "/goals/3",
+                    "valueHash": "714460aff55596ab6a2b0d42615a21b9c5be82487f745a68d7ee18049f26f951"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "04ede0e2b943c283408af13f15e429c4d3f550318ac34096022b20c8a80a02fc"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "9f85ff5b494d6fb3aa0a5fc03f7b2cba0075759e5a444afa89829072dffa4a9b"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "04ede0e2b943c283408af13f15e429c4d3f550318ac34096022b20c8a80a02fc"
+              },
+              {
+                "pointer": "/goals/3",
+                "valueHash": "714460aff55596ab6a2b0d42615a21b9c5be82487f745a68d7ee18049f26f951"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "核心目标0-2在artifact中均有准确可操作规则或示例：区分刻度细与准确、区间公式及示例、非重叠/重叠比较。但次要目标3要求说明重复平均不能消除共同偏差，artifact仅以'重复测量时也要留意共同偏差'未解释提醒，属局部深度缺口，核心用途成立，故评1分。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/3"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "次要延伸目标'说明重复平均不能自动消除共同方向的偏差'在lesson中仅以'重复测量时也要留意共同偏差'的未解释提醒出现，未展示平均不能消除共同偏差的原因或示例。",
+                "impact": "核心区间形成与比较用途成立，此局部缺口仅削弱次要目标深度，不改核心学习目的。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/goals/3"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "9f85ff5b494d6fb3aa0a5fc03f7b2cba0075759e5a444afa89829072dffa4a9b"
+                  },
+                  {
+                    "pointer": "/goals/3",
+                    "valueHash": "714460aff55596ab6a2b0d42615a21b9c5be82487f745a68d7ee18049f26f951"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "9f85ff5b494d6fb3aa0a5fc03f7b2cba0075759e5a444afa89829072dffa4a9b"
+              },
+              {
+                "pointer": "/goals/3",
+                "valueHash": "714460aff55596ab6a2b0d42615a21b9c5be82487f745a68d7ee18049f26f951"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q2:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "重复测量时也要留意共同偏差。",
+              "valueHash": "9f85ff5b494d6fb3aa0a5fc03f7b2cba0075759e5a444afa89829072dffa4a9b"
+            },
+            "reason": "artifact仅此句提及重复测量，未解释共同方向偏差不被平均消除的机制，目标3要求说明该机制，故局部缺陷成立。"
+          },
+          {
+            "id": "review2:Q2:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "重复测量时也要留意共同偏差。",
+              "valueHash": "9f85ff5b494d6fb3aa0a5fc03f7b2cba0075759e5a444afa89829072dffa4a9b"
+            },
+            "reason": "同上，artifact未提供说明重复平均不能自动消除共同偏差的论证，仅提醒留意，次要目标深度不足但非核心。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q2",
+          "level": 1,
+          "evidence": "sufficient",
+          "reason": "核心目标0-2在artifact中均有准确可操作规则或示例：区分刻度细与准确、区间公式及示例、非重叠/重叠比较。但次要目标3要求说明重复平均不能消除共同偏差，artifact仅以'重复测量时也要留意共同偏差'未解释提醒，属局部深度缺口，核心用途成立，故评1分。",
+          "refs": [
+            "/artifacts/0/text",
+            "/goals/3"
+          ],
+          "defects": [
+            {
+              "severity": "local",
+              "description": "次要延伸目标'说明重复平均不能自动消除共同方向的偏差'在lesson中仅以'重复测量时也要留意共同偏差'的未解释提醒出现，未展示平均不能消除共同偏差的原因或示例。",
+              "impact": "核心区间形成与比较用途成立，此局部缺口仅削弱次要目标深度，不改核心学习目的。",
+              "refs": [
+                "/artifacts/0/text",
+                "/goals/3"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "9f85ff5b494d6fb3aa0a5fc03f7b2cba0075759e5a444afa89829072dffa4a9b"
+                },
+                {
+                  "pointer": "/goals/3",
+                  "valueHash": "714460aff55596ab6a2b0d42615a21b9c5be82487f745a68d7ee18049f26f951"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "9f85ff5b494d6fb3aa0a5fc03f7b2cba0075759e5a444afa89829072dffa4a9b"
+            },
+            {
+              "pointer": "/goals/3",
+              "valueHash": "714460aff55596ab6a2b0d42615a21b9c5be82487f745a68d7ee18049f26f951"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "ce65d30f0d2370f059af37d5183428010d4bccf2069f0893c7de8ee026603639"
+  }
+}

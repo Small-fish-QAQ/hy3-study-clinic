@@ -1,0 +1,77 @@
+{
+  "inputIdentity": "0ed0a3138782ab40555159456165f1dbb792360301acd3331e59b2cb3ee2b075",
+  "attempts": [
+    {
+      "physicalId": "df8898e8-eeaf-4156-8902-3176d7e7b2bf",
+      "caseId": "S047",
+      "runId": "S047-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q4",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "题目有效要求学生应用规则计算5*4/2并解释除以2原因，作者键正确未泄露，达到working_fluency深度。",
+        "refs": [
+          "/question/prompt",
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "assessment": {
+          "key": "correct",
+          "validity": "valid",
+          "exposure": "none",
+          "discrimination": "adequate",
+          "demand": "application",
+          "demandReason": "学生需将一般规则用于n=5，执行5×4=20再除以2得10，并解释每对无序在有序计数中重复一次故除以2，超出抄写。",
+          "reason": "题干要求计算并解释；作者私有键5×4/2=10且说明正反各一次正确；priorExposure空无泄露；需应用与解释非纯检索，判别力足。",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text"
+          ],
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "ca51509a5ba3fefd4066a98e0cf30777287d5a985b78f665c152c10043b1e561"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "7d31921f32ad4191184c2c97bd606545eb038e2b6262e46985b6dbb2b15a87ed"
+            }
+          ]
+        },
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "ca51509a5ba3fefd4066a98e0cf30777287d5a985b78f665c152c10043b1e561"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "7d31921f32ad4191184c2c97bd606545eb038e2b6262e46985b6dbb2b15a87ed"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "048d87f46cf5e71c40673f0c198589ef7169711c8e00773c1213c7b454b1dfde"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

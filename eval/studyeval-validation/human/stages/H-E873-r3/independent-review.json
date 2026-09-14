@@ -1,0 +1,49 @@
+{
+  "inputIdentity": "fdba1afec38b50f6a3969cbe9699f0e8ef8d4b8b600bdf6ab7bd9ae62bf9a1a8",
+  "attempts": [
+    {
+      "physicalId": "13a3d638-5170-46e9-ba4a-11052fe99b85",
+      "caseId": "E873",
+      "runId": "H-E873-r3",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q6",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "support准确诊断学习者将自愿等同随机分组的推理缺口，用高兴趣反例展示混杂，并提供改变情境的提示卡下一题检查条件一致性，符合识别缺口、具体帮助与可用后续检查的标准。",
+        "refs": [
+          "/artifacts/1/text",
+          "/answer"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/1/text",
+            "valueHash": "92b176354da78b28cb5522dcba0ee9141d78651ee215f63b5167216fd3796daf"
+          },
+          {
+            "pointer": "/answer",
+            "valueHash": "7d6191d92d628a82e207484c2c7eb0e40705d9d13f6606a2290baa951d899e6f"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

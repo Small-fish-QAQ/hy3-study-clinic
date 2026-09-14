@@ -1,0 +1,134 @@
+{
+  "inputIdentity": "4b42fec21cab607b379a5d02a591c44a0f98e3d590b176fad81a8ae834a44bdc",
+  "attempts": [
+    {
+      "physicalId": "d8d0b3e4-0b75-4cbb-9fc8-95bef1d8138f",
+      "caseId": "S088",
+      "runId": "S088-r3",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q5",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "重解确认L[1:6:2]取b,d,f下标1,3,5且终点6不包含；学生答案满足c1,c2必需标准，c3非必需未满足判定正确，反馈准确，授分granted合理。",
+        "refs": [
+          "/answer",
+          "/productJudgment",
+          "/rubric/0",
+          "/rubric/1",
+          "/rubric/2"
+        ],
+        "defects": [],
+        "missing": [],
+        "grading": {
+          "criteria": [
+            {
+              "id": "c1",
+              "result": "met",
+              "reason": "答案取b、d、f对应下标1、3、5，满足元素与下标要求",
+              "refs": [
+                "/answer",
+                "/rubric/0"
+              ],
+              "required": true,
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "1f1899d77938970be2b4fb911104eb79b857f3b9b11357fb92a3f0e5f47e5119"
+                },
+                {
+                  "pointer": "/rubric/0",
+                  "valueHash": "6399550a90530ee1616215b1675defac00c772a340c4350897216a3724886f2c"
+                }
+              ]
+            },
+            {
+              "id": "c2",
+              "result": "met",
+              "reason": "答案说明在6前停止且不取6，满足终点不包含",
+              "refs": [
+                "/answer",
+                "/rubric/1"
+              ],
+              "required": true,
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "1f1899d77938970be2b4fb911104eb79b857f3b9b11357fb92a3f0e5f47e5119"
+                },
+                {
+                  "pointer": "/rubric/1",
+                  "valueHash": "b9daadef9f56c4be53ec987a58f6d1caeda944fe4c21953d9197e49732389c53"
+                }
+              ]
+            },
+            {
+              "id": "c3",
+              "result": "not_met",
+              "reason": "答案为普通句子无项目符号，可选标准未满足",
+              "refs": [
+                "/answer",
+                "/rubric/2"
+              ],
+              "required": false,
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "1f1899d77938970be2b4fb911104eb79b857f3b9b11357fb92a3f0e5f47e5119"
+                },
+                {
+                  "pointer": "/rubric/2",
+                  "valueHash": "d52851780736c28eed16df31e029f6ea5cfaf7332d14aae7be2022370d4bc979"
+                }
+              ]
+            }
+          ],
+          "warrantedCredit": "granted",
+          "actualCredit": "granted",
+          "actualCreditWitness": {
+            "pointer": "/productJudgment/consequence",
+            "valueHash": "dd515d1975b8e5a83bab3420bea5dacefe5451ac7cf617d23c4393cc79e4db99"
+          }
+        },
+        "witnesses": [
+          {
+            "pointer": "/answer",
+            "valueHash": "1f1899d77938970be2b4fb911104eb79b857f3b9b11357fb92a3f0e5f47e5119"
+          },
+          {
+            "pointer": "/productJudgment",
+            "valueHash": "c206eadb42adf8f5ad39e8bf4841abeca99cfc3682b0a563112465f5683de68c"
+          },
+          {
+            "pointer": "/rubric/0",
+            "valueHash": "6399550a90530ee1616215b1675defac00c772a340c4350897216a3724886f2c"
+          },
+          {
+            "pointer": "/rubric/1",
+            "valueHash": "b9daadef9f56c4be53ec987a58f6d1caeda944fe4c21953d9197e49732389c53"
+          },
+          {
+            "pointer": "/rubric/2",
+            "valueHash": "d52851780736c28eed16df31e029f6ea5cfaf7332d14aae7be2022370d4bc979"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

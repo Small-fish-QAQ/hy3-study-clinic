@@ -1,0 +1,90 @@
+{
+  "inputIdentity": "2a20d5ed1b385039aecc7e8f2b99f3d844221fd5dec68ffbd798c15a4a042530",
+  "attempts": [
+    {
+      "physicalId": "1658813e-4f5a-4169-8f60-87eae79640e5",
+      "caseId": "S078",
+      "runId": "S078-r3",
+      "stage": "goal-mapping",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "goals": [
+      {
+        "index": 0,
+        "importance": "essential",
+        "status": "usable",
+        "reason": "artifact通过具体路线示例依据有向边方向判断可行性，实现了按有向边检查路线可行的核心目标",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/0"
+        ],
+        "quote": "A到C再到B可行，每一步都有同方向边；B到A不可行，B没有出边。",
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "e1c8a829755e32077d2dc8bf44f0f2383fe25eb46dc4accb4e2a8ff2055aa8ea"
+          },
+          {
+            "pointer": "/goals/0",
+            "valueHash": "a51f21939f83eed1ca93d3681f208fb694af3488648930ef9519d1d81a501862"
+          }
+        ]
+      },
+      {
+        "index": 1,
+        "importance": "essential",
+        "status": "partial",
+        "reason": "artifact区分了入度出度概念并正确计算A和B的入度出度，但遗漏图中节点C的入度出度计算（C入度1出度1），局部不充分",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/1",
+          "/sources/0/text"
+        ],
+        "quote": "入度数箭头指入，出度数箭头指外，A入度0出度2，B入度2出度0。",
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "e1c8a829755e32077d2dc8bf44f0f2383fe25eb46dc4accb4e2a8ff2055aa8ea"
+          },
+          {
+            "pointer": "/goals/1",
+            "valueHash": "a63e5ea68b90b2ab60576d7e6f1c219c31f7b0a1e90a3e147a04d87b392c0399"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "4a1ff16d1619a7f4b64cc932d8257c0a3341f94daa68120cf944ecd4a83e3b93"
+          }
+        ]
+      },
+      {
+        "index": 2,
+        "importance": "secondary",
+        "status": "missing",
+        "reason": "artifact未提及边标签及其用途，无相关处理",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/2"
+        ],
+        "quote": "",
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "e1c8a829755e32077d2dc8bf44f0f2383fe25eb46dc4accb4e2a8ff2055aa8ea"
+          },
+          {
+            "pointer": "/goals/2",
+            "valueHash": "5971c156642542bafa467de656a783fad331d9b9629086ebfc96e501de760b60"
+          }
+        ]
+      }
+    ]
+  }
+}

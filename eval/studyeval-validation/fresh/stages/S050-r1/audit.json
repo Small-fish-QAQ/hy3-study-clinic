@@ -1,0 +1,104 @@
+{
+  "inputIdentity": "860cd670068e738906873b8a26265d579b29fe84a4fde0292d2fb5fde2a99b7a",
+  "attempts": [
+    {
+      "physicalId": "45cb92ca-ab96-4b5e-ac8f-bca42cf91a92",
+      "caseId": "S050",
+      "runId": "S050-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [
+        {
+          "location": "/dimensions/0/refs",
+          "changes": [
+            {
+              "proposed": "/answer",
+              "rejected": "Not an original evidence path."
+            }
+          ]
+        },
+        {
+          "location": "/dimensions/0/grading/criteria/0/refs",
+          "changes": [
+            {
+              "proposed": "/answer",
+              "rejected": "Not an original evidence path."
+            }
+          ]
+        }
+      ],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q5",
+        "level": "U",
+        "evidence": "missing",
+        "reason": "学生答案视图缺失，无法验证评分器对必需要求{1,2,3}的判断；产品记录授予信用，但缺学生证据不能确认评分准确性，故本维度不可评。",
+        "refs": [
+          "/rubric/0",
+          "/productJudgment/consequence"
+        ],
+        "defects": [],
+        "missing": [
+          "/answer 学生原始作答字段不存在，无法验证必需要求满足与授分正确性"
+        ],
+        "grading": {
+          "criteria": [
+            {
+              "id": "required",
+              "result": "uncertain",
+              "reason": "学生全答缺失，无法确认是否写出{1,2,3}",
+              "refs": [
+                "/rubric/0"
+              ]
+            }
+          ],
+          "actualCredit": "granted",
+          "warrantedCredit": "uncertain"
+        },
+        "witnesses": [
+          {
+            "pointer": "/rubric/0",
+            "valueHash": "41e3e9993ea73d3924609af1ca9150dfde326067be5fc53a6f4aec3ca0e10258"
+          },
+          {
+            "pointer": "/productJudgment/consequence",
+            "valueHash": "dd515d1975b8e5a83bab3420bea5dacefe5451ac7cf617d23c4393cc79e4db99"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "referenceRepairs": [
+      {
+        "location": "/dimensions/0/refs",
+        "changes": [
+          {
+            "proposed": "/answer",
+            "rejected": "Not an original evidence path."
+          }
+        ]
+      },
+      {
+        "location": "/dimensions/0/grading/criteria/0/refs",
+        "changes": [
+          {
+            "proposed": "/answer",
+            "rejected": "Not an original evidence path."
+          }
+        ]
+      }
+    ]
+  }
+}

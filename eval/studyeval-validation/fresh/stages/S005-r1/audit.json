@@ -1,0 +1,79 @@
+{
+  "inputIdentity": "3bb9c47f76b8e2f2d6775b1fa787f7a5f4b505a4377b045dcbcc7b9c298f10db",
+  "attempts": [
+    {
+      "physicalId": "534c430a-6aa9-43c4-85cf-3f4d786e2df1",
+      "caseId": "S005",
+      "runId": "S005-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q2",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "lesson准确说明复制保留源并建目标、移动使源消失目标存，核心目标完整覆盖。但遗漏次要目标改扩展名不证格式转换，source有而lesson未整合，局部缺失不影响核心用途。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/2",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "次要目标'说明改扩展名不证明格式转换'在lesson文本中未提及",
+            "impact": "核心复制/移动状态说明完整可用，省略次要目标不改变核心学习用途",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/2",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "40c4cc92e70defc3da0128c4041246cc57f4f23848ab1460eacc73b8fbb0adb2"
+              },
+              {
+                "pointer": "/goals/2",
+                "valueHash": "b524310b83946f4129f40f29a3aa35362a953ed7e94f6dd44c3c7a5466a7803b"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "f077626b6cc0dcadf32134e02c41925aefa4067f55b8ae7509353fb99642dc40"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "40c4cc92e70defc3da0128c4041246cc57f4f23848ab1460eacc73b8fbb0adb2"
+          },
+          {
+            "pointer": "/goals/2",
+            "valueHash": "b524310b83946f4129f40f29a3aa35362a953ed7e94f6dd44c3c7a5466a7803b"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "f077626b6cc0dcadf32134e02c41925aefa4067f55b8ae7509353fb99642dc40"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

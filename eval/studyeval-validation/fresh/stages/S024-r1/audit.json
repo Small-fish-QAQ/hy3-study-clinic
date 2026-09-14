@@ -1,0 +1,49 @@
+{
+  "inputIdentity": "653738d30a2c43e8f471f723746dcc07f16e2e7c4429dba7318a0fbf6d2f2101",
+  "attempts": [
+    {
+      "physicalId": "e1b3f806-63c6-4e35-b910-4d0719e3cf71",
+      "caseId": "S024",
+      "runId": "S024-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q6",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "交付物针对“她一定是小乔”的错误，依据规则指出两人皆可能，示范改名改写，并给出安娜贝拉新句要求列解释与改写，构成具体可迁移的下一检查，完整满足诊断与修复标准。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "ec7647254d93213dd9b21e35be2e319148cdb778ea291fc0ec72f50427519fae"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "69fef873755638b051db652f07b0960110732e94a4812af3f6f8b85635905051"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

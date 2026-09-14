@@ -1,0 +1,183 @@
+{
+  "status": "ready",
+  "message": "Lesson is ready.",
+  "course": {
+    "title": "最大公因数与整块铺砖"
+  },
+  "session": {
+    "status": "active",
+    "version": 11
+  },
+  "agenda": {
+    "version": 2,
+    "itemState": "queued"
+  },
+  "lesson": {
+    "objective": {
+      "title": "最大公因数求解与铺砖模型应用",
+      "whyNow": "面对一块整数厘米长宽的地板，如何保证用最大正方形砖完整铺满且不切割，并核对块数？",
+      "outcomes": [
+        {
+          "title": "在整块铺砖模型中确定最大砖边长与块数并计算核对",
+          "description": "在边缘平行、不切割、不留缝、不重叠且砖与板边长均为整数的正方形铺砖模型中，确定砖边长d必须同时整除长宽否则某方向剩带，最大砖边长等于长宽最大公因数；若长宽互质则最大公因数为1，本模型只能选最大的整数边长1厘米；若题目允许切割、非整数边长或改变砖排列方式，须重新读取限制，不能把本模型结论直接当成所有铺装答案。计算总块数为(长÷d)×(宽÷d)，并用板面积除以单砖面积核对相符；报告方案时写出模型条件、整除依据、每个方向块数和总数，且注意边长单位为厘米、面积为平方厘米、块数为整数，不能把边长值误当作所需块数。"
+        }
+      ]
+    },
+    "prerequisites": [],
+    "segments": [
+      {
+        "index": 0,
+        "purpose": "orientation",
+        "explanation": "两个正整数的公因数指能同时整除两者的正整数，其中最大的称为最大公因数。在长方形板铺正方形砖时，若要求砖边与板边平行、不切割、不留缝、不重叠且边长均为整数厘米，则砖边长必须同时整除板的长和宽，否则某一方向会剩一条带。因此最大可用砖边长就是长宽的最大公因数。总块数等于(长÷d)×(宽÷d)，也可由板面积除以单砖面积核对，两者应相符。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 1,
+        "purpose": "worked_example",
+        "explanation": "数较大时可用辗转相除求最大公因数：把较大数写成除数乘商加余数，公因数集合在(a,b)与(b,r)间保持不变，余数为0时本步除数即为结果。下面用一组新尺寸演示该过程如何导出铺砖方案。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": {
+          "startingState": "长方形板长48厘米、宽18厘米，模型：正方形砖边平行、不切割、不留缝、不重叠，砖边长为正整数厘米；尚未确定最大砖边长与块数",
+          "inputs": [
+            "长48厘米",
+            "宽18厘米"
+          ],
+          "ruleOrProcedure": "辗转相除求最大公因数，并应用于铺砖模型：d=gcd(长,宽)，块数=(长÷d)×(宽÷d)",
+          "steps": [
+            {
+              "action": "用较大数48除以18：48=18×2+12",
+              "reason": "根据辗转相除，能同时整除48和18的数也整除余数12，问题化为求(18,12)的公因数",
+              "resultingState": "得到余数12，问题化为求(18,12)的最大公因数"
+            }
+          ],
+          "learnerDecision": null,
+          "result": null,
+          "whyResultFollows": null,
+          "origin": "hy3_synthesis",
+          "sources": [],
+          "interaction": {
+            "stage": "guided",
+            "modelledStepCount": 1,
+            "origin": "hy3_synthesis",
+            "sources": [],
+            "activity": {
+              "prompt": "给定48厘米长、18厘米宽的板，在边平行、不切割模型中，已得余数12，问题化为求(18,12)的最大公因数。此时最大砖边长与总块数是？",
+              "options": [
+                {
+                  "id": "A",
+                  "text": "边长6厘米，长方向8块、宽方向3块，共24块"
+                },
+                {
+                  "id": "B",
+                  "text": "边长18厘米，长方向3块、宽方向1块，共3块"
+                },
+                {
+                  "id": "C",
+                  "text": "边长2厘米，长方向24块、宽方向9块，共216块"
+                }
+              ],
+              "response": null,
+              "respondedAt": null,
+              "correct": null,
+              "feedback": null,
+              "debrief": null,
+              "credit": "none",
+              "misconception": null
+            },
+            "hint": null,
+            "scaffold": null,
+            "transfer": null
+          }
+        },
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 2,
+        "purpose": "comparison",
+        "explanation": "当长宽互质时最大公因数为1，在本模型只能选边长1厘米。但若题目允许切割、非整数边长或改变砖排列方式，就须重新读取限制，不能把本模型结论直接当成所有铺装答案。报告方案时应写清条件、整除依据与块数，便于检查。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": {
+          "text": "误用：看到长宽互质就永远选1厘米砖，即便题目说“允许将砖切割后铺满”仍照搬。正用：仅当不切割、不留缝、边平行且整数边长时互质才导出1厘米；一旦放开切割或旋转，须按新约束求解。",
+          "origin": "hy3_synthesis",
+          "sources": []
+        },
+        "possibleMisconception": null,
+        "informalCheck": null
+      }
+    ],
+    "sourceReferencesAvailable": true,
+    "visuals": [],
+    "summary": {
+      "available": true,
+      "text": "最大公因数提供两整数共同的整除尺度；在边平行不切割模型中，砖边长取其值可满铺，总块数由两方向商相乘并可用面积核对。",
+      "nextConnection": null,
+      "formalOpportunities": []
+    },
+    "plannedTime": {
+      "agendaMinutes": 11,
+      "activeMinutesMin": 14,
+      "activeMinutesMax": 22,
+      "basis": "locally_evaluated_learning_actions"
+    }
+  },
+  "progress": {
+    "stateVersion": 2,
+    "stateId": "lesson_execution_d1df570d-dd40-4990-9205-039f2c8afa6b",
+    "currentSegmentIndex": 0,
+    "segmentCount": 3,
+    "presentedSegmentIndexes": [],
+    "presentationStatus": "not_started",
+    "presentationCompletedAt": null
+  },
+  "currentInformalCheck": null,
+  "practice": {
+    "status": "locked",
+    "currentItemIndex": 0,
+    "itemCount": 1,
+    "item": {
+      "index": 0,
+      "objectiveTitle": "在整块铺砖模型中确定最大砖边长与块数并计算核对",
+      "construct": "apply",
+      "surface": "initial",
+      "supplementary": true,
+      "prompt": "长方形板长35厘米、宽14厘米，要求正方形砖边平行、不切割、不留缝、不重叠，砖边长为整数厘米。在此模型下，最大砖边长与总块数是？",
+      "options": [
+        {
+          "id": "teaching_brief_f2d224f0-c2d7-4e10-b958-e4d484f86133_practice_1_initial_A",
+          "text": "边长7厘米，长方向5块、宽方向2块，共10块"
+        },
+        {
+          "id": "teaching_brief_f2d224f0-c2d7-4e10-b958-e4d484f86133_practice_1_initial_B",
+          "text": "边长1厘米，长方向35块、宽方向14块，共490块"
+        },
+        {
+          "id": "teaching_brief_f2d224f0-c2d7-4e10-b958-e4d484f86133_practice_1_initial_C",
+          "text": "边长5厘米，长方向7块、宽方向3块，共21块"
+        }
+      ]
+    },
+    "attempts": [],
+    "recovery": null,
+    "completedAt": null,
+    "credit": "none"
+  },
+  "allowedActions": [
+    "start_lesson"
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "inputIdentity": "f741701974dc9b901bbfe28323cfe013cf8bc66035f265a6c28867c04ad388b1",
+  "attempts": [
+    {
+      "physicalId": "bce2bb3f-e33a-49cc-99da-942269b9ba44",
+      "caseId": "S048",
+      "runId": "S048-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q3",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "解释正确链接课堂规则与两句修饰位置差异，说明范围限制不同且不可互换，无缺失连接。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "7f4f09e5c6f8ba6132e34a355019db89161ae7f14ba2040fdab28306f3e2972e"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "9ef8039d157a3635d1da4128848b8da6aabf32e121261f1cd761712bb1417ab2"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

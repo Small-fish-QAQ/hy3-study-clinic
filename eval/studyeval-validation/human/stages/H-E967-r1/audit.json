@@ -1,0 +1,73 @@
+{
+  "inputIdentity": "5bbc1f3d9539b148777f336f3c18eb2e695b958904e509426854e495ff84d6c7",
+  "attempts": [
+    {
+      "physicalId": "dd91d816-c4ab-4be2-8cd3-5d5cef175dae",
+      "caseId": "E967",
+      "runId": "H-E967-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q6",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "support诊断称出错因未背诵，发明学习者状态；并要求抄写参考答案原样作答声称即独立迁移掌握。这同时满足发明原因与将复述答案谎称掌握，属Q6的0分实质缺陷，破坏修复用途。",
+        "refs": [
+          "/artifacts/1/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "诊断发明学习者状态“没有认真背诵”，实际错误为混淆自愿与随机分组",
+            "impact": "错误归因使后续修复不针对真实推理缺口，核心用途失效",
+            "refs": [
+              "/artifacts/1/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/1/text",
+                "valueHash": "b48273621a19d2af23adcd0e37fd9f56bd0461da88677b76cc1375c7a736b7f0"
+              }
+            ]
+          },
+          {
+            "severity": "material",
+            "description": "要求抄写参考答案并原样答同一题，声称答出即证明独立迁移掌握",
+            "impact": "将复述披露答案谎称独立掌握，教导错误评估方法，实质缺陷",
+            "refs": [
+              "/artifacts/1/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/1/text",
+                "valueHash": "b48273621a19d2af23adcd0e37fd9f56bd0461da88677b76cc1375c7a736b7f0"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/1/text",
+            "valueHash": "b48273621a19d2af23adcd0e37fd9f56bd0461da88677b76cc1375c7a736b7f0"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

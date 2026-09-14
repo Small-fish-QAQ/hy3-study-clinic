@@ -1,0 +1,383 @@
+{
+  "task": {
+    "caseId": "S083",
+    "runId": "S083-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S083.json",
+    "inputHash": "fdcb311d29050730c074651c45b9599a8a7dc04222e24a103a2d5bad8d536640"
+  },
+  "inputHash": "fdcb311d29050730c074651c45b9599a8a7dc04222e24a103a2d5bad8d536640",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "310825caa6f7a4c5221e858d95ba8f3e38abf917d27c832aed0a0e3b36f042b6",
+    "stages": {
+      "blind-solution": {
+        "status": "resolved",
+        "solution": "从/sources/0/text抄出公式：n(n-1)/2。必要条件：n个不同对象、不放回、不计顺序、自配不允许（不可自选同一对象）。可接受解法：直接引用资料有序n(n-1)除以2的结论。",
+        "refs": [
+          "/question/prompt",
+          "/sources/0/text"
+        ],
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "a340c6346e86141ac8612f8ed453374cc0de19f9528c286940bcfe310a75280f"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "048d87f46cf5e71c40673f0c198589ef7169711c8e00773c1213c7b454b1dfde"
+          }
+        ]
+      },
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q4",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "题目仅要求抄写公式，作者答案正确，但未测试working_fluency所需的解释或应用，判别力弱，属局部缺陷。",
+            "refs": [
+              "/question/prompt",
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "题干要求‘抄出公式’，仅测试符号公式检索，未要求执行多步或解释。",
+                "impact": "核心抄写任务成立，但不符合声明深度working_fluency，降为1而非2。",
+                "refs": [
+                  "/question/prompt",
+                  "/artifacts/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/question/prompt",
+                    "valueHash": "a340c6346e86141ac8612f8ed453374cc0de19f9528c286940bcfe310a75280f"
+                  },
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "04d0f294d4b84e9816ec9960e0c8e8c77276e54c7ef68f0e3a1626b4fb9a9333"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "assessment": {
+              "key": "correct",
+              "validity": "valid",
+              "exposure": "none",
+              "discrimination": "weak",
+              "demand": "retrieval",
+              "demandReason": "学生只需从资料复制n(n-1)/2公式，无需选择方法、处理新实例、解释或比较。",
+              "reason": "题目为抄公式；作者答案n(n-1)/2正确且未禁正确解；priorExposure空无泄露；纯抄写判别弱。",
+              "refs": [
+                "/question/prompt",
+                "/artifacts/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/question/prompt",
+                  "valueHash": "a340c6346e86141ac8612f8ed453374cc0de19f9528c286940bcfe310a75280f"
+                },
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "04d0f294d4b84e9816ec9960e0c8e8c77276e54c7ef68f0e3a1626b4fb9a9333"
+                }
+              ]
+            },
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "a340c6346e86141ac8612f8ed453374cc0de19f9528c286940bcfe310a75280f"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "04d0f294d4b84e9816ec9960e0c8e8c77276e54c7ef68f0e3a1626b4fb9a9333"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "048d87f46cf5e71c40673f0c198589ef7169711c8e00773c1213c7b454b1dfde"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q4",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "题目仅要求抄写组合公式，作者键n(n-1)/2正确且无提前泄露，但声明深度working_fluency需执行解释，纯抄写属检索，判别力弱，局部缺陷。",
+            "refs": [
+              "/question/prompt",
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "题干仅要求抄写符号公式，未要求执行计算或解释方法",
+                "impact": "不改变核心用途（识别公式），但不符合working_fluency深度，判别力弱",
+                "refs": [
+                  "/question/prompt",
+                  "/artifacts/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/question/prompt",
+                    "valueHash": "a340c6346e86141ac8612f8ed453374cc0de19f9528c286940bcfe310a75280f"
+                  },
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "04d0f294d4b84e9816ec9960e0c8e8c77276e54c7ef68f0e3a1626b4fb9a9333"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "assessment": {
+              "key": "correct",
+              "validity": "valid",
+              "exposure": "none",
+              "discrimination": "weak",
+              "demand": "retrieval",
+              "demandReason": "学生仅需从资料中抄写现成符号公式n(n-1)/2，无选择方法、新实例计算或解释操作。",
+              "reason": "题目抄公式；作者答案n(n-1)/2正确；无提前曝光；判别力弱因仅检索不符working_fluency。",
+              "refs": [
+                "/question/prompt",
+                "/artifacts/0/text",
+                "/sources/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/question/prompt",
+                  "valueHash": "a340c6346e86141ac8612f8ed453374cc0de19f9528c286940bcfe310a75280f"
+                },
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "04d0f294d4b84e9816ec9960e0c8e8c77276e54c7ef68f0e3a1626b4fb9a9333"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "048d87f46cf5e71c40673f0c198589ef7169711c8e00773c1213c7b454b1dfde"
+                }
+              ]
+            },
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "a340c6346e86141ac8612f8ed453374cc0de19f9528c286940bcfe310a75280f"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "04d0f294d4b84e9816ec9960e0c8e8c77276e54c7ef68f0e3a1626b4fb9a9333"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "048d87f46cf5e71c40673f0c198589ef7169711c8e00773c1213c7b454b1dfde"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q4",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "题目仅要求抄写公式，作者键n(n-1)/2正确无泄露；但声明深度working_fluency需执行解释，纯抄写属检索判别弱，局部缺陷降为1。",
+            "refs": [
+              "/question/prompt",
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "题干仅要求抄写符号公式，未要求执行计算或解释方法",
+                "impact": "不改变核心用途（识别公式），但不符合working_fluency深度，判别力弱",
+                "refs": [
+                  "/question/prompt",
+                  "/artifacts/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/question/prompt",
+                    "valueHash": "a340c6346e86141ac8612f8ed453374cc0de19f9528c286940bcfe310a75280f"
+                  },
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "04d0f294d4b84e9816ec9960e0c8e8c77276e54c7ef68f0e3a1626b4fb9a9333"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "assessment": {
+              "key": "correct",
+              "validity": "valid",
+              "exposure": "none",
+              "discrimination": "weak",
+              "demand": "retrieval",
+              "demandReason": "学生仅需从资料中抄写现成符号公式n(n-1)/2，无选择方法、新实例计算或解释操作。",
+              "reason": "题目抄公式；作者答案n(n-1)/2正确且未禁正确解；priorExposure空无泄露；纯抄写判别弱不符working_fluency。",
+              "refs": [
+                "/question/prompt",
+                "/artifacts/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/question/prompt",
+                  "valueHash": "a340c6346e86141ac8612f8ed453374cc0de19f9528c286940bcfe310a75280f"
+                },
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "04d0f294d4b84e9816ec9960e0c8e8c77276e54c7ef68f0e3a1626b4fb9a9333"
+                }
+              ]
+            },
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "a340c6346e86141ac8612f8ed453374cc0de19f9528c286940bcfe310a75280f"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "04d0f294d4b84e9816ec9960e0c8e8c77276e54c7ef68f0e3a1626b4fb9a9333"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "048d87f46cf5e71c40673f0c198589ef7169711c8e00773c1213c7b454b1dfde"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q4:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/question/prompt",
+              "quote": "从资料抄出n个对象选两个不计顺序的公式。",
+              "valueHash": "a340c6346e86141ac8612f8ed453374cc0de19f9528c286940bcfe310a75280f"
+            },
+            "reason": "题干明确要求抄出公式，仅测试符号公式检索，未要求执行或解释，符合local缺陷指控。"
+          },
+          {
+            "id": "review2:Q4:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/question/prompt",
+              "quote": "从资料抄出n个对象选两个不计顺序的公式。",
+              "valueHash": "a340c6346e86141ac8612f8ed453374cc0de19f9528c286940bcfe310a75280f"
+            },
+            "reason": "同review1，题干仅要求抄写公式，无计算或解释，local缺陷成立。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q4",
+          "level": 1,
+          "evidence": "sufficient",
+          "reason": "题目仅要求抄写公式，作者键n(n-1)/2正确无泄露；但声明深度working_fluency需执行解释，纯抄写属检索判别弱，局部缺陷降为1。",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [
+            {
+              "severity": "local",
+              "description": "题干仅要求抄写符号公式，未要求执行计算或解释方法",
+              "impact": "不改变核心用途（识别公式），但不符合working_fluency深度，判别力弱",
+              "refs": [
+                "/question/prompt",
+                "/artifacts/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/question/prompt",
+                  "valueHash": "a340c6346e86141ac8612f8ed453374cc0de19f9528c286940bcfe310a75280f"
+                },
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "04d0f294d4b84e9816ec9960e0c8e8c77276e54c7ef68f0e3a1626b4fb9a9333"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "assessment": {
+            "key": "correct",
+            "validity": "valid",
+            "exposure": "none",
+            "discrimination": "weak",
+            "demand": "retrieval",
+            "demandReason": "学生仅需从资料中抄写现成符号公式n(n-1)/2，无选择方法、新实例计算或解释操作。",
+            "reason": "题目抄公式；作者答案n(n-1)/2正确且未禁正确解；priorExposure空无泄露；纯抄写判别弱不符working_fluency。",
+            "refs": [
+              "/question/prompt",
+              "/artifacts/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "a340c6346e86141ac8612f8ed453374cc0de19f9528c286940bcfe310a75280f"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "04d0f294d4b84e9816ec9960e0c8e8c77276e54c7ef68f0e3a1626b4fb9a9333"
+              }
+            ]
+          },
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "a340c6346e86141ac8612f8ed453374cc0de19f9528c286940bcfe310a75280f"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "04d0f294d4b84e9816ec9960e0c8e8c77276e54c7ef68f0e3a1626b4fb9a9333"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "048d87f46cf5e71c40673f0c198589ef7169711c8e00773c1213c7b454b1dfde"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "272b02698d4ce6b1e5e7dff5b6e1e99c669ce2fa1acc16ae2ccd180bb7dbeb32"
+  }
+}

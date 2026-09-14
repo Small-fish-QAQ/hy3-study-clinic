@@ -1,0 +1,131 @@
+{
+  "inputIdentity": "bde4be06d92ae58052d22af6be3a09d61a77f2982f98a3b9a4f30758b0074b7b",
+  "attempts": [
+    {
+      "physicalId": "bb9aa183-cd00-4d76-8da2-6a9cb8915443",
+      "caseId": "S051",
+      "runId": "S051-r1",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q4",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "题目直接抄写XOR条件，作者键正确未泄露；但声明深度working_fluency需执行解释，纯抄写仅检索判别力弱，属局部缺陷不改可答性。",
+        "refs": [
+          "/question/prompt",
+          "/artifacts/0/text",
+          "/sources/0/text",
+          "/desiredDepth"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "任务仅要求直接抄写条件，未要求执行或解释XOR方法，与声明深度working_fluency不符",
+            "impact": "核心用途为抽样相关技能，但仅检索不足以证明working_fluency，局部削弱判别力，不改变题目可答性",
+            "refs": [
+              "/question/prompt",
+              "/desiredDepth"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "baa31ac04a798dbeb2399ce369167178c41d3665a7f00098c16a1bc7480a4065"
+              },
+              {
+                "pointer": "/desiredDepth",
+                "valueHash": "ffc6fdfb6aedd605a4b7d1807dfd9cc571929860f9039a3db08c4bc8c2c7817b"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "assessment": {
+          "key": "correct",
+          "validity": "valid",
+          "exposure": "none",
+          "discrimination": "weak",
+          "demand": "retrieval",
+          "demandReason": "学生只需从给定source抄写现成条件短语，无需选择规则、计算新实例、解释或比较",
+          "reason": "题目直接抄写XOR输出1条件；作者键'恰好一个输入为1'正确且未提前曝光；但仅测检索，判别力弱，不符working_fluency深度",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "baa31ac04a798dbeb2399ce369167178c41d3665a7f00098c16a1bc7480a4065"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "3cbf198dae03564afeaa2dfa20cfd2db9469ccb90d67db543229d6da5f2a81f8"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "abe0ee3fc063cc9ca8e5695fcc7196cbc85922a703ddb540aee12d9b2456e392"
+            }
+          ]
+        },
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "baa31ac04a798dbeb2399ce369167178c41d3665a7f00098c16a1bc7480a4065"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "3cbf198dae03564afeaa2dfa20cfd2db9469ccb90d67db543229d6da5f2a81f8"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "abe0ee3fc063cc9ca8e5695fcc7196cbc85922a703ddb540aee12d9b2456e392"
+          },
+          {
+            "pointer": "/desiredDepth",
+            "valueHash": "ffc6fdfb6aedd605a4b7d1807dfd9cc571929860f9039a3db08c4bc8c2c7817b"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q4:1",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/question/prompt",
+          "quote": "直接抄写XOR门输出1的条件。",
+          "valueHash": "baa31ac04a798dbeb2399ce369167178c41d3665a7f00098c16a1bc7480a4065"
+        },
+        "reason": "题目明确要求直接抄写，而/desiredDepth为working_fluency需执行解释，仅检索未达深度，核心可答键正确未泄露，属局部缺陷。"
+      },
+      {
+        "id": "review2:Q4:1",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/desiredDepth",
+          "quote": "working_fluency",
+          "valueHash": "ffc6fdfb6aedd605a4b7d1807dfd9cc571929860f9039a3db08c4bc8c2c7817b"
+        },
+        "reason": "声明深度working_fluency要求执行解释方法，但题目/question/prompt仅要求抄写，致仅检索，局部削弱判别力，不改变有效性。"
+      }
+    ]
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "id": "assessment_version_86fbef0f-c554-4aaf-9085-6722340db45c",
+  "definitionId": "assessment_23689979-a5a2-483b-ab0a-a28b08fe523d",
+  "version": 1,
+  "predecessorId": null,
+  "status": "accepted",
+  "items": [
+    {
+      "id": "assessment_item_3ed429f6-b17e-4af8-a762-002620e48044",
+      "sourceQuestionId": "que_34166394-d58c-411f-998f-9d56de4b1f34",
+      "index": 0,
+      "targetLearningUnitId": "cun_bd2d2019-9c80-43cd-b1f2-769a3f748bd3",
+      "targetObjectiveId": "obj_744521b8-de9f-4851-a9d0-1f9de87b1d2f",
+      "representation": "recall",
+      "questionType": "short_answer",
+      "prompt": "三角形HJK与LMN相似，题目约定H↔L、J↔M、K↔N。已知HJK的边长：HJ=4厘米，JK=6厘米，HK=5厘米；LMN的边长：LM=12厘米，MN=18厘米，LN=15厘米。请完成以下任务：\n(1) 指出HJK与LMN中哪些边互为对应，并说明为何不能仅按图形中边的位置或最长边来猜测对应；\n(2) 计算从HJK到LMN的相似比k，并写清“新图形相对原图形”的方向；\n(3) 若反过来从LMN看HJK，相似比是多少？",
+      "rubric": [
+        {
+          "id": "criterion_b9e7af9f-7fb2-4219-8ca1-091f37daf1c3",
+          "text": "正确列出边对应（HJ↔LM, JK↔MN, HK↔LN），并说明不能按图形位置或最长边混淆对应，须依题目顶点配对。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_473f5b2b",
+            "blk_1_a7d14c01"
+          ]
+        },
+        {
+          "id": "criterion_280e0556-07eb-41ee-8f40-3954f53ec8c5",
+          "text": "计算从HJK到LMN的相似比k=LM÷HJ=12÷4=3，并明确写出“新图形LMN相对原图形HJK”的方向。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_473f5b2b",
+            "blk_1_a7d14c01"
+          ]
+        },
+        {
+          "id": "criterion_7808bdc4-6221-44d6-b6db-23b9272c4f2b",
+          "text": "给出反向相似比为1/k=1/3。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_473f5b2b",
+            "blk_1_a7d14c01"
+          ]
+        }
+      ],
+      "sourceBindings": [
+        {
+          "materialId": "mat_d71acd1d-bcbf-4438-ad1d-83db9eacf365",
+          "materialRevisionId": "rev_f3c564fb-106d-4afb-be5b-907963653e24",
+          "sourceBlockId": "blk_0_473f5b2b",
+          "quote": "若写作三角形ABC与DEF相似，并约定A对应D、B对应E、C对应F，那么AB对应DE、BC对应EF、AC对应DF。对应边不能只按图上看起来的位置猜测，尤其不能把最长边和不对应的短边混在同一比例中。",
+          "contentOrigin": "extracted_original",
+          "authoritative": true
+        },
+        {
+          "materialId": "mat_d71acd1d-bcbf-4438-ad1d-83db9eacf365",
+          "materialRevisionId": "rev_f3c564fb-106d-4afb-be5b-907963653e24",
+          "sourceBlockId": "blk_1_a7d14c01",
+          "quote": "从ABC到DEF的相似比定义为k=DE÷AB，k为正数。在这个方向下，DEF的每一条对应长度都是ABC的k倍：DE=k×AB、EF=k×BC、DF=k×AC。若反过来从DEF看ABC，相似比是1/k。写清“新图形相对原图形”可以避免把放大和缩小算反。只知道某一对边长之比，并不能在未获相似条件时推断其他边也按这个比例变化。",
+          "contentOrigin": "extracted_original",
+          "authoritative": true
+        }
+      ],
+      "formalEligible": true,
+      "policyReason": "FORMAL_ELIGIBLE"
+    }
+  ],
+  "sourceRevisionIds": [
+    "rev_f3c564fb-106d-4afb-be5b-907963653e24"
+  ],
+  "createdAt": "2026-09-14T11:37:41.405Z",
+  "acceptedAt": "2026-09-14T11:37:41.406Z",
+  "authorityMode": "formal",
+  "progressionContext": {
+    "quizId": "qz_0405891d-2299-4d44-9988-1d8295e74c3c",
+    "contractVersionId": "contract_bb6fdd52-ecbb-49ee-b506-047c6acdc5f2",
+    "curriculumVersionId": "curriculum_71dff7bf-5b2b-4e6f-afca-7ef49c573ade",
+    "studyPlanVersionId": "study_plan_fe35cd87-8694-4c09-a91f-68d9aceeafe3",
+    "agendaId": "agenda_bdeb047d-62b1-4ac4-8e16-856ab35357c8",
+    "agendaItemId": "agenda_item_99b3c2ef-3f51-4f5f-9751-5769638b7105",
+    "assessmentKind": "formal_checkpoint",
+    "executionSourceManifestFingerprint": "manifest_5b386380"
+  }
+}

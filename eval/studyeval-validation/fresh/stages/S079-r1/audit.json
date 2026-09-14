@@ -1,0 +1,107 @@
+{
+  "inputIdentity": "4ed9e11de75ce2325baab83043a32def9ea9f488433f3ee5142d55ac62c9da55",
+  "attempts": [
+    {
+      "physicalId": "d8623eed-1228-4e6f-9e22-df5e922690df",
+      "caseId": "S079",
+      "runId": "S079-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q4",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "题设强制未激活初始已有效入场，违背规则；作者答案错误支持直接转换。题目无效，无法评估状态规则应用。",
+        "refs": [
+          "/question/prompt",
+          "/sources/0/text",
+          "/artifacts/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "题设要求从初始未激活执行入场并说明已有效，与/sources/0/text矛盾；/artifacts/0/text错误称未激活可直接变有效并入场。",
+            "impact": "改变核心用途：强制错误前提且答案政策错误，无法有效评估目标技能。",
+            "refs": [
+              "/question/prompt",
+              "/sources/0/text",
+              "/artifacts/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "27d4aafb419668ab359eb1e1dd20bc53c0a4b11c543f54679805c57924642532"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "694fcf138ee515172ab2dd1c3a0a59baef8e0ee6b25086ed04ce3845111041ea"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "e75ea7bac5248792bf19eda5108404b84ef5a7446fb3ec136dbc30f089514279"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "assessment": {
+          "key": "incorrect",
+          "validity": "invalid",
+          "exposure": "none",
+          "discrimination": "weak",
+          "demand": "reasoning",
+          "demandReason": "学生被要求基于错误前提解释已有效并可入场，超出抄写但为错误推理",
+          "reason": "题目强制矛盾前提；作者答案/artifacts/0/text错误支持未激活直接入场；priorExposure空无泄露；题设无效故判别力弱。",
+          "refs": [
+            "/question/prompt",
+            "/sources/0/text",
+            "/artifacts/0/text"
+          ],
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "27d4aafb419668ab359eb1e1dd20bc53c0a4b11c543f54679805c57924642532"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "694fcf138ee515172ab2dd1c3a0a59baef8e0ee6b25086ed04ce3845111041ea"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "e75ea7bac5248792bf19eda5108404b84ef5a7446fb3ec136dbc30f089514279"
+            }
+          ]
+        },
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "27d4aafb419668ab359eb1e1dd20bc53c0a4b11c543f54679805c57924642532"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "694fcf138ee515172ab2dd1c3a0a59baef8e0ee6b25086ed04ce3845111041ea"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "e75ea7bac5248792bf19eda5108404b84ef5a7446fb3ec136dbc30f089514279"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

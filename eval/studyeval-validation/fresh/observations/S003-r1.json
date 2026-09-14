@@ -1,0 +1,346 @@
+{
+  "task": {
+    "caseId": "S003",
+    "runId": "S003-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S003.json",
+    "inputHash": "ffaff0fa72ff0c49394be6114831051a2b01dbe106d9f2c95a0f3870a17788e9"
+  },
+  "inputHash": "ffaff0fa72ff0c49394be6114831051a2b01dbe106d9f2c95a0f3870a17788e9",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "64d95413c2102847d656ca14bf1450023a8ee9cafb9d48754a1809e797677c4e",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "artifact称同名磁极相吸、切开后一半仅北极另一半仅南极，但source明确同名相斥、切开后每段皆有南北极。两错误直接颠覆磁极作用与切断解释核心机制，违背goals核对要求，实质缺陷。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "artifact主张'同名磁极相吸'，与source'同名磁极相斥，异名磁极相吸'矛盾",
+                "impact": "颠倒磁极相互作用核心机制，破坏goals中核对磁极相互作用的用途",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "9283088203a11f811ab6613968f0675753d5e6b809996885a3163a33e79a08cd"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "bd52c5a277bce71686f63dbe44ae0456d2b3036e28dc0d9ea741288fdb927b79"
+                  }
+                ]
+              },
+              {
+                "severity": "material",
+                "description": "artifact称切开后'一半只剩北极，另一半只剩南极'，但source表明每段仍各有南北两极",
+                "impact": "错误描述切断后磁极结构，违背课堂模型核心结论，改变切断解释教学目的",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "9283088203a11f811ab6613968f0675753d5e6b809996885a3163a33e79a08cd"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "bd52c5a277bce71686f63dbe44ae0456d2b3036e28dc0d9ea741288fdb927b79"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "9283088203a11f811ab6613968f0675753d5e6b809996885a3163a33e79a08cd"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "bd52c5a277bce71686f63dbe44ae0456d2b3036e28dc0d9ea741288fdb927b79"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "课程产物断言同名磁极相吸及切开后单极存在，与来源明确规定的同名相斥、切开后每段仍有南北极直接矛盾。该错误改变磁极作用和切断解释的核心机制，属实质缺陷，不符合证据真实性。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "声称同名磁极相吸，但来源规定同名相斥、异名相吸",
+                "impact": "颠倒核心磁极相互作用规则，破坏目标核对",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "9283088203a11f811ab6613968f0675753d5e6b809996885a3163a33e79a08cd"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "bd52c5a277bce71686f63dbe44ae0456d2b3036e28dc0d9ea741288fdb927b79"
+                  }
+                ]
+              },
+              {
+                "severity": "material",
+                "description": "声称切开后一半只北极另一半只南极，来源称每段仍有南北极",
+                "impact": "错误描述切断后结构，破坏切断解释核心结论",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "9283088203a11f811ab6613968f0675753d5e6b809996885a3163a33e79a08cd"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "bd52c5a277bce71686f63dbe44ae0456d2b3036e28dc0d9ea741288fdb927b79"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "9283088203a11f811ab6613968f0675753d5e6b809996885a3163a33e79a08cd"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "bd52c5a277bce71686f63dbe44ae0456d2b3036e28dc0d9ea741288fdb927b79"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "交付物lesson断言同名相吸及切开成单极，与source同名相斥、每段双极直接矛盾。goals要求核对二者，错误改变核心机制与结论，实质缺陷，故0。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "artifact主张'同名磁极相吸'，与source'同名磁极相斥，异名磁极相吸'矛盾",
+                "impact": "颠倒磁极相互作用核心机制，破坏goals中核对磁极相互作用的用途",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "9283088203a11f811ab6613968f0675753d5e6b809996885a3163a33e79a08cd"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "bd52c5a277bce71686f63dbe44ae0456d2b3036e28dc0d9ea741288fdb927b79"
+                  }
+                ]
+              },
+              {
+                "severity": "material",
+                "description": "artifact称切开后'一半只剩北极，另一半只剩南极'，但source表明每段仍各有南北两极",
+                "impact": "错误描述切断后磁极结构，违背课堂模型核心结论，改变切断解释教学目的",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "9283088203a11f811ab6613968f0675753d5e6b809996885a3163a33e79a08cd"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "bd52c5a277bce71686f63dbe44ae0456d2b3036e28dc0d9ea741288fdb927b79"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "9283088203a11f811ab6613968f0675753d5e6b809996885a3163a33e79a08cd"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "bd52c5a277bce71686f63dbe44ae0456d2b3036e28dc0d9ea741288fdb927b79"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q1:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "同名磁极相吸",
+              "valueHash": "9283088203a11f811ab6613968f0675753d5e6b809996885a3163a33e79a08cd"
+            },
+            "reason": "artifact称同名磁极相吸，但/sources/0/text规定同名相斥、异名相吸。goals要求核对磁极相互作用，此错误颠倒核心规则，实质缺陷。"
+          },
+          {
+            "id": "review1:Q1:2",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "把磁铁对半切开，一半只剩北极，另一半只剩南极。",
+              "valueHash": "9283088203a11f811ab6613968f0675753d5e6b809996885a3163a33e79a08cd"
+            },
+            "reason": "source明确切成两段后每段各有南北两极，artifact错误称一半单极，违背goals切断后解释，改变核心结论，material。"
+          },
+          {
+            "id": "review2:Q1:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "同名磁极相吸",
+              "valueHash": "9283088203a11f811ab6613968f0675753d5e6b809996885a3163a33e79a08cd"
+            },
+            "reason": "artifact断言与source矛盾，goals核对相互作用，错误颠倒核心规则，实质缺陷。"
+          },
+          {
+            "id": "review2:Q1:2",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "把磁铁对半切开，一半只剩北极，另一半只剩南极。",
+              "valueHash": "9283088203a11f811ab6613968f0675753d5e6b809996885a3163a33e79a08cd"
+            },
+            "reason": "artifact切断描述违背source双极模型，破坏切断解释核心用途，material。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q1",
+          "level": 0,
+          "evidence": "sufficient",
+          "reason": "交付物lesson断言同名相吸及切开成单极，与source同名相斥、每段双极直接矛盾。goals要求核对二者，错误改变核心机制与结论，实质缺陷，故0。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [
+            {
+              "severity": "material",
+              "description": "artifact主张'同名磁极相吸'，与source'同名磁极相斥，异名磁极相吸'矛盾",
+              "impact": "颠倒磁极相互作用核心机制，破坏goals中核对磁极相互作用的用途",
+              "refs": [
+                "/artifacts/0/text",
+                "/sources/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "9283088203a11f811ab6613968f0675753d5e6b809996885a3163a33e79a08cd"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "bd52c5a277bce71686f63dbe44ae0456d2b3036e28dc0d9ea741288fdb927b79"
+                }
+              ]
+            },
+            {
+              "severity": "material",
+              "description": "artifact称切开后'一半只剩北极，另一半只剩南极'，但source表明每段仍各有南北两极",
+              "impact": "错误描述切断后磁极结构，违背课堂模型核心结论，改变切断解释教学目的",
+              "refs": [
+                "/artifacts/0/text",
+                "/sources/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "9283088203a11f811ab6613968f0675753d5e6b809996885a3163a33e79a08cd"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "bd52c5a277bce71686f63dbe44ae0456d2b3036e28dc0d9ea741288fdb927b79"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "9283088203a11f811ab6613968f0675753d5e6b809996885a3163a33e79a08cd"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "bd52c5a277bce71686f63dbe44ae0456d2b3036e28dc0d9ea741288fdb927b79"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "87c4d55714fbdaf315b6faf7f6d813a0f6deca17e85f36ac92ba52eedc79681e"
+  }
+}

@@ -1,0 +1,504 @@
+{
+  "task": {
+    "caseId": "E846",
+    "runId": "H-E846-r2",
+    "replicate": 2,
+    "path": "benchmark/cases/E846.json",
+    "inputHash": "d057f1ff411a69d4352c3da1c03e896e7b571ef9e91c4eea6add8b4dbf731e9b",
+    "population": "controlled",
+    "sourceId": "F06"
+  },
+  "inputHash": "d057f1ff411a69d4352c3da1c03e896e7b571ef9e91c4eea6add8b4dbf731e9b",
+  "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "fcbf38290c9dc48988ec985891dc41084418bcf932e7bcec4676d97beb2780bd",
+    "stages": {
+      "goal-mapping": {
+        "goals": [
+          {
+            "index": 0,
+            "importance": "essential",
+            "status": "contradicted",
+            "reason": "artifact声明只训练背诵平均数口号且不必学习中位数，未提供正确计算平均数（无计算方法）和中位数的教学，与目标要求矛盾",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/0"
+            ],
+            "quote": "不必学习中位数或数据变化的影响",
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "5ab8b13b56d12e4dab0dc1fbb5b4aae81bc75071a57fa42297dda367438c47db"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "1b2009f0ac308e95b499485132f567842850dd56fabe70c0539e46aee4be87d9"
+              }
+            ]
+          },
+          {
+            "index": 1,
+            "importance": "essential",
+            "status": "contradicted",
+            "reason": "artifact明确排除学习数据变化的影响和中位数，因此未解释异常大值对两种指标的不同影响",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/1"
+            ],
+            "quote": "不必学习中位数或数据变化的影响",
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "5ab8b13b56d12e4dab0dc1fbb5b4aae81bc75071a57fa42297dda367438c47db"
+              },
+              {
+                "pointer": "/goals/1",
+                "valueHash": "cf035966053e78b93aaa1416ac63c9b166c8179903d63b20ad42bb4fdd69cade"
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "importance": "essential",
+            "status": "contradicted",
+            "reason": "artifact主张所有问题都用平均数，违背根据问题选择指标，且未涉及避免从单个指标推断全部分布",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/2"
+            ],
+            "quote": "所有问题都用平均数",
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "5ab8b13b56d12e4dab0dc1fbb5b4aae81bc75071a57fa42297dda367438c47db"
+              },
+              {
+                "pointer": "/goals/2",
+                "valueHash": "6c81063bc1178e9654fbc1007fbd52a5384101cd27c9cc188eb1751c121aad14"
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "importance": "secondary",
+            "status": "missing",
+            "reason": "artifact未包含合并人数不等的组时计算整体平均数的任何说明或演示",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/3"
+            ],
+            "quote": "",
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "5ab8b13b56d12e4dab0dc1fbb5b4aae81bc75071a57fa42297dda367438c47db"
+              },
+              {
+                "pointer": "/goals/3",
+                "valueHash": "a2b4c8ce7a546b055c9486e52d79511215d079be135a94af4fd35980912487bc"
+              }
+            ]
+          }
+        ]
+      },
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "交付物声明仅背诵“平均数最公平”，明确不学中位数与数据变化影响，直接矛盾目标中正确计算中位数、解释异常值对两指标不同影响及按问题选指标等核心要求，实质移除必备覆盖，构成material缺失。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "交付物明确只训练背诵“平均数最公平”，不学中位数与数据变化影响，与要求正确计算中位数、解释异常大值对两指标不同影响、依问题选指标等目标矛盾。",
+                "impact": "核心学习目标被移除，课程目的落空。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/goals"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "5ab8b13b56d12e4dab0dc1fbb5b4aae81bc75071a57fa42297dda367438c47db"
+                  },
+                  {
+                    "pointer": "/goals",
+                    "valueHash": "d3d0c9d862bfae034f0a1ba963a7205d6b0416240fc1ec3ae4f93d92d263f4e3"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "5ab8b13b56d12e4dab0dc1fbb5b4aae81bc75071a57fa42297dda367438c47db"
+              },
+              {
+                "pointer": "/goals",
+                "valueHash": "d3d0c9d862bfae034f0a1ba963a7205d6b0416240fc1ec3ae4f93d92d263f4e3"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "授课文本明确只背平均数、不学中位数与数据变化影响，且所有问题用平均数，直接矛盾计算中位数、解释异常值影响、按问题选指标等核心目标，声明学习范围被实质推翻。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/0",
+              "/goals/1",
+              "/goals/2"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "artifact声明不必学习中位数，矛盾goal1要求正确计算平均数和中位数",
+                "impact": "学习者无法获得中位数计算能力，核心目标缺失",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/goals/0"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "5ab8b13b56d12e4dab0dc1fbb5b4aae81bc75071a57fa42297dda367438c47db"
+                  },
+                  {
+                    "pointer": "/goals/0",
+                    "valueHash": "1b2009f0ac308e95b499485132f567842850dd56fabe70c0539e46aee4be87d9"
+                  }
+                ]
+              },
+              {
+                "severity": "material",
+                "description": "artifact声明不必学习数据变化的影响，矛盾goal2解释异常大值对两指标不同影响",
+                "impact": "学习者无法理解异常值作用，核心目标缺失",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/goals/1"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "5ab8b13b56d12e4dab0dc1fbb5b4aae81bc75071a57fa42297dda367438c47db"
+                  },
+                  {
+                    "pointer": "/goals/1",
+                    "valueHash": "cf035966053e78b93aaa1416ac63c9b166c8179903d63b20ad42bb4fdd69cade"
+                  }
+                ]
+              },
+              {
+                "severity": "material",
+                "description": "artifact规定所有问题用平均数，矛盾goal3根据问题选择指标并避免单指标推断分布",
+                "impact": "学习者无指标选择训练，核心目标缺失",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/goals/2"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "5ab8b13b56d12e4dab0dc1fbb5b4aae81bc75071a57fa42297dda367438c47db"
+                  },
+                  {
+                    "pointer": "/goals/2",
+                    "valueHash": "6c81063bc1178e9654fbc1007fbd52a5384101cd27c9cc188eb1751c121aad14"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "5ab8b13b56d12e4dab0dc1fbb5b4aae81bc75071a57fa42297dda367438c47db"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "1b2009f0ac308e95b499485132f567842850dd56fabe70c0539e46aee4be87d9"
+              },
+              {
+                "pointer": "/goals/1",
+                "valueHash": "cf035966053e78b93aaa1416ac63c9b166c8179903d63b20ad42bb4fdd69cade"
+              },
+              {
+                "pointer": "/goals/2",
+                "valueHash": "6c81063bc1178e9654fbc1007fbd52a5384101cd27c9cc188eb1751c121aad14"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "授课文本明确只背平均数口号、不学中位数与数据变化影响且所有问题用平均数，直接矛盾计算中位数、解释异常值影响、依问题选指标等核心目标，实质移除必备覆盖，课程目的落空。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/0",
+              "/goals/1",
+              "/goals/2"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "artifact声明不必学习中位数，矛盾goal0要求正确计算平均数和中位数",
+                "impact": "学习者无法获得中位数计算能力，核心目标缺失",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/goals/0"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "5ab8b13b56d12e4dab0dc1fbb5b4aae81bc75071a57fa42297dda367438c47db"
+                  },
+                  {
+                    "pointer": "/goals/0",
+                    "valueHash": "1b2009f0ac308e95b499485132f567842850dd56fabe70c0539e46aee4be87d9"
+                  }
+                ]
+              },
+              {
+                "severity": "material",
+                "description": "artifact声明不必学习数据变化的影响，矛盾goal1解释异常大值对两指标不同影响",
+                "impact": "学习者无法理解异常值作用，核心目标缺失",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/goals/1"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "5ab8b13b56d12e4dab0dc1fbb5b4aae81bc75071a57fa42297dda367438c47db"
+                  },
+                  {
+                    "pointer": "/goals/1",
+                    "valueHash": "cf035966053e78b93aaa1416ac63c9b166c8179903d63b20ad42bb4fdd69cade"
+                  }
+                ]
+              },
+              {
+                "severity": "material",
+                "description": "artifact规定所有问题用平均数，矛盾goal2根据问题选择指标并避免单指标推断分布",
+                "impact": "学习者无指标选择训练，核心目标缺失",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/goals/2"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "5ab8b13b56d12e4dab0dc1fbb5b4aae81bc75071a57fa42297dda367438c47db"
+                  },
+                  {
+                    "pointer": "/goals/2",
+                    "valueHash": "6c81063bc1178e9654fbc1007fbd52a5384101cd27c9cc188eb1751c121aad14"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "5ab8b13b56d12e4dab0dc1fbb5b4aae81bc75071a57fa42297dda367438c47db"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "1b2009f0ac308e95b499485132f567842850dd56fabe70c0539e46aee4be87d9"
+              },
+              {
+                "pointer": "/goals/1",
+                "valueHash": "cf035966053e78b93aaa1416ac63c9b166c8179903d63b20ad42bb4fdd69cade"
+              },
+              {
+                "pointer": "/goals/2",
+                "valueHash": "6c81063bc1178e9654fbc1007fbd52a5384101cd27c9cc188eb1751c121aad14"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q2:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "不必学习中位数或数据变化的影响",
+              "valueHash": "5ab8b13b56d12e4dab0dc1fbb5b4aae81bc75071a57fa42297dda367438c47db"
+            },
+            "reason": "该句及同文本'所有问题都用平均数'直接矛盾goals0,1,2中essential覆盖，核心学习目标被移除。"
+          },
+          {
+            "id": "review2:Q2:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "不必学习中位数或数据变化的影响",
+              "valueHash": "5ab8b13b56d12e4dab0dc1fbb5b4aae81bc75071a57fa42297dda367438c47db"
+            },
+            "reason": "引文矛盾/goal0要求正确计算中位数（refs/goals/0），描述误写goal1但实质指向goal0，缺陷成立。"
+          },
+          {
+            "id": "review2:Q2:2",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "不必学习中位数或数据变化的影响",
+              "valueHash": "5ab8b13b56d12e4dab0dc1fbb5b4aae81bc75071a57fa42297dda367438c47db"
+            },
+            "reason": "引文明确排除数据变化影响，矛盾/goal1解释异常大值对两指标不同影响，核心目标缺失。"
+          },
+          {
+            "id": "review2:Q2:3",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "所有问题都用平均数",
+              "valueHash": "5ab8b13b56d12e4dab0dc1fbb5b4aae81bc75071a57fa42297dda367438c47db"
+            },
+            "reason": "引文规定单一指标，矛盾/goal2根据问题选择指标并避免单指标推断分布，核心目标缺失。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q2",
+          "level": 0,
+          "evidence": "sufficient",
+          "reason": "授课文本明确只背平均数口号、不学中位数与数据变化影响且所有问题用平均数，直接矛盾计算中位数、解释异常值影响、依问题选指标等核心目标，实质移除必备覆盖，课程目的落空。",
+          "refs": [
+            "/artifacts/0/text",
+            "/goals/0",
+            "/goals/1",
+            "/goals/2"
+          ],
+          "defects": [
+            {
+              "severity": "material",
+              "description": "artifact声明不必学习中位数，矛盾goal0要求正确计算平均数和中位数",
+              "impact": "学习者无法获得中位数计算能力，核心目标缺失",
+              "refs": [
+                "/artifacts/0/text",
+                "/goals/0"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "5ab8b13b56d12e4dab0dc1fbb5b4aae81bc75071a57fa42297dda367438c47db"
+                },
+                {
+                  "pointer": "/goals/0",
+                  "valueHash": "1b2009f0ac308e95b499485132f567842850dd56fabe70c0539e46aee4be87d9"
+                }
+              ]
+            },
+            {
+              "severity": "material",
+              "description": "artifact声明不必学习数据变化的影响，矛盾goal1解释异常大值对两指标不同影响",
+              "impact": "学习者无法理解异常值作用，核心目标缺失",
+              "refs": [
+                "/artifacts/0/text",
+                "/goals/1"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "5ab8b13b56d12e4dab0dc1fbb5b4aae81bc75071a57fa42297dda367438c47db"
+                },
+                {
+                  "pointer": "/goals/1",
+                  "valueHash": "cf035966053e78b93aaa1416ac63c9b166c8179903d63b20ad42bb4fdd69cade"
+                }
+              ]
+            },
+            {
+              "severity": "material",
+              "description": "artifact规定所有问题用平均数，矛盾goal2根据问题选择指标并避免单指标推断分布",
+              "impact": "学习者无指标选择训练，核心目标缺失",
+              "refs": [
+                "/artifacts/0/text",
+                "/goals/2"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "5ab8b13b56d12e4dab0dc1fbb5b4aae81bc75071a57fa42297dda367438c47db"
+                },
+                {
+                  "pointer": "/goals/2",
+                  "valueHash": "6c81063bc1178e9654fbc1007fbd52a5384101cd27c9cc188eb1751c121aad14"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "5ab8b13b56d12e4dab0dc1fbb5b4aae81bc75071a57fa42297dda367438c47db"
+            },
+            {
+              "pointer": "/goals/0",
+              "valueHash": "1b2009f0ac308e95b499485132f567842850dd56fabe70c0539e46aee4be87d9"
+            },
+            {
+              "pointer": "/goals/1",
+              "valueHash": "cf035966053e78b93aaa1416ac63c9b166c8179903d63b20ad42bb4fdd69cade"
+            },
+            {
+              "pointer": "/goals/2",
+              "valueHash": "6c81063bc1178e9654fbc1007fbd52a5384101cd27c9cc188eb1751c121aad14"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "9960a9cfad1dc2463e3b76778ffe44f5d0dbc2606172baa325e27630b22d69e8"
+  }
+}

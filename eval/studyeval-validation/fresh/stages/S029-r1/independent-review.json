@@ -1,0 +1,77 @@
+{
+  "inputIdentity": "f7ced0071d894e9b26509278b20ff15ff835e993ff48fcfbf0823341e6582243",
+  "attempts": [
+    {
+      "physicalId": "7acb4e60-0f7e-42a6-89d0-6badb2ca9c9a",
+      "caseId": "S029",
+      "runId": "S029-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q4",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "题干条件明确可答，作者键15正确无泄露，需应用调整规则计算而非纯检索，判别力足",
+        "refs": [
+          "/question/prompt",
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "assessment": {
+          "key": "correct",
+          "validity": "valid",
+          "exposure": "none",
+          "discrimination": "adequate",
+          "demand": "application",
+          "demandReason": "学生须据允许自配条件算C(5,2)+5或重复组合，不能直抄来源禁自配公式",
+          "reason": "题干可答，作者解15正确，无提前曝光，需处理新约束应用计算，判别力足够",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text"
+          ],
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "f58c1f0050bd20369aed62a2fd5d37814baa28f76c4456e31f662993449ef862"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "9b81cd45f795f310142b9b84d4185b7641ff21384eb7e699ae47d3c98b0f135c"
+            }
+          ]
+        },
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "f58c1f0050bd20369aed62a2fd5d37814baa28f76c4456e31f662993449ef862"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "9b81cd45f795f310142b9b84d4185b7641ff21384eb7e699ae47d3c98b0f135c"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "048d87f46cf5e71c40673f0c198589ef7169711c8e00773c1213c7b454b1dfde"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

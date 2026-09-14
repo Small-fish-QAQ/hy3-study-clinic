@@ -1,0 +1,49 @@
+{
+  "inputIdentity": "a42a876b8caf743f305fe6782b41322218f9def290c44e8912141bf5bdc5175e",
+  "attempts": [
+    {
+      "physicalId": "dad0bec3-d93a-4392-8029-8d108affcd57",
+      "caseId": "S024",
+      "runId": "S024-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q6",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "交付修复指出原唯一指代判断无支持，依规则承认两可指代并给改写示例，提供新句要求列解释并改写以检验同种技能。诊断有凭、帮助具体、后续检查可操作，满足Q6二级标准。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "ec7647254d93213dd9b21e35be2e319148cdb778ea291fc0ec72f50427519fae"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "69fef873755638b051db652f07b0960110732e94a4812af3f6f8b85635905051"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

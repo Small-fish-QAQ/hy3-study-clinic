@@ -1,0 +1,107 @@
+{
+  "inputIdentity": "12946ae112e33448deaa864cc603e534308cf9e5a75ecafc3f8ae72c8070a527",
+  "attempts": [
+    {
+      "physicalId": "1001f2ff-f71b-4a68-9de8-e82fb2e24cc5",
+      "caseId": "E141",
+      "runId": "H-E141-r2",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "Artifact作为教学总结，其主张与source周报事实及警示直接矛盾：虚构三十位居民全支持、永久决定及全体代表性。错误改变核心结论与证据范围，属实质缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "断言三十人次说明三十位不同居民全部支持，但source明确人次非独立人数且意见卡仅部分支持、未填卡未知。",
+            "impact": "错误等同人次与居民并虚构全体支持，推翻准确反映数字对象与证据范围的核心要求。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "2a4ea755e5bfe2f048e166c46d9034be7eecbf1d6f06c61955a7f56cfaea9c3c"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+              }
+            ]
+          },
+          {
+            "severity": "material",
+            "description": "声称书屋已经决定永久提前开门，source指出目前未宣布永久变更，仅提议延长试行待讨论。",
+            "impact": "虚构既定决策状态，破坏事件与待决定区分的教学目标，核心事实错误。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "2a4ea755e5bfe2f048e166c46d9034be7eecbf1d6f06c61955a7f56cfaea9c3c"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+              }
+            ]
+          },
+          {
+            "severity": "material",
+            "description": "称意见调查代表所有读者，source强调不能外推全体且未统计其他时段。",
+            "impact": "错误扩展样本代表性，违背来源限制，使摘要范围主张失实。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "2a4ea755e5bfe2f048e166c46d9034be7eecbf1d6f06c61955a7f56cfaea9c3c"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "2a4ea755e5bfe2f048e166c46d9034be7eecbf1d6f06c61955a7f56cfaea9c3c"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

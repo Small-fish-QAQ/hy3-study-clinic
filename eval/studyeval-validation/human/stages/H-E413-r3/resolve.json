@@ -1,0 +1,93 @@
+{
+  "inputIdentity": "848899dabee05cd67e5592cb19915724e4c39f27856456d3fa9d7717d55662ec",
+  "attempts": [
+    {
+      "physicalId": "a14ba94a-c734-40b8-899c-207ffb382e83",
+      "caseId": "E413",
+      "runId": "H-E413-r3",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q3",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "工件声称盖章仅等调墨3分钟不必等裁纸且任何人员数时长相同，直接违背来源明确依赖规则与单双人员时长差异，教授无效工序方法，核心解释错误。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "lesson断言“盖章只要等调墨3分钟完成就能开始，不必等裁纸”及“任何工作人员数量都一样”，与source规定盖章需裁纸和调墨都完成且单/双人员总时长不同矛盾。",
+            "impact": "中央解释传授无效依赖规则与错误时长，破坏Q3解释有用性且背离goals讲清推理与边界的要求。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "76700318469aedf9e8629802845116e5adb78030a2aeda7f5e8f9b787211831a"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "76700318469aedf9e8629802845116e5adb78030a2aeda7f5e8f9b787211831a"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q3:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/sources/0/text",
+          "quote": "盖章必须在裁纸和调墨都完成后才能开始",
+          "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+        },
+        "reason": "来源明确要求盖章须裁纸调墨均完成，工件称不必等裁纸且任何人员数结果相同，违背规则并教无效方法，实质缺陷。"
+      },
+      {
+        "id": "review2:Q3:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "盖章只要等调墨3分钟完成就能开始，不必等裁纸。",
+          "valueHash": "76700318469aedf9e8629802845116e5adb78030a2aeda7f5e8f9b787211831a"
+        },
+        "reason": "工件此句直接主张错误依赖，与source中盖章必须两者完成的规则矛盾，推导错误时刻表，属中央解释错误。"
+      }
+    ]
+  }
+}

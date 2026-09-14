@@ -1,0 +1,69 @@
+{
+  "inputIdentity": "1b55d09fbf03f0379a9f3b7f88e70e60bbf40b179957f5f7c5c77889abbb373e",
+  "attempts": [
+    {
+      "physicalId": "d68f771d-c09c-4e62-8767-62ce2b2b85df",
+      "caseId": "S062",
+      "runId": "S062-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q2",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "交付物仅含欢迎语，未解释un-意义也未在给定词应用，核心目标完全缺失。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/0"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "交付物未包含任何关于前缀un-意义解释或应用的内容，仅含欢迎语",
+            "impact": "核心目标完全未处理，学习用途失败",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/0"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "ba5701b92bc7d14664cf6ebd8922e14ba99d362eaf01013e5db858ae4c2ff76a"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "e0d0ebf754fe4c4754e9e6e545be939741595f92a9cceff9da4b3a6be4251759"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "ba5701b92bc7d14664cf6ebd8922e14ba99d362eaf01013e5db858ae4c2ff76a"
+          },
+          {
+            "pointer": "/goals/0",
+            "valueHash": "e0d0ebf754fe4c4754e9e6e545be939741595f92a9cceff9da4b3a6be4251759"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

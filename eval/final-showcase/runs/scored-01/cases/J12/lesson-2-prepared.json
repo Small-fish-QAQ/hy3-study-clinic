@@ -1,0 +1,166 @@
+{
+  "status": "ready",
+  "message": "Lesson is ready.",
+  "course": {
+    "title": "英语比较级与最高级"
+  },
+  "session": {
+    "status": "active",
+    "version": 10
+  },
+  "agenda": {
+    "version": 2,
+    "itemState": "queued"
+  },
+  "lesson": {
+    "objective": {
+      "title": "比较级与最高级形式与用法：区分、构词与造句",
+      "whyNow": "给定三物体不同质量，常有人写出方向相反或丢范围的句子，如何系统生成正确比较句？",
+      "outcomes": [
+        {
+          "title": "依据给定数据写比较句并保留范围",
+          "description": "能够依据完整给定数据写比较句并保留范围：先确定维度、对象和范围，用数据决定方向，选词形与句式；比较级用than连接，最高级保留of the three等明确范围；按数据选择轻重词形（如B比C轻写lighter than而非套heavier），且价格数据不等同质量评价，只用给定同单位数值复核，无需自行补充测量条件；遵循本课给定less expensive为更便宜、least expensive为最便宜等约定。"
+        }
+      ]
+    },
+    "prerequisites": [],
+    "segments": [
+      {
+        "index": 0,
+        "purpose": "orientation",
+        "explanation": "写比较句前，先锁定维度、对象和范围。例如有三支铅笔：甲长10厘米、乙长15厘米、丙长20厘米。维度是长度，对象是两两或三者。若比两者，用比较级加than，如乙比甲长写'B is longer than A.'；若比三者中最长，用最高级并保留范围，如'C is the longest of the three pencils.'。方向必须由给定数值决定，不能套用反义词语。价格等无关维度不能混入质量评价。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 1,
+        "purpose": "worked_example",
+        "explanation": "下面用新案例演练：三水果质量不同，需写出正确比较句。注意步骤：先定维度对象，再比数据，选词形。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": {
+          "startingState": "三水果质量：苹果100g，香蕉150g，西瓜300g；任务：写香蕉与苹果的比较句，范围仅二者。",
+          "inputs": [
+            "质量数据100,150,300g",
+            "规则：比较级than，轻lighter重heavier"
+          ],
+          "ruleOrProcedure": "根据资料中的规则：同单位数值大者更重，用heavier than；小者lighter than",
+          "steps": [
+            {
+              "action": "确定维度为质量，对象为香蕉和苹果，提取数值香蕉150g>苹果100g",
+              "reason": "先定维度对象避免套错词",
+              "resultingState": "维度质量，香蕉150g重于苹果100g"
+            }
+          ],
+          "learnerDecision": null,
+          "result": null,
+          "whyResultFollows": null,
+          "origin": "hy3_synthesis",
+          "sources": [],
+          "interaction": {
+            "stage": "guided",
+            "modelledStepCount": 1,
+            "origin": "hy3_synthesis",
+            "sources": [],
+            "activity": {
+              "prompt": "给定三水果质量（苹果100g，香蕉150g，西瓜300g）且待写香蕉与苹果的比较句，下列哪句是正确的具体结果？",
+              "options": [
+                {
+                  "id": "A",
+                  "text": "The banana is heavier than the apple."
+                },
+                {
+                  "id": "B",
+                  "text": "The apple is heavier than the banana."
+                },
+                {
+                  "id": "C",
+                  "text": "The banana is the heaviest of the three fruits."
+                }
+              ],
+              "response": null,
+              "respondedAt": null,
+              "correct": null,
+              "feedback": null,
+              "debrief": null,
+              "credit": "none",
+              "misconception": null
+            },
+            "hint": null,
+            "scaffold": null,
+            "transfer": null
+          }
+        },
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      }
+    ],
+    "sourceReferencesAvailable": true,
+    "visuals": [],
+    "summary": {
+      "available": true,
+      "text": "先定维度、对象、范围，用同单位数据定方向，再选比较级than或最高级带范围，词形按给定表。",
+      "nextConnection": null,
+      "formalOpportunities": []
+    },
+    "plannedTime": {
+      "agendaMinutes": 9,
+      "activeMinutesMin": 12,
+      "activeMinutesMax": 18,
+      "basis": "locally_evaluated_learning_actions"
+    }
+  },
+  "progress": {
+    "stateVersion": 2,
+    "stateId": "lesson_execution_37c3e86e-8c3f-4a4c-9acb-27f9eb5ce467",
+    "currentSegmentIndex": 0,
+    "segmentCount": 2,
+    "presentedSegmentIndexes": [],
+    "presentationStatus": "not_started",
+    "presentationCompletedAt": null
+  },
+  "currentInformalCheck": null,
+  "practice": {
+    "status": "locked",
+    "currentItemIndex": 0,
+    "itemCount": 1,
+    "item": {
+      "index": 0,
+      "objectiveTitle": "依据给定数据写比较句并保留范围",
+      "construct": "apply",
+      "surface": "initial",
+      "supplementary": true,
+      "prompt": "给定三个玩具车质量：车D 3千克，车E 6千克，车F 9千克。观察到的句子：'E is heavier than F.' 这一结果源于哪类错误？",
+      "options": [
+        {
+          "id": "teaching_brief_a1ac34e6-ec1f-43bc-a8bd-a2653fd7c658_practice_1_initial_A",
+          "text": "错误，应写'E is lighter than F.'，因为6<9，比较级方向须按数据"
+        },
+        {
+          "id": "teaching_brief_a1ac34e6-ec1f-43bc-a8bd-a2653fd7c658_practice_1_initial_B",
+          "text": "该句正确，因为表述与质量数据方向一致"
+        },
+        {
+          "id": "teaching_brief_a1ac34e6-ec1f-43bc-a8bd-a2653fd7c658_practice_1_initial_C",
+          "text": "错误，应补最高级范围写成'E is the heaviest of the three.'"
+        }
+      ]
+    },
+    "attempts": [],
+    "recovery": null,
+    "completedAt": null,
+    "credit": "none"
+  },
+  "allowedActions": [
+    "start_lesson"
+  ]
+}

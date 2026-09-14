@@ -1,0 +1,96 @@
+{
+  "inputIdentity": "00bd054225a27e0b11f8185c5b5c26ed94c8eb1ca1a1f0d9f3a7eeeefc8e435b",
+  "attempts": [
+    {
+      "physicalId": "261e6b23-0957-42e9-a501-e4441fe21c98",
+      "caseId": "S008",
+      "runId": "S008-r1",
+      "stage": "blind-student",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": "Criterion must cite actual /answer and matching rubric text/object."
+    },
+    {
+      "physicalId": "9368e8b6-71d6-482b-acb9-a31b5802dd8d",
+      "caseId": "S008",
+      "runId": "S008-r1",
+      "stage": "blind-student",
+      "outputAttempt": 2,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "criteria": [
+      {
+        "id": "c1",
+        "result": "met",
+        "reason": "答案中明确计算出65°，满足第三角65度的要求",
+        "refs": [
+          "/answer",
+          "/rubric/0"
+        ],
+        "required": true,
+        "witnesses": [
+          {
+            "pointer": "/answer",
+            "valueHash": "0f636d95ae49771bae0a8feca7be7e58be55eb11f9971402f2ff4d679d328323"
+          },
+          {
+            "pointer": "/rubric/0",
+            "valueHash": "433a76d6f4a1dc7bb70ba7617eb9c24bfc16a306897f6751247f515dfb15ea94"
+          }
+        ]
+      },
+      {
+        "id": "c2",
+        "result": "met",
+        "reason": "答案写'由内角总和180°，计算180°-(48°+67°)=65°'，利用内角和180度并扣除已知两角48与67",
+        "refs": [
+          "/answer",
+          "/rubric/1"
+        ],
+        "required": true,
+        "witnesses": [
+          {
+            "pointer": "/answer",
+            "valueHash": "0f636d95ae49771bae0a8feca7be7e58be55eb11f9971402f2ff4d679d328323"
+          },
+          {
+            "pointer": "/rubric/1",
+            "valueHash": "eaca36faa72646063919361b272c1653cdc11b31eefa1de2268808c1d664b4db"
+          }
+        ]
+      },
+      {
+        "id": "c3",
+        "result": "met",
+        "reason": "答案整体为一句包含结论的句子，可视为使用一句单独的结论句",
+        "refs": [
+          "/answer",
+          "/rubric/2"
+        ],
+        "required": false,
+        "witnesses": [
+          {
+            "pointer": "/answer",
+            "valueHash": "0f636d95ae49771bae0a8feca7be7e58be55eb11f9971402f2ff4d679d328323"
+          },
+          {
+            "pointer": "/rubric/2",
+            "valueHash": "f4d8305144345c8dd339b126efc1afb13d48f79b84d7936aefeed088c54aad69"
+          }
+        ]
+      }
+    ],
+    "warrantedCredit": "granted"
+  }
+}

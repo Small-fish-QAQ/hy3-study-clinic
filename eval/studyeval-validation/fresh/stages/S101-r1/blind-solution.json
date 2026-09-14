@@ -1,0 +1,36 @@
+{
+  "inputIdentity": "8c8cd7401ea8cdd637d3fdea55194bdd051423f3360142eda862d33183f0a6c4",
+  "attempts": [
+    {
+      "physicalId": "b0a3f813-2fb7-4be3-9257-9b1b83236933",
+      "caseId": "S101",
+      "runId": "S101-r1",
+      "stage": "blind-solution",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "status": "resolved",
+    "solution": "不能唯一确定红球数。据/sources/0/text：总数8，红蓝均≥1，设红球r为整数则1≤r≤7，蓝球8-r。例：r=1,b=7；r=3,b=5。两组合均满足条件，证明非唯一。",
+    "refs": [
+      "/question/prompt",
+      "/sources/0/text"
+    ],
+    "witnesses": [
+      {
+        "pointer": "/question/prompt",
+        "valueHash": "6e35222514b3678631b97b82b69f390399f2baee79053ec5cc0cb9980929c813"
+      },
+      {
+        "pointer": "/sources/0/text",
+        "valueHash": "5aad739453ecf71bb67b8231d512e4501272c0e19922e6b7b60be43255633d24"
+      }
+    ]
+  }
+}

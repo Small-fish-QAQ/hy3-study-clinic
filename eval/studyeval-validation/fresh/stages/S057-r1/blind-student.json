@@ -1,0 +1,96 @@
+{
+  "inputIdentity": "b6ab716c00c922bd319154d6b8799b659ec2118bb891a437f209a1affbca46fe",
+  "attempts": [
+    {
+      "physicalId": "ef46a477-c157-4222-8827-52ecff25b64f",
+      "caseId": "S057",
+      "runId": "S057-r1",
+      "stage": "blind-student",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": "Criterion must cite actual /answer and matching rubric text/object."
+    },
+    {
+      "physicalId": "736db774-e972-4ba9-b445-511c8a1ba49f",
+      "caseId": "S057",
+      "runId": "S057-r1",
+      "stage": "blind-student",
+      "outputAttempt": 2,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "criteria": [
+      {
+        "id": "c1",
+        "result": "met",
+        "reason": "答案文本中明确计算出65度（'=65°'）",
+        "refs": [
+          "/answer",
+          "/rubric/0"
+        ],
+        "required": true,
+        "witnesses": [
+          {
+            "pointer": "/answer",
+            "valueHash": "0f636d95ae49771bae0a8feca7be7e58be55eb11f9971402f2ff4d679d328323"
+          },
+          {
+            "pointer": "/rubric/0",
+            "valueHash": "433a76d6f4a1dc7bb70ba7617eb9c24bfc16a306897f6751247f515dfb15ea94"
+          }
+        ]
+      },
+      {
+        "id": "c2",
+        "result": "met",
+        "reason": "明确使用内角总和180°并扣除已知两角(48°+67°)",
+        "refs": [
+          "/answer",
+          "/rubric/1"
+        ],
+        "required": true,
+        "witnesses": [
+          {
+            "pointer": "/answer",
+            "valueHash": "0f636d95ae49771bae0a8feca7be7e58be55eb11f9971402f2ff4d679d328323"
+          },
+          {
+            "pointer": "/rubric/1",
+            "valueHash": "eaca36faa72646063919361b272c1653cdc11b31eefa1de2268808c1d664b4db"
+          }
+        ]
+      },
+      {
+        "id": "c3",
+        "result": "met",
+        "reason": "提交为单句以句号结束，包含结论与依据",
+        "refs": [
+          "/answer",
+          "/rubric/2"
+        ],
+        "required": false,
+        "witnesses": [
+          {
+            "pointer": "/answer",
+            "valueHash": "0f636d95ae49771bae0a8feca7be7e58be55eb11f9971402f2ff4d679d328323"
+          },
+          {
+            "pointer": "/rubric/2",
+            "valueHash": "f4d8305144345c8dd339b126efc1afb13d48f79b84d7936aefeed088c54aad69"
+          }
+        ]
+      }
+    ],
+    "warrantedCredit": "granted"
+  }
+}

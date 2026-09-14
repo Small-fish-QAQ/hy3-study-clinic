@@ -1,0 +1,681 @@
+{
+  "task": {
+    "caseId": "S041",
+    "runId": "S041-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S041.json",
+    "inputHash": "39e556a797ad2f3bf2cb2dd028f428c949b9bb388f12cd24bf8a5736e336932b"
+  },
+  "inputHash": "39e556a797ad2f3bf2cb2dd028f428c949b9bb388f12cd24bf8a5736e336932b",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "9b97c45bb70ddfc2b668013d1568289af1e15d99b9209a285ecb625656803bea",
+    "stages": {
+      "blind-solution": {
+        "status": "resolved",
+        "solution": "依/sources/0/text：L=[a,b,c,d,e,f]下标0起，切片L[1:6:2]从1始步长2，取1,3,5对应元素b,d,f；下一下标7≥6停止，stop=6不包含。故元素为b,d,f，实际下标1,3,5，终点不包含。",
+        "refs": [
+          "/question/prompt",
+          "/sources/0/text"
+        ],
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "487499c8abe81de340d4ca5e9aa13223872b130c6a2bcd56f65c13d57d6dc1bf"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "7a10cc0071f3123316910bb75fd05269f043b078b4c61204a313a406d722851b"
+          }
+        ]
+      },
+      "blind-student": {
+        "criteria": [
+          {
+            "id": "c1",
+            "result": "met",
+            "reason": "学生答案'取b、d、f，对应下标1、3、5'明确列出元素b,d,f及下标1,3,5，与标准一致",
+            "refs": [
+              "/answer",
+              "/rubric/0"
+            ],
+            "required": true,
+            "witnesses": [
+              {
+                "pointer": "/answer",
+                "valueHash": "1f1899d77938970be2b4fb911104eb79b857f3b9b11357fb92a3f0e5f47e5119"
+              },
+              {
+                "pointer": "/rubric/0",
+                "valueHash": "6399550a90530ee1616215b1675defac00c772a340c4350897216a3724886f2c"
+              }
+            ]
+          },
+          {
+            "id": "c2",
+            "result": "met",
+            "reason": "学生答案'切片在6之前停止，6本身不取'表明终点6不包含，满足标准",
+            "refs": [
+              "/answer",
+              "/rubric/1"
+            ],
+            "required": true,
+            "witnesses": [
+              {
+                "pointer": "/answer",
+                "valueHash": "1f1899d77938970be2b4fb911104eb79b857f3b9b11357fb92a3f0e5f47e5119"
+              },
+              {
+                "pointer": "/rubric/1",
+                "valueHash": "b9daadef9f56c4be53ec987a58f6d1caeda944fe4c21953d9197e49732389c53"
+              }
+            ]
+          },
+          {
+            "id": "c3",
+            "result": "not_met",
+            "reason": "学生答案为普通句子，未使用项目符号列表格式，不满足该非必要要求",
+            "refs": [
+              "/answer",
+              "/rubric/2"
+            ],
+            "required": false,
+            "witnesses": [
+              {
+                "pointer": "/answer",
+                "valueHash": "1f1899d77938970be2b4fb911104eb79b857f3b9b11357fb92a3f0e5f47e5119"
+              },
+              {
+                "pointer": "/rubric/2",
+                "valueHash": "d52851780736c28eed16df31e029f6ea5cfaf7332d14aae7be2022370d4bc979"
+              }
+            ]
+          }
+        ],
+        "warrantedCredit": "granted"
+      },
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q5",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "产品将required标准c2(终点6不包含)错误判not_met，苛求原句“stop不包含”而忽视等价“6本身不取”，导致必要含义被拒且学分withheld，实为应授。",
+            "refs": [
+              "/answer",
+              "/rubric/1",
+              "/productJudgment/criteria/1",
+              "/productJudgment/consequence"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "评分器错误判定required标准c2未满足，反馈称必须原句写“stop不包含”而学生写“6本身不取”等价排除终点",
+                "impact": "改变核心用途：必要学分被错误拒绝，正确作答得withheld",
+                "refs": [
+                  "/answer",
+                  "/rubric/1",
+                  "/productJudgment/criteria/1"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/answer",
+                    "valueHash": "1f1899d77938970be2b4fb911104eb79b857f3b9b11357fb92a3f0e5f47e5119"
+                  },
+                  {
+                    "pointer": "/rubric/1",
+                    "valueHash": "b9daadef9f56c4be53ec987a58f6d1caeda944fe4c21953d9197e49732389c53"
+                  },
+                  {
+                    "pointer": "/productJudgment/criteria/1",
+                    "valueHash": "a0ab216682d7691f7359af06b69525bb27eddc3c25c3e41a3aa7501a1ce909d1"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "grading": {
+              "criteria": [
+                {
+                  "id": "c1",
+                  "result": "met",
+                  "reason": "学生答案'取b、d、f，对应下标1、3、5'明确列出元素b,d,f及下标1,3,5，满足必要标准",
+                  "refs": [
+                    "/answer",
+                    "/rubric/0"
+                  ],
+                  "required": true,
+                  "witnesses": [
+                    {
+                      "pointer": "/answer",
+                      "valueHash": "1f1899d77938970be2b4fb911104eb79b857f3b9b11357fb92a3f0e5f47e5119"
+                    },
+                    {
+                      "pointer": "/rubric/0",
+                      "valueHash": "6399550a90530ee1616215b1675defac00c772a340c4350897216a3724886f2c"
+                    }
+                  ]
+                },
+                {
+                  "id": "c2",
+                  "result": "met",
+                  "reason": "学生答案'切片在6之前停止，6本身不取'表明终点6不包含，等价满足标准",
+                  "refs": [
+                    "/answer",
+                    "/rubric/1"
+                  ],
+                  "required": true,
+                  "witnesses": [
+                    {
+                      "pointer": "/answer",
+                      "valueHash": "1f1899d77938970be2b4fb911104eb79b857f3b9b11357fb92a3f0e5f47e5119"
+                    },
+                    {
+                      "pointer": "/rubric/1",
+                      "valueHash": "b9daadef9f56c4be53ec987a58f6d1caeda944fe4c21953d9197e49732389c53"
+                    }
+                  ]
+                },
+                {
+                  "id": "c3",
+                  "result": "not_met",
+                  "reason": "学生答案为普通句子，未使用项目符号列表，可选标准不满足",
+                  "refs": [
+                    "/answer",
+                    "/rubric/2"
+                  ],
+                  "required": false,
+                  "witnesses": [
+                    {
+                      "pointer": "/answer",
+                      "valueHash": "1f1899d77938970be2b4fb911104eb79b857f3b9b11357fb92a3f0e5f47e5119"
+                    },
+                    {
+                      "pointer": "/rubric/2",
+                      "valueHash": "d52851780736c28eed16df31e029f6ea5cfaf7332d14aae7be2022370d4bc979"
+                    }
+                  ]
+                }
+              ],
+              "warrantedCredit": "granted",
+              "actualCredit": "withheld",
+              "actualCreditWitness": {
+                "pointer": "/productJudgment/consequence",
+                "valueHash": "a3b3d76fdf1e33a8c7bde9a7152980d0de2656e3d541feafb198261dcc7cf51c"
+              }
+            },
+            "witnesses": [
+              {
+                "pointer": "/answer",
+                "valueHash": "1f1899d77938970be2b4fb911104eb79b857f3b9b11357fb92a3f0e5f47e5119"
+              },
+              {
+                "pointer": "/rubric/1",
+                "valueHash": "b9daadef9f56c4be53ec987a58f6d1caeda944fe4c21953d9197e49732389c53"
+              },
+              {
+                "pointer": "/productJudgment/criteria/1",
+                "valueHash": "a0ab216682d7691f7359af06b69525bb27eddc3c25c3e41a3aa7501a1ce909d1"
+              },
+              {
+                "pointer": "/productJudgment/consequence",
+                "valueHash": "a3b3d76fdf1e33a8c7bde9a7152980d0de2656e3d541feafb198261dcc7cf51c"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q5",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "评分器误判必要标准c2为not_met，学生'6本身不取'等价终点排除；导致withheld错误，应granted。实质缺陷。",
+            "refs": [
+              "/answer",
+              "/rubric/1",
+              "/productJudgment/criteria/1",
+              "/productJudgment/consequence"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "产品将required标准c2（终点6不包含）误判not_met，因学生用'6本身不取'等价表达。",
+                "impact": "改变核心用途：错误拒绝必要含义致学分withheld，实际应granted，评分准确性实质缺陷。",
+                "refs": [
+                  "/answer",
+                  "/rubric/1",
+                  "/productJudgment/criteria/1"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/answer",
+                    "valueHash": "1f1899d77938970be2b4fb911104eb79b857f3b9b11357fb92a3f0e5f47e5119"
+                  },
+                  {
+                    "pointer": "/rubric/1",
+                    "valueHash": "b9daadef9f56c4be53ec987a58f6d1caeda944fe4c21953d9197e49732389c53"
+                  },
+                  {
+                    "pointer": "/productJudgment/criteria/1",
+                    "valueHash": "a0ab216682d7691f7359af06b69525bb27eddc3c25c3e41a3aa7501a1ce909d1"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "grading": {
+              "criteria": [
+                {
+                  "id": "c1",
+                  "result": "met",
+                  "reason": "学生答案列出b,d,f及下标1,3,5，满足必要标准",
+                  "refs": [
+                    "/answer",
+                    "/rubric/0"
+                  ],
+                  "required": true,
+                  "witnesses": [
+                    {
+                      "pointer": "/answer",
+                      "valueHash": "1f1899d77938970be2b4fb911104eb79b857f3b9b11357fb92a3f0e5f47e5119"
+                    },
+                    {
+                      "pointer": "/rubric/0",
+                      "valueHash": "6399550a90530ee1616215b1675defac00c772a340c4350897216a3724886f2c"
+                    }
+                  ]
+                },
+                {
+                  "id": "c2",
+                  "result": "met",
+                  "reason": "学生答案'6本身不取'表明终点6不包含，满足必要标准",
+                  "refs": [
+                    "/answer",
+                    "/rubric/1"
+                  ],
+                  "required": true,
+                  "witnesses": [
+                    {
+                      "pointer": "/answer",
+                      "valueHash": "1f1899d77938970be2b4fb911104eb79b857f3b9b11357fb92a3f0e5f47e5119"
+                    },
+                    {
+                      "pointer": "/rubric/1",
+                      "valueHash": "b9daadef9f56c4be53ec987a58f6d1caeda944fe4c21953d9197e49732389c53"
+                    }
+                  ]
+                },
+                {
+                  "id": "c3",
+                  "result": "not_met",
+                  "reason": "学生答案为普通句子，未用项目符号，可选标准不满足",
+                  "refs": [
+                    "/answer",
+                    "/rubric/2"
+                  ],
+                  "required": false,
+                  "witnesses": [
+                    {
+                      "pointer": "/answer",
+                      "valueHash": "1f1899d77938970be2b4fb911104eb79b857f3b9b11357fb92a3f0e5f47e5119"
+                    },
+                    {
+                      "pointer": "/rubric/2",
+                      "valueHash": "d52851780736c28eed16df31e029f6ea5cfaf7332d14aae7be2022370d4bc979"
+                    }
+                  ]
+                }
+              ],
+              "warrantedCredit": "granted",
+              "actualCredit": "withheld",
+              "actualCreditWitness": {
+                "pointer": "/productJudgment/consequence",
+                "valueHash": "a3b3d76fdf1e33a8c7bde9a7152980d0de2656e3d541feafb198261dcc7cf51c"
+              }
+            },
+            "witnesses": [
+              {
+                "pointer": "/answer",
+                "valueHash": "1f1899d77938970be2b4fb911104eb79b857f3b9b11357fb92a3f0e5f47e5119"
+              },
+              {
+                "pointer": "/rubric/1",
+                "valueHash": "b9daadef9f56c4be53ec987a58f6d1caeda944fe4c21953d9197e49732389c53"
+              },
+              {
+                "pointer": "/productJudgment/criteria/1",
+                "valueHash": "a0ab216682d7691f7359af06b69525bb27eddc3c25c3e41a3aa7501a1ce909d1"
+              },
+              {
+                "pointer": "/productJudgment/consequence",
+                "valueHash": "a3b3d76fdf1e33a8c7bde9a7152980d0de2656e3d541feafb198261dcc7cf51c"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q5",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "产品误判required标准c2为not_met，学生'6本身不取'等价终点排除，致withheld错误，应granted，实质评分缺陷。",
+            "refs": [
+              "/answer",
+              "/rubric/0",
+              "/rubric/1",
+              "/productJudgment/criteria/1",
+              "/productJudgment/consequence"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "评分器错误判定required标准c2未满足，反馈苛求原句“stop不包含”而学生写“6本身不取”等价排除终点",
+                "impact": "改变核心用途：必要学分被错误拒绝，正确作答得withheld，评分准确性实质缺陷",
+                "refs": [
+                  "/answer",
+                  "/rubric/1",
+                  "/productJudgment/criteria/1"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/answer",
+                    "valueHash": "1f1899d77938970be2b4fb911104eb79b857f3b9b11357fb92a3f0e5f47e5119"
+                  },
+                  {
+                    "pointer": "/rubric/1",
+                    "valueHash": "b9daadef9f56c4be53ec987a58f6d1caeda944fe4c21953d9197e49732389c53"
+                  },
+                  {
+                    "pointer": "/productJudgment/criteria/1",
+                    "valueHash": "a0ab216682d7691f7359af06b69525bb27eddc3c25c3e41a3aa7501a1ce909d1"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "grading": {
+              "criteria": [
+                {
+                  "id": "c1",
+                  "result": "met",
+                  "reason": "学生答案'取b、d、f，对应下标1、3、5'明确列出元素b,d,f及下标1,3,5，与标准一致",
+                  "refs": [
+                    "/answer",
+                    "/rubric/0"
+                  ],
+                  "required": true,
+                  "witnesses": [
+                    {
+                      "pointer": "/answer",
+                      "valueHash": "1f1899d77938970be2b4fb911104eb79b857f3b9b11357fb92a3f0e5f47e5119"
+                    },
+                    {
+                      "pointer": "/rubric/0",
+                      "valueHash": "6399550a90530ee1616215b1675defac00c772a340c4350897216a3724886f2c"
+                    }
+                  ]
+                },
+                {
+                  "id": "c2",
+                  "result": "met",
+                  "reason": "学生答案'切片在6之前停止，6本身不取'表明终点6不包含，满足标准",
+                  "refs": [
+                    "/answer",
+                    "/rubric/1"
+                  ],
+                  "required": true,
+                  "witnesses": [
+                    {
+                      "pointer": "/answer",
+                      "valueHash": "1f1899d77938970be2b4fb911104eb79b857f3b9b11357fb92a3f0e5f47e5119"
+                    },
+                    {
+                      "pointer": "/rubric/1",
+                      "valueHash": "b9daadef9f56c4be53ec987a58f6d1caeda944fe4c21953d9197e49732389c53"
+                    }
+                  ]
+                },
+                {
+                  "id": "c3",
+                  "result": "not_met",
+                  "reason": "学生答案为普通句子，未使用项目符号列表格式，不满足该非必要要求",
+                  "refs": [
+                    "/answer",
+                    "/rubric/2"
+                  ],
+                  "required": false,
+                  "witnesses": [
+                    {
+                      "pointer": "/answer",
+                      "valueHash": "1f1899d77938970be2b4fb911104eb79b857f3b9b11357fb92a3f0e5f47e5119"
+                    },
+                    {
+                      "pointer": "/rubric/2",
+                      "valueHash": "d52851780736c28eed16df31e029f6ea5cfaf7332d14aae7be2022370d4bc979"
+                    }
+                  ]
+                }
+              ],
+              "warrantedCredit": "granted",
+              "actualCredit": "withheld",
+              "actualCreditWitness": {
+                "pointer": "/productJudgment/consequence",
+                "valueHash": "a3b3d76fdf1e33a8c7bde9a7152980d0de2656e3d541feafb198261dcc7cf51c"
+              }
+            },
+            "witnesses": [
+              {
+                "pointer": "/answer",
+                "valueHash": "1f1899d77938970be2b4fb911104eb79b857f3b9b11357fb92a3f0e5f47e5119"
+              },
+              {
+                "pointer": "/rubric/0",
+                "valueHash": "6399550a90530ee1616215b1675defac00c772a340c4350897216a3724886f2c"
+              },
+              {
+                "pointer": "/rubric/1",
+                "valueHash": "b9daadef9f56c4be53ec987a58f6d1caeda944fe4c21953d9197e49732389c53"
+              },
+              {
+                "pointer": "/productJudgment/criteria/1",
+                "valueHash": "a0ab216682d7691f7359af06b69525bb27eddc3c25c3e41a3aa7501a1ce909d1"
+              },
+              {
+                "pointer": "/productJudgment/consequence",
+                "valueHash": "a3b3d76fdf1e33a8c7bde9a7152980d0de2656e3d541feafb198261dcc7cf51c"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q5:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/answer",
+              "quote": "6本身不取",
+              "valueHash": "1f1899d77938970be2b4fb911104eb79b857f3b9b11357fb92a3f0e5f47e5119"
+            },
+            "reason": "学生答案明确说6本身不取，等价终点6不包含，产品判not_met错误"
+          },
+          {
+            "id": "review2:Q5:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/productJudgment/criteria/1",
+              "quote": null,
+              "valueHash": "a0ab216682d7691f7359af06b69525bb27eddc3c25c3e41a3aa7501a1ce909d1"
+            },
+            "reason": "产品对c2判not_met，但学生答案已满足，误判实质缺陷"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q5",
+          "level": 0,
+          "evidence": "sufficient",
+          "reason": "产品误判required标准c2为not_met，学生'6本身不取'等价终点排除，致withheld错误，应granted，实质评分缺陷。",
+          "refs": [
+            "/answer",
+            "/rubric/0",
+            "/rubric/1",
+            "/productJudgment/criteria/1",
+            "/productJudgment/consequence"
+          ],
+          "defects": [
+            {
+              "severity": "material",
+              "description": "评分器错误判定required标准c2未满足，反馈苛求原句“stop不包含”而学生写“6本身不取”等价排除终点",
+              "impact": "改变核心用途：必要学分被错误拒绝，正确作答得withheld，评分准确性实质缺陷",
+              "refs": [
+                "/answer",
+                "/rubric/1",
+                "/productJudgment/criteria/1"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "1f1899d77938970be2b4fb911104eb79b857f3b9b11357fb92a3f0e5f47e5119"
+                },
+                {
+                  "pointer": "/rubric/1",
+                  "valueHash": "b9daadef9f56c4be53ec987a58f6d1caeda944fe4c21953d9197e49732389c53"
+                },
+                {
+                  "pointer": "/productJudgment/criteria/1",
+                  "valueHash": "a0ab216682d7691f7359af06b69525bb27eddc3c25c3e41a3aa7501a1ce909d1"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "grading": {
+            "criteria": [
+              {
+                "id": "c1",
+                "result": "met",
+                "reason": "学生答案'取b、d、f，对应下标1、3、5'明确列出元素b,d,f及下标1,3,5，与标准一致",
+                "refs": [
+                  "/answer",
+                  "/rubric/0"
+                ],
+                "required": true,
+                "witnesses": [
+                  {
+                    "pointer": "/answer",
+                    "valueHash": "1f1899d77938970be2b4fb911104eb79b857f3b9b11357fb92a3f0e5f47e5119"
+                  },
+                  {
+                    "pointer": "/rubric/0",
+                    "valueHash": "6399550a90530ee1616215b1675defac00c772a340c4350897216a3724886f2c"
+                  }
+                ]
+              },
+              {
+                "id": "c2",
+                "result": "met",
+                "reason": "学生答案'切片在6之前停止，6本身不取'表明终点6不包含，满足标准",
+                "refs": [
+                  "/answer",
+                  "/rubric/1"
+                ],
+                "required": true,
+                "witnesses": [
+                  {
+                    "pointer": "/answer",
+                    "valueHash": "1f1899d77938970be2b4fb911104eb79b857f3b9b11357fb92a3f0e5f47e5119"
+                  },
+                  {
+                    "pointer": "/rubric/1",
+                    "valueHash": "b9daadef9f56c4be53ec987a58f6d1caeda944fe4c21953d9197e49732389c53"
+                  }
+                ]
+              },
+              {
+                "id": "c3",
+                "result": "not_met",
+                "reason": "学生答案为普通句子，未使用项目符号列表格式，不满足该非必要要求",
+                "refs": [
+                  "/answer",
+                  "/rubric/2"
+                ],
+                "required": false,
+                "witnesses": [
+                  {
+                    "pointer": "/answer",
+                    "valueHash": "1f1899d77938970be2b4fb911104eb79b857f3b9b11357fb92a3f0e5f47e5119"
+                  },
+                  {
+                    "pointer": "/rubric/2",
+                    "valueHash": "d52851780736c28eed16df31e029f6ea5cfaf7332d14aae7be2022370d4bc979"
+                  }
+                ]
+              }
+            ],
+            "warrantedCredit": "granted",
+            "actualCredit": "withheld",
+            "actualCreditWitness": {
+              "pointer": "/productJudgment/consequence",
+              "valueHash": "a3b3d76fdf1e33a8c7bde9a7152980d0de2656e3d541feafb198261dcc7cf51c"
+            }
+          },
+          "witnesses": [
+            {
+              "pointer": "/answer",
+              "valueHash": "1f1899d77938970be2b4fb911104eb79b857f3b9b11357fb92a3f0e5f47e5119"
+            },
+            {
+              "pointer": "/rubric/0",
+              "valueHash": "6399550a90530ee1616215b1675defac00c772a340c4350897216a3724886f2c"
+            },
+            {
+              "pointer": "/rubric/1",
+              "valueHash": "b9daadef9f56c4be53ec987a58f6d1caeda944fe4c21953d9197e49732389c53"
+            },
+            {
+              "pointer": "/productJudgment/criteria/1",
+              "valueHash": "a0ab216682d7691f7359af06b69525bb27eddc3c25c3e41a3aa7501a1ce909d1"
+            },
+            {
+              "pointer": "/productJudgment/consequence",
+              "valueHash": "a3b3d76fdf1e33a8c7bde9a7152980d0de2656e3d541feafb198261dcc7cf51c"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "878dfa1e711b6c8acdd53b25809e990788e33e10fec010bfb36188fd5fe30bf0"
+  }
+}

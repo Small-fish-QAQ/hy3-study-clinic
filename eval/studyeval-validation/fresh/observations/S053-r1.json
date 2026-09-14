@@ -1,0 +1,424 @@
+{
+  "task": {
+    "caseId": "S053",
+    "runId": "S053-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S053.json",
+    "inputHash": "bc06dd7f4c906f4fa07e821856afcff8259caca5e21650bdbc02ce8ce965a110"
+  },
+  "inputHash": "bc06dd7f4c906f4fa07e821856afcff8259caca5e21650bdbc02ce8ce965a110",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "b9d788a7df59f99afd57e65f467b43644a4bc96c36a90885f51c17660f2fb904",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "修复文本虚构学习者未复习且讨厌数学，无证据；教授错误换算1米=10厘米（源为100厘米）；并声称抄结论即独立掌握。三者均触Q6零分标准，实质破坏基于证据的单位换算帮助目标。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "诊断发明学习者状态：声称“昨天完全没有复习，也一直讨厌数学”，无原始证据支持。",
+                "impact": "虚构原因脱离基于证据帮助的目标，误导干预方向。",
+                "refs": [
+                  "/artifacts/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "75218d1b28df1c5de6280766604e62819288843ce78b325e8b842ac3d54bf56a"
+                  }
+                ]
+              },
+              {
+                "severity": "material",
+                "description": "干预教错误方法：要求记住“1米=10厘米”，与源中1米=100厘米矛盾。",
+                "impact": "传授错误单位换算，直接损害核心学习用途。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "75218d1b28df1c5de6280766604e62819288843ce78b325e8b842ac3d54bf56a"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "2548172e88b868529837d1fdba69c19b301b4c25437b0d6dba8b3f817e24fd6b"
+                  }
+                ]
+              },
+              {
+                "severity": "material",
+                "description": "声称抄结论即独立掌握：“下一题直接抄这个结论就能证明独立掌握”。",
+                "impact": "将复述错误答案伪称独立掌握，违背评估原则，破坏修复可信度。",
+                "refs": [
+                  "/artifacts/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "75218d1b28df1c5de6280766604e62819288843ce78b325e8b842ac3d54bf56a"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "75218d1b28df1c5de6280766604e62819288843ce78b325e8b842ac3d54bf56a"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "2548172e88b868529837d1fdba69c19b301b4c25437b0d6dba8b3f817e24fd6b"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "诊断虚构学习者没复习且讨厌数学，教导错误换算1米=10厘米，并声称抄错结论即独立掌握，完全违背基于证据的帮助与正确换算目标。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text",
+              "/goals/0"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "诊断断言学习者昨天没复习且讨厌数学，无证据支持，发明学习者状态",
+                "impact": "违背goals中基于证据的帮助，虚假诊断误导",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/goals/0"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "75218d1b28df1c5de6280766604e62819288843ce78b325e8b842ac3d54bf56a"
+                  },
+                  {
+                    "pointer": "/goals/0",
+                    "valueHash": "863d0a6bb0902cab5b56fa7ead92d6a66354364d03cd74218606c53c382d88f2"
+                  }
+                ]
+              },
+              {
+                "severity": "material",
+                "description": "干预教导错误换算1米=10厘米，与源1米=100厘米矛盾",
+                "impact": "教错核心事实，破坏单位换算学习用途",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "75218d1b28df1c5de6280766604e62819288843ce78b325e8b842ac3d54bf56a"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "2548172e88b868529837d1fdba69c19b301b4c25437b0d6dba8b3f817e24fd6b"
+                  }
+                ]
+              },
+              {
+                "severity": "material",
+                "description": "声称下一题抄该错误结论即证明独立掌握，将复述误当掌握",
+                "impact": "错误评估掌握，核心目标失效",
+                "refs": [
+                  "/artifacts/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "75218d1b28df1c5de6280766604e62819288843ce78b325e8b842ac3d54bf56a"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "75218d1b28df1c5de6280766604e62819288843ce78b325e8b842ac3d54bf56a"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "2548172e88b868529837d1fdba69c19b301b4c25437b0d6dba8b3f817e24fd6b"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "863d0a6bb0902cab5b56fa7ead92d6a66354364d03cd74218606c53c382d88f2"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "产物诊断虚构学习者未复习且讨厌数学无证据；教授错误换算1米=10厘米（源为100厘米）；声称抄结论即独立掌握。三者触Q6零分标准，实质破坏基于证据的单位换算帮助目标。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text",
+              "/goals/0"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "诊断发明学习者状态：声称“昨天完全没有复习，也一直讨厌数学”，无原始证据支持。",
+                "impact": "虚构原因脱离基于证据帮助的目标，误导干预方向，核心用途失效。",
+                "refs": [
+                  "/artifacts/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "75218d1b28df1c5de6280766604e62819288843ce78b325e8b842ac3d54bf56a"
+                  }
+                ]
+              },
+              {
+                "severity": "material",
+                "description": "干预教错误方法：要求记住“1米=10厘米”，与源中1米=100厘米矛盾。",
+                "impact": "传授错误单位换算，直接损害核心学习用途。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "75218d1b28df1c5de6280766604e62819288843ce78b325e8b842ac3d54bf56a"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "2548172e88b868529837d1fdba69c19b301b4c25437b0d6dba8b3f817e24fd6b"
+                  }
+                ]
+              },
+              {
+                "severity": "material",
+                "description": "声称抄结论即独立掌握：“下一题直接抄这个结论就能证明独立掌握”。",
+                "impact": "将复述错误答案伪称独立掌握，违背评估原则，破坏修复可信度。",
+                "refs": [
+                  "/artifacts/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "75218d1b28df1c5de6280766604e62819288843ce78b325e8b842ac3d54bf56a"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "75218d1b28df1c5de6280766604e62819288843ce78b325e8b842ac3d54bf56a"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "2548172e88b868529837d1fdba69c19b301b4c25437b0d6dba8b3f817e24fd6b"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "863d0a6bb0902cab5b56fa7ead92d6a66354364d03cd74218606c53c382d88f2"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q6:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "这证明你昨天完全没有复习，也一直讨厌数学。",
+              "valueHash": "75218d1b28df1c5de6280766604e62819288843ce78b325e8b842ac3d54bf56a"
+            },
+            "reason": "文本直接虚构学习者状态和原因，view中无priorExposure或证据支持，触Q6零分诊断发明标准。"
+          },
+          {
+            "id": "review1:Q6:2",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "把1米=10厘米记住",
+              "valueHash": "75218d1b28df1c5de6280766604e62819288843ce78b325e8b842ac3d54bf56a"
+            },
+            "reason": "artifact教导1米=10厘米，而/sources/0/text明确1米=100厘米，教错方法触Q6零分。"
+          },
+          {
+            "id": "review1:Q6:3",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "下一题直接抄这个结论就能证明独立掌握",
+              "valueHash": "75218d1b28df1c5de6280766604e62819288843ce78b325e8b842ac3d54bf56a"
+            },
+            "reason": "声称抄披露答案即独立掌握，触Q6零分复述答案伪称掌握标准。"
+          },
+          {
+            "id": "review2:Q6:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "这证明你昨天完全没有复习，也一直讨厌数学。",
+              "valueHash": "75218d1b28df1c5de6280766604e62819288843ce78b325e8b842ac3d54bf56a"
+            },
+            "reason": "同review1:Q6:1，虚构状态无证据，违背goals基于证据帮助。"
+          },
+          {
+            "id": "review2:Q6:2",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "把1米=10厘米记住",
+              "valueHash": "75218d1b28df1c5de6280766604e62819288843ce78b325e8b842ac3d54bf56a"
+            },
+            "reason": "同review1:Q6:2，教错换算方法，与source矛盾，破坏核心用途。"
+          },
+          {
+            "id": "review2:Q6:3",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "下一题直接抄这个结论就能证明独立掌握",
+              "valueHash": "75218d1b28df1c5de6280766604e62819288843ce78b325e8b842ac3d54bf56a"
+            },
+            "reason": "同review1:Q6:3，声称抄错结论即掌握，触零分。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q6",
+          "level": 0,
+          "evidence": "sufficient",
+          "reason": "产物诊断虚构学习者未复习且讨厌数学无证据；教授错误换算1米=10厘米（源为100厘米）；声称抄结论即独立掌握。三者触Q6零分标准，实质破坏基于证据的单位换算帮助目标。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text",
+            "/goals/0"
+          ],
+          "defects": [
+            {
+              "severity": "material",
+              "description": "诊断发明学习者状态：声称“昨天完全没有复习，也一直讨厌数学”，无原始证据支持。",
+              "impact": "虚构原因脱离基于证据帮助的目标，误导干预方向，核心用途失效。",
+              "refs": [
+                "/artifacts/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "75218d1b28df1c5de6280766604e62819288843ce78b325e8b842ac3d54bf56a"
+                }
+              ]
+            },
+            {
+              "severity": "material",
+              "description": "干预教错误方法：要求记住“1米=10厘米”，与源中1米=100厘米矛盾。",
+              "impact": "传授错误单位换算，直接损害核心学习用途。",
+              "refs": [
+                "/artifacts/0/text",
+                "/sources/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "75218d1b28df1c5de6280766604e62819288843ce78b325e8b842ac3d54bf56a"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "2548172e88b868529837d1fdba69c19b301b4c25437b0d6dba8b3f817e24fd6b"
+                }
+              ]
+            },
+            {
+              "severity": "material",
+              "description": "声称抄结论即独立掌握：“下一题直接抄这个结论就能证明独立掌握”。",
+              "impact": "将复述错误答案伪称独立掌握，违背评估原则，破坏修复可信度。",
+              "refs": [
+                "/artifacts/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "75218d1b28df1c5de6280766604e62819288843ce78b325e8b842ac3d54bf56a"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "75218d1b28df1c5de6280766604e62819288843ce78b325e8b842ac3d54bf56a"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "2548172e88b868529837d1fdba69c19b301b4c25437b0d6dba8b3f817e24fd6b"
+            },
+            {
+              "pointer": "/goals/0",
+              "valueHash": "863d0a6bb0902cab5b56fa7ead92d6a66354364d03cd74218606c53c382d88f2"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "b635973846ce3da14db28f390cb30800cc43f008272c20ccf8ac728fb37aed37"
+  }
+}

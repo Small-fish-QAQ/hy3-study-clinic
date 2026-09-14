@@ -1,0 +1,261 @@
+{
+  "status": "ready",
+  "message": "Lesson is ready.",
+  "course": {
+    "title": "英语主动句与被动句的对应"
+  },
+  "session": {
+    "status": "active",
+    "version": 1
+  },
+  "agenda": {
+    "version": 1,
+    "itemState": "queued"
+  },
+  "lesson": {
+    "objective": {
+      "title": "主动与被动语态转换的基础概念与结构实践",
+      "whyNow": "学生常把被动句句首名词误认为施事，需要明确语法主语与语义角色的差别。",
+      "outcomes": [
+        {
+          "title": "识别主动句与被动句中的施事、动作、受事并区分语法主语",
+          "description": "在给定的主动句与被动句中，识别动作的施事、动作和受事；区分被动句的语法主语是受事而非施事，即受事成为语法主语但仍是动作承受者，并未变成执行者。"
+        },
+        {
+          "title": "解释语态转换改变叙述重点而不改变事件及语态选择依据",
+          "description": "解释改变语态可以改变叙述重点而不必改变所报告的事件；说明选择语态取决于要突出谁或什么，不等于被动句永远更正式或更好。"
+        }
+      ]
+    },
+    "prerequisites": [],
+    "segments": [
+      {
+        "index": 0,
+        "purpose": "orientation",
+        "explanation": "在英语主动句中，执行动作的人或物（施事）位于主语位置，动作是动词，受到动作影响的对象（受事）是宾语。变为被动句时，受事移动到主语位置成为语法主语，但它仍承受动作，并非变成执行者；原施事可留在by短语中。例如'The editor writes the article.'中editor是施事，writes是动作，article是受事；被动'The article is written by the editor.'里article是语法主语且为受事。这种转换改变叙述重点，不改变事件本身。本课仅处理有明确宾语的及物动词、一般现在时和一般过去时。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 1,
+        "purpose": "guided_practice",
+        "explanation": "下面通过一个新案例展示转换步骤：先标出角色，再选be形式与过去分词，最后核对信息。注意be的单复数依据新主语而非原主语。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": {
+          "startingState": "主动句：The engineer repairs the pump. 要求转换为被动句并保留全部信息。",
+          "inputs": [
+            "动词repair，一般现在时，单数受事pump，施事engineer"
+          ],
+          "ruleOrProcedure": "被动结构：受事主语 + be合适形式 + 过去分词 + by施事；be形式由新主语单复数和时态决定；repair的过去分词为repaired。",
+          "steps": [
+            {
+              "action": "标出角色：施事the engineer，动作repairs，受事the pump",
+              "reason": "主动句主语是施事，宾语是受事",
+              "resultingState": "已标出：agent=the engineer, action=repairs, patient=the pump"
+            }
+          ],
+          "learnerDecision": null,
+          "result": null,
+          "whyResultFollows": null,
+          "origin": "hy3_synthesis",
+          "sources": [],
+          "interaction": {
+            "stage": "guided",
+            "modelledStepCount": 1,
+            "origin": "hy3_synthesis",
+            "sources": [],
+            "activity": {
+              "prompt": "给定新案例：主动句 The engineers check the valves. 要求转换为被动句。哪个结果是正确转换？",
+              "options": [
+                {
+                  "id": "A",
+                  "text": "The valves are checked by the engineers."
+                },
+                {
+                  "id": "B",
+                  "text": "The valves is checked by the engineers."
+                },
+                {
+                  "id": "C",
+                  "text": "The engineers are checked by the valves."
+                }
+              ],
+              "response": null,
+              "respondedAt": null,
+              "correct": null,
+              "feedback": null,
+              "debrief": null,
+              "credit": "none",
+              "misconception": null
+            },
+            "hint": null,
+            "scaffold": null,
+            "transfer": null
+          }
+        },
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 2,
+        "purpose": "comparison",
+        "explanation": "有些句子看似动作却无受事，不能套用上述转换。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": {
+          "text": "像'The child slept.'没有宾语，不属于本转换规则适用对象；若误将其当作受事移位，会错误构造出'The slept is child'之类无效句。",
+          "origin": "hy3_synthesis",
+          "sources": []
+        },
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 3,
+        "purpose": "mechanism",
+        "explanation": "改变语态时，原主动句的受事移动到主语位置，叙述重点从施事转到受事，但所报告的事件本身不变。例如'The reporter writes the story.'中记者是施事、故事是受事；被动句'The story is written by the reporter.'让故事成为语法主语，突出故事被写下，但事件仍是记者写故事。选择被动是为了突出受事，不等于被动更正式或更好。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [
+          {
+            "kind": "mechanism_effect",
+            "fromProposition": "受事前移为语法主语且施事留by短语",
+            "toProposition": "叙述重点转向受事，但事件参与者与动作不变",
+            "origin": "hy3_synthesis",
+            "sources": []
+          }
+        ],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 4,
+        "purpose": "guided_practice",
+        "explanation": "下面用一个新案例练习结构对应：先确认角色与时态，再选be与过去分词。注意be由新主语决定。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": {
+          "kind": "choose",
+          "prompt": "主动句：The chef makes the cake. 要求转换为被动并保留全部信息。哪个结果正确？",
+          "guidance": null,
+          "options": [
+            {
+              "id": "A",
+              "text": "The cake is made by the chef."
+            },
+            {
+              "id": "B",
+              "text": "The cake are made by the chef."
+            },
+            {
+              "id": "C",
+              "text": "The chef is made by the cake."
+            }
+          ],
+          "presented": false,
+          "response": null,
+          "respondedAt": null,
+          "correct": null,
+          "feedback": null,
+          "credit": "none"
+        }
+      },
+      {
+        "index": 5,
+        "purpose": "comparison",
+        "explanation": "本课转换规则有明确边界：只适用于带宾语的及物动词。若句子本身无受事，就不能套用移位规则，否则会捏造事件或产生无效结构。选择语态依然取决于要突出谁，但前提是有可移动的受事。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": {
+          "text": "像'The sun rises.'没有宾语，不属于本转换规则适用对象；若强行构造被动会得到无效句如'The rises is sun.'，这改变了原句不及物事件。",
+          "origin": "hy3_synthesis",
+          "sources": []
+        },
+        "possibleMisconception": null,
+        "informalCheck": null
+      }
+    ],
+    "sourceReferencesAvailable": true,
+    "visuals": [],
+    "summary": {
+      "available": true,
+      "text": "主动句施事在主语，被动句受事在主语但仍为受事；转换须有宾语、选对be与分词。",
+      "nextConnection": null,
+      "formalOpportunities": []
+    },
+    "plannedTime": {
+      "agendaMinutes": 21,
+      "activeMinutesMin": 24,
+      "activeMinutesMax": 39,
+      "basis": "locally_evaluated_learning_actions"
+    }
+  },
+  "progress": {
+    "stateVersion": 2,
+    "stateId": "lesson_execution_16725ecb-b219-4484-94de-2923ab18e341",
+    "currentSegmentIndex": 0,
+    "segmentCount": 6,
+    "presentedSegmentIndexes": [],
+    "presentationStatus": "not_started",
+    "presentationCompletedAt": null
+  },
+  "currentInformalCheck": null,
+  "practice": {
+    "status": "locked",
+    "currentItemIndex": 0,
+    "itemCount": 2,
+    "item": {
+      "index": 0,
+      "objectiveTitle": "识别主动句与被动句中的施事、动作、受事并区分语法主语",
+      "construct": "identify",
+      "surface": "initial",
+      "supplementary": true,
+      "prompt": "观察被动句 The boxes were checked by Mia. 下列哪项正确指出了语法主语及其角色？",
+      "options": [
+        {
+          "id": "teaching_brief_cf49cfe0-d7bf-4ab1-a53f-967c8d297688_practice_1_initial_A",
+          "text": "The boxes是语法主语，且是受事；Mia是施事"
+        },
+        {
+          "id": "teaching_brief_cf49cfe0-d7bf-4ab1-a53f-967c8d297688_practice_1_initial_B",
+          "text": "Mia是语法主语，且是施事；The boxes是受事"
+        },
+        {
+          "id": "teaching_brief_cf49cfe0-d7bf-4ab1-a53f-967c8d297688_practice_1_initial_C",
+          "text": "The boxes是语法主语，且是施事"
+        }
+      ]
+    },
+    "attempts": [],
+    "recovery": null,
+    "completedAt": null,
+    "credit": "none"
+  },
+  "allowedActions": [
+    "start_lesson"
+  ]
+}

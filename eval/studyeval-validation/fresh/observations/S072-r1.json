@@ -1,0 +1,128 @@
+{
+  "task": {
+    "caseId": "S072",
+    "runId": "S072-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S072.json",
+    "inputHash": "b1ab3f5427b57ec5a40963ab398fb71692db192267ea6d9e0628ea3ab79ca520"
+  },
+  "inputHash": "b1ab3f5427b57ec5a40963ab398fb71692db192267ea6d9e0628ea3ab79ca520",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "5a83abc11e7f5797730daaec283a3aabf5d0a444d560e5b88bb089ebb6858278",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "修复诊断改下标错误，保留H2O改系数并计数，且给出N2+H2→NH3具体下一检查，符合Q6完整标准。",
+            "refs": [
+              "/artifacts/0/text",
+              "/answer",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "c984d217a8ba7622cabc5ae619c03efd1468b7270d5b64bc319da15715dff934"
+              },
+              {
+                "pointer": "/answer",
+                "valueHash": "e16225b1eff8991166dababd8058cab1ec0cbe17d1ddd5faddba138462339473"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "59437daaeac189d745ba28fdee3966ddf517f7bcc1363dd97ec06abb86dd3a0e"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "修复针对answer中改下标的错误，指出换物质并保留H2O改系数为2H2+O2→2H2O且计数；继而提出N2+H2→NH3填正整数系数并计数的新检查，具体可操作，满足目标对纠正与独立再检验的要求。",
+            "refs": [
+              "/artifacts/0/text",
+              "/answer",
+              "/goals/0"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "c984d217a8ba7622cabc5ae619c03efd1468b7270d5b64bc319da15715dff934"
+              },
+              {
+                "pointer": "/answer",
+                "valueHash": "e16225b1eff8991166dababd8058cab1ec0cbe17d1ddd5faddba138462339473"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "df44a9a5408590f40907a7130b4254b35360c4f93b8aab8f59a260950db8f121"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q6",
+          "level": 2,
+          "evidence": "sufficient",
+          "reason": "修复诊断改下标错误，保留H2O改系数并计数，且给出N2+H2→NH3具体下一检查，符合Q6完整标准。",
+          "refs": [
+            "/artifacts/0/text",
+            "/answer",
+            "/sources/0/text"
+          ],
+          "defects": [],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "c984d217a8ba7622cabc5ae619c03efd1468b7270d5b64bc319da15715dff934"
+            },
+            {
+              "pointer": "/answer",
+              "valueHash": "e16225b1eff8991166dababd8058cab1ec0cbe17d1ddd5faddba138462339473"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "59437daaeac189d745ba28fdee3966ddf517f7bcc1363dd97ec06abb86dd3a0e"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "89e61420d7f662828327e968389085eefa956400fa1f6de3d2327edffcc93c7a"
+  }
+}

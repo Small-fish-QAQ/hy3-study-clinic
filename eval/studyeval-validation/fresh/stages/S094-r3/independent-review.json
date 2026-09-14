@@ -1,0 +1,54 @@
+{
+  "inputIdentity": "8bb9126b0b799ac8133158770699b76a17b569b566e05dce9b2add44db459196",
+  "attempts": [
+    {
+      "physicalId": "e8bf3df2-88c6-4289-8f2b-d9a130a49058",
+      "caseId": "S094",
+      "runId": "S094-r3",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q2",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "Artifact明确区分叙述者非作者，解释第一人称可报感受但不可全知他人心思，并给出“朋友说…”归属标记规则，准确覆盖全部核心与次要目标，深度足够无缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text",
+          "/goals"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "f06c41473aa7af3af43adc2ee10638ca2d93bffca4f99b6be4f4a14c7bf8e60c"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "bae368a359568cf22d196cf95dd79a50368bc21f0e49042a004744bc3b0af43c"
+          },
+          {
+            "pointer": "/goals",
+            "valueHash": "8b78e8c669075a0ea86f5033dbbe2b4722fc4b29b6264d26b8764fba22ae73f4"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

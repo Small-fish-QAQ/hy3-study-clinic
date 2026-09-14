@@ -1,0 +1,154 @@
+{
+  "inputIdentity": "ca02fa43d368333931e1cec8ebaf38a7e6ec39dc6f84efa9049b2dbfd0ad8813",
+  "attempts": [
+    {
+      "physicalId": "c29bc1a2-178b-442a-9200-69ad82f85ae5",
+      "caseId": "S046",
+      "runId": "S046-r1",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q2",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "课件断言'一袋无论多重都只含糖6克'矛盾源整袋18克且否定换算；'每份与每100克可以直接当成相同基准'矛盾区分基准核心目标。两核心目标被实质矛盾，次要目标虽提及但不足以挽救，声明用途失败。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text",
+          "/goals/0",
+          "/goals/1"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "课件称'一袋无论多重都只含糖6克'，否定每份到整袋换算（源:整袋90克=三份共18克），违背核心目标0。",
+            "impact": "学习者误以为无需换算，核心用途被摧毁。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text",
+              "/goals/0"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "7133deb22efbcc58d48ffb3e1df54061ca22da836bdf8b7f55f070cf2cf2cc0f"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "68fdce4b60a730e16f15fa21fa915ae0a6300744628a556284f8e578fc6dc56c"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "d00f6a0777096e29c941990ef83976c45d7a6297cb337b9439ad3b262e15fae5"
+              }
+            ]
+          },
+          {
+            "severity": "material",
+            "description": "课件称'每份与每100克可以直接当成相同基准'，违背核心目标1区分基准（源:每30克6克 vs 每100克20克）。",
+            "impact": "学习者无法建立双基准概念，核心目标落空。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text",
+              "/goals/1"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "7133deb22efbcc58d48ffb3e1df54061ca22da836bdf8b7f55f070cf2cf2cc0f"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "68fdce4b60a730e16f15fa21fa915ae0a6300744628a556284f8e578fc6dc56c"
+              },
+              {
+                "pointer": "/goals/1",
+                "valueHash": "cc917d2aec98364dbd0e1578c297faf88ec801582389efb073c4f83537439e6b"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "7133deb22efbcc58d48ffb3e1df54061ca22da836bdf8b7f55f070cf2cf2cc0f"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "68fdce4b60a730e16f15fa21fa915ae0a6300744628a556284f8e578fc6dc56c"
+          },
+          {
+            "pointer": "/goals/0",
+            "valueHash": "d00f6a0777096e29c941990ef83976c45d7a6297cb337b9439ad3b262e15fae5"
+          },
+          {
+            "pointer": "/goals/1",
+            "valueHash": "cc917d2aec98364dbd0e1578c297faf88ec801582389efb073c4f83537439e6b"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q2:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "一袋无论多重都只含糖6克",
+          "valueHash": "7133deb22efbcc58d48ffb3e1df54061ca22da836bdf8b7f55f070cf2cf2cc0f"
+        },
+        "reason": "原文artifact直接断言袋恒含6克，与source整袋18克及目标0换算要求矛盾，核心目标被推翻。"
+      },
+      {
+        "id": "review1:Q2:2",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "每份与每100克可以直接当成相同基准",
+          "valueHash": "7133deb22efbcc58d48ffb3e1df54061ca22da836bdf8b7f55f070cf2cf2cc0f"
+        },
+        "reason": "原文artifact称两基准可直接等同，违背goals/1区分基准核心目标，与source双基准数据矛盾。"
+      },
+      {
+        "id": "review2:Q2:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "一袋无论多重都只含糖6克",
+          "valueHash": "7133deb22efbcc58d48ffb3e1df54061ca22da836bdf8b7f55f070cf2cf2cc0f"
+        },
+        "reason": "同review1:Q2:1，artifact错误断言否定换算，material矛盾核心目标0。"
+      },
+      {
+        "id": "review2:Q2:2",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "每份与每100克可以直接当成相同基准",
+          "valueHash": "7133deb22efbcc58d48ffb3e1df54061ca22da836bdf8b7f55f070cf2cf2cc0f"
+        },
+        "reason": "同review1:Q2:2，artifact合并基准违背核心目标1，material。"
+      }
+    ]
+  }
+}

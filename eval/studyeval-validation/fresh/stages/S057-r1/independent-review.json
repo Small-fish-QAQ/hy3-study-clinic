@@ -1,0 +1,149 @@
+{
+  "inputIdentity": "4d9e407050b5f652a2dc5fbbba49b25c8c2b6cbeae5c0546cda99f29050b866f",
+  "attempts": [
+    {
+      "physicalId": "e918f0fe-0639-4b1a-b986-909e9800d3a8",
+      "caseId": "S057",
+      "runId": "S057-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q5",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "学生答案明确65°并用180°-(48°+67°)扣除两角，满足c1,c2,c3。产品误判c2未体现角和规则而not_met并withheld，属required标准错误拒绝，应授分却拒，实质缺陷。",
+        "refs": [
+          "/answer",
+          "/productJudgment/criteria/1",
+          "/rubric/1"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "产品以未使用180-48-67逐项写法为由判c2 not_met，但c2文本仅要求利用三内角和180度扣除已知两角，答案180°-(48°+67°)已满足",
+            "impact": "改变核心用途：错误拒绝正确回答并withholding credit，应授分却未授",
+            "refs": [
+              "/answer",
+              "/productJudgment/criteria/1",
+              "/rubric/1"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/answer",
+                "valueHash": "0f636d95ae49771bae0a8feca7be7e58be55eb11f9971402f2ff4d679d328323"
+              },
+              {
+                "pointer": "/productJudgment/criteria/1",
+                "valueHash": "a0ab216682d7691f7359af06b69525bb27eddc3c25c3e41a3aa7501a1ce909d1"
+              },
+              {
+                "pointer": "/rubric/1",
+                "valueHash": "eaca36faa72646063919361b272c1653cdc11b31eefa1de2268808c1d664b4db"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "grading": {
+          "criteria": [
+            {
+              "id": "c1",
+              "result": "met",
+              "reason": "答案文本中明确计算出65度（'=65°'）",
+              "refs": [
+                "/answer",
+                "/rubric/0"
+              ],
+              "required": true,
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "0f636d95ae49771bae0a8feca7be7e58be55eb11f9971402f2ff4d679d328323"
+                },
+                {
+                  "pointer": "/rubric/0",
+                  "valueHash": "433a76d6f4a1dc7bb70ba7617eb9c24bfc16a306897f6751247f515dfb15ea94"
+                }
+              ]
+            },
+            {
+              "id": "c2",
+              "result": "met",
+              "reason": "明确使用内角总和180°并扣除已知两角(48°+67°)",
+              "refs": [
+                "/answer",
+                "/rubric/1"
+              ],
+              "required": true,
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "0f636d95ae49771bae0a8feca7be7e58be55eb11f9971402f2ff4d679d328323"
+                },
+                {
+                  "pointer": "/rubric/1",
+                  "valueHash": "eaca36faa72646063919361b272c1653cdc11b31eefa1de2268808c1d664b4db"
+                }
+              ]
+            },
+            {
+              "id": "c3",
+              "result": "met",
+              "reason": "提交为单句以句号结束，包含结论与依据",
+              "refs": [
+                "/answer",
+                "/rubric/2"
+              ],
+              "required": false,
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "0f636d95ae49771bae0a8feca7be7e58be55eb11f9971402f2ff4d679d328323"
+                },
+                {
+                  "pointer": "/rubric/2",
+                  "valueHash": "f4d8305144345c8dd339b126efc1afb13d48f79b84d7936aefeed088c54aad69"
+                }
+              ]
+            }
+          ],
+          "warrantedCredit": "granted",
+          "actualCredit": "withheld",
+          "actualCreditWitness": {
+            "pointer": "/productJudgment/consequence",
+            "valueHash": "a3b3d76fdf1e33a8c7bde9a7152980d0de2656e3d541feafb198261dcc7cf51c"
+          }
+        },
+        "witnesses": [
+          {
+            "pointer": "/answer",
+            "valueHash": "0f636d95ae49771bae0a8feca7be7e58be55eb11f9971402f2ff4d679d328323"
+          },
+          {
+            "pointer": "/productJudgment/criteria/1",
+            "valueHash": "a0ab216682d7691f7359af06b69525bb27eddc3c25c3e41a3aa7501a1ce909d1"
+          },
+          {
+            "pointer": "/rubric/1",
+            "valueHash": "eaca36faa72646063919361b272c1653cdc11b31eefa1de2268808c1d664b4db"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

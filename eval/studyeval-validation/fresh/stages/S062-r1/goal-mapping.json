@@ -1,0 +1,43 @@
+{
+  "inputIdentity": "1177afe675d079674c517ab3877cbeda6d20670df82c7c5db90dd24d204c89cf",
+  "attempts": [
+    {
+      "physicalId": "44e1ab1b-60f0-4bf4-a25e-4b9501752a19",
+      "caseId": "S062",
+      "runId": "S062-r1",
+      "stage": "goal-mapping",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "goals": [
+      {
+        "index": 0,
+        "importance": "essential",
+        "status": "missing",
+        "reason": "artifact文本仅为'完整教学交付到此结束：欢迎大家学习英语。'，未包含任何关于词表中前缀un-意义的解释，也未在给定词上应用，确实缺少该核心目标的相关处理。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/0"
+        ],
+        "quote": "",
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "ba5701b92bc7d14664cf6ebd8922e14ba99d362eaf01013e5db858ae4c2ff76a"
+          },
+          {
+            "pointer": "/goals/0",
+            "valueHash": "e0d0ebf754fe4c4754e9e6e545be939741595f92a9cceff9da4b3a6be4251759"
+          }
+        ]
+      }
+    ]
+  }
+}

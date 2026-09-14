@@ -1,0 +1,134 @@
+{
+  "inputIdentity": "d909641666cd0b5c7174a7214c5ef3a8728060846cbca9d6eaea469fc593f6b8",
+  "attempts": [
+    {
+      "physicalId": "6f5d7869-8ce8-49ff-aa48-0a1c490e1770",
+      "caseId": "S003",
+      "runId": "S003-r1",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "交付物lesson断言同名相吸及切开成单极，与source同名相斥、每段双极直接矛盾。goals要求核对二者，错误改变核心机制与结论，实质缺陷，故0。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "artifact主张'同名磁极相吸'，与source'同名磁极相斥，异名磁极相吸'矛盾",
+            "impact": "颠倒磁极相互作用核心机制，破坏goals中核对磁极相互作用的用途",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "9283088203a11f811ab6613968f0675753d5e6b809996885a3163a33e79a08cd"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "bd52c5a277bce71686f63dbe44ae0456d2b3036e28dc0d9ea741288fdb927b79"
+              }
+            ]
+          },
+          {
+            "severity": "material",
+            "description": "artifact称切开后'一半只剩北极，另一半只剩南极'，但source表明每段仍各有南北两极",
+            "impact": "错误描述切断后磁极结构，违背课堂模型核心结论，改变切断解释教学目的",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "9283088203a11f811ab6613968f0675753d5e6b809996885a3163a33e79a08cd"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "bd52c5a277bce71686f63dbe44ae0456d2b3036e28dc0d9ea741288fdb927b79"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "9283088203a11f811ab6613968f0675753d5e6b809996885a3163a33e79a08cd"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "bd52c5a277bce71686f63dbe44ae0456d2b3036e28dc0d9ea741288fdb927b79"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q1:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "同名磁极相吸",
+          "valueHash": "9283088203a11f811ab6613968f0675753d5e6b809996885a3163a33e79a08cd"
+        },
+        "reason": "artifact称同名磁极相吸，但/sources/0/text规定同名相斥、异名相吸。goals要求核对磁极相互作用，此错误颠倒核心规则，实质缺陷。"
+      },
+      {
+        "id": "review1:Q1:2",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "把磁铁对半切开，一半只剩北极，另一半只剩南极。",
+          "valueHash": "9283088203a11f811ab6613968f0675753d5e6b809996885a3163a33e79a08cd"
+        },
+        "reason": "source明确切成两段后每段各有南北两极，artifact错误称一半单极，违背goals切断后解释，改变核心结论，material。"
+      },
+      {
+        "id": "review2:Q1:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "同名磁极相吸",
+          "valueHash": "9283088203a11f811ab6613968f0675753d5e6b809996885a3163a33e79a08cd"
+        },
+        "reason": "artifact断言与source矛盾，goals核对相互作用，错误颠倒核心规则，实质缺陷。"
+      },
+      {
+        "id": "review2:Q1:2",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "把磁铁对半切开，一半只剩北极，另一半只剩南极。",
+          "valueHash": "9283088203a11f811ab6613968f0675753d5e6b809996885a3163a33e79a08cd"
+        },
+        "reason": "artifact切断描述违背source双极模型，破坏切断解释核心用途，material。"
+      }
+    ]
+  }
+}

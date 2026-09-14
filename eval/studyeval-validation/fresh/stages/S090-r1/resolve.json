@@ -1,0 +1,123 @@
+{
+  "inputIdentity": "ac874eea403acaca77393cec17243e24f7a15ef8545e24ecaa84d9d9fecf59bf",
+  "attempts": [
+    {
+      "physicalId": "066d0092-5db3-4a79-a6d0-c6d93b969d9f",
+      "caseId": "S090",
+      "runId": "S090-r1",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "Artifact错误断言振幅翻倍使频率翻倍且音调升高，并误定义频率为传播距离，直接违背source明示前提，摧毁核对概念区别的核心教学目标，属实质缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "Artifact声称振幅翻倍就使频率翻倍、音调一定升高，违背source中振幅不决定频率、提高振幅不升高音调的明示前提。",
+            "impact": "颠覆音调/频率/振幅关系核心结论，破坏核对概念区别目标。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "762a9b1a698e3d5fdc466d1fc1e5272d1095b2f8972ab12bc45a83d78ffd96d2"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "7d4b5318383b8f1b4d45756898be01c9752196adf6665cc09ce68423b1d671b7"
+              }
+            ]
+          },
+          {
+            "severity": "material",
+            "description": "Artifact定义频率为声音每次传播的距离，而source明确频率为每秒振动次数(Hz)。",
+            "impact": "错误定义核心物理量，使学习者建立根本错误概念，破坏概念核对目标。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "762a9b1a698e3d5fdc466d1fc1e5272d1095b2f8972ab12bc45a83d78ffd96d2"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "7d4b5318383b8f1b4d45756898be01c9752196adf6665cc09ce68423b1d671b7"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "762a9b1a698e3d5fdc466d1fc1e5272d1095b2f8972ab12bc45a83d78ffd96d2"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "7d4b5318383b8f1b4d45756898be01c9752196adf6665cc09ce68423b1d671b7"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q1:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "振幅翻倍就使频率翻倍，音调也一定升高；频率表示声音每次传播的距离。",
+          "valueHash": "762a9b1a698e3d5fdc466d1fc1e5272d1095b2f8972ab12bc45a83d78ffd96d2"
+        },
+        "reason": "该引文包含振幅-频率-音调错误机制及频率错误定义，source明确反驳此机制与定义，破坏核心教学目标。"
+      },
+      {
+        "id": "review2:Q1:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "振幅翻倍就使频率翻倍，音调也一定升高",
+          "valueHash": "762a9b1a698e3d5fdc466d1fc1e5272d1095b2f8972ab12bc45a83d78ffd96d2"
+        },
+        "reason": "引文断言振幅翻倍频率翻倍且音调升高，source称振幅不决定频率、提高振幅不升高音调，直接矛盾，实质破坏概念核对。"
+      },
+      {
+        "id": "review2:Q1:2",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "频率表示声音每次传播的距离。",
+          "valueHash": "762a9b1a698e3d5fdc466d1fc1e5272d1095b2f8972ab12bc45a83d78ffd96d2"
+        },
+        "reason": "artifact误定义频率为传播距离，source明确频率为每秒振动次数，错误定义核心量，material。"
+      }
+    ]
+  }
+}

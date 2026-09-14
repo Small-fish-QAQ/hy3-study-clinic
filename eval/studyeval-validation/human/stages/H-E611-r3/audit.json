@@ -1,0 +1,69 @@
+{
+  "inputIdentity": "962fd37d60794bda00bc6bcda6416ebcae6f84b3e86c8b12072bd9c635df79da",
+  "attempts": [
+    {
+      "physicalId": "76cb6fab-03ff-47fe-af6a-0199269fbc8f",
+      "caseId": "E611",
+      "runId": "H-E611-r3",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q2",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "核心目标1-3均有可操作规则与示例；次要延伸目标仅以“同向偏差也不会仅靠重复平均自动消失”断言，未解释或演示，属未解释提醒，局部缺陷不影响核心覆盖。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/3"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "次要延伸目标要求说明重复平均不能自动消除同向偏差，artifact仅陈述‘同向偏差也不会仅靠重复平均自动消失’，未提供解释或代表演示。",
+            "impact": "核心目标（区分分辨率与准确、形成区间、比较区间）保持可用，此局部缺口不改变主要学习用途。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/3"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "c1ec4cc283b869ded4bd6704017dd84fadd61b71cdacc0ccea326fdeabd36eab"
+              },
+              {
+                "pointer": "/goals/3",
+                "valueHash": "714460aff55596ab6a2b0d42615a21b9c5be82487f745a68d7ee18049f26f951"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "c1ec4cc283b869ded4bd6704017dd84fadd61b71cdacc0ccea326fdeabd36eab"
+          },
+          {
+            "pointer": "/goals/3",
+            "valueHash": "714460aff55596ab6a2b0d42615a21b9c5be82487f745a68d7ee18049f26f951"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

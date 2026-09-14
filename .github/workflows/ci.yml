@@ -34,3 +34,8 @@ jobs:
         run: npm run lint
       - name: Test
         run: npm test
+      - name: Verify frozen evaluation evidence
+        run: |
+          node eval/studyeval-validation/scripts/verify.mjs
+          node eval/final-showcase/publication/verify.mjs
+          node --test eval/studyeval/test/*.test.mjs

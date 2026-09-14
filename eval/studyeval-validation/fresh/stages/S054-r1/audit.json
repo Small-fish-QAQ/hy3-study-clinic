@@ -1,0 +1,54 @@
+{
+  "inputIdentity": "7039329e286ee7ee77bac118635e42249c54c79a77296577db302c5e88e06643",
+  "attempts": [
+    {
+      "physicalId": "fce7567e-8d28-49a3-a77a-741e061c5ca9",
+      "caseId": "S054",
+      "runId": "S054-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q6",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "诊断准确指出分母直接相加致单位未统一，给出六分之一共同单位正确示范，并提供具体可用的下一检查题1/4+1/6及要求说明共同单位与等值改写，有效测试迁移。",
+        "refs": [
+          "/artifacts/0/text",
+          "/answer",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "bd10fb30fadced3d0aaa30b98545f5b1dd6596c059570c1eda9c1e9a6e88783d"
+          },
+          {
+            "pointer": "/answer",
+            "valueHash": "5fa9a6e988796acce4dd7a033670180448bc29a07a9fa5e48255977034751897"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "c4d75b2db6f5aa30dcec740ff8a4b7e07282347099740e24a9f3e2fd0f4bef58"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

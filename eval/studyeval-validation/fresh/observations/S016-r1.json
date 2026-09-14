@@ -1,0 +1,113 @@
+{
+  "task": {
+    "caseId": "S016",
+    "runId": "S016-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S016.json",
+    "inputHash": "1faaa181f082f750b461d8c3eaeca4f7c77317f23c419fff2bf1ee162658b136"
+  },
+  "inputHash": "1faaa181f082f750b461d8c3eaeca4f7c77317f23c419fff2bf1ee162658b136",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "48f04339b8c1e4b4367a33a9f1acf86eeb73c3ed9797e22ca2a3a2ec4519dda7",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "前提设317居民每人一票，artifact推出317张票并声明非真实调查，主张、计算与限制均由给定假设支持，无事实或归属缺陷。",
+            "refs": [
+              "/sources/0/text",
+              "/artifacts/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "6ab9fc9b0dd1268c9f2a3fe52735c432087e1c882feb81af2722dc414e9adaf1"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "d64a019ab590870f80dc8494e77107f1e56d63478ee2a185e91f1ad89c61f46e"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "由虚构前提317居民每人一票正确推出317张票，且明确声明不表示真实人口被证实，与来源一致，无事实或归属缺陷，满足核对票数目标。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "d64a019ab590870f80dc8494e77107f1e56d63478ee2a185e91f1ad89c61f46e"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "6ab9fc9b0dd1268c9f2a3fe52735c432087e1c882feb81af2722dc414e9adaf1"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q1",
+          "level": 2,
+          "evidence": "sufficient",
+          "reason": "前提设317居民每人一票，artifact推出317张票并声明非真实调查，主张、计算与限制均由给定假设支持，无事实或归属缺陷。",
+          "refs": [
+            "/sources/0/text",
+            "/artifacts/0/text"
+          ],
+          "defects": [],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "6ab9fc9b0dd1268c9f2a3fe52735c432087e1c882feb81af2722dc414e9adaf1"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "d64a019ab590870f80dc8494e77107f1e56d63478ee2a185e91f1ad89c61f46e"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "a0bc0660a1d53a43596dcd9f21816a6dba4590e2dd1966c6c029b0cc15bf4aaa"
+  }
+}

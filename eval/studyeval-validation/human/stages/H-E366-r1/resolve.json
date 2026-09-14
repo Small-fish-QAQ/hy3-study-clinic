@@ -1,0 +1,88 @@
+{
+  "inputIdentity": "3a2edf36f9702ba3d327fae62cd83cf8263d0a126a4d816257e8403cb8083cb5",
+  "attempts": [
+    {
+      "physicalId": "7672be72-20dd-419a-af7f-ad93f59d5ea2",
+      "caseId": "E366",
+      "runId": "H-E366-r1",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q3",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "产物给出两人12分与一人15分正确结论，但仅列结果和泛化提醒，未展示从给定时长与依赖到具体时刻的关键推理操作（如并行取max、顺序加），也未交代例子适用边界推理。结论正确，核心用途成立但局部解释连接缺失，符合Q3的1分。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "仅陈述正确时间线结果，未展示从给定依赖和时长推导的关键操作（如并行等待较晚完成、顺序累加）及适用边界推理",
+            "impact": "结论正确，核心时间答案成立，但未能展示推理步骤，局部未满足goals讲清步骤的要求",
+            "refs": [
+              "/artifacts/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "c7ff6a9c213d042e991ce0cb292305417dc1e88aa2002451772e47e4e0b76944"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "c7ff6a9c213d042e991ce0cb292305417dc1e88aa2002451772e47e4e0b76944"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q3:1",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "两人且工具互不冲突时，裁纸4分钟、调墨3分钟从0并行，盖章4到6，晾干到11，装袋到12。只有一人且前两步全程占人，则15分钟。安排时先检查依赖，再判断最短时间。",
+          "valueHash": "c7ff6a9c213d042e991ce0cb292305417dc1e88aa2002451772e47e4e0b76944"
+        },
+        "reason": "artifact直接给出时刻结果而未展示从给定时长与依赖推导的关键操作（如取max或累加），也未针对例子说明汇合等待较晚限制，缺陷属实但仅局部影响解释充分性。"
+      },
+      {
+        "id": "review2:Q3:1",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "两人且工具互不冲突时，裁纸4分钟、调墨3分钟从0并行，盖章4到6，晾干到11，装袋到12。只有一人且前两步全程占人，则15分钟。安排时先检查依赖，再判断最短时间。",
+          "valueHash": "c7ff6a9c213d042e991ce0cb292305417dc1e88aa2002451772e47e4e0b76944"
+        },
+        "reason": "同上前条，仅陈述时间线结果，未展示并行等待较晚完成或顺序累加等关键操作连接，属局部解释缺失，非实质错误。"
+      }
+    ]
+  }
+}

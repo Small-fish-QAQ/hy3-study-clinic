@@ -1,0 +1,128 @@
+{
+  "task": {
+    "caseId": "S054",
+    "runId": "S054-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S054.json",
+    "inputHash": "56aaa1decaa3a7aba7ea0b64ed46748eb795f555cab1bcf3d41d53b594a64982"
+  },
+  "inputHash": "56aaa1decaa3a7aba7ea0b64ed46748eb795f555cab1bcf3d41d53b594a64982",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "e76e0ef499b631c72fb6ace50a3c007f5b917f837a7c06c23f70450a738e6b91",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "诊断准确指出分母直接相加致单位未统一，给出六分之一共同单位正确示范，并提供具体可用的下一检查题1/4+1/6及要求说明共同单位与等值改写，有效测试迁移。",
+            "refs": [
+              "/artifacts/0/text",
+              "/answer",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "bd10fb30fadced3d0aaa30b98545f5b1dd6596c059570c1eda9c1e9a6e88783d"
+              },
+              {
+                "pointer": "/answer",
+                "valueHash": "5fa9a6e988796acce4dd7a033670180448bc29a07a9fa5e48255977034751897"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "c4d75b2db6f5aa30dcec740ff8a4b7e07282347099740e24a9f3e2fd0f4bef58"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "诊断指出学习者将分母直接相加导致单位未统一，基于/answer错误答案；帮助用六分之一统一单位算3/6+2/6=5/6，契合/sources/0规则；新检查令算1/4+1/6并说明共同单位，提供具体可用的同技能迁移检验，满足Q6的2级标准。",
+            "refs": [
+              "/artifacts/0/text",
+              "/answer",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "bd10fb30fadced3d0aaa30b98545f5b1dd6596c059570c1eda9c1e9a6e88783d"
+              },
+              {
+                "pointer": "/answer",
+                "valueHash": "5fa9a6e988796acce4dd7a033670180448bc29a07a9fa5e48255977034751897"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "c4d75b2db6f5aa30dcec740ff8a4b7e07282347099740e24a9f3e2fd0f4bef58"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q6",
+          "level": 2,
+          "evidence": "sufficient",
+          "reason": "诊断准确指出分母直接相加致单位未统一，给出六分之一共同单位正确示范，并提供具体可用的下一检查题1/4+1/6及要求说明共同单位与等值改写，有效测试迁移。",
+          "refs": [
+            "/artifacts/0/text",
+            "/answer",
+            "/sources/0/text"
+          ],
+          "defects": [],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "bd10fb30fadced3d0aaa30b98545f5b1dd6596c059570c1eda9c1e9a6e88783d"
+            },
+            {
+              "pointer": "/answer",
+              "valueHash": "5fa9a6e988796acce4dd7a033670180448bc29a07a9fa5e48255977034751897"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "c4d75b2db6f5aa30dcec740ff8a4b7e07282347099740e24a9f3e2fd0f4bef58"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "95bc19f61f5a06d6ba16a598fd1fbd9d7e74a9277cfc08c813d7889ce411d8ce"
+  }
+}

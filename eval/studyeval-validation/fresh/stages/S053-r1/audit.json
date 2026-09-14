@@ -1,0 +1,97 @@
+{
+  "inputIdentity": "f69c1a14b9667f9e478a450a0cc30c34c96947620966865b1fc9d9de3b17dada",
+  "attempts": [
+    {
+      "physicalId": "eb2e68be-000a-4198-b68b-722373b5d36f",
+      "caseId": "S053",
+      "runId": "S053-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q6",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "修复文本虚构学习者未复习且讨厌数学，无证据；教授错误换算1米=10厘米（源为100厘米）；并声称抄结论即独立掌握。三者均触Q6零分标准，实质破坏基于证据的单位换算帮助目标。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "诊断发明学习者状态：声称“昨天完全没有复习，也一直讨厌数学”，无原始证据支持。",
+            "impact": "虚构原因脱离基于证据帮助的目标，误导干预方向。",
+            "refs": [
+              "/artifacts/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "75218d1b28df1c5de6280766604e62819288843ce78b325e8b842ac3d54bf56a"
+              }
+            ]
+          },
+          {
+            "severity": "material",
+            "description": "干预教错误方法：要求记住“1米=10厘米”，与源中1米=100厘米矛盾。",
+            "impact": "传授错误单位换算，直接损害核心学习用途。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "75218d1b28df1c5de6280766604e62819288843ce78b325e8b842ac3d54bf56a"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "2548172e88b868529837d1fdba69c19b301b4c25437b0d6dba8b3f817e24fd6b"
+              }
+            ]
+          },
+          {
+            "severity": "material",
+            "description": "声称抄结论即独立掌握：“下一题直接抄这个结论就能证明独立掌握”。",
+            "impact": "将复述错误答案伪称独立掌握，违背评估原则，破坏修复可信度。",
+            "refs": [
+              "/artifacts/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "75218d1b28df1c5de6280766604e62819288843ce78b325e8b842ac3d54bf56a"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "75218d1b28df1c5de6280766604e62819288843ce78b325e8b842ac3d54bf56a"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "2548172e88b868529837d1fdba69c19b301b4c25437b0d6dba8b3f817e24fd6b"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

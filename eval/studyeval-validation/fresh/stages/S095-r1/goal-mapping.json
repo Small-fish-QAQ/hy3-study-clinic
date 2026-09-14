@@ -1,0 +1,85 @@
+{
+  "inputIdentity": "940d9ca36266d90c1a100b7af45cb784dd4dd4fdd60d4fac3a2a0608c4a2b766",
+  "attempts": [
+    {
+      "physicalId": "27ecd405-cc35-4890-9112-4375b791e445",
+      "caseId": "S095",
+      "runId": "S095-r1",
+      "stage": "goal-mapping",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "goals": [
+      {
+        "index": 0,
+        "importance": "essential",
+        "status": "usable",
+        "reason": "artifact通过具体路线A→C→B和B→A检验了有向边方向约束，实现了按有向边检查路线可行性的核心目标。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/0"
+        ],
+        "quote": "A到C再到B可行，每一步都有同方向边；B到A不可行，因为B没有出边。",
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "72e0453a9438790f8907f568fdfc97b6907db40d27181f87c52fb2d1048b0c9b"
+          },
+          {
+            "pointer": "/goals/0",
+            "valueHash": "a51f21939f83eed1ca93d3681f208fb694af3488648930ef9519d1d81a501862"
+          }
+        ]
+      },
+      {
+        "index": 1,
+        "importance": "essential",
+        "status": "usable",
+        "reason": "artifact给出了A和B的入度出度数值并区分了入度（箭头指入）与出度（箭头指外），符合区分并计算节点入度和出度的核心目标。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/1"
+        ],
+        "quote": "A入度0出度2，B入度2出度0；入度数箭头指入，出度数箭头指外。",
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "72e0453a9438790f8907f568fdfc97b6907db40d27181f87c52fb2d1048b0c9b"
+          },
+          {
+            "pointer": "/goals/1",
+            "valueHash": "a63e5ea68b90b2ab60576d7e6f1c219c31f7b0a1e90a3e147a04d87b392c0399"
+          }
+        ]
+      },
+      {
+        "index": 2,
+        "importance": "secondary",
+        "status": "usable",
+        "reason": "artifact解释了边标签用于帮助读者辨认边且不影响方向，实现了次要目标。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/2"
+        ],
+        "quote": "边标签帮助读者辨认边，但不改变通行方向。",
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "72e0453a9438790f8907f568fdfc97b6907db40d27181f87c52fb2d1048b0c9b"
+          },
+          {
+            "pointer": "/goals/2",
+            "valueHash": "5971c156642542bafa467de656a783fad331d9b9629086ebfc96e501de760b60"
+          }
+        ]
+      }
+    ]
+  }
+}

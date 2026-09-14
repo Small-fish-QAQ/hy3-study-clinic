@@ -1,0 +1,113 @@
+{
+  "task": {
+    "caseId": "S063",
+    "runId": "S063-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S063.json",
+    "inputHash": "cbb9b50ed7ed2b2cff17589c5d60892929cfbcaa06c7e612ea470d1cdd82c97c"
+  },
+  "inputHash": "cbb9b50ed7ed2b2cff17589c5d60892929cfbcaa06c7e612ea470d1cdd82c97c",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "60512aec76917cd7155a34729480cd62a6c7d924affdce81a00889496981afc7",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "产物对2000（闰）与1900（平）的判断严格依据源中公历规则，世纪年须验400的总结正确，未超范围讨论其他历法，无事实或归属缺陷。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "b285d9407510e34c9675f2f5c991c1a1d50f9e9f13f1655e92fe9be836a512e3"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "5e982eb2843152ea1b81d9f7793dbfb2609636664c75b2a6bab9a349cc3bf60b"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "Artifact correctly applies stated Gregorian rules to 2000 and 1900, verifying century condition. Aligns with source examples and goal; no defect in fact, scope or attribution.",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "b285d9407510e34c9675f2f5c991c1a1d50f9e9f13f1655e92fe9be836a512e3"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "5e982eb2843152ea1b81d9f7793dbfb2609636664c75b2a6bab9a349cc3bf60b"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q1",
+          "level": 2,
+          "evidence": "sufficient",
+          "reason": "产物对2000（闰）与1900（平）的判断严格依据源中公历规则，世纪年须验400的总结正确，未超范围讨论其他历法，无事实或归属缺陷。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "b285d9407510e34c9675f2f5c991c1a1d50f9e9f13f1655e92fe9be836a512e3"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "5e982eb2843152ea1b81d9f7793dbfb2609636664c75b2a6bab9a349cc3bf60b"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "a806c85d30977d9ea29efc07ea0805a8750bc4f01980e29838703b68cdb9518e"
+  }
+}

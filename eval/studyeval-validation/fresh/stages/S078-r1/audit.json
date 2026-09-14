@@ -1,0 +1,79 @@
+{
+  "inputIdentity": "6012bd1de010649d454a2fbe5c01fc9dfd7f75d963f62df6b540c44d8bf338f7",
+  "attempts": [
+    {
+      "physicalId": "288cfaa0-6025-47e2-97a0-f751aa9b7cab",
+      "caseId": "S078",
+      "runId": "S078-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q2",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "核心两目标均有准确操作演示；次要目标边标签用途未解释，属局部遗漏不影响核心。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/2",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "次要目标'解释边标签的用途'在lesson中完全省略，未提及标签便于阅读且不改方向。",
+            "impact": "核心路线可行性与入出度计算已正确展示，省略次要标签解释不削弱核心学习用途。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/2",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "e1c8a829755e32077d2dc8bf44f0f2383fe25eb46dc4accb4e2a8ff2055aa8ea"
+              },
+              {
+                "pointer": "/goals/2",
+                "valueHash": "5971c156642542bafa467de656a783fad331d9b9629086ebfc96e501de760b60"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "4a1ff16d1619a7f4b64cc932d8257c0a3341f94daa68120cf944ecd4a83e3b93"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "e1c8a829755e32077d2dc8bf44f0f2383fe25eb46dc4accb4e2a8ff2055aa8ea"
+          },
+          {
+            "pointer": "/goals/2",
+            "valueHash": "5971c156642542bafa467de656a783fad331d9b9629086ebfc96e501de760b60"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "4a1ff16d1619a7f4b64cc932d8257c0a3341f94daa68120cf944ecd4a83e3b93"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

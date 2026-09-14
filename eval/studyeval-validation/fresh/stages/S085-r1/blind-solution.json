@@ -1,0 +1,36 @@
+{
+  "inputIdentity": "6839ef4ee52606e86252adfe8985079fca51cb3c59448c5bc07b85be27913a0c",
+  "attempts": [
+    {
+      "physicalId": "399b1c40-bd7d-4a4d-86cc-309b7d87bd03",
+      "caseId": "S085",
+      "runId": "S085-r1",
+      "stage": "blind-solution",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "status": "contradictory",
+    "solution": "据/sources/0/text，初始未激活；激活仅未激活→有效，入场仅有效→已使用。从初始未激活直接执行入场不符合规则，不能成功，也不会变为有效。题目强制要求说明'已经有效并可成功入场'与明示规则矛盾，不屈从。",
+    "refs": [
+      "/question/prompt",
+      "/sources/0/text"
+    ],
+    "witnesses": [
+      {
+        "pointer": "/question/prompt",
+        "valueHash": "27d4aafb419668ab359eb1e1dd20bc53c0a4b11c543f54679805c57924642532"
+      },
+      {
+        "pointer": "/sources/0/text",
+        "valueHash": "694fcf138ee515172ab2dd1c3a0a59baef8e0ee6b25086ed04ce3845111041ea"
+      }
+    ]
+  }
+}

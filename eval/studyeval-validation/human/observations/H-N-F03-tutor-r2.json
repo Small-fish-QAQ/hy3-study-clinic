@@ -1,0 +1,196 @@
+{
+  "task": {
+    "caseId": "N-F03-tutor",
+    "runId": "H-N-F03-tutor-r2",
+    "replicate": 2,
+    "path": "runs/final/cases/N-F03-tutor.json",
+    "inputHash": "278275b2f9f3d606ff2afde4dad0d40a93eb9aca4c40947e15619b0fdc9b9c57",
+    "population": "natural",
+    "sourceId": "F03"
+  },
+  "inputHash": "278275b2f9f3d606ff2afde4dad0d40a93eb9aca4c40947e15619b0fdc9b9c57",
+  "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "538b319b5ef211129be7fce19556bf25cf316ac7298e1475f217b59b8143f4b0",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "引用资料原句准确，关键关系归纳与来源一致；自创运动鞋例明确为假想并标注非原文，适用边界与三层框架均符来源逻辑，无事实或归属缺陷。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "f653eac8024e376cef6ce8bcbe3cb4d70ebdcd1f839018aaf4434efdb4a309e6"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "944a460c4eccfdbd61d456dc9fc3969b0ed10c585ea05e87ccfe3e9b93549680"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          },
+          {
+            "dimension": "Q3",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "用穿运动鞋假想例解释观察差异不证因果，指出混杂替代解释，交代自然观察与随机控制边界，连接前提与结论清晰，满足局部解释充分性。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "f653eac8024e376cef6ce8bcbe3cb4d70ebdcd1f839018aaf4434efdb4a309e6"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "944a460c4eccfdbd61d456dc9fc3969b0ed10c585ea05e87ccfe3e9b93549680"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "tutor-reply准确引用来源中观察差异不证因果的论断，自创运动鞋例子与资料不同且边界说明符合资料精神，无事实数字或归属缺陷，核心证据范围正确。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "f653eac8024e376cef6ce8bcbe3cb4d70ebdcd1f839018aaf4434efdb4a309e6"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "944a460c4eccfdbd61d456dc9fc3969b0ed10c585ea05e87ccfe3e9b93549680"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          },
+          {
+            "dimension": "Q3",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "局部解释用运动鞋例展示从观察差异到不能因果的推理连接，指出混杂可能并交代自然观察边界，符合三层框架，关键操作与限制已显示，无缺失连接或错误机制。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "f653eac8024e376cef6ce8bcbe3cb4d70ebdcd1f839018aaf4434efdb4a309e6"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "944a460c4eccfdbd61d456dc9fc3969b0ed10c585ea05e87ccfe3e9b93549680"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q1",
+          "level": 2,
+          "evidence": "sufficient",
+          "reason": "引用资料原句准确，关键关系归纳与来源一致；自创运动鞋例明确为假想并标注非原文，适用边界与三层框架均符来源逻辑，无事实或归属缺陷。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "f653eac8024e376cef6ce8bcbe3cb4d70ebdcd1f839018aaf4434efdb4a309e6"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "944a460c4eccfdbd61d456dc9fc3969b0ed10c585ea05e87ccfe3e9b93549680"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        },
+        {
+          "dimension": "Q3",
+          "level": 2,
+          "evidence": "sufficient",
+          "reason": "用穿运动鞋假想例解释观察差异不证因果，指出混杂替代解释，交代自然观察与随机控制边界，连接前提与结论清晰，满足局部解释充分性。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "f653eac8024e376cef6ce8bcbe3cb4d70ebdcd1f839018aaf4434efdb4a309e6"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "944a460c4eccfdbd61d456dc9fc3969b0ed10c585ea05e87ccfe3e9b93549680"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "fe11039f13eb784e0e8cb04b909df3cd71af91da28fcfdf769dbcdf53275a510"
+  }
+}

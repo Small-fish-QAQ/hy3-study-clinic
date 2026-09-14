@@ -1,0 +1,326 @@
+{
+  "task": {
+    "caseId": "S081",
+    "runId": "S081-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S081.json",
+    "inputHash": "4c0bada8a90aa08843332a4c5401d4e0ed5c00aadf7168ff42d27f3594fd2ff3"
+  },
+  "inputHash": "4c0bada8a90aa08843332a4c5401d4e0ed5c00aadf7168ff42d27f3594fd2ff3",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "ad4e866c7448839c2222383b8eefb641794e542db250a68c052a1dc01e7ff860",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "交付物诊断学习者态度无证据，并教导错误规则“代词永远指向第一个出现的人”，违背所给歧义规则，核心修复用途被实质破坏，故0分。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "诊断发明学习者状态：指责学习者一向不认真且讨厌语言课，无原始证据支持。",
+                "impact": "改变核心用途：修复应针对推理缺口而非人身攻击，破坏学习目标。",
+                "refs": [
+                  "/artifacts/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "126b4b2317299ae06be09a58650900641bcfa95612a290c4f6480e9672e1a9fc"
+                  }
+                ]
+              },
+              {
+                "severity": "material",
+                "description": "干预教错误方法：声称代词永远指向第一个出现的人，违背source中需承认歧义、不能凭空推断的规则。",
+                "impact": "改变核心用途：强化未经支持的唯一指代判断，与修复目标相反。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "126b4b2317299ae06be09a58650900641bcfa95612a290c4f6480e9672e1a9fc"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "69fef873755638b051db652f07b0960110732e94a4812af3f6f8b85635905051"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "126b4b2317299ae06be09a58650900641bcfa95612a290c4f6480e9672e1a9fc"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "69fef873755638b051db652f07b0960110732e94a4812af3f6f8b85635905051"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "诊断臆造学习者“不认真讨厌语言课”状态，干预教授错误方法“代词永远指向第一个出现的人”，违背source歧义规则，未提供针对推理缺口的可用修复，核心用途失效。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "诊断臆造学习者一贯不认真且讨厌语言课的状态",
+                "impact": "偏离修复目标，攻击学习者而非处理推理缺口，符合Q6的0分标准",
+                "refs": [
+                  "/artifacts/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "126b4b2317299ae06be09a58650900641bcfa95612a290c4f6480e9672e1a9fc"
+                  }
+                ]
+              },
+              {
+                "severity": "material",
+                "description": "干预教导错误方法：代词永远指向第一个出现的人，照背即可",
+                "impact": "与source规则矛盾，未教正确歧义处理，核心学习用途被实质改变",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "126b4b2317299ae06be09a58650900641bcfa95612a290c4f6480e9672e1a9fc"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "69fef873755638b051db652f07b0960110732e94a4812af3f6f8b85635905051"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "126b4b2317299ae06be09a58650900641bcfa95612a290c4f6480e9672e1a9fc"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "69fef873755638b051db652f07b0960110732e94a4812af3f6f8b85635905051"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "交付物诊断臆造学习者不认真讨厌语言课的状态，并教导错误规则“代词永远指向第一个出现的人”，违背source歧义规则，符合Q6的0分标准，核心修复用途实质破坏。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "诊断发明学习者状态：指责学习者一向不认真且讨厌语言课，无原始证据支持。",
+                "impact": "改变核心用途：修复应针对推理缺口而非人身攻击，破坏学习目标。",
+                "refs": [
+                  "/artifacts/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "126b4b2317299ae06be09a58650900641bcfa95612a290c4f6480e9672e1a9fc"
+                  }
+                ]
+              },
+              {
+                "severity": "material",
+                "description": "干预教错误方法：声称代词永远指向第一个出现的人，违背source中需承认歧义、不能凭空推断的规则。",
+                "impact": "改变核心用途：强化未经支持的唯一指代判断，与修复目标相反。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "126b4b2317299ae06be09a58650900641bcfa95612a290c4f6480e9672e1a9fc"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "69fef873755638b051db652f07b0960110732e94a4812af3f6f8b85635905051"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "126b4b2317299ae06be09a58650900641bcfa95612a290c4f6480e9672e1a9fc"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "69fef873755638b051db652f07b0960110732e94a4812af3f6f8b85635905051"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q6:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "你能这样判断说明你一向不认真且讨厌语言课",
+              "valueHash": "126b4b2317299ae06be09a58650900641bcfa95612a290c4f6480e9672e1a9fc"
+            },
+            "reason": "原文交付物直接包含此句，无先前证据支持该学习者状态，属发明状态，符合Q6零分标准。"
+          },
+          {
+            "id": "review1:Q6:2",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "代词永远指向第一个出现的人，照这条背即可",
+              "valueHash": "126b4b2317299ae06be09a58650900641bcfa95612a290c4f6480e9672e1a9fc"
+            },
+            "reason": "交付物教导此错误规则，而/sources/0/text要求承认歧义不能凭空推断，方法错误实质破坏修复目标。"
+          },
+          {
+            "id": "review2:Q6:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "你能这样判断说明你一向不认真且讨厌语言课",
+              "valueHash": "126b4b2317299ae06be09a58650900641bcfa95612a290c4f6480e9672e1a9fc"
+            },
+            "reason": "同review1:Q6:1，原文确含臆造学习者状态，无证据，属material缺陷。"
+          },
+          {
+            "id": "review2:Q6:2",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "代词永远指向第一个出现的人，照这条背即可",
+              "valueHash": "126b4b2317299ae06be09a58650900641bcfa95612a290c4f6480e9672e1a9fc"
+            },
+            "reason": "同review1:Q6:2，错误方法与source矛盾，实质改变核心用途。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q6",
+          "level": 0,
+          "evidence": "sufficient",
+          "reason": "交付物诊断臆造学习者不认真讨厌语言课的状态，并教导错误规则“代词永远指向第一个出现的人”，违背source歧义规则，符合Q6的0分标准，核心修复用途实质破坏。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [
+            {
+              "severity": "material",
+              "description": "诊断发明学习者状态：指责学习者一向不认真且讨厌语言课，无原始证据支持。",
+              "impact": "改变核心用途：修复应针对推理缺口而非人身攻击，破坏学习目标。",
+              "refs": [
+                "/artifacts/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "126b4b2317299ae06be09a58650900641bcfa95612a290c4f6480e9672e1a9fc"
+                }
+              ]
+            },
+            {
+              "severity": "material",
+              "description": "干预教错误方法：声称代词永远指向第一个出现的人，违背source中需承认歧义、不能凭空推断的规则。",
+              "impact": "改变核心用途：强化未经支持的唯一指代判断，与修复目标相反。",
+              "refs": [
+                "/artifacts/0/text",
+                "/sources/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "126b4b2317299ae06be09a58650900641bcfa95612a290c4f6480e9672e1a9fc"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "69fef873755638b051db652f07b0960110732e94a4812af3f6f8b85635905051"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "126b4b2317299ae06be09a58650900641bcfa95612a290c4f6480e9672e1a9fc"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "69fef873755638b051db652f07b0960110732e94a4812af3f6f8b85635905051"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "abc426e91b1d3e632a71ff70344172b5688d352d7d38daeefc6303ca0b9891ec"
+  }
+}

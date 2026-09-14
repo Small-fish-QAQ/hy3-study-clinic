@@ -1,0 +1,95 @@
+{
+  "inputIdentity": "7c9fa27a4d2d603fa7d507c3e34bd423b33e7c9c86ebee63ad969f1ee5292829",
+  "attempts": [
+    {
+      "physicalId": "ad733a92-b3ff-40ff-99fe-452885dd1f9a",
+      "caseId": "S061",
+      "runId": "S061-r1",
+      "stage": "goal-mapping",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "goals": [
+      {
+        "index": 0,
+        "importance": "essential",
+        "status": "contradicted",
+        "reason": "Artifact声称不用看箭头且B可走到A，违背了源中有向边必须顺方向且B无出边的规则，未提供正确按有向边检查路线的方法，核心结论被改变。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/0",
+          "/sources/0/text"
+        ],
+        "quote": "看到有边就可以走，不用看箭头，B也能直接走到A。",
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "2a576634b7ef91ab126053b3c6c052c3bd54a8ad49ce703b7d739d66b6fa23c7"
+          },
+          {
+            "pointer": "/goals/0",
+            "valueHash": "a51f21939f83eed1ca93d3681f208fb694af3488648930ef9519d1d81a501862"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "4a1ff16d1619a7f4b64cc932d8257c0a3341f94daa68120cf944ecd4a83e3b93"
+          }
+        ]
+      },
+      {
+        "index": 1,
+        "importance": "essential",
+        "status": "contradicted",
+        "reason": "Artifact断言入度和出度是同一个数，未区分二者也未教计算，与源中出度/入度不同定义矛盾，核心学习目标被错误主张替代。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/1",
+          "/sources/0/text"
+        ],
+        "quote": "入度和出度是同一个数。",
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "2a576634b7ef91ab126053b3c6c052c3bd54a8ad49ce703b7d739d66b6fa23c7"
+          },
+          {
+            "pointer": "/goals/1",
+            "valueHash": "a63e5ea68b90b2ab60576d7e6f1c219c31f7b0a1e90a3e147a04d87b392c0399"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "4a1ff16d1619a7f4b64cc932d8257c0a3341f94daa68120cf944ecd4a83e3b93"
+          }
+        ]
+      },
+      {
+        "index": 2,
+        "importance": "secondary",
+        "status": "usable",
+        "reason": "Artifact明确说明边标签让图更易读，实现了解释边标签用途的目标，虽未提不改变方向但目标仅要求解释用途。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/2"
+        ],
+        "quote": "边标签让图更易读。",
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "2a576634b7ef91ab126053b3c6c052c3bd54a8ad49ce703b7d739d66b6fa23c7"
+          },
+          {
+            "pointer": "/goals/2",
+            "valueHash": "5971c156642542bafa467de656a783fad331d9b9629086ebfc96e501de760b60"
+          }
+        ]
+      }
+    ]
+  }
+}

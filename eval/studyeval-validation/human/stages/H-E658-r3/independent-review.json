@@ -1,0 +1,79 @@
+{
+  "inputIdentity": "4f6c543df2a9dd36ddabb86bfeec44d4319c86cd26827933914e2586eedf937b",
+  "attempts": [
+    {
+      "physicalId": "6550e3a1-e49f-45d5-9cec-0ac3b2043051",
+      "caseId": "E658",
+      "runId": "H-E658-r3",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q2",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "核心三目标均给出准确可操作规则与示例：区间公式、比较非重叠与重叠区间。但次要延伸目标仅以'留意共同偏差'提醒出现，未解释平均不能消除共同偏差，符合局部缺陷1分。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text",
+          "/goals/3"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "次要延伸目标'说明重复平均不能自动消除共同方向的偏差'在lesson中仅简化为'重复测量时也要留意共同偏差'的未解释提醒，未展示原因或示例。",
+            "impact": "核心区间形成与比较用途成立，此局部缺口仅削弱次要目标深度，不改核心学习目的。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/3",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "9f85ff5b494d6fb3aa0a5fc03f7b2cba0075759e5a444afa89829072dffa4a9b"
+              },
+              {
+                "pointer": "/goals/3",
+                "valueHash": "714460aff55596ab6a2b0d42615a21b9c5be82487f745a68d7ee18049f26f951"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "04ede0e2b943c283408af13f15e429c4d3f550318ac34096022b20c8a80a02fc"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "9f85ff5b494d6fb3aa0a5fc03f7b2cba0075759e5a444afa89829072dffa4a9b"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "04ede0e2b943c283408af13f15e429c4d3f550318ac34096022b20c8a80a02fc"
+          },
+          {
+            "pointer": "/goals/3",
+            "valueHash": "714460aff55596ab6a2b0d42615a21b9c5be82487f745a68d7ee18049f26f951"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

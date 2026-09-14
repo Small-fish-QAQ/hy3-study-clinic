@@ -1,0 +1,49 @@
+{
+  "inputIdentity": "8e80bc9b9c1de9d7973abb5656ffa74811bdcf5b5f61c1debba1acd04cf4aad2",
+  "attempts": [
+    {
+      "physicalId": "0d1f7f54-bec6-40d2-b299-3419a5652797",
+      "caseId": "S011",
+      "runId": "S011-r3",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "artifact准确复述source中条形磁铁的磁极作用与切断后仍有南北极的模型，无事实或范围缺陷，满足goals核对要求。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "270770ae0140fc5bd6ca4a4e08629c550198ddae94a93e5de576ccfe8172f857"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "bd52c5a277bce71686f63dbe44ae0456d2b3036e28dc0d9ea741288fdb927b79"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

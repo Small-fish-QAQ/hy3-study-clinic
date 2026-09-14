@@ -1,0 +1,702 @@
+{
+  "task": {
+    "caseId": "E497",
+    "runId": "H-E497-r2",
+    "replicate": 2,
+    "path": "benchmark/cases/E497.json",
+    "inputHash": "b62b6128a5713adcb245bf537cd8bf0d306cd2e799a3fb5928a50de4353169ed",
+    "population": "controlled",
+    "sourceId": "F06"
+  },
+  "inputHash": "b62b6128a5713adcb245bf537cd8bf0d306cd2e799a3fb5928a50de4353169ed",
+  "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "05e83f34825c3f726f252d328aca0d13ad109535ce5c7a85e1a0f316e3c4bd46",
+    "stages": {
+      "blind-solution": {
+        "status": "resolved",
+        "solution": "原数据2,4,4,14：总和24，平均数24/4=6分钟；排序后中间两数为4与4，中位数4分钟。改14为22：总和2+4+4+22=32，平均数8分钟；中位数仍4分钟。变化不同因平均数依赖全部数值之和，最大值增8使总和增8、均数增2；中位数仅取排序中间值，此处中间两值未变故不变。限制：仅按题设四次记录计算，不引申去重或缺失。",
+        "refs": [
+          "/question/prompt"
+        ],
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "c72bdf5aa33b5c9b2a61dcde88889cc9c7e6ebaf01687c706d6d8539580d34da"
+          }
+        ]
+      },
+      "blind-student": {
+        "criteria": [
+          {
+            "id": "c1",
+            "result": "met",
+            "reason": "答案给出原平均6、中位4（原总和24四次平均6；中间两个都是4中位4）和修改后平均8、中位4（改后总和32平均8中间位置仍是两个4中位还为4），符合标准。",
+            "refs": [
+              "/answer",
+              "/rubric/0"
+            ],
+            "required": true,
+            "witnesses": [
+              {
+                "pointer": "/answer",
+                "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+              },
+              {
+                "pointer": "/rubric/0",
+                "valueHash": "a1297a15ff2b3a0f739057b0447a410cb40c06ce923b05a3164b28df2ba398b4"
+              }
+            ]
+          },
+          {
+            "id": "c2",
+            "result": "met",
+            "reason": "答案通过原总和24改后32平均6变8说明总和增加使平均改变，并通过中间位置仍是两个4中位还为4及最长那次拉高总和而没有移动中间值解释中位未变，满足解释要求。",
+            "refs": [
+              "/answer",
+              "/rubric/1"
+            ],
+            "required": true,
+            "witnesses": [
+              {
+                "pointer": "/answer",
+                "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+              },
+              {
+                "pointer": "/rubric/1",
+                "valueHash": "46a9a9b0313c712bcf38afd5a6b9d93cea5b4f5f9ce44412a9a9122ea1b5461b"
+              }
+            ]
+          },
+          {
+            "id": "c3",
+            "result": "not_met",
+            "reason": "答案为连续文本，未使用小标题分开计算和解释，不满足可选表达形式。",
+            "refs": [
+              "/answer",
+              "/rubric/2"
+            ],
+            "required": false,
+            "witnesses": [
+              {
+                "pointer": "/answer",
+                "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+              },
+              {
+                "pointer": "/rubric/2",
+                "valueHash": "c501d76a0d0bcb2526107e773e4c2486adf551bafedd0b5c028a4823e4cc1a95"
+              }
+            ]
+          }
+        ],
+        "warrantedCredit": "granted"
+      },
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q5",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "独立解题确认原平均6中位4、改后平均8中位4，学生答案满足c1,c2。产品正确授予学分，但误将可选c3判met并反馈使用小标题，实际无小标题。必需判定与学分正确，仅可选判定及反馈错误，故为1级。",
+            "refs": [
+              "/answer",
+              "/rubric/0",
+              "/rubric/1",
+              "/rubric/2",
+              "/productJudgment/feedback",
+              "/productJudgment/consequence"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "产品将可选标准c3误判为met，并反馈称学生使用小标题分开步骤，实际答案为连续文本无小标题",
+                "impact": "不改变核心用途：必需标准c1,c2正确met且学分granted正确，仅可选形式判定错误",
+                "refs": [
+                  "/answer",
+                  "/rubric/2",
+                  "/productJudgment/feedback"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/answer",
+                    "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+                  },
+                  {
+                    "pointer": "/rubric/2",
+                    "valueHash": "c501d76a0d0bcb2526107e773e4c2486adf551bafedd0b5c028a4823e4cc1a95"
+                  },
+                  {
+                    "pointer": "/productJudgment/feedback",
+                    "valueHash": "f5ab37d7e74da67aa5774cc98a70ee1d1c2beff20aecf0363911527b3ee2bbab"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "grading": {
+              "criteria": [
+                {
+                  "id": "c1",
+                  "result": "met",
+                  "reason": "学生全答给出原平均6中位4及改后平均8中位4，满足必要含义",
+                  "refs": [
+                    "/answer",
+                    "/rubric/0"
+                  ],
+                  "required": true,
+                  "witnesses": [
+                    {
+                      "pointer": "/answer",
+                      "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+                    },
+                    {
+                      "pointer": "/rubric/0",
+                      "valueHash": "a1297a15ff2b3a0f739057b0447a410cb40c06ce923b05a3164b28df2ba398b4"
+                    }
+                  ]
+                },
+                {
+                  "id": "c2",
+                  "result": "met",
+                  "reason": "答案说明总和增加使平均改变，中间两项仍为4中位未变，满足解释",
+                  "refs": [
+                    "/answer",
+                    "/rubric/1"
+                  ],
+                  "required": true,
+                  "witnesses": [
+                    {
+                      "pointer": "/answer",
+                      "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+                    },
+                    {
+                      "pointer": "/rubric/1",
+                      "valueHash": "46a9a9b0313c712bcf38afd5a6b9d93cea5b4f5f9ce44412a9a9122ea1b5461b"
+                    }
+                  ]
+                },
+                {
+                  "id": "c3",
+                  "result": "not_met",
+                  "reason": "答案为连续文本，未用小标题分开步骤，产品误判为met",
+                  "refs": [
+                    "/answer",
+                    "/rubric/2"
+                  ],
+                  "required": false,
+                  "witnesses": [
+                    {
+                      "pointer": "/answer",
+                      "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+                    },
+                    {
+                      "pointer": "/rubric/2",
+                      "valueHash": "c501d76a0d0bcb2526107e773e4c2486adf551bafedd0b5c028a4823e4cc1a95"
+                    }
+                  ]
+                }
+              ],
+              "warrantedCredit": "granted",
+              "actualCredit": "granted"
+            },
+            "witnesses": [
+              {
+                "pointer": "/answer",
+                "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+              },
+              {
+                "pointer": "/rubric/0",
+                "valueHash": "a1297a15ff2b3a0f739057b0447a410cb40c06ce923b05a3164b28df2ba398b4"
+              },
+              {
+                "pointer": "/rubric/1",
+                "valueHash": "46a9a9b0313c712bcf38afd5a6b9d93cea5b4f5f9ce44412a9a9122ea1b5461b"
+              },
+              {
+                "pointer": "/rubric/2",
+                "valueHash": "c501d76a0d0bcb2526107e773e4c2486adf551bafedd0b5c028a4823e4cc1a95"
+              },
+              {
+                "pointer": "/productJudgment/feedback",
+                "valueHash": "f5ab37d7e74da67aa5774cc98a70ee1d1c2beff20aecf0363911527b3ee2bbab"
+              },
+              {
+                "pointer": "/productJudgment/consequence",
+                "valueHash": "7a46f96ef53640241d47aaf5bf8982277cb8089d4e31cb15b6a2197d05b6c7b9"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q5",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "必需要求c1,c2学生答案均满足，产品授分granted正确；但可选c3产品误判met且反馈谎称小标题，仅可选错误不改核心学分。",
+            "refs": [
+              "/answer",
+              "/rubric/0",
+              "/rubric/1",
+              "/rubric/2",
+              "/productJudgment/criteria/2",
+              "/productJudgment/feedback"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "产品将可选标准c3判为met，并称学生用小标题分开步骤，但答案实为连续文本无小标题。",
+                "impact": "不改变核心评分用途，因c3可选且学分授予基于必需要求已满足，但反馈不准确。",
+                "refs": [
+                  "/answer",
+                  "/productJudgment/criteria/2",
+                  "/productJudgment/feedback"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/answer",
+                    "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+                  },
+                  {
+                    "pointer": "/productJudgment/criteria/2",
+                    "valueHash": "35e7bfb27d54bc5b8ed1699cd41203fb25e5e569d9ae5579798d7e7e02830b58"
+                  },
+                  {
+                    "pointer": "/productJudgment/feedback",
+                    "valueHash": "f5ab37d7e74da67aa5774cc98a70ee1d1c2beff20aecf0363911527b3ee2bbab"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "grading": {
+              "criteria": [
+                {
+                  "id": "c1",
+                  "result": "met",
+                  "reason": "答案明确原平均6中位4、改后平均8中位4，符合题设计算。",
+                  "refs": [
+                    "/answer",
+                    "/rubric/0"
+                  ],
+                  "required": true,
+                  "witnesses": [
+                    {
+                      "pointer": "/answer",
+                      "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+                    },
+                    {
+                      "pointer": "/rubric/0",
+                      "valueHash": "a1297a15ff2b3a0f739057b0447a410cb40c06ce923b05a3164b28df2ba398b4"
+                    }
+                  ]
+                },
+                {
+                  "id": "c2",
+                  "result": "met",
+                  "reason": "通过总和增加与中间值不变解释差异，满足要求。",
+                  "refs": [
+                    "/answer",
+                    "/rubric/1"
+                  ],
+                  "required": true,
+                  "witnesses": [
+                    {
+                      "pointer": "/answer",
+                      "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+                    },
+                    {
+                      "pointer": "/rubric/1",
+                      "valueHash": "46a9a9b0313c712bcf38afd5a6b9d93cea5b4f5f9ce44412a9a9122ea1b5461b"
+                    }
+                  ]
+                },
+                {
+                  "id": "c3",
+                  "result": "not_met",
+                  "reason": "答案为单段连续文本，未用小标题分开计算和解释，产品判met错误。",
+                  "refs": [
+                    "/answer",
+                    "/rubric/2"
+                  ],
+                  "required": false,
+                  "witnesses": [
+                    {
+                      "pointer": "/answer",
+                      "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+                    },
+                    {
+                      "pointer": "/rubric/2",
+                      "valueHash": "c501d76a0d0bcb2526107e773e4c2486adf551bafedd0b5c028a4823e4cc1a95"
+                    }
+                  ]
+                }
+              ],
+              "warrantedCredit": "granted",
+              "actualCredit": "granted"
+            },
+            "witnesses": [
+              {
+                "pointer": "/answer",
+                "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+              },
+              {
+                "pointer": "/rubric/0",
+                "valueHash": "a1297a15ff2b3a0f739057b0447a410cb40c06ce923b05a3164b28df2ba398b4"
+              },
+              {
+                "pointer": "/rubric/1",
+                "valueHash": "46a9a9b0313c712bcf38afd5a6b9d93cea5b4f5f9ce44412a9a9122ea1b5461b"
+              },
+              {
+                "pointer": "/rubric/2",
+                "valueHash": "c501d76a0d0bcb2526107e773e4c2486adf551bafedd0b5c028a4823e4cc1a95"
+              },
+              {
+                "pointer": "/productJudgment/criteria/2",
+                "valueHash": "35e7bfb27d54bc5b8ed1699cd41203fb25e5e569d9ae5579798d7e7e02830b58"
+              },
+              {
+                "pointer": "/productJudgment/feedback",
+                "valueHash": "f5ab37d7e74da67aa5774cc98a70ee1d1c2beff20aecf0363911527b3ee2bbab"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q5",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "重解确认原平均6中位4、改后平均8中位4，学生答案满足c1,c2；产品授分granted正确。但可选c3产品误判met且反馈称用小标题，实际答案为连续文本无标题。必需判定与学分正确，仅可选错误，故1级。",
+            "refs": [
+              "/answer",
+              "/rubric/0",
+              "/rubric/1",
+              "/rubric/2",
+              "/productJudgment/criteria/2",
+              "/productJudgment/feedback",
+              "/productJudgment/consequence"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "产品将可选标准c3误判为met，并反馈称学生使用小标题分开步骤，实际答案为连续文本无小标题",
+                "impact": "不改变核心评分用途：必需标准c1,c2正确met且学分granted正确，仅可选形式判定错误",
+                "refs": [
+                  "/answer",
+                  "/rubric/2",
+                  "/productJudgment/feedback"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/answer",
+                    "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+                  },
+                  {
+                    "pointer": "/rubric/2",
+                    "valueHash": "c501d76a0d0bcb2526107e773e4c2486adf551bafedd0b5c028a4823e4cc1a95"
+                  },
+                  {
+                    "pointer": "/productJudgment/feedback",
+                    "valueHash": "f5ab37d7e74da67aa5774cc98a70ee1d1c2beff20aecf0363911527b3ee2bbab"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "grading": {
+              "criteria": [
+                {
+                  "id": "c1",
+                  "result": "met",
+                  "reason": "学生全答给出原平均6中位4及改后平均8中位4，满足必要含义",
+                  "refs": [
+                    "/answer",
+                    "/rubric/0"
+                  ],
+                  "required": true,
+                  "witnesses": [
+                    {
+                      "pointer": "/answer",
+                      "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+                    },
+                    {
+                      "pointer": "/rubric/0",
+                      "valueHash": "a1297a15ff2b3a0f739057b0447a410cb40c06ce923b05a3164b28df2ba398b4"
+                    }
+                  ]
+                },
+                {
+                  "id": "c2",
+                  "result": "met",
+                  "reason": "答案说明总和增加使平均改变，中间两项仍为4中位未变，满足解释",
+                  "refs": [
+                    "/answer",
+                    "/rubric/1"
+                  ],
+                  "required": true,
+                  "witnesses": [
+                    {
+                      "pointer": "/answer",
+                      "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+                    },
+                    {
+                      "pointer": "/rubric/1",
+                      "valueHash": "46a9a9b0313c712bcf38afd5a6b9d93cea5b4f5f9ce44412a9a9122ea1b5461b"
+                    }
+                  ]
+                },
+                {
+                  "id": "c3",
+                  "result": "not_met",
+                  "reason": "答案为连续文本，未用小标题分开步骤，产品误判为met",
+                  "refs": [
+                    "/answer",
+                    "/rubric/2"
+                  ],
+                  "required": false,
+                  "witnesses": [
+                    {
+                      "pointer": "/answer",
+                      "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+                    },
+                    {
+                      "pointer": "/rubric/2",
+                      "valueHash": "c501d76a0d0bcb2526107e773e4c2486adf551bafedd0b5c028a4823e4cc1a95"
+                    }
+                  ]
+                }
+              ],
+              "warrantedCredit": "granted",
+              "actualCredit": "granted"
+            },
+            "witnesses": [
+              {
+                "pointer": "/answer",
+                "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+              },
+              {
+                "pointer": "/rubric/0",
+                "valueHash": "a1297a15ff2b3a0f739057b0447a410cb40c06ce923b05a3164b28df2ba398b4"
+              },
+              {
+                "pointer": "/rubric/1",
+                "valueHash": "46a9a9b0313c712bcf38afd5a6b9d93cea5b4f5f9ce44412a9a9122ea1b5461b"
+              },
+              {
+                "pointer": "/rubric/2",
+                "valueHash": "c501d76a0d0bcb2526107e773e4c2486adf551bafedd0b5c028a4823e4cc1a95"
+              },
+              {
+                "pointer": "/productJudgment/criteria/2",
+                "valueHash": "35e7bfb27d54bc5b8ed1699cd41203fb25e5e569d9ae5579798d7e7e02830b58"
+              },
+              {
+                "pointer": "/productJudgment/feedback",
+                "valueHash": "f5ab37d7e74da67aa5774cc98a70ee1d1c2beff20aecf0363911527b3ee2bbab"
+              },
+              {
+                "pointer": "/productJudgment/consequence",
+                "valueHash": "7a46f96ef53640241d47aaf5bf8982277cb8089d4e31cb15b6a2197d05b6c7b9"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q5:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/answer",
+              "quote": "原总和24，四次平均6；中间两个都是4，中位4。改后总和32，平均8，中间位置仍是两个4，中位还为4。最长那次拉高总和而没有移动中间值。",
+              "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+            },
+            "reason": "答案文本为连续句子，无任何小标题分隔，证实产品反馈所称使用小标题不实；但c3为可选，不影响必需判定与学分。"
+          },
+          {
+            "id": "review2:Q5:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/productJudgment/criteria/2",
+              "quote": null,
+              "valueHash": "35e7bfb27d54bc5b8ed1699cd41203fb25e5e569d9ae5579798d7e7e02830b58"
+            },
+            "reason": "产品将可选c3判为met，但/answer显示无小标题，误判仅局部影响反馈准确性，学分授予仍正确。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q5",
+          "level": 1,
+          "evidence": "sufficient",
+          "reason": "重解确认原平均6中位4、改后平均8中位4，学生答案满足c1,c2；产品授分granted正确。但可选c3产品误判met且反馈称用小标题，实际答案为连续文本无标题。必需判定与学分正确，仅可选错误，故1级。",
+          "refs": [
+            "/answer",
+            "/rubric/0",
+            "/rubric/1",
+            "/rubric/2",
+            "/productJudgment/criteria/2",
+            "/productJudgment/feedback",
+            "/productJudgment/consequence"
+          ],
+          "defects": [
+            {
+              "severity": "local",
+              "description": "产品将可选标准c3误判为met，并反馈称学生使用小标题分开步骤，实际答案为连续文本无小标题",
+              "impact": "不改变核心评分用途：必需标准c1,c2正确met且学分granted正确，仅可选形式判定错误",
+              "refs": [
+                "/answer",
+                "/rubric/2",
+                "/productJudgment/feedback"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+                },
+                {
+                  "pointer": "/rubric/2",
+                  "valueHash": "c501d76a0d0bcb2526107e773e4c2486adf551bafedd0b5c028a4823e4cc1a95"
+                },
+                {
+                  "pointer": "/productJudgment/feedback",
+                  "valueHash": "f5ab37d7e74da67aa5774cc98a70ee1d1c2beff20aecf0363911527b3ee2bbab"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "grading": {
+            "criteria": [
+              {
+                "id": "c1",
+                "result": "met",
+                "reason": "学生全答给出原平均6中位4及改后平均8中位4，满足必要含义",
+                "refs": [
+                  "/answer",
+                  "/rubric/0"
+                ],
+                "required": true,
+                "witnesses": [
+                  {
+                    "pointer": "/answer",
+                    "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+                  },
+                  {
+                    "pointer": "/rubric/0",
+                    "valueHash": "a1297a15ff2b3a0f739057b0447a410cb40c06ce923b05a3164b28df2ba398b4"
+                  }
+                ]
+              },
+              {
+                "id": "c2",
+                "result": "met",
+                "reason": "答案说明总和增加使平均改变，中间两项仍为4中位未变，满足解释",
+                "refs": [
+                  "/answer",
+                  "/rubric/1"
+                ],
+                "required": true,
+                "witnesses": [
+                  {
+                    "pointer": "/answer",
+                    "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+                  },
+                  {
+                    "pointer": "/rubric/1",
+                    "valueHash": "46a9a9b0313c712bcf38afd5a6b9d93cea5b4f5f9ce44412a9a9122ea1b5461b"
+                  }
+                ]
+              },
+              {
+                "id": "c3",
+                "result": "not_met",
+                "reason": "答案为连续文本，未用小标题分开步骤，产品误判为met",
+                "refs": [
+                  "/answer",
+                  "/rubric/2"
+                ],
+                "required": false,
+                "witnesses": [
+                  {
+                    "pointer": "/answer",
+                    "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+                  },
+                  {
+                    "pointer": "/rubric/2",
+                    "valueHash": "c501d76a0d0bcb2526107e773e4c2486adf551bafedd0b5c028a4823e4cc1a95"
+                  }
+                ]
+              }
+            ],
+            "warrantedCredit": "granted",
+            "actualCredit": "granted"
+          },
+          "witnesses": [
+            {
+              "pointer": "/answer",
+              "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+            },
+            {
+              "pointer": "/rubric/0",
+              "valueHash": "a1297a15ff2b3a0f739057b0447a410cb40c06ce923b05a3164b28df2ba398b4"
+            },
+            {
+              "pointer": "/rubric/1",
+              "valueHash": "46a9a9b0313c712bcf38afd5a6b9d93cea5b4f5f9ce44412a9a9122ea1b5461b"
+            },
+            {
+              "pointer": "/rubric/2",
+              "valueHash": "c501d76a0d0bcb2526107e773e4c2486adf551bafedd0b5c028a4823e4cc1a95"
+            },
+            {
+              "pointer": "/productJudgment/criteria/2",
+              "valueHash": "35e7bfb27d54bc5b8ed1699cd41203fb25e5e569d9ae5579798d7e7e02830b58"
+            },
+            {
+              "pointer": "/productJudgment/feedback",
+              "valueHash": "f5ab37d7e74da67aa5774cc98a70ee1d1c2beff20aecf0363911527b3ee2bbab"
+            },
+            {
+              "pointer": "/productJudgment/consequence",
+              "valueHash": "7a46f96ef53640241d47aaf5bf8982277cb8089d4e31cb15b6a2197d05b6c7b9"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "dbf40c1dd66ffb05022158b200234876d961b7115afeeac5e4b49d4ce2bf0faf"
+  }
+}

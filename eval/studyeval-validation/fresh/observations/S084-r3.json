@@ -1,0 +1,248 @@
+{
+  "task": {
+    "caseId": "S084",
+    "runId": "S084-r3",
+    "replicate": 3,
+    "path": "dataset/studyeval/S084.json",
+    "inputHash": "b7b8afd9b8105cd16f41249dbedd61e4d6cc92a74d28b5d6ad5fd9764aa46221"
+  },
+  "inputHash": "b7b8afd9b8105cd16f41249dbedd61e4d6cc92a74d28b5d6ad5fd9764aa46221",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "559a6c8aa8953270f079659fb5f5a31fccce85f95fde249f10168043c7eccf1b",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "Artifact正确计算3072字节=3 KiB=3.072 kB并解释基数差异，但错误称资料第一条示例用图片（源明确第一条为文本）。该归属错误属外围，修正后核心换算教学仍成立，故评1。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "Artifact声称'资料第一条示例使用图片'，但source明确'资料第一条示例用一个文本文件，第二条示例才用图片'。",
+                "impact": "修正示例类型归属后，存储单位换算核心计算(3072字节=3 KiB=3.072 kB)及'表示改变不表示内容改变'结论均不受影响，核心教学用途成立。",
+                "refs": [
+                  "/sources/0/text",
+                  "/artifacts/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "9962889a586bcebaf05685b990e16a73f43aca209ab59334e74cf9c8606897a1"
+                  },
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "8f5b7afa0804efc7b740aed2a819f388dcd9bc9151fe081f4c6ef990d3efd750"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "8f5b7afa0804efc7b740aed2a819f388dcd9bc9151fe081f4c6ef990d3efd750"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "9962889a586bcebaf05685b990e16a73f43aca209ab59334e74cf9c8606897a1"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "artifact正确换算3072字节为3KiB与3.072kB，说明基数不同且表示不改内容。但错误归属第一条示例为图片，source明确第一条为文本文件。该归属缺陷局部影响来源归属核对，修正后核心换算与结论完好。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "artifact声称资料第一条示例使用图片，但source明确第一条为文本文件、第二条才用图片。",
+                "impact": "修正该归属细节后，核心换算答案与内容无关结论仍成立，仅局部违背goals中来源归属核对要求。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "8f5b7afa0804efc7b740aed2a819f388dcd9bc9151fe081f4c6ef990d3efd750"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "9962889a586bcebaf05685b990e16a73f43aca209ab59334e74cf9c8606897a1"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "8f5b7afa0804efc7b740aed2a819f388dcd9bc9151fe081f4c6ef990d3efd750"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "9962889a586bcebaf05685b990e16a73f43aca209ab59334e74cf9c8606897a1"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "Artifact正确计算3072字节=3KiB=3.072kB并解释基数差异与表示无关内容，但错误归属资料第一条示例为图片，source明确第一条为文本文件。该归属错误属局部，修正后核心换算教学仍成立，故评1。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "Artifact声称'资料第一条示例使用图片'，但source明确'资料第一条示例用一个文本文件，第二条示例才用图片'。",
+                "impact": "修正示例类型归属后，存储单位换算核心计算及'表示改变不表示内容改变'结论均不受影响，核心教学用途成立。",
+                "refs": [
+                  "/sources/0/text",
+                  "/artifacts/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "9962889a586bcebaf05685b990e16a73f43aca209ab59334e74cf9c8606897a1"
+                  },
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "8f5b7afa0804efc7b740aed2a819f388dcd9bc9151fe081f4c6ef990d3efd750"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "8f5b7afa0804efc7b740aed2a819f388dcd9bc9151fe081f4c6ef990d3efd750"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "9962889a586bcebaf05685b990e16a73f43aca209ab59334e74cf9c8606897a1"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q1:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/sources/0/text",
+              "quote": "资料第一条示例用一个文本文件，第二条示例才用图片。",
+              "valueHash": "9962889a586bcebaf05685b990e16a73f43aca209ab59334e74cf9c8606897a1"
+            },
+            "reason": "源文明确第一条示例为文本文件，与artifact中'资料第一条示例使用图片'矛盾，证实归属错误为局部缺陷。"
+          },
+          {
+            "id": "review2:Q1:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "资料第一条示例使用图片。",
+              "valueHash": "8f5b7afa0804efc7b740aed2a819f388dcd9bc9151fe081f4c6ef990d3efd750"
+            },
+            "reason": "artifact文本直接声称第一条示例用图片，而source反驳其为文本文件，缺陷成立且影响局部。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q1",
+          "level": 1,
+          "evidence": "sufficient",
+          "reason": "Artifact正确计算3072字节=3KiB=3.072kB并解释基数差异与表示无关内容，但错误归属资料第一条示例为图片，source明确第一条为文本文件。该归属错误属局部，修正后核心换算教学仍成立，故评1。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [
+            {
+              "severity": "local",
+              "description": "Artifact声称'资料第一条示例使用图片'，但source明确'资料第一条示例用一个文本文件，第二条示例才用图片'。",
+              "impact": "修正示例类型归属后，存储单位换算核心计算及'表示改变不表示内容改变'结论均不受影响，核心教学用途成立。",
+              "refs": [
+                "/sources/0/text",
+                "/artifacts/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "9962889a586bcebaf05685b990e16a73f43aca209ab59334e74cf9c8606897a1"
+                },
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "8f5b7afa0804efc7b740aed2a819f388dcd9bc9151fe081f4c6ef990d3efd750"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "8f5b7afa0804efc7b740aed2a819f388dcd9bc9151fe081f4c6ef990d3efd750"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "9962889a586bcebaf05685b990e16a73f43aca209ab59334e74cf9c8606897a1"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "5e6762ddf7113fc4675172ec95663533441cdbcbb1f5df7c87942734f397ecea"
+  }
+}

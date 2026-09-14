@@ -1,0 +1,224 @@
+{
+  "status": "ready",
+  "message": "Lesson is ready.",
+  "course": {
+    "title": "Function arguments, local names, and returned values"
+  },
+  "session": {
+    "status": "active",
+    "version": 1
+  },
+  "agenda": {
+    "version": 1,
+    "itemState": "queued"
+  },
+  "lesson": {
+    "objective": {
+      "title": "函数参数区分、局部计算追踪与纯函数组合",
+      "whyNow": "常看到函数内对参数名重新赋值，便以为调用处的变量也跟着变。需要先建立参数与实参分离、按值绑定的追踪模型。",
+      "outcomes": [
+        {
+          "title": "区分函数参数与实参并解释按值传递绑定",
+          "description": "能够区分函数定义中的参数名与调用时提供的实参值，并解释按值传递如何将实参值绑定到局部参数名，且对局部名的赋值不影响调用者变量。需结合本课示例说明参数与实参的区别及局部隔离。"
+        },
+        {
+          "title": "追踪局部计算与返回调用者的值",
+          "description": "在给定函数定义下，能够追踪调用过程中的传入实参、每次局部更新、return表达式及调用者中的显式赋值，并记录返回给调用者的值，同时保持返回结果与调用者变量及局部名的区分。需依据本课具体函数（如adjust、choose）演示追踪步骤。"
+        }
+      ]
+    },
+    "prerequisites": [],
+    "segments": [
+      {
+        "index": 0,
+        "purpose": "orientation",
+        "explanation": "设想函数 triple(p): 先 p = p * 3，再返回 p。调用者持有 q = 2，执行 r = triple(q)。开始时实参 2 绑定到局部 p，p 变为 6 后返回 6，r 得到 6，而 q 仍是 2。这展示参数 p 与实参 q 是两个名字，值绑定后局部修改隔离。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 1,
+        "purpose": "mechanism",
+        "explanation": "根据资料中的规则，函数 adjust(x) 中 x 是参数，adjust(4) 中 4 是实参。调用 adjust(n) 时 n 的值 4 绑定到局部 x，x 被加 2 变为 6 并返回 18，但调用后 n 仍为 4。这说明局部重赋值不更新调用者变量；只有调用者写 n = adjust(n) 时 n 才变。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [
+          {
+            "kind": "mechanism_effect",
+            "fromProposition": "调用 adjust(n) 时实参 n 的值 4 绑定到局部参数 x",
+            "toProposition": "函数内 x 被改为 6 不会影响调用者 n，n 仍为 4",
+            "origin": "hy3_synthesis",
+            "sources": []
+          }
+        ],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 2,
+        "purpose": "guided_practice",
+        "explanation": "资料中 choose(z) 在 z<0 时返回 0 否则返回 z+1。该参数 z 与调用者变量无关，仅接收传入值。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": {
+          "kind": "choose",
+          "prompt": "调用者令 t = 0，执行 u = choose(t)。根据资料中的规则，choose(z) 在 z<0 时返回 0 否则返回 z+1。调用后 u 为何值，t 是否改变？",
+          "guidance": null,
+          "options": [
+            {
+              "id": "A",
+              "text": "u = 1，t 仍为 0"
+            },
+            {
+              "id": "B",
+              "text": "u = 0，t 仍为 0"
+            }
+          ],
+          "presented": false,
+          "response": null,
+          "respondedAt": null,
+          "correct": null,
+          "feedback": null,
+          "credit": "none"
+        }
+      },
+      {
+        "index": 3,
+        "purpose": "worked_example",
+        "explanation": "当一个纯函数被调用时，调用者提供的数值作为实参按值传递，绑定到函数局部的参数名。函数内部仅修改局部名，返回表达式算出的值送回调用者。调用者若把返回结果赋给某个变量，该变量才更新；若只是用返回结果初始化新变量，原变量不变。下面以 half(y) 为例追踪一次调用，展示局部计算与调用者赋值的区分。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": {
+          "startingState": "调用者持有变量 m = 10，并执行 s = half(m)。函数 half(y) 定义为 return y / 2。所有值为数字，按值传递，无副作用。",
+          "inputs": [
+            "m = 10",
+            "s = half(m)"
+          ],
+          "ruleOrProcedure": "根据资料中的规则，half(y) 接收实参绑定到局部 y，返回 y/2；返回结果被赋给 s，m 本身不被函数修改。",
+          "steps": [
+            {
+              "action": "将实参 10 绑定到局部参数 y，计算返回表达式 y / 2",
+              "reason": "调用 half(m) 时 m 的值 10 按值传入，局部 y 初始为 10，返回表达式 10/2 = 5",
+              "resultingState": "局部 y 为 10，函数返回 5 至调用者"
+            }
+          ],
+          "learnerDecision": null,
+          "result": null,
+          "whyResultFollows": null,
+          "origin": "hy3_synthesis",
+          "sources": [],
+          "interaction": {
+            "stage": "guided",
+            "modelledStepCount": 1,
+            "origin": "hy3_synthesis",
+            "sources": [],
+            "activity": {
+              "prompt": "基于上述 half(m) 调用，局部 y 得到 10 并返回 5，调用者执行 s = half(m)。最终 s 与 m 的值分别为？",
+              "options": [
+                {
+                  "id": "A",
+                  "text": "s = 5, m = 10"
+                },
+                {
+                  "id": "B",
+                  "text": "s = 5, m = 5"
+                },
+                {
+                  "id": "C",
+                  "text": "s = 10, m = 10"
+                }
+              ],
+              "response": null,
+              "respondedAt": null,
+              "correct": null,
+              "feedback": null,
+              "debrief": null,
+              "credit": "none",
+              "misconception": null
+            },
+            "hint": null,
+            "scaffold": null,
+            "transfer": null
+          }
+        },
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      }
+    ],
+    "sourceReferencesAvailable": true,
+    "visuals": [],
+    "summary": {
+      "available": true,
+      "text": "函数定义中的参数名是局部占位符；调用时实参值按值绑定到该占位符，函数内对其赋值只影响本次调用的局部状态，不影响调用者变量，除非调用者显式接收返回值。",
+      "nextConnection": null,
+      "formalOpportunities": []
+    },
+    "plannedTime": {
+      "agendaMinutes": 19,
+      "activeMinutesMin": 22,
+      "activeMinutesMax": 33,
+      "basis": "locally_evaluated_learning_actions"
+    }
+  },
+  "progress": {
+    "stateVersion": 2,
+    "stateId": "lesson_execution_99abaccb-fa64-416f-b266-e8780e55bc7e",
+    "currentSegmentIndex": 0,
+    "segmentCount": 4,
+    "presentedSegmentIndexes": [],
+    "presentationStatus": "not_started",
+    "presentationCompletedAt": null
+  },
+  "currentInformalCheck": null,
+  "practice": {
+    "status": "locked",
+    "currentItemIndex": 0,
+    "itemCount": 2,
+    "item": {
+      "index": 0,
+      "objectiveTitle": "区分函数参数与实参并解释按值传递绑定",
+      "construct": "explain",
+      "surface": "initial",
+      "supplementary": true,
+      "prompt": "调用者定义 m = 3，调用 val = inc(m)，其中 inc(k) 先执行 k = k + 5 再返回 k。调用后 m 仍为 3，val 为 8。哪种解释符合这一观察？",
+      "options": [
+        {
+          "id": "teaching_brief_e003ae66-ef0f-410b-b1f3-c3f43dfe6baa_practice_1_initial_A",
+          "text": "实参 m 的值 3 按值绑定到局部参数 k，k 后续加 5 只改局部，不影响 m"
+        },
+        {
+          "id": "teaching_brief_e003ae66-ef0f-410b-b1f3-c3f43dfe6baa_practice_1_initial_B",
+          "text": "inc 函数内部有语句把 k 显式赋回 m，但此处未执行"
+        },
+        {
+          "id": "teaching_brief_e003ae66-ef0f-410b-b1f3-c3f43dfe6baa_practice_1_initial_C",
+          "text": "m 是常量因此不能被 inc 修改"
+        }
+      ]
+    },
+    "attempts": [],
+    "recovery": null,
+    "completedAt": null,
+    "credit": "none"
+  },
+  "allowedActions": [
+    "start_lesson"
+  ]
+}

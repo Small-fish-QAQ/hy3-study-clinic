@@ -1,0 +1,69 @@
+{
+  "inputIdentity": "6db39d16cbed538142c4fcd627704ad4e02059c42d75c6e77ecfb4726375702d",
+  "attempts": [
+    {
+      "physicalId": "17dfa8fa-3a0a-43e2-8358-76f8223f10b5",
+      "caseId": "S027",
+      "runId": "S027-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "课程文本错误宣称所有被4整除年份均为闰年，因此1900年2月29天且忽略100/400条件，与来源规则及核对规则实例的目标直接矛盾，实质改变核心机制与答案。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "课程声称所有能被4整除的年份都是闰年，1900年二月有29天，忽略100和400条件。",
+            "impact": "改变闰年核心规则、必要条件与实例答案，破坏核对规则解释及实例的目标用途。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "853685eab47e41df7ddef7354c0225b71a669fb7d649723b4972c34088946314"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "5e982eb2843152ea1b81d9f7793dbfb2609636664c75b2a6bab9a349cc3bf60b"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "853685eab47e41df7ddef7354c0225b71a669fb7d649723b4972c34088946314"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "5e982eb2843152ea1b81d9f7793dbfb2609636664c75b2a6bab9a349cc3bf60b"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

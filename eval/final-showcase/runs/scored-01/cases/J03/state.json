@@ -1,0 +1,78 @@
+{
+  "sourceId": "J03",
+  "sourceSha256": "73da0786eddcbe30b88f7416fe6f02117386b0d3369181e8b475d9f155b206a5",
+  "events": [
+    {
+      "at": "2026-09-14T11:17:01.841Z",
+      "stage": "preparation-step",
+      "state": "preparing_concepts",
+      "machineAction": "prepare_concepts"
+    },
+    {
+      "at": "2026-09-14T11:17:01.858Z",
+      "stage": "curriculum-accepted",
+      "curriculumId": "curriculum_edc8f566-2271-475f-acdb-8c113f8248f7"
+    },
+    {
+      "at": "2026-09-14T11:17:01.948Z",
+      "stage": "preparation-step",
+      "state": "validating_course_plan",
+      "machineAction": "prepare_course_plan"
+    },
+    {
+      "at": "2026-09-14T11:17:01.962Z",
+      "stage": "preparation-stop",
+      "state": "complete",
+      "blocker": null
+    },
+    {
+      "at": "2026-09-14T11:20:42.722Z",
+      "stage": "lesson-user-retry",
+      "agendaItemId": "agenda_item_ce471bf5-f70f-4181-baeb-b214deb2803e",
+      "initialStatus": "retry_available",
+      "policy": "one-explicit-retry-when-offered"
+    },
+    {
+      "at": "2026-09-14T11:23:33.705Z",
+      "stage": "teaching",
+      "status": "failed",
+      "error": {
+        "name": "Error",
+        "message": "Lesson unavailable: retry_available Lesson preparation can be retried."
+      }
+    }
+  ],
+  "teaching": [
+    {
+      "agendaItemId": "agenda_item_ce471bf5-f70f-4181-baeb-b214deb2803e",
+      "learningUnitId": "cun_27d7214f-9f55-49b4-98f2-a2ff9f0807e8",
+      "status": "failed",
+      "sessionId": "study_session_9df9c197-5d0f-4878-8eb2-7a90c86edba5",
+      "preparationAttempts": [
+        {
+          "attempt": 1,
+          "status": "retry_available"
+        },
+        {
+          "attempt": 2,
+          "status": "retry_available"
+        }
+      ],
+      "error": {
+        "name": "Error",
+        "message": "Lesson unavailable: retry_available Lesson preparation can be retried."
+      }
+    }
+  ],
+  "formal": [],
+  "tutor": [],
+  "workspaceId": "ws_7e7f3d42-5112-4fff-8434-4e1043fdd9a7",
+  "materialId": "mat_9d7936b0-fe49-4dcc-a402-aa43e66e9d6e",
+  "commandSequence": 10,
+  "contractId": "contract_51d7fd1f-c846-4447-98ab-840051b3d793",
+  "status": "completed_with_observed_boundaries",
+  "counts": {
+    "physical": 10,
+    "logical": 8
+  }
+}

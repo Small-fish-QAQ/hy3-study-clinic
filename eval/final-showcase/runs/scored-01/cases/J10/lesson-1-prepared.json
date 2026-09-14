@@ -1,0 +1,223 @@
+{
+  "status": "ready",
+  "message": "Lesson is ready.",
+  "course": {
+    "title": "有丝分裂中的复制与分配"
+  },
+  "session": {
+    "status": "active",
+    "version": 1
+  },
+  "agenda": {
+    "version": 1,
+    "itemState": "queued"
+  },
+  "lesson": {
+    "objective": {
+      "title": "复制与分配的区别及染色体与细胞计数和遗传稳定性",
+      "whyNow": "若把DNA复制份数与染色体分配结果混算，会误答子细胞染色体数或总DNA数。",
+      "outcomes": [
+        {
+          "title": "解释分裂前DNA复制与随后染色体分配是两个不同动作",
+          "description": "解释有丝分裂中，分裂前间期DNA复制与随后有丝分裂过程中的染色体分配是不同动作：复制增加DNA份数，分配将已复制的材料送到两个子细胞，并说明细胞先在间期复制DNA，随后分配复制后的染色体并经细胞质分裂形成两个细胞。"
+        },
+        {
+          "title": "应用着丝粒计数约定确定各时点数并避免混淆",
+          "description": "应用按着丝粒数目计染色体的约定，在正常有丝分裂模型（复制前4条染色体各1 DNA；复制后未分离时仍记4条染色体但8个DNA分子；分离后细胞质未分开时全细胞8条染色体每极4条；子细胞各4条）中，于明确时点判定染色体数与DNA分子数。解答前先明确问的是一个细胞、每一极还是两个子细胞合计，以及复制和分离是否已发生，并依次交代复制、分离与细胞分开步骤，避免把DNA份数、染色体条数和细胞个数混在一起。"
+        }
+      ]
+    },
+    "prerequisites": [],
+    "segments": [
+      {
+        "index": 0,
+        "purpose": "orientation",
+        "explanation": "在理解有丝分裂时，常把‘遗传材料增多’和‘材料分到两个细胞’混为一谈。实际上，细胞先通过间期复制让每条染色体的信息变成两份，之后在有丝分裂中把已复制的染色体分配到子细胞。这两个动作先后发生、性质不同：复制只增加DNA份数，分配才改变细胞个数与染色体落点。后续用具体计数规则看清二者如何分别影响DNA分子数和染色体条数。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 1,
+        "purpose": "mechanism",
+        "explanation": "以课本正常模型为例：复制前体细胞有4条染色体，每条1个DNA。DNA复制后、姐妹染色单体未分开时，因计数按着丝粒，仍记4条染色体，但DNA分子变为8个。可见‘复制增加DNA份数’并不等同于‘染色体条数立即加倍’；随后分配动作才把每条染色单体分开移向两极，最终每个子细胞获4条。复制与分配因此是两个可分开追踪的动作。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [
+          {
+            "kind": "mechanism_effect",
+            "fromProposition": "间期DNA复制使每条染色体含两条姐妹染色单体，DNA分子数由4增至8",
+            "toProposition": "按着丝粒计数染色体仍记4条，未变为8条",
+            "origin": "hy3_synthesis",
+            "sources": []
+          }
+        ],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 2,
+        "purpose": "guided_practice",
+        "explanation": "运用上述计数约定，可对新观察作预测。下面检验能否正确区分复制后时点的染色体计数与DNA计数。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": {
+          "kind": "choose",
+          "prompt": "已知正常模型复制前有4条染色体、4个DNA。复制后尚未分离时，整个细胞DNA分子数为8。此时按着丝粒计，染色体条数是多少？",
+          "guidance": null,
+          "options": [
+            {
+              "id": "A",
+              "text": "4条"
+            },
+            {
+              "id": "B",
+              "text": "8条"
+            }
+          ],
+          "presented": false,
+          "response": null,
+          "respondedAt": null,
+          "correct": null,
+          "feedback": null,
+          "credit": "none"
+        }
+      },
+      {
+        "index": 3,
+        "purpose": "worked_example",
+        "explanation": "前面已区分复制与分配。现在看分配动作内部：姐妹染色单体分开并移向两极时，每条染色单体因拥有独立着丝粒而被计为一条染色体。因此，在复制后DNA已加倍的基础上，分离使整个细胞（若胞质未分）的染色体条数从4变为8，但DNA分子数不变，因为分配不复制DNA。要明确提问对象是全细胞、某一极还是两个子细胞合计，才能正确报数。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": {
+          "startingState": "正常模型细胞，复制前4条染色体各1 DNA。已发生DNA复制（未分离时4染色体8 DNA），继而姐妹染色单体分离且移向两极，但细胞质未分开。",
+          "inputs": [
+            "提问：若此刻立即进行细胞质分裂形成两个子细胞，两个子细胞合计的染色体条数是多少？"
+          ],
+          "ruleOrProcedure": "计数约定：按着丝粒计染色体；复制增加DNA份数不增染色体条数直到分离；分离后每条染色单体独立成染色体；胞质分裂不增加染色体总数只是分配到两个细胞。",
+          "steps": [
+            {
+              "action": "确认当前分离后、胞质未分开时点的全细胞染色体条数",
+              "reason": "分离使每条染色单体独立，原4条染色体各含2染色单体→共8条独立染色体，全细胞计8条",
+              "resultingState": "全细胞有8条染色体，DNA分子数仍为8（每染色体1 DNA）"
+            }
+          ],
+          "learnerDecision": null,
+          "result": null,
+          "whyResultFollows": null,
+          "origin": "hy3_synthesis",
+          "sources": [],
+          "interaction": {
+            "stage": "guided",
+            "modelledStepCount": 1,
+            "origin": "hy3_synthesis",
+            "sources": [],
+            "activity": {
+              "prompt": "给定上述细胞已分离且胞质未分开，全细胞8条染色体、8个DNA。若立即完成胞质分裂形成两个子细胞，两个子细胞合计的染色体条数是多少？",
+              "options": [
+                {
+                  "id": "A",
+                  "text": "8条"
+                },
+                {
+                  "id": "B",
+                  "text": "4条"
+                },
+                {
+                  "id": "C",
+                  "text": "16条"
+                }
+              ],
+              "response": null,
+              "respondedAt": null,
+              "correct": null,
+              "feedback": null,
+              "debrief": null,
+              "credit": "none",
+              "misconception": null
+            },
+            "hint": null,
+            "scaffold": null,
+            "transfer": null
+          }
+        },
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      }
+    ],
+    "sourceReferencesAvailable": true,
+    "visuals": [],
+    "summary": {
+      "available": true,
+      "text": "复制与分配是两个先后独立动作：复制令DNA份数加倍但按着丝粒染色体数不变，分配才将复制后的染色体均分至子细胞使每细胞遗传信息完整。",
+      "nextConnection": null,
+      "formalOpportunities": []
+    },
+    "plannedTime": {
+      "agendaMinutes": 19,
+      "activeMinutesMin": 22,
+      "activeMinutesMax": 33,
+      "basis": "locally_evaluated_learning_actions"
+    }
+  },
+  "progress": {
+    "stateVersion": 2,
+    "stateId": "lesson_execution_c758560b-2238-47e0-b5fb-d4f9d4c9e41d",
+    "currentSegmentIndex": 0,
+    "segmentCount": 4,
+    "presentedSegmentIndexes": [],
+    "presentationStatus": "not_started",
+    "presentationCompletedAt": null
+  },
+  "currentInformalCheck": null,
+  "practice": {
+    "status": "locked",
+    "currentItemIndex": 0,
+    "itemCount": 2,
+    "item": {
+      "index": 0,
+      "objectiveTitle": "解释分裂前DNA复制与随后染色体分配是两个不同动作",
+      "construct": "explain",
+      "surface": "initial",
+      "supplementary": true,
+      "prompt": "观察：某个细胞内有10个DNA分子，按着丝粒计为5条染色体。同一正常模型下（复制前体细胞含5条染色体，每条约1个DNA；计数规则按着丝粒，复制后姐妹染色单体共享一个着丝粒）。以下哪项最符该观察？",
+      "options": [
+        {
+          "id": "teaching_brief_17339aa3-2c7f-455a-8665-bf86a620d7e2_practice_1_initial_A",
+          "text": "该细胞处于复制后、姐妹染色单体未分开时：5条染色体、10个DNA分子"
+        },
+        {
+          "id": "teaching_brief_17339aa3-2c7f-455a-8665-bf86a620d7e2_practice_1_initial_B",
+          "text": "该细胞处于分离后、细胞质未分开时：10条染色体、10个DNA分子"
+        },
+        {
+          "id": "teaching_brief_17339aa3-2c7f-455a-8665-bf86a620d7e2_practice_1_initial_C",
+          "text": "该细胞为已完成分裂的子细胞：5条染色体、5个DNA分子"
+        }
+      ]
+    },
+    "attempts": [],
+    "recovery": null,
+    "completedAt": null,
+    "credit": "none"
+  },
+  "allowedActions": [
+    "start_lesson"
+  ]
+}

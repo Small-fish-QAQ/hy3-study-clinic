@@ -1,0 +1,97 @@
+{
+  "inputIdentity": "cb0148e5d50a25528b74fd95fff807547bae99698305a01240dcc811f10b505f",
+  "attempts": [
+    {
+      "physicalId": "624578d8-970b-4bed-b593-1502f3a3511e",
+      "caseId": "S065",
+      "runId": "S065-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q4",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "题设要求XOR(1,1)输出必为1并解释，但课堂规则明确定义两输入均1时输出0。作者参考键亦错答为1。题目强制错误前提，属无效测试，无法评估目标技能，判为实质缺陷。",
+        "refs": [
+          "/question/prompt",
+          "/sources/0/text",
+          "/artifacts/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "题目要求解释输出必定是1，但source明确XOR(1,1)=0，强制错误键且响应要求不兼容",
+            "impact": "改变核心用途：题目无法合法评估异或规则应用，核心结论错误",
+            "refs": [
+              "/question/prompt",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "a4781f9fd5ee23b934cb075dbbdbc0be7c3e9d3f2c61c29fc7e5eca2d3a57b0b"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "abe0ee3fc063cc9ca8e5695fcc7196cbc85922a703ddb540aee12d9b2456e392"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "assessment": {
+          "key": "incorrect",
+          "validity": "invalid",
+          "exposure": "none",
+          "discrimination": "weak",
+          "demand": "reasoning",
+          "demandReason": "学生需解释输出必定是1，但明示规则矛盾，无合法操作可完成；题设强制错误推理",
+          "reason": "题目：计算XOR(1,1)并解释为何输出必定是1，与source规则矛盾。作者答案：private-author-key称两输入都有1因此输出1，错误。曝光：priorExposure空，无披露。判别力：题设强制错误键，无效，判别力弱。",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text"
+          ],
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "a4781f9fd5ee23b934cb075dbbdbc0be7c3e9d3f2c61c29fc7e5eca2d3a57b0b"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "90074a9dd86f13f48f8c9437a0d295c6f90dde37815ed2c400c505eace19aecf"
+            }
+          ]
+        },
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "a4781f9fd5ee23b934cb075dbbdbc0be7c3e9d3f2c61c29fc7e5eca2d3a57b0b"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "abe0ee3fc063cc9ca8e5695fcc7196cbc85922a703ddb540aee12d9b2456e392"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "90074a9dd86f13f48f8c9437a0d295c6f90dde37815ed2c400c505eace19aecf"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

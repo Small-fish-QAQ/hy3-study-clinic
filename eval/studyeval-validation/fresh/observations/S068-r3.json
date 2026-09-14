@@ -1,0 +1,399 @@
+{
+  "task": {
+    "caseId": "S068",
+    "runId": "S068-r3",
+    "replicate": 3,
+    "path": "dataset/studyeval/S068.json",
+    "inputHash": "191c04c520221da72f63605288f849a786242801fa5e9efc6570120a623db0f2"
+  },
+  "inputHash": "191c04c520221da72f63605288f849a786242801fa5e9efc6570120a623db0f2",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "5ed36e50dbb30fda2f015d875989b15c29078978dc32df9bad7049ee56e35581",
+    "stages": {
+      "blind-solution": {
+        "status": "resolved",
+        "solution": "依据/sources/0/text中“激活只能把未激活变为有效”，抄出：激活操作允许的起点状态为“未激活”，终点状态为“有效”。",
+        "refs": [
+          "/sources/0/text",
+          "/question/prompt"
+        ],
+        "witnesses": [
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "694fcf138ee515172ab2dd1c3a0a59baef8e0ee6b25086ed04ce3845111041ea"
+          },
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "f2cd6c08b9d046cedf630b82184bd09b37a81beb527ef9e494a6f6b2afc6fc14"
+          }
+        ]
+      },
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q4",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "任务要求抄写激活起终点，作者键正确未披露，但仅检索不符working_fluency深度意图，判别力弱为局部缺陷。",
+            "refs": [
+              "/question/prompt",
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "问题仅要求从资料抄出状态，未要求执行或解释状态转换方法，而desiredDepth为working_fluency。",
+                "impact": "核心用途（抽测状态规则认知）成立，但未达到声明深度，判别力弱。",
+                "refs": [
+                  "/question/prompt",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/question/prompt",
+                    "valueHash": "f2cd6c08b9d046cedf630b82184bd09b37a81beb527ef9e494a6f6b2afc6fc14"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "694fcf138ee515172ab2dd1c3a0a59baef8e0ee6b25086ed04ce3845111041ea"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "assessment": {
+              "key": "correct",
+              "validity": "valid",
+              "exposure": "none",
+              "discrimination": "weak",
+              "demand": "retrieval",
+              "demandReason": "学生仅需从资料中抄写“激活只能把未激活变为有效”的起终点，无超出复述的操作。",
+              "reason": "题目抄状态；作者键“未激活到有效”正确；priorExposure空无曝光；仅检索不符working_fluency故判别弱。",
+              "refs": [
+                "/question/prompt",
+                "/artifacts/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/question/prompt",
+                  "valueHash": "f2cd6c08b9d046cedf630b82184bd09b37a81beb527ef9e494a6f6b2afc6fc14"
+                },
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "05fae2f96046c439a12189503a85befc635039e3ffe61cf823fdc83dced5bca5"
+                }
+              ]
+            },
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "f2cd6c08b9d046cedf630b82184bd09b37a81beb527ef9e494a6f6b2afc6fc14"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "05fae2f96046c439a12189503a85befc635039e3ffe61cf823fdc83dced5bca5"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "694fcf138ee515172ab2dd1c3a0a59baef8e0ee6b25086ed04ce3845111041ea"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q4",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "题干要求抄出激活起终点，属纯检索；作者密钥正确，无提前曝光，但desiredDepth为working_fluency却仅测复制，判别力弱，得1。",
+            "refs": [
+              "/question/prompt",
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "任务仅要求从资料抄写现成状态转换，未要求学生执行多步或解释方法",
+                "impact": "核心识别目标仍成立，但不符合working_fluency声明的深度，导致判别力不足",
+                "refs": [
+                  "/question/prompt"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/question/prompt",
+                    "valueHash": "f2cd6c08b9d046cedf630b82184bd09b37a81beb527ef9e494a6f6b2afc6fc14"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "assessment": {
+              "key": "correct",
+              "validity": "valid",
+              "exposure": "none",
+              "discrimination": "weak",
+              "demand": "retrieval",
+              "demandReason": "学生只需从/sources/0/text中抄出“激活只能把未激活变为有效”的起终点状态，无需选规则、计算新例或解释。",
+              "reason": "题目：抄出激活起点终点；作者答案：未激活到有效（正确）；曝光：priorExposure空且密钥私有；判别力弱因仅检索未达working_fluency。",
+              "refs": [
+                "/question/prompt",
+                "/artifacts/0/text",
+                "/sources/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/question/prompt",
+                  "valueHash": "f2cd6c08b9d046cedf630b82184bd09b37a81beb527ef9e494a6f6b2afc6fc14"
+                },
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "05fae2f96046c439a12189503a85befc635039e3ffe61cf823fdc83dced5bca5"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "694fcf138ee515172ab2dd1c3a0a59baef8e0ee6b25086ed04ce3845111041ea"
+                }
+              ]
+            },
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "f2cd6c08b9d046cedf630b82184bd09b37a81beb527ef9e494a6f6b2afc6fc14"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "05fae2f96046c439a12189503a85befc635039e3ffe61cf823fdc83dced5bca5"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "694fcf138ee515172ab2dd1c3a0a59baef8e0ee6b25086ed04ce3845111041ea"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "referenceRepairs": [
+          {
+            "location": "/dimensions/0/defects/0/refs",
+            "changes": [
+              {
+                "proposed": "/rubric/Q4",
+                "rejected": "Not an original evidence path."
+              }
+            ]
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q4",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "题目仅要求抄写激活起终点，作者键正确未披露，但desiredDepth为working_fluency却仅测检索，判别力弱为局部缺陷，核心用途成立。",
+            "refs": [
+              "/question/prompt",
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "任务仅要求从资料抄写现成状态转换，未要求学生执行多步或解释方法",
+                "impact": "核心识别目标仍成立，但不符合working_fluency声明的深度，导致判别力不足",
+                "refs": [
+                  "/question/prompt",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/question/prompt",
+                    "valueHash": "f2cd6c08b9d046cedf630b82184bd09b37a81beb527ef9e494a6f6b2afc6fc14"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "694fcf138ee515172ab2dd1c3a0a59baef8e0ee6b25086ed04ce3845111041ea"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "assessment": {
+              "key": "correct",
+              "validity": "valid",
+              "exposure": "none",
+              "discrimination": "weak",
+              "demand": "retrieval",
+              "demandReason": "学生只需从/sources/0/text中抄出“激活只能把未激活变为有效”的起终点状态，无需选规则、计算新例或解释。",
+              "reason": "题目抄状态；作者键“未激活到有效”正确；priorExposure空无曝光；仅检索不符working_fluency故判别弱。",
+              "refs": [
+                "/question/prompt",
+                "/artifacts/0/text",
+                "/sources/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/question/prompt",
+                  "valueHash": "f2cd6c08b9d046cedf630b82184bd09b37a81beb527ef9e494a6f6b2afc6fc14"
+                },
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "05fae2f96046c439a12189503a85befc635039e3ffe61cf823fdc83dced5bca5"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "694fcf138ee515172ab2dd1c3a0a59baef8e0ee6b25086ed04ce3845111041ea"
+                }
+              ]
+            },
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "f2cd6c08b9d046cedf630b82184bd09b37a81beb527ef9e494a6f6b2afc6fc14"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "05fae2f96046c439a12189503a85befc635039e3ffe61cf823fdc83dced5bca5"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "694fcf138ee515172ab2dd1c3a0a59baef8e0ee6b25086ed04ce3845111041ea"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q4:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/question/prompt",
+              "quote": "请从资料抄出“激活”操作允许的起点和终点状态。",
+              "valueHash": "f2cd6c08b9d046cedf630b82184bd09b37a81beb527ef9e494a6f6b2afc6fc14"
+            },
+            "reason": "题干明确要求抄出，仅检索；desiredDepth为working_fluency要求执行解释，故局部缺陷。"
+          },
+          {
+            "id": "review2:Q4:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/question/prompt",
+              "quote": "请从资料抄出“激活”操作允许的起点和终点状态。",
+              "valueHash": "f2cd6c08b9d046cedf630b82184bd09b37a81beb527ef9e494a6f6b2afc6fc14"
+            },
+            "reason": "抄写要求与working_fluency深度不匹配，局部弱点。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q4",
+          "level": 1,
+          "evidence": "sufficient",
+          "reason": "题目仅要求抄写激活起终点，作者键正确未披露，但desiredDepth为working_fluency却仅测检索，判别力弱为局部缺陷，核心用途成立。",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [
+            {
+              "severity": "local",
+              "description": "任务仅要求从资料抄写现成状态转换，未要求学生执行多步或解释方法",
+              "impact": "核心识别目标仍成立，但不符合working_fluency声明的深度，导致判别力不足",
+              "refs": [
+                "/question/prompt",
+                "/sources/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/question/prompt",
+                  "valueHash": "f2cd6c08b9d046cedf630b82184bd09b37a81beb527ef9e494a6f6b2afc6fc14"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "694fcf138ee515172ab2dd1c3a0a59baef8e0ee6b25086ed04ce3845111041ea"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "assessment": {
+            "key": "correct",
+            "validity": "valid",
+            "exposure": "none",
+            "discrimination": "weak",
+            "demand": "retrieval",
+            "demandReason": "学生只需从/sources/0/text中抄出“激活只能把未激活变为有效”的起终点状态，无需选规则、计算新例或解释。",
+            "reason": "题目抄状态；作者键“未激活到有效”正确；priorExposure空无曝光；仅检索不符working_fluency故判别弱。",
+            "refs": [
+              "/question/prompt",
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "f2cd6c08b9d046cedf630b82184bd09b37a81beb527ef9e494a6f6b2afc6fc14"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "05fae2f96046c439a12189503a85befc635039e3ffe61cf823fdc83dced5bca5"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "694fcf138ee515172ab2dd1c3a0a59baef8e0ee6b25086ed04ce3845111041ea"
+              }
+            ]
+          },
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "f2cd6c08b9d046cedf630b82184bd09b37a81beb527ef9e494a6f6b2afc6fc14"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "05fae2f96046c439a12189503a85befc635039e3ffe61cf823fdc83dced5bca5"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "694fcf138ee515172ab2dd1c3a0a59baef8e0ee6b25086ed04ce3845111041ea"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "4cb1874d7c7e44808578bcccd2d5382970464e446b1d175205dbca5d74a6da7d"
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "inputIdentity": "601bfecb431ae3f110d4879a14f49a3003a8d057fca3223fbb7f918c4295a731",
+  "attempts": [
+    {
+      "physicalId": "c5ff6dc1-552b-40da-8d20-551627bb11f0",
+      "caseId": "S082",
+      "runId": "S082-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q3",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "artifact用340×0.6得总路程204米，并基于同位置与往返路径说明除以2得墙距102米，正确链接前提、操作与结论，无缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "ac9fc467ca979b19de859556e08bdcb78514ce59e62499fb3b5250bd2b76088a"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "79185b54dfbddde1df8e87303862dd09dbc298fe4bf0af82dc4cd087114a46d8"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

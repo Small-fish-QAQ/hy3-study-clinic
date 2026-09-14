@@ -1,0 +1,27 @@
+{
+  "id": "S016",
+  "dimensions": [
+    "Q1"
+  ],
+  "evidence": {
+    "sources": [
+      {
+        "id": "premise",
+        "text": "这是明确虚构的课堂模型，设一个岛上有317位居民，每人恰持一张票。"
+      }
+    ],
+    "goals": [
+      "核对由假设推出的票数"
+    ],
+    "prerequisites": [],
+    "desiredDepth": "working_fluency",
+    "authorityBoundaries": [],
+    "artifacts": [
+      {
+        "id": "claim",
+        "text": "在这个假设模型里共有317张票。这不表示真实岛屿的人口已经被调查证实。"
+      }
+    ],
+    "exposure": []
+  }
+}

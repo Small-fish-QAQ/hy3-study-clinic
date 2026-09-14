@@ -1,0 +1,143 @@
+{
+  "task": {
+    "caseId": "S023",
+    "runId": "S023-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S023.json",
+    "inputHash": "bdee83b2172b4f2cfe7adf3e150c497ed63624b5ecd196f13f2b93d83fec106d"
+  },
+  "inputHash": "bdee83b2172b4f2cfe7adf3e150c497ed63624b5ecd196f13f2b93d83fec106d",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "014692f3601f8c401241de1601b6d3d46493f1304aba6ce2dcca12941917db5f",
+    "stages": {
+      "goal-mapping": {
+        "goals": [
+          {
+            "index": 0,
+            "importance": "essential",
+            "status": "usable",
+            "reason": "artifact拟定了课程方案，包含单元目标（按正文编号查脚注并解释补充信息）、活动（给含编号短文配对说明）和检查，保留了脚注阅读目标，且未要求交付实际课文（仅用练习短文非真实课文）。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/0"
+            ],
+            "quote": "单元目标：按正文编号查到对应脚注，并解释注释补充哪项信息。",
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "a3a1218d1df2c86d4597f8fe6c5392c6ea34cdea7a737f4c9895e66197b02fee"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "51ad373335c102698c4fc2a62905c1a64cf257a30a1c7efb5a0285ea61cae3ea"
+              }
+            ]
+          }
+        ]
+      },
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "课程方案设定按编号查脚注并解释补充信息的单元目标，设计配对活动与两次正确检查，保留脚注阅读目标且具操作深度，符合working_fluency要求。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/0"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "a3a1218d1df2c86d4597f8fe6c5392c6ea34cdea7a737f4c9895e66197b02fee"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "51ad373335c102698c4fc2a62905c1a64cf257a30a1c7efb5a0285ea61cae3ea"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "交付物为课程方案，明确单元目标为按编号查脚注并解释补充信息，活动与检查具体可操作，保留了脚注阅读目标且未交付实际课文，符合拟定方案的目标与深度要求。",
+            "refs": [
+              "/goals/0",
+              "/artifacts/0/text",
+              "/desiredDepth"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/goals/0",
+                "valueHash": "51ad373335c102698c4fc2a62905c1a64cf257a30a1c7efb5a0285ea61cae3ea"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "a3a1218d1df2c86d4597f8fe6c5392c6ea34cdea7a737f4c9895e66197b02fee"
+              },
+              {
+                "pointer": "/desiredDepth",
+                "valueHash": "ffc6fdfb6aedd605a4b7d1807dfd9cc571929860f9039a3db08c4bc8c2c7817b"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q2",
+          "level": 2,
+          "evidence": "sufficient",
+          "reason": "课程方案设定按编号查脚注并解释补充信息的单元目标，设计配对活动与两次正确检查，保留脚注阅读目标且具操作深度，符合working_fluency要求。",
+          "refs": [
+            "/artifacts/0/text",
+            "/goals/0"
+          ],
+          "defects": [],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "a3a1218d1df2c86d4597f8fe6c5392c6ea34cdea7a737f4c9895e66197b02fee"
+            },
+            {
+              "pointer": "/goals/0",
+              "valueHash": "51ad373335c102698c4fc2a62905c1a64cf257a30a1c7efb5a0285ea61cae3ea"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "7963dc5c0a7e832f1253c683a42712dfda61d5ae6e89a0c0d1296114e6576226"
+  }
+}

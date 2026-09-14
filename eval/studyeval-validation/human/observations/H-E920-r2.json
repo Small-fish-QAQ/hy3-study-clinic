@@ -1,0 +1,255 @@
+{
+  "task": {
+    "caseId": "E920",
+    "runId": "H-E920-r2",
+    "replicate": 2,
+    "path": "benchmark/cases/E920.json",
+    "inputHash": "1cab0ebc541b0976c5c908c3d469d391c15ea2d9e8a5605ad9a520b45bb66302",
+    "population": "controlled",
+    "sourceId": "F03"
+  },
+  "inputHash": "1cab0ebc541b0976c5c908c3d469d391c15ea2d9e8a5605ad9a520b45bb66302",
+  "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "910af83f45a59de616ef666aca8c8ec137227c37eba54e2a0ae0be2c433ce1df",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "支持材料建议重读来源、列条件并练新题，相关但泛化，未针对学生将自愿参与误作随机分组、忽略未测混杂的具体推理缺口，下一题无具体内容。符合Q6的1级局部缺陷。",
+            "refs": [
+              "/artifacts/1/text",
+              "/answer"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "支持文本仅泛化建议重读来源、列条件、练新题，未具体指出学生答案中‘自愿参加等于随机分组’及忽略未记录兴趣的混淆错误",
+                "impact": "核心诊断修复用途成立但不够精准，学生可能未针对性修正因果推论误区",
+                "refs": [
+                  "/artifacts/1/text",
+                  "/answer"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/1/text",
+                    "valueHash": "4d9b4818aa1491288de36d3cf785ec2e7804231387da4c6670f21598747cfc02"
+                  },
+                  {
+                    "pointer": "/answer",
+                    "valueHash": "7d6191d92d628a82e207484c2c7eb0e40705d9d13f6606a2290baa951d899e6f"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/1/text",
+                "valueHash": "4d9b4818aa1491288de36d3cf785ec2e7804231387da4c6670f21598747cfc02"
+              },
+              {
+                "pointer": "/answer",
+                "valueHash": "7d6191d92d628a82e207484c2c7eb0e40705d9d13f6606a2290baa951d899e6f"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "支持材料仅泛化建议重读来源、列条件并练新题，未具体指出学习者误将自愿等同随机分组的推理缺口，也未提供新题内容供核对，属相关但泛化，符合1分标准。",
+            "refs": [
+              "/artifacts/1/text",
+              "/answer",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "支持材料未诊断具体推理缺口（如自愿≠随机），仅泛化建议重读列条件；且建议新题无内容条件。",
+                "impact": "核心用途（提供修复）部分成立但缺具体性，不改变其作为相关辅助的存在，未教错方法。",
+                "refs": [
+                  "/artifacts/1/text",
+                  "/answer"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/1/text",
+                    "valueHash": "4d9b4818aa1491288de36d3cf785ec2e7804231387da4c6670f21598747cfc02"
+                  },
+                  {
+                    "pointer": "/answer",
+                    "valueHash": "7d6191d92d628a82e207484c2c7eb0e40705d9d13f6606a2290baa951d899e6f"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/1/text",
+                "valueHash": "4d9b4818aa1491288de36d3cf785ec2e7804231387da4c6670f21598747cfc02"
+              },
+              {
+                "pointer": "/answer",
+                "valueHash": "7d6191d92d628a82e207484c2c7eb0e40705d9d13f6606a2290baa951d899e6f"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "944a460c4eccfdbd61d456dc9fc3969b0ed10c585ea05e87ccfe3e9b93549680"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "support仅泛化建议重读来源、列条件、练新题，未具体指出学生将自愿等同随机及忽略未测混杂的推理缺口，相关但缺具体性，符合Q6的1级局部缺陷。",
+            "refs": [
+              "/artifacts/1/text",
+              "/answer"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "支持材料未诊断具体推理缺口（如自愿≠随机），仅泛化建议重读列条件并推荐无内容新题",
+                "impact": "核心修复用途部分成立但缺针对性，不改变其作为相关辅助的存在，未教错方法",
+                "refs": [
+                  "/artifacts/1/text",
+                  "/answer"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/1/text",
+                    "valueHash": "4d9b4818aa1491288de36d3cf785ec2e7804231387da4c6670f21598747cfc02"
+                  },
+                  {
+                    "pointer": "/answer",
+                    "valueHash": "7d6191d92d628a82e207484c2c7eb0e40705d9d13f6606a2290baa951d899e6f"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/1/text",
+                "valueHash": "4d9b4818aa1491288de36d3cf785ec2e7804231387da4c6670f21598747cfc02"
+              },
+              {
+                "pointer": "/answer",
+                "valueHash": "7d6191d92d628a82e207484c2c7eb0e40705d9d13f6606a2290baa951d899e6f"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q6:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/artifacts/1/text",
+              "quote": "先重新阅读来源里与这道题相关的规则，把题目条件列清，再检查结论。建议练一道同主题的新题，完成后核对条件。",
+              "valueHash": "4d9b4818aa1491288de36d3cf785ec2e7804231387da4c6670f21598747cfc02"
+            },
+            "reason": "引文显示support仅泛化步骤，未点出答案中自愿等于随机分组的错误，缺陷属实但属局部。"
+          },
+          {
+            "id": "review2:Q6:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/artifacts/1/text",
+              "quote": "先重新阅读来源里与这道题相关的规则，把题目条件列清，再检查结论。建议练一道同主题的新题，完成后核对条件。",
+              "valueHash": "4d9b4818aa1491288de36d3cf785ec2e7804231387da4c6670f21598747cfc02"
+            },
+            "reason": "同前，support无具体诊断与新题内容，指控成立且程度为local，未夸大。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q6",
+          "level": 1,
+          "evidence": "sufficient",
+          "reason": "support仅泛化建议重读来源、列条件、练新题，未具体指出学生将自愿等同随机及忽略未测混杂的推理缺口，相关但缺具体性，符合Q6的1级局部缺陷。",
+          "refs": [
+            "/artifacts/1/text",
+            "/answer"
+          ],
+          "defects": [
+            {
+              "severity": "local",
+              "description": "支持材料未诊断具体推理缺口（如自愿≠随机），仅泛化建议重读列条件并推荐无内容新题",
+              "impact": "核心修复用途部分成立但缺针对性，不改变其作为相关辅助的存在，未教错方法",
+              "refs": [
+                "/artifacts/1/text",
+                "/answer"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/1/text",
+                  "valueHash": "4d9b4818aa1491288de36d3cf785ec2e7804231387da4c6670f21598747cfc02"
+                },
+                {
+                  "pointer": "/answer",
+                  "valueHash": "7d6191d92d628a82e207484c2c7eb0e40705d9d13f6606a2290baa951d899e6f"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/1/text",
+              "valueHash": "4d9b4818aa1491288de36d3cf785ec2e7804231387da4c6670f21598747cfc02"
+            },
+            {
+              "pointer": "/answer",
+              "valueHash": "7d6191d92d628a82e207484c2c7eb0e40705d9d13f6606a2290baa951d899e6f"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "cf77306efa769cf02bc9f66cceb1783310261177a865e88c4d55a983f3e4585a"
+  }
+}

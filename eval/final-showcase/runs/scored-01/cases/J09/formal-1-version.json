@@ -1,0 +1,73 @@
+{
+  "id": "assessment_version_cc580cfd-9c64-4c3f-a13e-3daefff5ec4e",
+  "definitionId": "assessment_f3605691-a897-42b9-8724-e5ab60a22ccf",
+  "version": 1,
+  "predecessorId": null,
+  "status": "accepted",
+  "items": [
+    {
+      "id": "assessment_item_efcc2fb3-0800-4231-ac1e-cbcd3b25ff31",
+      "sourceQuestionId": "que_05c03303-4464-4d3e-a8cb-61d27b91a3cb",
+      "index": 0,
+      "targetLearningUnitId": "cun_3101aa4b-f653-419d-a822-47fe68a7cd9b",
+      "targetObjectiveId": "obj_58f897da-a539-474a-ac10-ba11caceae8d",
+      "representation": "recall",
+      "questionType": "short_answer",
+      "prompt": "温室中一株番茄苗，根毛完好，木质部通畅，叶片气孔开放，土壤湿润。请沿“土壤供水、根吸收、木质部运输、叶蒸发、气孔散失”的链条，解释这株植物体内水分从土壤到叶片散失的连贯机制：根毛如何增加表面积从土壤吸水，木质部中的导管等结构如何提供向上通路，叶片水分蒸发经气孔散失形成蒸腾，其拉力如何成为水向上运输的重要动力而非叶片主动泵出液态水。",
+      "rubric": [
+        {
+          "id": "criterion_5e2ed1ed-ae98-4411-bfa0-488b0d35c5e6",
+          "text": "描述根毛增加根与土壤接触的表面积，有利于从湿润土壤吸收水",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_a1ba8aa8"
+          ]
+        },
+        {
+          "id": "criterion_63658889-9d1c-4a50-bb73-7e80358069fa",
+          "text": "说明木质部中的导管等结构提供水分向上运输的通路",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_a1ba8aa8"
+          ]
+        },
+        {
+          "id": "criterion_199f9d6f-cf7b-4816-85a2-da9786ae718e",
+          "text": "说明叶片内水分蒸发经气孔散失形成蒸腾，蒸腾拉力是水向上运输的重要动力之一，且不是叶片把整滴液态水主动泵到空气中",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_a1ba8aa8"
+          ]
+        }
+      ],
+      "sourceBindings": [
+        {
+          "materialId": "mat_7be119da-11ce-4ae1-ba28-4744ee1a7207",
+          "materialRevisionId": "rev_25ec1cd0-a1fa-4f6f-948e-5814d4ce22bf",
+          "sourceBlockId": "blk_0_a1ba8aa8",
+          "quote": "陆生植物需要把根部吸收的水送到茎和叶。根毛增加根与土壤接触的表面积，有利于从湿润土壤吸收水和溶于水的无机盐。木质部中的导管等结构提供水分向上运输的通路。叶片内的水分蒸发后，水蒸气主要经气孔散失到空气中，这个过程叫蒸腾。蒸腾形成的拉力是水在木质部向上运输的重要动力之一，不是叶片把整滴液态水主动泵到空气中。",
+          "contentOrigin": "extracted_original",
+          "authoritative": true
+        }
+      ],
+      "formalEligible": true,
+      "policyReason": "FORMAL_ELIGIBLE"
+    }
+  ],
+  "sourceRevisionIds": [
+    "rev_25ec1cd0-a1fa-4f6f-948e-5814d4ce22bf"
+  ],
+  "createdAt": "2026-09-14T11:53:37.128Z",
+  "acceptedAt": "2026-09-14T11:53:37.129Z",
+  "authorityMode": "formal",
+  "progressionContext": {
+    "quizId": "qz_bb827e2a-b97c-4edf-a7f1-5230731ba5d0",
+    "contractVersionId": "contract_1ef70225-2ac3-412b-a977-31d2d858dcfb",
+    "curriculumVersionId": "curriculum_d12c53a0-0651-41db-9e54-c628d8289968",
+    "studyPlanVersionId": "study_plan_5e303ba3-2a8d-4f13-ae1a-67ca59653e4b",
+    "agendaId": "agenda_fd8361f2-f192-4d30-bfbf-d3624cadaa98",
+    "agendaItemId": "agenda_item_986f7824-2cf1-4fdf-af2c-50321a8d7976",
+    "assessmentKind": "formal_checkpoint",
+    "executionSourceManifestFingerprint": "manifest_1d0d0ebc"
+  }
+}

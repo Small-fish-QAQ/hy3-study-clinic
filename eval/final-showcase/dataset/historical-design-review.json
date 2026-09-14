@@ -1,0 +1,458 @@
+{
+  "reviewedAt": "2026-09-14T11:11:07.517Z",
+  "purpose": "Reviewer-facing product demonstration quality under intended normal-use conditions; identify a source distribution before authoring/freeze, not select showcase successes after scoring.",
+  "scope": "Seven available complete aggregate analyses from ten historical development attempts; missing analyses are disclosed and no outcomes are reconstructed or pooled into a product score.",
+  "runs": [
+    {
+      "name": "championship-development-01",
+      "completeAnalysisAvailable": false
+    },
+    {
+      "name": "championship-development-02",
+      "completeAnalysisAvailable": true,
+      "totals": {
+        "started": 20,
+        "prepared": 20,
+        "lessonReady": 18,
+        "teachingComplete": 17,
+        "formalAttempted": 16,
+        "generationReached": 16,
+        "candidateReturned": 15,
+        "admitted": 14,
+        "supportedEvidence": 2,
+        "responsiveEvidence": 14
+      }
+    },
+    {
+      "name": "championship-development-03",
+      "completeAnalysisAvailable": true,
+      "totals": {
+        "started": 20,
+        "prepared": 18,
+        "lessonReady": 18,
+        "teachingComplete": 18,
+        "formalAttempted": 18,
+        "generationReached": 17,
+        "candidateReturned": 17,
+        "admitted": 14,
+        "supportedEvidence": 0,
+        "responsiveEvidence": 14
+      }
+    },
+    {
+      "name": "championship-development-04",
+      "completeAnalysisAvailable": true,
+      "totals": {
+        "started": 20,
+        "prepared": 19,
+        "lessonReady": 19,
+        "teachingComplete": 19,
+        "formalAttempted": 19,
+        "generationReached": 18,
+        "candidateReturned": 18,
+        "admitted": 17,
+        "supportedEvidence": 1,
+        "responsiveEvidence": 16
+      }
+    },
+    {
+      "name": "championship-development-05",
+      "completeAnalysisAvailable": true,
+      "totals": {
+        "started": 20,
+        "prepared": 19,
+        "lessonReady": 19,
+        "teachingComplete": 19,
+        "formalAttempted": 19,
+        "generationReached": 19,
+        "candidateReturned": 18,
+        "admitted": 16,
+        "supportedEvidence": 1,
+        "responsiveEvidence": 16
+      }
+    },
+    {
+      "name": "championship-development-06",
+      "completeAnalysisAvailable": false
+    },
+    {
+      "name": "championship-development-07",
+      "completeAnalysisAvailable": true,
+      "totals": {
+        "started": 20,
+        "prepared": 20,
+        "lessonReady": 20,
+        "teachingComplete": 20,
+        "formalAttempted": 20,
+        "generationReached": 20,
+        "candidateReturned": 20,
+        "admitted": 15,
+        "supportedEvidence": 2,
+        "responsiveEvidence": 15
+      }
+    },
+    {
+      "name": "championship-development-08",
+      "completeAnalysisAvailable": true,
+      "totals": {
+        "started": 20,
+        "prepared": 20,
+        "lessonReady": 20,
+        "teachingComplete": 20,
+        "formalAttempted": 19,
+        "generationReached": 19,
+        "candidateReturned": 19,
+        "admitted": 11,
+        "supportedEvidence": 1,
+        "responsiveEvidence": 11
+      }
+    },
+    {
+      "name": "championship-development-09",
+      "completeAnalysisAvailable": false
+    },
+    {
+      "name": "championship-development-10",
+      "completeAnalysisAvailable": true,
+      "totals": {
+        "started": 20,
+        "prepared": 20,
+        "lessonReady": 20,
+        "teachingComplete": 20,
+        "formalAttempted": 20,
+        "generationReached": 19,
+        "candidateReturned": 19,
+        "admitted": 18,
+        "supportedEvidence": 1,
+        "responsiveEvidence": 18
+      }
+    }
+  ],
+  "courseStability": [
+    {
+      "id": "F01",
+      "title": "读懂一份书屋周报",
+      "runs": 7,
+      "teaching": 7,
+      "admission": 5,
+      "responsiveEvidence": 5
+    },
+    {
+      "id": "F02",
+      "title": "折扣前后，谁是比较基数",
+      "runs": 7,
+      "teaching": 7,
+      "admission": 7,
+      "responsiveEvidence": 7
+    },
+    {
+      "id": "F03",
+      "title": "早餐调查能说明什么",
+      "runs": 7,
+      "teaching": 6,
+      "admission": 6,
+      "responsiveEvidence": 6
+    },
+    {
+      "id": "F04",
+      "title": "看懂一张没有画出的柱形图",
+      "runs": 7,
+      "teaching": 7,
+      "admission": 6,
+      "responsiveEvidence": 6
+    },
+    {
+      "id": "F05",
+      "title": "两种尺子与读数的可信范围",
+      "runs": 7,
+      "teaching": 6,
+      "admission": 5,
+      "responsiveEvidence": 5
+    },
+    {
+      "id": "F06",
+      "title": "平均等待时间与典型体验",
+      "runs": 7,
+      "teaching": 7,
+      "admission": 7,
+      "responsiveEvidence": 7
+    },
+    {
+      "id": "F07",
+      "title": "种子对照实验的条件",
+      "runs": 7,
+      "teaching": 7,
+      "admission": 6,
+      "responsiveEvidence": 6
+    },
+    {
+      "id": "F08",
+      "title": "印章卡片的逻辑",
+      "runs": 7,
+      "teaching": 7,
+      "admission": 7,
+      "responsiveEvidence": 7
+    },
+    {
+      "id": "F09",
+      "title": "轮流做家务的工作量",
+      "runs": 7,
+      "teaching": 7,
+      "admission": 7,
+      "responsiveEvidence": 7
+    },
+    {
+      "id": "F10",
+      "title": "先晾干再装袋的工序",
+      "runs": 7,
+      "teaching": 5,
+      "admission": 3,
+      "responsiveEvidence": 3
+    },
+    {
+      "id": "F11",
+      "title": "一条配比线与两条配比线",
+      "runs": 7,
+      "teaching": 7,
+      "admission": 5,
+      "responsiveEvidence": 5
+    },
+    {
+      "id": "F12",
+      "title": "一次检测，两种整体",
+      "runs": 7,
+      "teaching": 6,
+      "admission": 6,
+      "responsiveEvidence": 6
+    },
+    {
+      "id": "E01",
+      "title": "OpenStax：相同温度为什么触感不同",
+      "runs": 7,
+      "teaching": 6,
+      "admission": 4,
+      "responsiveEvidence": 3
+    },
+    {
+      "id": "E02",
+      "title": "OpenStax：生态系统中的能量来源",
+      "runs": 7,
+      "teaching": 7,
+      "admission": 2,
+      "responsiveEvidence": 2
+    },
+    {
+      "id": "E03",
+      "title": "OpenStax：平均数、中位数与众数",
+      "runs": 7,
+      "teaching": 7,
+      "admission": 3,
+      "responsiveEvidence": 3
+    },
+    {
+      "id": "E04",
+      "title": "OpenStax：意义、图像与声音的记忆编码",
+      "runs": 7,
+      "teaching": 7,
+      "admission": 5,
+      "responsiveEvidence": 5
+    },
+    {
+      "id": "B-F01",
+      "title": "读懂一份书屋周报",
+      "runs": 7,
+      "teaching": 6,
+      "admission": 6,
+      "responsiveEvidence": 6
+    },
+    {
+      "id": "B-F05",
+      "title": "两种尺子与读数的可信范围",
+      "runs": 7,
+      "teaching": 7,
+      "admission": 6,
+      "responsiveEvidence": 6
+    },
+    {
+      "id": "B-F09",
+      "title": "轮流做家务的工作量",
+      "runs": 7,
+      "teaching": 7,
+      "admission": 7,
+      "responsiveEvidence": 7
+    },
+    {
+      "id": "B-E01",
+      "title": "OpenStax：相同温度为什么触感不同",
+      "runs": 7,
+      "teaching": 7,
+      "admission": 2,
+      "responsiveEvidence": 2
+    }
+  ],
+  "materialReview": [
+    {
+      "id": "F02",
+      "title": "折扣前后，谁是比较基数",
+      "characters": 804,
+      "goals": [
+        "识别百分比所用基数",
+        "计算连续价格变动",
+        "区分百分点变化与相对变化并说明适用边界"
+      ],
+      "fileSha256": "4a7d7c0b181cd3377a981a8b00174c37dcc9620a759243827d40fadae1aa90ff",
+      "lastRunContentAudit": {
+        "classification": "路线成功；原答案给一般公式但未完成当前具体价格计算",
+        "failureCategory": "none",
+        "semanticSound": true,
+        "responsiveSound": true,
+        "originalJudgmentSound": true,
+        "reason": "500元先降20%得400，再以当前400涨20%得480；减少100而增加80，基数不同；比例无量纲与货币金额不同。响应完成三问，原答案只有原价×0.96等一般说明，未给400/480和实际两基数。",
+        "questionQuality": "明确任务要求量纲区分，因而不是额外隐藏判据；属于连续比例的基础近迁移。",
+        "controls": "不足答案未获支持；原答案重放相同、零新增调用、无表变化。"
+      }
+    },
+    {
+      "id": "F04",
+      "title": "看懂一张没有画出的柱形图",
+      "characters": 810,
+      "goals": [
+        "根据原始数值比较绝对量和比例",
+        "识别纵轴截断与分母差异",
+        "给出有范围限制的数据结论"
+      ],
+      "fileSha256": "d14a1734b5511d78331b4af60eb2d2abba492f17a68a901bdc0214f1a6f6d77e",
+      "lastRunContentAudit": {
+        "classification": "路线成功；原登记答案使用旧点位和旧数值",
+        "failureCategory": "none",
+        "semanticSound": true,
+        "responsiveSound": true,
+        "originalJudgmentSound": true,
+        "reason": "丙20/50=40%，丁56/80=70%，丁件数与比例均更高；合计76/130=38/65≈58.46%，不同于简单平均55%。响应完整计算并保留分母等特定条件。原答案仍是甲80/100、乙36/40和116/140。",
+        "questionQuality": "基础加权比例近迁移，两个比较本题同向，未考查件数与比例排序相反的更难情况。教学中较强的分母措辞已另记spot-check；实际题目两比例不同，计算结论成立。",
+        "controls": "不足答案未获支持；原答案重放相同、零新增调用、无表变化。"
+      }
+    },
+    {
+      "id": "F06",
+      "title": "平均等待时间与典型体验",
+      "characters": 816,
+      "goals": [
+        "正确计算平均数和中位数",
+        "解释异常大值对两种指标的不同影响",
+        "根据问题选择指标并避免从单个指标推断全部分布"
+      ],
+      "fileSha256": "fb1f28d889d314deaebf5ba7730dde71b9cceddb780d63ac168c4bb51b07453f",
+      "lastRunContentAudit": {
+        "classification": "路线成功；原答案未计算当前两组等待时间",
+        "failureCategory": "none",
+        "semanticSound": true,
+        "responsiveSound": true,
+        "originalJudgmentSound": true,
+        "reason": "4条均6分与6条均9分，合并(24+54)/10=7.8分，不是简单平均7.5分。响应正确计算并说明不同记录数的权重；原答案是旧1/2/2/3/12均值中位数实例。",
+        "questionQuality": "基本加权平均；按记录条数计算，未声称已知道去重人数或未来等待时间。",
+        "controls": "不足答案未获支持；原答案重放相同、零新增调用、无表变化。"
+      }
+    },
+    {
+      "id": "F08",
+      "title": "印章卡片的逻辑",
+      "characters": 768,
+      "goals": [
+        "区分充分条件与必要条件",
+        "构造反例检验逆向推断",
+        "依据双向规则或单向规则做有边界的判断"
+      ],
+      "fileSha256": "8bc811e074e8b0c5526dd976e750a116026f8a770d4c1254a01f394e858c32ed",
+      "lastRunContentAudit": {
+        "classification": "路线成功；原答案没有列齐题目要求的三种相容组合",
+        "failureCategory": "none",
+        "semanticSound": true,
+        "responsiveSound": true,
+        "originalJudgmentSound": true,
+        "reason": "题目询问规则的逻辑角色和全部未禁止组合：星形足以蓝色、蓝色为星形必要条件，禁止星形非蓝色，其余三组合允许。响应列齐；原答案正确说明逆推和存在性边界，但未列齐三组合，第三项partial合理。",
+        "questionQuality": "这里“不是双向等价”解释的是单向规则不蕴含逆命题，关键判据明确写“不必然”，未要求断言本批实际存在非星形蓝卡。相较先前非必要条件断言，该实际题目可成立；仍应保留不蕴含与实际为假的区别。基本规则复述，不是强迁移证据。",
+        "controls": "不足答案未获支持；原答案重放相同、零新增调用、无表变化。"
+      }
+    },
+    {
+      "id": "F09",
+      "title": "轮流做家务的工作量",
+      "characters": 803,
+      "goals": [
+        "区分工作速度与完成时间",
+        "在明确独立可加假设下计算合作用时",
+        "条件改变时检验效率相加是否仍成立"
+      ],
+      "fileSha256": "a7a1c7dfc5af01fee55524aa4c4487e08bc96a2e1cda2d0ae9c5409d8d70e095",
+      "lastRunContentAudit": {
+        "classification": "路线成功；独立响应附加了不成立的合作时间断言",
+        "failureCategory": "none",
+        "semanticSound": true,
+        "responsiveSound": false,
+        "originalJudgmentSound": true,
+        "reason": "题目明确分别要求评价时间相加/平均算法与区分时间和速度。参考答案说明须按合作条件先转成速度，两个小时数做算术并未构成合作模型，这一主线可成立。实际响应在可分工、无重复、无开销条件下算得10/3小时正确，却又在讨论不同假设时声称“绝不应直接等于15或7.5”“合作不会更慢的基本事实”，并随即承认某种串行平分可为7.5，自相矛盾且忽略等待等条件。评分仍给全部met并授信，是响应附加断言审核漏检。",
+        "questionQuality": "参考答案中量纲提醒只是题面另问的概念区别，不能用它解释两个同为小时的时长为何不能作为合作时间相加。实际题目不要求无条件唯一合作数值；原答案是旧1/8、1/4与剩余3/4计算，没有评价当前算法，拒绝合理。",
+        "controls": "不足答案未获支持；原答案重放相同、零新增调用、无表变化。"
+      }
+    },
+    {
+      "id": "F11",
+      "title": "一条配比线与两条配比线",
+      "characters": 761,
+      "goals": [
+        "把文字配比条件写成线性约束",
+        "区分唯一解、多解与矛盾条件",
+        "检验新增条件是独立信息还是原条件重复"
+      ],
+      "fileSha256": "6538c24c3c9995401211d9415ddf22c28d794050039a72588a6956ed32a1f1ac",
+      "lastRunContentAudit": {
+        "classification": "产品语义审核误判来源矛盾，出题前停止",
+        "failureCategory": "product_design",
+        "semanticSound": null,
+        "responsiveSound": null,
+        "originalJudgmentSound": null,
+        "reason": "实际目标为文字建模并遵守题设变量域。22条完整来源均已提供，审核也确认第2/3/4及19/3/4条形成充分过程支持，却把第18条“回到现实约定检验候选是否可用”误读为允许从生活习惯补条件，标为contradicts_claim，导致整体fail。上下文明确现实约定指题设中的非负实数/整张域，与不擅自补条件不矛盾。不是缺来源、不是课程本来不可评估，也不是网络或解析失败。",
+        "firstMeaningfulFailure": "formal_provider / objective_authority_semantic_support_invalid，2026-09-13T17:56:34.902Z；尚未进入Formal题目生成。",
+        "questionQuality": "本地没有安全的确定性依据自动推翻语义contradicts标签；有充分支持组也不能普遍覆盖真实矛盾。保留本次误拒为模型审核局限，不重试投票改判或补记成功。"
+      }
+    },
+    {
+      "id": "E03",
+      "title": "OpenStax：平均数、中位数与众数",
+      "characters": 1855,
+      "goals": [
+        "用中文解释平均数、中位数与众数回答的不同问题",
+        "说明存在极端值时中位数与平均数的不同表现",
+        "保留奇偶样本量、最高频数并列与定性数据众数的条件"
+      ],
+      "fileSha256": "a7b80b010349096c23e9dedc5a1cf7bf0cf34b23cba650b15fc0b6dc7898eaac",
+      "lastRunContentAudit": {
+        "classification": "路线成功；原登记答案给出通则但未对应本题数据",
+        "failureCategory": "none",
+        "semanticSound": true,
+        "responsiveSound": true,
+        "originalJudgmentSound": true,
+        "reason": "当前10/12/12/15/20的总和69、均值13.8、中位数12、众数12正确。响应说明总和/样本量、有序中间位置和最高频次三种含义及本数据上的对应。原答案准确列一般通则，却未指出当前5个观测、中间位置或12的最高频次；三项partial可以解释为尚未完成题面要求的当前数据对应。",
+        "questionQuality": "定义解释与基础数据应用；不应把参考答案出现13.8误作所有有效解释都必须逐字或逐数复述的额外规则。首节教学对有序类别中位数及选项众数的错误另记教学抽查，不能由本题成功反推教学内容都正确。",
+        "controls": "不足答案未获支持；原答案重放相同、零新增调用、无表变化。"
+      }
+    }
+  ],
+  "inputHashes": {
+    "product-championship-2026-09-13/analysis/championship-development-02/results.json": "91429a5631671524665143e6e2efb409efdfa99cb968672f3d2141181946385b",
+    "product-championship-2026-09-13/analysis/championship-development-03/results.json": "4b665d727f1c5ec699def5b2115fbf5d4081b0514d614b9691ed3b85466d24d5",
+    "product-championship-2026-09-13/analysis/championship-development-04/results.json": "a63565956f8906152cd953e985b85c7a191b12f0ca37ad504067bcede1896cf8",
+    "product-championship-2026-09-13/analysis/championship-development-05/results.json": "28990e76de55c836347cf3480ad9cde83f007db5ec3a63c590a7ab5a3095125b",
+    "product-championship-2026-09-13/analysis/championship-development-07/results.json": "cec244562b4878fbe316f8b1cf421eea742eb37216bcef1baa25c06fc6486e4e",
+    "product-championship-2026-09-13/analysis/championship-development-08/results.json": "678a78e4b4e63d6bec280d6757a27c3e10776495facf30e04211accd79e84b12",
+    "product-championship-2026-09-13/analysis/championship-development-10/results.json": "49c5287c96974c53a355c715be61fe4490daec6b100f25c57817add73628ad96"
+  },
+  "conclusions": [
+    "F02/F06/F08/F09 and basic F09 reached teaching/admission/responsive evidence in all seven complete historical analyses. F04 did so in six; all seven had teaching.",
+    "F02/F04/F06/F08 successful actual Formal responses in run 10 were reviewed as substantively sound. F09 had an incorrect added assertion despite delivery success; it informs material structure, not semantic certification.",
+    "E03 has useful complete explanations but only 3/7 admissions; it is not a stability leader. Its last successful task illustrates elementary explanation/application, not strong transfer.",
+    "The strongest original Chinese notes are roughly 768-816 characters, with three goals, explicit assumptions, definitions, worked calculations and interpretation. Showcase notes use comparable density with room for complete examples.",
+    "Candidate 23 improves representation-safe comparisons, actual visibility context, semantic-equivalence review and bounded support classification while retaining deterministic evidence authority. No course-specific code or special learner treatment is used."
+  ]
+}

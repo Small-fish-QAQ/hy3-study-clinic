@@ -1,0 +1,93 @@
+{
+  "inputIdentity": "5affd3bd70aeda4f48871402ed660a6be7d7c38cac2e7797761d5d1248c5774a",
+  "attempts": [
+    {
+      "physicalId": "0eb171c2-65ca-4982-bb1c-bc384dadeccf",
+      "caseId": "E920",
+      "runId": "H-E920-r2",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q6",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "support仅泛化建议重读来源、列条件、练新题，未具体指出学生将自愿等同随机及忽略未测混杂的推理缺口，相关但缺具体性，符合Q6的1级局部缺陷。",
+        "refs": [
+          "/artifacts/1/text",
+          "/answer"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "支持材料未诊断具体推理缺口（如自愿≠随机），仅泛化建议重读列条件并推荐无内容新题",
+            "impact": "核心修复用途部分成立但缺针对性，不改变其作为相关辅助的存在，未教错方法",
+            "refs": [
+              "/artifacts/1/text",
+              "/answer"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/1/text",
+                "valueHash": "4d9b4818aa1491288de36d3cf785ec2e7804231387da4c6670f21598747cfc02"
+              },
+              {
+                "pointer": "/answer",
+                "valueHash": "7d6191d92d628a82e207484c2c7eb0e40705d9d13f6606a2290baa951d899e6f"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/1/text",
+            "valueHash": "4d9b4818aa1491288de36d3cf785ec2e7804231387da4c6670f21598747cfc02"
+          },
+          {
+            "pointer": "/answer",
+            "valueHash": "7d6191d92d628a82e207484c2c7eb0e40705d9d13f6606a2290baa951d899e6f"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q6:1",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/artifacts/1/text",
+          "quote": "先重新阅读来源里与这道题相关的规则，把题目条件列清，再检查结论。建议练一道同主题的新题，完成后核对条件。",
+          "valueHash": "4d9b4818aa1491288de36d3cf785ec2e7804231387da4c6670f21598747cfc02"
+        },
+        "reason": "引文显示support仅泛化步骤，未点出答案中自愿等于随机分组的错误，缺陷属实但属局部。"
+      },
+      {
+        "id": "review2:Q6:1",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/artifacts/1/text",
+          "quote": "先重新阅读来源里与这道题相关的规则，把题目条件列清，再检查结论。建议练一道同主题的新题，完成后核对条件。",
+          "valueHash": "4d9b4818aa1491288de36d3cf785ec2e7804231387da4c6670f21598747cfc02"
+        },
+        "reason": "同前，support无具体诊断与新题内容，指控成立且程度为local，未夸大。"
+      }
+    ]
+  }
+}

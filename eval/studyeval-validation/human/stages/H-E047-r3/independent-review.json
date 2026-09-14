@@ -1,0 +1,49 @@
+{
+  "inputIdentity": "5e52df90ee1d139f1b95d3e16399b08369c474826f56f739d6afc3fae75772a1",
+  "attempts": [
+    {
+      "physicalId": "79ad09e5-0acb-4747-84c1-6221adea46f5",
+      "caseId": "E047",
+      "runId": "H-E047-r3",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "教学总结的主张、数字与范围均直接由来源周报支持：30人次、10卡中8支持、不可外推不同居民或全体读者、长期未决定、可省略分人次但保留试行与范围，无事实或归属缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "2e571e3058700991121d7236da0f92ba22b0a611fa21687090c6e99237327e08"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

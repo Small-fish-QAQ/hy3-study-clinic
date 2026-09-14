@@ -1,0 +1,230 @@
+{
+  "task": {
+    "caseId": "S101",
+    "runId": "S101-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S101.json",
+    "inputHash": "839d22b84636d481cafdb0545aa7cc2bf7435665147cd4231446419db7e816ad"
+  },
+  "inputHash": "839d22b84636d481cafdb0545aa7cc2bf7435665147cd4231446419db7e816ad",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "91872819f8d9be42dff959f91f2fee2e5f4d8171c98acf8199968763aac48d34",
+    "stages": {
+      "blind-solution": {
+        "status": "resolved",
+        "solution": "不能唯一确定红球数。据/sources/0/text：总数8，红蓝均≥1，设红球r为整数则1≤r≤7，蓝球8-r。例：r=1,b=7；r=3,b=5。两组合均满足条件，证明非唯一。",
+        "refs": [
+          "/question/prompt",
+          "/sources/0/text"
+        ],
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "6e35222514b3678631b97b82b69f390399f2baee79053ec5cc0cb9980929c813"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "5aad739453ecf71bb67b8231d512e4501272c0e19922e6b7b60be43255633d24"
+          }
+        ]
+      },
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q4",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "题目有效要求展示欠定并举两组合，作者答案正确，无泄露，学生需依约束自构实例并说明，属应用，判别力足。",
+            "refs": [
+              "/question/prompt",
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "assessment": {
+              "key": "correct",
+              "validity": "valid",
+              "exposure": "none",
+              "discrimination": "adequate",
+              "demand": "application",
+              "demandReason": "学生须据总数8且两色≥1约束自选两红球数算蓝球并说明满足，非抄现成数据。",
+              "reason": "题干问能否唯一确定并给两组合说明；私钥与盲解均正确给否及红1蓝7、红3蓝5；priorExposure空无泄露；需自构非检索。",
+              "refs": [
+                "/question/prompt",
+                "/artifacts/0/text",
+                "/sources/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/question/prompt",
+                  "valueHash": "6e35222514b3678631b97b82b69f390399f2baee79053ec5cc0cb9980929c813"
+                },
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "300bb8d47cf5a3d8750d362cf2c3cf371d263c743739d948dbfdd78ca7b6aea4"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "5aad739453ecf71bb67b8231d512e4501272c0e19922e6b7b60be43255633d24"
+                }
+              ]
+            },
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "6e35222514b3678631b97b82b69f390399f2baee79053ec5cc0cb9980929c813"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "300bb8d47cf5a3d8750d362cf2c3cf371d263c743739d948dbfdd78ca7b6aea4"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "5aad739453ecf71bb67b8231d512e4501272c0e19922e6b7b60be43255633d24"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q4",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "题目问能否唯一确定并要求举两组合说明，盲解与artifact均正确，无提前曝光，促使学习者应用约束构造实例并解释，符合working_fluency深度，判别力足够。",
+            "refs": [
+              "/question/prompt",
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "assessment": {
+              "key": "correct",
+              "validity": "valid",
+              "exposure": "none",
+              "discrimination": "adequate",
+              "demand": "application",
+              "demandReason": "学生必须根据总数8和两色均≥1的约束，自行选取两个不同红球数计算蓝球并解释满足前提，资料未提供具体组合故非抄写。",
+              "reason": "题干有效询问欠定并需举例；作者答案与盲解均正确否定并给实例；priorExposure空无泄题；构造实例并解释满足约束属应用层级，能区分理解与否。",
+              "refs": [
+                "/question/prompt",
+                "/artifacts/0/text",
+                "/sources/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/question/prompt",
+                  "valueHash": "6e35222514b3678631b97b82b69f390399f2baee79053ec5cc0cb9980929c813"
+                },
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "300bb8d47cf5a3d8750d362cf2c3cf371d263c743739d948dbfdd78ca7b6aea4"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "5aad739453ecf71bb67b8231d512e4501272c0e19922e6b7b60be43255633d24"
+                }
+              ]
+            },
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "6e35222514b3678631b97b82b69f390399f2baee79053ec5cc0cb9980929c813"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "300bb8d47cf5a3d8750d362cf2c3cf371d263c743739d948dbfdd78ca7b6aea4"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "5aad739453ecf71bb67b8231d512e4501272c0e19922e6b7b60be43255633d24"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q4",
+          "level": 2,
+          "evidence": "sufficient",
+          "reason": "题目有效要求展示欠定并举两组合，作者答案正确，无泄露，学生需依约束自构实例并说明，属应用，判别力足。",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [],
+          "missing": [],
+          "assessment": {
+            "key": "correct",
+            "validity": "valid",
+            "exposure": "none",
+            "discrimination": "adequate",
+            "demand": "application",
+            "demandReason": "学生须据总数8且两色≥1约束自选两红球数算蓝球并说明满足，非抄现成数据。",
+            "reason": "题干问能否唯一确定并给两组合说明；私钥与盲解均正确给否及红1蓝7、红3蓝5；priorExposure空无泄露；需自构非检索。",
+            "refs": [
+              "/question/prompt",
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "6e35222514b3678631b97b82b69f390399f2baee79053ec5cc0cb9980929c813"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "300bb8d47cf5a3d8750d362cf2c3cf371d263c743739d948dbfdd78ca7b6aea4"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "5aad739453ecf71bb67b8231d512e4501272c0e19922e6b7b60be43255633d24"
+              }
+            ]
+          },
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "6e35222514b3678631b97b82b69f390399f2baee79053ec5cc0cb9980929c813"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "300bb8d47cf5a3d8750d362cf2c3cf371d263c743739d948dbfdd78ca7b6aea4"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "5aad739453ecf71bb67b8231d512e4501272c0e19922e6b7b60be43255633d24"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "87748826d3f036591d6ca5c31fcb546391c56acf892cbdfa20f001e5d35b683d"
+  }
+}

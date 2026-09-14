@@ -1,0 +1,69 @@
+{
+  "inputIdentity": "e3a12dd579c3e3ded8e14a3deabc8fdce65e262ea3a6e885139ee45d1277f27c",
+  "attempts": [
+    {
+      "physicalId": "b9157070-e027-40bc-8f71-48a7555ea37b",
+      "caseId": "S033",
+      "runId": "S033-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q3",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "lesson断言B齿多三倍故A转一圈B转三圈且同向，但source明示A12齿B36齿时B转1/3圈且反向。该解释传授错误转速比例与转向因果，直接破坏齿数决定转数和方向的核心教学目标。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "lesson错误声称A转一圈B转三圈且两轮同方向转，违背啮合齿轮齿数反比与反向规则",
+            "impact": "教授无效数学关系与错误方向机制，使学习者建立相反因果，核心解释用途实质失效",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "f2ffbb0a81a36816805d82af8f8224a5604ec8e494677ec469aa6054103f5701"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "f2ffbb0a81a36816805d82af8f8224a5604ec8e494677ec469aa6054103f5701"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

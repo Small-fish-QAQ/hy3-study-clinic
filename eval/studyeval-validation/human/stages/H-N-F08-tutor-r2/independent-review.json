@@ -1,0 +1,96 @@
+{
+  "inputIdentity": "0d20507e8df181dcdd9b54b7d43709c3446b300f290a53183ac149ef569a5581",
+  "attempts": [
+    {
+      "physicalId": "a5db4573-6d1f-46f6-9f98-17131063f57d",
+      "caseId": "N-F08-tutor",
+      "runId": "H-N-F08-tutor-r2",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "核心逻辑（星形→蓝、逆否成立、反向不成立）及考试奖章类比均获资料支持，但产物称资料为《印章卡片的逻辑》，而源文本无此标题，属局部归属不实，不改核心用途，评1。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "Artifact attributes the source to a course material titled 《印章卡片的逻辑》, but provided source F08 text has no such title.",
+            "impact": "Correcting the title does not change the core logical mechanism explained; rule direction and examples remain supported by source.",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "d95e4892d1c0484b032189c23a6497f13e1c86cf1cfda09729d923a3a8615fa9"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "132c532360b4bc6ac5b2aa8886b4b3bf89c500f85d4e1be08595f9a669823289"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "d95e4892d1c0484b032189c23a6497f13e1c86cf1cfda09729d923a3a8615fa9"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "132c532360b4bc6ac5b2aa8886b4b3bf89c500f85d4e1be08595f9a669823289"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      },
+      {
+        "dimension": "Q3",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "产物以满分得奖章为例，展示单向充分、逆否可推、反向反例不成立，并说明不补当且仅当等边界，关键连接与限制清晰，无缺陷，评2。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "d95e4892d1c0484b032189c23a6497f13e1c86cf1cfda09729d923a3a8615fa9"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "132c532360b4bc6ac5b2aa8886b4b3bf89c500f85d4e1be08595f9a669823289"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

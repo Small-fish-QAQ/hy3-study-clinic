@@ -1,0 +1,88 @@
+{
+  "inputIdentity": "28fdf222840150d796eab58c129f5ed9f52c6d85019941e9f23096fd20b93996",
+  "attempts": [
+    {
+      "physicalId": "a4a25eac-cfa7-4dff-8587-768c9c09e27c",
+      "caseId": "E366",
+      "runId": "H-E366-r3",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q3",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "产物正确给出两人12分、一人15分及条件，但仅列时间表与总时长，未展示关键操作连接（如并行取max(4,3)=4、单人前两步相加），学习者需自推运算。无错误机制，核心用途成立，故为local缺陷，非2非0。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "未展示从题设时长与依赖到结果时刻的推导操作：两人场景未说明盖章开始由裁纸与调墨完成时刻最大值决定及后续+2+5+1；一人场景未展示4+3+2+5+1=15。",
+            "impact": "结论正确且条件提及，但缺失关键运算连接，学习者需自行发明操作，不破坏核心答案但降低解释充分性，未达goals讲清步骤。",
+            "refs": [
+              "/artifacts/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "c7ff6a9c213d042e991ce0cb292305417dc1e88aa2002451772e47e4e0b76944"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "c7ff6a9c213d042e991ce0cb292305417dc1e88aa2002451772e47e4e0b76944"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q3:1",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "两人且工具互不冲突时，裁纸4分钟、调墨3分钟从0并行，盖章4到6，晾干到11，装袋到12。只有一人且前两步全程占人，则15分钟。",
+          "valueHash": "c7ff6a9c213d042e991ce0cb292305417dc1e88aa2002451772e47e4e0b76944"
+        },
+        "reason": "引文直接列出结果时刻与总时长，未出现max或累加等推导操作，证实缺失关键连接，但结论正确故local。"
+      },
+      {
+        "id": "review2:Q3:1",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "两人且工具互不冲突时，裁纸4分钟、调墨3分钟从0并行，盖章4到6，晾干到11，装袋到12。只有一人且前两步全程占人，则15分钟。",
+          "valueHash": "c7ff6a9c213d042e991ce0cb292305417dc1e88aa2002451772e47e4e0b76944"
+        },
+        "reason": "同上，artifact未展示并行取晚者及串行相加的操作骨架，缺陷属实且仅为局部。"
+      }
+    ]
+  }
+}

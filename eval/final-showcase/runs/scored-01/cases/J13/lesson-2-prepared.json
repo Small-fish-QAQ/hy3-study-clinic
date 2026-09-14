@@ -1,0 +1,184 @@
+{
+  "status": "ready",
+  "message": "Lesson is ready.",
+  "course": {
+    "title": "溶解度、饱和与冷却析出"
+  },
+  "session": {
+    "status": "active",
+    "version": 11
+  },
+  "agenda": {
+    "version": 2,
+    "itemState": "queued"
+  },
+  "lesson": {
+    "objective": {
+      "title": "溶解度定义解释、饱和判断与冷却析出计算",
+      "whyNow": "已知X在20℃与50℃的溶解度，但面对具体冷却操作，常有人直接把两温度饱和上限之差当作析出量。需要先建立‘先算实际已溶、再比新上限’的判断顺序。",
+      "outcomes": [
+        {
+          "title": "冷却析出判断与质量核对",
+          "description": "在水量不变、仅用20℃和50℃两温度不作插值且假定充分搅拌平衡无挥发的冷却模型中，先确定冷却前实际已溶质量，再算新温度上限，仅当已溶量超出新上限时计算析出量；核对总质量守恒并区分整个容器总质量与液相溶液质量。"
+        }
+      ]
+    },
+    "prerequisites": [],
+    "segments": [
+      {
+        "index": 0,
+        "purpose": "orientation",
+        "explanation": "溶解度指每100克水最多溶解的溶质克数，本课X在20℃为30、50℃为60。判断冷却是否析出，第一步找冷却前实际已溶质量，第二步用‘水质量×新温度溶解度÷100’算新上限，第三步仅当已溶超过上限才析出超出部分。例如60克水在20℃上限为18克，在50℃上限为36克；若热态溶有20克，冷到20℃时20>18，析出2克，液相剩18克，容器总质量=60+20=80克，液相溶液=60+18=78克。注意饱和不要求底部有固体，未饱和也不会析出。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 1,
+        "purpose": "worked_example",
+        "explanation": "下面用70克水的新案例演练该顺序，但先只算出新温度上限，留待你判断析出。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": {
+          "startingState": "70克水，50℃时溶有35克X，充分搅拌平衡，无挥发；现冷却至20℃，水量不变。",
+          "inputs": [
+            "水量70克",
+            "初始已溶35克",
+            "从50℃降至20℃"
+          ],
+          "ruleOrProcedure": "新上限=70×30÷100=21克；若初始已溶>新上限则析出差量，否则无。",
+          "steps": [
+            {
+              "action": "计算20℃下70克水的溶解上限",
+              "reason": "依据溶解度定义与线性缩放",
+              "resultingState": "20℃上限=21克，液相最多溶21克X"
+            }
+          ],
+          "learnerDecision": null,
+          "result": null,
+          "whyResultFollows": null,
+          "origin": "hy3_synthesis",
+          "sources": [],
+          "interaction": {
+            "stage": "guided",
+            "modelledStepCount": 1,
+            "origin": "hy3_synthesis",
+            "sources": [],
+            "activity": {
+              "prompt": "已知70克水在50℃溶有35克X，冷却至20℃且水量不变。根据已算出的20℃上限21克，哪种结果正确？",
+              "options": [
+                {
+                  "id": "A",
+                  "text": "析出14克固体，液相溶液质量91克"
+                },
+                {
+                  "id": "B",
+                  "text": "析出15克固体，液相溶液质量90克"
+                },
+                {
+                  "id": "C",
+                  "text": "无析出，液相溶液质量105克"
+                }
+              ],
+              "response": null,
+              "respondedAt": null,
+              "correct": null,
+              "feedback": null,
+              "debrief": null,
+              "credit": "none",
+              "misconception": null
+            },
+            "hint": null,
+            "scaffold": null,
+            "transfer": null
+          }
+        },
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 2,
+        "purpose": "comparison",
+        "explanation": "冷却模型有明确边界：仅用20℃与50℃两数据点，不作插值；且水量不变、充分平衡。若初始已溶本就低于新上限，如50克水在50℃只溶10克，冷到20℃上限15克，不析出。这与‘温度降低必析出’的直觉相反，也说明饱和不等于底部有固体。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": {
+          "text": "反例：50克水50℃溶10克X，冷至20℃上限15克，10<15故无析出；若误用两温度饱和差(30-15=15)会错判析出15克。这显示必须依据实际已溶而非容量差。",
+          "origin": "hy3_synthesis",
+          "sources": []
+        },
+        "possibleMisconception": null,
+        "informalCheck": null
+      }
+    ],
+    "sourceReferencesAvailable": true,
+    "visuals": [],
+    "summary": {
+      "available": true,
+      "text": "冷却析出量 = 初始已溶质量 - 新温度溶解上限，仅当差为正；总质量=水+全部溶质，液相质量不含析出晶体。",
+      "nextConnection": null,
+      "formalOpportunities": []
+    },
+    "plannedTime": {
+      "agendaMinutes": 11,
+      "activeMinutesMin": 14,
+      "activeMinutesMax": 22,
+      "basis": "locally_evaluated_learning_actions"
+    }
+  },
+  "progress": {
+    "stateVersion": 2,
+    "stateId": "lesson_execution_9704a180-7d9b-466c-beb2-9f7648cce2f0",
+    "currentSegmentIndex": 0,
+    "segmentCount": 3,
+    "presentedSegmentIndexes": [],
+    "presentationStatus": "not_started",
+    "presentationCompletedAt": null
+  },
+  "currentInformalCheck": null,
+  "practice": {
+    "status": "locked",
+    "currentItemIndex": 0,
+    "itemCount": 1,
+    "item": {
+      "index": 0,
+      "objectiveTitle": "冷却析出判断与质量核对",
+      "construct": "apply",
+      "surface": "initial",
+      "supplementary": true,
+      "prompt": "在80克水、仅经历从50℃冷却至20℃且水量不变的实验中，最终测得容器总质量110克，液相溶液质量104克。下列哪一初始已溶质量能解释该结果？",
+      "options": [
+        {
+          "id": "teaching_brief_e1e95992-dc08-4949-be65-8bb0f847f522_practice_1_initial_A",
+          "text": "初始50℃时已溶30克X"
+        },
+        {
+          "id": "teaching_brief_e1e95992-dc08-4949-be65-8bb0f847f522_practice_1_initial_B",
+          "text": "初始50℃时已溶48克X"
+        },
+        {
+          "id": "teaching_brief_e1e95992-dc08-4949-be65-8bb0f847f522_practice_1_initial_C",
+          "text": "初始20℃时已溶24克X且未冷却"
+        }
+      ]
+    },
+    "attempts": [],
+    "recovery": null,
+    "completedAt": null,
+    "credit": "none"
+  },
+  "allowedActions": [
+    "start_lesson"
+  ]
+}

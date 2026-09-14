@@ -1,0 +1,723 @@
+{
+  "at": "2026-09-14T11:11:13.912Z",
+  "passed": true,
+  "scoredCourses": 20,
+  "historicalDistinctTexts": 97,
+  "noExactReuse": true,
+  "reviewer": "Current task assistant; source audit is not independent human validation",
+  "method": "Exact and longest contiguous lexical overlap screening plus explicit semantic-model and worked-example review of all 20 sources. Lexical distance is not a proof of semantic freshness. Shared prerequisite arithmetic and adjacent subject matter are allowed; old cases or cosmetic rewrites are not.",
+  "rows": [
+    {
+      "id": "J01",
+      "fileSha256": "e32c6d0ace9e646c74951c1a529dd5cca0e99d0505dd22cd52de629b7606e6b5",
+      "textSha256": "b8dd8de8b1a498813818eb49705bdf6778a567201d66aabab764ca1ded63cc5c",
+      "characters": 934,
+      "words": null,
+      "paragraphs": 6,
+      "nearestLexical": [
+        {
+          "id": "M03",
+          "path": "mainline-product-2026-09-14/dataset/courses/M03.json",
+          "characters": 6,
+          "overlap": "。若题目允许"
+        },
+        {
+          "id": "F10",
+          "path": "final-evaluation-2026-09-12/benchmark/product-inputs/F10.json",
+          "characters": 5,
+          "overlap": "相加，也不"
+        },
+        {
+          "id": "P06",
+          "path": "final-evidence-2026-09-14/dataset/product/P06.json",
+          "characters": 5,
+          "overlap": "a,b)与"
+        }
+      ],
+      "semanticFreshness": "Greatest common divisors, Euclidean invariance and exact square tiling; no prior scored source teaches this model.",
+      "correctnessReview": "Euclidean invariance and 84/60 -> 12; 7*5=35 tiles. Zero-remainder wording corrected before build to include immediate divisibility.",
+      "selfContained": true,
+      "explanationExampleApplication": true,
+      "intendedNormalUse": true,
+      "preScoringAccepted": true
+    },
+    {
+      "id": "J02",
+      "fileSha256": "134b5a4a2cd50639fdbb7a19eb3701585d7ac19d7030bf9d18e74c41f9bd34ef",
+      "textSha256": "8cad32c703ee7925b152a5b384abcc2801c89ae21fce34814885c561dcb8ca89",
+      "characters": 878,
+      "words": null,
+      "paragraphs": 6,
+      "nearestLexical": [
+        {
+          "id": "F11",
+          "path": "final-evaluation-2026-09-12/benchmark/product-inputs/F11.json",
+          "characters": 5,
+          "overlap": "是否一致，"
+        },
+        {
+          "id": "P01",
+          "path": "final-evidence-2026-09-14/dataset/product/P01.json",
+          "characters": 5,
+          "overlap": "长度单位。"
+        },
+        {
+          "id": "P14",
+          "path": "final-evidence-2026-09-14/dataset/product/P14.json",
+          "characters": 5,
+          "overlap": "位。 例如"
+        }
+      ],
+      "semanticFreshness": "Corresponding vertices and squared area scaling in explicitly similar triangles; distinct from earlier map-scale routes, perimeter optimization and angle-sum controls.",
+      "correctnessReview": "Specified correspondence; 3-4-5 area 6; scale 2 yields area 24; area ratio 9 gives positive length ratio 3.",
+      "selfContained": true,
+      "explanationExampleApplication": true,
+      "intendedNormalUse": true,
+      "preScoringAccepted": true
+    },
+    {
+      "id": "J03",
+      "fileSha256": "e9828cb5431d661b5518356a2b163a657fa6f13a9b4788809dd73562f0377e84",
+      "textSha256": "75e1ba82fb318b0f77d178d681003a2cc4a7cefede806e5fda92cc17143f73fb",
+      "characters": 926,
+      "words": null,
+      "paragraphs": 6,
+      "nearestLexical": [
+        {
+          "id": "F05",
+          "path": "final-evaluation-2026-09-12/benchmark/product-inputs/F05.json",
+          "characters": 5,
+          "overlap": "。 比较两"
+        },
+        {
+          "id": "P01",
+          "path": "final-evidence-2026-09-14/dataset/product/P01.json",
+          "characters": 5,
+          "overlap": "。 比较两"
+        },
+        {
+          "id": "P15",
+          "path": "final-evidence-2026-09-14/dataset/product/P15.json",
+          "characters": 5,
+          "overlap": "。 比较两"
+        }
+      ],
+      "semanticFreshness": "Canonical decimal scientific notation and normalization, distinct from reciprocal-exponent identities, storage units and unsigned binary representation.",
+      "correctnessReview": "All decimal/exponent conversions and 8400+2000=10400 verified; positive-only comparison rule and exact-value scope supplied.",
+      "selfContained": true,
+      "explanationExampleApplication": true,
+      "intendedNormalUse": true,
+      "preScoringAccepted": true
+    },
+    {
+      "id": "J04",
+      "fileSha256": "f9999af5382ab3c9cd29fab85b412644d10e11beafcab477545941ee4a46bc02",
+      "textSha256": "e76b4b0cd3079fe633b37091a48b2786a76d7c25802f8da401e765f77f799a94",
+      "characters": 931,
+      "words": null,
+      "paragraphs": 6,
+      "nearestLexical": [
+        {
+          "id": "F06",
+          "path": "final-evaluation-2026-09-12/benchmark/product-inputs/F06.json",
+          "characters": 6,
+          "overlap": "从小到大排列"
+        },
+        {
+          "id": "P04",
+          "path": "final-evidence-2026-09-14/dataset/product/P04.json",
+          "characters": 6,
+          "overlap": "从小到大排列"
+        },
+        {
+          "id": "F04",
+          "path": "final-evaluation-2026-09-12/benchmark/product-inputs/F04.json",
+          "characters": 5,
+          "overlap": "不能直接把"
+        }
+      ],
+      "semanticFreshness": "A specified median-of-halves quartile convention and IQR fences, not the prior mean/median/mode or weighted-mean tasks.",
+      "correctnessReview": "Explicit median-of-halves convention: Q1=4, Q3=11, IQR=7; fences -6.5/21.5; maximum replacement leaves quartiles unchanged for this dataset only.",
+      "selfContained": true,
+      "explanationExampleApplication": true,
+      "intendedNormalUse": true,
+      "preScoringAccepted": true
+    },
+    {
+      "id": "J05",
+      "fileSha256": "bf843a555a31314844c64c2f4c4d6c33231e94709b04290ea369ef06e0ae9b8d",
+      "textSha256": "2cb8c664704fcbc965dccafdcfe02cffdd79ecde66ef4809fb4ab367869b460d",
+      "characters": 882,
+      "words": null,
+      "paragraphs": 6,
+      "nearestLexical": [
+        {
+          "id": "F04",
+          "path": "final-evaluation-2026-09-12/benchmark/product-inputs/F04.json",
+          "characters": 5,
+          "overlap": "不能直接把"
+        },
+        {
+          "id": "P10",
+          "path": "final-evidence-2026-09-14/dataset/product/P10.json",
+          "characters": 5,
+          "overlap": "，不能直接"
+        },
+        {
+          "id": "F05",
+          "path": "final-evaluation-2026-09-12/benchmark/product-inputs/F05.json",
+          "characters": 4,
+          "overlap": "，但这不"
+        }
+      ],
+      "semanticFreshness": "Static lever moments and perpendicular moment arms, distinct from earlier gear rotations, circuit rules and work-rate examples.",
+      "correctnessReview": "Perpendicular arms and opposing directions explicit; 10*.3=6*.5; 12*.4/6=.8; multiple-load total 2.0.",
+      "selfContained": true,
+      "explanationExampleApplication": true,
+      "intendedNormalUse": true,
+      "preScoringAccepted": true
+    },
+    {
+      "id": "J06",
+      "fileSha256": "8d033588f09224f645fd55e48713ae764b01134d50062a3dd4c023ca55b8cd82",
+      "textSha256": "fd18b021dc5faf6164443dd2183a709e30a5f5afe02a596b6e5e738e1d5e377d",
+      "characters": 857,
+      "words": null,
+      "paragraphs": 6,
+      "nearestLexical": [
+        {
+          "id": "M07",
+          "path": "mainline-product-2026-09-14/dataset/courses/M07.json",
+          "characters": 6,
+          "overlap": "质量用千克、"
+        },
+        {
+          "id": "F05",
+          "path": "final-evaluation-2026-09-12/benchmark/product-inputs/F05.json",
+          "characters": 5,
+          "overlap": "，不能只凭"
+        },
+        {
+          "id": "F09",
+          "path": "final-evaluation-2026-09-12/benchmark/product-inputs/F09.json",
+          "characters": 5,
+          "overlap": "，不能只凭"
+        }
+      ],
+      "semanticFreshness": "Quadratic kinetic energy and inverse speed inference, rather than the earlier Newtonian-force, pressure or heat-balance cases.",
+      "correctnessReview": "E=.5*m*v^2; examples 9,36,18 J checked; ratio 2*(.5)^2=.5; energy change 27, not 9.",
+      "selfContained": true,
+      "explanationExampleApplication": true,
+      "intendedNormalUse": true,
+      "preScoringAccepted": true
+    },
+    {
+      "id": "J07",
+      "fileSha256": "0634456657d479e06b60b8232263a6eb8c2ed9547047dfa4047b6f0b8d7171a0",
+      "textSha256": "40c08f26f4120cb3b92605a8668d6cbcdf578ab33b99caea210ef631b04bd669",
+      "characters": 890,
+      "words": null,
+      "paragraphs": 6,
+      "nearestLexical": [
+        {
+          "id": "M01",
+          "path": "mainline-product-2026-09-14/dataset/courses/M01.json",
+          "characters": 6,
+          "overlap": "，统一单位，"
+        },
+        {
+          "id": "S063",
+          "path": "final-evidence-2026-09-14/dataset/studyeval/S063.json",
+          "characters": 6,
+          "overlap": "。这里不讨论"
+        },
+        {
+          "id": "F05",
+          "path": "final-evaluation-2026-09-12/benchmark/product-inputs/F05.json",
+          "characters": 5,
+          "overlap": "厘米，那么"
+        }
+      ],
+      "semanticFreshness": "Hooke-law extension from rest length with elastic-range constraints; not an affine calibration table or a material-density task.",
+      "correctnessReview": "Extension rather than total length used throughout; 3/100=.03 m; 2/.04=50 N/m; elastic limit expressly given.",
+      "selfContained": true,
+      "explanationExampleApplication": true,
+      "intendedNormalUse": true,
+      "preScoringAccepted": true
+    },
+    {
+      "id": "J08",
+      "fileSha256": "b5309f7305d53219b054dcc266f71682abba0e413c8d5ae5288bc2efa9690274",
+      "textSha256": "7a2b663242dacd169cca938038165a410b217efdabda5e532fa1f1a9b7aab4bb",
+      "characters": 928,
+      "words": null,
+      "paragraphs": 6,
+      "nearestLexical": [
+        {
+          "id": "P02",
+          "path": "final-evidence-2026-09-14/dataset/product/P02.json",
+          "characters": 6,
+          "overlap": "。这个结论只"
+        },
+        {
+          "id": "M10",
+          "path": "mainline-product-2026-09-14/dataset/courses/M10.json",
+          "characters": 6,
+          "overlap": "再相加。例如"
+        },
+        {
+          "id": "F02",
+          "path": "final-evaluation-2026-09-12/benchmark/product-inputs/F02.json",
+          "characters": 5,
+          "overlap": "解释计算时"
+        }
+      ],
+      "semanticFreshness": "Power integrated over usage time and kWh accounting, distinct from rates of task completion, tariff-free percentage examples and storage units.",
+      "correctnessReview": "kWh conversion 3.6e6 J; .8*1.5=1.2; staged .9; comparison .15/.6; fee .72; actual versus rated power distinguished.",
+      "selfContained": true,
+      "explanationExampleApplication": true,
+      "intendedNormalUse": true,
+      "preScoringAccepted": true
+    },
+    {
+      "id": "J09",
+      "fileSha256": "a087f24f0c1aea45a0fff055e8c7c39469a465b832eafbe66c05ead43d9038e2",
+      "textSha256": "7eaeec40f0cff5dbe9a47cf6d9ec367e28165904b4af912e86b5fbe3aa5b9097",
+      "characters": 871,
+      "words": null,
+      "paragraphs": 6,
+      "nearestLexical": [
+        {
+          "id": "F07",
+          "path": "final-evaluation-2026-09-12/benchmark/product-inputs/F07.json",
+          "characters": 6,
+          "overlap": "温度、光照、"
+        },
+        {
+          "id": "M15",
+          "path": "mainline-product-2026-09-14/dataset/courses/M15.json",
+          "characters": 6,
+          "overlap": "。这里说的是"
+        },
+        {
+          "id": "M01",
+          "path": "mainline-product-2026-09-14/dataset/courses/M01.json",
+          "characters": 5,
+          "overlap": "，也不能把"
+        }
+      ],
+      "semanticFreshness": "Whole-plant transpiration and water balance, distinct from earlier membrane diffusion, seed experiments and ecosystem energy sources.",
+      "correctnessReview": "Complete root/xylem/transpiration chain; fixed stomatal and environmental conditions; 8-11=-3 and 12-11=1; phloem distinction checked.",
+      "selfContained": true,
+      "explanationExampleApplication": true,
+      "intendedNormalUse": true,
+      "preScoringAccepted": true
+    },
+    {
+      "id": "J10",
+      "fileSha256": "7bb7cd92b8bf43cbecbc6d6e5d456463fbb83afe19068a33f1e05c4713f60fa4",
+      "textSha256": "a34efe4d58cd6cebcf966dccb0fa4b339a87fe6e8797c3621e3a45cf97f6923d",
+      "characters": 883,
+      "words": null,
+      "paragraphs": 6,
+      "nearestLexical": [
+        {
+          "id": "P08",
+          "path": "final-evidence-2026-09-14/dataset/product/P08.json",
+          "characters": 6,
+          "overlap": "规则，不能把"
+        },
+        {
+          "id": "S071",
+          "path": "final-evidence-2026-09-14/dataset/studyeval/S071.json",
+          "characters": 6,
+          "overlap": "模型中，复制"
+        },
+        {
+          "id": "M10",
+          "path": "mainline-product-2026-09-14/dataset/courses/M10.json",
+          "characters": 5,
+          "overlap": "2、4、8"
+        }
+      ],
+      "semanticFreshness": "Mitosis, sister chromatids and cell multiplication, distinct from allele segregation in crosses and DNA complement strings.",
+      "correctnessReview": "Counted moments explicitly distinguish DNA molecules, centromere-defined chromosomes, poles and daughter cells. 1*2^3=8; 2*2^2=8.",
+      "selfContained": true,
+      "explanationExampleApplication": true,
+      "intendedNormalUse": true,
+      "preScoringAccepted": true
+    },
+    {
+      "id": "J11",
+      "fileSha256": "77ebcc5c7655c7ad006db42b3cb387642f47a5a26b808010bdb935962f7a70f5",
+      "textSha256": "c257c4d0f4d2498f6cc3a79ead868d13cd3c6ff53dde1168075711f71833cfe6",
+      "characters": 1413,
+      "words": null,
+      "paragraphs": 7,
+      "nearestLexical": [
+        {
+          "id": "M17",
+          "path": "mainline-product-2026-09-14/dataset/courses/M17.json",
+          "characters": 13,
+          "overlap": "the machines "
+        },
+        {
+          "id": "E01",
+          "path": "final-evaluation-2026-09-12/benchmark/product-inputs/E01.json",
+          "characters": 10,
+          "overlap": "ed by the "
+        },
+        {
+          "id": "E03",
+          "path": "final-evaluation-2026-09-12/benchmark/product-inputs/E03.json",
+          "characters": 10,
+          "overlap": "ed by the "
+        }
+      ],
+      "semanticFreshness": "Active/passive voice with tense and role preservation, distinct from subject-verb agreement, pronoun resolution and concession connectors.",
+      "correctnessReview": "All transformations preserve roles/tense/negation; irregular participles and object pronouns supplied; full-information task differs from optional agent omission.",
+      "selfContained": true,
+      "explanationExampleApplication": true,
+      "intendedNormalUse": true,
+      "preScoringAccepted": true
+    },
+    {
+      "id": "J12",
+      "fileSha256": "d129208f93d0da9d72bc4f2a799e943e2338125edbc518dccc3a7cf32c15e3b3",
+      "textSha256": "a437378274916974361f1fb32fe6fe8eef186cf022dc59cf60ac4a7f241309c3",
+      "characters": 1367,
+      "words": null,
+      "paragraphs": 7,
+      "nearestLexical": [
+        {
+          "id": "P19",
+          "path": "final-evidence-2026-09-14/dataset/product/P19.json",
+          "characters": 13,
+          "overlap": "er than that "
+        },
+        {
+          "id": "E04",
+          "path": "final-evaluation-2026-09-12/benchmark/product-inputs/E04.json",
+          "characters": 12,
+          "overlap": " of these th"
+        },
+        {
+          "id": "M08",
+          "path": "mainline-product-2026-09-14/dataset/courses/M08.json",
+          "characters": 10,
+          "overlap": " the light"
+        }
+      ],
+      "semanticFreshness": "Comparative/superlative adjective formation and scoped comparison, not earlier prefix negation or agreement exercises.",
+      "correctnessReview": "All supplied adjective forms and price/mass comparisons checked; basic requests still require data application and scope.",
+      "selfContained": true,
+      "explanationExampleApplication": true,
+      "intendedNormalUse": true,
+      "preScoringAccepted": true
+    },
+    {
+      "id": "J13",
+      "fileSha256": "924e67fe46ff14acaab1088d23fe2549afaa77c078268e2e8f46c5a68b54eca9",
+      "textSha256": "fbb32edd5521a0c9aadf735a81391c6bf2c45dacefb77897d7163918b634647e",
+      "characters": 874,
+      "words": null,
+      "paragraphs": 6,
+      "nearestLexical": [
+        {
+          "id": "F05",
+          "path": "final-evaluation-2026-09-12/benchmark/product-inputs/F05.json",
+          "characters": 6,
+          "overlap": "不会凭空增加"
+        },
+        {
+          "id": "F12",
+          "path": "final-evaluation-2026-09-12/benchmark/product-inputs/F12.json",
+          "characters": 6,
+          "overlap": "。不能只看到"
+        },
+        {
+          "id": "M07",
+          "path": "mainline-product-2026-09-14/dataset/courses/M07.json",
+          "characters": 6,
+          "overlap": "20摄氏度的"
+        }
+      ],
+      "semanticFreshness": "Temperature-dependent solubility and crystallization at saturation, distinct from separation-method choices and acid-base indicators.",
+      "correctnessReview": "Fictional X table complete; 50g water caps 15/30g; cooling precipitates 15; 65+15=80 mass balance. No unstated interpolation.",
+      "selfContained": true,
+      "explanationExampleApplication": true,
+      "intendedNormalUse": true,
+      "preScoringAccepted": true
+    },
+    {
+      "id": "J14",
+      "fileSha256": "1080326de5d19874d9f6ed4a96d0b39f3eb4ad86e20d9c49a842d67e50c81dbe",
+      "textSha256": "357d019d991bac22fd9e850bca8f824036df7b222fc65008e863dfeb7fa2cfaa",
+      "characters": 975,
+      "words": null,
+      "paragraphs": 7,
+      "nearestLexical": [
+        {
+          "id": "M10",
+          "path": "mainline-product-2026-09-14/dataset/courses/M10.json",
+          "characters": 8,
+          "overlap": "再相加。例如10"
+        },
+        {
+          "id": "F04",
+          "path": "final-evaluation-2026-09-12/benchmark/product-inputs/F04.json",
+          "characters": 6,
+          "overlap": "。不能直接把"
+        },
+        {
+          "id": "P13",
+          "path": "final-evidence-2026-09-14/dataset/product/P13.json",
+          "characters": 5,
+          "overlap": "在本模型中"
+        }
+      ],
+      "semanticFreshness": "Solute conservation through dilution and solution mixing, substantively different from percentage price changes and card-count linear constraints.",
+      "correctnessReview": "Solute and total mass distinguished; dilution 30/.1-200=100g; mixture (10+50)/300=.2. Shared percentage prerequisite is disclosed, not a reused price task.",
+      "selfContained": true,
+      "explanationExampleApplication": true,
+      "intendedNormalUse": true,
+      "preScoringAccepted": true
+    },
+    {
+      "id": "J15",
+      "fileSha256": "b83ced98885f3c9007c3fab1b12ec9a02fc3cd7a3563e0b2f117cb726e14a7a3",
+      "textSha256": "cadba1bafe86f325807b48f30c6b67ad6f164285933723acf39aef0d108dc82d",
+      "characters": 969,
+      "words": null,
+      "paragraphs": 7,
+      "nearestLexical": [
+        {
+          "id": "M22",
+          "path": "mainline-product-2026-09-14/dataset/courses/M22.json",
+          "characters": 7,
+          "overlap": "收入1500元"
+        },
+        {
+          "id": "B03",
+          "path": "final-evidence-2026-09-14/dataset/product/B03.json",
+          "characters": 5,
+          "overlap": "月10日，"
+        },
+        {
+          "id": "M10",
+          "path": "mainline-product-2026-09-14/dataset/courses/M10.json",
+          "characters": 5,
+          "overlap": "。这样既能"
+        }
+      ],
+      "semanticFreshness": "Accrual service revenue and receivables versus collections, distinct from prior asset depreciation, break-even and opportunity-cost tasks.",
+      "correctnessReview": "Revenue 1500, collections 900, closing receivable 600; later collection adds no revenue; roll-forward 400+700-500=600.",
+      "selfContained": true,
+      "explanationExampleApplication": true,
+      "intendedNormalUse": true,
+      "preScoringAccepted": true
+    },
+    {
+      "id": "J16",
+      "fileSha256": "03b682e887b9abbcf2f77455eed8ff4ececf5fe978fa2c0e72d9940d2c88db8f",
+      "textSha256": "75d9524c38be4f93617fbc9a2a9a937846bfe36508b3f5b8e93eae3b3670f6a6",
+      "characters": 958,
+      "words": null,
+      "paragraphs": 7,
+      "nearestLexical": [
+        {
+          "id": "F03",
+          "path": "final-evaluation-2026-09-12/benchmark/product-inputs/F03.json",
+          "characters": 6,
+          "overlap": "，因此不能仅"
+        },
+        {
+          "id": "M22",
+          "path": "mainline-product-2026-09-14/dataset/courses/M22.json",
+          "characters": 6,
+          "overlap": "1000元、"
+        },
+        {
+          "id": "M23",
+          "path": "mainline-product-2026-09-14/dataset/courses/M23.json",
+          "characters": 6,
+          "overlap": "1000元。"
+        }
+      ],
+      "semanticFreshness": "Balance-sheet equation and financing versus asset exchange, distinct from revenue timing, linear depreciation and operating-cost break-even.",
+      "correctnessReview": "Every transaction balances; final assets 1700=liabilities 700+equity 1000. Financing, capital purchase and principal repayment distinguished.",
+      "selfContained": true,
+      "explanationExampleApplication": true,
+      "intendedNormalUse": true,
+      "preScoringAccepted": true
+    },
+    {
+      "id": "J17",
+      "fileSha256": "2a985cf13bc9fc01c6702fc0ea5a01133fa3f58d1580fcea06d6000628be8df2",
+      "textSha256": "285ae481cb4a8c1b3d330dd84e8b20cb2174d8249e0e388caa6b05a990a2fa67",
+      "characters": 2685,
+      "words": 441,
+      "paragraphs": 6,
+      "nearestLexical": [
+        {
+          "id": "E03",
+          "path": "final-evaluation-2026-09-12/benchmark/product-inputs/E03.json",
+          "characters": 15,
+          "overlap": " interchangeabl"
+        },
+        {
+          "id": "P17",
+          "path": "final-evidence-2026-09-14/dataset/product/P17.json",
+          "characters": 14,
+          "overlap": " according to "
+        },
+        {
+          "id": "M11",
+          "path": "mainline-product-2026-09-14/dataset/courses/M11.json",
+          "characters": 14,
+          "overlap": " into a single"
+        }
+      ],
+      "semanticFreshness": "Relational join matching and row multiplicity, distinct from prior SQL transaction rollback and spreadsheet-reference movement.",
+      "correctnessReview": "Every matching pair enumerated; INNER=3 and LEFT=4 initially; adding Ben order gives 4 in both; null and order guarantees explicit.",
+      "selfContained": true,
+      "explanationExampleApplication": true,
+      "intendedNormalUse": true,
+      "preScoringAccepted": true
+    },
+    {
+      "id": "J18",
+      "fileSha256": "69b728f338f6fe245a052cb3afefaa0a65c21fb666988805b405c5279dfa36fe",
+      "textSha256": "80e7741c16fa72662e05b11579e2ffa12a8fc97463bb44cb3ee680e54e6e4221",
+      "characters": 2676,
+      "words": 453,
+      "paragraphs": 6,
+      "nearestLexical": [
+        {
+          "id": "E02",
+          "path": "final-evaluation-2026-09-12/benchmark/product-inputs/E02.json",
+          "characters": 13,
+          "overlap": " is important"
+        },
+        {
+          "id": "E04",
+          "path": "final-evaluation-2026-09-12/benchmark/product-inputs/E04.json",
+          "characters": 13,
+          "overlap": "s the input o"
+        },
+        {
+          "id": "P17",
+          "path": "final-evidence-2026-09-14/dataset/product/P17.json",
+          "characters": 13,
+          "overlap": " has its own "
+        }
+      ],
+      "semanticFreshness": "Lexicographic record ordering and stable multi-pass sorting, not binary search, Pareto dominance or cache replacement.",
+      "correctnessReview": "Stable sorted order D,B,C,E,A; secondary-then-primary passes match; reversed passes C,E,D,A,B. Complete numeric records supplied.",
+      "selfContained": true,
+      "explanationExampleApplication": true,
+      "intendedNormalUse": true,
+      "preScoringAccepted": true
+    },
+    {
+      "id": "J19",
+      "fileSha256": "c44d8cdc5952ba894cbe97c6ede5639fe3163cdc9c2330176752e0bdd35468a2",
+      "textSha256": "c28cff2e6193604c1b50506a31634068b9f9c35b34af8589aee194069a1db235",
+      "characters": 2578,
+      "words": 464,
+      "paragraphs": 6,
+      "nearestLexical": [
+        {
+          "id": "E01",
+          "path": "final-evaluation-2026-09-12/benchmark/product-inputs/E01.json",
+          "characters": 15,
+          "overlap": " the same time "
+        },
+        {
+          "id": "M08",
+          "path": "mainline-product-2026-09-14/dataset/courses/M08.json",
+          "characters": 14,
+          "overlap": "tion determine"
+        },
+        {
+          "id": "E03",
+          "path": "final-evaluation-2026-09-12/benchmark/product-inputs/E03.json",
+          "characters": 13,
+          "overlap": ". for example"
+        }
+      ],
+      "semanticFreshness": "FIFO queue operations and non-preemptive service timelines, distinct from postfix LIFO evaluation, recency caches and dependency-network scheduling.",
+      "correctnessReview": "Queue operations checked; start/finish intervals [0,4],[4,6],[6,7], waiting 0/3/4; idle next task starts at arrival 10.",
+      "selfContained": true,
+      "explanationExampleApplication": true,
+      "intendedNormalUse": true,
+      "preScoringAccepted": true
+    },
+    {
+      "id": "J20",
+      "fileSha256": "64aca3af611eddc3cbced03522bf857d11d90017ad27664a155ff2d298a9cd0d",
+      "textSha256": "22ffb6f931ee7c8c51f051cd16b467772dbc3bf041345422485e42c7bb84e0d8",
+      "characters": 2591,
+      "words": 448,
+      "paragraphs": 6,
+      "nearestLexical": [
+        {
+          "id": "M11",
+          "path": "mainline-product-2026-09-14/dataset/courses/M11.json",
+          "characters": 15,
+          "overlap": "er. for example"
+        },
+        {
+          "id": "M12",
+          "path": "mainline-product-2026-09-14/dataset/courses/M12.json",
+          "characters": 15,
+          "overlap": " implementation"
+        },
+        {
+          "id": "P17",
+          "path": "final-evidence-2026-09-14/dataset/product/P17.json",
+          "characters": 14,
+          "overlap": " and does not "
+        }
+      ],
+      "semanticFreshness": "Pure value-returning functions and nested call evaluation, distinct from mutable object aliasing, array bounds and slicing.",
+      "correctnessReview": "Pass-by-value model explicit; adjust(4)=18; nested results 9 and 12; choose(-2/5/0)=0/6/1; caller assignment distinctions correct.",
+      "selfContained": true,
+      "explanationExampleApplication": true,
+      "intendedNormalUse": true,
+      "preScoringAccepted": true
+    }
+  ],
+  "largestWithinSetOverlap": [
+    {
+      "a": "J18",
+      "b": "J19",
+      "characters": 20,
+      "overlap": " it does not invent "
+    },
+    {
+      "a": "J18",
+      "b": "J20",
+      "characters": 17,
+      "overlap": ". in this lesson "
+    },
+    {
+      "a": "J19",
+      "b": "J20",
+      "characters": 17,
+      "overlap": ". in this lesson "
+    },
+    {
+      "a": "J17",
+      "b": "J18",
+      "characters": 16,
+      "overlap": ". in this lesson"
+    },
+    {
+      "a": "J17",
+      "b": "J19",
+      "characters": 16,
+      "overlap": ". in this lesson"
+    }
+  ]
+}

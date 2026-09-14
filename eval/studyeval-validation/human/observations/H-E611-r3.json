@@ -1,0 +1,338 @@
+{
+  "task": {
+    "caseId": "E611",
+    "runId": "H-E611-r3",
+    "replicate": 3,
+    "path": "benchmark/cases/E611.json",
+    "inputHash": "c0bfa347bcd1a8f2d3751c2acebc48d79c8b1403697b7568a78e5134036941fb",
+    "population": "controlled",
+    "sourceId": "F05"
+  },
+  "inputHash": "c0bfa347bcd1a8f2d3751c2acebc48d79c8b1403697b7568a78e5134036941fb",
+  "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "820b4719a50f5cb07dec6bf894eb09e1fd87037119e38ee5f14c1dbe7df788bd",
+    "stages": {
+      "goal-mapping": {
+        "goals": [
+          {
+            "index": 0,
+            "importance": "essential",
+            "status": "usable",
+            "reason": "artifact明确指出刻度更细（分辨率）不保证校准更准（准确程度），以等价表述实现了区分读数分辨率与真实准确程度的目标。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/0"
+            ],
+            "quote": "刻度更细不保证校准更准",
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "c1ec4cc283b869ded4bd6704017dd84fadd61b71cdacc0ccea326fdeabd36eab"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "974f091625a397eadb261006f5285e9c63c7ca6b839e6bdbb8c41f4bfff75e27"
+              }
+            ]
+          },
+          {
+            "index": 1,
+            "importance": "essential",
+            "status": "usable",
+            "reason": "artifact给出了使用给定误差上界e与读数r形成闭区间[r-e,r+e]的明确规则，并配以具体数值示例，满足可执行要求。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/1"
+            ],
+            "quote": "读数r、已知误差上界e给出闭区间[r-e,r+e]。例如读数7.2厘米、误差不超过0.1厘米，对应[7.1,7.3]。",
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "c1ec4cc283b869ded4bd6704017dd84fadd61b71cdacc0ccea326fdeabd36eab"
+              },
+              {
+                "pointer": "/goals/1",
+                "valueHash": "b948cbdb264205a71c39bbf43fca64b81f119fd6bce83afbff737e5a078063b3"
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "importance": "essential",
+            "status": "usable",
+            "reason": "artifact通过两个区间示例说明了不重叠时前者必短、重叠时不能保证顺序的判断规则，覆盖了从区间推断大小关系的核心用途。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/2"
+            ],
+            "quote": "若另一物品区间[7.5,7.7]，前者必短；若区间重叠则仅凭界限不能保证顺序。",
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "c1ec4cc283b869ded4bd6704017dd84fadd61b71cdacc0ccea326fdeabd36eab"
+              },
+              {
+                "pointer": "/goals/2",
+                "valueHash": "a63a83b2364923d8e078ddf815b65a88e03ab9e5b2b372710e75e020c2056d1a"
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "importance": "secondary",
+            "status": "usable",
+            "reason": "artifact以‘同向偏差也不会仅靠重复平均自动消失’直接说明了重复平均不能自动消除共同方向偏差，符合次要延伸目标。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/3"
+            ],
+            "quote": "同向偏差也不会仅靠重复平均自动消失。",
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "c1ec4cc283b869ded4bd6704017dd84fadd61b71cdacc0ccea326fdeabd36eab"
+              },
+              {
+                "pointer": "/goals/3",
+                "valueHash": "714460aff55596ab6a2b0d42615a21b9c5be82487f745a68d7ee18049f26f951"
+              }
+            ]
+          }
+        ]
+      },
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "核心目标1-3均有可操作规则与示例；次要延伸目标仅以“同向偏差也不会仅靠重复平均自动消失”断言，未解释或演示，属未解释提醒，局部缺陷不影响核心覆盖。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/3"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "次要延伸目标要求说明重复平均不能自动消除同向偏差，artifact仅陈述‘同向偏差也不会仅靠重复平均自动消失’，未提供解释或代表演示。",
+                "impact": "核心目标（区分分辨率与准确、形成区间、比较区间）保持可用，此局部缺口不改变主要学习用途。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/goals/3"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "c1ec4cc283b869ded4bd6704017dd84fadd61b71cdacc0ccea326fdeabd36eab"
+                  },
+                  {
+                    "pointer": "/goals/3",
+                    "valueHash": "714460aff55596ab6a2b0d42615a21b9c5be82487f745a68d7ee18049f26f951"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "c1ec4cc283b869ded4bd6704017dd84fadd61b71cdacc0ccea326fdeabd36eab"
+              },
+              {
+                "pointer": "/goals/3",
+                "valueHash": "714460aff55596ab6a2b0d42615a21b9c5be82487f745a68d7ee18049f26f951"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "Lesson用闭区间公式与数值例示覆盖了区间形成和大小比较核心目标，并提及分辨率不等同准确度。但声明的次要延伸目标仅以'同向偏差也不会仅靠重复平均自动消失'提醒呈现，未解释或演示，属局部缩减，核心用途成立。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/3"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "次要延伸目标'说明重复平均不能自动消除共同方向的偏差'在lesson中仅表述为'同向偏差也不会仅靠重复平均自动消失'，未提供解释或示例（如固定偏移不消）。",
+                "impact": "核心区间形成与比较方法保持可用，不影响主要学习用途。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/goals/3"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "c1ec4cc283b869ded4bd6704017dd84fadd61b71cdacc0ccea326fdeabd36eab"
+                  },
+                  {
+                    "pointer": "/goals/3",
+                    "valueHash": "714460aff55596ab6a2b0d42615a21b9c5be82487f745a68d7ee18049f26f951"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "c1ec4cc283b869ded4bd6704017dd84fadd61b71cdacc0ccea326fdeabd36eab"
+              },
+              {
+                "pointer": "/goals/3",
+                "valueHash": "714460aff55596ab6a2b0d42615a21b9c5be82487f745a68d7ee18049f26f951"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "核心三目标均有准确规则与示例；次要延伸目标仅以'同向偏差也不会仅靠重复平均自动消失'未解释提醒呈现，属局部缺陷，核心用途成立。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/3"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "次要延伸目标要求说明重复平均不能自动消除共同方向偏差，artifact仅陈述'同向偏差也不会仅靠重复平均自动消失'，未提供解释或代表演示。",
+                "impact": "核心区间形成与比较方法保持可用，不影响主要学习用途。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/goals/3"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "c1ec4cc283b869ded4bd6704017dd84fadd61b71cdacc0ccea326fdeabd36eab"
+                  },
+                  {
+                    "pointer": "/goals/3",
+                    "valueHash": "714460aff55596ab6a2b0d42615a21b9c5be82487f745a68d7ee18049f26f951"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "c1ec4cc283b869ded4bd6704017dd84fadd61b71cdacc0ccea326fdeabd36eab"
+              },
+              {
+                "pointer": "/goals/3",
+                "valueHash": "714460aff55596ab6a2b0d42615a21b9c5be82487f745a68d7ee18049f26f951"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q2:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "同向偏差也不会仅靠重复平均自动消失。",
+              "valueHash": "c1ec4cc283b869ded4bd6704017dd84fadd61b71cdacc0ccea326fdeabd36eab"
+            },
+            "reason": "引文显示仅给出结论性提醒，无解释或演示，符合reduced to unexplained reminder，但核心目标可用故local。"
+          },
+          {
+            "id": "review2:Q2:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "同向偏差也不会仅靠重复平均自动消失。",
+              "valueHash": "c1ec4cc283b869ded4bd6704017dd84fadd61b71cdacc0ccea326fdeabd36eab"
+            },
+            "reason": "同上，artifact未提供该次要目标的解释或示例，仅提醒，核心覆盖完好故local。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q2",
+          "level": 1,
+          "evidence": "sufficient",
+          "reason": "核心三目标均有准确规则与示例；次要延伸目标仅以'同向偏差也不会仅靠重复平均自动消失'未解释提醒呈现，属局部缺陷，核心用途成立。",
+          "refs": [
+            "/artifacts/0/text",
+            "/goals/3"
+          ],
+          "defects": [
+            {
+              "severity": "local",
+              "description": "次要延伸目标要求说明重复平均不能自动消除共同方向偏差，artifact仅陈述'同向偏差也不会仅靠重复平均自动消失'，未提供解释或代表演示。",
+              "impact": "核心区间形成与比较方法保持可用，不影响主要学习用途。",
+              "refs": [
+                "/artifacts/0/text",
+                "/goals/3"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "c1ec4cc283b869ded4bd6704017dd84fadd61b71cdacc0ccea326fdeabd36eab"
+                },
+                {
+                  "pointer": "/goals/3",
+                  "valueHash": "714460aff55596ab6a2b0d42615a21b9c5be82487f745a68d7ee18049f26f951"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "c1ec4cc283b869ded4bd6704017dd84fadd61b71cdacc0ccea326fdeabd36eab"
+            },
+            {
+              "pointer": "/goals/3",
+              "valueHash": "714460aff55596ab6a2b0d42615a21b9c5be82487f745a68d7ee18049f26f951"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "be7fe41aa930183db41c59f0eb9d774292296b5537e272328dd8c6576f2195a7"
+  }
+}

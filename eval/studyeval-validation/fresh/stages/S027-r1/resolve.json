@@ -1,0 +1,93 @@
+{
+  "inputIdentity": "40ada7f3fd30bcc7b1511ed3f5b49db29c23f70e76c4b4992c74471a3241733f",
+  "attempts": [
+    {
+      "physicalId": "bf48e575-d299-4ead-88c7-5e7e3c839ac2",
+      "caseId": "S027",
+      "runId": "S027-r1",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "Lesson错误宣称所有被4整除即闰年且可忽略100/400条件，致1900年误为29天，与source规则及1900反例矛盾，实质改变核心规则解释与实例核对目标。非局部缺陷故非1，证据可见故非U。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "Artifact lesson声称所有能被4整除年份都是闰年，1900年二月有29天，100和400条件可忽略，与source公历规则矛盾。",
+            "impact": "错误规则改变闰年判定核心机制与实例答案，使学习者形成错误必要条件，直接破坏goals中核对规则解释及实例的用途。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "853685eab47e41df7ddef7354c0225b71a669fb7d649723b4972c34088946314"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "5e982eb2843152ea1b81d9f7793dbfb2609636664c75b2a6bab9a349cc3bf60b"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "853685eab47e41df7ddef7354c0225b71a669fb7d649723b4972c34088946314"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "5e982eb2843152ea1b81d9f7793dbfb2609636664c75b2a6bab9a349cc3bf60b"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q1:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "所有能被4整除的年份都是闰年，因此1900年二月有29天；100和400条件可以忽略。",
+          "valueHash": "853685eab47e41df7ddef7354c0225b71a669fb7d649723b4972c34088946314"
+        },
+        "reason": "引文证实artifact错误主张所有被4整除即闰年且忽略条件，与source公历规则矛盾，实质改变核心机制与实例答案。"
+      },
+      {
+        "id": "review2:Q1:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "所有能被4整除的年份都是闰年，因此1900年二月有29天；100和400条件可以忽略。",
+          "valueHash": "853685eab47e41df7ddef7354c0225b71a669fb7d649723b4972c34088946314"
+        },
+        "reason": "原文确证lesson错误声称忽略100/400条件且1900年29天，违背source规则及1900反例，破坏核对目标。"
+      }
+    ]
+  }
+}

@@ -1,0 +1,95 @@
+{
+  "answerPolicy": "preregistered-insufficient",
+  "answers": {
+    "assessment_item_ff5c97e0-9c7d-41dd-9ced-6d2447d345e5": "I do not know the answer and have not worked through the task."
+  },
+  "result": {
+    "assessmentVersionId": "assessment_version_6ab3274a-30e6-4825-b8ca-043da47ee4c2",
+    "title": "独立检查：解释关系连接基于显式条件及左行多匹配",
+    "attempt": {
+      "id": "assessment_attempt_694cc558-e30a-427b-8ad9-ebe6e789dcb6",
+      "assessmentVersionId": "assessment_version_6ab3274a-30e6-4825-b8ca-043da47ee4c2",
+      "workspaceId": "ws_56f35c57-1dc4-426c-a413-a104a3375c58",
+      "ordinal": 1,
+      "status": "submitted",
+      "responses": {
+        "assessment_item_ff5c97e0-9c7d-41dd-9ced-6d2447d345e5": "I do not know the answer and have not worked through the task."
+      },
+      "startedAt": "2026-09-14T12:10:32.563Z",
+      "submittedAt": "2026-09-14T12:10:32.672Z",
+      "cancelledAt": null
+    },
+    "items": [
+      {
+        "itemId": "assessment_item_ff5c97e0-9c7d-41dd-9ced-6d2447d345e5",
+        "prompt": "现有左表 Authors(author_id, name) 包含行 (1, 'Lee'), (2, 'Mo')；右表 Books(book_id, author_id, title) 包含行 (101,1,'A'), (102,1,'B'), (103,2,'C')。关系连接根据显式条件（如 author_id 相等）组合两表行，左表每一行独立检查右表所有行，键相等则产生配对行，且此机制不自动汇总。请解释关系连接基于显式条件组合行的机制，并基于上述数据说明为什么作者 'Lee' 在连接结果中会出现多次（即一个左表行可以匹配多个右表行）。",
+        "purpose": "检验你是否能在自己的表述中说明这个关键能力。",
+        "sourceReferences": [
+          {
+            "materialTitle": "Joining related tables without losing unmatched rows",
+            "locationLabel": "第 1 段",
+            "excerpt": "A relational join combines rows from two tables according to a stated condition.",
+            "advisory": false
+          },
+          {
+            "materialTitle": "Joining related tables without losing unmatched rows",
+            "locationLabel": "第 6 段",
+            "excerpt": "To work out a result, take each customer row, find every order with the same identifier, and emit each matching pair.",
+            "advisory": false
+          },
+          {
+            "materialTitle": "Joining related tables without losing unmatched rows",
+            "locationLabel": "第 2 段",
+            "excerpt": "Ada appears twice because two separate order rows match Ada's customer row.",
+            "advisory": false
+          }
+        ]
+      }
+    ],
+    "result": {
+      "gradeRecordId": "grade_e81a91df-d6f3-4ae1-be0c-7ff172bc4d23",
+      "demonstrated": false,
+      "summary": "这次回答还没有回应题目要求的关键内容。",
+      "minorNotice": null,
+      "criteria": [
+        {
+          "criterionId": "criterion_a5c78f75-c42c-48e9-824d-a2cf9d9cb881",
+          "label": "解释关系连接基于显式条件（如 author_id 相等）组合两表行，左表每行独立检查右表，键相等则产生配对行。",
+          "result": "not_met",
+          "message": "这一点还没有在回答中体现。"
+        },
+        {
+          "criterionId": "criterion_56009fca-7390-4ca4-9891-8204f4b7fe12",
+          "label": "基于给定数据说明 Lee 因右表有两行 author_id=1 而匹配多次，在结果中重复出现，体现左行多匹配。",
+          "result": "not_met",
+          "message": "这一点还没有在回答中体现。"
+        }
+      ],
+      "sourceReferences": [
+        {
+          "materialTitle": "Joining related tables without losing unmatched rows",
+          "locationLabel": "第 1 段",
+          "excerpt": "A relational join combines rows from two tables according to a stated condition.",
+          "advisory": false
+        },
+        {
+          "materialTitle": "Joining related tables without losing unmatched rows",
+          "locationLabel": "第 6 段",
+          "excerpt": "To work out a result, take each customer row, find every order with the same identifier, and emit each matching pair.",
+          "advisory": false
+        },
+        {
+          "materialTitle": "Joining related tables without losing unmatched rows",
+          "locationLabel": "第 2 段",
+          "excerpt": "Ada appears twice because two separate order rows match Ada's customer row.",
+          "advisory": false
+        }
+      ],
+      "evidenceStatus": "unavailable",
+      "repairEpisodeId": "repair_4c02f049-0c80-4aed-a6e2-c7e742d84ff5",
+      "progressionPending": false,
+      "reviewSchedulingPending": false
+    },
+    "review": null
+  }
+}

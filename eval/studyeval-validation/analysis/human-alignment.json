@@ -1,0 +1,2696 @@
+{
+  "at": "2026-09-13T22:39:22.914Z",
+  "humanCases": 27,
+  "humanDimensionPairs": 34,
+  "individualRatings": 68,
+  "consensusDimensionSlots": 24,
+  "consensusCaseClusters": 21,
+  "nonConsensusSlots": 10,
+  "humanRatingCounts": {
+    "0": 15,
+    "1": 11,
+    "2": 42
+  },
+  "humanHuman": {
+    "allPairs": 34,
+    "numericPairs": 34,
+    "unresolved": 0,
+    "exact": {
+      "n": 24,
+      "d": 34,
+      "rate": 0.7058823529411765,
+      "wilson95": [
+        0.5383109020528557,
+        0.8316536932957758
+      ]
+    },
+    "numericExact": {
+      "n": 24,
+      "d": 34,
+      "rate": 0.7058823529411765,
+      "wilson95": [
+        0.5383109020528557,
+        0.8316536932957758
+      ]
+    },
+    "adjacent": 9,
+    "polarity": 1,
+    "meanAbsoluteError": 0.3235294117647059,
+    "quadraticWeightedKappa": 0.7198986058301649,
+    "matrix": [
+      [
+        7,
+        0,
+        0
+      ],
+      [
+        0,
+        1,
+        4
+      ],
+      [
+        1,
+        5,
+        16
+      ]
+    ]
+  },
+  "primaryFirstPassConsensus": {
+    "allPairs": 24,
+    "numericPairs": 24,
+    "unresolved": 0,
+    "exact": {
+      "n": 22,
+      "d": 24,
+      "rate": 0.9166666666666666,
+      "wilson95": [
+        0.741511978067893,
+        0.9768411847029567
+      ]
+    },
+    "numericExact": {
+      "n": 22,
+      "d": 24,
+      "rate": 0.9166666666666666,
+      "wilson95": [
+        0.741511978067893,
+        0.9768411847029567
+      ]
+    },
+    "adjacent": 2,
+    "polarity": 0,
+    "meanAbsoluteError": 0.08333333333333333,
+    "quadraticWeightedKappa": 0.9483870967741935,
+    "matrix": [
+      [
+        7,
+        0,
+        0
+      ],
+      [
+        0,
+        1,
+        0
+      ],
+      [
+        0,
+        2,
+        14
+      ]
+    ],
+    "caseClusterBootstrap95": [
+      0.8,
+      1
+    ]
+  },
+  "allNumericIndividualRatingsVsFirst": {
+    "allPairs": 68,
+    "numericPairs": 68,
+    "unresolved": 0,
+    "exact": {
+      "n": 53,
+      "d": 68,
+      "rate": 0.7794117647058824,
+      "wilson95": [
+        0.6674326122885067,
+        0.861509876126748
+      ]
+    },
+    "numericExact": {
+      "n": 53,
+      "d": 68,
+      "rate": 0.7794117647058824,
+      "wilson95": [
+        0.6674326122885067,
+        0.861509876126748
+      ]
+    },
+    "adjacent": 15,
+    "polarity": 0,
+    "meanAbsoluteError": 0.22058823529411764,
+    "quadraticWeightedKappa": 0.8324572930354797,
+    "matrix": [
+      [
+        14,
+        1,
+        0
+      ],
+      [
+        0,
+        7,
+        4
+      ],
+      [
+        0,
+        10,
+        32
+      ]
+    ]
+  },
+  "allOriginalRatingsVsFirst": {
+    "allPairs": 68,
+    "numericPairs": 68,
+    "unresolved": 0,
+    "exact": {
+      "n": 53,
+      "d": 68,
+      "rate": 0.7794117647058824,
+      "wilson95": [
+        0.6674326122885067,
+        0.861509876126748
+      ]
+    },
+    "numericExact": {
+      "n": 53,
+      "d": 68,
+      "rate": 0.7794117647058824,
+      "wilson95": [
+        0.6674326122885067,
+        0.861509876126748
+      ]
+    },
+    "adjacent": 15,
+    "polarity": 0,
+    "meanAbsoluteError": 0.22058823529411764,
+    "quadraticWeightedKappa": 0.8324572930354797,
+    "matrix": [
+      [
+        14,
+        1,
+        0
+      ],
+      [
+        0,
+        7,
+        4
+      ],
+      [
+        0,
+        10,
+        32
+      ]
+    ]
+  },
+  "repeatExact": {
+    "n": 32,
+    "d": 34,
+    "rate": 0.9411764705882353,
+    "wilson95": [
+      0.80906393095719,
+      0.9837173447898772
+    ]
+  },
+  "seriousRepeatSwings": 0,
+  "passes": [
+    {
+      "replicate": 1,
+      "allPairs": 24,
+      "numericPairs": 24,
+      "unresolved": 0,
+      "exact": {
+        "n": 22,
+        "d": 24,
+        "rate": 0.9166666666666666,
+        "wilson95": [
+          0.741511978067893,
+          0.9768411847029567
+        ]
+      },
+      "numericExact": {
+        "n": 22,
+        "d": 24,
+        "rate": 0.9166666666666666,
+        "wilson95": [
+          0.741511978067893,
+          0.9768411847029567
+        ]
+      },
+      "adjacent": 2,
+      "polarity": 0,
+      "meanAbsoluteError": 0.08333333333333333,
+      "quadraticWeightedKappa": 0.9483870967741935,
+      "matrix": [
+        [
+          7,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ],
+        [
+          0,
+          2,
+          14
+        ]
+      ]
+    },
+    {
+      "replicate": 2,
+      "allPairs": 24,
+      "numericPairs": 24,
+      "unresolved": 0,
+      "exact": {
+        "n": 22,
+        "d": 24,
+        "rate": 0.9166666666666666,
+        "wilson95": [
+          0.741511978067893,
+          0.9768411847029567
+        ]
+      },
+      "numericExact": {
+        "n": 22,
+        "d": 24,
+        "rate": 0.9166666666666666,
+        "wilson95": [
+          0.741511978067893,
+          0.9768411847029567
+        ]
+      },
+      "adjacent": 2,
+      "polarity": 0,
+      "meanAbsoluteError": 0.08333333333333333,
+      "quadraticWeightedKappa": 0.9483870967741935,
+      "matrix": [
+        [
+          7,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ],
+        [
+          0,
+          2,
+          14
+        ]
+      ]
+    },
+    {
+      "replicate": 3,
+      "allPairs": 24,
+      "numericPairs": 24,
+      "unresolved": 0,
+      "exact": {
+        "n": 22,
+        "d": 24,
+        "rate": 0.9166666666666666,
+        "wilson95": [
+          0.741511978067893,
+          0.9768411847029567
+        ]
+      },
+      "numericExact": {
+        "n": 22,
+        "d": 24,
+        "rate": 0.9166666666666666,
+        "wilson95": [
+          0.741511978067893,
+          0.9768411847029567
+        ]
+      },
+      "adjacent": 2,
+      "polarity": 0,
+      "meanAbsoluteError": 0.08333333333333333,
+      "quadraticWeightedKappa": 0.9483870967741935,
+      "matrix": [
+        [
+          7,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ],
+        [
+          0,
+          2,
+          14
+        ]
+      ]
+    }
+  ],
+  "predeclaredModalSensitivity": {
+    "allPairs": 24,
+    "numericPairs": 24,
+    "unresolved": 0,
+    "exact": {
+      "n": 22,
+      "d": 24,
+      "rate": 0.9166666666666666,
+      "wilson95": [
+        0.741511978067893,
+        0.9768411847029567
+      ]
+    },
+    "numericExact": {
+      "n": 22,
+      "d": 24,
+      "rate": 0.9166666666666666,
+      "wilson95": [
+        0.741511978067893,
+        0.9768411847029567
+      ]
+    },
+    "adjacent": 2,
+    "polarity": 0,
+    "meanAbsoluteError": 0.08333333333333333,
+    "quadraticWeightedKappa": 0.9483870967741935,
+    "matrix": [
+      [
+        7,
+        0,
+        0
+      ],
+      [
+        0,
+        1,
+        0
+      ],
+      [
+        0,
+        2,
+        14
+      ]
+    ]
+  },
+  "byDimension": {
+    "Q1": {
+      "allPairs": 9,
+      "numericPairs": 9,
+      "unresolved": 0,
+      "exact": {
+        "n": 8,
+        "d": 9,
+        "rate": 0.8888888888888888,
+        "wilson95": [
+          0.5650002944233439,
+          0.9801091123614551
+        ]
+      },
+      "numericExact": {
+        "n": 8,
+        "d": 9,
+        "rate": 0.8888888888888888,
+        "wilson95": [
+          0.5650002944233439,
+          0.9801091123614551
+        ]
+      },
+      "adjacent": 1,
+      "polarity": 0,
+      "meanAbsoluteError": 0.1111111111111111,
+      "quadraticWeightedKappa": 0.88,
+      "matrix": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ],
+        [
+          0,
+          1,
+          6
+        ]
+      ]
+    },
+    "Q2": {
+      "allPairs": 2,
+      "numericPairs": 2,
+      "unresolved": 0,
+      "exact": {
+        "n": 2,
+        "d": 2,
+        "rate": 1,
+        "wilson95": [
+          0.34238022750665303,
+          1
+        ]
+      },
+      "numericExact": {
+        "n": 2,
+        "d": 2,
+        "rate": 1,
+        "wilson95": [
+          0.34238022750665303,
+          1
+        ]
+      },
+      "adjacent": 0,
+      "polarity": 0,
+      "meanAbsoluteError": 0,
+      "quadraticWeightedKappa": null,
+      "matrix": [
+        [
+          2,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    "Q3": {
+      "allPairs": 8,
+      "numericPairs": 8,
+      "unresolved": 0,
+      "exact": {
+        "n": 7,
+        "d": 8,
+        "rate": 0.875,
+        "wilson95": [
+          0.5291118177871464,
+          0.9775825085499433
+        ]
+      },
+      "numericExact": {
+        "n": 7,
+        "d": 8,
+        "rate": 0.875,
+        "wilson95": [
+          0.5291118177871464,
+          0.9775825085499433
+        ]
+      },
+      "adjacent": 1,
+      "polarity": 0,
+      "meanAbsoluteError": 0.125,
+      "quadraticWeightedKappa": 0.8666666666666667,
+      "matrix": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          6
+        ]
+      ]
+    },
+    "Q4": {
+      "allPairs": 2,
+      "numericPairs": 2,
+      "unresolved": 0,
+      "exact": {
+        "n": 2,
+        "d": 2,
+        "rate": 1,
+        "wilson95": [
+          0.34238022750665303,
+          1
+        ]
+      },
+      "numericExact": {
+        "n": 2,
+        "d": 2,
+        "rate": 1,
+        "wilson95": [
+          0.34238022750665303,
+          1
+        ]
+      },
+      "adjacent": 0,
+      "polarity": 0,
+      "meanAbsoluteError": 0,
+      "quadraticWeightedKappa": 1,
+      "matrix": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          1
+        ]
+      ]
+    },
+    "Q5": {
+      "allPairs": 2,
+      "numericPairs": 2,
+      "unresolved": 0,
+      "exact": {
+        "n": 2,
+        "d": 2,
+        "rate": 1,
+        "wilson95": [
+          0.34238022750665303,
+          1
+        ]
+      },
+      "numericExact": {
+        "n": 2,
+        "d": 2,
+        "rate": 1,
+        "wilson95": [
+          0.34238022750665303,
+          1
+        ]
+      },
+      "adjacent": 0,
+      "polarity": 0,
+      "meanAbsoluteError": 0,
+      "quadraticWeightedKappa": 1,
+      "matrix": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          1
+        ]
+      ]
+    },
+    "Q6": {
+      "allPairs": 1,
+      "numericPairs": 1,
+      "unresolved": 0,
+      "exact": {
+        "n": 1,
+        "d": 1,
+        "rate": 1,
+        "wilson95": [
+          0.20654931437723745,
+          1
+        ]
+      },
+      "numericExact": {
+        "n": 1,
+        "d": 1,
+        "rate": 1,
+        "wilson95": [
+          0.20654931437723745,
+          1
+        ]
+      },
+      "adjacent": 0,
+      "polarity": 0,
+      "meanAbsoluteError": 0,
+      "quadraticWeightedKappa": null,
+      "matrix": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ]
+      ]
+    }
+  },
+  "normalizedHumanSha256": "5c03c298e8a0b6e9455c98d83de1aa2d4c3ea28814c573c4768be6f3b7019f49",
+  "sourceReproductionPassed": true,
+  "ratingsExposedOnlyAfterCompleteScoring": true,
+  "details": [
+    {
+      "itemId": "P1-01",
+      "caseId": "E047",
+      "dimension": "Q1",
+      "inputHash": "ef8d7792ebda61812466b1f13a52756fbd35b533c300c281e79d0828bb15cf92",
+      "humans": [
+        {
+          "annotator": "A",
+          "answer": "2",
+          "reason": "不能把三十人次写成三十位不同居民，作者保留了统计范围，没有盲目扩大",
+          "sourceFile": "Human-A-Packet-1-答题表.docx",
+          "sourceSha256": "f30166f8eb12800d54be9685f0604b8a17f4fabacaf26193d6d03cc7300375ce"
+        },
+        {
+          "annotator": "C",
+          "answer": "2",
+          "reason": "误区核查清晰",
+          "sourceFile": "Human-C-Packet-1-答题表.docx",
+          "sourceSha256": "65676bc7f01fc149cece6458c91a94c348b8564299d1ae6dce7fb43b89ccd230"
+        }
+      ],
+      "consensus": 2,
+      "first": 2,
+      "levels": [
+        2,
+        2,
+        2
+      ],
+      "modal": 2,
+      "repeatedExact": true,
+      "observations": [
+        {
+          "caseId": "E047",
+          "runId": "H-E047-r1",
+          "replicate": 1,
+          "dimension": "Q1",
+          "level": 2,
+          "reason": "lesson准确复述来源数字（30人次、10卡8支持）、范围限制（非不同居民、非全体读者）和决策状态（未决定），并正确指导摘要可省略各自人次但保留试行与统计范围，所有主张均有source支持，无事实或归属缺陷。",
+          "inputHash": "ef8d7792ebda61812466b1f13a52756fbd35b533c300c281e79d0828bb15cf92"
+        },
+        {
+          "caseId": "E047",
+          "runId": "H-E047-r2",
+          "replicate": 2,
+          "dimension": "Q1",
+          "level": 2,
+          "reason": "lesson准确概括source：两周六共30人次非30人；10卡中8份支持不推全体；长期未定；摘要可省分计但留试行与范围。所有主张、数字、限制均有source支撑，无事实或归属缺陷。",
+          "inputHash": "ef8d7792ebda61812466b1f13a52756fbd35b533c300c281e79d0828bb15cf92"
+        },
+        {
+          "caseId": "E047",
+          "runId": "H-E047-r3",
+          "replicate": 3,
+          "dimension": "Q1",
+          "level": 2,
+          "reason": "教学总结的主张、数字与范围均准确对应来源：两周六共30人次、10卡中8支持、不可外推全体、长期未定、可省分计但保留试行与范围。无虚构或错误归属，核心教学用途成立。",
+          "inputHash": "ef8d7792ebda61812466b1f13a52756fbd35b533c300c281e79d0828bb15cf92"
+        }
+      ]
+    },
+    {
+      "itemId": "P1-02",
+      "caseId": "N-F01-tutor",
+      "dimension": "Q1",
+      "inputHash": "a03e021c3abfc0921f93c64381059ff54f10084a4e254b73ca45e64c55cb3e9e",
+      "humans": [
+        {
+          "annotator": "A",
+          "answer": "2",
+          "reason": "正确解释了不能把部分意见推广到全部读者，事实和限制均符合资料。",
+          "sourceFile": "Human-A-Packet-1-答题表.docx",
+          "sourceSha256": "f30166f8eb12800d54be9685f0604b8a17f4fabacaf26193d6d03cc7300375ce"
+        },
+        {
+          "annotator": "C",
+          "answer": "2",
+          "reason": "关键逻辑清楚,即:时间上的重叠或共同出现，不等于一方造成另一方。",
+          "sourceFile": "Human-C-Packet-1-答题表.docx",
+          "sourceSha256": "65676bc7f01fc149cece6458c91a94c348b8564299d1ae6dce7fb43b89ccd230"
+        }
+      ],
+      "consensus": 2,
+      "first": 2,
+      "levels": [
+        2,
+        2,
+        2
+      ],
+      "modal": 2,
+      "repeatedExact": true,
+      "observations": [
+        {
+          "caseId": "N-F01-tutor",
+          "runId": "H-N-F01-tutor-r1",
+          "replicate": 1,
+          "dimension": "Q1",
+          "level": 2,
+          "reason": "产物准确转述资料中同现非因果原则，假设例与资料不同且无事实断言错误，归属与限制均受F01支持，核心结论正确无缺陷。",
+          "inputHash": "a03e021c3abfc0921f93c64381059ff54f10084a4e254b73ca45e64c55cb3e9e"
+        },
+        {
+          "caseId": "N-F01-tutor",
+          "runId": "H-N-F01-tutor-r2",
+          "replicate": 2,
+          "dimension": "Q1",
+          "level": 2,
+          "reason": "tutor-reply准确归属资料中同现非因果原则，使用明确假设例子（图书馆与喷药）解释，边界说明符合资料；无事实或归属缺陷。",
+          "inputHash": "a03e021c3abfc0921f93c64381059ff54f10084a4e254b73ca45e64c55cb3e9e"
+        },
+        {
+          "caseId": "N-F01-tutor",
+          "runId": "H-N-F01-tutor-r3",
+          "replicate": 3,
+          "dimension": "Q1",
+          "level": 2,
+          "reason": "产物准确转述来源中同现非因果的关键关系，自举读书节与喷药例子未与资料重复，边界说明与来源精神一致，无事实或归属缺陷。",
+          "inputHash": "a03e021c3abfc0921f93c64381059ff54f10084a4e254b73ca45e64c55cb3e9e"
+        }
+      ]
+    },
+    {
+      "itemId": "P1-02",
+      "caseId": "N-F01-tutor",
+      "dimension": "Q3",
+      "inputHash": "a03e021c3abfc0921f93c64381059ff54f10084a4e254b73ca45e64c55cb3e9e",
+      "humans": [
+        {
+          "annotator": "A",
+          "answer": "2",
+          "reason": "同时发生不等于导致，因果没问题",
+          "sourceFile": "Human-A-Packet-1-答题表.docx",
+          "sourceSha256": "f30166f8eb12800d54be9685f0604b8a17f4fabacaf26193d6d03cc7300375ce"
+        },
+        {
+          "annotator": "C",
+          "answer": "2",
+          "reason": "举例直观",
+          "sourceFile": "Human-C-Packet-1-答题表.docx",
+          "sourceSha256": "65676bc7f01fc149cece6458c91a94c348b8564299d1ae6dce7fb43b89ccd230"
+        }
+      ],
+      "consensus": 2,
+      "first": 2,
+      "levels": [
+        2,
+        2,
+        2
+      ],
+      "modal": 2,
+      "repeatedExact": true,
+      "observations": [
+        {
+          "caseId": "N-F01-tutor",
+          "runId": "H-N-F01-tutor-r1",
+          "replicate": 1,
+          "dimension": "Q3",
+          "level": 2,
+          "reason": "以读书节与喷药例解释同现非因果，阐明无比较数据不能写因果，并交代例子边界及摘要其他规则，前提-例-结论连接充分。",
+          "inputHash": "a03e021c3abfc0921f93c64381059ff54f10084a4e254b73ca45e64c55cb3e9e"
+        },
+        {
+          "caseId": "N-F01-tutor",
+          "runId": "H-N-F01-tutor-r2",
+          "replicate": 2,
+          "dimension": "Q3",
+          "level": 2,
+          "reason": "例子从假设前提展示同现非因果推理：无比较数据甚至可能反向，连接结论；适用边界明确，无需额外算术，解释充分。",
+          "inputHash": "a03e021c3abfc0921f93c64381059ff54f10084a4e254b73ca45e64c55cb3e9e"
+        },
+        {
+          "caseId": "N-F01-tutor",
+          "runId": "H-N-F01-tutor-r3",
+          "replicate": 3,
+          "dimension": "Q3",
+          "level": 2,
+          "reason": "举例从同时发生前提出发，展示缺乏比较依据不能推断因果甚至可能反向，明确例子仅用于理解该原则及证明因果需其他依据，解释连接与限制充分。",
+          "inputHash": "a03e021c3abfc0921f93c64381059ff54f10084a4e254b73ca45e64c55cb3e9e"
+        }
+      ]
+    },
+    {
+      "itemId": "P1-03",
+      "caseId": "E658",
+      "dimension": "Q2",
+      "inputHash": "07fa108a650e1ccbcbd3dfcd13915bffcb5d1d9464320760a4ea5542d2c8ea6f",
+      "humans": [
+        {
+          "annotator": "A",
+          "answer": "2",
+          "reason": "包含区间计算、误差限制和刻度不等于准确等核心内容，覆盖目标要求。",
+          "sourceFile": "Human-A-Packet-1-答题表.docx",
+          "sourceSha256": "f30166f8eb12800d54be9685f0604b8a17f4fabacaf26193d6d03cc7300375ce"
+        },
+        {
+          "annotator": "C",
+          "answer": "1",
+          "reason": "刻度细不等于准确我觉得在这段话里没体现",
+          "sourceFile": "Human-C-Packet-1-答题表.docx",
+          "sourceSha256": "65676bc7f01fc149cece6458c91a94c348b8564299d1ae6dce7fb43b89ccd230"
+        }
+      ],
+      "consensus": null,
+      "first": 1,
+      "levels": [
+        1,
+        1,
+        1
+      ],
+      "modal": 1,
+      "repeatedExact": true,
+      "observations": [
+        {
+          "caseId": "E658",
+          "runId": "H-E658-r1",
+          "replicate": 1,
+          "dimension": "Q2",
+          "level": 1,
+          "reason": "核心三目标均有可操作规则或示例：区间公式、比较规则、分辨率区分。次要目标仅以'重复测量时也要留意共同偏差'提醒，未说明平均不能消除共同偏差，缩减为未解释提醒，核心用途成立故为1而非0；因确有局部缺陷不为2。",
+          "inputHash": "07fa108a650e1ccbcbd3dfcd13915bffcb5d1d9464320760a4ea5542d2c8ea6f"
+        },
+        {
+          "caseId": "E658",
+          "runId": "H-E658-r2",
+          "replicate": 2,
+          "dimension": "Q2",
+          "level": 1,
+          "reason": "核心目标0-2在artifact中有准确规则或示例（区间公式、比较、刻度不等于准确），但次要目标3仅以'重复测量时也要留意共同偏差'未解释提醒出现，缺说明平均不自动消除，属局部缩减，主体用途成立。",
+          "inputHash": "07fa108a650e1ccbcbd3dfcd13915bffcb5d1d9464320760a4ea5542d2c8ea6f"
+        },
+        {
+          "caseId": "E658",
+          "runId": "H-E658-r3",
+          "replicate": 3,
+          "dimension": "Q2",
+          "level": 1,
+          "reason": "核心目标0-2在artifact中均有准确可操作规则或示例：区分刻度细与准确、区间公式及示例、非重叠/重叠比较。但次要目标3要求说明重复平均不能消除共同偏差，artifact仅以'重复测量时也要留意共同偏差'未解释提醒，属局部深度缺口，核心用途成立，故评1分。",
+          "inputHash": "07fa108a650e1ccbcbd3dfcd13915bffcb5d1d9464320760a4ea5542d2c8ea6f"
+        }
+      ]
+    },
+    {
+      "itemId": "P1-04",
+      "caseId": "E413",
+      "dimension": "Q3",
+      "inputHash": "dd39f264e0fd5760d77195257997a2ffc0d85b3366a467c458f5769bbaf9b980",
+      "humans": [
+        {
+          "annotator": "A",
+          "answer": "0",
+          "reason": "原文要求裁纸和调墨都完成才能盖章，作者遗漏前置条件导致时间计算错误。",
+          "sourceFile": "Human-A-Packet-1-答题表.docx",
+          "sourceSha256": "f30166f8eb12800d54be9685f0604b8a17f4fabacaf26193d6d03cc7300375ce"
+        },
+        {
+          "annotator": "C",
+          "answer": "0",
+          "reason": "为什么盖章不等裁纸",
+          "sourceFile": "Human-C-Packet-1-答题表.docx",
+          "sourceSha256": "65676bc7f01fc149cece6458c91a94c348b8564299d1ae6dce7fb43b89ccd230"
+        }
+      ],
+      "consensus": 0,
+      "first": 0,
+      "levels": [
+        0,
+        0,
+        0
+      ],
+      "modal": 0,
+      "repeatedExact": true,
+      "observations": [
+        {
+          "caseId": "E413",
+          "runId": "H-E413-r1",
+          "replicate": 1,
+          "dimension": "Q3",
+          "level": 0,
+          "reason": "artifact称盖章仅等调墨3分不必等裁纸且任何人员数同，违背source明确依赖与资源条件，教无效方法，破坏讲清步骤与边界的核心用途。",
+          "inputHash": "dd39f264e0fd5760d77195257997a2ffc0d85b3366a467c458f5769bbaf9b980"
+        },
+        {
+          "caseId": "E413",
+          "runId": "H-E413-r2",
+          "replicate": 2,
+          "dimension": "Q3",
+          "level": 0,
+          "reason": "artifact断言盖章仅等调墨3分即可开始且不必等裁纸，推得第5分盖完、11分装袋且任何人员数同。source明确定义盖章须裁纸调墨均完成，且人员数改变并行与总时。该解释教无效方法，实质错误，破坏讲清步骤与边界的目标。",
+          "inputHash": "dd39f264e0fd5760d77195257997a2ffc0d85b3366a467c458f5769bbaf9b980"
+        },
+        {
+          "caseId": "E413",
+          "runId": "H-E413-r3",
+          "replicate": 3,
+          "dimension": "Q3",
+          "level": 0,
+          "reason": "工件声称盖章仅等调墨3分钟不必等裁纸且任何人员数时长相同，直接违背来源明确依赖规则与单双人员时长差异，教授无效工序方法，核心解释错误。",
+          "inputHash": "dd39f264e0fd5760d77195257997a2ffc0d85b3366a467c458f5769bbaf9b980"
+        }
+      ]
+    },
+    {
+      "itemId": "P1-05",
+      "caseId": "N-F02-tutor",
+      "dimension": "Q1",
+      "inputHash": "03d50ecde50ddf9d85d9caf6ceb17427a247f4de31d09bd49f793bc33dc9fb65",
+      "humans": [
+        {
+          "annotator": "A",
+          "answer": "2",
+          "reason": "作者正确说明百分比变化取决于基数，果园例子计算也正确",
+          "sourceFile": "Human-A-Packet-1-答题表.docx",
+          "sourceSha256": "f30166f8eb12800d54be9685f0604b8a17f4fabacaf26193d6d03cc7300375ce"
+        },
+        {
+          "annotator": "C",
+          "answer": "2",
+          "reason": "连续百分比不能叠加及原因说明清晰",
+          "sourceFile": "Human-C-Packet-1-答题表.docx",
+          "sourceSha256": "65676bc7f01fc149cece6458c91a94c348b8564299d1ae6dce7fb43b89ccd230"
+        }
+      ],
+      "consensus": 2,
+      "first": 2,
+      "levels": [
+        2,
+        2,
+        2
+      ],
+      "modal": 2,
+      "repeatedExact": true,
+      "observations": [
+        {
+          "caseId": "N-F02-tutor",
+          "runId": "H-N-F02-tutor-r1",
+          "replicate": 1,
+          "dimension": "Q1",
+          "level": 2,
+          "reason": "引用资料准确，非价格例子计算正确（500*0.8=400, 400*0.2=80, 480），边界描述与资料一致，无事实或归属缺陷。",
+          "inputHash": "03d50ecde50ddf9d85d9caf6ceb17427a247f4de31d09bd49f793bc33dc9fb65"
+        },
+        {
+          "caseId": "N-F02-tutor",
+          "runId": "H-N-F02-tutor-r2",
+          "replicate": 2,
+          "dimension": "Q1",
+          "level": 2,
+          "reason": "回复准确引用资料中连续百分比基数不同的结论，用果园500箱减增20%算得480箱无误，边界说明与资料假设一致，无事实或归属缺陷。",
+          "inputHash": "03d50ecde50ddf9d85d9caf6ceb17427a247f4de31d09bd49f793bc33dc9fb65"
+        },
+        {
+          "caseId": "N-F02-tutor",
+          "runId": "H-N-F02-tutor-r3",
+          "replicate": 3,
+          "dimension": "Q1",
+          "level": 2,
+          "reason": "导师回复准确引用资料连续百分比基数不同的论述，用果园非价格例正确算500箱减增20%得480箱，边界说明归因资料提醒，无事实或归属缺陷。",
+          "inputHash": "03d50ecde50ddf9d85d9caf6ceb17427a247f4de31d09bd49f793bc33dc9fb65"
+        }
+      ]
+    },
+    {
+      "itemId": "P1-05",
+      "caseId": "N-F02-tutor",
+      "dimension": "Q3",
+      "inputHash": "03d50ecde50ddf9d85d9caf6ceb17427a247f4de31d09bd49f793bc33dc9fb65",
+      "humans": [
+        {
+          "annotator": "A",
+          "answer": "2",
+          "reason": "作者用产量变化解释百分比不能抵消，例子符合资料中的关键关系",
+          "sourceFile": "Human-A-Packet-1-答题表.docx",
+          "sourceSha256": "f30166f8eb12800d54be9685f0604b8a17f4fabacaf26193d6d03cc7300375ce"
+        },
+        {
+          "annotator": "C",
+          "answer": "1",
+          "reason": "百分点和相对增长率跳过了",
+          "sourceFile": "Human-C-Packet-1-答题表.docx",
+          "sourceSha256": "65676bc7f01fc149cece6458c91a94c348b8564299d1ae6dce7fb43b89ccd230"
+        }
+      ],
+      "consensus": null,
+      "first": 2,
+      "levels": [
+        2,
+        2,
+        2
+      ],
+      "modal": 2,
+      "repeatedExact": true,
+      "observations": [
+        {
+          "caseId": "N-F02-tutor",
+          "runId": "H-N-F02-tutor-r1",
+          "replicate": 1,
+          "dimension": "Q3",
+          "level": 2,
+          "reason": "例子展示关键操作：第二步以新基数400计算20%得80，连接不抵消结论，并说明适用边界，解释充分无缺失连接。",
+          "inputHash": "03d50ecde50ddf9d85d9caf6ceb17427a247f4de31d09bd49f793bc33dc9fb65"
+        },
+        {
+          "caseId": "N-F02-tutor",
+          "runId": "H-N-F02-tutor-r2",
+          "replicate": 2,
+          "dimension": "Q3",
+          "level": 2,
+          "reason": "例子从500箱前提出发，展示减产剩400、增产以400为基数加80得480，明确新基数致不抵消，并交代无取整等政策限制，解释连接充分。",
+          "inputHash": "03d50ecde50ddf9d85d9caf6ceb17427a247f4de31d09bd49f793bc33dc9fb65"
+        },
+        {
+          "caseId": "N-F02-tutor",
+          "runId": "H-N-F02-tutor-r3",
+          "replicate": 3,
+          "dimension": "Q3",
+          "level": 2,
+          "reason": "解释展示关键操作：第二次增产20%作用于新基数400箱得80箱，连接至不抵消结论，并说明无取整政策门槛等边界，符合充分停止条件。",
+          "inputHash": "03d50ecde50ddf9d85d9caf6ceb17427a247f4de31d09bd49f793bc33dc9fb65"
+        }
+      ]
+    },
+    {
+      "itemId": "P1-06",
+      "caseId": "E027",
+      "dimension": "Q4",
+      "inputHash": "27e79ead871b1233fce22af4b7cd122a02e4e7a93fd14ff2f25e1b52c25d10ae",
+      "humans": [
+        {
+          "annotator": "A",
+          "answer": "2",
+          "reason": "题目条件完整，参考答案正确，且没有提前展示解答",
+          "sourceFile": "Human-A-Packet-1-答题表.docx",
+          "sourceSha256": "f30166f8eb12800d54be9685f0604b8a17f4fabacaf26193d6d03cc7300375ce"
+        },
+        {
+          "annotator": "C",
+          "answer": "2",
+          "reason": "作答正确，步骤简洁",
+          "sourceFile": "Human-C-Packet-1-答题表.docx",
+          "sourceSha256": "65676bc7f01fc149cece6458c91a94c348b8564299d1ae6dce7fb43b89ccd230"
+        }
+      ],
+      "consensus": 2,
+      "first": 2,
+      "levels": [
+        2,
+        2,
+        2
+      ],
+      "modal": 2,
+      "repeatedExact": true,
+      "observations": [
+        {
+          "caseId": "E027",
+          "runId": "H-E027-r1",
+          "replicate": 1,
+          "dimension": "Q4",
+          "level": 2,
+          "reason": "题干明确假设，要求分段求解并比较。作者参考解正确未泄露。学生需应用分时段效率计算多步求解，达到working_fluency深度，判别力足。",
+          "inputHash": "27e79ead871b1233fce22af4b7cd122a02e4e7a93fd14ff2f25e1b52c25d10ae"
+        },
+        {
+          "caseId": "E027",
+          "runId": "H-E027-r2",
+          "replicate": 2,
+          "dimension": "Q4",
+          "level": 2,
+          "reason": "题目给定甲8h乙4h及独立可加条件，乙先做1h甲独做剩余，求总时并比较合作。作者参考解正确，无提前泄露，需应用多步计算，符合working_fluency。",
+          "inputHash": "27e79ead871b1233fce22af4b7cd122a02e4e7a93fd14ff2f25e1b52c25d10ae"
+        },
+        {
+          "caseId": "E027",
+          "runId": "H-E027-r3",
+          "replicate": 3,
+          "dimension": "Q4",
+          "level": 2,
+          "reason": "题干给定可分开无重复等假设，要求乙先做甲独做总时并与合作比较。作者参考解正确且未展示，学生需多步计算与应用方法，判别力足，符合working_fluency，无缺陷。",
+          "inputHash": "27e79ead871b1233fce22af4b7cd122a02e4e7a93fd14ff2f25e1b52c25d10ae"
+        }
+      ]
+    },
+    {
+      "itemId": "P1-07",
+      "caseId": "E497",
+      "dimension": "Q5",
+      "inputHash": "b62b6128a5713adcb245bf537cd8bf0d306cd2e799a3fb5928a50de4353169ed",
+      "humans": [
+        {
+          "annotator": "A",
+          "answer": "2",
+          "reason": "学习者满足平均数、中位数计算和解释要求，系统评分符合标准",
+          "sourceFile": "Human-A-Packet-1-答题表.docx",
+          "sourceSha256": "f30166f8eb12800d54be9685f0604b8a17f4fabacaf26193d6d03cc7300375ce"
+        },
+        {
+          "annotator": "C",
+          "answer": "1",
+          "reason": "学生答案没有小标题，不满足标准三了",
+          "sourceFile": "Human-C-Packet-1-答题表.docx",
+          "sourceSha256": "65676bc7f01fc149cece6458c91a94c348b8564299d1ae6dce7fb43b89ccd230"
+        }
+      ],
+      "consensus": null,
+      "first": 1,
+      "levels": [
+        1,
+        1,
+        1
+      ],
+      "modal": 1,
+      "repeatedExact": true,
+      "observations": [
+        {
+          "caseId": "E497",
+          "runId": "H-E497-r1",
+          "replicate": 1,
+          "dimension": "Q5",
+          "level": 1,
+          "reason": "重算确认原平均6中位4、改后平均8中位4；学生答案含必要数值与解释，产品对必需要求c1,c2判定met且授分granted正确。但产品误将可选c3判met并反馈使用小标题，实际答案为连续文本无小标题，属可选判定错误，核心评分准确，故1级。",
+          "inputHash": "b62b6128a5713adcb245bf537cd8bf0d306cd2e799a3fb5928a50de4353169ed"
+        },
+        {
+          "caseId": "E497",
+          "runId": "H-E497-r2",
+          "replicate": 2,
+          "dimension": "Q5",
+          "level": 1,
+          "reason": "重解确认原平均6中位4、改后平均8中位4，学生答案满足c1,c2；产品授分granted正确。但可选c3产品误判met且反馈称用小标题，实际答案为连续文本无标题。必需判定与学分正确，仅可选错误，故1级。",
+          "inputHash": "b62b6128a5713adcb245bf537cd8bf0d306cd2e799a3fb5928a50de4353169ed"
+        },
+        {
+          "caseId": "E497",
+          "runId": "H-E497-r3",
+          "replicate": 3,
+          "dimension": "Q5",
+          "level": 1,
+          "reason": "必需要求c1,c2学生答案均满足，产品授分正确；但可选c3误判met且反馈虚假称小标题，属可选错误不影响核心给分。",
+          "inputHash": "b62b6128a5713adcb245bf537cd8bf0d306cd2e799a3fb5928a50de4353169ed"
+        }
+      ]
+    },
+    {
+      "itemId": "P1-08",
+      "caseId": "N-F03-tutor",
+      "dimension": "Q1",
+      "inputHash": "278275b2f9f3d606ff2afde4dad0d40a93eb9aca4c40947e15619b0fdc9b9c57",
+      "humans": [
+        {
+          "annotator": "A",
+          "answer": "2",
+          "reason": "指出观察数据不能直接证明因果，符合资料对混杂因素的说明",
+          "sourceFile": "Human-A-Packet-1-答题表.docx",
+          "sourceSha256": "f30166f8eb12800d54be9685f0604b8a17f4fabacaf26193d6d03cc7300375ce"
+        },
+        {
+          "annotator": "C",
+          "answer": "2",
+          "reason": "关键关系说明正确",
+          "sourceFile": "Human-C-Packet-1-答题表.docx",
+          "sourceSha256": "65676bc7f01fc149cece6458c91a94c348b8564299d1ae6dce7fb43b89ccd230"
+        }
+      ],
+      "consensus": 2,
+      "first": 2,
+      "levels": [
+        2,
+        2,
+        2
+      ],
+      "modal": 2,
+      "repeatedExact": true,
+      "observations": [
+        {
+          "caseId": "N-F03-tutor",
+          "runId": "H-N-F03-tutor-r1",
+          "replicate": 1,
+          "dimension": "Q1",
+          "level": 2,
+          "reason": "回复准确引述来源早餐调查不证因果原文，用运动鞋例解释观察差异不推因果并给边界，归属与事实无缺陷，核心结论成立。",
+          "inputHash": "278275b2f9f3d606ff2afde4dad0d40a93eb9aca4c40947e15619b0fdc9b9c57"
+        },
+        {
+          "caseId": "N-F03-tutor",
+          "runId": "H-N-F03-tutor-r2",
+          "replicate": 2,
+          "dimension": "Q1",
+          "level": 2,
+          "reason": "引用资料原句准确，关键关系归纳与来源一致；自创运动鞋例明确为假想并标注非原文，适用边界与三层框架均符来源逻辑，无事实或归属缺陷。",
+          "inputHash": "278275b2f9f3d606ff2afde4dad0d40a93eb9aca4c40947e15619b0fdc9b9c57"
+        },
+        {
+          "caseId": "N-F03-tutor",
+          "runId": "H-N-F03-tutor-r3",
+          "replicate": 3,
+          "dimension": "Q1",
+          "level": 2,
+          "reason": "导师回复准确引用资料关于观察性差异不证明因果的论断，自创鞋类例子与资料精神一致且标注非原文，适用边界正确，无事实或归属缺陷。",
+          "inputHash": "278275b2f9f3d606ff2afde4dad0d40a93eb9aca4c40947e15619b0fdc9b9c57"
+        }
+      ]
+    },
+    {
+      "itemId": "P1-08",
+      "caseId": "N-F03-tutor",
+      "dimension": "Q3",
+      "inputHash": "278275b2f9f3d606ff2afde4dad0d40a93eb9aca4c40947e15619b0fdc9b9c57",
+      "humans": [
+        {
+          "annotator": "A",
+          "answer": "1",
+          "reason": "运动鞋例子说明相关不等于因果，并指出随机分组会改变结论",
+          "sourceFile": "Human-A-Packet-1-答题表.docx",
+          "sourceSha256": "f30166f8eb12800d54be9685f0604b8a17f4fabacaf26193d6d03cc7300375ce"
+        },
+        {
+          "annotator": "C",
+          "answer": "2",
+          "reason": "举例直观",
+          "sourceFile": "Human-C-Packet-1-答题表.docx",
+          "sourceSha256": "65676bc7f01fc149cece6458c91a94c348b8564299d1ae6dce7fb43b89ccd230"
+        }
+      ],
+      "consensus": null,
+      "first": 2,
+      "levels": [
+        2,
+        2,
+        2
+      ],
+      "modal": 2,
+      "repeatedExact": true,
+      "observations": [
+        {
+          "caseId": "N-F03-tutor",
+          "runId": "H-N-F03-tutor-r1",
+          "replicate": 1,
+          "dimension": "Q3",
+          "level": 2,
+          "reason": "运动鞋例从观察差异前提出发，指出混杂可能故不推因果，明确自然观察与随机同条件边界，并套用三层框架，解释连接充分。",
+          "inputHash": "278275b2f9f3d606ff2afde4dad0d40a93eb9aca4c40947e15619b0fdc9b9c57"
+        },
+        {
+          "caseId": "N-F03-tutor",
+          "runId": "H-N-F03-tutor-r2",
+          "replicate": 2,
+          "dimension": "Q3",
+          "level": 2,
+          "reason": "用穿运动鞋假想例解释观察差异不证因果，指出混杂替代解释，交代自然观察与随机控制边界，连接前提与结论清晰，满足局部解释充分性。",
+          "inputHash": "278275b2f9f3d606ff2afde4dad0d40a93eb9aca4c40947e15619b0fdc9b9c57"
+        },
+        {
+          "caseId": "N-F03-tutor",
+          "runId": "H-N-F03-tutor-r3",
+          "replicate": 3,
+          "dimension": "Q3",
+          "level": 2,
+          "reason": "以鞋类观察为例解释混杂导致因果未立，展示前提（自然观察差异）到结论（不自动因果）的推理，并明确适用边界与三层框架，解释连接充分。",
+          "inputHash": "278275b2f9f3d606ff2afde4dad0d40a93eb9aca4c40947e15619b0fdc9b9c57"
+        }
+      ]
+    },
+    {
+      "itemId": "P1-09",
+      "caseId": "E967",
+      "dimension": "Q6",
+      "inputHash": "57247b05dcd3b0c88d34f5a5a5e57eeff3904547f864dbc3a87c803f7680f8be",
+      "humans": [
+        {
+          "annotator": "A",
+          "answer": "0",
+          "reason": "作者把错误归因于“不认真背诵”，没有针对自愿分组导致的因果错误提供补救，抄三遍过于主观",
+          "sourceFile": "Human-A-Packet-1-答题表.docx",
+          "sourceSha256": "f30166f8eb12800d54be9685f0604b8a17f4fabacaf26193d6d03cc7300375ce"
+        },
+        {
+          "annotator": "C",
+          "answer": "0",
+          "reason": "错因不够详细",
+          "sourceFile": "Human-C-Packet-1-答题表.docx",
+          "sourceSha256": "65676bc7f01fc149cece6458c91a94c348b8564299d1ae6dce7fb43b89ccd230"
+        }
+      ],
+      "consensus": 0,
+      "first": 0,
+      "levels": [
+        0,
+        0,
+        0
+      ],
+      "modal": 0,
+      "repeatedExact": true,
+      "observations": [
+        {
+          "caseId": "E967",
+          "runId": "H-E967-r1",
+          "replicate": 1,
+          "dimension": "Q6",
+          "level": 0,
+          "reason": "support诊断称出错因未背诵，发明学习者状态；并要求抄写参考答案原样重答声称即独立迁移掌握。同时命中rubric 0的invent state与claim rehearsal as mastery，修复核心用途失效，非局部或泛泛。",
+          "inputHash": "57247b05dcd3b0c88d34f5a5a5e57eeff3904547f864dbc3a87c803f7680f8be"
+        },
+        {
+          "caseId": "E967",
+          "runId": "H-E967-r2",
+          "replicate": 2,
+          "dimension": "Q6",
+          "level": 0,
+          "reason": "Q6需诊断真实推理缺口并给可用修复。support称出错因没背诵，虚构学习者状态，未指认误认自愿=随机；并令抄参考答案原样答称证明迁移，触0分中发明原因与复述即掌握。核心修复用途落空，非局部。",
+          "inputHash": "57247b05dcd3b0c88d34f5a5a5e57eeff3904547f864dbc3a87c803f7680f8be"
+        },
+        {
+          "caseId": "E967",
+          "runId": "H-E967-r3",
+          "replicate": 3,
+          "dimension": "Q6",
+          "level": 0,
+          "reason": "支持文本诊断出错因未认真背诵，发明学习者状态，未指出误认自愿为随机的推理缺口；并要求抄写参考答案原样重答声称独立掌握，教导错误方法且将复述等同掌握，符合Q6零分标准，核心修复用途不成立。",
+          "inputHash": "57247b05dcd3b0c88d34f5a5a5e57eeff3904547f864dbc3a87c803f7680f8be"
+        }
+      ]
+    },
+    {
+      "itemId": "P2-01",
+      "caseId": "E094",
+      "dimension": "Q1",
+      "inputHash": "e8edfc4e6a7f698db1c4caa1e95476f9689a95e6b87d32336d8d0af4d8c95adb",
+      "humans": [
+        {
+          "annotator": "A",
+          "answer": "1",
+          "reason": "说的基本跟原材料一致",
+          "sourceFile": "Human-A-Packet-2-答题表.docx",
+          "sourceSha256": "c00362c608cbdd25b99fd7f2bddf22f446397781355adda10d51c82e23b047e1"
+        },
+        {
+          "annotator": "B",
+          "answer": "1",
+          "reason": "负责人建议延长试行，长期安排尚待讨论。",
+          "sourceFile": "Human-B-Packet-2-答题表.docx",
+          "sourceSha256": "0c9043684d6c9c770f7fe4407210cfadd494f2a87beb0b570916b525ff234444"
+        }
+      ],
+      "consensus": 1,
+      "first": 1,
+      "levels": [
+        1,
+        1,
+        1
+      ],
+      "modal": 1,
+      "repeatedExact": true,
+      "observations": [
+        {
+          "caseId": "E094",
+          "runId": "H-E094-r1",
+          "replicate": 1,
+          "dimension": "Q1",
+          "level": 1,
+          "reason": "核心主张（总人次30、非独立居民、意见卡不外延、长期未定、摘要可省分项）与源文一致；末尾回顾颠倒两周六分项人次（称第一12第二18，源为18与12），属可证局部事实错误，修正后教学用途完整。",
+          "inputHash": "e8edfc4e6a7f698db1c4caa1e95476f9689a95e6b87d32336d8d0af4d8c95adb"
+        },
+        {
+          "caseId": "E094",
+          "runId": "H-E094-r2",
+          "replicate": 2,
+          "dimension": "Q1",
+          "level": 1,
+          "reason": "核心主张（总30人次、八份支持、未决定、可省略分别人次）均与源一致且正确；但附带回顾颠倒两周六各自人次（源为18+12，文写12+18），属局部事实错，修正后核心用途不变。",
+          "inputHash": "e8edfc4e6a7f698db1c4caa1e95476f9689a95e6b87d32336d8d0af4d8c95adb"
+        },
+        {
+          "caseId": "E094",
+          "runId": "H-E094-r3",
+          "replicate": 3,
+          "dimension": "Q1",
+          "level": 1,
+          "reason": "核心主张（总30人次、非不同居民、8/10支持不外延、长期未定、摘要可省分项留范围）均符source；仅末尾回顾将两周六人次颠倒（称第一12第二18，源为18与12），属局部事实错误，修正后教学用途不变。",
+          "inputHash": "e8edfc4e6a7f698db1c4caa1e95476f9689a95e6b87d32336d8d0af4d8c95adb"
+        }
+      ]
+    },
+    {
+      "itemId": "P2-02",
+      "caseId": "E470",
+      "dimension": "Q1",
+      "inputHash": "dd377a458a8db124d451ed2aa0b7d3fef555e62146877d4dff5b197694b0c452",
+      "humans": [
+        {
+          "annotator": "A",
+          "answer": "2",
+          "reason": "数字算对了，也知道数量和比例不是一回事，不能混着比较",
+          "sourceFile": "Human-A-Packet-2-答题表.docx",
+          "sourceSha256": "c00362c608cbdd25b99fd7f2bddf22f446397781355adda10d51c82e23b047e1"
+        },
+        {
+          "annotator": "B",
+          "answer": "2",
+          "reason": "若要公平比较，需要先约定物品难度、统计时段和完成定义等条件。",
+          "sourceFile": "Human-B-Packet-2-答题表.docx",
+          "sourceSha256": "0c9043684d6c9c770f7fe4407210cfadd494f2a87beb0b570916b525ff234444"
+        }
+      ],
+      "consensus": 2,
+      "first": 2,
+      "levels": [
+        2,
+        2,
+        2
+      ],
+      "modal": 2,
+      "repeatedExact": true,
+      "observations": [
+        {
+          "caseId": "E470",
+          "runId": "H-E470-r1",
+          "replicate": 1,
+          "dimension": "Q1",
+          "level": 2,
+          "reason": "artifact总结的件数比较、比例计算、合并比例116/140≈82.9%、分母不同不可直接平均及需难度信息论能力等主张，均与source文字数字及限制一致，无事实错误或越界推断。",
+          "inputHash": "dd377a458a8db124d451ed2aa0b7d3fef555e62146877d4dff5b197694b0c452"
+        },
+        {
+          "caseId": "E470",
+          "runId": "H-E470-r2",
+          "replicate": 2,
+          "dimension": "Q1",
+          "level": 2,
+          "reason": "lesson中甲80乙36件数、比例计算、合并116/140≈82.9%、不平均百分率、需难度信息论能力、纵轴截断不改原差等主张，均能在source的登记表与读图说明中找到支持或直接推导，无数字错误或范围溢出，来源支持完整。",
+          "inputHash": "dd377a458a8db124d451ed2aa0b7d3fef555e62146877d4dff5b197694b0c452"
+        },
+        {
+          "caseId": "E470",
+          "runId": "H-E470-r3",
+          "replicate": 3,
+          "dimension": "Q1",
+          "level": 2,
+          "reason": "artifact总结的件数、比例、合并计算及边界条件均与source提供的登记表数据和说明一致，无事实或归属缺陷。",
+          "inputHash": "dd377a458a8db124d451ed2aa0b7d3fef555e62146877d4dff5b197694b0c452"
+        }
+      ]
+    },
+    {
+      "itemId": "P2-03",
+      "caseId": "E705",
+      "dimension": "Q2",
+      "inputHash": "5b3183984d363b1023add0b5e9f28080511e53612f4a5411d761d0860cd94626",
+      "humans": [
+        {
+          "annotator": "A",
+          "answer": "0",
+          "reason": "这题重点不只是看小数位，他把误差和区间这些重要内容都漏掉了。",
+          "sourceFile": "Human-A-Packet-2-答题表.docx",
+          "sourceSha256": "c00362c608cbdd25b99fd7f2bddf22f446397781355adda10d51c82e23b047e1"
+        },
+        {
+          "annotator": "B",
+          "answer": "0",
+          "reason": "比较两件物品时，应比较它们允许的区间，而不是只看中心读数。",
+          "sourceFile": "Human-B-Packet-2-答题表.docx",
+          "sourceSha256": "0c9043684d6c9c770f7fe4407210cfadd494f2a87beb0b570916b525ff234444"
+        }
+      ],
+      "consensus": 0,
+      "first": 0,
+      "levels": [
+        0,
+        0,
+        0
+      ],
+      "modal": 0,
+      "repeatedExact": true,
+      "observations": [
+        {
+          "caseId": "E705",
+          "runId": "H-E705-r1",
+          "replicate": 1,
+          "dimension": "Q2",
+          "level": 0,
+          "reason": "产物声称小数多必准，矛盾目标0区分分辨率与准确；并排除误差界限与区间比较，使本质目标1、2缺失。声明学习范围被自身推翻，核心目的失效。",
+          "inputHash": "5b3183984d363b1023add0b5e9f28080511e53612f4a5411d761d0860cd94626"
+        },
+        {
+          "caseId": "E705",
+          "runId": "H-E705-r2",
+          "replicate": 2,
+          "dimension": "Q2",
+          "level": 0,
+          "reason": "产物宣称只学读小数且小数越多越准，矛盾目标1；明确误差界限与区间比较不用学，显式删除目标2、3核心内容。essential目标被矛盾或缺失，声明学习范围目的被摧毁。",
+          "inputHash": "5b3183984d363b1023add0b5e9f28080511e53612f4a5411d761d0860cd94626"
+        },
+        {
+          "caseId": "E705",
+          "runId": "H-E705-r3",
+          "replicate": 3,
+          "dimension": "Q2",
+          "level": 0,
+          "reason": "产物主张小数越多越准矛盾goal0区分要求，并声明误差界限与区间比较不用学致goal1、2缺失，本质目标被矛盾或排除，覆盖失败。",
+          "inputHash": "5b3183984d363b1023add0b5e9f28080511e53612f4a5411d761d0860cd94626"
+        }
+      ]
+    },
+    {
+      "itemId": "P2-04",
+      "caseId": "E319",
+      "dimension": "Q3",
+      "inputHash": "1feb5f7c0f6db7f0655e47ce7b2776808e02b38f107576a096b6800295819796",
+      "humans": [
+        {
+          "annotator": "A",
+          "answer": "2",
+          "reason": "讲得挺明白的，把前后步骤和两个人合作的情况都解释出来了。",
+          "sourceFile": "Human-A-Packet-2-答题表.docx",
+          "sourceSha256": "c00362c608cbdd25b99fd7f2bddf22f446397781355adda10d51c82e23b047e1"
+        },
+        {
+          "annotator": "B",
+          "answer": "2",
+          "reason": "评价方案时，先检查每一步的开工条件，再讨论是否还有不必要的等待。",
+          "sourceFile": "Human-B-Packet-2-答题表.docx",
+          "sourceSha256": "0c9043684d6c9c770f7fe4407210cfadd494f2a87beb0b570916b525ff234444"
+        }
+      ],
+      "consensus": 2,
+      "first": 2,
+      "levels": [
+        2,
+        2,
+        2
+      ],
+      "modal": 2,
+      "repeatedExact": true,
+      "observations": [
+        {
+          "caseId": "E319",
+          "runId": "H-E319-r1",
+          "replicate": 1,
+          "dimension": "Q3",
+          "level": 2,
+          "reason": "artifact对两人及一人例均展示了从依赖与资源前提到取最大完成时刻/串行相加操作，再至各步时刻与总时的连接，并交代“合法不等于最快”的限制，无具体缺陷。",
+          "inputHash": "1feb5f7c0f6db7f0655e47ce7b2776808e02b38f107576a096b6800295819796"
+        },
+        {
+          "caseId": "E319",
+          "runId": "H-E319-r2",
+          "replicate": 2,
+          "dimension": "Q3",
+          "level": 2,
+          "reason": "artifact对两人及一人例子展示了从依赖与资源前提出发，取最大完成时刻或顺序相加的关键操作并连接到总时长，且交代了先查依赖资源、合法非最快的适用限制，符合局部解释充分性。",
+          "inputHash": "1feb5f7c0f6db7f0655e47ce7b2776808e02b38f107576a096b6800295819796"
+        },
+        {
+          "caseId": "E319",
+          "runId": "H-E319-r3",
+          "replicate": 3,
+          "dimension": "Q3",
+          "level": 2,
+          "reason": "artifact对两人并行取max、一人串行求和的关键操作及步骤时长连接均已展示，并给出依赖与资源、合法不等于最快的边界，无错误且覆盖局部例子目标。",
+          "inputHash": "1feb5f7c0f6db7f0655e47ce7b2776808e02b38f107576a096b6800295819796"
+        }
+      ]
+    },
+    {
+      "itemId": "P2-05",
+      "caseId": "N-F05-tutor",
+      "dimension": "Q1",
+      "inputHash": "e5df30e0c13100ce17282c86e71282ac7f2558dd968c0773fcabc87b642ff096",
+      "humans": [
+        {
+          "annotator": "A",
+          "answer": "2",
+          "reason": "他的说法没有问题，误差范围和比较方法都跟材料一样。",
+          "sourceFile": "Human-A-Packet-2-答题表.docx",
+          "sourceSha256": "c00362c608cbdd25b99fd7f2bddf22f446397781355adda10d51c82e23b047e1"
+        },
+        {
+          "annotator": "B",
+          "answer": "2",
+          "reason": "对资料转述准确，且例子区间计算也正确",
+          "sourceFile": "Human-B-Packet-2-答题表.docx",
+          "sourceSha256": "0c9043684d6c9c770f7fe4407210cfadd494f2a87beb0b570916b525ff234444"
+        }
+      ],
+      "consensus": 2,
+      "first": 2,
+      "levels": [
+        2,
+        2,
+        2
+      ],
+      "modal": 2,
+      "repeatedExact": true,
+      "observations": [
+        {
+          "caseId": "N-F05-tutor",
+          "runId": "H-N-F05-tutor-r1",
+          "replicate": 1,
+          "dimension": "Q1",
+          "level": 2,
+          "reason": "tutor-reply主张区间模型、比较区间重叠证据不足、小数位多不更准确均与F05一致；自举电子秤例区间计算正确，边界说明符合资料限制，无事实或归属缺陷。",
+          "inputHash": "e5df30e0c13100ce17282c86e71282ac7f2558dd968c0773fcabc87b642ff096"
+        },
+        {
+          "caseId": "N-F05-tutor",
+          "runId": "H-N-F05-tutor-r2",
+          "replicate": 2,
+          "dimension": "Q1",
+          "level": 2,
+          "reason": "作者总结资料闭区间模型、比区间不比读数、重叠证据不足及显示位数不决精度均准确；自构电子秤例计算正确，归属资料甲/乙例无误，边界陈述有来源支持。无缺陷。",
+          "inputHash": "e5df30e0c13100ce17282c86e71282ac7f2558dd968c0773fcabc87b642ff096"
+        },
+        {
+          "caseId": "N-F05-tutor",
+          "runId": "H-N-F05-tutor-r3",
+          "replicate": 3,
+          "dimension": "Q1",
+          "level": 2,
+          "reason": "作者回顾资料模型与边界准确，新举糖秤例子区间计算正确，重叠判断正确，适用边界与来源一致，无事实或归属缺陷。",
+          "inputHash": "e5df30e0c13100ce17282c86e71282ac7f2558dd968c0773fcabc87b642ff096"
+        }
+      ]
+    },
+    {
+      "itemId": "P2-05",
+      "caseId": "N-F05-tutor",
+      "dimension": "Q3",
+      "inputHash": "e5df30e0c13100ce17282c86e71282ac7f2558dd968c0773fcabc87b642ff096",
+      "humans": [
+        {
+          "annotator": "A",
+          "answer": "2",
+          "reason": "例子比较简单，一看就能明白为什么不能只看数字大小。",
+          "sourceFile": "Human-A-Packet-2-答题表.docx",
+          "sourceSha256": "c00362c608cbdd25b99fd7f2bddf22f446397781355adda10d51c82e23b047e1"
+        },
+        {
+          "annotator": "B",
+          "answer": "2",
+          "reason": "电子秤直观展示，并且明确了范围与边界",
+          "sourceFile": "Human-B-Packet-2-答题表.docx",
+          "sourceSha256": "0c9043684d6c9c770f7fe4407210cfadd494f2a87beb0b570916b525ff234444"
+        }
+      ],
+      "consensus": 2,
+      "first": 2,
+      "levels": [
+        2,
+        2,
+        2
+      ],
+      "modal": 2,
+      "repeatedExact": true,
+      "observations": [
+        {
+          "caseId": "N-F05-tutor",
+          "runId": "H-N-F05-tutor-r1",
+          "replicate": 1,
+          "dimension": "Q3",
+          "level": 2,
+          "reason": "产物以资料模型为前提，用电子秤新例展示由读数误差得区间并比较重叠，解释比区间不比读数及证据不足关系，并说明模型适用边界，连接充分，无缺失。",
+          "inputHash": "e5df30e0c13100ce17282c86e71282ac7f2558dd968c0773fcabc87b642ff096"
+        },
+        {
+          "caseId": "N-F05-tutor",
+          "runId": "H-N-F05-tutor-r2",
+          "replicate": 2,
+          "dimension": "Q3",
+          "level": 2,
+          "reason": "新例从读数及误差前提经加减得区间，比较重叠导出不能断定轻重，解释比区间不比读数；补充模型对称闭合等边界，操作骨架与限制交代清楚，符合目标。",
+          "inputHash": "e5df30e0c13100ce17282c86e71282ac7f2558dd968c0773fcabc87b642ff096"
+        },
+        {
+          "caseId": "N-F05-tutor",
+          "runId": "H-N-F05-tutor-r3",
+          "replicate": 3,
+          "dimension": "Q3",
+          "level": 2,
+          "reason": "局部解释以糖秤为例，展示从给定读数误差到区间运算及比较重叠的关键连接，并交代对称闭合等适用限制，符合充分性停止条件。",
+          "inputHash": "e5df30e0c13100ce17282c86e71282ac7f2558dd968c0773fcabc87b642ff096"
+        }
+      ]
+    },
+    {
+      "itemId": "P2-06",
+      "caseId": "E074",
+      "dimension": "Q4",
+      "inputHash": "1db95a987151a3b0561e54505a5d3699184d1f70508076077aa6d3cbb4ace9ce",
+      "humans": [
+        {
+          "annotator": "A",
+          "answer": "2",
+          "reason": "题目本身没问题，条件也够，而且没有提前给答案。",
+          "sourceFile": "Human-A-Packet-2-答题表.docx",
+          "sourceSha256": "c00362c608cbdd25b99fd7f2bddf22f446397781355adda10d51c82e23b047e1"
+        },
+        {
+          "annotator": "B",
+          "answer": "0",
+          "reason": "解答实际上已经在资料中给出，不满足要求",
+          "sourceFile": "Human-B-Packet-2-答题表.docx",
+          "sourceSha256": "0c9043684d6c9c770f7fe4407210cfadd494f2a87beb0b570916b525ff234444"
+        }
+      ],
+      "consensus": null,
+      "first": 1,
+      "levels": [
+        1,
+        1,
+        1
+      ],
+      "modal": 1,
+      "repeatedExact": true,
+      "observations": [
+        {
+          "caseId": "E074",
+          "runId": "H-E074-r1",
+          "replicate": 1,
+          "dimension": "Q4",
+          "level": 1,
+          "reason": "题目问来源已给的小岚每小时完成量，作者解六分之一份正确且未泄露。但题仅测术语检索，声明深度working_fluency需执行解释，判别弱，属局部缺陷，核心提取用途成立。",
+          "inputHash": "1db95a987151a3b0561e54505a5d3699184d1f70508076077aa6d3cbb4ace9ce"
+        },
+        {
+          "caseId": "E074",
+          "runId": "H-E074-r2",
+          "replicate": 2,
+          "dimension": "Q4",
+          "level": 1,
+          "reason": "题目问来源中已给出的小岚每小时完成量，答案直接见于source且作者参考解正确，无提前曝光；但仅测检索，未要求学生执行或解释，与声明working_fluency深度不符，判别力弱，故为1。",
+          "inputHash": "1db95a987151a3b0561e54505a5d3699184d1f70508076077aa6d3cbb4ace9ce"
+        },
+        {
+          "caseId": "E074",
+          "runId": "H-E074-r3",
+          "replicate": 3,
+          "dimension": "Q4",
+          "level": 1,
+          "reason": "题目问来源已明说的小岚速度，作者参考解正确且未提前展示；但仅要求检索现成表述，未令执行或解释方法，与声明working_fluency深度不符，判别力弱，属局部缺陷。",
+          "inputHash": "1db95a987151a3b0561e54505a5d3699184d1f70508076077aa6d3cbb4ace9ce"
+        }
+      ]
+    },
+    {
+      "itemId": "P2-07",
+      "caseId": "E544",
+      "dimension": "Q5",
+      "inputHash": "6ff2484f2b7fe1767ca3c539a575aa55551c2125913b7c1cf1c42f5c766b07a3",
+      "humans": [
+        {
+          "annotator": "A",
+          "answer": "0",
+          "reason": "系统判断错了，学生其实已经答对了，不应该不给分。",
+          "sourceFile": "Human-A-Packet-2-答题表.docx",
+          "sourceSha256": "c00362c608cbdd25b99fd7f2bddf22f446397781355adda10d51c82e23b047e1"
+        },
+        {
+          "annotator": "B",
+          "answer": "0",
+          "reason": "原平均24/4=6，中位(4+4)/2=4；改后平均32/4=8，中位仍4。",
+          "sourceFile": "Human-B-Packet-2-答题表.docx",
+          "sourceSha256": "0c9043684d6c9c770f7fe4407210cfadd494f2a87beb0b570916b525ff234444"
+        }
+      ],
+      "consensus": 0,
+      "first": 0,
+      "levels": [
+        0,
+        0,
+        0
+      ],
+      "modal": 0,
+      "repeatedExact": true,
+      "observations": [
+        {
+          "caseId": "E544",
+          "runId": "H-E544-r1",
+          "replicate": 1,
+          "dimension": "Q5",
+          "level": 0,
+          "reason": "学生答案明确给出原平均6、中位4及改后平均8、中位4，满足必要c1；产品误判c1未满足并拒绝授分，实际withheld与应得granted冲突，构成实质评分错误。",
+          "inputHash": "6ff2484f2b7fe1767ca3c539a575aa55551c2125913b7c1cf1c42f5c766b07a3"
+        },
+        {
+          "caseId": "E544",
+          "runId": "H-E544-r2",
+          "replicate": 2,
+          "dimension": "Q5",
+          "level": 0,
+          "reason": "学生答案明确给出原平均6、中位4及改后平均8、中位4，满足c1；并解释总和拉高与中间值未变满足c2。产品误判c1为not_met并withheld学分，错误拒绝必要含义且学分冲突，实质缺陷。",
+          "inputHash": "6ff2484f2b7fe1767ca3c539a575aa55551c2125913b7c1cf1c42f5c766b07a3"
+        },
+        {
+          "caseId": "E544",
+          "runId": "H-E544-r3",
+          "replicate": 3,
+          "dimension": "Q5",
+          "level": 0,
+          "reason": "学生答案明确给出原平均6中位4及改后平均8中位4，满足c1；产品误判c1为not_met并拒给学分，错误拒绝必要标准导致学分冲突，属实质缺陷。",
+          "inputHash": "6ff2484f2b7fe1767ca3c539a575aa55551c2125913b7c1cf1c42f5c766b07a3"
+        }
+      ]
+    },
+    {
+      "itemId": "P2-08",
+      "caseId": "E846",
+      "dimension": "Q2",
+      "inputHash": "d057f1ff411a69d4352c3da1c03e896e7b571ef9e91c4eea6add8b4dbf731e9b",
+      "humans": [
+        {
+          "annotator": "A",
+          "answer": "0",
+          "reason": "原文要求的不只是平均数，还有中位数这些内容，但这里被简化掉了。",
+          "sourceFile": "Human-A-Packet-2-答题表.docx",
+          "sourceSha256": "c00362c608cbdd25b99fd7f2bddf22f446397781355adda10d51c82e23b047e1"
+        },
+        {
+          "annotator": "B",
+          "answer": "0",
+          "reason": "若中间位置的数据或排序结构改变，中位数也可能改变。",
+          "sourceFile": "Human-B-Packet-2-答题表.docx",
+          "sourceSha256": "0c9043684d6c9c770f7fe4407210cfadd494f2a87beb0b570916b525ff234444"
+        }
+      ],
+      "consensus": 0,
+      "first": 0,
+      "levels": [
+        0,
+        0,
+        0
+      ],
+      "modal": 0,
+      "repeatedExact": true,
+      "observations": [
+        {
+          "caseId": "E846",
+          "runId": "H-E846-r1",
+          "replicate": 1,
+          "dimension": "Q2",
+          "level": 0,
+          "reason": "产物明确只背诵平均数且不必学中位数与数据变化影响，直接矛盾目标0-2本质要求，核心教学用途失败；次要目标3亦缺失。",
+          "inputHash": "d057f1ff411a69d4352c3da1c03e896e7b571ef9e91c4eea6add8b4dbf731e9b"
+        },
+        {
+          "caseId": "E846",
+          "runId": "H-E846-r2",
+          "replicate": 2,
+          "dimension": "Q2",
+          "level": 0,
+          "reason": "授课文本明确只背平均数口号、不学中位数与数据变化影响且所有问题用平均数，直接矛盾计算中位数、解释异常值影响、依问题选指标等核心目标，实质移除必备覆盖，课程目的落空。",
+          "inputHash": "d057f1ff411a69d4352c3da1c03e896e7b571ef9e91c4eea6add8b4dbf731e9b"
+        },
+        {
+          "caseId": "E846",
+          "runId": "H-E846-r3",
+          "replicate": 3,
+          "dimension": "Q2",
+          "level": 0,
+          "reason": "产物声明只背平均数最公平、所有问题用平均数且不必学中位数与数据变化影响，直接矛盾目标0,1,2本质要求，核心覆盖失败。",
+          "inputHash": "d057f1ff411a69d4352c3da1c03e896e7b571ef9e91c4eea6add8b4dbf731e9b"
+        }
+      ]
+    },
+    {
+      "itemId": "P2-09",
+      "caseId": "E873",
+      "dimension": "Q6",
+      "inputHash": "1a75e7d9d68339a276ef3b9675f67332307ea9ae90fb1136a5b54b8b1fcf4106",
+      "humans": [
+        {
+          "annotator": "A",
+          "answer": "2",
+          "reason": "反馈找到了问题原因，也告诉了之后应该怎么改。",
+          "sourceFile": "Human-A-Packet-2-答题表.docx",
+          "sourceSha256": "c00362c608cbdd25b99fd7f2bddf22f446397781355adda10d51c82e23b047e1"
+        },
+        {
+          "annotator": "B",
+          "answer": "1",
+          "reason": "但测量了若干变量不等于排除了所有差异。研究设计越接近只改变目标因素，因果解释通常越有依据；具体能支持到什么范围，还取决于实际执行和数据。",
+          "sourceFile": "Human-B-Packet-2-答题表.docx",
+          "sourceSha256": "0c9043684d6c9c770f7fe4407210cfadd494f2a87beb0b570916b525ff234444"
+        }
+      ],
+      "consensus": null,
+      "first": 2,
+      "levels": [
+        2,
+        2,
+        2
+      ],
+      "modal": 2,
+      "repeatedExact": true,
+      "observations": [
+        {
+          "caseId": "E873",
+          "runId": "H-E873-r1",
+          "replicate": 1,
+          "dimension": "Q6",
+          "level": 2,
+          "reason": "support准确诊断学生将自愿等同随机的推理缺口，用兴趣反例具体帮助，并给出抽签但额外练习的下一题检查同一归因技能，符合Q6的2标准。",
+          "inputHash": "1a75e7d9d68339a276ef3b9675f67332307ea9ae90fb1136a5b54b8b1fcf4106"
+        },
+        {
+          "caseId": "E873",
+          "runId": "H-E873-r2",
+          "replicate": 2,
+          "dimension": "Q6",
+          "level": 2,
+          "reason": "支持材料准确诊断学生将自愿误作随机的推理缺口，用反例说明混杂，并提供具体下一题（抽签分卡但甲组多练十分钟）检查同一推理技能，符合Q6二级标准。",
+          "inputHash": "1a75e7d9d68339a276ef3b9675f67332307ea9ae90fb1136a5b54b8b1fcf4106"
+        },
+        {
+          "caseId": "E873",
+          "runId": "H-E873-r3",
+          "replicate": 3,
+          "dimension": "Q6",
+          "level": 2,
+          "reason": "学生可见support准确诊断将自愿误作随机的推理缺口，用反例说明混杂，并给出具体下一题（抽签分卡但甲多练十分钟）测试保持比较条件一致，迁移变量且可操作，符合2标准。",
+          "inputHash": "1a75e7d9d68339a276ef3b9675f67332307ea9ae90fb1136a5b54b8b1fcf4106"
+        }
+      ]
+    },
+    {
+      "itemId": "P3-01",
+      "caseId": "E141",
+      "dimension": "Q1",
+      "inputHash": "e1769cd39c01d626137a2c86d3a4d3f6cd710fed1646fb2e8570eb901c076049",
+      "humans": [
+        {
+          "annotator": "B",
+          "answer": "0",
+          "reason": "目前没有宣布永久变更",
+          "sourceFile": "Human-B-Packet-3-答题表.docx",
+          "sourceSha256": "203a544105f6f96a8d4f78666339a9a186ee8534fb9ffc71b5e5556c6d7753dd"
+        },
+        {
+          "annotator": "C",
+          "answer": "0",
+          "reason": "三句话全错了",
+          "sourceFile": "Human-C-Packet-3-答题表.docx",
+          "sourceSha256": "3a328dd50cbb4a45dc902809706a620a176968735ddba70e581d94985bb90f0b"
+        }
+      ],
+      "consensus": 0,
+      "first": 0,
+      "levels": [
+        0,
+        0,
+        0
+      ],
+      "modal": 0,
+      "repeatedExact": true,
+      "observations": [
+        {
+          "caseId": "E141",
+          "runId": "H-E141-r1",
+          "replicate": 1,
+          "dimension": "Q1",
+          "level": 0,
+          "reason": "artifact错误主张三十人次即三十不同居民全部支持、已决定永久开门、调查代表所有读者，均与source明确限制矛盾，实质改变证据范围与决策状态核心教学结论。",
+          "inputHash": "e1769cd39c01d626137a2c86d3a4d3f6cd710fed1646fb2e8570eb901c076049"
+        },
+        {
+          "caseId": "E141",
+          "runId": "H-E141-r2",
+          "replicate": 2,
+          "dimension": "Q1",
+          "level": 0,
+          "reason": "Artifact三处主张违背source事实与限制：混淆人次与居民、虚构永久决定、外推全体读者，实质改变核心结论与证据范围。",
+          "inputHash": "e1769cd39c01d626137a2c86d3a4d3f6cd710fed1646fb2e8570eb901c076049"
+        },
+        {
+          "caseId": "E141",
+          "runId": "H-E141-r3",
+          "replicate": 3,
+          "dimension": "Q1",
+          "level": 0,
+          "reason": "产物断言三十人次即三十不同居民全部支持，且已决定永久开门代表所有读者，均直接违背来源明确限制（人次非去重、仅10卡8支持、未宣布永久变更、不可外推），实质改变核心结论与证据权威，破坏核对目标。",
+          "inputHash": "e1769cd39c01d626137a2c86d3a4d3f6cd710fed1646fb2e8570eb901c076049"
+        }
+      ]
+    },
+    {
+      "itemId": "P3-02",
+      "caseId": "N-F07-tutor",
+      "dimension": "Q1",
+      "inputHash": "b37e7384d5f4ffa0c9382488ecc79d26019020396378d497e43a8577f960a101",
+      "humans": [
+        {
+          "annotator": "B",
+          "answer": "1",
+          "reason": "重复实验可以帮助检查结果是否稳定，但重复的对象、条件与方法需要记录",
+          "sourceFile": "Human-B-Packet-3-答题表.docx",
+          "sourceSha256": "203a544105f6f96a8d4f78666339a9a186ee8534fb9ffc71b5e5556c6d7753dd"
+        },
+        {
+          "annotator": "C",
+          "answer": "2",
+          "reason": "根据原题自行举例，但大意没出错，推导也正确",
+          "sourceFile": "Human-C-Packet-3-答题表.docx",
+          "sourceSha256": "3a328dd50cbb4a45dc902809706a620a176968735ddba70e581d94985bb90f0b"
+        }
+      ],
+      "consensus": null,
+      "first": 2,
+      "levels": [
+        2,
+        2,
+        2
+      ],
+      "modal": 2,
+      "repeatedExact": true,
+      "observations": [
+        {
+          "caseId": "N-F07-tutor",
+          "runId": "H-N-F07-tutor-r1",
+          "replicate": 1,
+          "dimension": "Q1",
+          "level": 2,
+          "reason": "tutor引用资料原句列举观察天数等需一致，用假设种子例与手机例解释单一因素归因需控变量，断言均受资料支持或合理推导，无事实错误或虚假归属。",
+          "inputHash": "b37e7384d5f4ffa0c9382488ecc79d26019020396378d497e43a8577f960a101"
+        },
+        {
+          "caseId": "N-F07-tutor",
+          "runId": "H-N-F07-tutor-r2",
+          "replicate": 2,
+          "dimension": "Q1",
+          "level": 2,
+          "reason": "导师回复准确引用资料控制变量原则，以假设观察天数不同例和手机类比说明单一归因需控其他变量，边界清晰，无事实或归属缺陷。",
+          "inputHash": "b37e7384d5f4ffa0c9382488ecc79d26019020396378d497e43a8577f960a101"
+        },
+        {
+          "caseId": "N-F07-tutor",
+          "runId": "H-N-F07-tutor-r3",
+          "replicate": 3,
+          "dimension": "Q1",
+          "level": 2,
+          "reason": "tutor-reply正确引用资料中观察天数等需一致的原则，用假设情景与手机例子解释单一因素归因需控变量，边界说明合理，无事实或归属缺陷。",
+          "inputHash": "b37e7384d5f4ffa0c9382488ecc79d26019020396378d497e43a8577f960a101"
+        }
+      ]
+    },
+    {
+      "itemId": "P3-02",
+      "caseId": "N-F07-tutor",
+      "dimension": "Q3",
+      "inputHash": "b37e7384d5f4ffa0c9382488ecc79d26019020396378d497e43a8577f960a101",
+      "humans": [
+        {
+          "annotator": "B",
+          "answer": "2",
+          "reason": "举例清晰，涵盖全面",
+          "sourceFile": "Human-B-Packet-3-答题表.docx",
+          "sourceSha256": "203a544105f6f96a8d4f78666339a9a186ee8534fb9ffc71b5e5556c6d7753dd"
+        },
+        {
+          "annotator": "C",
+          "answer": "2",
+          "reason": "举例有点奇怪，但没有硬伤错误",
+          "sourceFile": "Human-C-Packet-3-答题表.docx",
+          "sourceSha256": "3a328dd50cbb4a45dc902809706a620a176968735ddba70e581d94985bb90f0b"
+        }
+      ],
+      "consensus": 2,
+      "first": 2,
+      "levels": [
+        2,
+        2,
+        2
+      ],
+      "modal": 2,
+      "repeatedExact": true,
+      "observations": [
+        {
+          "caseId": "N-F07-tutor",
+          "runId": "H-N-F07-tutor-r1",
+          "replicate": 1,
+          "dimension": "Q3",
+          "level": 2,
+          "reason": "tutor以手机例展示额外变量未控制则无法归因的why/how，并明确边界：仅示逻辑且同湿度时不适用。链接前提与结论清晰，满足局部解释充分性停止条件。",
+          "inputHash": "b37e7384d5f4ffa0c9382488ecc79d26019020396378d497e43a8577f960a101"
+        },
+        {
+          "caseId": "N-F07-tutor",
+          "runId": "H-N-F07-tutor-r2",
+          "replicate": 2,
+          "dimension": "Q3",
+          "level": 2,
+          "reason": "解释连接资料前提（其他条件一致）与结论（不能单归因），用手机类比展示why并给出适用边界，符合目标要求，无缺失连接。",
+          "inputHash": "b37e7384d5f4ffa0c9382488ecc79d26019020396378d497e43a8577f960a101"
+        },
+        {
+          "caseId": "N-F07-tutor",
+          "runId": "H-N-F07-tutor-r3",
+          "replicate": 3,
+          "dimension": "Q3",
+          "level": 2,
+          "reason": "解释链接资料前提（变量需一致）与结论（不能单独归因），手机例子展示未控湿度致多变量问题并明确适用边界，关键逻辑清晰，符合解释充分性停止条件。",
+          "inputHash": "b37e7384d5f4ffa0c9382488ecc79d26019020396378d497e43a8577f960a101"
+        }
+      ]
+    },
+    {
+      "itemId": "P3-03",
+      "caseId": "E611",
+      "dimension": "Q2",
+      "inputHash": "c0bfa347bcd1a8f2d3751c2acebc48d79c8b1403697b7568a78e5134036941fb",
+      "humans": [
+        {
+          "annotator": "B",
+          "answer": "2",
+          "reason": "比较两件物品时，应比较它们允许的区间",
+          "sourceFile": "Human-B-Packet-3-答题表.docx",
+          "sourceSha256": "203a544105f6f96a8d4f78666339a9a186ee8534fb9ffc71b5e5556c6d7753dd"
+        },
+        {
+          "annotator": "C",
+          "answer": "1",
+          "reason": "同packet1 03",
+          "sourceFile": "Human-C-Packet-3-答题表.docx",
+          "sourceSha256": "3a328dd50cbb4a45dc902809706a620a176968735ddba70e581d94985bb90f0b"
+        }
+      ],
+      "consensus": null,
+      "first": 1,
+      "levels": [
+        1,
+        2,
+        1
+      ],
+      "modal": 1,
+      "repeatedExact": false,
+      "observations": [
+        {
+          "caseId": "E611",
+          "runId": "H-E611-r1",
+          "replicate": 1,
+          "dimension": "Q2",
+          "level": 1,
+          "reason": "artifact对目标0-2给出了准确规则与示例：区间公式、比较逻辑、分辨率不等同校准。但目标3（次要）仅以‘同向偏差也不会仅靠重复平均自动消失’提醒，无解释或演示，属未解释提醒，核心用途成立，故评1。",
+          "inputHash": "c0bfa347bcd1a8f2d3751c2acebc48d79c8b1403697b7568a78e5134036941fb"
+        },
+        {
+          "caseId": "E611",
+          "runId": "H-E611-r2",
+          "replicate": 2,
+          "dimension": "Q2",
+          "level": 2,
+          "reason": "artifact对四项目标均给出准确规则或示例：区间公式与例、比较区间顺序、刻度细不等校准准、同向偏差不自动消失，达到可用操作深度，无缺陷。",
+          "inputHash": "c0bfa347bcd1a8f2d3751c2acebc48d79c8b1403697b7568a78e5134036941fb"
+        },
+        {
+          "caseId": "E611",
+          "runId": "H-E611-r3",
+          "replicate": 3,
+          "dimension": "Q2",
+          "level": 1,
+          "reason": "核心三目标均有准确规则与示例；次要延伸目标仅以'同向偏差也不会仅靠重复平均自动消失'未解释提醒呈现，属局部缺陷，核心用途成立。",
+          "inputHash": "c0bfa347bcd1a8f2d3751c2acebc48d79c8b1403697b7568a78e5134036941fb"
+        }
+      ]
+    },
+    {
+      "itemId": "P3-04",
+      "caseId": "E366",
+      "dimension": "Q3",
+      "inputHash": "9ddec8a0080a675ad35184be3719fb2aa7c0dea1fa6ed89b489fda08842779ba",
+      "humans": [
+        {
+          "annotator": "B",
+          "answer": "2",
+          "reason": "所有时长固定，不考虑走动与工具切换的额外时间",
+          "sourceFile": "Human-B-Packet-3-答题表.docx",
+          "sourceSha256": "203a544105f6f96a8d4f78666339a9a186ee8534fb9ffc71b5e5556c6d7753dd"
+        },
+        {
+          "annotator": "C",
+          "answer": "2",
+          "reason": "步骤描述清晰",
+          "sourceFile": "Human-C-Packet-3-答题表.docx",
+          "sourceSha256": "3a328dd50cbb4a45dc902809706a620a176968735ddba70e581d94985bb90f0b"
+        }
+      ],
+      "consensus": 2,
+      "first": 1,
+      "levels": [
+        1,
+        1,
+        1
+      ],
+      "modal": 1,
+      "repeatedExact": true,
+      "observations": [
+        {
+          "caseId": "E366",
+          "runId": "H-E366-r1",
+          "replicate": 1,
+          "dimension": "Q3",
+          "level": 1,
+          "reason": "产物给出两人12分与一人15分正确结论，但仅列结果和泛化提醒，未展示从给定时长与依赖到具体时刻的关键推理操作（如并行取max、顺序加），也未交代例子适用边界推理。结论正确，核心用途成立但局部解释连接缺失，符合Q3的1分。",
+          "inputHash": "9ddec8a0080a675ad35184be3719fb2aa7c0dea1fa6ed89b489fda08842779ba"
+        },
+        {
+          "caseId": "E366",
+          "runId": "H-E366-r2",
+          "replicate": 2,
+          "dimension": "Q3",
+          "level": 1,
+          "reason": "产物给出两人12分与一人15分正确结论及资源条件，但仅列时刻结果未展示并行汇合需等较晚路径的关键推理连接。核心答案正确，缺失解释连接属局部缺陷，得1分。",
+          "inputHash": "9ddec8a0080a675ad35184be3719fb2aa7c0dea1fa6ed89b489fda08842779ba"
+        },
+        {
+          "caseId": "E366",
+          "runId": "H-E366-r3",
+          "replicate": 3,
+          "dimension": "Q3",
+          "level": 1,
+          "reason": "产物正确给出两人12分、一人15分及条件，但仅列时间表与总时长，未展示关键操作连接（如并行取max(4,3)=4、单人前两步相加），学习者需自推运算。无错误机制，核心用途成立，故为local缺陷，非2非0。",
+          "inputHash": "9ddec8a0080a675ad35184be3719fb2aa7c0dea1fa6ed89b489fda08842779ba"
+        }
+      ]
+    },
+    {
+      "itemId": "P3-05",
+      "caseId": "N-F08-tutor",
+      "dimension": "Q1",
+      "inputHash": "821be6a706b8d39de0de84d6d17b0fff2256a8e984214299069795eb546e598d",
+      "humans": [
+        {
+          "annotator": "B",
+          "answer": "2",
+          "reason": "列出允许与不允许的组合，能帮助我们看清规则到底排除了什么，而不是凭语言感觉推断",
+          "sourceFile": "Human-B-Packet-3-答题表.docx",
+          "sourceSha256": "203a544105f6f96a8d4f78666339a9a186ee8534fb9ffc71b5e5556c6d7753dd"
+        },
+        {
+          "annotator": "C",
+          "answer": "2",
+          "reason": "事实部分与资料一致",
+          "sourceFile": "Human-C-Packet-3-答题表.docx",
+          "sourceSha256": "3a328dd50cbb4a45dc902809706a620a176968735ddba70e581d94985bb90f0b"
+        }
+      ],
+      "consensus": 2,
+      "first": 1,
+      "levels": [
+        1,
+        1,
+        1
+      ],
+      "modal": 1,
+      "repeatedExact": true,
+      "observations": [
+        {
+          "caseId": "N-F08-tutor",
+          "runId": "H-N-F08-tutor-r1",
+          "replicate": 1,
+          "dimension": "Q1",
+          "level": 1,
+          "reason": "交付物用奖章例解释单向规则，其方向固定、逆否成立、反向不成立断言均与F08一致；但artifact称来源为《印章卡片的逻辑》，而F08无此标题，属外围归属缺陷，核心用途成立，故为1级。",
+          "inputHash": "821be6a706b8d39de0de84d6d17b0fff2256a8e984214299069795eb546e598d"
+        },
+        {
+          "caseId": "N-F08-tutor",
+          "runId": "H-N-F08-tutor-r2",
+          "replicate": 2,
+          "dimension": "Q1",
+          "level": 1,
+          "reason": "核心单向规则、逆否及反例类比均获F08支持，但artifact称资料为《印章卡片的逻辑》而源无此标题，属外围归属不实；修正后核心教学不变，故1非2；无机制错误非0。",
+          "inputHash": "821be6a706b8d39de0de84d6d17b0fff2256a8e984214299069795eb546e598d"
+        },
+        {
+          "caseId": "N-F08-tutor",
+          "runId": "H-N-F08-tutor-r3",
+          "replicate": 3,
+          "dimension": "Q1",
+          "level": 1,
+          "reason": "核心机制与例子正确转述单向规则，但产物将未命名资料冠以《印章卡片的逻辑》标题，属局部归属缺陷，不影响核心用途。",
+          "inputHash": "821be6a706b8d39de0de84d6d17b0fff2256a8e984214299069795eb546e598d"
+        }
+      ]
+    },
+    {
+      "itemId": "P3-05",
+      "caseId": "N-F08-tutor",
+      "dimension": "Q3",
+      "inputHash": "821be6a706b8d39de0de84d6d17b0fff2256a8e984214299069795eb546e598d",
+      "humans": [
+        {
+          "annotator": "B",
+          "answer": "2",
+          "reason": "若给定规则和事实排除了所有反例，才可以说必然",
+          "sourceFile": "Human-B-Packet-3-答题表.docx",
+          "sourceSha256": "203a544105f6f96a8d4f78666339a9a186ee8534fb9ffc71b5e5556c6d7753dd"
+        },
+        {
+          "annotator": "C",
+          "answer": "2",
+          "reason": "举例符合原意",
+          "sourceFile": "Human-C-Packet-3-答题表.docx",
+          "sourceSha256": "3a328dd50cbb4a45dc902809706a620a176968735ddba70e581d94985bb90f0b"
+        }
+      ],
+      "consensus": 2,
+      "first": 2,
+      "levels": [
+        2,
+        2,
+        2
+      ],
+      "modal": 2,
+      "repeatedExact": true,
+      "observations": [
+        {
+          "caseId": "N-F08-tutor",
+          "runId": "H-N-F08-tutor-r1",
+          "replicate": 1,
+          "dimension": "Q3",
+          "level": 2,
+          "reason": "局部解释用奖章例链接前提(满分→奖章)、逆否(非奖章→非满分)及反向谬误(竞赛获奖反例)，并交代不补当且仅当、不引未陈述因素的边界，满足目标。",
+          "inputHash": "821be6a706b8d39de0de84d6d17b0fff2256a8e984214299069795eb546e598d"
+        },
+        {
+          "caseId": "N-F08-tutor",
+          "runId": "H-N-F08-tutor-r2",
+          "replicate": 2,
+          "dimension": "Q3",
+          "level": 2,
+          "reason": "回复以满分得奖章为例，展示正向、逆否及反向不成立推理，并说明不补当且仅当等边界，解释连接前提与结论的why/how充分，符合局部解释要求。",
+          "inputHash": "821be6a706b8d39de0de84d6d17b0fff2256a8e984214299069795eb546e598d"
+        },
+        {
+          "caseId": "N-F08-tutor",
+          "runId": "H-N-F08-tutor-r3",
+          "replicate": 3,
+          "dimension": "Q3",
+          "level": 2,
+          "reason": "例子从前提展示正向、逆否与反向边界，交代适用限制，无缺失连接或错误机制。",
+          "inputHash": "821be6a706b8d39de0de84d6d17b0fff2256a8e984214299069795eb546e598d"
+        }
+      ]
+    },
+    {
+      "itemId": "P3-06",
+      "caseId": "E121",
+      "dimension": "Q4",
+      "inputHash": "d4898bde5060ba76dd1d8f0f6f416c0e9fcc9b0b2206f38b77bd52cfe57af386",
+      "humans": [
+        {
+          "annotator": "B",
+          "answer": "0",
+          "reason": "乙先做1小时后离开，甲独自完成剩余部分",
+          "sourceFile": "Human-B-Packet-3-答题表.docx",
+          "sourceSha256": "203a544105f6f96a8d4f78666339a9a186ee8534fb9ffc71b5e5556c6d7753dd"
+        },
+        {
+          "annotator": "C",
+          "answer": "0",
+          "reason": "参考答案给一半",
+          "sourceFile": "Human-C-Packet-3-答题表.docx",
+          "sourceSha256": "3a328dd50cbb4a45dc902809706a620a176968735ddba70e581d94985bb90f0b"
+        }
+      ],
+      "consensus": 0,
+      "first": 0,
+      "levels": [
+        0,
+        0,
+        0
+      ],
+      "modal": 0,
+      "repeatedExact": true,
+      "observations": [
+        {
+          "caseId": "E121",
+          "runId": "H-E121-r1",
+          "replicate": 1,
+          "dimension": "Q4",
+          "level": 0,
+          "reason": "作者参考解错误称乙离后两人合作总3h，违背题设乙离开甲独做（正确7h），作为评分键拒绝正确解，测试失效。",
+          "inputHash": "d4898bde5060ba76dd1d8f0f6f416c0e9fcc9b0b2206f38b77bd52cfe57af386"
+        },
+        {
+          "caseId": "E121",
+          "runId": "H-E121-r2",
+          "replicate": 2,
+          "dimension": "Q4",
+          "level": 0,
+          "reason": "作者参考解称乙离开后两人仍合作总3h，违背题设乙离开甲独做，正确总时7h。作者答案错误且答案政策与题设矛盾，material缺陷致level0。",
+          "inputHash": "d4898bde5060ba76dd1d8f0f6f416c0e9fcc9b0b2206f38b77bd52cfe57af386"
+        },
+        {
+          "caseId": "E121",
+          "runId": "H-E121-r3",
+          "replicate": 3,
+          "dimension": "Q4",
+          "level": 0,
+          "reason": "作者参考解违背题设称乙离开后两人仍合作得3小时，正确为甲独做总7时；key=incorrect致level0。题目有效未泄露，但答案政策错误使核心评分基准受损。",
+          "inputHash": "d4898bde5060ba76dd1d8f0f6f416c0e9fcc9b0b2206f38b77bd52cfe57af386"
+        }
+      ]
+    },
+    {
+      "itemId": "P3-07",
+      "caseId": "E450",
+      "dimension": "Q5",
+      "inputHash": "ad04afa5a152f413121e43ba12b56273f0397aa1c6c32440892a06adae83a5ee",
+      "humans": [
+        {
+          "annotator": "B",
+          "answer": "2",
+          "reason": "原平均24/4=6，中位(4+4)/2=4；改后平均32/4=8，中位仍4",
+          "sourceFile": "Human-B-Packet-3-答题表.docx",
+          "sourceSha256": "203a544105f6f96a8d4f78666339a9a186ee8534fb9ffc71b5e5556c6d7753dd"
+        },
+        {
+          "annotator": "C",
+          "answer": "2",
+          "reason": "根据标准评分正确",
+          "sourceFile": "Human-C-Packet-3-答题表.docx",
+          "sourceSha256": "3a328dd50cbb4a45dc902809706a620a176968735ddba70e581d94985bb90f0b"
+        }
+      ],
+      "consensus": 2,
+      "first": 2,
+      "levels": [
+        2,
+        2,
+        2
+      ],
+      "modal": 2,
+      "repeatedExact": true,
+      "observations": [
+        {
+          "caseId": "E450",
+          "runId": "H-E450-r1",
+          "replicate": 1,
+          "dimension": "Q5",
+          "level": 2,
+          "reason": "重解确认原平均6中位4、改后平均8中位4；学生答案含全部数值与因果解释，评分器对c1/c2判met、c3判not_met正确，反馈与授分一致，无缺陷。",
+          "inputHash": "ad04afa5a152f413121e43ba12b56273f0397aa1c6c32440892a06adae83a5ee"
+        },
+        {
+          "caseId": "E450",
+          "runId": "H-E450-r2",
+          "replicate": 2,
+          "dimension": "Q5",
+          "level": 2,
+          "reason": "重解确认原平均6中位4改后平均8中位4；学生答案完整给出数值并解释总和增与中间值不变；评分器正确判c1,c2 met、c3 not_met，授学分，与独立分析一致，无缺陷。",
+          "inputHash": "ad04afa5a152f413121e43ba12b56273f0397aa1c6c32440892a06adae83a5ee"
+        },
+        {
+          "caseId": "E450",
+          "runId": "H-E450-r3",
+          "replicate": 3,
+          "dimension": "Q5",
+          "level": 2,
+          "reason": "独立解题确认原平均6中位4、改后平均8中位4；学生答案满足c1、c2，且未用小标题故c3 not_met正确。产品反馈与授分均准确，无缺陷。",
+          "inputHash": "ad04afa5a152f413121e43ba12b56273f0397aa1c6c32440892a06adae83a5ee"
+        }
+      ]
+    },
+    {
+      "itemId": "P3-08",
+      "caseId": "N-F09-tutor",
+      "dimension": "Q1",
+      "inputHash": "22e4040cd3ffd8ec6a389198142f453e0b1f9e0e75515078b7926885ff55af39",
+      "humans": [
+        {
+          "annotator": "B",
+          "answer": "1",
+          "reason": "题目只给单独用时而未说明合作方式时，应先指出所需假设，再给条件式结果。现实合作可能有额外收益，也可能有协调损失，单独速度不足以确定所有情况",
+          "sourceFile": "Human-B-Packet-3-答题表.docx",
+          "sourceSha256": "203a544105f6f96a8d4f78666339a9a186ee8534fb9ffc71b5e5556c6d7753dd"
+        },
+        {
+          "annotator": "C",
+          "answer": "2",
+          "reason": "概括及原因总结正确",
+          "sourceFile": "Human-C-Packet-3-答题表.docx",
+          "sourceSha256": "3a328dd50cbb4a45dc902809706a620a176968735ddba70e581d94985bb90f0b"
+        }
+      ],
+      "consensus": null,
+      "first": 1,
+      "levels": [
+        1,
+        2,
+        1
+      ],
+      "modal": 1,
+      "repeatedExact": false,
+      "observations": [
+        {
+          "caseId": "N-F09-tutor",
+          "runId": "H-N-F09-tutor-r1",
+          "replicate": 1,
+          "dimension": "Q1",
+          "level": 1,
+          "reason": "产物准确复述来源速度量纲、假设与分段计算，补充粉刷例计算正确且边界说明匹配；仅将无标题卡片来源误归为《轮流做家务的工作量》课程资料，属局部归属缺陷，核心用途成立。",
+          "inputHash": "22e4040cd3ffd8ec6a389198142f453e0b1f9e0e75515078b7926885ff55af39"
+        },
+        {
+          "caseId": "N-F09-tutor",
+          "runId": "H-N-F09-tutor-r2",
+          "replicate": 2,
+          "dimension": "Q1",
+          "level": 2,
+          "reason": "摘录与来源一致，自编粉刷例计算正确，边界条件与来源假设吻合，无事实或归属缺陷。",
+          "inputHash": "22e4040cd3ffd8ec6a389198142f453e0b1f9e0e75515078b7926885ff55af39"
+        },
+        {
+          "caseId": "N-F09-tutor",
+          "runId": "H-N-F09-tutor-r3",
+          "replicate": 3,
+          "dimension": "Q1",
+          "level": 1,
+          "reason": "产物核心机制、自举粉刷例计算与边界均正确，但将无标题来源F09误命名为《轮流做家务的工作量》，属局部归属缺陷，修正标题不影响教学用途，故为1级而非2或0。",
+          "inputHash": "22e4040cd3ffd8ec6a389198142f453e0b1f9e0e75515078b7926885ff55af39"
+        }
+      ]
+    },
+    {
+      "itemId": "P3-08",
+      "caseId": "N-F09-tutor",
+      "dimension": "Q3",
+      "inputHash": "22e4040cd3ffd8ec6a389198142f453e0b1f9e0e75515078b7926885ff55af39",
+      "humans": [
+        {
+          "annotator": "B",
+          "answer": "2",
+          "reason": "这些公式依赖模型条件",
+          "sourceFile": "Human-B-Packet-3-答题表.docx",
+          "sourceSha256": "203a544105f6f96a8d4f78666339a9a186ee8534fb9ffc71b5e5556c6d7753dd"
+        },
+        {
+          "annotator": "C",
+          "answer": "2",
+          "reason": "举例易懂，且有难度升级",
+          "sourceFile": "Human-C-Packet-3-答题表.docx",
+          "sourceSha256": "3a328dd50cbb4a45dc902809706a620a176968735ddba70e581d94985bb90f0b"
+        }
+      ],
+      "consensus": 2,
+      "first": 2,
+      "levels": [
+        2,
+        2,
+        2
+      ],
+      "modal": 2,
+      "repeatedExact": true,
+      "observations": [
+        {
+          "caseId": "N-F09-tutor",
+          "runId": "H-N-F09-tutor-r1",
+          "replicate": 1,
+          "dimension": "Q3",
+          "level": 2,
+          "reason": "补充粉刷例完整展示前提、分段运算连接与结果，并说明适用边界，符合局部解释充分性停止条件，无缺陷。",
+          "inputHash": "22e4040cd3ffd8ec6a389198142f453e0b1f9e0e75515078b7926885ff55af39"
+        },
+        {
+          "caseId": "N-F09-tutor",
+          "runId": "H-N-F09-tutor-r2",
+          "replicate": 2,
+          "dimension": "Q3",
+          "level": 2,
+          "reason": "例从给定速度出发展示分段运算：首段量、剩余量、合速、剩余时间至总长，并交代适用边界，符合解释停止条件。",
+          "inputHash": "22e4040cd3ffd8ec6a389198142f453e0b1f9e0e75515078b7926885ff55af39"
+        },
+        {
+          "caseId": "N-F09-tutor",
+          "runId": "H-N-F09-tutor-r3",
+          "replicate": 3,
+          "dimension": "Q3",
+          "level": 2,
+          "reason": "局部例子从给定单独用时推速度，分段算完成量与合速，用除法求剩余时间并总计时长，明确假设与适用边界，解释连接充分。",
+          "inputHash": "22e4040cd3ffd8ec6a389198142f453e0b1f9e0e75515078b7926885ff55af39"
+        }
+      ]
+    },
+    {
+      "itemId": "P3-09",
+      "caseId": "E920",
+      "dimension": "Q6",
+      "inputHash": "1cab0ebc541b0976c5c908c3d469d391c15ea2d9e8a5605ad9a520b45bb66302",
+      "humans": [
+        {
+          "annotator": "B",
+          "answer": "1",
+          "reason": "但测量了若干变量不等于排除了所有差异。研究设计越接近只改变目标因素，因果解释通常越有依据；具体能支持到什么范围，还取决于实际执行和数据",
+          "sourceFile": "Human-B-Packet-3-答题表.docx",
+          "sourceSha256": "203a544105f6f96a8d4f78666339a9a186ee8534fb9ffc71b5e5556c6d7753dd"
+        },
+        {
+          "annotator": "C",
+          "answer": "2",
+          "reason": "给学生提供的建议详细可实施",
+          "sourceFile": "Human-C-Packet-3-答题表.docx",
+          "sourceSha256": "3a328dd50cbb4a45dc902809706a620a176968735ddba70e581d94985bb90f0b"
+        }
+      ],
+      "consensus": null,
+      "first": 1,
+      "levels": [
+        1,
+        1,
+        1
+      ],
+      "modal": 1,
+      "repeatedExact": true,
+      "observations": [
+        {
+          "caseId": "E920",
+          "runId": "H-E920-r1",
+          "replicate": 1,
+          "dimension": "Q6",
+          "level": 1,
+          "reason": "support仅泛化建议重读来源规则、列条件、练同主题新题，未点明学生将自愿参与误作随机分组的具体错误，也未提供新题条件，属相关但通用修复，核心用途成立但有局部缺陷。",
+          "inputHash": "1cab0ebc541b0976c5c908c3d469d391c15ea2d9e8a5605ad9a520b45bb66302"
+        },
+        {
+          "caseId": "E920",
+          "runId": "H-E920-r2",
+          "replicate": 2,
+          "dimension": "Q6",
+          "level": 1,
+          "reason": "support仅泛化建议重读来源、列条件、练新题，未具体指出学生将自愿等同随机及忽略未测混杂的推理缺口，相关但缺具体性，符合Q6的1级局部缺陷。",
+          "inputHash": "1cab0ebc541b0976c5c908c3d469d391c15ea2d9e8a5605ad9a520b45bb66302"
+        },
+        {
+          "caseId": "E920",
+          "runId": "H-E920-r3",
+          "replicate": 3,
+          "dimension": "Q6",
+          "level": 1,
+          "reason": "support仅泛化建议重读来源规则与练同主题新题，未点明学生将自愿参与等同随机分组的具体推理缺口，也无新题具体内容，属相关但泛化建议，符合Q6的1分。",
+          "inputHash": "1cab0ebc541b0976c5c908c3d469d391c15ea2d9e8a5605ad9a520b45bb66302"
+        }
+      ]
+    }
+  ]
+}

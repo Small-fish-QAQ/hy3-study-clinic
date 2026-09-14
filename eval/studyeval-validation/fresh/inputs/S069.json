@@ -1,0 +1,67 @@
+{
+  "id": "S069",
+  "dimensions": [
+    "Q5"
+  ],
+  "evidence": {
+    "sources": [
+      {
+        "id": "source",
+        "text": "课堂采用全年固定偏移：甲地UTC+2，乙地UTC-3，不使用夏令时。甲地比乙地快5小时，同一瞬间从甲换到乙要减5小时，跨午夜时日期随之改变。"
+      }
+    ],
+    "goals": [
+      "核验跨日期时区换算的评分"
+    ],
+    "prerequisites": [
+      "阅读所给规则",
+      "基本四则运算"
+    ],
+    "desiredDepth": "working_fluency",
+    "authorityBoundaries": [
+      "判断所附局部教学或任务的实际要求。作者参考答案为私有评估材料，未预先展示给学习者。数据与规则是明示课堂前提。"
+    ],
+    "artifacts": [],
+    "exposure": [],
+    "question": {
+      "prompt": "甲地周三02:00对应乙地什么日期和时刻？说明换算方向。",
+      "options": []
+    },
+    "rubric": [
+      {
+        "id": "c1",
+        "text": "乙地周二21:00",
+        "required": true
+      },
+      {
+        "id": "c2",
+        "text": "由甲到乙减5小时并回到前一天",
+        "required": true
+      },
+      {
+        "id": "c3",
+        "text": "列成两列表格",
+        "required": false
+      }
+    ],
+    "answer": "乙地是周二晚上九点。甲比乙快五小时，所以把周三凌晨两点往回拨五小时，跨回周二。",
+    "productJudgment": {
+      "criteria": [
+        {
+          "id": "c1",
+          "result": "met"
+        },
+        {
+          "id": "c2",
+          "result": "met"
+        },
+        {
+          "id": "c3",
+          "result": "met"
+        }
+      ],
+      "feedback": "日期时刻及解释正确，而且给出了两列表格。",
+      "consequence": "granted"
+    }
+  }
+}

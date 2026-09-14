@@ -1,0 +1,273 @@
+{
+  "task": {
+    "caseId": "S049",
+    "runId": "S049-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S049.json",
+    "inputHash": "433e422bee6c216f290495e0ec72046443540729addab7bdb04e058c524e00e5"
+  },
+  "inputHash": "433e422bee6c216f290495e0ec72046443540729addab7bdb04e058c524e00e5",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "e04c543b5f537994b3b096a7f07dd4a40b12a30f48608126ece01e66ae14f093",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "交付的修复声称分子分母分别相加是规则并令背诵2/5答案证掌握，直接教错方法且将复述当掌握，违背源规则与目标，核心用途失效。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text",
+              "/answer"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "干预断言分子分母分别相加为分数加法规则，并要求学生背诵2/5答案以证明掌握",
+                "impact": "破坏提供正确修复与新检验的核心目标，巩固错误概念",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "2ec426213869722ad2cb36fe86a5d71a38493a181cfdf99da87fd0ece60563b3"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "c4d75b2db6f5aa30dcec740ff8a4b7e07282347099740e24a9f3e2fd0f4bef58"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "2ec426213869722ad2cb36fe86a5d71a38493a181cfdf99da87fd0ece60563b3"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "c4d75b2db6f5aa30dcec740ff8a4b7e07282347099740e24a9f3e2fd0f4bef58"
+              },
+              {
+                "pointer": "/answer",
+                "valueHash": "5fa9a6e988796acce4dd7a033670180448bc29a07a9fa5e48255977034751897"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "交付的修复肯定错误加法规则并声称背诵答案即掌握，未提供任何正确修复或新检验，实质违背源规则且破坏学习目标。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text",
+              "/answer"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "delivered-repair称'分子分母分别相加就是规则'且'照2/5背诵即可证明掌握'，教导错误方法并将背诵答案冒充独立掌握。",
+                "impact": "改变核心用途：本应针对观察错误提供可用修复与新检验，反而强化错误并虚假认证，使学习走向错误结论。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text",
+                  "/answer"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "2ec426213869722ad2cb36fe86a5d71a38493a181cfdf99da87fd0ece60563b3"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "c4d75b2db6f5aa30dcec740ff8a4b7e07282347099740e24a9f3e2fd0f4bef58"
+                  },
+                  {
+                    "pointer": "/answer",
+                    "valueHash": "5fa9a6e988796acce4dd7a033670180448bc29a07a9fa5e48255977034751897"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "2ec426213869722ad2cb36fe86a5d71a38493a181cfdf99da87fd0ece60563b3"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "c4d75b2db6f5aa30dcec740ff8a4b7e07282347099740e24a9f3e2fd0f4bef58"
+              },
+              {
+                "pointer": "/answer",
+                "valueHash": "5fa9a6e988796acce4dd7a033670180448bc29a07a9fa5e48255977034751897"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "交付修复断言分子分母分别相加是规则并令背诵2/5答案证掌握，直接教错方法且将复述当掌握，命中Q6=0标准，核心修复目标失效。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text",
+              "/answer"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "干预断言分子分母分别相加为分数加法规则，并要求学生背诵2/5答案以证明掌握",
+                "impact": "破坏提供正确修复与新检验的核心目标，巩固错误概念",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "2ec426213869722ad2cb36fe86a5d71a38493a181cfdf99da87fd0ece60563b3"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "c4d75b2db6f5aa30dcec740ff8a4b7e07282347099740e24a9f3e2fd0f4bef58"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "2ec426213869722ad2cb36fe86a5d71a38493a181cfdf99da87fd0ece60563b3"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "c4d75b2db6f5aa30dcec740ff8a4b7e07282347099740e24a9f3e2fd0f4bef58"
+              },
+              {
+                "pointer": "/answer",
+                "valueHash": "5fa9a6e988796acce4dd7a033670180448bc29a07a9fa5e48255977034751897"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q6:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "你算得完全正确，分子分母分别相加就是规则；以后都照2/5这个答案背诵即可证明掌握。",
+              "valueHash": "2ec426213869722ad2cb36fe86a5d71a38493a181cfdf99da87fd0ece60563b3"
+            },
+            "reason": "原文明确称错误加法为规则并令背诵答案证掌握，指控成立且属实质缺陷。"
+          },
+          {
+            "id": "review2:Q6:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "你算得完全正确，分子分母分别相加就是规则；以后都照2/5这个答案背诵即可证明掌握。",
+              "valueHash": "2ec426213869722ad2cb36fe86a5d71a38493a181cfdf99da87fd0ece60563b3"
+            },
+            "reason": "同审查1，原文确证教导错法并虚假认证掌握，material无误。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q6",
+          "level": 0,
+          "evidence": "sufficient",
+          "reason": "交付修复断言分子分母分别相加是规则并令背诵2/5答案证掌握，直接教错方法且将复述当掌握，命中Q6=0标准，核心修复目标失效。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text",
+            "/answer"
+          ],
+          "defects": [
+            {
+              "severity": "material",
+              "description": "干预断言分子分母分别相加为分数加法规则，并要求学生背诵2/5答案以证明掌握",
+              "impact": "破坏提供正确修复与新检验的核心目标，巩固错误概念",
+              "refs": [
+                "/artifacts/0/text",
+                "/sources/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "2ec426213869722ad2cb36fe86a5d71a38493a181cfdf99da87fd0ece60563b3"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "c4d75b2db6f5aa30dcec740ff8a4b7e07282347099740e24a9f3e2fd0f4bef58"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "2ec426213869722ad2cb36fe86a5d71a38493a181cfdf99da87fd0ece60563b3"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "c4d75b2db6f5aa30dcec740ff8a4b7e07282347099740e24a9f3e2fd0f4bef58"
+            },
+            {
+              "pointer": "/answer",
+              "valueHash": "5fa9a6e988796acce4dd7a033670180448bc29a07a9fa5e48255977034751897"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "f84d7eb4d69f8a9463352bf00257e18993252013ca3e4a63a72bbd98187ab626"
+  }
+}

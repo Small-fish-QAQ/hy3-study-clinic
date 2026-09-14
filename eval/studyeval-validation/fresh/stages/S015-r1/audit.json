@@ -1,0 +1,98 @@
+{
+  "inputIdentity": "e20aeb9f4ceb23176dfc46cdd4fad2911cc580724b48a1d2cc4de17865195c6a",
+  "attempts": [
+    {
+      "physicalId": "d3726659-418e-49bf-8299-58e8cdaff2e3",
+      "caseId": "S015",
+      "runId": "S015-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q3",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "lesson断言负指数等于结果前加负号，算得2^(-3)=-8，且称0有倒数，完全违背source正确规则与目标。中心解释错误并教无效方法，实质缺陷，得0分。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text",
+          "/goals/0"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "声称指数前的负号等于结果前的负号，并得出2^(-3)=-8，错误将负指数解释为结果取负，违背解释负指数为倒数的目标且计算错误。",
+            "impact": "直接教授无效方法，破坏核心教学用途。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text",
+              "/goals/0"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "6aae95868d661b1ab8e48373b9ffb6b00e77e9766b05ea85f48ef6b7a99a2d16"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "8f66df12d54e18d234589d8c047330d6ce2ae196b074b8083cf0629060128d07"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "5beffddf1cc4e9fecc4598786366c806f32c8b70ed98357008e9d55a2bdacb77"
+              }
+            ]
+          },
+          {
+            "severity": "material",
+            "description": "声称'0也有倒数'，与source中a=0时倒数式无定义矛盾，错误传授事实。",
+            "impact": "破坏负指数适用边界正确理解，实质缺陷。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "6aae95868d661b1ab8e48373b9ffb6b00e77e9766b05ea85f48ef6b7a99a2d16"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "8f66df12d54e18d234589d8c047330d6ce2ae196b074b8083cf0629060128d07"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "6aae95868d661b1ab8e48373b9ffb6b00e77e9766b05ea85f48ef6b7a99a2d16"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "8f66df12d54e18d234589d8c047330d6ce2ae196b074b8083cf0629060128d07"
+          },
+          {
+            "pointer": "/goals/0",
+            "valueHash": "5beffddf1cc4e9fecc4598786366c806f32c8b70ed98357008e9d55a2bdacb77"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

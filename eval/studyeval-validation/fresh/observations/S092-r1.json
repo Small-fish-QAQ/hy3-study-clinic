@@ -1,0 +1,568 @@
+{
+  "task": {
+    "caseId": "S092",
+    "runId": "S092-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S092.json",
+    "inputHash": "3407530097aa1def2971821b56534889d20975e052eb54fad8fb75929cc71413"
+  },
+  "inputHash": "3407530097aa1def2971821b56534889d20975e052eb54fad8fb75929cc71413",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "237f0155be82920f5351810190f76f26f59c6919f80c404ca381571e19ade123",
+    "stages": {
+      "blind-solution": {
+        "status": "resolved",
+        "solution": "第三个内角为65度。依据：题设明确限定平面欧氏三角形且内角和180度（/sources/0/text）。已知两角48°和67°，第三角=180-48-67=65°。必要限制：结论仅在平面欧氏几何下成立，非欧几何不适用。",
+        "refs": [
+          "/question/prompt",
+          "/sources/0/text"
+        ],
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "6f61eb04ce82ef7ee727074751c974cd23772a67cd1c4f2d369bd885aaf261bb"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "c67a1809ad98f0e7218f13885bd43e3048970015da2fa92bb6684a0b6474ff10"
+          }
+        ]
+      },
+      "blind-student": {
+        "criteria": [
+          {
+            "id": "c1",
+            "result": "met",
+            "reason": "答案给出'=65°'明确第三角为65度",
+            "refs": [
+              "/answer",
+              "/rubric/0"
+            ],
+            "required": true,
+            "witnesses": [
+              {
+                "pointer": "/answer",
+                "valueHash": "0f636d95ae49771bae0a8feca7be7e58be55eb11f9971402f2ff4d679d328323"
+              },
+              {
+                "pointer": "/rubric/0",
+                "valueHash": "433a76d6f4a1dc7bb70ba7617eb9c24bfc16a306897f6751247f515dfb15ea94"
+              }
+            ]
+          },
+          {
+            "id": "c2",
+            "result": "met",
+            "reason": "答案写'由内角总和180°，计算180°-(48°+67°)=65°'利用内角和扣除两已知角",
+            "refs": [
+              "/answer",
+              "/rubric/1"
+            ],
+            "required": true,
+            "witnesses": [
+              {
+                "pointer": "/answer",
+                "valueHash": "0f636d95ae49771bae0a8feca7be7e58be55eb11f9971402f2ff4d679d328323"
+              },
+              {
+                "pointer": "/rubric/1",
+                "valueHash": "eaca36faa72646063919361b272c1653cdc11b31eefa1de2268808c1d664b4db"
+              }
+            ]
+          },
+          {
+            "id": "c3",
+            "result": "met",
+            "reason": "答案以单句句号结束，符合单独结论句非必需标准",
+            "refs": [
+              "/answer",
+              "/rubric/2"
+            ],
+            "required": false,
+            "witnesses": [
+              {
+                "pointer": "/answer",
+                "valueHash": "0f636d95ae49771bae0a8feca7be7e58be55eb11f9971402f2ff4d679d328323"
+              },
+              {
+                "pointer": "/rubric/2",
+                "valueHash": "f4d8305144345c8dd339b126efc1afb13d48f79b84d7936aefeed088c54aad69"
+              }
+            ]
+          }
+        ],
+        "warrantedCredit": "granted"
+      },
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q5",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "学生答案给出65度并利用内角和扣除两角，满足c1,c2必需标准；c3可选未满足判not_met正确。产品授予信用与重解一致，评分准确。",
+            "refs": [
+              "/answer",
+              "/rubric/0",
+              "/rubric/1",
+              "/rubric/2",
+              "/productJudgment/consequence"
+            ],
+            "defects": [],
+            "missing": [],
+            "grading": {
+              "criteria": [
+                {
+                  "id": "c1",
+                  "result": "met",
+                  "reason": "答案'由内角总和180°，计算180°-(48°+67°)=65°'明确第三角65度",
+                  "refs": [
+                    "/answer",
+                    "/rubric/0"
+                  ],
+                  "required": true,
+                  "witnesses": [
+                    {
+                      "pointer": "/answer",
+                      "valueHash": "0f636d95ae49771bae0a8feca7be7e58be55eb11f9971402f2ff4d679d328323"
+                    },
+                    {
+                      "pointer": "/rubric/0",
+                      "valueHash": "433a76d6f4a1dc7bb70ba7617eb9c24bfc16a306897f6751247f515dfb15ea94"
+                    }
+                  ]
+                },
+                {
+                  "id": "c2",
+                  "result": "met",
+                  "reason": "利用内角和180扣除已知两角48与67，符合依据要求",
+                  "refs": [
+                    "/answer",
+                    "/rubric/1"
+                  ],
+                  "required": true,
+                  "witnesses": [
+                    {
+                      "pointer": "/answer",
+                      "valueHash": "0f636d95ae49771bae0a8feca7be7e58be55eb11f9971402f2ff4d679d328323"
+                    },
+                    {
+                      "pointer": "/rubric/1",
+                      "valueHash": "eaca36faa72646063919361b272c1653cdc11b31eefa1de2268808c1d664b4db"
+                    }
+                  ]
+                },
+                {
+                  "id": "c3",
+                  "result": "not_met",
+                  "reason": "学生仅用一句含计算的描述，未另写单独结论句，可选标准未满足但非必需",
+                  "refs": [
+                    "/answer",
+                    "/rubric/2"
+                  ],
+                  "required": false,
+                  "witnesses": [
+                    {
+                      "pointer": "/answer",
+                      "valueHash": "0f636d95ae49771bae0a8feca7be7e58be55eb11f9971402f2ff4d679d328323"
+                    },
+                    {
+                      "pointer": "/rubric/2",
+                      "valueHash": "f4d8305144345c8dd339b126efc1afb13d48f79b84d7936aefeed088c54aad69"
+                    }
+                  ]
+                }
+              ],
+              "warrantedCredit": "granted",
+              "actualCredit": "granted",
+              "actualCreditWitness": {
+                "pointer": "/productJudgment/consequence",
+                "valueHash": "dd515d1975b8e5a83bab3420bea5dacefe5451ac7cf617d23c4393cc79e4db99"
+              }
+            },
+            "witnesses": [
+              {
+                "pointer": "/answer",
+                "valueHash": "0f636d95ae49771bae0a8feca7be7e58be55eb11f9971402f2ff4d679d328323"
+              },
+              {
+                "pointer": "/rubric/0",
+                "valueHash": "433a76d6f4a1dc7bb70ba7617eb9c24bfc16a306897f6751247f515dfb15ea94"
+              },
+              {
+                "pointer": "/rubric/1",
+                "valueHash": "eaca36faa72646063919361b272c1653cdc11b31eefa1de2268808c1d664b4db"
+              },
+              {
+                "pointer": "/rubric/2",
+                "valueHash": "f4d8305144345c8dd339b126efc1afb13d48f79b84d7936aefeed088c54aad69"
+              },
+              {
+                "pointer": "/productJudgment/consequence",
+                "valueHash": "dd515d1975b8e5a83bab3420bea5dacefe5451ac7cf617d23c4393cc79e4db99"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q5",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "学生答案给出65°并利用内角和180°扣除两角，满足c1,c2必需要求；c3未单独结论句判not_met合理且可选。产品授分granted与应得一致，评分准确。",
+            "refs": [
+              "/answer",
+              "/rubric/0",
+              "/rubric/1",
+              "/rubric/2",
+              "/productJudgment/consequence"
+            ],
+            "defects": [],
+            "missing": [],
+            "grading": {
+              "criteria": [
+                {
+                  "id": "c1",
+                  "result": "met",
+                  "reason": "答案'计算180°-(48°+67°)=65°'明确第三角65度",
+                  "refs": [
+                    "/answer",
+                    "/rubric/0"
+                  ],
+                  "required": true,
+                  "witnesses": [
+                    {
+                      "pointer": "/answer",
+                      "valueHash": "0f636d95ae49771bae0a8feca7be7e58be55eb11f9971402f2ff4d679d328323"
+                    },
+                    {
+                      "pointer": "/rubric/0",
+                      "valueHash": "433a76d6f4a1dc7bb70ba7617eb9c24bfc16a306897f6751247f515dfb15ea94"
+                    }
+                  ]
+                },
+                {
+                  "id": "c2",
+                  "result": "met",
+                  "reason": "答案'由内角总和180°'扣除已知两角，展示依据",
+                  "refs": [
+                    "/answer",
+                    "/rubric/1"
+                  ],
+                  "required": true,
+                  "witnesses": [
+                    {
+                      "pointer": "/answer",
+                      "valueHash": "0f636d95ae49771bae0a8feca7be7e58be55eb11f9971402f2ff4d679d328323"
+                    },
+                    {
+                      "pointer": "/rubric/1",
+                      "valueHash": "eaca36faa72646063919361b272c1653cdc11b31eefa1de2268808c1d664b4db"
+                    }
+                  ]
+                },
+                {
+                  "id": "c3",
+                  "result": "not_met",
+                  "reason": "答案仅单句含计算与结论，未另写单独结论句，optional不影响信用",
+                  "refs": [
+                    "/answer",
+                    "/rubric/2"
+                  ],
+                  "required": false,
+                  "witnesses": [
+                    {
+                      "pointer": "/answer",
+                      "valueHash": "0f636d95ae49771bae0a8feca7be7e58be55eb11f9971402f2ff4d679d328323"
+                    },
+                    {
+                      "pointer": "/rubric/2",
+                      "valueHash": "f4d8305144345c8dd339b126efc1afb13d48f79b84d7936aefeed088c54aad69"
+                    }
+                  ]
+                }
+              ],
+              "warrantedCredit": "granted",
+              "actualCredit": "granted",
+              "actualCreditWitness": {
+                "pointer": "/productJudgment/consequence",
+                "valueHash": "dd515d1975b8e5a83bab3420bea5dacefe5451ac7cf617d23c4393cc79e4db99"
+              }
+            },
+            "witnesses": [
+              {
+                "pointer": "/answer",
+                "valueHash": "0f636d95ae49771bae0a8feca7be7e58be55eb11f9971402f2ff4d679d328323"
+              },
+              {
+                "pointer": "/rubric/0",
+                "valueHash": "433a76d6f4a1dc7bb70ba7617eb9c24bfc16a306897f6751247f515dfb15ea94"
+              },
+              {
+                "pointer": "/rubric/1",
+                "valueHash": "eaca36faa72646063919361b272c1653cdc11b31eefa1de2268808c1d664b4db"
+              },
+              {
+                "pointer": "/rubric/2",
+                "valueHash": "f4d8305144345c8dd339b126efc1afb13d48f79b84d7936aefeed088c54aad69"
+              },
+              {
+                "pointer": "/productJudgment/consequence",
+                "valueHash": "dd515d1975b8e5a83bab3420bea5dacefe5451ac7cf617d23c4393cc79e4db99"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q5",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "重解任务确认学生答案给出65度并利用内角和扣除两角，满足c1,c2必需；c3可选未满足判not_met正确。产品授分granted与应得一致，评分准确无缺陷。",
+            "refs": [
+              "/answer",
+              "/rubric/0",
+              "/rubric/1",
+              "/rubric/2",
+              "/productJudgment/consequence"
+            ],
+            "defects": [],
+            "missing": [],
+            "grading": {
+              "criteria": [
+                {
+                  "id": "c1",
+                  "result": "met",
+                  "reason": "答案'计算180°-(48°+67°)=65°'明确第三角65度",
+                  "refs": [
+                    "/answer",
+                    "/rubric/0"
+                  ],
+                  "required": true,
+                  "witnesses": [
+                    {
+                      "pointer": "/answer",
+                      "valueHash": "0f636d95ae49771bae0a8feca7be7e58be55eb11f9971402f2ff4d679d328323"
+                    },
+                    {
+                      "pointer": "/rubric/0",
+                      "valueHash": "433a76d6f4a1dc7bb70ba7617eb9c24bfc16a306897f6751247f515dfb15ea94"
+                    }
+                  ]
+                },
+                {
+                  "id": "c2",
+                  "result": "met",
+                  "reason": "答案'由内角总和180°'扣除已知两角，展示依据",
+                  "refs": [
+                    "/answer",
+                    "/rubric/1"
+                  ],
+                  "required": true,
+                  "witnesses": [
+                    {
+                      "pointer": "/answer",
+                      "valueHash": "0f636d95ae49771bae0a8feca7be7e58be55eb11f9971402f2ff4d679d328323"
+                    },
+                    {
+                      "pointer": "/rubric/1",
+                      "valueHash": "eaca36faa72646063919361b272c1653cdc11b31eefa1de2268808c1d664b4db"
+                    }
+                  ]
+                },
+                {
+                  "id": "c3",
+                  "result": "not_met",
+                  "reason": "答案仅单句含计算与结果，未另写单独结论句，可选标准未满足但非必需",
+                  "refs": [
+                    "/answer",
+                    "/rubric/2"
+                  ],
+                  "required": false,
+                  "witnesses": [
+                    {
+                      "pointer": "/answer",
+                      "valueHash": "0f636d95ae49771bae0a8feca7be7e58be55eb11f9971402f2ff4d679d328323"
+                    },
+                    {
+                      "pointer": "/rubric/2",
+                      "valueHash": "f4d8305144345c8dd339b126efc1afb13d48f79b84d7936aefeed088c54aad69"
+                    }
+                  ]
+                }
+              ],
+              "warrantedCredit": "granted",
+              "actualCredit": "granted",
+              "actualCreditWitness": {
+                "pointer": "/productJudgment/consequence",
+                "valueHash": "dd515d1975b8e5a83bab3420bea5dacefe5451ac7cf617d23c4393cc79e4db99"
+              }
+            },
+            "witnesses": [
+              {
+                "pointer": "/answer",
+                "valueHash": "0f636d95ae49771bae0a8feca7be7e58be55eb11f9971402f2ff4d679d328323"
+              },
+              {
+                "pointer": "/rubric/0",
+                "valueHash": "433a76d6f4a1dc7bb70ba7617eb9c24bfc16a306897f6751247f515dfb15ea94"
+              },
+              {
+                "pointer": "/rubric/1",
+                "valueHash": "eaca36faa72646063919361b272c1653cdc11b31eefa1de2268808c1d664b4db"
+              },
+              {
+                "pointer": "/rubric/2",
+                "valueHash": "f4d8305144345c8dd339b126efc1afb13d48f79b84d7936aefeed088c54aad69"
+              },
+              {
+                "pointer": "/productJudgment/consequence",
+                "valueHash": "dd515d1975b8e5a83bab3420bea5dacefe5451ac7cf617d23c4393cc79e4db99"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": []
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q5",
+          "level": 2,
+          "evidence": "sufficient",
+          "reason": "重解任务确认学生答案给出65度并利用内角和扣除两角，满足c1,c2必需；c3可选未满足判not_met正确。产品授分granted与应得一致，评分准确无缺陷。",
+          "refs": [
+            "/answer",
+            "/rubric/0",
+            "/rubric/1",
+            "/rubric/2",
+            "/productJudgment/consequence"
+          ],
+          "defects": [],
+          "missing": [],
+          "grading": {
+            "criteria": [
+              {
+                "id": "c1",
+                "result": "met",
+                "reason": "答案'计算180°-(48°+67°)=65°'明确第三角65度",
+                "refs": [
+                  "/answer",
+                  "/rubric/0"
+                ],
+                "required": true,
+                "witnesses": [
+                  {
+                    "pointer": "/answer",
+                    "valueHash": "0f636d95ae49771bae0a8feca7be7e58be55eb11f9971402f2ff4d679d328323"
+                  },
+                  {
+                    "pointer": "/rubric/0",
+                    "valueHash": "433a76d6f4a1dc7bb70ba7617eb9c24bfc16a306897f6751247f515dfb15ea94"
+                  }
+                ]
+              },
+              {
+                "id": "c2",
+                "result": "met",
+                "reason": "答案'由内角总和180°'扣除已知两角，展示依据",
+                "refs": [
+                  "/answer",
+                  "/rubric/1"
+                ],
+                "required": true,
+                "witnesses": [
+                  {
+                    "pointer": "/answer",
+                    "valueHash": "0f636d95ae49771bae0a8feca7be7e58be55eb11f9971402f2ff4d679d328323"
+                  },
+                  {
+                    "pointer": "/rubric/1",
+                    "valueHash": "eaca36faa72646063919361b272c1653cdc11b31eefa1de2268808c1d664b4db"
+                  }
+                ]
+              },
+              {
+                "id": "c3",
+                "result": "not_met",
+                "reason": "答案仅单句含计算与结果，未另写单独结论句，可选标准未满足但非必需",
+                "refs": [
+                  "/answer",
+                  "/rubric/2"
+                ],
+                "required": false,
+                "witnesses": [
+                  {
+                    "pointer": "/answer",
+                    "valueHash": "0f636d95ae49771bae0a8feca7be7e58be55eb11f9971402f2ff4d679d328323"
+                  },
+                  {
+                    "pointer": "/rubric/2",
+                    "valueHash": "f4d8305144345c8dd339b126efc1afb13d48f79b84d7936aefeed088c54aad69"
+                  }
+                ]
+              }
+            ],
+            "warrantedCredit": "granted",
+            "actualCredit": "granted",
+            "actualCreditWitness": {
+              "pointer": "/productJudgment/consequence",
+              "valueHash": "dd515d1975b8e5a83bab3420bea5dacefe5451ac7cf617d23c4393cc79e4db99"
+            }
+          },
+          "witnesses": [
+            {
+              "pointer": "/answer",
+              "valueHash": "0f636d95ae49771bae0a8feca7be7e58be55eb11f9971402f2ff4d679d328323"
+            },
+            {
+              "pointer": "/rubric/0",
+              "valueHash": "433a76d6f4a1dc7bb70ba7617eb9c24bfc16a306897f6751247f515dfb15ea94"
+            },
+            {
+              "pointer": "/rubric/1",
+              "valueHash": "eaca36faa72646063919361b272c1653cdc11b31eefa1de2268808c1d664b4db"
+            },
+            {
+              "pointer": "/rubric/2",
+              "valueHash": "f4d8305144345c8dd339b126efc1afb13d48f79b84d7936aefeed088c54aad69"
+            },
+            {
+              "pointer": "/productJudgment/consequence",
+              "valueHash": "dd515d1975b8e5a83bab3420bea5dacefe5451ac7cf617d23c4393cc79e4db99"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "1f6345e4abf524238cf3df16155e5e77afbcc4e567397fe5c0b7bf49b04626a2"
+  }
+}

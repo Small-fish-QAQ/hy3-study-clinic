@@ -1,0 +1,81 @@
+{
+  "id": "assessment_version_d3301cc5-bbda-477e-84fb-2c3dd9068630",
+  "definitionId": "assessment_b3ace457-23e4-4261-a4de-b3317a967565",
+  "version": 1,
+  "predecessorId": null,
+  "status": "accepted",
+  "items": [
+    {
+      "id": "assessment_item_cb434c40-e09b-4e47-929c-8849b0cf926e",
+      "sourceQuestionId": "que_6782cef4-b4ee-4d2c-a038-86b88778aa43",
+      "index": 0,
+      "targetLearningUnitId": "cun_5646302b-1aa6-4579-8bc1-7e2d1d653f67",
+      "targetObjectiveId": "obj_d25a5ec4-2376-4c51-8088-7aa80790cd54",
+      "representation": "recall",
+      "questionType": "short_answer",
+      "prompt": "假设项目标识不同，队列容量充足，所有操作按给定顺序执行，无隐藏前置状态。初始队列内容为 [U, V]（U 先插入，V 后插入）。依次执行以下操作：1) dequeue；2) enqueue W；3) peek。请回答：(a) 第一次 dequeue 返回什么项目？(b) 执行 enqueue W 后队列内容是什么（用方括号从首到尾书写）？(c) 随后 peek 返回什么项目，此时队列内容是否改变？(d) 用 FIFO 队列的基本操作规则（enqueue 位置、dequeue 与 peek 对队首的作用、插入顺序决定下次 dequeue 而非字母序）简要解释上述结果。",
+      "rubric": [
+        {
+          "id": "criterion_0f5f2683-d25d-438f-931b-83951b6fb277",
+          "text": "第一次 dequeue 返回 U，因为 dequeue 移除并返回队首，初始队首为 U（插入顺序最早）。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_61a5b659"
+          ]
+        },
+        {
+          "id": "criterion_1b536aa7-47a9-4627-abcf-7b6917db5b2e",
+          "text": "执行 enqueue W 后队列内容为 [V, W]，方括号从首到尾书写，enqueue 在队尾添加 W 于 V 之后。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_61a5b659"
+          ]
+        },
+        {
+          "id": "criterion_e6d764a0-82e2-4694-93b0-11bb93312aa9",
+          "text": "peek 返回 V 且队列内容不改变（仍为 [V, W]），因为 peek 返回队首但不移除。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_61a5b659"
+          ]
+        },
+        {
+          "id": "criterion_2cc9099e-669a-4456-9d02-cebfd35b2c32",
+          "text": "解释体现 FIFO 插入顺序决定操作对象而非字母序，并正确描述 enqueue/dequeue/peek 语义（enqueue 队尾，dequeue 移除返回队首，peek 返回队首不移除）。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_61a5b659"
+          ]
+        }
+      ],
+      "sourceBindings": [
+        {
+          "materialId": "mat_0f8b9ce8-84db-4360-bdd4-0214c94a0154",
+          "materialRevisionId": "rev_85eb519d-8e12-4f81-9d1a-2da6e27983a2",
+          "sourceBlockId": "blk_0_61a5b659",
+          "quote": "A queue stores items in first-in, first-out order, abbreviated FIFO. Enqueue adds an item at the back. Dequeue removes and returns the item at the front. Peek returns the front item without removing it. We write queue contents from front to back in square brackets. The queue [A, B, C] will return A on the next dequeue, not C. The order of insertion determines this behavior, not alphabetical order.",
+          "contentOrigin": "extracted_original",
+          "authoritative": true
+        }
+      ],
+      "formalEligible": true,
+      "policyReason": "FORMAL_ELIGIBLE"
+    }
+  ],
+  "sourceRevisionIds": [
+    "rev_85eb519d-8e12-4f81-9d1a-2da6e27983a2"
+  ],
+  "createdAt": "2026-09-14T12:16:17.217Z",
+  "acceptedAt": "2026-09-14T12:16:17.218Z",
+  "authorityMode": "formal",
+  "progressionContext": {
+    "quizId": "qz_e0daf447-be0c-4975-8536-3d362f2e3e8b",
+    "contractVersionId": "contract_10d259da-5801-4622-ad38-df65527c82b5",
+    "curriculumVersionId": "curriculum_c8e71983-464f-49cb-8c63-90b9d6d9131b",
+    "studyPlanVersionId": "study_plan_e573bc48-4369-44f5-96de-8491eccddc2c",
+    "agendaId": "agenda_3194b45e-351f-47da-8379-f8d263f9f775",
+    "agendaItemId": "agenda_item_3fe29e49-83b6-46a9-b140-4667d6b1b57c",
+    "assessmentKind": "formal_checkpoint",
+    "executionSourceManifestFingerprint": "manifest_e42b12ec"
+  }
+}

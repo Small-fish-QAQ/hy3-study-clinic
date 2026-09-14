@@ -1,0 +1,85 @@
+{
+  "inputIdentity": "a88d936b96bddc4b2a38b746d784eca952979599148b0209db99ea9e654a441a",
+  "attempts": [
+    {
+      "physicalId": "09881948-7b9b-439f-a1c3-574052109a9b",
+      "caseId": "S097",
+      "runId": "S097-r1",
+      "stage": "goal-mapping",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "goals": [
+      {
+        "index": 0,
+        "importance": "essential",
+        "status": "usable",
+        "reason": "artifact直接说明小说中的“我”是文本叙述者，不自动是现实作者，实现了区分叙述者与现实作者的核心目标。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/0"
+        ],
+        "quote": "小说中的“我”是文本叙述者，不自动是现实作者。",
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "2955c5a9173f69a8a98ac42c40be80a9884f2f9d92ab33f7700ef6f8ba35f4aa"
+          },
+          {
+            "pointer": "/goals/0",
+            "valueHash": "2b41e2bf08ab98b4ef000c50cebd55a20f14a001d93a4acdd0bee2a73360a806"
+          }
+        ]
+      },
+      {
+        "index": 1,
+        "importance": "essential",
+        "status": "usable",
+        "reason": "artifact明确第一人称叙述者能说自己的感受（直接知道），并限制无依据不能知道另一人物未表达心思，解释了能直接知道什么及限制。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/1"
+        ],
+        "quote": "它可以说自己的感受，但没有依据时不能知道另一人物没表达的心思。",
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "2955c5a9173f69a8a98ac42c40be80a9884f2f9d92ab33f7700ef6f8ba35f4aa"
+          },
+          {
+            "pointer": "/goals/1",
+            "valueHash": "22d8faa697faa2a740550cc0d1cafef65fe438b94828227c311203c1333a76d9"
+          }
+        ]
+      },
+      {
+        "index": 2,
+        "importance": "secondary",
+        "status": "missing",
+        "reason": "artifact仅讨论叙述者身份和认知限制，未提及引用他人话语时的归属标记，确实没有相关处理。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/2"
+        ],
+        "quote": "",
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "2955c5a9173f69a8a98ac42c40be80a9884f2f9d92ab33f7700ef6f8ba35f4aa"
+          },
+          {
+            "pointer": "/goals/2",
+            "valueHash": "e6a9fe5f3b015bae44d40471551088d7d08a745fa66ebc11c00ab452a5d7dff2"
+          }
+        ]
+      }
+    ]
+  }
+}

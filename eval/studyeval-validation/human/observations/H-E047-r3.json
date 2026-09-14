@@ -1,0 +1,115 @@
+{
+  "task": {
+    "caseId": "E047",
+    "runId": "H-E047-r3",
+    "replicate": 3,
+    "path": "benchmark/cases/E047.json",
+    "inputHash": "ef8d7792ebda61812466b1f13a52756fbd35b533c300c281e79d0828bb15cf92",
+    "population": "controlled",
+    "sourceId": "F01"
+  },
+  "inputHash": "ef8d7792ebda61812466b1f13a52756fbd35b533c300c281e79d0828bb15cf92",
+  "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "bc0cd0d65c39d30a3e8f57975a3900d63209ad4312fa3e5c59feb3850c6e4fcb",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "教学总结的主张、数字与范围均准确对应来源：两周六共30人次、10卡中8支持、不可外推全体、长期未定、可省分计但保留试行与范围。无虚构或错误归属，核心教学用途成立。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "2e571e3058700991121d7236da0f92ba22b0a611fa21687090c6e99237327e08"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "教学总结的主张、数字与范围均直接由来源周报支持：30人次、10卡中8支持、不可外推不同居民或全体读者、长期未决定、可省略分人次但保留试行与范围，无事实或归属缺陷。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "2e571e3058700991121d7236da0f92ba22b0a611fa21687090c6e99237327e08"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q1",
+          "level": 2,
+          "evidence": "sufficient",
+          "reason": "教学总结的主张、数字与范围均准确对应来源：两周六共30人次、10卡中8支持、不可外推全体、长期未定、可省分计但保留试行与范围。无虚构或错误归属，核心教学用途成立。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "2e571e3058700991121d7236da0f92ba22b0a611fa21687090c6e99237327e08"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "e1d1ec97aa935f7a3c19c63a1c694aa193d372d5f5703aacf74e9765334479e8"
+  }
+}

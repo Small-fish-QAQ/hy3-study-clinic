@@ -1,0 +1,322 @@
+{
+  "task": {
+    "caseId": "S050",
+    "runId": "S050-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S050.json",
+    "inputHash": "54d636409177a677fe99b629f4f2c513839b088d179166b57b7f11568d75af3a"
+  },
+  "inputHash": "54d636409177a677fe99b629f4f2c513839b088d179166b57b7f11568d75af3a",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "31fae00331d7b039f5ce5ca5b3edd6b4e0e6e6c9428529136a821e273426d37b",
+    "stages": {
+      "blind-solution": {
+        "status": "resolved",
+        "solution": "依/sources/0/text假定A={1,2},B={2,3}，并集为属于任一集合的不同元素，即{1,2,3}。必要条件：明确A、B元素；可接受解法：列举两集元素去重合并。",
+        "refs": [
+          "/question/prompt",
+          "/sources/0/text"
+        ],
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "d6444630e214e8c1957d29925ae3850ab17e4d454700814e3daa72f9286df7a3"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "a5384e5168414c3fb7fdaf9d41facc61921578fe1399ba0c69cb62aa2103ce93"
+          }
+        ]
+      },
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q5",
+            "level": "U",
+            "evidence": "missing",
+            "reason": "学生答案视图缺失，无法验证评分器对必需要求{1,2,3}的判断；产品记录授予信用，但缺学生证据不能确认评分准确性，故本维度不可评。",
+            "refs": [
+              "/rubric/0",
+              "/productJudgment/consequence"
+            ],
+            "defects": [],
+            "missing": [
+              "/answer 学生原始作答字段不存在，无法验证必需要求满足与授分正确性"
+            ],
+            "grading": {
+              "criteria": [
+                {
+                  "id": "required",
+                  "result": "uncertain",
+                  "reason": "学生全答缺失，无法确认是否写出{1,2,3}",
+                  "refs": [
+                    "/rubric/0"
+                  ]
+                }
+              ],
+              "actualCredit": "granted",
+              "warrantedCredit": "uncertain"
+            },
+            "witnesses": [
+              {
+                "pointer": "/rubric/0",
+                "valueHash": "41e3e9993ea73d3924609af1ca9150dfde326067be5fc53a6f4aec3ca0e10258"
+              },
+              {
+                "pointer": "/productJudgment/consequence",
+                "valueHash": "dd515d1975b8e5a83bab3420bea5dacefe5451ac7cf617d23c4393cc79e4db99"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "referenceRepairs": [
+          {
+            "location": "/dimensions/0/refs",
+            "changes": [
+              {
+                "proposed": "/answer",
+                "rejected": "Not an original evidence path."
+              }
+            ]
+          },
+          {
+            "location": "/dimensions/0/grading/criteria/0/refs",
+            "changes": [
+              {
+                "proposed": "/answer",
+                "rejected": "Not an original evidence path."
+              }
+            ]
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q5",
+            "level": "U",
+            "evidence": "missing",
+            "reason": "学生原始作答未在view.answer提供，authorityBoundaries确认完全未提供且不可恢复。缺学生证据无法核对评分器准确性，故无法决定此维度。",
+            "refs": [
+              "/question/prompt",
+              "/rubric/0",
+              "/productJudgment/consequence"
+            ],
+            "defects": [],
+            "missing": [
+              "/answer 学生原始作答缺失，无法验证产品授予信用是否对应正确解答"
+            ],
+            "grading": {
+              "criteria": [
+                {
+                  "id": "required",
+                  "result": "uncertain",
+                  "reason": "学生全答不可见，无法判断是否满足写出{1,2,3}的要求",
+                  "refs": [
+                    "/rubric/0"
+                  ]
+                }
+              ],
+              "actualCredit": "granted",
+              "warrantedCredit": "uncertain"
+            },
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "d6444630e214e8c1957d29925ae3850ab17e4d454700814e3daa72f9286df7a3"
+              },
+              {
+                "pointer": "/rubric/0",
+                "valueHash": "41e3e9993ea73d3924609af1ca9150dfde326067be5fc53a6f4aec3ca0e10258"
+              },
+              {
+                "pointer": "/productJudgment/consequence",
+                "valueHash": "dd515d1975b8e5a83bab3420bea5dacefe5451ac7cf617d23c4393cc79e4db99"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "referenceRepairs": [
+          {
+            "location": "/dimensions/0/refs",
+            "changes": [
+              {
+                "proposed": "/answer",
+                "rejected": "Not an original evidence path."
+              }
+            ]
+          },
+          {
+            "location": "/dimensions/0/grading/criteria/0/refs",
+            "changes": [
+              {
+                "proposed": "/answer",
+                "rejected": "Not an original evidence path."
+              }
+            ]
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q5",
+            "level": "U",
+            "evidence": "missing",
+            "reason": "view中无answer字段，authorityBoundaries确认学习者答案完全未提供且不可恢复。缺学生原始作答这一关键证据，无法核对评分器对必需要求{1,2,3}的接受及授分准确性，故不可评。",
+            "refs": [
+              "/question/prompt",
+              "/rubric/0",
+              "/productJudgment/consequence"
+            ],
+            "defects": [],
+            "missing": [
+              "/answer 学生原始作答字段缺失，导致无法验证必需要求满足与产品授分正确性"
+            ],
+            "grading": {
+              "criteria": [
+                {
+                  "id": "required",
+                  "result": "uncertain",
+                  "reason": "学生全答缺失，无法确认是否写出{1,2,3}",
+                  "refs": [
+                    "/rubric/0"
+                  ]
+                }
+              ],
+              "actualCredit": "granted",
+              "warrantedCredit": "uncertain"
+            },
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "d6444630e214e8c1957d29925ae3850ab17e4d454700814e3daa72f9286df7a3"
+              },
+              {
+                "pointer": "/rubric/0",
+                "valueHash": "41e3e9993ea73d3924609af1ca9150dfde326067be5fc53a6f4aec3ca0e10258"
+              },
+              {
+                "pointer": "/productJudgment/consequence",
+                "valueHash": "dd515d1975b8e5a83bab3420bea5dacefe5451ac7cf617d23c4393cc79e4db99"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [],
+        "evidenceChecks": [
+          {
+            "id": "review1:Q5:missing",
+            "decision": "unavailable",
+            "evidence": {
+              "ref": "",
+              "quote": null,
+              "missingKey": "answer",
+              "valueHash": "31fae00331d7b039f5ce5ca5b3edd6b4e0e6e6c9428529136a821e273426d37b"
+            },
+            "reason": "view根对象缺少answer字段，authorityBoundaries明确学习者答案完全未提供且不可恢复，学生作答证据仍不可访问，无法核验评分。"
+          },
+          {
+            "id": "review2:Q5:missing",
+            "decision": "unavailable",
+            "evidence": {
+              "ref": "",
+              "quote": null,
+              "missingKey": "answer",
+              "valueHash": "31fae00331d7b039f5ce5ca5b3edd6b4e0e6e6c9428529136a821e273426d37b"
+            },
+            "reason": "view中无answer键，权威边界确认未提供，决定性证据缺口仍存在，不能评估评分器准确性。"
+          }
+        ],
+        "referenceRepairs": [
+          {
+            "location": "/dimensions/0/grading/criteria/0/refs",
+            "changes": [
+              {
+                "proposed": "/answer",
+                "rejected": "Not an original evidence path."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q5",
+          "level": "U",
+          "evidence": "missing",
+          "reason": "view中无answer字段，authorityBoundaries确认学习者答案完全未提供且不可恢复。缺学生原始作答这一关键证据，无法核对评分器对必需要求{1,2,3}的接受及授分准确性，故不可评。",
+          "refs": [
+            "/question/prompt",
+            "/rubric/0",
+            "/productJudgment/consequence"
+          ],
+          "defects": [],
+          "missing": [
+            "/answer 学生原始作答字段缺失，导致无法验证必需要求满足与产品授分正确性"
+          ],
+          "grading": {
+            "criteria": [
+              {
+                "id": "required",
+                "result": "uncertain",
+                "reason": "学生全答缺失，无法确认是否写出{1,2,3}",
+                "refs": [
+                  "/rubric/0"
+                ]
+              }
+            ],
+            "actualCredit": "granted",
+            "warrantedCredit": "uncertain"
+          },
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "d6444630e214e8c1957d29925ae3850ab17e4d454700814e3daa72f9286df7a3"
+            },
+            {
+              "pointer": "/rubric/0",
+              "valueHash": "41e3e9993ea73d3924609af1ca9150dfde326067be5fc53a6f4aec3ca0e10258"
+            },
+            {
+              "pointer": "/productJudgment/consequence",
+              "valueHash": "dd515d1975b8e5a83bab3420bea5dacefe5451ac7cf617d23c4393cc79e4db99"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": [
+        {
+          "dimension": "Q5",
+          "reason": "/answer 学生原始作答字段缺失，导致无法验证必需要求满足与产品授分正确性"
+        }
+      ]
+    },
+    "resultHash": "db139c09f5a83f1c01de624bc8380862ea36c55344e27aad8c4996b099b5fca8"
+  }
+}

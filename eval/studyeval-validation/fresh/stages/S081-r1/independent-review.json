@@ -1,0 +1,83 @@
+{
+  "inputIdentity": "7353aa902da41ac13e180a0299db4902cc6210354bd44755985dcca8382d781a",
+  "attempts": [
+    {
+      "physicalId": "e3092107-8c04-4b6c-8356-db689b21d91e",
+      "caseId": "S081",
+      "runId": "S081-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q6",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "诊断臆造学习者“不认真讨厌语言课”状态，干预教授错误方法“代词永远指向第一个出现的人”，违背source歧义规则，未提供针对推理缺口的可用修复，核心用途失效。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "诊断臆造学习者一贯不认真且讨厌语言课的状态",
+            "impact": "偏离修复目标，攻击学习者而非处理推理缺口，符合Q6的0分标准",
+            "refs": [
+              "/artifacts/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "126b4b2317299ae06be09a58650900641bcfa95612a290c4f6480e9672e1a9fc"
+              }
+            ]
+          },
+          {
+            "severity": "material",
+            "description": "干预教导错误方法：代词永远指向第一个出现的人，照背即可",
+            "impact": "与source规则矛盾，未教正确歧义处理，核心学习用途被实质改变",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "126b4b2317299ae06be09a58650900641bcfa95612a290c4f6480e9672e1a9fc"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "69fef873755638b051db652f07b0960110732e94a4812af3f6f8b85635905051"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "126b4b2317299ae06be09a58650900641bcfa95612a290c4f6480e9672e1a9fc"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "69fef873755638b051db652f07b0960110732e94a4812af3f6f8b85635905051"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

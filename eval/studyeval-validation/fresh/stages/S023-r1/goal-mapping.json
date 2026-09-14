@@ -1,0 +1,43 @@
+{
+  "inputIdentity": "375d159c51e16036504cd9c18c991fc739c0ef85bae5367df67c7b16ba2bd32e",
+  "attempts": [
+    {
+      "physicalId": "0ac304ee-c2ca-4569-a1fc-ba8505ae1ec8",
+      "caseId": "S023",
+      "runId": "S023-r1",
+      "stage": "goal-mapping",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "goals": [
+      {
+        "index": 0,
+        "importance": "essential",
+        "status": "usable",
+        "reason": "artifact拟定了课程方案，包含单元目标（按正文编号查脚注并解释补充信息）、活动（给含编号短文配对说明）和检查，保留了脚注阅读目标，且未要求交付实际课文（仅用练习短文非真实课文）。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/0"
+        ],
+        "quote": "单元目标：按正文编号查到对应脚注，并解释注释补充哪项信息。",
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "a3a1218d1df2c86d4597f8fe6c5392c6ea34cdea7a737f4c9895e66197b02fee"
+          },
+          {
+            "pointer": "/goals/0",
+            "valueHash": "51ad373335c102698c4fc2a62905c1a64cf257a30a1c7efb5a0285ea61cae3ea"
+          }
+        ]
+      }
+    ]
+  }
+}

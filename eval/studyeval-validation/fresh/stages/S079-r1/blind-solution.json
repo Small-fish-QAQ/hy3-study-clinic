@@ -1,0 +1,36 @@
+{
+  "inputIdentity": "6839ef4ee52606e86252adfe8985079fca51cb3c59448c5bc07b85be27913a0c",
+  "attempts": [
+    {
+      "physicalId": "218e4746-8883-4897-8e8a-b6ecfc1f2d2f",
+      "caseId": "S079",
+      "runId": "S079-r1",
+      "stage": "blind-solution",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "status": "contradictory",
+    "solution": "依/sources/0/text：初始未激活；入场仅有效→已使用，未激活不可直接入场。题设令从初始执行入场并说明已有效且成功，违背规则。合法路径须先激活（未激活→有效）再入场。题设强制不成立，记录约束矛盾。",
+    "refs": [
+      "/question/prompt",
+      "/sources/0/text"
+    ],
+    "witnesses": [
+      {
+        "pointer": "/question/prompt",
+        "valueHash": "27d4aafb419668ab359eb1e1dd20bc53c0a4b11c543f54679805c57924642532"
+      },
+      {
+        "pointer": "/sources/0/text",
+        "valueHash": "694fcf138ee515172ab2dd1c3a0a59baef8e0ee6b25086ed04ce3845111041ea"
+      }
+    ]
+  }
+}

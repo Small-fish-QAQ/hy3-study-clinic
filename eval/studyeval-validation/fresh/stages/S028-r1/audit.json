@@ -1,0 +1,88 @@
+{
+  "inputIdentity": "985364273e768503f6ef3612904ee39be260e8cf378b16e4da423b28b5169ed6",
+  "attempts": [
+    {
+      "physicalId": "18c0a844-e248-4af2-bdf9-5f627c8e3b78",
+      "caseId": "S028",
+      "runId": "S028-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q2",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "教学文本声称第一人称总是作者本人且知所有人物思想，直接矛盾来源中区分叙述者/作者及限制认知的核心目标，核心用途被实质推翻。次要目标正确但不改实质缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "Lesson asserts first-person 'I' is always the real author, contradicting core goal to distinguish narrator from author.",
+            "impact": "Defeats core purpose of differentiating narrator and real author; teaches false equivalence.",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "a750d065c5417fa7e4b648d56cbe226380a18cdd6674a5a2ae6c5682c51c6b91"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "bae368a359568cf22d196cf95dd79a50368bc21f0e49042a004744bc3b0af43c"
+              }
+            ]
+          },
+          {
+            "severity": "material",
+            "description": "Lesson claims narrator certainly knows all characters' thoughts, contradicting core goal to explain limits of first-person knowledge.",
+            "impact": "Defeats core purpose of explaining what first-person can directly know and its limits; removes required constraint.",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "a750d065c5417fa7e4b648d56cbe226380a18cdd6674a5a2ae6c5682c51c6b91"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "bae368a359568cf22d196cf95dd79a50368bc21f0e49042a004744bc3b0af43c"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "a750d065c5417fa7e4b648d56cbe226380a18cdd6674a5a2ae6c5682c51c6b91"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "bae368a359568cf22d196cf95dd79a50368bc21f0e49042a004744bc3b0af43c"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,248 @@
+{
+  "task": {
+    "caseId": "S012",
+    "runId": "S012-r2",
+    "replicate": 2,
+    "path": "dataset/studyeval/S012.json",
+    "inputHash": "c1eb68e9f051ef917d2af2c6c0beeec0d9751490347b166389dfb8708c546ae9"
+  },
+  "inputHash": "c1eb68e9f051ef917d2af2c6c0beeec0d9751490347b166389dfb8708c546ae9",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "460d186d7cd51a9f56f74ec52143ed4bf73f44255de85f73bafc2d5c4906b51b",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q3",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "产物仅称A转一圈B转1/3圈且反向并符合资料，未展示齿数12与36如何通过啮合规则导出转数及反向的运算或因果连接，结论正确但解释缺失，属局部缺陷。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "未展示从给定齿数到转数及转向的操作/理由，仅断言结果符合资料",
+                "impact": "核心正确结论成立，但解释性连接缺失，学习者不知齿数为何决定结果",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "dcb7d49988d0f9be3af2f95cecf3aa3153067a25e4dbd0227238970bc2bca47c"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "dcb7d49988d0f9be3af2f95cecf3aa3153067a25e4dbd0227238970bc2bca47c"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q3",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "产物仅断言B转1/3圈且反向符合资料，未展示齿数规则到结果的推理连接，缺失解释齿数决定机制的操作用途，但结论正确，属局部缺陷。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "未展示从齿轮啮合规则与齿数前提推导转数方向的关键连接（如A12齿推B12齿，B36齿故1/3圈，外啮合反向）",
+                "impact": "不改变所给具体结果的正确性，但未达成解释为何齿数决定转数和方向的目标，学习者无法获知推理",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "dcb7d49988d0f9be3af2f95cecf3aa3153067a25e4dbd0227238970bc2bca47c"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "dcb7d49988d0f9be3af2f95cecf3aa3153067a25e4dbd0227238970bc2bca47c"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q3",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "产物仅断言B转1/3圈且反向符合资料，未展示齿数规则到结果的推理连接，缺失解释齿数决定机制的操作用途，但结论正确，属局部缺陷。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "未展示从给定齿数及啮合规则到转数及转向的操作/理由，仅断言结果符合资料",
+                "impact": "核心正确结论成立，但解释性连接缺失，学习者不知齿数为何决定结果",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "dcb7d49988d0f9be3af2f95cecf3aa3153067a25e4dbd0227238970bc2bca47c"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "dcb7d49988d0f9be3af2f95cecf3aa3153067a25e4dbd0227238970bc2bca47c"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q3:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "A转一圈时，B准确转1/3圈且方向相反。这两个结果都符合资料。",
+              "valueHash": "dcb7d49988d0f9be3af2f95cecf3aa3153067a25e4dbd0227238970bc2bca47c"
+            },
+            "reason": "引文仅断言结果符合资料，未展示从齿数到转数及转向的操作或理由，缺陷成立为局部。"
+          },
+          {
+            "id": "review2:Q3:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "A转一圈时，B准确转1/3圈且方向相反。这两个结果都符合资料。",
+              "valueHash": "dcb7d49988d0f9be3af2f95cecf3aa3153067a25e4dbd0227238970bc2bca47c"
+            },
+            "reason": "引文未展示齿轮啮合规则与齿数前提推导转数方向的关键连接，缺陷成立为局部，不影响结果正确。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q3",
+          "level": 1,
+          "evidence": "sufficient",
+          "reason": "产物仅断言B转1/3圈且反向符合资料，未展示齿数规则到结果的推理连接，缺失解释齿数决定机制的操作用途，但结论正确，属局部缺陷。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [
+            {
+              "severity": "local",
+              "description": "未展示从给定齿数及啮合规则到转数及转向的操作/理由，仅断言结果符合资料",
+              "impact": "核心正确结论成立，但解释性连接缺失，学习者不知齿数为何决定结果",
+              "refs": [
+                "/artifacts/0/text",
+                "/sources/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "dcb7d49988d0f9be3af2f95cecf3aa3153067a25e4dbd0227238970bc2bca47c"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "dcb7d49988d0f9be3af2f95cecf3aa3153067a25e4dbd0227238970bc2bca47c"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "60d7f29daaf6d4cddabfc5d40f659cd8636dbc50ae0823d819ab180d7ebf8f56"
+  }
+}

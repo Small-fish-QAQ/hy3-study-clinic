@@ -1,0 +1,83 @@
+{
+  "inputIdentity": "98362e34bec3d5823bf7e4fc1ad8a10046cdc07cee8b71e68996bd6e0ad621fd",
+  "attempts": [
+    {
+      "physicalId": "6d0db685-0578-4592-a0b3-44db091fc9d0",
+      "caseId": "S069",
+      "runId": "S069-r1",
+      "stage": "blind-student",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "criteria": [
+      {
+        "id": "c1",
+        "result": "met",
+        "reason": "答案明确指出乙地周二晚上九点，即周二21:00，满足乙地周二21:00",
+        "refs": [
+          "/answer",
+          "/rubric/0"
+        ],
+        "required": true,
+        "witnesses": [
+          {
+            "pointer": "/answer",
+            "valueHash": "89ca6d97fa4baf8d416204a00d7657425f1bcd562a92c2bab5ad336d10a0053d"
+          },
+          {
+            "pointer": "/rubric/0",
+            "valueHash": "04f832a6f433402126f73019928e65619c2b73270b9e40a1d1c1455b9aaf9762"
+          }
+        ]
+      },
+      {
+        "id": "c2",
+        "result": "met",
+        "reason": "答案说明甲比乙快五小时，将周三凌晨两点往回拨五小时跨回周二，即由甲到乙减5小时并回到前一天",
+        "refs": [
+          "/answer",
+          "/rubric/1"
+        ],
+        "required": true,
+        "witnesses": [
+          {
+            "pointer": "/answer",
+            "valueHash": "89ca6d97fa4baf8d416204a00d7657425f1bcd562a92c2bab5ad336d10a0053d"
+          },
+          {
+            "pointer": "/rubric/1",
+            "valueHash": "9a4b846117363f96775f4de0256f3f77d03902a9507d0ec35e62f3817f0bf1be"
+          }
+        ]
+      },
+      {
+        "id": "c3",
+        "result": "not_met",
+        "reason": "答案未列成两列表格，但该项非必需",
+        "refs": [
+          "/answer",
+          "/rubric/2"
+        ],
+        "required": false,
+        "witnesses": [
+          {
+            "pointer": "/answer",
+            "valueHash": "89ca6d97fa4baf8d416204a00d7657425f1bcd562a92c2bab5ad336d10a0053d"
+          },
+          {
+            "pointer": "/rubric/2",
+            "valueHash": "c7dc0b88c588fc4f0e46e820834b1da7c4e8c69e5d2f4cf691ca19b9bdbeccc8"
+          }
+        ]
+      }
+    ],
+    "warrantedCredit": "granted"
+  }
+}

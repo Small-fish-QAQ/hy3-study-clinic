@@ -1,0 +1,85 @@
+{
+  "id": "assessment_version_6ab3274a-30e6-4825-b8ca-043da47ee4c2",
+  "definitionId": "assessment_9dc61e4e-6f8b-46ee-942f-0acb6efdb65d",
+  "version": 1,
+  "predecessorId": null,
+  "status": "accepted",
+  "items": [
+    {
+      "id": "assessment_item_ff5c97e0-9c7d-41dd-9ced-6d2447d345e5",
+      "sourceQuestionId": "que_e8e50656-0c69-4309-a543-a41b67dc1564",
+      "index": 0,
+      "targetLearningUnitId": "cun_102e303c-80c0-4100-a6e2-5e086b9b98b9",
+      "targetObjectiveId": "obj_f507edf7-239a-4dcd-86ce-162300832bb9",
+      "representation": "recall",
+      "questionType": "short_answer",
+      "prompt": "现有左表 Authors(author_id, name) 包含行 (1, 'Lee'), (2, 'Mo')；右表 Books(book_id, author_id, title) 包含行 (101,1,'A'), (102,1,'B'), (103,2,'C')。关系连接根据显式条件（如 author_id 相等）组合两表行，左表每一行独立检查右表所有行，键相等则产生配对行，且此机制不自动汇总。请解释关系连接基于显式条件组合行的机制，并基于上述数据说明为什么作者 'Lee' 在连接结果中会出现多次（即一个左表行可以匹配多个右表行）。",
+      "rubric": [
+        {
+          "id": "criterion_a5c78f75-c42c-48e9-824d-a2cf9d9cb881",
+          "text": "解释关系连接基于显式条件（如 author_id 相等）组合两表行，左表每行独立检查右表，键相等则产生配对行。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_6f502b39",
+            "blk_5_4da07976",
+            "blk_1_ca453a0e"
+          ]
+        },
+        {
+          "id": "criterion_56009fca-7390-4ca4-9891-8204f4b7fe12",
+          "text": "基于给定数据说明 Lee 因右表有两行 author_id=1 而匹配多次，在结果中重复出现，体现左行多匹配。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_6f502b39",
+            "blk_5_4da07976",
+            "blk_1_ca453a0e"
+          ]
+        }
+      ],
+      "sourceBindings": [
+        {
+          "materialId": "mat_20bfb00c-71d0-446b-a1ef-e4a8cbb4d2df",
+          "materialRevisionId": "rev_b92fa7b1-9f6c-40a1-b495-ad67b980554a",
+          "sourceBlockId": "blk_0_6f502b39",
+          "quote": "A relational join combines rows from two tables according to a stated condition.",
+          "contentOrigin": "extracted_original",
+          "authoritative": true
+        },
+        {
+          "materialId": "mat_20bfb00c-71d0-446b-a1ef-e4a8cbb4d2df",
+          "materialRevisionId": "rev_b92fa7b1-9f6c-40a1-b495-ad67b980554a",
+          "sourceBlockId": "blk_5_4da07976",
+          "quote": "To work out a result, take each customer row, find every order with the same identifier, and emit each matching pair.",
+          "contentOrigin": "extracted_original",
+          "authoritative": true
+        },
+        {
+          "materialId": "mat_20bfb00c-71d0-446b-a1ef-e4a8cbb4d2df",
+          "materialRevisionId": "rev_b92fa7b1-9f6c-40a1-b495-ad67b980554a",
+          "sourceBlockId": "blk_1_ca453a0e",
+          "quote": "Ada appears twice because two separate order rows match Ada's customer row.",
+          "contentOrigin": "extracted_original",
+          "authoritative": true
+        }
+      ],
+      "formalEligible": true,
+      "policyReason": "FORMAL_ELIGIBLE"
+    }
+  ],
+  "sourceRevisionIds": [
+    "rev_b92fa7b1-9f6c-40a1-b495-ad67b980554a"
+  ],
+  "createdAt": "2026-09-14T12:10:32.560Z",
+  "acceptedAt": "2026-09-14T12:10:32.561Z",
+  "authorityMode": "formal",
+  "progressionContext": {
+    "quizId": "qz_1c06dd53-d28d-4fd1-b818-fbfc53362705",
+    "contractVersionId": "contract_e84faebb-2eb2-434e-a10e-6feb177544b6",
+    "curriculumVersionId": "curriculum_04f57e9f-d4f9-46b5-a426-6d3cb56f31b7",
+    "studyPlanVersionId": "study_plan_c1c68295-a3a9-4089-ada6-e9d08abb6328",
+    "agendaId": "agenda_0783ff83-cdac-45d3-bf23-8f7e7cb85583",
+    "agendaItemId": "agenda_item_55130e87-785a-451d-bf34-4b9da6e12ce0",
+    "assessmentKind": "formal_checkpoint",
+    "executionSourceManifestFingerprint": "manifest_f4ac1d70"
+  }
+}

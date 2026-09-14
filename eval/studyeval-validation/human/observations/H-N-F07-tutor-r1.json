@@ -1,0 +1,196 @@
+{
+  "task": {
+    "caseId": "N-F07-tutor",
+    "runId": "H-N-F07-tutor-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-F07-tutor.json",
+    "inputHash": "b37e7384d5f4ffa0c9382488ecc79d26019020396378d497e43a8577f960a101",
+    "population": "natural",
+    "sourceId": "F07"
+  },
+  "inputHash": "b37e7384d5f4ffa0c9382488ecc79d26019020396378d497e43a8577f960a101",
+  "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "15b097141fa9abec8b1493deb25b7a32c4868ad41c517af0d49753a84e76eefe",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "tutor引用资料原句列举观察天数等需一致，用假设种子例与手机例解释单一因素归因需控变量，断言均受资料支持或合理推导，无事实错误或虚假归属。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "98463466492601085e31eabda2920d8153801ad49d3f58ed0283684b400c9ded"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          },
+          {
+            "dimension": "Q3",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "tutor以手机例展示额外变量未控制则无法归因的why/how，并明确边界：仅示逻辑且同湿度时不适用。链接前提与结论清晰，满足局部解释充分性停止条件。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "98463466492601085e31eabda2920d8153801ad49d3f58ed0283684b400c9ded"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "回复准确引资料中观察天数等需一致的要求，自构甲7天乙4天反例推导不能单归因水，逻辑正确；手机类比及边界说明无虚假归属，实质主张有源或显式假设支撑，无事实/归因缺陷。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "98463466492601085e31eabda2920d8153801ad49d3f58ed0283684b400c9ded"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          },
+          {
+            "dimension": "Q3",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "回复从资料前提展示控变量要求，用假设反例与手机类比解释单因素归因需其他变量受控，明确展示额外变量破坏归因的why，并交代类比适用边界，关键连接与限制充分，符合工作流畅度标准。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "98463466492601085e31eabda2920d8153801ad49d3f58ed0283684b400c9ded"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q1",
+          "level": 2,
+          "evidence": "sufficient",
+          "reason": "tutor引用资料原句列举观察天数等需一致，用假设种子例与手机例解释单一因素归因需控变量，断言均受资料支持或合理推导，无事实错误或虚假归属。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "98463466492601085e31eabda2920d8153801ad49d3f58ed0283684b400c9ded"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        },
+        {
+          "dimension": "Q3",
+          "level": 2,
+          "evidence": "sufficient",
+          "reason": "tutor以手机例展示额外变量未控制则无法归因的why/how，并明确边界：仅示逻辑且同湿度时不适用。链接前提与结论清晰，满足局部解释充分性停止条件。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "98463466492601085e31eabda2920d8153801ad49d3f58ed0283684b400c9ded"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "7db6e39596cd282af7b44bb5655c8499f1c5faaab0d13b7fa5dc52823819504b"
+  }
+}

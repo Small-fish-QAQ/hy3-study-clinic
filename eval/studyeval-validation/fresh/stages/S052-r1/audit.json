@@ -1,0 +1,54 @@
+{
+  "inputIdentity": "0a3879f040f616a3fe29274e18c230be0333881aa337312902c6558c8648d1c5",
+  "attempts": [
+    {
+      "physicalId": "39ceca6e-3c4e-42b8-b75d-5af56be5c1b2",
+      "caseId": "S052",
+      "runId": "S052-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q6",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "诊断指出仅见次序错误且不确定比较首末字母，以cab/bac问首不同字母，并以abc/acb要求说明首位同看次位，提供具体可操作修复与迁移检查，符合标准。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text",
+          "/answer"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "e4e22ba55fa4a05ca2a3ce7b96aa7ac96f56eaf66d4841914023b35731d3817e"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "8e8aeb259dc1cfe4a1f03fa52d74d889ce63a71eb1e26a30d0128233ac115487"
+          },
+          {
+            "pointer": "/answer",
+            "valueHash": "948dc84c311f94f736381181143581872cf13a213125e81a3683ffed379fecb6"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

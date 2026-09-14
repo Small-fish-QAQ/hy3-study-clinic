@@ -1,0 +1,85 @@
+{
+  "inputIdentity": "9f6dfe938bfed59a0bfbdbad3dc519c7922e9cc64e55bc273bec062abcefae0b",
+  "attempts": [
+    {
+      "physicalId": "2bb2e67b-08e8-4d84-82b5-c542cf45f71c",
+      "caseId": "S060",
+      "runId": "S060-r1",
+      "stage": "goal-mapping",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "goals": [
+      {
+        "index": 0,
+        "importance": "essential",
+        "status": "contradicted",
+        "reason": "产物断言第一人称“我”总是作者本人，将叙述者与现实作者等同，与区分两者的核心目标矛盾",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/0"
+        ],
+        "quote": "第一人称“我”总是作者本人",
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "a750d065c5417fa7e4b648d56cbe226380a18cdd6674a5a2ae6c5682c51c6b91"
+          },
+          {
+            "pointer": "/goals/0",
+            "valueHash": "2b41e2bf08ab98b4ef000c50cebd55a20f14a001d93a4acdd0bee2a73360a806"
+          }
+        ]
+      },
+      {
+        "index": 1,
+        "importance": "essential",
+        "status": "contradicted",
+        "reason": "产物断言第一人称叙述“一定知道所有人物思想”，否认了来源中要求的限制（不能直接知道未表达心思），未正确解释限制",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/1"
+        ],
+        "quote": "也一定知道所有人物思想",
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "a750d065c5417fa7e4b648d56cbe226380a18cdd6674a5a2ae6c5682c51c6b91"
+          },
+          {
+            "pointer": "/goals/1",
+            "valueHash": "22d8faa697faa2a740550cc0d1cafef65fe438b94828227c311203c1333a76d9"
+          }
+        ]
+      },
+      {
+        "index": 2,
+        "importance": "secondary",
+        "status": "usable",
+        "reason": "产物明确指示引用时标清说话人，实现了说明引用别人话语归属标记的目标",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/2"
+        ],
+        "quote": "引用时标清说话人。",
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "a750d065c5417fa7e4b648d56cbe226380a18cdd6674a5a2ae6c5682c51c6b91"
+          },
+          {
+            "pointer": "/goals/2",
+            "valueHash": "e6a9fe5f3b015bae44d40471551088d7d08a745fa66ebc11c00ab452a5d7dff2"
+          }
+        ]
+      }
+    ]
+  }
+}

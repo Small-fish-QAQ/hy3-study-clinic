@@ -1,0 +1,253 @@
+{
+  "task": {
+    "caseId": "S032",
+    "runId": "S032-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S032.json",
+    "inputHash": "8b9eff0da9c3907af22433e60ecaef06441e574dd29c086a1f60d4edc36fc7fc"
+  },
+  "inputHash": "8b9eff0da9c3907af22433e60ecaef06441e574dd29c086a1f60d4edc36fc7fc",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "fad566a0b7f7577e7246156c2f7998e2cfc7789868c2df3197c04fb478be6343",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "交付物指出分数加法错误并建议复习通分，方向相关，但未具体诊断推理缺口（如误加分子分母），也未提供具体下一检验题，仅泛泛建议多练习，符合Q6的1级（相关但泛泛，缺具体内容）。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "修复建议泛泛，仅说复习通分、细心、多练习，未具体指出错误推理（分子分母分别加）也未给出可用下一检查题。",
+                "impact": "核心用途（指出错误并指向通分）成立，但缺失具体可操作的下一检验，降低修复可用性，不改变核心方向。",
+                "refs": [
+                  "/artifacts/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "f5d18a6174622da51a7f1212abe36dd87793f3029c1de466aaddf7a16a7dda2b"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "f5d18a6174622da51a7f1212abe36dd87793f3029c1de466aaddf7a16a7dda2b"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "c4d75b2db6f5aa30dcec740ff8a4b7e07282347099740e24a9f3e2fd0f4bef58"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "交付物指出分数加法有错并建议复习通分，相关但泛泛，未明确错误根源（分子分母分别加），也未提供具体新检验。符合Q6的1级：建议相关但通用，缺具体内容与下一检查。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text",
+              "/answer"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "修复建议泛泛（仅说复习通分、细心、多练习），未指出具体错误推理（分子分母分别相加不正确），且未提供具体可用的新检验题目或条件。",
+                "impact": "核心诊断与修复意图相关但缺乏具体性和可操作新检验，不改变其作为针对错误反馈的性质，但未达到完整标准。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text",
+                  "/answer"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "f5d18a6174622da51a7f1212abe36dd87793f3029c1de466aaddf7a16a7dda2b"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "c4d75b2db6f5aa30dcec740ff8a4b7e07282347099740e24a9f3e2fd0f4bef58"
+                  },
+                  {
+                    "pointer": "/answer",
+                    "valueHash": "5fa9a6e988796acce4dd7a033670180448bc29a07a9fa5e48255977034751897"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "f5d18a6174622da51a7f1212abe36dd87793f3029c1de466aaddf7a16a7dda2b"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "c4d75b2db6f5aa30dcec740ff8a4b7e07282347099740e24a9f3e2fd0f4bef58"
+              },
+              {
+                "pointer": "/answer",
+                "valueHash": "5fa9a6e988796acce4dd7a033670180448bc29a07a9fa5e48255977034751897"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "交付物指出分数加法错误并建议复习通分，方向相关，但未具体诊断推理缺口（如误加分子分母），也未提供具体下一检验题，仅泛泛建议多练习，符合Q6的1级（相关但泛泛，缺具体内容）。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text",
+              "/answer"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "修复建议泛泛，仅说复习通分、细心、多练习，未具体指出错误推理（分子分母分别加）也未给出可用下一检查题。",
+                "impact": "核心用途（指出错误并指向通分）成立，但缺失具体可操作的下一检验，降低修复可用性，不改变核心方向。",
+                "refs": [
+                  "/artifacts/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "f5d18a6174622da51a7f1212abe36dd87793f3029c1de466aaddf7a16a7dda2b"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "f5d18a6174622da51a7f1212abe36dd87793f3029c1de466aaddf7a16a7dda2b"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "c4d75b2db6f5aa30dcec740ff8a4b7e07282347099740e24a9f3e2fd0f4bef58"
+              },
+              {
+                "pointer": "/answer",
+                "valueHash": "5fa9a6e988796acce4dd7a033670180448bc29a07a9fa5e48255977034751897"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q6:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "这次分数加法有错，应复习通分，计算时细心一些，多做练习。",
+              "valueHash": "f5d18a6174622da51a7f1212abe36dd87793f3029c1de466aaddf7a16a7dda2b"
+            },
+            "reason": "引文显示建议仅泛泛提及复习通分与多练习，未点明分子分母分别加的错误推理，也未提供具体下一检查题，指控成立但属局部缺陷。"
+          },
+          {
+            "id": "review2:Q6:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "这次分数加法有错，应复习通分，计算时细心一些，多做练习。",
+              "valueHash": "f5d18a6174622da51a7f1212abe36dd87793f3029c1de466aaddf7a16a7dda2b"
+            },
+            "reason": "artifact文本未包含source中的具体错误规则，也未给新检验，核心方向相关但缺具体内容，局部缺陷指控成立。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q6",
+          "level": 1,
+          "evidence": "sufficient",
+          "reason": "交付物指出分数加法错误并建议复习通分，方向相关，但未具体诊断推理缺口（如误加分子分母），也未提供具体下一检验题，仅泛泛建议多练习，符合Q6的1级（相关但泛泛，缺具体内容）。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text",
+            "/answer"
+          ],
+          "defects": [
+            {
+              "severity": "local",
+              "description": "修复建议泛泛，仅说复习通分、细心、多练习，未具体指出错误推理（分子分母分别加）也未给出可用下一检查题。",
+              "impact": "核心用途（指出错误并指向通分）成立，但缺失具体可操作的下一检验，降低修复可用性，不改变核心方向。",
+              "refs": [
+                "/artifacts/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "f5d18a6174622da51a7f1212abe36dd87793f3029c1de466aaddf7a16a7dda2b"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "f5d18a6174622da51a7f1212abe36dd87793f3029c1de466aaddf7a16a7dda2b"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "c4d75b2db6f5aa30dcec740ff8a4b7e07282347099740e24a9f3e2fd0f4bef58"
+            },
+            {
+              "pointer": "/answer",
+              "valueHash": "5fa9a6e988796acce4dd7a033670180448bc29a07a9fa5e48255977034751897"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "75a5fde62754e8804d2f4d309991e3343f58cfb8f1394438a66e0a603f82a6c2"
+  }
+}

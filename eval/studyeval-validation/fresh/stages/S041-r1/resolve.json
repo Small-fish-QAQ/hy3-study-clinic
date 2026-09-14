@@ -1,0 +1,196 @@
+{
+  "inputIdentity": "e446ce59c3530937a79cbb059b78c92a0afa69bf896466e97c761add4dca4e1f",
+  "attempts": [
+    {
+      "physicalId": "96bbd4dd-15a5-4d34-af4b-71457e097313",
+      "caseId": "S041",
+      "runId": "S041-r1",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": "Defect verification quote must match original evidence."
+    },
+    {
+      "physicalId": "254f6ae7-3b7f-428c-8e29-ea2f092a40e9",
+      "caseId": "S041",
+      "runId": "S041-r1",
+      "stage": "resolve",
+      "outputAttempt": 2,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q5",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "产品误判required标准c2为not_met，学生'6本身不取'等价终点排除，致withheld错误，应granted，实质评分缺陷。",
+        "refs": [
+          "/answer",
+          "/rubric/0",
+          "/rubric/1",
+          "/productJudgment/criteria/1",
+          "/productJudgment/consequence"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "评分器错误判定required标准c2未满足，反馈苛求原句“stop不包含”而学生写“6本身不取”等价排除终点",
+            "impact": "改变核心用途：必要学分被错误拒绝，正确作答得withheld，评分准确性实质缺陷",
+            "refs": [
+              "/answer",
+              "/rubric/1",
+              "/productJudgment/criteria/1"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/answer",
+                "valueHash": "1f1899d77938970be2b4fb911104eb79b857f3b9b11357fb92a3f0e5f47e5119"
+              },
+              {
+                "pointer": "/rubric/1",
+                "valueHash": "b9daadef9f56c4be53ec987a58f6d1caeda944fe4c21953d9197e49732389c53"
+              },
+              {
+                "pointer": "/productJudgment/criteria/1",
+                "valueHash": "a0ab216682d7691f7359af06b69525bb27eddc3c25c3e41a3aa7501a1ce909d1"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "grading": {
+          "criteria": [
+            {
+              "id": "c1",
+              "result": "met",
+              "reason": "学生答案'取b、d、f，对应下标1、3、5'明确列出元素b,d,f及下标1,3,5，与标准一致",
+              "refs": [
+                "/answer",
+                "/rubric/0"
+              ],
+              "required": true,
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "1f1899d77938970be2b4fb911104eb79b857f3b9b11357fb92a3f0e5f47e5119"
+                },
+                {
+                  "pointer": "/rubric/0",
+                  "valueHash": "6399550a90530ee1616215b1675defac00c772a340c4350897216a3724886f2c"
+                }
+              ]
+            },
+            {
+              "id": "c2",
+              "result": "met",
+              "reason": "学生答案'切片在6之前停止，6本身不取'表明终点6不包含，满足标准",
+              "refs": [
+                "/answer",
+                "/rubric/1"
+              ],
+              "required": true,
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "1f1899d77938970be2b4fb911104eb79b857f3b9b11357fb92a3f0e5f47e5119"
+                },
+                {
+                  "pointer": "/rubric/1",
+                  "valueHash": "b9daadef9f56c4be53ec987a58f6d1caeda944fe4c21953d9197e49732389c53"
+                }
+              ]
+            },
+            {
+              "id": "c3",
+              "result": "not_met",
+              "reason": "学生答案为普通句子，未使用项目符号列表格式，不满足该非必要要求",
+              "refs": [
+                "/answer",
+                "/rubric/2"
+              ],
+              "required": false,
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "1f1899d77938970be2b4fb911104eb79b857f3b9b11357fb92a3f0e5f47e5119"
+                },
+                {
+                  "pointer": "/rubric/2",
+                  "valueHash": "d52851780736c28eed16df31e029f6ea5cfaf7332d14aae7be2022370d4bc979"
+                }
+              ]
+            }
+          ],
+          "warrantedCredit": "granted",
+          "actualCredit": "withheld",
+          "actualCreditWitness": {
+            "pointer": "/productJudgment/consequence",
+            "valueHash": "a3b3d76fdf1e33a8c7bde9a7152980d0de2656e3d541feafb198261dcc7cf51c"
+          }
+        },
+        "witnesses": [
+          {
+            "pointer": "/answer",
+            "valueHash": "1f1899d77938970be2b4fb911104eb79b857f3b9b11357fb92a3f0e5f47e5119"
+          },
+          {
+            "pointer": "/rubric/0",
+            "valueHash": "6399550a90530ee1616215b1675defac00c772a340c4350897216a3724886f2c"
+          },
+          {
+            "pointer": "/rubric/1",
+            "valueHash": "b9daadef9f56c4be53ec987a58f6d1caeda944fe4c21953d9197e49732389c53"
+          },
+          {
+            "pointer": "/productJudgment/criteria/1",
+            "valueHash": "a0ab216682d7691f7359af06b69525bb27eddc3c25c3e41a3aa7501a1ce909d1"
+          },
+          {
+            "pointer": "/productJudgment/consequence",
+            "valueHash": "a3b3d76fdf1e33a8c7bde9a7152980d0de2656e3d541feafb198261dcc7cf51c"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q5:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/answer",
+          "quote": "6本身不取",
+          "valueHash": "1f1899d77938970be2b4fb911104eb79b857f3b9b11357fb92a3f0e5f47e5119"
+        },
+        "reason": "学生答案明确说6本身不取，等价终点6不包含，产品判not_met错误"
+      },
+      {
+        "id": "review2:Q5:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/productJudgment/criteria/1",
+          "quote": null,
+          "valueHash": "a0ab216682d7691f7359af06b69525bb27eddc3c25c3e41a3aa7501a1ce909d1"
+        },
+        "reason": "产品对c2判not_met，但学生答案已满足，误判实质缺陷"
+      }
+    ]
+  }
+}

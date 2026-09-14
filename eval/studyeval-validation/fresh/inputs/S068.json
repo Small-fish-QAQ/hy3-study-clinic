@@ -1,0 +1,36 @@
+{
+  "id": "S068",
+  "dimensions": [
+    "Q4"
+  ],
+  "evidence": {
+    "sources": [
+      {
+        "id": "source",
+        "text": "课堂票券有未激活、有效、已使用三个状态。激活只能把未激活变为有效；入场只能把有效变为已使用；已使用不能再次入场或再次激活。初始状态为未激活。"
+      }
+    ],
+    "goals": [
+      "应用状态转换规则判断操作序列"
+    ],
+    "prerequisites": [
+      "阅读所给规则",
+      "基本四则运算"
+    ],
+    "desiredDepth": "working_fluency",
+    "authorityBoundaries": [
+      "判断所附局部教学或任务的实际要求。作者参考答案为私有评估材料，未预先展示给学习者。数据与规则是明示课堂前提。"
+    ],
+    "artifacts": [
+      {
+        "id": "private-author-key",
+        "text": "未激活到有效。"
+      }
+    ],
+    "exposure": [],
+    "question": {
+      "prompt": "请从资料抄出“激活”操作允许的起点和终点状态。",
+      "options": []
+    }
+  }
+}

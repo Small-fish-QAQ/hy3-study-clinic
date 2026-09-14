@@ -1,0 +1,23 @@
+{
+  "at": "2026-09-13T20:35:56.173Z",
+  "scope": "Post-score read-only verification of input, projection, result, and actual wire-byte hashes. No evaluation or score changes.",
+  "auditCorrection": "The first auxiliary audit mistakenly used product recorder field names requestSha256/responseSha256 for StudyEval, whose frozen ledger uses requestHash/responseHash. That audit is preserved separately. This audit reads the actual frozen provider schema; no run, raw capture or scored script was changed.",
+  "results": [
+    {
+      "name": "human",
+      "observations": 81,
+      "requests": 251,
+      "responses": 251,
+      "passed": true,
+      "failures": []
+    },
+    {
+      "name": "fresh",
+      "observations": 126,
+      "requests": 429,
+      "responses": 429,
+      "passed": true,
+      "failures": []
+    }
+  ]
+}

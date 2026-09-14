@@ -1,0 +1,97 @@
+{
+  "inputIdentity": "2db9555d1158803ebb9b02e10c2c4203c1f5426be706c896786e06ff4974cef0",
+  "attempts": [
+    {
+      "physicalId": "dfba239f-1958-4d6a-bb82-76289bfc703c",
+      "caseId": "S029",
+      "runId": "S029-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q4",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "题设允许自配与source禁自配不同，学生需算C(5,2)+5=15，作者答案一致正确；无提前泄题；但题干仅要总数未要求解释，声明深度working_fluency需执行并解释，故仅测应用未测解释，区分度弱。",
+        "refs": [
+          "/question/prompt",
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "题干仅要求给出总数未要求解释方法，而desiredDepth为working_fluency要求执行并解释，未充分测试解释技能",
+            "impact": "核心计算用途成立，但区分度弱仅测应用未测解释",
+            "refs": [
+              "/question/prompt",
+              "/desiredDepth"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "f58c1f0050bd20369aed62a2fd5d37814baa28f76c4456e31f662993449ef862"
+              },
+              {
+                "pointer": "/desiredDepth",
+                "valueHash": "ffc6fdfb6aedd605a4b7d1807dfd9cc571929860f9039a3db08c4bc8c2c7817b"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "assessment": {
+          "key": "correct",
+          "validity": "valid",
+          "exposure": "none",
+          "discrimination": "weak",
+          "demand": "application",
+          "demandReason": "学生需根据允许自配条件计算异类对加自配或重复组合总数，不能从source直接抄禁自配公式，需调整计算并得15。",
+          "reason": "题目给定五张明信片选两张允许自配求总数；作者私有答案15正确；priorExposure空无泄露；但仅要总数未解释，未达working_fluency深度。",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text"
+          ],
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "f58c1f0050bd20369aed62a2fd5d37814baa28f76c4456e31f662993449ef862"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "9b81cd45f795f310142b9b84d4185b7641ff21384eb7e699ae47d3c98b0f135c"
+            }
+          ]
+        },
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "f58c1f0050bd20369aed62a2fd5d37814baa28f76c4456e31f662993449ef862"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "9b81cd45f795f310142b9b84d4185b7641ff21384eb7e699ae47d3c98b0f135c"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "048d87f46cf5e71c40673f0c198589ef7169711c8e00773c1213c7b454b1dfde"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

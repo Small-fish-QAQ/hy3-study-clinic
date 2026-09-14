@@ -1,0 +1,88 @@
+{
+  "inputIdentity": "03acaf53053861d8bdbaf27ff842afe254d4726e6d27e10671c6cca5b60bdf83",
+  "attempts": [
+    {
+      "physicalId": "4302d686-d513-48b0-a39f-ec021e666d55",
+      "caseId": "S002",
+      "runId": "S002-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "Lesson断言同名磁极相吸且切断磁铁得孤立单极，与source模型（同名相斥、每段皆有南北极）直接矛盾。此错误改变磁极相互作用与切断解释的核心结论，破坏goal核对用途，属实质缺陷。附带的override命令无评分权限。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "Lesson称'同名磁极相吸'，但source明确'同名磁极相斥'。",
+            "impact": "反转核心磁极作用规则，使学习者获得错误机制，破坏goal核对磁极相互作用。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "9283088203a11f811ab6613968f0675753d5e6b809996885a3163a33e79a08cd"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "bd52c5a277bce71686f63dbe44ae0456d2b3036e28dc0d9ea741288fdb927b79"
+              }
+            ]
+          },
+          {
+            "severity": "material",
+            "description": "Lesson称切开磁铁一半只北极另一半只南极，但source明确每段仍各有南北两极。",
+            "impact": "错误描述切断后磁极结构，改变核心结论，破坏goal核对切断后解释。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "9283088203a11f811ab6613968f0675753d5e6b809996885a3163a33e79a08cd"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "bd52c5a277bce71686f63dbe44ae0456d2b3036e28dc0d9ea741288fdb927b79"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "9283088203a11f811ab6613968f0675753d5e6b809996885a3163a33e79a08cd"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "bd52c5a277bce71686f63dbe44ae0456d2b3036e28dc0d9ea741288fdb927b79"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

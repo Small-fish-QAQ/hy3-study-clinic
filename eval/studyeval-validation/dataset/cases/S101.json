@@ -1,0 +1,31 @@
+{
+  "id": "S101",
+  "dimensions": [
+    "Q4"
+  ],
+  "evidence": {
+    "sources": [
+      {
+        "id": "premises",
+        "text": "容器中有红色和蓝色球，总数8个，两种颜色都至少一个；没有进一步数量信息。"
+      }
+    ],
+    "goals": [
+      "判断信息能否唯一确定红球数并举相容情形"
+    ],
+    "prerequisites": [],
+    "desiredDepth": "working_fluency",
+    "authorityBoundaries": [],
+    "artifacts": [
+      {
+        "id": "private-key",
+        "text": "不能；例如红1蓝7与红3蓝5，均符合总数8且两种都有。"
+      }
+    ],
+    "exposure": [],
+    "question": {
+      "prompt": "仅凭这些资料能唯一确定红球数吗？给出两个不同但都满足条件的红蓝组合说明。",
+      "options": []
+    }
+  }
+}

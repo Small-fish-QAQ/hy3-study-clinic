@@ -1,0 +1,263 @@
+{
+  "status": "ready",
+  "message": "Lesson is ready.",
+  "course": {
+    "title": "相似图形中的长度比与面积比"
+  },
+  "session": {
+    "status": "active",
+    "version": 1
+  },
+  "agenda": {
+    "version": 1,
+    "itemState": "queued"
+  },
+  "lesson": {
+    "objective": {
+      "title": "相似图形顶点对应规则与长度面积缩放规律",
+      "whyNow": "已知两三角形相似且顶点对应已给，但在面积或周长干预后常搞反放大缩小方向，需先建立对应与方向模型并练习预测。",
+      "outcomes": [
+        {
+          "title": "确定相似比方向并避免对应边混淆",
+          "description": "给定相似图形中明确的顶点对应关系，确定相似比的方向（新图形边长除以原图形边长，为正数；反向为倒数），并通过写清“新图形相对原图形”避免放大缩小算反，且不混淆不对应边或仅按位置猜测对应边。"
+        },
+        {
+          "title": "解释长度周长按k缩放而面积按k²缩放并区分比例",
+          "description": "解释相似图形中对应长度和周长按相似比k缩放，面积按k²缩放；区分面积比与长度比不同（单位分别为面积与长度，比例本身无量纲）。"
+        }
+      ]
+    },
+    "prerequisites": [],
+    "segments": [
+      {
+        "index": 0,
+        "purpose": "orientation",
+        "explanation": "若三角形PQR与STU相似且P↔S、Q↔T、R↔U，则PQ对应ST、QR对应TU、PR对应SU。相似比k定义为新图形对应边长除以原图形对应边长，例如从PQR到STU，k=ST÷PQ，为正数；反向则为1/k。长度与周长都乘k，面积乘k²。绝不能只按图形中边的位置猜测对应，必须依据题目写明的顶点配对。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 1,
+        "purpose": "worked_example",
+        "explanation": "接下来用一个新案例展示如何逐步确认相似比方向并预测缩放结果。案例使用不同的字母与数值，以隔离核心机制。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": {
+          "startingState": "三角形GHI与JKL相似，约定G↔J、H↔K、I↔L。已知GH=4厘米，HI=6厘米，JK=12厘米，KL=18厘米。现由GHI缩放得到新三角形G'H'I'，其周长是GHI周长的9倍。",
+          "inputs": [
+            "GH=4, JK=12",
+            "HI=6, KL=18",
+            "G'H'I'周长 = 9 × GHI周长"
+          ],
+          "ruleOrProcedure": "相似比k=新图形对应边长÷原图形对应边长（正数）。长度、周长乘k，面积乘k²。先由已知对应边确认原相似方向，再据周长反推新缩放k'。",
+          "steps": [
+            {
+              "action": "计算GHI到JKL的相似比：k_JKL = JK ÷ GH = 12 ÷ 4 = 3",
+              "reason": "顶点对应已明确，用一对对应边求比值",
+              "resultingState": "确认GHI→JKL的k=3，且KL/HI=18/6=3一致"
+            }
+          ],
+          "learnerDecision": null,
+          "result": null,
+          "whyResultFollows": null,
+          "origin": "hy3_synthesis",
+          "sources": [],
+          "interaction": {
+            "stage": "guided",
+            "modelledStepCount": 1,
+            "origin": "hy3_synthesis",
+            "sources": [],
+            "activity": {
+              "prompt": "根据案例事实和待定变化（周长变为9倍），以下哪项是正确的G'H'I'相对GHI的相似比方向及边长？",
+              "options": [
+                {
+                  "id": "A",
+                  "text": "相似比k'=9，G'H'=36厘米、H'I'=54厘米"
+                },
+                {
+                  "id": "B",
+                  "text": "相似比k'=3，G'H'=12厘米、H'I'=18厘米"
+                },
+                {
+                  "id": "C",
+                  "text": "相似比k'=81，G'H'=324厘米、H'I'=486厘米"
+                }
+              ],
+              "response": null,
+              "respondedAt": null,
+              "correct": null,
+              "feedback": null,
+              "debrief": null,
+              "credit": "none",
+              "misconception": null
+            },
+            "hint": null,
+            "scaffold": null,
+            "transfer": null
+          }
+        },
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 2,
+        "purpose": "comparison",
+        "explanation": "明确顶点对应是避免混淆的边界；若只按图形位置猜对应边，可能选错比例。必须依据题目写明的配对，否则相似假设本身需要核对。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": {
+          "text": "例如原三角形边长3、4、5，另一三角形边长6、8、10，若未给对应而默认第一边对第一边，可能把原3与新8配对，得到错误比；正确做法是依据题目给定对应或明确匹配规则。",
+          "origin": "hy3_synthesis",
+          "sources": []
+        },
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 3,
+        "purpose": "mechanism",
+        "explanation": "若三角形ABC与DEF相似且约定A↔D、B↔E、C↔F，取AB=2、BC=3、AC=4，对应DE=6、EF=9、DF=12。由AB与DE得相似比k=6÷2=3，用BC与EF核对9÷3=3一致。此时每一条对应长度都乘3，因此DEF周长是ABC周长的3倍；面积则是ABC面积的3²=9倍。可见对应边共同确定同一个k后，长度与周长走k，面积走k²，二者缩放路径不同。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [
+          {
+            "kind": "mechanism_effect",
+            "fromProposition": "对应边长均乘相似比k",
+            "toProposition": "周长乘k且面积乘k²",
+            "origin": "hy3_synthesis",
+            "sources": []
+          }
+        ],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 4,
+        "purpose": "guided_practice",
+        "explanation": "再用一组新数值练习预测。三角形UVW与XYZ相似，U↔X、V↔Y、W↔Z，已知UV=4厘米、XY=12厘米，UVW周长为24厘米。先由对应边得k=12÷4=3，周长随k缩放。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": {
+          "kind": "choose",
+          "prompt": "根据UV=4、XY=12，原UVW周长24厘米，XYZ周长应为多少？",
+          "guidance": null,
+          "options": [
+            {
+              "id": "A",
+              "text": "72厘米（24×3）"
+            },
+            {
+              "id": "B",
+              "text": "216厘米（24×9）"
+            },
+            {
+              "id": "C",
+              "text": "8厘米（24×1/3）"
+            }
+          ],
+          "presented": false,
+          "response": null,
+          "respondedAt": null,
+          "correct": null,
+          "feedback": null,
+          "credit": "none"
+        }
+      },
+      {
+        "index": 5,
+        "purpose": "comparison",
+        "explanation": "当题目未写明顶点对应时，不能按字母顺序硬配。必须依据给定的边匹配规则（如最短边对最短边）来确定对应，再算k。若忽略此边界，可能把原边长2与新边长9配对，得到错误k=4.5，进而面积比误为20.25，破坏相似一致性。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": {
+          "text": "例如原三角形边长2、3、4，另一三角形边长6、9、12；若未给对应却默认第一边对第一边，把2与9配，得k=4.5，但3与6配得k=2，比例矛盾，说明对应假设需按明确匹配规则核对。",
+          "origin": "hy3_synthesis",
+          "sources": []
+        },
+        "possibleMisconception": null,
+        "informalCheck": null
+      }
+    ],
+    "sourceReferencesAvailable": true,
+    "visuals": [],
+    "summary": {
+      "available": true,
+      "text": "相似比方向为新图形对应边长÷原图形对应边长（正数）；周长乘k、面积乘k²；对应须依题目写明顶点，不可按位置猜。",
+      "nextConnection": null,
+      "formalOpportunities": []
+    },
+    "plannedTime": {
+      "agendaMinutes": 23,
+      "activeMinutesMin": 26,
+      "activeMinutesMax": 41,
+      "basis": "locally_evaluated_learning_actions"
+    }
+  },
+  "progress": {
+    "stateVersion": 4,
+    "stateId": "lesson_execution_7dea2f4d-9e1f-4cc6-aab0-700ef85e68df",
+    "currentSegmentIndex": 0,
+    "segmentCount": 6,
+    "presentedSegmentIndexes": [],
+    "presentationStatus": "not_started",
+    "presentationCompletedAt": null
+  },
+  "currentInformalCheck": null,
+  "practice": {
+    "status": "locked",
+    "currentItemIndex": 0,
+    "itemCount": 2,
+    "item": {
+      "index": 0,
+      "objectiveTitle": "确定相似比方向并避免对应边混淆",
+      "construct": "apply",
+      "surface": "initial",
+      "supplementary": true,
+      "prompt": "三角形XYZ与PQR相似，明确X↔P、Y↔Q、Z↔R。已知XY=8厘米，PQ=24厘米。现由XYZ缩放得到X'Y'Z'，观测到X'Y'Z'周长是XYZ周长的2/3，面积是XYZ面积的4/9。以下哪项正确反映了X'Y'Z'相对XYZ的相似比方向及边长变化？",
+      "options": [
+        {
+          "id": "teaching_brief_5f9669d7-818a-48ed-9cfc-5c9574fc9317_practice_1_initial_A",
+          "text": "相似比k'=2/3，对应边长均乘2/3（如X'Y'=8×2/3≈5.33厘米）"
+        },
+        {
+          "id": "teaching_brief_5f9669d7-818a-48ed-9cfc-5c9574fc9317_practice_1_initial_B",
+          "text": "相似比k'=3/2，对应边长均乘3/2（如X'Y'=12厘米）"
+        },
+        {
+          "id": "teaching_brief_5f9669d7-818a-48ed-9cfc-5c9574fc9317_practice_1_initial_C",
+          "text": "相似比k'=4/9，对应边长均乘4/9（如X'Y'≈3.56厘米）"
+        }
+      ]
+    },
+    "attempts": [],
+    "recovery": null,
+    "completedAt": null,
+    "credit": "none"
+  },
+  "allowedActions": [
+    "start_lesson"
+  ]
+}

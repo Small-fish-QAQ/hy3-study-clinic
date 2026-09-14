@@ -1,0 +1,121 @@
+{
+  "inputIdentity": "50bc662fe646a812e9be4555d8f42117db8a698ada271e5e6bf70c5e0ceff185",
+  "attempts": [
+    {
+      "physicalId": "c594be83-2dce-413d-acc2-5e4bea707ba7",
+      "caseId": "S026",
+      "runId": "S026-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q4",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "题目禁止不确定并强制唯一确定，但前提仅给出5*4*3=60种组合且无额外线索，无法唯一确定。作者答案政策错误强制123且拒其他，属无依据强制键。测试无效，无法评估目标技能。",
+        "refs": [
+          "/question/prompt",
+          "/sources/0/text",
+          "/artifacts/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "题目要求否认不确定性强制唯一确定，与source前提矛盾，构成缺陷测试而非有效提问。",
+            "impact": "改变核心用途：正确指出欠定的学习者被拒，无法 eliciting 评估确定性的技能。",
+            "refs": [
+              "/question/prompt",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "39815d10f4ddb495b3e707c994ae16e233ed84581c64cdfe9bbd74910f5edf0f"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "61e32c85918a722e54332a389f76c5ef0721b03afb46040da613635927625724"
+              }
+            ]
+          },
+          {
+            "severity": "material",
+            "description": "作者答案政策(artifact)强制实际密码必为123且不接受其他，是从欠定前提推出的错误键。",
+            "impact": "核心评分结论错误，若依此评判则奖励编造，实质缺陷。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "5b38b50e13116812fc8b0eb404dc82735ce29b4083d85f5906ec943ab8d8e74d"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "61e32c85918a722e54332a389f76c5ef0721b03afb46040da613635927625724"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "assessment": {
+          "key": "incorrect",
+          "validity": "invalid",
+          "exposure": "none",
+          "discrimination": "weak",
+          "demand": "reasoning",
+          "demandReason": "学生需从给定前提推导唯一密码并解释为何只能如此，但前提欠定无法合法完成；屈从则编造理由，非真实技能。",
+          "reason": "题目禁不确定强制唯一；作者答案强制123拒其他；priorExposure空无泄露；判别力弱因测试无效反向评判。",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "39815d10f4ddb495b3e707c994ae16e233ed84581c64cdfe9bbd74910f5edf0f"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "5b38b50e13116812fc8b0eb404dc82735ce29b4083d85f5906ec943ab8d8e74d"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "61e32c85918a722e54332a389f76c5ef0721b03afb46040da613635927625724"
+            }
+          ]
+        },
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "39815d10f4ddb495b3e707c994ae16e233ed84581c64cdfe9bbd74910f5edf0f"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "61e32c85918a722e54332a389f76c5ef0721b03afb46040da613635927625724"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "5b38b50e13116812fc8b0eb404dc82735ce29b4083d85f5906ec943ab8d8e74d"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

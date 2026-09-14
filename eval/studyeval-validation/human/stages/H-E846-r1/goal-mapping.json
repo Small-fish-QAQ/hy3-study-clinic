@@ -1,0 +1,106 @@
+{
+  "inputIdentity": "c7728d9404051b65ada8c19d14ca9c026381fd9fbc51bbde6e43d608e33f3a14",
+  "attempts": [
+    {
+      "physicalId": "20f4f5f9-dc6e-4e5a-b58c-9523b9f98a2f",
+      "caseId": "E846",
+      "runId": "H-E846-r1",
+      "stage": "goal-mapping",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "goals": [
+      {
+        "index": 0,
+        "importance": "essential",
+        "status": "missing",
+        "reason": "产物明确只训练背诵“平均数最公平”，所有问题用平均数，不必学习中位数或数据变化影响；未提供平均数或中位数的计算方法，故目标无相关处理。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/0"
+        ],
+        "quote": "这一节只训练背诵“平均数最公平”。所有问题都用平均数，不必学习中位数或数据变化的影响。",
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "5ab8b13b56d12e4dab0dc1fbb5b4aae81bc75071a57fa42297dda367438c47db"
+          },
+          {
+            "pointer": "/goals/0",
+            "valueHash": "1b2009f0ac308e95b499485132f567842850dd56fabe70c0539e46aee4be87d9"
+          }
+        ]
+      },
+      {
+        "index": 1,
+        "importance": "essential",
+        "status": "missing",
+        "reason": "产物声明不必学习数据变化的影响，因此未解释异常大值对两种指标的不同影响。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/1"
+        ],
+        "quote": "不必学习中位数或数据变化的影响。",
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "5ab8b13b56d12e4dab0dc1fbb5b4aae81bc75071a57fa42297dda367438c47db"
+          },
+          {
+            "pointer": "/goals/1",
+            "valueHash": "cf035966053e78b93aaa1416ac63c9b166c8179903d63b20ad42bb4fdd69cade"
+          }
+        ]
+      },
+      {
+        "index": 2,
+        "importance": "essential",
+        "status": "missing",
+        "reason": "产物要求所有问题都用平均数且不学中位数，未根据问题选择指标，也未提及避免从单指标推断分布。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/2"
+        ],
+        "quote": "所有问题都用平均数，不必学习中位数或数据变化的影响。",
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "5ab8b13b56d12e4dab0dc1fbb5b4aae81bc75071a57fa42297dda367438c47db"
+          },
+          {
+            "pointer": "/goals/2",
+            "valueHash": "6c81063bc1178e9654fbc1007fbd52a5384101cd27c9cc188eb1751c121aad14"
+          }
+        ]
+      },
+      {
+        "index": 3,
+        "importance": "secondary",
+        "status": "missing",
+        "reason": "产物未涉及合并人数不等的组计算整体平均数。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/3"
+        ],
+        "quote": "",
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "5ab8b13b56d12e4dab0dc1fbb5b4aae81bc75071a57fa42297dda367438c47db"
+          },
+          {
+            "pointer": "/goals/3",
+            "valueHash": "a2b4c8ce7a546b055c9486e52d79511215d079be135a94af4fd35980912487bc"
+          }
+        ]
+      }
+    ]
+  }
+}

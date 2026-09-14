@@ -1,0 +1,69 @@
+{
+  "inputIdentity": "cde9e98130b44055fc07bb7ac8d5fd1762783cd2de6f25a83dd57387ccf06d85",
+  "attempts": [
+    {
+      "physicalId": "2af8c3e8-b5fd-4dd9-8c18-a8fe98cf33f3",
+      "caseId": "S012",
+      "runId": "S012-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q3",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "产物仅断言B转1/3圈且反向符合资料，未展示齿数如何通过啮合规则推导转数比与方向。结论正确但解释连接缺失，属局部缺陷，未教错误方法。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "未展示从齿数前提至转数/方向结论的操作或理由，仅声明结果符合资料，缺少解释连接",
+            "impact": "学习者看不到推导链，但无虚假机制，核心正确结论成立，故局部",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "dcb7d49988d0f9be3af2f95cecf3aa3153067a25e4dbd0227238970bc2bca47c"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "dcb7d49988d0f9be3af2f95cecf3aa3153067a25e4dbd0227238970bc2bca47c"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

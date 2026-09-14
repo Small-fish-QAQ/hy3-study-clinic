@@ -1,0 +1,36 @@
+{
+  "inputIdentity": "166eb40a95efeda16c0ac9e8e2ccdb7877091996ebba3e8c6fe05ff0ef947041",
+  "attempts": [
+    {
+      "physicalId": "3c86d9c5-90eb-42ee-b0cb-1270fd96c31a",
+      "caseId": "E497",
+      "runId": "H-E497-r3",
+      "stage": "blind-solution",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "status": "resolved",
+    "solution": "原数据2,4,4,14：总和24，平均数24/4=6分钟；排序后中间两数为4和4，中位数4分钟。改14为22后：总和32，平均数8分钟；中位数仍4分钟。变化不同因平均数受所有值影响，22替换14使总和增8、均增2；中位数仅取决于中间排序位置，中间两值未变故不变。题设四次记录，按条计。",
+    "refs": [
+      "/question/prompt",
+      "/sources/0/text"
+    ],
+    "witnesses": [
+      {
+        "pointer": "/question/prompt",
+        "valueHash": "c72bdf5aa33b5c9b2a61dcde88889cc9c7e6ebaf01687c706d6d8539580d34da"
+      },
+      {
+        "pointer": "/sources/0/text",
+        "valueHash": "a43f09ae51e1a19e3e4fe7ef6283f10eab5bf8c071e52a5d86e3c347cdbc2311"
+      }
+    ]
+  }
+}

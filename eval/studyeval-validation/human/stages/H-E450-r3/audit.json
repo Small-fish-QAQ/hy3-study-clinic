@@ -1,0 +1,150 @@
+{
+  "inputIdentity": "c60493309be3323369e5ee6727c330862253f3b72d12b33359d96b4b7b6bfaa8",
+  "attempts": [
+    {
+      "physicalId": "7a216d2b-4071-4af2-8428-7b69148883ec",
+      "caseId": "E450",
+      "runId": "H-E450-r3",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q5",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "独立解题确认原平均6中位4、改后平均8中位4；学生答案满足c1、c2，且未用小标题故c3 not_met正确。产品反馈与授分均准确，无缺陷。",
+        "refs": [
+          "/answer",
+          "/rubric/0",
+          "/rubric/1",
+          "/rubric/2",
+          "/productJudgment/criteria/0",
+          "/productJudgment/criteria/1",
+          "/productJudgment/criteria/2",
+          "/productJudgment/feedback",
+          "/productJudgment/consequence"
+        ],
+        "defects": [],
+        "missing": [],
+        "grading": {
+          "criteria": [
+            {
+              "id": "c1",
+              "result": "met",
+              "reason": "学生答案明确给出原平均6、中位4及改后平均8、中位4，与题设计算一致。",
+              "refs": [
+                "/answer",
+                "/rubric/0"
+              ],
+              "required": true,
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+                },
+                {
+                  "pointer": "/rubric/0",
+                  "valueHash": "a1297a15ff2b3a0f739057b0447a410cb40c06ce923b05a3164b28df2ba398b4"
+                }
+              ]
+            },
+            {
+              "id": "c2",
+              "result": "met",
+              "reason": "学生指出总和32平均8（总和增加使平均改变），中间两个4未变故中位不变，解释正确。",
+              "refs": [
+                "/answer",
+                "/rubric/1"
+              ],
+              "required": true,
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+                },
+                {
+                  "pointer": "/rubric/1",
+                  "valueHash": "46a9a9b0313c712bcf38afd5a6b9d93cea5b4f5f9ce44412a9a9122ea1b5461b"
+                }
+              ]
+            },
+            {
+              "id": "c3",
+              "result": "not_met",
+              "reason": "学生答案为连续句子，未用小标题分开，可选标准未满足，评判正确。",
+              "refs": [
+                "/answer",
+                "/rubric/2"
+              ],
+              "required": false,
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+                },
+                {
+                  "pointer": "/rubric/2",
+                  "valueHash": "c501d76a0d0bcb2526107e773e4c2486adf551bafedd0b5c028a4823e4cc1a95"
+                }
+              ]
+            }
+          ],
+          "warrantedCredit": "granted",
+          "actualCredit": "granted"
+        },
+        "witnesses": [
+          {
+            "pointer": "/answer",
+            "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+          },
+          {
+            "pointer": "/rubric/0",
+            "valueHash": "a1297a15ff2b3a0f739057b0447a410cb40c06ce923b05a3164b28df2ba398b4"
+          },
+          {
+            "pointer": "/rubric/1",
+            "valueHash": "46a9a9b0313c712bcf38afd5a6b9d93cea5b4f5f9ce44412a9a9122ea1b5461b"
+          },
+          {
+            "pointer": "/rubric/2",
+            "valueHash": "c501d76a0d0bcb2526107e773e4c2486adf551bafedd0b5c028a4823e4cc1a95"
+          },
+          {
+            "pointer": "/productJudgment/criteria/0",
+            "valueHash": "f0889a8ca84b1ad53479a19f0e5a22afede0813daadd0b81641dfa3a2bb5e932"
+          },
+          {
+            "pointer": "/productJudgment/criteria/1",
+            "valueHash": "02e8c5829531b184471f66e350e5cf32a381ad8e83a35792a261b5649778b57b"
+          },
+          {
+            "pointer": "/productJudgment/criteria/2",
+            "valueHash": "03635d5bea0f2b3f2dd24e1a4cc46bf8203c501288725de8c49a6be969e72548"
+          },
+          {
+            "pointer": "/productJudgment/feedback",
+            "valueHash": "89c727f844ede74e17dcf7aac610663610c531d72c23683c04bcd4f42f1d925e"
+          },
+          {
+            "pointer": "/productJudgment/consequence",
+            "valueHash": "7a46f96ef53640241d47aaf5bf8982277cb8089d4e31cb15b6a2197d05b6c7b9"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

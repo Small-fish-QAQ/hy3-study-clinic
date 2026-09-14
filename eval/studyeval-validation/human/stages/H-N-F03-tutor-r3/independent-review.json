@@ -1,0 +1,76 @@
+{
+  "inputIdentity": "77b5dfad8d651cd84d693b491c6fdcc636a3d93213753cf9bd25607ee31ce468",
+  "attempts": [
+    {
+      "physicalId": "1db334f0-d151-4d9f-879e-020543b25666",
+      "caseId": "N-F03-tutor",
+      "runId": "H-N-F03-tutor-r3",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "tutor-reply准确引用资料关于观察差异不自动因果的论断，自编运动鞋例子与资料精神一致，边界说明自然观察与随机控制区别正确，无事实或归属缺陷。",
+        "refs": [
+          "/sources/0/text",
+          "/artifacts/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "944a460c4eccfdbd61d456dc9fc3969b0ed10c585ea05e87ccfe3e9b93549680"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "f653eac8024e376cef6ce8bcbe3cb4d70ebdcd1f839018aaf4434efdb4a309e6"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      },
+      {
+        "dimension": "Q3",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "运动鞋例子从观察差异前提出发，指出混杂训练等因素故不能断因果，连接关键推理，并交代自然观察适用边界及随机控制下比较依据变化，解释充分。",
+        "refs": [
+          "/sources/0/text",
+          "/artifacts/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "944a460c4eccfdbd61d456dc9fc3969b0ed10c585ea05e87ccfe3e9b93549680"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "f653eac8024e376cef6ce8bcbe3cb4d70ebdcd1f839018aaf4434efdb4a309e6"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

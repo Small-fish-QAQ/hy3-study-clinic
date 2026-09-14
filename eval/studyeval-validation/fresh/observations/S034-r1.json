@@ -1,0 +1,346 @@
+{
+  "task": {
+    "caseId": "S034",
+    "runId": "S034-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S034.json",
+    "inputHash": "a3217664d87fa752077f5aa02696e6b23ba0ea35646fcc8eb59deec75fd05ea0"
+  },
+  "inputHash": "a3217664d87fa752077f5aa02696e6b23ba0ea35646fcc8eb59deec75fd05ea0",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "d7750b9f9c1b4603ef71fbd0def3512752001203a4e3f1f598989208eeceb135",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "lesson断言KiB与kB均1000字节且KiB会压缩文件，违背source中KiB=1024及换算不涉压缩率的规则，错误定义核心单位并歪曲因果，改变核心教学结论，属实质缺陷。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "断言KiB和kB都表示1000字节，错误定义KiB（实为1024字节）",
+                "impact": "破坏存储单位换算核心机制与必要前提，使推导基础错误",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "915ce91058911fe5ef50e753f34714b3e5df40b8a16892eee876b0913e2da702"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "9962889a586bcebaf05685b990e16a73f43aca209ab59334e74cf9c8606897a1"
+                  }
+                ]
+              },
+              {
+                "severity": "material",
+                "description": "声称用KiB表示会压缩文件，违背来源中大小换算不说明压缩率的规则",
+                "impact": "引入虚假因果，改变关于单位用途的核心结论",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "915ce91058911fe5ef50e753f34714b3e5df40b8a16892eee876b0913e2da702"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "9962889a586bcebaf05685b990e16a73f43aca209ab59334e74cf9c8606897a1"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "915ce91058911fe5ef50e753f34714b3e5df40b8a16892eee876b0913e2da702"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "9962889a586bcebaf05685b990e16a73f43aca209ab59334e74cf9c8606897a1"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "lesson断言KiB与kB同为1000字节且KiB压缩文件，与source明示KiB=1024及换算不涉及压缩率矛盾。错误事实改变单位换算核心机制与结论，破坏核对归属目标。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "lesson称'KiB和kB都表示1000字节'，但source明确二进制KiB为1024字节。",
+                "impact": "错误单位定义直接篡改核心换算规则，使学习者建立错误前提，破坏核对换算目标。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "915ce91058911fe5ef50e753f34714b3e5df40b8a16892eee876b0913e2da702"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "9962889a586bcebaf05685b990e16a73f43aca209ab59334e74cf9c8606897a1"
+                  }
+                ]
+              },
+              {
+                "severity": "material",
+                "description": "lesson称'用KiB表示会压缩文件'，source指出大小换算不说明压缩率。",
+                "impact": "虚构压缩效应改变结论，无证据支持，误导对单位用途的理解。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "915ce91058911fe5ef50e753f34714b3e5df40b8a16892eee876b0913e2da702"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "9962889a586bcebaf05685b990e16a73f43aca209ab59334e74cf9c8606897a1"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "915ce91058911fe5ef50e753f34714b3e5df40b8a16892eee876b0913e2da702"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "9962889a586bcebaf05685b990e16a73f43aca209ab59334e74cf9c8606897a1"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "lesson称KiB与kB均1000字节且KiB压缩文件，但source明确KiB=1024且换算不涉及压缩率。错误定义与虚假因果直接破坏核对单位换算及归属的核心目标，属实质缺陷，故评0。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "断言KiB和kB都表示1000字节，错误定义KiB（实为1024字节）",
+                "impact": "破坏存储单位换算核心机制与必要前提，使推导基础错误",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "915ce91058911fe5ef50e753f34714b3e5df40b8a16892eee876b0913e2da702"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "9962889a586bcebaf05685b990e16a73f43aca209ab59334e74cf9c8606897a1"
+                  }
+                ]
+              },
+              {
+                "severity": "material",
+                "description": "声称用KiB表示会压缩文件，违背来源中大小换算不说明压缩率的规则",
+                "impact": "引入虚假因果，改变关于单位用途的核心结论",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "915ce91058911fe5ef50e753f34714b3e5df40b8a16892eee876b0913e2da702"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "9962889a586bcebaf05685b990e16a73f43aca209ab59334e74cf9c8606897a1"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "915ce91058911fe5ef50e753f34714b3e5df40b8a16892eee876b0913e2da702"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "9962889a586bcebaf05685b990e16a73f43aca209ab59334e74cf9c8606897a1"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q1:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "KiB和kB都表示1000字节",
+              "valueHash": "915ce91058911fe5ef50e753f34714b3e5df40b8a16892eee876b0913e2da702"
+            },
+            "reason": "原文断言两者均1000字节，但/sources/0/text明确二进制KiB为1024，错误定义核心单位，破坏换算目标。"
+          },
+          {
+            "id": "review1:Q1:2",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "用KiB表示会压缩文件。",
+              "valueHash": "915ce91058911fe5ef50e753f34714b3e5df40b8a16892eee876b0913e2da702"
+            },
+            "reason": "原文声称KiB表示压缩文件，/sources/0/text指出大小换算不说明压缩率，虚构因果改变核心结论。"
+          },
+          {
+            "id": "review2:Q1:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "KiB和kB都表示1000字节",
+              "valueHash": "915ce91058911fe5ef50e753f34714b3e5df40b8a16892eee876b0913e2da702"
+            },
+            "reason": "同review1:Q1:1，原文与source矛盾，实质错误篡改换算规则。"
+          },
+          {
+            "id": "review2:Q1:2",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "用KiB表示会压缩文件。",
+              "valueHash": "915ce91058911fe5ef50e753f34714b3e5df40b8a16892eee876b0913e2da702"
+            },
+            "reason": "同review1:Q1:2，虚假压缩效应无来源支持，误导单位用途。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q1",
+          "level": 0,
+          "evidence": "sufficient",
+          "reason": "lesson称KiB与kB均1000字节且KiB压缩文件，但source明确KiB=1024且换算不涉及压缩率。错误定义与虚假因果直接破坏核对单位换算及归属的核心目标，属实质缺陷，故评0。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [
+            {
+              "severity": "material",
+              "description": "断言KiB和kB都表示1000字节，错误定义KiB（实为1024字节）",
+              "impact": "破坏存储单位换算核心机制与必要前提，使推导基础错误",
+              "refs": [
+                "/artifacts/0/text",
+                "/sources/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "915ce91058911fe5ef50e753f34714b3e5df40b8a16892eee876b0913e2da702"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "9962889a586bcebaf05685b990e16a73f43aca209ab59334e74cf9c8606897a1"
+                }
+              ]
+            },
+            {
+              "severity": "material",
+              "description": "声称用KiB表示会压缩文件，违背来源中大小换算不说明压缩率的规则",
+              "impact": "引入虚假因果，改变关于单位用途的核心结论",
+              "refs": [
+                "/artifacts/0/text",
+                "/sources/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "915ce91058911fe5ef50e753f34714b3e5df40b8a16892eee876b0913e2da702"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "9962889a586bcebaf05685b990e16a73f43aca209ab59334e74cf9c8606897a1"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "915ce91058911fe5ef50e753f34714b3e5df40b8a16892eee876b0913e2da702"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "9962889a586bcebaf05685b990e16a73f43aca209ab59334e74cf9c8606897a1"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "b28a27d6d39d88cbefb5d4d2944c7cbb07bea76b556d12725e513fa6a12089ed"
+  }
+}

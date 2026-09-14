@@ -1,0 +1,69 @@
+{
+  "inputIdentity": "d1bf4a9c833a4c258a853b411909e8ed27587ce74d51705398ff4160b54faf08",
+  "attempts": [
+    {
+      "physicalId": "399db427-e4e0-4e91-b547-7fb437a49b6a",
+      "caseId": "S038",
+      "runId": "S038-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q3",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "来源明确回声总时0.6秒且行程为墙距两倍，但局部解释误称0.6秒仅单程、不计返回，算得204米墙距，教无效方法，核心目标失败。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "解释声称0.6秒仅为单程时间且无需考虑返回，用340×0.6=204米作为墙距，违背来源中回声总时含往返且行程为墙距两倍的前提，教授了错误算法。",
+            "impact": "完全破坏‘解释如何由回声时间得到墙距’的目标，学习者将得出错误距离，核心教学用途失效。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "3bbce2de2fe1eeb758a911865d1912be311746bdcab655ec42447c7ca0aebbb0"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "79185b54dfbddde1df8e87303862dd09dbc298fe4bf0af82dc4cd087114a46d8"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "3bbce2de2fe1eeb758a911865d1912be311746bdcab655ec42447c7ca0aebbb0"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "79185b54dfbddde1df8e87303862dd09dbc298fe4bf0af82dc4cd087114a46d8"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

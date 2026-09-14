@@ -1,0 +1,178 @@
+{
+  "startedAt": "2026-09-14T11:13:53.283Z",
+  "suite": "fresh-showcase",
+  "completeSuite": true,
+  "schedule": [
+    {
+      "sourceId": "J01",
+      "path": "dataset/courses/J01.json",
+      "maxTeaching": 4,
+      "maxFormal": 1,
+      "failPractice": false,
+      "tutor": false
+    },
+    {
+      "sourceId": "J02",
+      "path": "dataset/courses/J02.json",
+      "maxTeaching": 4,
+      "maxFormal": 1,
+      "failPractice": false,
+      "tutor": false
+    },
+    {
+      "sourceId": "J03",
+      "path": "dataset/courses/J03.json",
+      "maxTeaching": 4,
+      "maxFormal": 1,
+      "failPractice": false,
+      "tutor": false
+    },
+    {
+      "sourceId": "J04",
+      "path": "dataset/courses/J04.json",
+      "maxTeaching": 4,
+      "maxFormal": 1,
+      "failPractice": false,
+      "tutor": false
+    },
+    {
+      "sourceId": "J05",
+      "path": "dataset/courses/J05.json",
+      "maxTeaching": 4,
+      "maxFormal": 1,
+      "failPractice": false,
+      "tutor": false
+    },
+    {
+      "sourceId": "J06",
+      "path": "dataset/courses/J06.json",
+      "maxTeaching": 4,
+      "maxFormal": 1,
+      "failPractice": false,
+      "tutor": false
+    },
+    {
+      "sourceId": "J07",
+      "path": "dataset/courses/J07.json",
+      "maxTeaching": 4,
+      "maxFormal": 1,
+      "failPractice": false,
+      "tutor": false
+    },
+    {
+      "sourceId": "J08",
+      "path": "dataset/courses/J08.json",
+      "maxTeaching": 4,
+      "maxFormal": 1,
+      "failPractice": false,
+      "tutor": false
+    },
+    {
+      "sourceId": "J09",
+      "path": "dataset/courses/J09.json",
+      "maxTeaching": 4,
+      "maxFormal": 1,
+      "failPractice": false,
+      "tutor": false
+    },
+    {
+      "sourceId": "J10",
+      "path": "dataset/courses/J10.json",
+      "maxTeaching": 4,
+      "maxFormal": 1,
+      "failPractice": false,
+      "tutor": false
+    },
+    {
+      "sourceId": "J11",
+      "path": "dataset/courses/J11.json",
+      "maxTeaching": 4,
+      "maxFormal": 1,
+      "failPractice": false,
+      "tutor": false
+    },
+    {
+      "sourceId": "J12",
+      "path": "dataset/courses/J12.json",
+      "maxTeaching": 4,
+      "maxFormal": 1,
+      "failPractice": false,
+      "tutor": false
+    },
+    {
+      "sourceId": "J13",
+      "path": "dataset/courses/J13.json",
+      "maxTeaching": 4,
+      "maxFormal": 1,
+      "failPractice": false,
+      "tutor": false
+    },
+    {
+      "sourceId": "J14",
+      "path": "dataset/courses/J14.json",
+      "maxTeaching": 4,
+      "maxFormal": 1,
+      "failPractice": false,
+      "tutor": false
+    },
+    {
+      "sourceId": "J15",
+      "path": "dataset/courses/J15.json",
+      "maxTeaching": 4,
+      "maxFormal": 1,
+      "failPractice": false,
+      "tutor": false
+    },
+    {
+      "sourceId": "J16",
+      "path": "dataset/courses/J16.json",
+      "maxTeaching": 4,
+      "maxFormal": 1,
+      "failPractice": false,
+      "tutor": false
+    },
+    {
+      "sourceId": "J17",
+      "path": "dataset/courses/J17.json",
+      "maxTeaching": 4,
+      "maxFormal": 1,
+      "failPractice": false,
+      "tutor": false
+    },
+    {
+      "sourceId": "J18",
+      "path": "dataset/courses/J18.json",
+      "maxTeaching": 4,
+      "maxFormal": 1,
+      "failPractice": false,
+      "tutor": false
+    },
+    {
+      "sourceId": "J19",
+      "path": "dataset/courses/J19.json",
+      "maxTeaching": 4,
+      "maxFormal": 1,
+      "failPractice": false,
+      "tutor": false
+    },
+    {
+      "sourceId": "J20",
+      "path": "dataset/courses/J20.json",
+      "maxTeaching": 4,
+      "maxFormal": 1,
+      "failPractice": false,
+      "tutor": false
+    }
+  ],
+  "productCommit": "84b3c2fbce7e6523e43a8fa66df42bb6e37fa149",
+  "freezeSha256": "4c99f3a1e5a547cc80a565516da743a1d9a66de06b77f18a1240e6805981a915",
+  "provider": {
+    "model": "hy3",
+    "endpointHost": "tokenhub.tencentmaas.com",
+    "endpointIdentityHash": "55d8daa779c2677950284ca29b3592b00ba33aa642800c819b5a63f23675965d",
+    "immutableWeightsVerified": false
+  },
+  "concurrency": 6,
+  "actualProductRoot": "C:\\Users\\smallfish\\open-source\\hy3-study-clinic",
+  "nodeVersion": "v24.14.1"
+}

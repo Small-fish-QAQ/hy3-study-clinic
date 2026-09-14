@@ -1,0 +1,74 @@
+{
+  "inputIdentity": "4f6c543df2a9dd36ddabb86bfeec44d4319c86cd26827933914e2586eedf937b",
+  "attempts": [
+    {
+      "physicalId": "82e1f0f5-de97-4d92-ac15-de909b5a0edf",
+      "caseId": "E658",
+      "runId": "H-E658-r2",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q2",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "核心目标1-3在artifact中均有可操作规则或示例：区间公式、比较演示、刻度细不等于准确。但次要目标4仅以'重复测量时也要留意共同偏差'的未解释提醒出现，未说明平均不自动消除或举例，符合Q2的1分标准。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/3",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "次要延伸目标'说明重复平均不能自动消除共同方向的偏差'在lesson中仅简化为'重复测量时也要留意共同偏差'，未解释不能自动消除或给出任何演示。",
+            "impact": "核心目标（区间构建、比较、分辨率区分）仍可用，学习用途主体成立，仅次要目标深度不足。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/3"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "9f85ff5b494d6fb3aa0a5fc03f7b2cba0075759e5a444afa89829072dffa4a9b"
+              },
+              {
+                "pointer": "/goals/3",
+                "valueHash": "714460aff55596ab6a2b0d42615a21b9c5be82487f745a68d7ee18049f26f951"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "9f85ff5b494d6fb3aa0a5fc03f7b2cba0075759e5a444afa89829072dffa4a9b"
+          },
+          {
+            "pointer": "/goals/3",
+            "valueHash": "714460aff55596ab6a2b0d42615a21b9c5be82487f745a68d7ee18049f26f951"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "04ede0e2b943c283408af13f15e429c4d3f550318ac34096022b20c8a80a02fc"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

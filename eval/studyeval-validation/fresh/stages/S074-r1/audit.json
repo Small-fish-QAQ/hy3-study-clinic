@@ -1,0 +1,49 @@
+{
+  "inputIdentity": "43e83dfbf9c284786f02571c83d4e1f0411e410bebf7bb71f452258de08fa60a",
+  "attempts": [
+    {
+      "physicalId": "f15eddcb-cb8c-4758-a33a-94f5b8f2f268",
+      "caseId": "S074",
+      "runId": "S074-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q6",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "交付物准确指出长度3时i<=3访问不存在下标3，建议i<3并阐明限制下标而非长度，且给出长度4时列出下标与次数的具体新检查，可检验同一边界推理，满足完整标准。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "59494a351f56294401a0511f84ee11519e67f7aea59aa02aa9cfa17db9c08fee"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "6213ff9a055ace79d0f400ff726e7c543da909a26d1040539112300cd2428c3c"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

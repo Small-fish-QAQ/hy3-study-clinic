@@ -1,0 +1,451 @@
+{
+  "task": {
+    "caseId": "E705",
+    "runId": "H-E705-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E705.json",
+    "inputHash": "5b3183984d363b1023add0b5e9f28080511e53612f4a5411d761d0860cd94626",
+    "population": "controlled",
+    "sourceId": "F05"
+  },
+  "inputHash": "5b3183984d363b1023add0b5e9f28080511e53612f4a5411d761d0860cd94626",
+  "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "42578502a01851b97c644f17e8c63d7fa98acb04be247ab222d1ec19fe0ac2c1",
+    "stages": {
+      "goal-mapping": {
+        "goals": [
+          {
+            "index": 0,
+            "importance": "essential",
+            "status": "contradicted",
+            "reason": "artifact声称'小数写得越多必定越准'，并将误差界限与区间比较列为不用学，这直接否定了区分读数分辨率（小数位）与真实准确程度的必要性，且与目标要求的区分相反。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/0"
+            ],
+            "quote": "小数写得越多必定越准",
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "4799744cc7668cbd8697be5870cadab058dc7fec6efec2c6a1bd24e6b123973e"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "974f091625a397eadb261006f5285e9c63c7ca6b839e6bdbb8c41f4bfff75e27"
+              }
+            ]
+          },
+          {
+            "index": 1,
+            "importance": "essential",
+            "status": "missing",
+            "reason": "artifact明确声明'误差界限与区间比较都不用学'，因此完全没有教授或使用给定误差界限形成区间的处理。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/1"
+            ],
+            "quote": "",
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "4799744cc7668cbd8697be5870cadab058dc7fec6efec2c6a1bd24e6b123973e"
+              },
+              {
+                "pointer": "/goals/1",
+                "valueHash": "b948cbdb264205a71c39bbf43fca64b81f119fd6bce83afbff737e5a078063b3"
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "importance": "essential",
+            "status": "missing",
+            "reason": "artifact明确声明'误差界限与区间比较都不用学'，缺少判断多个测量区间是否支持大小关系的任何内容。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/2"
+            ],
+            "quote": "",
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "4799744cc7668cbd8697be5870cadab058dc7fec6efec2c6a1bd24e6b123973e"
+              },
+              {
+                "pointer": "/goals/2",
+                "valueHash": "a63a83b2364923d8e078ddf815b65a88e03ab9e5b2b372710e75e020c2056d1a"
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "importance": "secondary",
+            "status": "missing",
+            "reason": "artifact未提及重复测量或平均偏差，仅要求读小数位并错误声称小数多必准，无关于重复平均不能自动消除共同方向偏差的说明。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/3"
+            ],
+            "quote": "",
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "4799744cc7668cbd8697be5870cadab058dc7fec6efec2c6a1bd24e6b123973e"
+              },
+              {
+                "pointer": "/goals/3",
+                "valueHash": "714460aff55596ab6a2b0d42615a21b9c5be82487f745a68d7ee18049f26f951"
+              }
+            ]
+          }
+        ]
+      },
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "产物声称小数位越多必定越准且误差界限与区间比较不用学，直接矛盾目标1并缺失目标2、3，核心学习目的被推翻。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/0",
+              "/goals/1",
+              "/goals/2"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "产物断言“小数写得越多必定越准”，矛盾目标1（区分读数分辨率与真实准确程度）。",
+                "impact": "反转应有的区分，传授错误等价，击败声明目的。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/goals/0"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "4799744cc7668cbd8697be5870cadab058dc7fec6efec2c6a1bd24e6b123973e"
+                  },
+                  {
+                    "pointer": "/goals/0",
+                    "valueHash": "974f091625a397eadb261006f5285e9c63c7ca6b839e6bdbb8c41f4bfff75e27"
+                  }
+                ]
+              },
+              {
+                "severity": "material",
+                "description": "产物称“误差界限与区间比较都不用学”，遗漏目标2、3（使用给定误差界限形成区间、判断区间大小关系）。",
+                "impact": "核心操作目标被明确排除，覆盖失败。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/goals/1",
+                  "/goals/2"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "4799744cc7668cbd8697be5870cadab058dc7fec6efec2c6a1bd24e6b123973e"
+                  },
+                  {
+                    "pointer": "/goals/1",
+                    "valueHash": "b948cbdb264205a71c39bbf43fca64b81f119fd6bce83afbff737e5a078063b3"
+                  },
+                  {
+                    "pointer": "/goals/2",
+                    "valueHash": "a63a83b2364923d8e078ddf815b65a88e03ab9e5b2b372710e75e020c2056d1a"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "4799744cc7668cbd8697be5870cadab058dc7fec6efec2c6a1bd24e6b123973e"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "974f091625a397eadb261006f5285e9c63c7ca6b839e6bdbb8c41f4bfff75e27"
+              },
+              {
+                "pointer": "/goals/1",
+                "valueHash": "b948cbdb264205a71c39bbf43fca64b81f119fd6bce83afbff737e5a078063b3"
+              },
+              {
+                "pointer": "/goals/2",
+                "valueHash": "a63a83b2364923d8e078ddf815b65a88e03ab9e5b2b372710e75e020c2056d1a"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "产物lesson宣称只要求读尺小数且小数越多越准，误差区间不用学，直接矛盾声明目标1-4，核心学习范围被自身否定。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "artifact声称仅读小数位、小数多必准、误差界限与区间比较不用学，与goals中区分分辨率与准确、形成区间、比较区间及次要重复平均目标完全矛盾。",
+                "impact": "声明的学习范围被产物推翻，学习者按产物将获错误认知，核心教学目的失效。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/goals"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "4799744cc7668cbd8697be5870cadab058dc7fec6efec2c6a1bd24e6b123973e"
+                  },
+                  {
+                    "pointer": "/goals",
+                    "valueHash": "8a4e42a310413343ffed86d2ae9a81c2cc492e69e9709e20cd9c1397db6e64bd"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "4799744cc7668cbd8697be5870cadab058dc7fec6efec2c6a1bd24e6b123973e"
+              },
+              {
+                "pointer": "/goals",
+                "valueHash": "8a4e42a310413343ffed86d2ae9a81c2cc492e69e9709e20cd9c1397db6e64bd"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "产物声称小数多必准，矛盾目标0区分分辨率与准确；并排除误差界限与区间比较，使本质目标1、2缺失。声明学习范围被自身推翻，核心目的失效。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/0",
+              "/goals/1",
+              "/goals/2"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "产物断言“小数写得越多必定越准”，将读数分辨率等同准确程度，矛盾goal0区分要求。",
+                "impact": "反转必要区分，传授错误等价，击败声明目的。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/goals/0"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "4799744cc7668cbd8697be5870cadab058dc7fec6efec2c6a1bd24e6b123973e"
+                  },
+                  {
+                    "pointer": "/goals/0",
+                    "valueHash": "974f091625a397eadb261006f5285e9c63c7ca6b839e6bdbb8c41f4bfff75e27"
+                  }
+                ]
+              },
+              {
+                "severity": "material",
+                "description": "产物称“误差界限与区间比较都不用学”，排除goal1、goal2核心操作。",
+                "impact": "本质目标被明确省略，覆盖失败。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/goals/1",
+                  "/goals/2"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "4799744cc7668cbd8697be5870cadab058dc7fec6efec2c6a1bd24e6b123973e"
+                  },
+                  {
+                    "pointer": "/goals/1",
+                    "valueHash": "b948cbdb264205a71c39bbf43fca64b81f119fd6bce83afbff737e5a078063b3"
+                  },
+                  {
+                    "pointer": "/goals/2",
+                    "valueHash": "a63a83b2364923d8e078ddf815b65a88e03ab9e5b2b372710e75e020c2056d1a"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "4799744cc7668cbd8697be5870cadab058dc7fec6efec2c6a1bd24e6b123973e"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "974f091625a397eadb261006f5285e9c63c7ca6b839e6bdbb8c41f4bfff75e27"
+              },
+              {
+                "pointer": "/goals/1",
+                "valueHash": "b948cbdb264205a71c39bbf43fca64b81f119fd6bce83afbff737e5a078063b3"
+              },
+              {
+                "pointer": "/goals/2",
+                "valueHash": "a63a83b2364923d8e078ddf815b65a88e03ab9e5b2b372710e75e020c2056d1a"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q2:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "小数写得越多必定越准",
+              "valueHash": "4799744cc7668cbd8697be5870cadab058dc7fec6efec2c6a1bd24e6b123973e"
+            },
+            "reason": "该句将小数位多等同于更准，与goal0要求区分分辨率与准确程度直接矛盾，推翻核心目的。"
+          },
+          {
+            "id": "review1:Q2:2",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "误差界限与区间比较都不用学",
+              "valueHash": "4799744cc7668cbd8697be5870cadab058dc7fec6efec2c6a1bd24e6b123973e"
+            },
+            "reason": "该句明确排除goal1和goal2所需内容，导致本质目标缺失，覆盖失败。"
+          },
+          {
+            "id": "review2:Q2:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "误差界限与区间比较都不用学",
+              "valueHash": "4799744cc7668cbd8697be5870cadab058dc7fec6efec2c6a1bd24e6b123973e"
+            },
+            "reason": "artifact整体声明否定goals中区分、区间形成与比较等目标，material。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q2",
+          "level": 0,
+          "evidence": "sufficient",
+          "reason": "产物声称小数多必准，矛盾目标0区分分辨率与准确；并排除误差界限与区间比较，使本质目标1、2缺失。声明学习范围被自身推翻，核心目的失效。",
+          "refs": [
+            "/artifacts/0/text",
+            "/goals/0",
+            "/goals/1",
+            "/goals/2"
+          ],
+          "defects": [
+            {
+              "severity": "material",
+              "description": "产物断言“小数写得越多必定越准”，将读数分辨率等同准确程度，矛盾goal0区分要求。",
+              "impact": "反转必要区分，传授错误等价，击败声明目的。",
+              "refs": [
+                "/artifacts/0/text",
+                "/goals/0"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "4799744cc7668cbd8697be5870cadab058dc7fec6efec2c6a1bd24e6b123973e"
+                },
+                {
+                  "pointer": "/goals/0",
+                  "valueHash": "974f091625a397eadb261006f5285e9c63c7ca6b839e6bdbb8c41f4bfff75e27"
+                }
+              ]
+            },
+            {
+              "severity": "material",
+              "description": "产物称“误差界限与区间比较都不用学”，排除goal1、goal2核心操作。",
+              "impact": "本质目标被明确省略，覆盖失败。",
+              "refs": [
+                "/artifacts/0/text",
+                "/goals/1",
+                "/goals/2"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "4799744cc7668cbd8697be5870cadab058dc7fec6efec2c6a1bd24e6b123973e"
+                },
+                {
+                  "pointer": "/goals/1",
+                  "valueHash": "b948cbdb264205a71c39bbf43fca64b81f119fd6bce83afbff737e5a078063b3"
+                },
+                {
+                  "pointer": "/goals/2",
+                  "valueHash": "a63a83b2364923d8e078ddf815b65a88e03ab9e5b2b372710e75e020c2056d1a"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "4799744cc7668cbd8697be5870cadab058dc7fec6efec2c6a1bd24e6b123973e"
+            },
+            {
+              "pointer": "/goals/0",
+              "valueHash": "974f091625a397eadb261006f5285e9c63c7ca6b839e6bdbb8c41f4bfff75e27"
+            },
+            {
+              "pointer": "/goals/1",
+              "valueHash": "b948cbdb264205a71c39bbf43fca64b81f119fd6bce83afbff737e5a078063b3"
+            },
+            {
+              "pointer": "/goals/2",
+              "valueHash": "a63a83b2364923d8e078ddf815b65a88e03ab9e5b2b372710e75e020c2056d1a"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "a60e82dc832c89b3161b15264782e40b384d73e75d91d4dc75c6d490f5e5f58d"
+  }
+}

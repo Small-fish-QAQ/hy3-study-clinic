@@ -1,0 +1,98 @@
+{
+  "inputIdentity": "d8313211223970619c84bd7597ddacd94a15d757f04bd988d93159f26621aa2b",
+  "attempts": [
+    {
+      "physicalId": "3bc27430-bdbe-46b4-84ce-a5074963ea5c",
+      "caseId": "S032",
+      "runId": "S032-r3",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q6",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "交付物指出分数加法有错并建议复习通分，与错误相关但通用；未识别具体误加分子分母的推理缺口，且未提供具体下一步检验，符合Q6的1分标准。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text",
+          "/answer"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "修复建议泛泛，未识别具体推理错误（如分子分母分别相加），且未供给具体下一检查练习，仅推荐多做练习无内容条件。",
+            "impact": "核心诊断与修复方向相关，局部缺失具体新检验，不改变针对错误提供修复的核心用途但不符合完整标准。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "f5d18a6174622da51a7f1212abe36dd87793f3029c1de466aaddf7a16a7dda2b"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "c4d75b2db6f5aa30dcec740ff8a4b7e07282347099740e24a9f3e2fd0f4bef58"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "f5d18a6174622da51a7f1212abe36dd87793f3029c1de466aaddf7a16a7dda2b"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "c4d75b2db6f5aa30dcec740ff8a4b7e07282347099740e24a9f3e2fd0f4bef58"
+          },
+          {
+            "pointer": "/answer",
+            "valueHash": "5fa9a6e988796acce4dd7a033670180448bc29a07a9fa5e48255977034751897"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q6:1",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "这次分数加法有错，应复习通分，计算时细心一些，多做练习。",
+          "valueHash": "f5d18a6174622da51a7f1212abe36dd87793f3029c1de466aaddf7a16a7dda2b"
+        },
+        "reason": "文本未点明分子分母分别相加的具体错误，也未给出具体下一步检验，仅泛泛建议复习通分和多做练习，符合通用建议特征，缺陷局部不影响相关修复意图。"
+      },
+      {
+        "id": "review2:Q6:1",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "这次分数加法有错，应复习通分，计算时细心一些，多做练习。",
+          "valueHash": "f5d18a6174622da51a7f1212abe36dd87793f3029c1de466aaddf7a16a7dda2b"
+        },
+        "reason": "原文确无具体推理缺口识别与可用新检验，仅为相关通用建议，局部缺陷成立，与review1一致。"
+      }
+    ]
+  }
+}

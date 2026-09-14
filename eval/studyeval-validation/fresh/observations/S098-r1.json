@@ -1,0 +1,180 @@
+{
+  "task": {
+    "caseId": "S098",
+    "runId": "S098-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S098.json",
+    "inputHash": "908df6a1efdb79bce2ee12db07e7950d7dfa8a54a23b150110301db856424ca1"
+  },
+  "inputHash": "908df6a1efdb79bce2ee12db07e7950d7dfa8a54a23b150110301db856424ca1",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "9bbf6439a9f2f71e8bf3a23eae097fec288d51828129ad37856f675a9106b36f",
+    "stages": {
+      "goal-mapping": {
+        "goals": [
+          {
+            "index": 0,
+            "importance": "essential",
+            "status": "usable",
+            "reason": "artifact通过整袋90克除以每份30克得3份，再乘每份糖6克得18克，展示了从每份含量到实际食用量（整袋）含量的换算方法，计算正确且符合给定前提。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/0"
+            ],
+            "quote": "整袋90克包含90÷30=3份，因此糖6×3=18克。",
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "f83a50b56f9534c12f527194fee68004b7f5536171b682e50023ee31374792e2"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "d00f6a0777096e29c941990ef83976c45d7a6297cb337b9439ad3b262e15fae5"
+              }
+            ]
+          },
+          {
+            "index": 1,
+            "importance": "essential",
+            "status": "usable",
+            "reason": "artifact计算每100克含糖量并明确指出比较标签前需统一基准，不能将每份6克与每100克20克视为同一食用量，实现了两个报告基准的区分。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/1"
+            ],
+            "quote": "每100克糖6÷30×100=20克，比较标签前要统一基准，不能把6克与20克当成同一食用量。",
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "f83a50b56f9534c12f527194fee68004b7f5536171b682e50023ee31374792e2"
+              },
+              {
+                "pointer": "/goals/1",
+                "valueHash": "cc917d2aec98364dbd0e1578c297faf88ec801582389efb073c4f83537439e6b"
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "importance": "secondary",
+            "status": "usable",
+            "reason": "artifact明确说明日期可辨别批次且不改变换算，满足了说明日期标识批次作用的目标。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/2"
+            ],
+            "quote": "日期可辨别批次，不改变本组换算。",
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "f83a50b56f9534c12f527194fee68004b7f5536171b682e50023ee31374792e2"
+              },
+              {
+                "pointer": "/goals/2",
+                "valueHash": "51cacb911299eb1ad2e2b165a33d978c9e6438802b47aad3ac9a36ffe43e134d"
+              }
+            ]
+          }
+        ]
+      },
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "所有声明目标（含次要）均得到准确可操作处理：换算整袋糖量、区分每份与每100克基准、说明日期辨批次作用，深度满足working_fluency。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "f83a50b56f9534c12f527194fee68004b7f5536171b682e50023ee31374792e2"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "68fdce4b60a730e16f15fa21fa915ae0a6300744628a556284f8e578fc6dc56c"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "lesson文本对整袋换算、每100克基准区分及日期批次作用均给出准确操作说明，覆盖全部核心与次要目标，深度满足working_fluency，无缺陷。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "f83a50b56f9534c12f527194fee68004b7f5536171b682e50023ee31374792e2"
+              },
+              {
+                "pointer": "/goals",
+                "valueHash": "71b13cc1a085f8ddbb92a4bbebdedb746993b27a666f3cfe783b754e5aab3c16"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q2",
+          "level": 2,
+          "evidence": "sufficient",
+          "reason": "所有声明目标（含次要）均得到准确可操作处理：换算整袋糖量、区分每份与每100克基准、说明日期辨批次作用，深度满足working_fluency。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "f83a50b56f9534c12f527194fee68004b7f5536171b682e50023ee31374792e2"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "68fdce4b60a730e16f15fa21fa915ae0a6300744628a556284f8e578fc6dc56c"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "3d4f790b0e0b5ad4b2f148219f48e9fa582ca03da8ae1618b9c6044a089882c6"
+  }
+}

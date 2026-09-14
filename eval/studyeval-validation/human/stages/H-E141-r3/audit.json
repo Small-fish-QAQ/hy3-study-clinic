@@ -1,0 +1,88 @@
+{
+  "inputIdentity": "12946ae112e33448deaa864cc603e534308cf9e5a75ecafc3f8ae72c8070a527",
+  "attempts": [
+    {
+      "physicalId": "ff4337d3-0b26-4c6b-87e8-436ab7b6a9f4",
+      "caseId": "E141",
+      "runId": "H-E141-r3",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "产物断言'三十人次即三十不同居民全部支持'及'已决定永久开门且调查代表全体'，直接违背来源明确限制：人次非独立人数、仅10卡8支持、未宣布永久变更、不可外推。属实质错误，破坏证据与范围核对。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "声称三十个到馆人次说明三十位不同居民全部支持，但来源明确人次非独立居民数且意见卡仅10份中8份支持，不能外推全体。",
+            "impact": "改变核心事实结论与证据范围，使学习者接受错误归因与全称主张，破坏核对主张与来源支持的目标。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "2a4ea755e5bfe2f048e166c46d9034be7eecbf1d6f06c61955a7f56cfaea9c3c"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+              }
+            ]
+          },
+          {
+            "severity": "material",
+            "description": "声称书屋已经决定永久提前开门且意见调查代表所有读者，但来源明确目前没有宣布永久变更且不得将卡结果外推全体。",
+            "impact": "篡改决策状态与证据权威，实质颠覆教学总结的界限要求。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "2a4ea755e5bfe2f048e166c46d9034be7eecbf1d6f06c61955a7f56cfaea9c3c"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "2a4ea755e5bfe2f048e166c46d9034be7eecbf1d6f06c61955a7f56cfaea9c3c"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

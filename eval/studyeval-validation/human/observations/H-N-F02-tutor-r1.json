@@ -1,0 +1,196 @@
+{
+  "task": {
+    "caseId": "N-F02-tutor",
+    "runId": "H-N-F02-tutor-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-F02-tutor.json",
+    "inputHash": "03d50ecde50ddf9d85d9caf6ceb17427a247f4de31d09bd49f793bc33dc9fb65",
+    "population": "natural",
+    "sourceId": "F02"
+  },
+  "inputHash": "03d50ecde50ddf9d85d9caf6ceb17427a247f4de31d09bd49f793bc33dc9fb65",
+  "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "e76b469c5f84b0bf184d5564593b6170532b4059c9175b4ea662a235a814df18",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "引用资料准确，非价格例子计算正确（500*0.8=400, 400*0.2=80, 480），边界描述与资料一致，无事实或归属缺陷。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "954d89e64d4ec170f31ac4dfe06ad06321e1631999a560553b02e626afa69d41"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "eed51cb255d5d0e12ca505b4c60926d142df7cf81a0f73781aba0593d2870361"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          },
+          {
+            "dimension": "Q3",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "例子展示关键操作：第二步以新基数400计算20%得80，连接不抵消结论，并说明适用边界，解释充分无缺失连接。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "954d89e64d4ec170f31ac4dfe06ad06321e1631999a560553b02e626afa69d41"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "eed51cb255d5d0e12ca505b4c60926d142df7cf81a0f73781aba0593d2870361"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "tutor-reply准确引用资料连续变化基数不同，果园例计算500*0.8=400、400*1.2=480正确，边界声明假设产量按比例且无取整门槛并指向资料，无事实或归属缺陷，核心证据与范围受支持。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "954d89e64d4ec170f31ac4dfe06ad06321e1631999a560553b02e626afa69d41"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "eed51cb255d5d0e12ca505b4c60926d142df7cf81a0f73781aba0593d2870361"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          },
+          {
+            "dimension": "Q3",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "果园例从500箱减产20%剩400箱，明确第二步增20%作用于400箱得80箱终480，展示基数变动致不抵消的关键连接，并交代例子假设及现实限制指向资料，解释充分达停止条件。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "954d89e64d4ec170f31ac4dfe06ad06321e1631999a560553b02e626afa69d41"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "eed51cb255d5d0e12ca505b4c60926d142df7cf81a0f73781aba0593d2870361"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q1",
+          "level": 2,
+          "evidence": "sufficient",
+          "reason": "引用资料准确，非价格例子计算正确（500*0.8=400, 400*0.2=80, 480），边界描述与资料一致，无事实或归属缺陷。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "954d89e64d4ec170f31ac4dfe06ad06321e1631999a560553b02e626afa69d41"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "eed51cb255d5d0e12ca505b4c60926d142df7cf81a0f73781aba0593d2870361"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        },
+        {
+          "dimension": "Q3",
+          "level": 2,
+          "evidence": "sufficient",
+          "reason": "例子展示关键操作：第二步以新基数400计算20%得80，连接不抵消结论，并说明适用边界，解释充分无缺失连接。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "954d89e64d4ec170f31ac4dfe06ad06321e1631999a560553b02e626afa69d41"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "eed51cb255d5d0e12ca505b4c60926d142df7cf81a0f73781aba0593d2870361"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "ef97b26c177b6a2617c0535c139ffae890bca301420ecc5d7e3e2efc3d84d24c"
+  }
+}

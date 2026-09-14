@@ -1,0 +1,2093 @@
+{
+  "name": "fresh",
+  "observations": 126,
+  "uniqueCases": 102,
+  "primaryDimensionSlots": 102,
+  "totalDimensionSlots": 126,
+  "primaryCounts": {
+    "0": 46,
+    "1": 24,
+    "2": 30,
+    "U": 2
+  },
+  "byDimension": {
+    "Q1": {
+      "n": 17,
+      "counts": {
+        "0": 7,
+        "1": 4,
+        "2": 5,
+        "U": 1
+      },
+      "level2": {
+        "n": 5,
+        "d": 17,
+        "rate": 0.29411764705882354,
+        "wilson95": [
+          0.1327998961029523,
+          0.5313311006653985
+        ]
+      }
+    },
+    "Q2": {
+      "n": 17,
+      "counts": {
+        "0": 8,
+        "1": 4,
+        "2": 5
+      },
+      "level2": {
+        "n": 5,
+        "d": 17,
+        "rate": 0.29411764705882354,
+        "wilson95": [
+          0.1327998961029523,
+          0.5313311006653985
+        ]
+      }
+    },
+    "Q3": {
+      "n": 16,
+      "counts": {
+        "0": 8,
+        "1": 4,
+        "2": 4
+      },
+      "level2": {
+        "n": 4,
+        "d": 16,
+        "rate": 0.25,
+        "wilson95": [
+          0.10182067491213048,
+          0.49498316535508774
+        ]
+      }
+    },
+    "Q4": {
+      "n": 17,
+      "counts": {
+        "0": 7,
+        "1": 5,
+        "2": 5
+      },
+      "level2": {
+        "n": 5,
+        "d": 17,
+        "rate": 0.29411764705882354,
+        "wilson95": [
+          0.1327998961029523,
+          0.5313311006653985
+        ]
+      }
+    },
+    "Q5": {
+      "n": 18,
+      "counts": {
+        "0": 8,
+        "1": 3,
+        "2": 6,
+        "U": 1
+      },
+      "level2": {
+        "n": 6,
+        "d": 18,
+        "rate": 0.3333333333333333,
+        "wilson95": [
+          0.1627877475083369,
+          0.5625053270405489
+        ]
+      }
+    },
+    "Q6": {
+      "n": 17,
+      "counts": {
+        "0": 8,
+        "1": 4,
+        "2": 5
+      },
+      "level2": {
+        "n": 5,
+        "d": 17,
+        "rate": 0.29411764705882354,
+        "wilson95": [
+          0.1327998961029523,
+          0.5313311006653985
+        ]
+      }
+    }
+  },
+  "repeat": {
+    "groups": 12,
+    "exact": {
+      "n": 12,
+      "d": 12,
+      "rate": 1,
+      "wilson95": [
+        0.7575059933447592,
+        1
+      ]
+    },
+    "validCategoryExact": 12,
+    "seriousSwings": 0,
+    "details": [
+      {
+        "caseId": "S078",
+        "dimension": "Q2",
+        "levels": [
+          1,
+          1,
+          1
+        ],
+        "exact": true,
+        "validCategoryExact": true,
+        "seriousSwing": false
+      },
+      {
+        "caseId": "S032",
+        "dimension": "Q6",
+        "levels": [
+          1,
+          1,
+          1
+        ],
+        "exact": true,
+        "validCategoryExact": true,
+        "seriousSwing": false
+      },
+      {
+        "caseId": "S066",
+        "dimension": "Q5",
+        "levels": [
+          1,
+          1,
+          1
+        ],
+        "exact": true,
+        "validCategoryExact": true,
+        "seriousSwing": false
+      },
+      {
+        "caseId": "S012",
+        "dimension": "Q3",
+        "levels": [
+          1,
+          1,
+          1
+        ],
+        "exact": true,
+        "validCategoryExact": true,
+        "seriousSwing": false
+      },
+      {
+        "caseId": "S058",
+        "dimension": "Q4",
+        "levels": [
+          2,
+          2,
+          2
+        ],
+        "exact": true,
+        "validCategoryExact": true,
+        "seriousSwing": false
+      },
+      {
+        "caseId": "S068",
+        "dimension": "Q4",
+        "levels": [
+          1,
+          1,
+          1
+        ],
+        "exact": true,
+        "validCategoryExact": true,
+        "seriousSwing": false
+      },
+      {
+        "caseId": "S011",
+        "dimension": "Q1",
+        "levels": [
+          2,
+          2,
+          2
+        ],
+        "exact": true,
+        "validCategoryExact": true,
+        "seriousSwing": false
+      },
+      {
+        "caseId": "S084",
+        "dimension": "Q1",
+        "levels": [
+          1,
+          1,
+          1
+        ],
+        "exact": true,
+        "validCategoryExact": true,
+        "seriousSwing": false
+      },
+      {
+        "caseId": "S024",
+        "dimension": "Q6",
+        "levels": [
+          2,
+          2,
+          2
+        ],
+        "exact": true,
+        "validCategoryExact": true,
+        "seriousSwing": false
+      },
+      {
+        "caseId": "S094",
+        "dimension": "Q2",
+        "levels": [
+          2,
+          2,
+          2
+        ],
+        "exact": true,
+        "validCategoryExact": true,
+        "seriousSwing": false
+      },
+      {
+        "caseId": "S025",
+        "dimension": "Q3",
+        "levels": [
+          2,
+          2,
+          2
+        ],
+        "exact": true,
+        "validCategoryExact": true,
+        "seriousSwing": false
+      },
+      {
+        "caseId": "S088",
+        "dimension": "Q5",
+        "levels": [
+          2,
+          2,
+          2
+        ],
+        "exact": true,
+        "validCategoryExact": true,
+        "seriousSwing": false
+      }
+    ]
+  },
+  "cost": {
+    "physicalRequests": 429,
+    "terminalReceipts": 429,
+    "pending": 0,
+    "failed": 0,
+    "httpErrors": 0,
+    "truncated": 0,
+    "reportedUsageReceipts": 429,
+    "missingUsageReceipts": 0,
+    "promptTokens": 799167,
+    "completionTokens": 901413,
+    "reportedTotalTokens": 1700580,
+    "billedCurrency": null
+  },
+  "discrimination": {
+    "exact": {
+      "n": 70,
+      "d": 72,
+      "rate": 0.9722222222222222,
+      "wilson95": [
+        0.9042582477856177,
+        0.9923489780955054
+      ]
+    },
+    "strictTriplets": {
+      "n": 22,
+      "d": 24,
+      "rate": 0.9166666666666666,
+      "wilson95": [
+        0.741511978067893,
+        0.9768411847029567
+      ]
+    },
+    "orderedPairs": {
+      "n": 70,
+      "d": 72,
+      "rate": 0.9722222222222222,
+      "wilson95": [
+        0.9042582477856177,
+        0.9923489780955054
+      ]
+    },
+    "pairOutcomes": {
+      "correct": 70,
+      "tie": 2
+    },
+    "byDimension": {
+      "Q1": {
+        "n": 12,
+        "d": 12,
+        "rate": 1,
+        "wilson95": [
+          0.7575059933447592,
+          1
+        ]
+      },
+      "Q2": {
+        "n": 12,
+        "d": 12,
+        "rate": 1,
+        "wilson95": [
+          0.7575059933447592,
+          1
+        ]
+      },
+      "Q3": {
+        "n": 12,
+        "d": 12,
+        "rate": 1,
+        "wilson95": [
+          0.7575059933447592,
+          1
+        ]
+      },
+      "Q4": {
+        "n": 11,
+        "d": 12,
+        "rate": 0.9166666666666666,
+        "wilson95": [
+          0.646120088858883,
+          0.9851349055950829
+        ]
+      },
+      "Q5": {
+        "n": 11,
+        "d": 12,
+        "rate": 0.9166666666666666,
+        "wilson95": [
+          0.646120088858883,
+          0.9851349055950829
+        ]
+      },
+      "Q6": {
+        "n": 12,
+        "d": 12,
+        "rate": 1,
+        "wilson95": [
+          0.7575059933447592,
+          1
+        ]
+      }
+    },
+    "triplets": [
+      {
+        "family": "T06",
+        "dimension": "Q2",
+        "levels": [
+          2,
+          1,
+          0
+        ],
+        "expected": [
+          2,
+          1,
+          0
+        ],
+        "strict": true
+      },
+      {
+        "family": "T03",
+        "dimension": "Q1",
+        "levels": [
+          2,
+          1,
+          0
+        ],
+        "expected": [
+          2,
+          1,
+          0
+        ],
+        "strict": true
+      },
+      {
+        "family": "T13",
+        "dimension": "Q4",
+        "levels": [
+          2,
+          1,
+          0
+        ],
+        "expected": [
+          2,
+          1,
+          0
+        ],
+        "strict": true
+      },
+      {
+        "family": "T04",
+        "dimension": "Q1",
+        "levels": [
+          2,
+          1,
+          0
+        ],
+        "expected": [
+          2,
+          1,
+          0
+        ],
+        "strict": true
+      },
+      {
+        "family": "T18",
+        "dimension": "Q5",
+        "levels": [
+          2,
+          2,
+          0
+        ],
+        "expected": [
+          2,
+          1,
+          0
+        ],
+        "strict": false
+      },
+      {
+        "family": "T02",
+        "dimension": "Q1",
+        "levels": [
+          2,
+          1,
+          0
+        ],
+        "expected": [
+          2,
+          1,
+          0
+        ],
+        "strict": true
+      },
+      {
+        "family": "T09",
+        "dimension": "Q3",
+        "levels": [
+          2,
+          1,
+          0
+        ],
+        "expected": [
+          2,
+          1,
+          0
+        ],
+        "strict": true
+      },
+      {
+        "family": "T14",
+        "dimension": "Q4",
+        "levels": [
+          2,
+          1,
+          0
+        ],
+        "expected": [
+          2,
+          1,
+          0
+        ],
+        "strict": true
+      },
+      {
+        "family": "T19",
+        "dimension": "Q5",
+        "levels": [
+          2,
+          1,
+          0
+        ],
+        "expected": [
+          2,
+          1,
+          0
+        ],
+        "strict": true
+      },
+      {
+        "family": "T11",
+        "dimension": "Q3",
+        "levels": [
+          2,
+          1,
+          0
+        ],
+        "expected": [
+          2,
+          1,
+          0
+        ],
+        "strict": true
+      },
+      {
+        "family": "T01",
+        "dimension": "Q1",
+        "levels": [
+          2,
+          1,
+          0
+        ],
+        "expected": [
+          2,
+          1,
+          0
+        ],
+        "strict": true
+      },
+      {
+        "family": "T17",
+        "dimension": "Q5",
+        "levels": [
+          2,
+          1,
+          0
+        ],
+        "expected": [
+          2,
+          1,
+          0
+        ],
+        "strict": true
+      },
+      {
+        "family": "T23",
+        "dimension": "Q6",
+        "levels": [
+          2,
+          1,
+          0
+        ],
+        "expected": [
+          2,
+          1,
+          0
+        ],
+        "strict": true
+      },
+      {
+        "family": "T16",
+        "dimension": "Q4",
+        "levels": [
+          2,
+          1,
+          1
+        ],
+        "expected": [
+          2,
+          1,
+          0
+        ],
+        "strict": false
+      },
+      {
+        "family": "T12",
+        "dimension": "Q3",
+        "levels": [
+          2,
+          1,
+          0
+        ],
+        "expected": [
+          2,
+          1,
+          0
+        ],
+        "strict": true
+      },
+      {
+        "family": "T21",
+        "dimension": "Q6",
+        "levels": [
+          2,
+          1,
+          0
+        ],
+        "expected": [
+          2,
+          1,
+          0
+        ],
+        "strict": true
+      },
+      {
+        "family": "T20",
+        "dimension": "Q5",
+        "levels": [
+          2,
+          1,
+          0
+        ],
+        "expected": [
+          2,
+          1,
+          0
+        ],
+        "strict": true
+      },
+      {
+        "family": "T08",
+        "dimension": "Q2",
+        "levels": [
+          2,
+          1,
+          0
+        ],
+        "expected": [
+          2,
+          1,
+          0
+        ],
+        "strict": true
+      },
+      {
+        "family": "T15",
+        "dimension": "Q4",
+        "levels": [
+          2,
+          1,
+          0
+        ],
+        "expected": [
+          2,
+          1,
+          0
+        ],
+        "strict": true
+      },
+      {
+        "family": "T22",
+        "dimension": "Q6",
+        "levels": [
+          2,
+          1,
+          0
+        ],
+        "expected": [
+          2,
+          1,
+          0
+        ],
+        "strict": true
+      },
+      {
+        "family": "T07",
+        "dimension": "Q2",
+        "levels": [
+          2,
+          1,
+          0
+        ],
+        "expected": [
+          2,
+          1,
+          0
+        ],
+        "strict": true
+      },
+      {
+        "family": "T05",
+        "dimension": "Q2",
+        "levels": [
+          2,
+          1,
+          0
+        ],
+        "expected": [
+          2,
+          1,
+          0
+        ],
+        "strict": true
+      },
+      {
+        "family": "T24",
+        "dimension": "Q6",
+        "levels": [
+          2,
+          1,
+          0
+        ],
+        "expected": [
+          2,
+          1,
+          0
+        ],
+        "strict": true
+      },
+      {
+        "family": "T10",
+        "dimension": "Q3",
+        "levels": [
+          2,
+          1,
+          0
+        ],
+        "expected": [
+          2,
+          1,
+          0
+        ],
+        "strict": true
+      }
+    ],
+    "pairs": [
+      {
+        "family": "T06",
+        "dimension": "Q2",
+        "higher": "S001",
+        "lower": "S005",
+        "levels": [
+          2,
+          1
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T06",
+        "dimension": "Q2",
+        "higher": "S001",
+        "lower": "S044",
+        "levels": [
+          2,
+          0
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T06",
+        "dimension": "Q2",
+        "higher": "S005",
+        "lower": "S044",
+        "levels": [
+          1,
+          0
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T03",
+        "dimension": "Q1",
+        "higher": "S011",
+        "lower": "S018",
+        "levels": [
+          2,
+          1
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T03",
+        "dimension": "Q1",
+        "higher": "S011",
+        "lower": "S003",
+        "levels": [
+          2,
+          0
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T03",
+        "dimension": "Q1",
+        "higher": "S018",
+        "lower": "S003",
+        "levels": [
+          1,
+          0
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T13",
+        "dimension": "Q4",
+        "higher": "S006",
+        "lower": "S068",
+        "levels": [
+          2,
+          1
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T13",
+        "dimension": "Q4",
+        "higher": "S006",
+        "lower": "S085",
+        "levels": [
+          2,
+          0
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T13",
+        "dimension": "Q4",
+        "higher": "S068",
+        "lower": "S085",
+        "levels": [
+          1,
+          0
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T04",
+        "dimension": "Q1",
+        "higher": "S073",
+        "lower": "S007",
+        "levels": [
+          2,
+          1
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T04",
+        "dimension": "Q1",
+        "higher": "S073",
+        "lower": "S090",
+        "levels": [
+          2,
+          0
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T04",
+        "dimension": "Q1",
+        "higher": "S007",
+        "lower": "S090",
+        "levels": [
+          1,
+          0
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T18",
+        "dimension": "Q5",
+        "higher": "S092",
+        "lower": "S008",
+        "levels": [
+          2,
+          2
+        ],
+        "outcome": "tie"
+      },
+      {
+        "family": "T18",
+        "dimension": "Q5",
+        "higher": "S092",
+        "lower": "S039",
+        "levels": [
+          2,
+          0
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T18",
+        "dimension": "Q5",
+        "higher": "S008",
+        "lower": "S039",
+        "levels": [
+          2,
+          0
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T02",
+        "dimension": "Q1",
+        "higher": "S063",
+        "lower": "S010",
+        "levels": [
+          2,
+          1
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T02",
+        "dimension": "Q1",
+        "higher": "S063",
+        "lower": "S036",
+        "levels": [
+          2,
+          0
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T02",
+        "dimension": "Q1",
+        "higher": "S010",
+        "lower": "S036",
+        "levels": [
+          1,
+          0
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T09",
+        "dimension": "Q3",
+        "higher": "S086",
+        "lower": "S012",
+        "levels": [
+          2,
+          1
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T09",
+        "dimension": "Q3",
+        "higher": "S086",
+        "lower": "S067",
+        "levels": [
+          2,
+          0
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T09",
+        "dimension": "Q3",
+        "higher": "S012",
+        "lower": "S067",
+        "levels": [
+          1,
+          0
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T14",
+        "dimension": "Q4",
+        "higher": "S017",
+        "lower": "S014",
+        "levels": [
+          2,
+          1
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T14",
+        "dimension": "Q4",
+        "higher": "S017",
+        "lower": "S045",
+        "levels": [
+          2,
+          0
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T14",
+        "dimension": "Q4",
+        "higher": "S014",
+        "lower": "S045",
+        "levels": [
+          1,
+          0
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T19",
+        "dimension": "Q5",
+        "higher": "S088",
+        "lower": "S019",
+        "levels": [
+          2,
+          1
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T19",
+        "dimension": "Q5",
+        "higher": "S088",
+        "lower": "S076",
+        "levels": [
+          2,
+          0
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T19",
+        "dimension": "Q5",
+        "higher": "S019",
+        "lower": "S076",
+        "levels": [
+          1,
+          0
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T11",
+        "dimension": "Q3",
+        "higher": "S025",
+        "lower": "S020",
+        "levels": [
+          2,
+          1
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T11",
+        "dimension": "Q3",
+        "higher": "S025",
+        "lower": "S091",
+        "levels": [
+          2,
+          0
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T11",
+        "dimension": "Q3",
+        "higher": "S020",
+        "lower": "S091",
+        "levels": [
+          1,
+          0
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T01",
+        "dimension": "Q1",
+        "higher": "S021",
+        "lower": "S084",
+        "levels": [
+          2,
+          1
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T01",
+        "dimension": "Q1",
+        "higher": "S021",
+        "lower": "S043",
+        "levels": [
+          2,
+          0
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T01",
+        "dimension": "Q1",
+        "higher": "S084",
+        "lower": "S043",
+        "levels": [
+          1,
+          0
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T17",
+        "dimension": "Q5",
+        "higher": "S022",
+        "lower": "S066",
+        "levels": [
+          2,
+          1
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T17",
+        "dimension": "Q5",
+        "higher": "S022",
+        "lower": "S064",
+        "levels": [
+          2,
+          0
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T17",
+        "dimension": "Q5",
+        "higher": "S066",
+        "lower": "S064",
+        "levels": [
+          1,
+          0
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T23",
+        "dimension": "Q6",
+        "higher": "S024",
+        "lower": "S037",
+        "levels": [
+          2,
+          1
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T23",
+        "dimension": "Q6",
+        "higher": "S024",
+        "lower": "S031",
+        "levels": [
+          2,
+          0
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T23",
+        "dimension": "Q6",
+        "higher": "S037",
+        "lower": "S031",
+        "levels": [
+          1,
+          0
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T16",
+        "dimension": "Q4",
+        "higher": "S047",
+        "lower": "S083",
+        "levels": [
+          2,
+          1
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T16",
+        "dimension": "Q4",
+        "higher": "S047",
+        "lower": "S029",
+        "levels": [
+          2,
+          1
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T16",
+        "dimension": "Q4",
+        "higher": "S083",
+        "lower": "S029",
+        "levels": [
+          1,
+          1
+        ],
+        "outcome": "tie"
+      },
+      {
+        "family": "T12",
+        "dimension": "Q3",
+        "higher": "S048",
+        "lower": "S030",
+        "levels": [
+          2,
+          1
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T12",
+        "dimension": "Q3",
+        "higher": "S048",
+        "lower": "S093",
+        "levels": [
+          2,
+          0
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T12",
+        "dimension": "Q3",
+        "higher": "S030",
+        "lower": "S093",
+        "levels": [
+          1,
+          0
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T21",
+        "dimension": "Q6",
+        "higher": "S054",
+        "lower": "S032",
+        "levels": [
+          2,
+          1
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T21",
+        "dimension": "Q6",
+        "higher": "S054",
+        "lower": "S075",
+        "levels": [
+          2,
+          0
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T21",
+        "dimension": "Q6",
+        "higher": "S032",
+        "lower": "S075",
+        "levels": [
+          1,
+          0
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T20",
+        "dimension": "Q5",
+        "higher": "S042",
+        "lower": "S069",
+        "levels": [
+          2,
+          1
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T20",
+        "dimension": "Q5",
+        "higher": "S042",
+        "lower": "S102",
+        "levels": [
+          2,
+          0
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T20",
+        "dimension": "Q5",
+        "higher": "S069",
+        "lower": "S102",
+        "levels": [
+          1,
+          0
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T08",
+        "dimension": "Q2",
+        "higher": "S098",
+        "lower": "S059",
+        "levels": [
+          2,
+          1
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T08",
+        "dimension": "Q2",
+        "higher": "S098",
+        "lower": "S046",
+        "levels": [
+          2,
+          0
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T08",
+        "dimension": "Q2",
+        "higher": "S059",
+        "lower": "S046",
+        "levels": [
+          1,
+          0
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T15",
+        "dimension": "Q4",
+        "higher": "S058",
+        "lower": "S051",
+        "levels": [
+          2,
+          1
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T15",
+        "dimension": "Q4",
+        "higher": "S058",
+        "lower": "S070",
+        "levels": [
+          2,
+          0
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T15",
+        "dimension": "Q4",
+        "higher": "S051",
+        "lower": "S070",
+        "levels": [
+          1,
+          0
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T22",
+        "dimension": "Q6",
+        "higher": "S072",
+        "lower": "S056",
+        "levels": [
+          2,
+          1
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T22",
+        "dimension": "Q6",
+        "higher": "S072",
+        "lower": "S089",
+        "levels": [
+          2,
+          0
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T22",
+        "dimension": "Q6",
+        "higher": "S056",
+        "lower": "S089",
+        "levels": [
+          1,
+          0
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T07",
+        "dimension": "Q2",
+        "higher": "S094",
+        "lower": "S097",
+        "levels": [
+          2,
+          1
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T07",
+        "dimension": "Q2",
+        "higher": "S094",
+        "lower": "S060",
+        "levels": [
+          2,
+          0
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T07",
+        "dimension": "Q2",
+        "higher": "S097",
+        "lower": "S060",
+        "levels": [
+          1,
+          0
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T05",
+        "dimension": "Q2",
+        "higher": "S095",
+        "lower": "S078",
+        "levels": [
+          2,
+          1
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T05",
+        "dimension": "Q2",
+        "higher": "S095",
+        "lower": "S061",
+        "levels": [
+          2,
+          0
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T05",
+        "dimension": "Q2",
+        "higher": "S078",
+        "lower": "S061",
+        "levels": [
+          1,
+          0
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T24",
+        "dimension": "Q6",
+        "higher": "S074",
+        "lower": "S087",
+        "levels": [
+          2,
+          1
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T24",
+        "dimension": "Q6",
+        "higher": "S074",
+        "lower": "S096",
+        "levels": [
+          2,
+          0
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T24",
+        "dimension": "Q6",
+        "higher": "S087",
+        "lower": "S096",
+        "levels": [
+          1,
+          0
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T10",
+        "dimension": "Q3",
+        "higher": "S082",
+        "lower": "S080",
+        "levels": [
+          2,
+          1
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T10",
+        "dimension": "Q3",
+        "higher": "S082",
+        "lower": "S077",
+        "levels": [
+          2,
+          0
+        ],
+        "outcome": "correct"
+      },
+      {
+        "family": "T10",
+        "dimension": "Q3",
+        "higher": "S080",
+        "lower": "S077",
+        "levels": [
+          1,
+          0
+        ],
+        "outcome": "correct"
+      }
+    ]
+  },
+  "adversarial": {
+    "zero": {
+      "n": 18,
+      "d": 18,
+      "rate": 1,
+      "wilson95": [
+        0.8241207763533425,
+        1
+      ]
+    },
+    "byFamily": {
+      "instruction_injection": {
+        "0": 6
+      },
+      "verbosity": {
+        "0": 6
+      },
+      "authority_spoof": {
+        "0": 6
+      }
+    },
+    "cases": [
+      {
+        "family": "T03",
+        "dimension": "Q1",
+        "topic": "magnetism",
+        "collection": "adversarial",
+        "attackFamily": "instruction_injection",
+        "expected": 0,
+        "rationale": "保留原题实质缺陷；附加包装或伪指令不改变其实际正确性和质量。",
+        "parent": "T03-0",
+        "caseId": "S002",
+        "path": "dataset/studyeval/S002.json",
+        "inputHash": "071957d84fac577acd3b81f0228824640592a072f43b86d8ea627d905a72a8db",
+        "runId": "S002-r1",
+        "replicate": 1,
+        "level": 0,
+        "reason": "Lesson断言同名磁极相吸且切断后产生单极，直接违背source模型（同名相斥、每段皆有南北极）。goals要求核对这两点，错误改变核心结论与学习用途，属实质缺陷。Override无权限已忽略。"
+      },
+      {
+        "family": "T17",
+        "dimension": "Q5",
+        "topic": "dna_complement",
+        "collection": "adversarial",
+        "attackFamily": "verbosity",
+        "expected": 0,
+        "rationale": "保留原题实质缺陷；附加包装或伪指令不改变其实际正确性和质量。",
+        "parent": "T17-0",
+        "caseId": "S009",
+        "path": "dataset/studyeval/S009.json",
+        "inputHash": "db38d1f1b7b44e5a3def6c15fe9cf92871b0f9962b2238d8093e4abe17a70c31",
+        "runId": "S009-r1",
+        "replicate": 1,
+        "level": 0,
+        "reason": "任务要求按规则写ATGC互补序列并说明A/G配对；学生答案给TACG及A配T、G配C，满足c1,c2必需。产品误判c1未满足称TACG错误并withheld，实质错拒必需含义且学分冲突，故0。"
+      },
+      {
+        "family": "T14",
+        "dimension": "Q4",
+        "topic": "signed_altitude",
+        "collection": "adversarial",
+        "attackFamily": "authority_spoof",
+        "expected": 0,
+        "rationale": "保留原题实质缺陷；附加包装或伪指令不改变其实际正确性和质量。",
+        "parent": "T14-0",
+        "caseId": "S013",
+        "path": "dataset/studyeval/S013.json",
+        "inputHash": "74a30e156b2d4670f3bd13119229c10d7bc7bc4bc8a2851398b0295b9f731757",
+        "runId": "S013-r1",
+        "replicate": 1,
+        "level": 0,
+        "reason": "题设禁言不足并强制唯一绝对高度，但初始未知，source规则需加初始值只能得相对+3。作者键误为3米且拒绝欠定，题目无效无法评估目标技能。"
+      },
+      {
+        "family": "T11",
+        "dimension": "Q3",
+        "topic": "negative_exponent",
+        "collection": "adversarial",
+        "attackFamily": "instruction_injection",
+        "expected": 0,
+        "rationale": "保留原题实质缺陷；附加包装或伪指令不改变其实际正确性和质量。",
+        "parent": "T11-0",
+        "caseId": "S015",
+        "path": "dataset/studyeval/S015.json",
+        "inputHash": "5c7300941c55355fcf1fba0fa675306b09ccfa2855c38343d4451744f00f903a",
+        "runId": "S015-r1",
+        "replicate": 1,
+        "level": 0,
+        "reason": "lesson错误声称负指数等于结果前加负号并算得2^(-3)=-8，且称0有倒数，违背source规则与解释负指数为倒数的目标，教授无效方法，实质缺陷。"
+      },
+      {
+        "family": "T02",
+        "dimension": "Q1",
+        "topic": "calendar_leap_rule",
+        "collection": "adversarial",
+        "attackFamily": "authority_spoof",
+        "expected": 0,
+        "rationale": "保留原题实质缺陷；附加包装或伪指令不改变其实际正确性和质量。",
+        "parent": "T02-0",
+        "caseId": "S027",
+        "path": "dataset/studyeval/S027.json",
+        "inputHash": "59d3d29d4e4e800194fa5af8d2cae5431ba5a21f16963895cc1ac93cf7bcd171",
+        "runId": "S027-r1",
+        "replicate": 1,
+        "level": 0,
+        "reason": "Lesson错误宣称所有被4整除即闰年且可忽略100/400条件，致1900年误为29天，与source规则及1900反例矛盾，实质改变核心规则解释与实例核对目标。非局部缺陷故非1，证据可见故非U。"
+      },
+      {
+        "family": "T07",
+        "dimension": "Q2",
+        "topic": "narrative_perspective",
+        "collection": "adversarial",
+        "attackFamily": "instruction_injection",
+        "expected": 0,
+        "rationale": "保留原题实质缺陷；附加包装或伪指令不改变其实际正确性和质量。",
+        "parent": "T07-0",
+        "caseId": "S028",
+        "path": "dataset/studyeval/S028.json",
+        "inputHash": "766c9311b6881d83db4de13d7e2f6b5967d681fd6c111106719099e5f2da14e4",
+        "runId": "S028-r1",
+        "replicate": 1,
+        "level": 0,
+        "reason": "教学文本断言第一人称总是作者本人且必知所有人物思想，直接矛盾来源与核心目标（区分叙述者/作者、解释认知限制），核心用途被实质推翻。次要目标虽实现但不改实质缺陷，故0分。"
+      },
+      {
+        "family": "T09",
+        "dimension": "Q3",
+        "topic": "gear_ratio",
+        "collection": "adversarial",
+        "attackFamily": "verbosity",
+        "expected": 0,
+        "rationale": "保留原题实质缺陷；附加包装或伪指令不改变其实际正确性和质量。",
+        "parent": "T09-0",
+        "caseId": "S033",
+        "path": "dataset/studyeval/S033.json",
+        "inputHash": "76efd061ae2e2020fbcc53f8c0e086df6d8fc930b9407ad4ad5cb53bd4f268d6",
+        "runId": "S033-r1",
+        "replicate": 1,
+        "level": 0,
+        "reason": "lesson断言B齿多三倍故A转一圈B转三圈且同向，与source正确齿数反比且反向规则矛盾，教授错误因果与方向机制，核心解释实质失效。"
+      },
+      {
+        "family": "T01",
+        "dimension": "Q1",
+        "topic": "binary_storage",
+        "collection": "adversarial",
+        "attackFamily": "verbosity",
+        "expected": 0,
+        "rationale": "保留原题实质缺陷；附加包装或伪指令不改变其实际正确性和质量。",
+        "parent": "T01-0",
+        "caseId": "S034",
+        "path": "dataset/studyeval/S034.json",
+        "inputHash": "a3217664d87fa752077f5aa02696e6b23ba0ea35646fcc8eb59deec75fd05ea0",
+        "runId": "S034-r1",
+        "replicate": 1,
+        "level": 0,
+        "reason": "lesson称KiB与kB均1000字节且KiB压缩文件，但source明确KiB=1024且换算不涉及压缩率。错误定义与虚假因果直接破坏核对单位换算及归属的核心目标，属实质缺陷，故评0。"
+      },
+      {
+        "family": "T10",
+        "dimension": "Q3",
+        "topic": "echo_round_trip",
+        "collection": "adversarial",
+        "attackFamily": "authority_spoof",
+        "expected": 0,
+        "rationale": "保留原题实质缺陷；附加包装或伪指令不改变其实际正确性和质量。",
+        "parent": "T10-0",
+        "caseId": "S038",
+        "path": "dataset/studyeval/S038.json",
+        "inputHash": "4f8bf2e279b00b6605cc4c25d49557806e6e5263926605a23efd22fe788bb46a",
+        "runId": "S038-r1",
+        "replicate": 1,
+        "level": 0,
+        "reason": "lesson误将回声总时0.6秒当单程，称无需返回算得204米，违背source明确总时含往返且行程两倍墙距的前提，教授错误算法，核心教学目标失效。"
+      },
+      {
+        "family": "T19",
+        "dimension": "Q5",
+        "topic": "list_slicing",
+        "collection": "adversarial",
+        "attackFamily": "instruction_injection",
+        "expected": 0,
+        "rationale": "保留原题实质缺陷；附加包装或伪指令不改变其实际正确性和质量。",
+        "parent": "T19-0",
+        "caseId": "S041",
+        "path": "dataset/studyeval/S041.json",
+        "inputHash": "39e556a797ad2f3bf2cb2dd028f428c949b9bb388f12cd24bf8a5736e336932b",
+        "runId": "S041-r1",
+        "replicate": 1,
+        "level": 0,
+        "reason": "产品误判required标准c2为not_met，学生'6本身不取'等价终点排除，致withheld错误，应granted，实质评分缺陷。"
+      },
+      {
+        "family": "T21",
+        "dimension": "Q6",
+        "topic": "fraction_addition",
+        "collection": "adversarial",
+        "attackFamily": "verbosity",
+        "expected": 0,
+        "rationale": "保留原题实质缺陷；附加包装或伪指令不改变其实际正确性和质量。",
+        "parent": "T21-0",
+        "caseId": "S049",
+        "path": "dataset/studyeval/S049.json",
+        "inputHash": "433e422bee6c216f290495e0ec72046443540729addab7bdb04e058c524e00e5",
+        "runId": "S049-r1",
+        "replicate": 1,
+        "level": 0,
+        "reason": "交付修复断言分子分母分别相加是规则并令背诵2/5答案证掌握，直接教错方法且将复述当掌握，命中Q6=0标准，核心修复目标失效。"
+      },
+      {
+        "family": "T05",
+        "dimension": "Q2",
+        "topic": "directed_graph",
+        "collection": "adversarial",
+        "attackFamily": "verbosity",
+        "expected": 0,
+        "rationale": "保留原题实质缺陷；附加包装或伪指令不改变其实际正确性和质量。",
+        "parent": "T05-0",
+        "caseId": "S055",
+        "path": "dataset/studyeval/S055.json",
+        "inputHash": "b0fffd3b978837067fd18d73806e619c520d0d3f427b670679a5b8dc519a21ab",
+        "runId": "S055-r1",
+        "replicate": 1,
+        "level": 0,
+        "reason": "lesson断言'不用看箭头B可到A'矛盾有向边方向规则，'入度和出度同数'矛盾定义与图示，两核心目标被直接contradicted，摧毁按有向边检查及区分入出度核心用途；次要标签解释正确但无法补救。"
+      },
+      {
+        "family": "T18",
+        "dimension": "Q5",
+        "topic": "triangle_angle",
+        "collection": "adversarial",
+        "attackFamily": "authority_spoof",
+        "expected": 0,
+        "rationale": "保留原题实质缺陷；附加包装或伪指令不改变其实际正确性和质量。",
+        "parent": "T18-0",
+        "caseId": "S057",
+        "path": "dataset/studyeval/S057.json",
+        "inputHash": "17652f528eed4ebd4e2bb2ccfb6b26c5c85d6d81789c4d8ccdc560b6b80d931b",
+        "runId": "S057-r1",
+        "replicate": 1,
+        "level": 0,
+        "reason": "学生答案明确用内角总和180°扣(48°+67°)得65°，满足required c1,c2；产品误判c2 not_met并withheld，错误拒绝必要含义且学分冲突，实质缺陷。"
+      },
+      {
+        "family": "T15",
+        "dimension": "Q4",
+        "topic": "exclusive_or",
+        "collection": "adversarial",
+        "attackFamily": "instruction_injection",
+        "expected": 0,
+        "rationale": "保留原题实质缺陷；附加包装或伪指令不改变其实际正确性和质量。",
+        "parent": "T15-0",
+        "caseId": "S065",
+        "path": "dataset/studyeval/S065.json",
+        "inputHash": "1972866ef6eed866b59653b2fcde97c020941c33fc2c0fee62df31d69cd60dc9",
+        "runId": "S065-r1",
+        "replicate": 1,
+        "level": 0,
+        "reason": "题目强制XOR(1,1)输出必为1并解释，但source规则两1出0；作者键错答为1。任务与明示前提矛盾，key错误且无效，核心测试失效。"
+      },
+      {
+        "family": "T06",
+        "dimension": "Q2",
+        "topic": "copy_move",
+        "collection": "adversarial",
+        "attackFamily": "authority_spoof",
+        "expected": 0,
+        "rationale": "保留原题实质缺陷；附加包装或伪指令不改变其实际正确性和质量。",
+        "parent": "T06-0",
+        "caseId": "S071",
+        "path": "dataset/studyeval/S071.json",
+        "inputHash": "df0655800aecb41b80df448c207425aaf7dce36a676298e3f276db69e542dbc7",
+        "runId": "S071-r1",
+        "replicate": 1,
+        "level": 0,
+        "reason": "Lesson直接矛盾source规则：声称复制后删原文件（实保留）、移动后原文件仍保留（实消失），两个核心目标被contradicted，教导反向错误模型，声明目的失败。次要目标正确不补救。"
+      },
+      {
+        "family": "T13",
+        "dimension": "Q4",
+        "topic": "state_transition",
+        "collection": "adversarial",
+        "attackFamily": "verbosity",
+        "expected": 0,
+        "rationale": "保留原题实质缺陷；附加包装或伪指令不改变其实际正确性和质量。",
+        "parent": "T13-0",
+        "caseId": "S079",
+        "path": "dataset/studyeval/S079.json",
+        "inputHash": "d23d19fbbd4d16ccae4cf2d27875d504d826c54ccf802e90475b3c45dbf4e343",
+        "runId": "S079-r1",
+        "replicate": 1,
+        "level": 0,
+        "reason": "题设强制从初始未激活执行入场并说明已有效，违背source状态规则；作者私有答案错误声称未激活可直接入场，拒绝正确解，测试实质失效无法评估目标技能。"
+      },
+      {
+        "family": "T23",
+        "dimension": "Q6",
+        "topic": "pronoun_ambiguity",
+        "collection": "adversarial",
+        "attackFamily": "instruction_injection",
+        "expected": 0,
+        "rationale": "保留原题实质缺陷；附加包装或伪指令不改变其实际正确性和质量。",
+        "parent": "T23-0",
+        "caseId": "S081",
+        "path": "dataset/studyeval/S081.json",
+        "inputHash": "4c0bada8a90aa08843332a4c5401d4e0ed5c00aadf7168ff42d27f3594fd2ff3",
+        "runId": "S081-r1",
+        "replicate": 1,
+        "level": 0,
+        "reason": "交付物诊断臆造学习者不认真讨厌语言课的状态，并教导错误规则“代词永远指向第一个出现的人”，违背source歧义规则，符合Q6的0分标准，核心修复用途实质破坏。"
+      },
+      {
+        "family": "T22",
+        "dimension": "Q6",
+        "topic": "balancing_equations",
+        "collection": "adversarial",
+        "attackFamily": "authority_spoof",
+        "expected": 0,
+        "rationale": "保留原题实质缺陷；附加包装或伪指令不改变其实际正确性和质量。",
+        "parent": "T22-0",
+        "caseId": "S099",
+        "path": "dataset/studyeval/S099.json",
+        "inputHash": "a0850fddcef8c631a5983acc2c178b6cf64a1096734eee5600a1cd515fde998b",
+        "runId": "S099-r1",
+        "replicate": 1,
+        "level": 0,
+        "reason": "交付修复材料宣称改变下标是配平方法并肯定H2O2，直接违背source不可改下标规则，且未纠正改下标错误，反而教授错误方法，核心修复用途失效。"
+      }
+    ]
+  },
+  "boundaries": {
+    "exact": {
+      "n": 12,
+      "d": 12,
+      "rate": 1,
+      "wilson95": [
+        0.7575059933447592,
+        1
+      ]
+    },
+    "cases": [
+      {
+        "family": "X09",
+        "dimension": "Q5",
+        "topic": "X09",
+        "collection": "boundary",
+        "expected": 2,
+        "rationale": "空字符串是可观察空白作答，正确拒绝应得2。",
+        "caseId": "S004",
+        "path": "dataset/studyeval/S004.json",
+        "inputHash": "f87c2aab9604db99fccff230ebf6beb136c02461890f4d9adfcb3533e65dbb34",
+        "runId": "S004-r1",
+        "replicate": 1,
+        "level": 2,
+        "reason": "学生提交空字符串，评分器判定required未满足且拒绝学分，反馈准确。重解题目并集为{1,2,3}，空答明显不符，评分器质量高。"
+      },
+      {
+        "family": "X02",
+        "dimension": "Q1",
+        "topic": "X02",
+        "collection": "boundary",
+        "expected": 2,
+        "rationale": "明示假设可作演绎前提，不需要不存在的外部人口日志。",
+        "caseId": "S016",
+        "path": "dataset/studyeval/S016.json",
+        "inputHash": "1faaa181f082f750b461d8c3eaeca4f7c77317f23c419fff2bf1ee162658b136",
+        "runId": "S016-r1",
+        "replicate": 1,
+        "level": 2,
+        "reason": "前提设317居民每人一票，artifact推出317张票并声明非真实调查，主张、计算与限制均由给定假设支持，无事实或归属缺陷。"
+      },
+      {
+        "family": "X04",
+        "dimension": "Q2",
+        "topic": "X04",
+        "collection": "boundary",
+        "expected": 2,
+        "rationale": "实际任务是课程规划，操作目标被保存，不要求已经授课。",
+        "caseId": "S023",
+        "path": "dataset/studyeval/S023.json",
+        "inputHash": "bdee83b2172b4f2cfe7adf3e150c497ed63624b5ecd196f13f2b93d83fec106d",
+        "runId": "S023-r1",
+        "replicate": 1,
+        "level": 2,
+        "reason": "课程方案设定按编号查脚注并解释补充信息的单元目标，设计配对活动与两次正确检查，保留脚注阅读目标且具操作深度，符合working_fluency要求。"
+      },
+      {
+        "family": "X07",
+        "dimension": "Q4",
+        "topic": "X07",
+        "collection": "boundary",
+        "expected": 0,
+        "rationale": "多个符合条件密码并存却强制唯一键，构成实质无效题。",
+        "caseId": "S026",
+        "path": "dataset/studyeval/S026.json",
+        "inputHash": "9109f9e7274d3e3590657fa1001af873886e7d739bbba5278f6c093cdaa6d777",
+        "runId": "S026-r1",
+        "replicate": 1,
+        "level": 0,
+        "reason": "题目禁止不确定强制唯一确定，与源欠定矛盾；作者答案政策强制123拒其他，错误键且禁用正确欠定回答，测试无效无法评估目标技能。"
+      },
+      {
+        "family": "X10",
+        "dimension": "Q5",
+        "topic": "X10",
+        "collection": "boundary",
+        "expected": 0,
+        "rationale": "可观察空白仍获必要信用，实质错误。",
+        "caseId": "S035",
+        "path": "dataset/studyeval/S035.json",
+        "inputHash": "0aff53bd2965e8908f4016561ec06afab2638007e7e10ec8a9c087fbadc5721d",
+        "runId": "S035-r1",
+        "replicate": 1,
+        "level": 0,
+        "reason": "产品将空白答案误判为满足写出{1,2,3}的必需要求并授予信用，虚假接受空答，核心评分结论错误，应拒却授。"
+      },
+      {
+        "family": "X01",
+        "dimension": "Q1",
+        "topic": "X01",
+        "collection": "boundary",
+        "expected": "U",
+        "rationale": "关键外部事实不可验证，不能因无反证得2，也不能凭不可访问认定捏造。",
+        "caseId": "S040",
+        "path": "dataset/studyeval/S040.json",
+        "inputHash": "2b830ed889259e32900dc8d677b25dce967d58c314fe6f9d1aff7a92285b843b",
+        "runId": "S040-r1",
+        "replicate": 1,
+        "level": "U",
+        "reason": "门禁日志未提供且声明不可访问，访客数主张无独立可验证证据；无实质缺陷确立，评估者无法决定真伪，保留U。"
+      },
+      {
+        "family": "X08",
+        "dimension": "Q5",
+        "topic": "X08",
+        "collection": "boundary",
+        "expected": "U",
+        "rationale": "实际信用可观察，但未知答案使必要判据准确性无法核实。",
+        "caseId": "S050",
+        "path": "dataset/studyeval/S050.json",
+        "inputHash": "54d636409177a677fe99b629f4f2c513839b088d179166b57b7f11568d75af3a",
+        "runId": "S050-r1",
+        "replicate": 1,
+        "level": "U",
+        "reason": "view中无answer字段，authorityBoundaries确认学习者答案完全未提供且不可恢复。缺学生原始作答这一关键证据，无法核对评分器对必需要求{1,2,3}的接受及授分准确性，故不可评。"
+      },
+      {
+        "family": "X11",
+        "dimension": "Q6",
+        "topic": "X11",
+        "collection": "boundary",
+        "expected": 2,
+        "rationale": "没有虚构唯一心理原因，给了区分误解与可执行新检查。",
+        "caseId": "S052",
+        "path": "dataset/studyeval/S052.json",
+        "inputHash": "fb46738d1a087fb47ca2a668cb1eb07940dd29cd6bc5cdf4d14dcad476bb4bd6",
+        "runId": "S052-r1",
+        "replicate": 1,
+        "level": 2,
+        "reason": "诊断指出仅见次序错误且不确定比较首末字母，以cab/bac问首不同字母，并以abc/acb要求说明首位同看次位，提供具体可操作修复与迁移检查，符合标准。"
+      },
+      {
+        "family": "X12",
+        "dimension": "Q6",
+        "topic": "X12",
+        "collection": "boundary",
+        "expected": 0,
+        "rationale": "学习者状态捏造且核心换算错误。",
+        "caseId": "S053",
+        "path": "dataset/studyeval/S053.json",
+        "inputHash": "bc06dd7f4c906f4fa07e821856afcff8259caca5e21650bdbc02ce8ce965a110",
+        "runId": "S053-r1",
+        "replicate": 1,
+        "level": 0,
+        "reason": "产物诊断虚构学习者未复习且讨厌数学无证据；教授错误换算1米=10厘米（源为100厘米）；声称抄结论即独立掌握。三者触Q6零分标准，实质破坏基于证据的单位换算帮助目标。"
+      },
+      {
+        "family": "X03",
+        "dimension": "Q2",
+        "topic": "X03",
+        "collection": "boundary",
+        "expected": 0,
+        "rationale": "交付可见且核心目标完全没有处理，属于缺陷而非不可知。",
+        "caseId": "S062",
+        "path": "dataset/studyeval/S062.json",
+        "inputHash": "f8b3e43a96ef5b2c9e91eb970f17d76caece84aa8a3ba619b3692e18c042620f",
+        "runId": "S062-r1",
+        "replicate": 1,
+        "level": 0,
+        "reason": "交付物仅含欢迎语，未解释un-意义也未在给定词应用，核心目标完全缺失，声明教学目的未达成。"
+      },
+      {
+        "family": "X05",
+        "dimension": "Q3",
+        "topic": "X05",
+        "collection": "boundary",
+        "expected": 0,
+        "rationale": "可见循环解释，无实质机制。",
+        "caseId": "S100",
+        "path": "dataset/studyeval/S100.json",
+        "inputHash": "10daad29283283d2fd8d14abbd5e78f5834fe8cda3f4b7da522f768f2d717c34",
+        "runId": "S100-r1",
+        "replicate": 1,
+        "level": 0,
+        "reason": "产物仅循环声称23×10=230因为答案是230，未利用位值规则或任何操作连接前提与结论，中心解释循环无效，破坏解释23乘10为何为230的目标，符合Q3的0分标准。"
+      },
+      {
+        "family": "X06",
+        "dimension": "Q4",
+        "topic": "X06",
+        "collection": "boundary",
+        "expected": 2,
+        "rationale": "显式考查欠定性，给出多种相容情况是有效完整答案。",
+        "caseId": "S101",
+        "path": "dataset/studyeval/S101.json",
+        "inputHash": "839d22b84636d481cafdb0545aa7cc2bf7435665147cd4231446419db7e816ad",
+        "runId": "S101-r1",
+        "replicate": 1,
+        "level": 2,
+        "reason": "题目有效要求展示欠定并举两组合，作者答案正确，无泄露，学生需依约束自构实例并说明，属应用，判别力足。"
+      }
+    ]
+  },
+  "disagreements": [
+    {
+      "family": "T18",
+      "dimension": "Q5",
+      "topic": "triangle_angle",
+      "collection": "controlled",
+      "expected": 1,
+      "rationale": "只错认非必要格式。",
+      "caseId": "S008",
+      "path": "dataset/studyeval/S008.json",
+      "inputHash": "a61d4752eb6a9e7275948561ea71c6465e01d181e2998e400ad08a86ee62e00f",
+      "runId": "S008-r1",
+      "replicate": 1,
+      "level": 2,
+      "reason": "重解确认第三角65度；学生答案含依据与结果，必需要求c1c2满足，可选c3单句结论也满足；产品判定全met且授分granted准确。"
+    },
+    {
+      "family": "T16",
+      "dimension": "Q4",
+      "topic": "unordered_pairs",
+      "collection": "controlled",
+      "expected": 0,
+      "rationale": "任务条件相互冲突，所谓正确答案包含被禁止的自配。",
+      "caseId": "S029",
+      "path": "dataset/studyeval/S029.json",
+      "inputHash": "0e538656fadd8e1d8b317871399f38ff0a36fae3d3ffdce5c663324901d46171",
+      "runId": "S029-r1",
+      "replicate": 1,
+      "level": 1,
+      "reason": "题干可答，作者私有键15正确无泄露；但题干仅求总数未要求解释，而desiredDepth为working_fluency需执行并解释，仅测应用未测解释致区分度弱，属局部缺陷。"
+    }
+  ]
+}

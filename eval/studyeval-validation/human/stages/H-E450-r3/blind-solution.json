@@ -1,0 +1,31 @@
+{
+  "inputIdentity": "166eb40a95efeda16c0ac9e8e2ccdb7877091996ebba3e8c6fe05ff0ef947041",
+  "attempts": [
+    {
+      "physicalId": "75bac21f-5204-4d3d-9df4-58dba1281b3d",
+      "caseId": "E450",
+      "runId": "H-E450-r3",
+      "stage": "blind-solution",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "status": "resolved",
+    "solution": "原数据2,4,4,14：平均=(2+4+4+14)/4=6分钟，中位=(4+4)/2=4分钟。改22后：平均=(2+4+4+22)/4=8分钟，中位=4分钟。平均数受所有值影响，14→22使总和增8，除4得平均增2；中位数取排序后中间两值（均4），极值变化未改中间位置，故不变。限制：仅依题设四次记录，不涉去重或起止定义。",
+    "refs": [
+      "/question/prompt"
+    ],
+    "witnesses": [
+      {
+        "pointer": "/question/prompt",
+        "valueHash": "c72bdf5aa33b5c9b2a61dcde88889cc9c7e6ebaf01687c706d6d8539580d34da"
+      }
+    ]
+  }
+}

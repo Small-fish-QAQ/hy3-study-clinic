@@ -1,0 +1,76 @@
+{
+  "inputIdentity": "e093b66d32fda2d1a6ec98f5d6cb69d81181e900a34eaf19511811bdf5701106",
+  "attempts": [
+    {
+      "physicalId": "548abd1e-27f2-410b-8c9d-3767c3710b7f",
+      "caseId": "N-F08-tutor",
+      "runId": "H-N-F08-tutor-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "导师回复中单向规则、逆否成立、反向不成立的断言均与F08一致；考试奖章例为明确假设，类比正确，边界说明符合资料明示规则方向，无事实或归属缺陷。",
+        "refs": [
+          "/sources/0/text",
+          "/artifacts/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "132c532360b4bc6ac5b2aa8886b4b3bf89c500f85d4e1be08595f9a669823289"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "d95e4892d1c0484b032189c23a6497f13e1c86cf1cfda09729d923a3a8615fa9"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      },
+      {
+        "dimension": "Q3",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "局部解释用奖章例链接前提(满分→奖章)、逆否(非奖章→非满分)及反向谬误(竞赛获奖反例)，并交代不补当且仅当、不引未陈述因素的边界，满足目标。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "d95e4892d1c0484b032189c23a6497f13e1c86cf1cfda09729d923a3a8615fa9"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "132c532360b4bc6ac5b2aa8886b4b3bf89c500f85d4e1be08595f9a669823289"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

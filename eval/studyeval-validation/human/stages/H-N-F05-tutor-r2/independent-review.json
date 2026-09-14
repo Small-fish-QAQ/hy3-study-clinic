@@ -1,0 +1,76 @@
+{
+  "inputIdentity": "2496257442c3d6ac89403091440fc0bcdc5b23592134e6cc3d830f6bd220b7cd",
+  "attempts": [
+    {
+      "physicalId": "012b0971-1563-4e5d-a22d-edfbe139f196",
+      "caseId": "N-F05-tutor",
+      "runId": "H-N-F05-tutor-r2",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "产物复述资料机制并给出电子秤新例，所有区间计算、比较结论及模型边界描述与来源一致，无事实错误或虚假归属。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "b715f15b523c715661ff4e94ca664156d6b6b2f9aee0edb446e03f8a0b9be19b"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "04ede0e2b943c283408af13f15e429c4d3f550318ac34096022b20c8a80a02fc"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      },
+      {
+        "dimension": "Q3",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "新例展示由读数及给定误差上界加减得区间并比较重叠，解释比区间不比读数及证据不足关系；第三段说明对称已知等适用边界，连接充分。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "b715f15b523c715661ff4e94ca664156d6b6b2f9aee0edb446e03f8a0b9be19b"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "04ede0e2b943c283408af13f15e429c4d3f550318ac34096022b20c8a80a02fc"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

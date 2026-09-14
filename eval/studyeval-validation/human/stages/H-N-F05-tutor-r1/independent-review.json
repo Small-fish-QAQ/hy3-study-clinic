@@ -1,0 +1,76 @@
+{
+  "inputIdentity": "2496257442c3d6ac89403091440fc0bcdc5b23592134e6cc3d830f6bd220b7cd",
+  "attempts": [
+    {
+      "physicalId": "744b370c-7961-4a82-b365-ccdf6a1b3460",
+      "caseId": "N-F05-tutor",
+      "runId": "H-N-F05-tutor-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "产物准确总结资料区间模型与重叠比较，自举电子秤例区间计算正确，边界说明与资料一致，无事实或归属缺陷。",
+        "refs": [
+          "/sources/0/text",
+          "/artifacts/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "04ede0e2b943c283408af13f15e429c4d3f550318ac34096022b20c8a80a02fc"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "b715f15b523c715661ff4e94ca664156d6b6b2f9aee0edb446e03f8a0b9be19b"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      },
+      {
+        "dimension": "Q3",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "局部例子从给定误差前提出发展示了区间运算与重叠比较的关键连接，并交代对称闭合等适用限制，解释充分达标。",
+        "refs": [
+          "/sources/0/text",
+          "/artifacts/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "04ede0e2b943c283408af13f15e429c4d3f550318ac34096022b20c8a80a02fc"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "b715f15b523c715661ff4e94ca664156d6b6b2f9aee0edb446e03f8a0b9be19b"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

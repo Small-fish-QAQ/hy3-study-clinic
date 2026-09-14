@@ -1,0 +1,75 @@
+{
+  "id": "assessment_version_96305bb0-f3c3-4a6b-bd4c-cae72db969c1",
+  "definitionId": "assessment_b28fb695-771e-4bd9-ade3-56a2e413705e",
+  "version": 1,
+  "predecessorId": null,
+  "status": "accepted",
+  "items": [
+    {
+      "id": "assessment_item_def676d0-3a28-4554-8f65-dd9c41b694ca",
+      "sourceQuestionId": "que_2e6ea3c1-0875-4eac-a3dd-823fa9b887cf",
+      "index": 0,
+      "targetLearningUnitId": "cun_13c3bf14-145b-4bba-a2c7-2fbe00ffb542",
+      "targetObjectiveId": "obj_6a599e0b-de86-4230-a952-3fbba29362d8",
+      "representation": "recall",
+      "questionType": "short_answer",
+      "prompt": "某次测验中，7名学生的得分已按从小到大排序如下（单位：分）：62, 68, 75, 80, 85, 90, 95。请严格按本课明确约定（先求整体中位数，奇数个去掉正中后分低高半组，再取各组中位数）计算Q1与Q3，写出中间过程与结果。",
+      "rubric": [
+        {
+          "id": "criterion_883e8cca-3901-4157-9ec9-7f24657690fb",
+          "text": "正确按奇数约定求整体中位数并分半：整体中位数80，低半组62,68,75，高半组85,90,95。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_29807624",
+            "blk_1_874766f4"
+          ]
+        },
+        {
+          "id": "criterion_ee3a89f5-75f5-4a4f-beb0-ec53c4373d1e",
+          "text": "正确应用组内中位数规则得出Q1=68分（低半组正中）和Q3=90分（高半组正中）。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_29807624",
+            "blk_1_874766f4"
+          ]
+        }
+      ],
+      "sourceBindings": [
+        {
+          "materialId": "mat_4621dac0-9e9e-48dd-a990-42713b77a1f7",
+          "materialRevisionId": "rev_f01219cf-e118-4ab6-afed-a1bf3eeeafd0",
+          "sourceBlockId": "blk_0_29807624",
+          "quote": "四分位数用来描述排序数据内部的位置。本课只使用一种明确约定：先把至少4个数据从小到大排列，求整体中位数；若数据个数为偶数，分成数量相等的低半组与高半组；若为奇数，去掉正中的那个数据后，再把左右两边分别作为低半组与高半组。低半组的中位数记为Q1，高半组的中位数记为Q3。某些软件采用其他插值约定，题目使用本课方法时不要混用。",
+          "contentOrigin": "extracted_original",
+          "authoritative": true
+        },
+        {
+          "materialId": "mat_4621dac0-9e9e-48dd-a990-42713b77a1f7",
+          "materialRevisionId": "rev_f01219cf-e118-4ab6-afed-a1bf3eeeafd0",
+          "sourceBlockId": "blk_1_874766f4",
+          "quote": "求一个组的中位数也有规则：奇数个数取排序后的正中数据；偶数个数取中间两个数据的平均。四分位数按位置确定，不能直接把最小值与最大值平均来充当Q1或Q3，也不能只把数据个数除以4就把所得数当成观测值。若原始记录没有排序，要先排序，重复的观测值仍各占一个位置。",
+          "contentOrigin": "extracted_original",
+          "authoritative": true
+        }
+      ],
+      "formalEligible": true,
+      "policyReason": "FORMAL_ELIGIBLE"
+    }
+  ],
+  "sourceRevisionIds": [
+    "rev_f01219cf-e118-4ab6-afed-a1bf3eeeafd0"
+  ],
+  "createdAt": "2026-09-14T11:31:13.824Z",
+  "acceptedAt": "2026-09-14T11:31:13.824Z",
+  "authorityMode": "formal",
+  "progressionContext": {
+    "quizId": "qz_109ab5e3-0416-4ad7-b609-1b96a606eb63",
+    "contractVersionId": "contract_520c5645-fd2b-425f-9f8a-67a68873d437",
+    "curriculumVersionId": "curriculum_9b2846f6-da26-47ec-9ac0-26ba8ea573e4",
+    "studyPlanVersionId": "study_plan_b0a31e9c-c21a-436a-b235-bf0cb582d2fe",
+    "agendaId": "agenda_816945c3-821a-4be7-ac39-5aebc98d3237",
+    "agendaItemId": "agenda_item_462a9f0d-fc18-4471-9f6d-13c0db1b8f01",
+    "assessmentKind": "formal_checkpoint",
+    "executionSourceManifestFingerprint": "manifest_a49ae6f0"
+  }
+}

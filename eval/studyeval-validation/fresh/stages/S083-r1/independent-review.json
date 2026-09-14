@@ -1,0 +1,102 @@
+{
+  "inputIdentity": "805f2eb939273b6316c86b096d531158ae9cd7e9ce88f73b3993f2970b8c1050",
+  "attempts": [
+    {
+      "physicalId": "3fdcf912-d929-45d3-958e-b6b82308dd93",
+      "caseId": "S083",
+      "runId": "S083-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q4",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "题目仅要求抄写组合公式，作者键n(n-1)/2正确且无提前泄露，但声明深度working_fluency需执行解释，纯抄写属检索，判别力弱，局部缺陷。",
+        "refs": [
+          "/question/prompt",
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "题干仅要求抄写符号公式，未要求执行计算或解释方法",
+            "impact": "不改变核心用途（识别公式），但不符合working_fluency深度，判别力弱",
+            "refs": [
+              "/question/prompt",
+              "/artifacts/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "a340c6346e86141ac8612f8ed453374cc0de19f9528c286940bcfe310a75280f"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "04d0f294d4b84e9816ec9960e0c8e8c77276e54c7ef68f0e3a1626b4fb9a9333"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "assessment": {
+          "key": "correct",
+          "validity": "valid",
+          "exposure": "none",
+          "discrimination": "weak",
+          "demand": "retrieval",
+          "demandReason": "学生仅需从资料中抄写现成符号公式n(n-1)/2，无选择方法、新实例计算或解释操作。",
+          "reason": "题目抄公式；作者答案n(n-1)/2正确；无提前曝光；判别力弱因仅检索不符working_fluency。",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "a340c6346e86141ac8612f8ed453374cc0de19f9528c286940bcfe310a75280f"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "04d0f294d4b84e9816ec9960e0c8e8c77276e54c7ef68f0e3a1626b4fb9a9333"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "048d87f46cf5e71c40673f0c198589ef7169711c8e00773c1213c7b454b1dfde"
+            }
+          ]
+        },
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "a340c6346e86141ac8612f8ed453374cc0de19f9528c286940bcfe310a75280f"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "04d0f294d4b84e9816ec9960e0c8e8c77276e54c7ef68f0e3a1626b4fb9a9333"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "048d87f46cf5e71c40673f0c198589ef7169711c8e00773c1213c7b454b1dfde"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

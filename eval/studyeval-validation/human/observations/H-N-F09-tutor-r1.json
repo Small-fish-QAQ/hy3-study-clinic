@@ -1,0 +1,331 @@
+{
+  "task": {
+    "caseId": "N-F09-tutor",
+    "runId": "H-N-F09-tutor-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-F09-tutor.json",
+    "inputHash": "22e4040cd3ffd8ec6a389198142f453e0b1f9e0e75515078b7926885ff55af39",
+    "population": "natural",
+    "sourceId": "F09"
+  },
+  "inputHash": "22e4040cd3ffd8ec6a389198142f453e0b1f9e0e75515078b7926885ff55af39",
+  "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "7401611083737ab895115048cc4021d033b886187125cb5db369d4b4a38fafe8",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "资料核心内容、计算与边界均被来源支持；仅artifact将无标题来源指称为《轮流做家务的工作量》属局部归因不准确，不改教学结论。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "Artifact attributes the provided source to a course material titled 《轮流做家务的工作量》, but source F09 has no such title.",
+                "impact": "Correcting the title does not alter the core mechanism, computations, or stated limits; quoted excerpt and principles remain accurate.",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "aff18385f24a6c262c334211a2f0b4cf24274b0ced6c491758a119a614223f39"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "aff18385f24a6c262c334211a2f0b4cf24274b0ced6c491758a119a614223f39"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          },
+          {
+            "dimension": "Q3",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "补充粉刷例完整展示前提、分段运算连接与结果，并说明适用边界，符合局部解释充分性停止条件，无缺陷。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "aff18385f24a6c262c334211a2f0b4cf24274b0ced6c491758a119a614223f39"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "产物准确复述来源的速度量纲、假设与分段计算，例子计算正确；但将来源命名为《轮流做家务的工作量》无源支持，属局部归属缺陷。",
+            "refs": [
+              "/sources/0/text",
+              "/artifacts/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "产物声称课程资料名为《轮流做家务的工作量》，但来源文本无标题且内容为卡片整理，非家务。",
+                "impact": "不改变核心机制解释、例子计算与边界说明，核心用途成立。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "aff18385f24a6c262c334211a2f0b4cf24274b0ced6c491758a119a614223f39"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "aff18385f24a6c262c334211a2f0b4cf24274b0ced6c491758a119a614223f39"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          },
+          {
+            "dimension": "Q3",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "补充例子从前提给出速度、分段完成量与合速，展示除法连接结果，并说明适用边界，解释充分达停止条件。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "aff18385f24a6c262c334211a2f0b4cf24274b0ced6c491758a119a614223f39"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "产物准确复述来源速度量纲、假设与分段计算，补充粉刷例计算正确且边界说明匹配；仅将无标题卡片来源误归为《轮流做家务的工作量》课程资料，属局部归属缺陷，核心用途成立。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "Artifact attributes the provided source to a course material titled 《轮流做家务的工作量》, but source F09 has no such title and concerns card sorting.",
+                "impact": "Correcting the title does not alter the core mechanism, computations, or stated limits; quoted excerpt and principles remain accurate.",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "aff18385f24a6c262c334211a2f0b4cf24274b0ced6c491758a119a614223f39"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "aff18385f24a6c262c334211a2f0b4cf24274b0ced6c491758a119a614223f39"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q1:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "课程资料《轮流做家务的工作量》里讲明",
+              "valueHash": "aff18385f24a6c262c334211a2f0b4cf24274b0ced6c491758a119a614223f39"
+            },
+            "reason": "产物将来源命名为《轮流做家务的工作量》，但/sources/0/text无此标题且内容为卡片整理，属局部归属不准确，不改核心教学。"
+          },
+          {
+            "id": "review2:Q1:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "课程资料《轮流做家务的工作量》",
+              "valueHash": "aff18385f24a6c262c334211a2f0b4cf24274b0ced6c491758a119a614223f39"
+            },
+            "reason": "来源/sources/0/text无标题且讲卡片整理，非家务，但修正标题不影响核心计算与边界。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q1",
+          "level": 1,
+          "evidence": "sufficient",
+          "reason": "产物准确复述来源速度量纲、假设与分段计算，补充粉刷例计算正确且边界说明匹配；仅将无标题卡片来源误归为《轮流做家务的工作量》课程资料，属局部归属缺陷，核心用途成立。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [
+            {
+              "severity": "local",
+              "description": "Artifact attributes the provided source to a course material titled 《轮流做家务的工作量》, but source F09 has no such title and concerns card sorting.",
+              "impact": "Correcting the title does not alter the core mechanism, computations, or stated limits; quoted excerpt and principles remain accurate.",
+              "refs": [
+                "/artifacts/0/text",
+                "/sources/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "aff18385f24a6c262c334211a2f0b4cf24274b0ced6c491758a119a614223f39"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "aff18385f24a6c262c334211a2f0b4cf24274b0ced6c491758a119a614223f39"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        },
+        {
+          "dimension": "Q3",
+          "level": 2,
+          "evidence": "sufficient",
+          "reason": "补充粉刷例完整展示前提、分段运算连接与结果，并说明适用边界，符合局部解释充分性停止条件，无缺陷。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "aff18385f24a6c262c334211a2f0b4cf24274b0ced6c491758a119a614223f39"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "10f393712eddbeec3cb40a2fd745115422ef9216a619951a11cf30f99b353ef4"
+  }
+}

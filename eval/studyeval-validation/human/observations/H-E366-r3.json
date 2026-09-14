@@ -1,0 +1,235 @@
+{
+  "task": {
+    "caseId": "E366",
+    "runId": "H-E366-r3",
+    "replicate": 3,
+    "path": "benchmark/cases/E366.json",
+    "inputHash": "9ddec8a0080a675ad35184be3719fb2aa7c0dea1fa6ed89b489fda08842779ba",
+    "population": "controlled",
+    "sourceId": "F10"
+  },
+  "inputHash": "9ddec8a0080a675ad35184be3719fb2aa7c0dea1fa6ed89b489fda08842779ba",
+  "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "7437f80f29c24190483c1c620db81bbdc140e67298d29b42b072362b2a896bf1",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q3",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "artifact正确给出两人并行12分钟与一人15分钟及条件，但仅列时间表与总时长，未展示从给定时长、依赖推导时刻的关键操作（如并行取max、顺序累加），缺少解释连接，符合Q3的1分。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "未展示从题设步骤时长与依赖关系到结果时刻的推导操作：两人场景未说明盖章开始由裁纸与调墨完成时刻最大值决定（max(4,3)=4）及后续+2+5+1；一人场景未展示4+3+2+5+1=15。",
+                "impact": "结论正确但学习者需自行发明关键运算连接，未达成goals讲清推理步骤的要求，但不改变核心答案正确性。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "c7ff6a9c213d042e991ce0cb292305417dc1e88aa2002451772e47e4e0b76944"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "c7ff6a9c213d042e991ce0cb292305417dc1e88aa2002451772e47e4e0b76944"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q3",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "产物给出两人12分、一人15分正确结论及条件，但未展示关键推理连接：并行时盖章开始需等裁纸与调墨较晚完成者(4分)，单人前两步串行7分再加8分。仅列时刻与泛化语，缺操作骨架，属局部解释缺失。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "缺失从并行前置条件到盖章开始时刻的关键连接（未说明需取max(4,3)=4），以及单人前两步耗时相加的推导展示。",
+                "impact": "结论正确且条件提及，但未展示必要推理步骤，使学习者需自行推断关键操作，不破坏核心答案但降低解释充分性。",
+                "refs": [
+                  "/artifacts/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "c7ff6a9c213d042e991ce0cb292305417dc1e88aa2002451772e47e4e0b76944"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "c7ff6a9c213d042e991ce0cb292305417dc1e88aa2002451772e47e4e0b76944"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q3",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "产物正确给出两人12分、一人15分及条件，但仅列时间表与总时长，未展示关键操作连接（如并行取max(4,3)=4、单人前两步相加），学习者需自推运算。无错误机制，核心用途成立，故为local缺陷，非2非0。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "未展示从题设时长与依赖到结果时刻的推导操作：两人场景未说明盖章开始由裁纸与调墨完成时刻最大值决定及后续+2+5+1；一人场景未展示4+3+2+5+1=15。",
+                "impact": "结论正确且条件提及，但缺失关键运算连接，学习者需自行发明操作，不破坏核心答案但降低解释充分性，未达goals讲清步骤。",
+                "refs": [
+                  "/artifacts/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "c7ff6a9c213d042e991ce0cb292305417dc1e88aa2002451772e47e4e0b76944"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "c7ff6a9c213d042e991ce0cb292305417dc1e88aa2002451772e47e4e0b76944"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q3:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "两人且工具互不冲突时，裁纸4分钟、调墨3分钟从0并行，盖章4到6，晾干到11，装袋到12。只有一人且前两步全程占人，则15分钟。",
+              "valueHash": "c7ff6a9c213d042e991ce0cb292305417dc1e88aa2002451772e47e4e0b76944"
+            },
+            "reason": "引文直接列出结果时刻与总时长，未出现max或累加等推导操作，证实缺失关键连接，但结论正确故local。"
+          },
+          {
+            "id": "review2:Q3:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "两人且工具互不冲突时，裁纸4分钟、调墨3分钟从0并行，盖章4到6，晾干到11，装袋到12。只有一人且前两步全程占人，则15分钟。",
+              "valueHash": "c7ff6a9c213d042e991ce0cb292305417dc1e88aa2002451772e47e4e0b76944"
+            },
+            "reason": "同上，artifact未展示并行取晚者及串行相加的操作骨架，缺陷属实且仅为局部。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q3",
+          "level": 1,
+          "evidence": "sufficient",
+          "reason": "产物正确给出两人12分、一人15分及条件，但仅列时间表与总时长，未展示关键操作连接（如并行取max(4,3)=4、单人前两步相加），学习者需自推运算。无错误机制，核心用途成立，故为local缺陷，非2非0。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [
+            {
+              "severity": "local",
+              "description": "未展示从题设时长与依赖到结果时刻的推导操作：两人场景未说明盖章开始由裁纸与调墨完成时刻最大值决定及后续+2+5+1；一人场景未展示4+3+2+5+1=15。",
+              "impact": "结论正确且条件提及，但缺失关键运算连接，学习者需自行发明操作，不破坏核心答案但降低解释充分性，未达goals讲清步骤。",
+              "refs": [
+                "/artifacts/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "c7ff6a9c213d042e991ce0cb292305417dc1e88aa2002451772e47e4e0b76944"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "c7ff6a9c213d042e991ce0cb292305417dc1e88aa2002451772e47e4e0b76944"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "dbf64978dc9e271df177a0949900b3703163ed287ff85b3c39abbd701af71b23"
+  }
+}

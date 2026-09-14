@@ -1,0 +1,144 @@
+{
+  "at": "2026-09-13T20:05:22.626Z",
+  "scope": "Post-design-freeze source-lineage audit only; no human ratings read, no scoring decisions changed.",
+  "cases": 27,
+  "casesWithExactSharedDevelopmentSource": 27,
+  "rows": [
+    {
+      "caseId": "E027",
+      "sources": 1,
+      "sharedSourceTexts": 1
+    },
+    {
+      "caseId": "E047",
+      "sources": 1,
+      "sharedSourceTexts": 1
+    },
+    {
+      "caseId": "E074",
+      "sources": 1,
+      "sharedSourceTexts": 1
+    },
+    {
+      "caseId": "E094",
+      "sources": 1,
+      "sharedSourceTexts": 1
+    },
+    {
+      "caseId": "E121",
+      "sources": 1,
+      "sharedSourceTexts": 1
+    },
+    {
+      "caseId": "E141",
+      "sources": 1,
+      "sharedSourceTexts": 1
+    },
+    {
+      "caseId": "E319",
+      "sources": 1,
+      "sharedSourceTexts": 1
+    },
+    {
+      "caseId": "E366",
+      "sources": 1,
+      "sharedSourceTexts": 1
+    },
+    {
+      "caseId": "E413",
+      "sources": 1,
+      "sharedSourceTexts": 1
+    },
+    {
+      "caseId": "E450",
+      "sources": 1,
+      "sharedSourceTexts": 1
+    },
+    {
+      "caseId": "E470",
+      "sources": 1,
+      "sharedSourceTexts": 1
+    },
+    {
+      "caseId": "E497",
+      "sources": 1,
+      "sharedSourceTexts": 1
+    },
+    {
+      "caseId": "E544",
+      "sources": 1,
+      "sharedSourceTexts": 1
+    },
+    {
+      "caseId": "E611",
+      "sources": 1,
+      "sharedSourceTexts": 1
+    },
+    {
+      "caseId": "E658",
+      "sources": 1,
+      "sharedSourceTexts": 1
+    },
+    {
+      "caseId": "E705",
+      "sources": 1,
+      "sharedSourceTexts": 1
+    },
+    {
+      "caseId": "E846",
+      "sources": 1,
+      "sharedSourceTexts": 1
+    },
+    {
+      "caseId": "E873",
+      "sources": 1,
+      "sharedSourceTexts": 1
+    },
+    {
+      "caseId": "E920",
+      "sources": 1,
+      "sharedSourceTexts": 1
+    },
+    {
+      "caseId": "E967",
+      "sources": 1,
+      "sharedSourceTexts": 1
+    },
+    {
+      "caseId": "N-F01-tutor",
+      "sources": 1,
+      "sharedSourceTexts": 1
+    },
+    {
+      "caseId": "N-F02-tutor",
+      "sources": 1,
+      "sharedSourceTexts": 1
+    },
+    {
+      "caseId": "N-F03-tutor",
+      "sources": 1,
+      "sharedSourceTexts": 1
+    },
+    {
+      "caseId": "N-F05-tutor",
+      "sources": 1,
+      "sharedSourceTexts": 1
+    },
+    {
+      "caseId": "N-F07-tutor",
+      "sources": 1,
+      "sharedSourceTexts": 1
+    },
+    {
+      "caseId": "N-F08-tutor",
+      "sources": 1,
+      "sharedSourceTexts": 1
+    },
+    {
+      "caseId": "N-F09-tutor",
+      "sources": 1,
+      "sharedSourceTexts": 1
+    }
+  ],
+  "interpretation": "The reserved set validates unseen cases and independent existing human ratings within development subject matter. It is not a source-disjoint generalization test. The new evaluator/product populations provide separately frozen new-source evidence."
+}

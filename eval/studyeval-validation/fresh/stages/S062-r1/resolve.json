@@ -1,0 +1,93 @@
+{
+  "inputIdentity": "3ff0b6a02c81965050f456bad8a5a3550a8749e347ce2da3d81ffb346fa75607",
+  "attempts": [
+    {
+      "physicalId": "73c8e982-2e1e-44a2-9112-81f3408cfae6",
+      "caseId": "S062",
+      "runId": "S062-r1",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q2",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "交付物仅含欢迎语，未解释un-意义也未在给定词应用，核心目标完全缺失，声明教学目的未达成。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/0"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "交付物未包含任何关于前缀un-意义解释或应用的内容，仅含欢迎语",
+            "impact": "核心目标完全未处理，学习用途失败",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/0"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "ba5701b92bc7d14664cf6ebd8922e14ba99d362eaf01013e5db858ae4c2ff76a"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "e0d0ebf754fe4c4754e9e6e545be939741595f92a9cceff9da4b3a6be4251759"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "ba5701b92bc7d14664cf6ebd8922e14ba99d362eaf01013e5db858ae4c2ff76a"
+          },
+          {
+            "pointer": "/goals/0",
+            "valueHash": "e0d0ebf754fe4c4754e9e6e545be939741595f92a9cceff9da4b3a6be4251759"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q2:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "完整教学交付到此结束：欢迎大家学习英语。",
+          "valueHash": "ba5701b92bc7d14664cf6ebd8922e14ba99d362eaf01013e5db858ae4c2ff76a"
+        },
+        "reason": "artifact仅欢迎语，未含un-解释或应用，与目标对照确为缺失。"
+      },
+      {
+        "id": "review2:Q2:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "完整教学交付到此结束：欢迎大家学习英语。",
+          "valueHash": "ba5701b92bc7d14664cf6ebd8922e14ba99d362eaf01013e5db858ae4c2ff76a"
+        },
+        "reason": "目标要求解释应用，artifact无对应内容，核心目标缺失成立。"
+      }
+    ]
+  }
+}

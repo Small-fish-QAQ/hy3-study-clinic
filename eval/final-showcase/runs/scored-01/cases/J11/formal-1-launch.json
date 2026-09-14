@@ -1,0 +1,44 @@
+{
+  "kind": "assessment",
+  "agendaItemId": "agenda_item_a6dbfecc-af6b-4aa5-8031-ec3201ec30ea",
+  "quiz": {
+    "id": "qz_a5397520-13cb-4bb8-9268-cc5b6fc2a4fc",
+    "materialId": null,
+    "workspaceId": "ws_166d6de9-6ed3-4fad-a032-31a2af00ad78",
+    "kind": "adaptive",
+    "assessmentMode": "concept_practice",
+    "config": {
+      "difficulty": "medium",
+      "types": [
+        "short_answer"
+      ],
+      "countPerType": 1
+    },
+    "questions": [
+      {
+        "id": "que_bf371bc6-abc6-44ba-ba23-1bfc3277c56a",
+        "index": 0,
+        "type": "short_answer",
+        "stem": "给定新句子（假设适用本课规则）：主动句 'The mechanic repairs the car.' 及其相应被动句 'The car is repaired by the mechanic.' 请识别：1) 主动句中动作的施事、动作、受事分别是什么；2) 被动句的语法主语是什么，它是施事还是受事，实际动作执行者是谁？",
+        "conceptId": "con_36b3f225-6535-444e-9e1e-2ef14cff24b5",
+        "conceptName": "主动与被动语态的转换目的",
+        "grounding": {
+          "blockId": "blk_0_1c59de98",
+          "quote": "英语主动句通常把动作的施事放在主语位置，如“The editor checks the report.”编辑是检查动作的执行者，报告是受到检查的对象。相应被动句为“The report is checked by the editor.”报告成为语法主语，但它仍是动作的受事，并没有变成检查别人的执行者。改变语态可以改变叙述重点，而不必改变所报告的事件。",
+          "startOffset": 0,
+          "endOffset": 177,
+          "occurrenceCount": 1,
+          "reanchored": false
+        },
+        "blueprintId": "bp_ff27b75e-2ec4-4417-8b9e-7a8f7cbc6698",
+        "points": 2
+      }
+    ],
+    "targetConceptIds": [
+      "con_36b3f225-6535-444e-9e1e-2ef14cff24b5"
+    ],
+    "createdAt": "2026-09-14T11:49:48.214Z"
+  },
+  "assessmentKind": "formal_checkpoint",
+  "formalAssessmentVersionId": "assessment_version_3080dbb9-be89-45eb-9930-36e6128164aa"
+}

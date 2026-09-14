@@ -1,0 +1,49 @@
+{
+  "inputIdentity": "0237a098fbcb7739a729af1531e6ca44f0e70d19559308defad9faa4b434642e",
+  "attempts": [
+    {
+      "physicalId": "f3ca54b2-14dc-4311-87a8-88cc82b7fb97",
+      "caseId": "E470",
+      "runId": "H-E470-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "artifact总结的件数比较、比例计算、合并比例116/140≈82.9%、分母不同不可直接平均及需难度信息论能力等主张，均与source文字数字及限制一致，无事实错误或越界推断。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "bbaae6498ec01e1f3a2726e79b3196337ade6c3c6fe50344b4bd0f3cba93b267"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "d285228b9962482d5b8d81456178a4eb5cad39d02c75d3a204457e6093fff0ba"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

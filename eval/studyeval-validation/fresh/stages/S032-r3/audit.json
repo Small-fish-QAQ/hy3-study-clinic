@@ -1,0 +1,74 @@
+{
+  "inputIdentity": "f31346efe7fd4d8527191461e8539989decc2722830df4f8a4208895610d3779",
+  "attempts": [
+    {
+      "physicalId": "27237218-1581-4580-a5eb-69dbcd503db3",
+      "caseId": "S032",
+      "runId": "S032-r3",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q6",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "交付物指出分数加法有错并建议复习通分，与错误相关但过于笼统，未点明分子分母误加的具体差距，也未给出可使用的下一步具体检验，符合Q6的1分标准。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text",
+          "/answer"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "修复仅泛泛建议复习通分、细心、多练习，未识别具体推理错误（如分子分母分别相加），且未提供具体下一步检验内容/条件。",
+            "impact": "建议与错误相关，核心修复意图成立但缺乏具体性，不影响其作为相关建议的局部用途。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "f5d18a6174622da51a7f1212abe36dd87793f3029c1de466aaddf7a16a7dda2b"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "c4d75b2db6f5aa30dcec740ff8a4b7e07282347099740e24a9f3e2fd0f4bef58"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "f5d18a6174622da51a7f1212abe36dd87793f3029c1de466aaddf7a16a7dda2b"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "c4d75b2db6f5aa30dcec740ff8a4b7e07282347099740e24a9f3e2fd0f4bef58"
+          },
+          {
+            "pointer": "/answer",
+            "valueHash": "5fa9a6e988796acce4dd7a033670180448bc29a07a9fa5e48255977034751897"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

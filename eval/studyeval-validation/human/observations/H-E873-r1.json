@@ -1,0 +1,120 @@
+{
+  "task": {
+    "caseId": "E873",
+    "runId": "H-E873-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E873.json",
+    "inputHash": "1a75e7d9d68339a276ef3b9675f67332307ea9ae90fb1136a5b54b8b1fcf4106",
+    "population": "controlled",
+    "sourceId": "F03"
+  },
+  "inputHash": "1a75e7d9d68339a276ef3b9675f67332307ea9ae90fb1136a5b54b8b1fcf4106",
+  "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "7a4659784b331c72302809dbefd4fd451bfc822a1ee0c738bd062e3cd445a795",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "support准确诊断学生将自愿等同随机的推理缺口，用兴趣反例具体帮助，并给出抽签但额外练习的下一题检查同一归因技能，符合Q6的2标准。",
+            "refs": [
+              "/artifacts/1/text",
+              "/answer"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/1/text",
+                "valueHash": "92b176354da78b28cb5522dcba0ee9141d78651ee215f63b5167216fd3796daf"
+              },
+              {
+                "pointer": "/answer",
+                "valueHash": "7d6191d92d628a82e207484c2c7eb0e40705d9d13f6606a2290baa951d899e6f"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "支持文本诊断学生将自愿等同随机的推理缺口，用高兴趣反例说明混杂，并给出提示卡随机但额外多练的下一检查，改变表面变量测试同技能，符合Q6完整标准。",
+            "refs": [
+              "/artifacts/1/text",
+              "/answer",
+              "/question/prompt"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/1/text",
+                "valueHash": "92b176354da78b28cb5522dcba0ee9141d78651ee215f63b5167216fd3796daf"
+              },
+              {
+                "pointer": "/answer",
+                "valueHash": "7d6191d92d628a82e207484c2c7eb0e40705d9d13f6606a2290baa951d899e6f"
+              },
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "40515ddefe7144a8c80977cc79f59af6231fa3747b5a992a6434f6ea76b34d40"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q6",
+          "level": 2,
+          "evidence": "sufficient",
+          "reason": "support准确诊断学生将自愿等同随机的推理缺口，用兴趣反例具体帮助，并给出抽签但额外练习的下一题检查同一归因技能，符合Q6的2标准。",
+          "refs": [
+            "/artifacts/1/text",
+            "/answer"
+          ],
+          "defects": [],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/1/text",
+              "valueHash": "92b176354da78b28cb5522dcba0ee9141d78651ee215f63b5167216fd3796daf"
+            },
+            {
+              "pointer": "/answer",
+              "valueHash": "7d6191d92d628a82e207484c2c7eb0e40705d9d13f6606a2290baa951d899e6f"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "de7601eef7b12daab0a172fbd3857a268c0d53126a9fe9288e341e92e1180887"
+  }
+}

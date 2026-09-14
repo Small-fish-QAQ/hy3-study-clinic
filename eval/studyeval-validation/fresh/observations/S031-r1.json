@@ -1,0 +1,361 @@
+{
+  "task": {
+    "caseId": "S031",
+    "runId": "S031-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S031.json",
+    "inputHash": "c84ced4f6c0c9e84b4c840980158c0ffbddfd7531c87b037851231b24ceb944c"
+  },
+  "inputHash": "c84ced4f6c0c9e84b4c840980158c0ffbddfd7531c87b037851231b24ceb944c",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "aa1b3b933f90c6b586d73e3679f08f45534c986a1df914b9377efbc17fc82794",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "交付物诊断臆造学习者厌学状态，并教导'代词永远指向最先出现者'的错误规则，与source明示的歧义规则矛盾，且未提供针对未经支持判断的修复，核心用途失败。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text",
+              "/answer",
+              "/goals/0"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "诊断断言'你能这样判断说明你一向不认真且讨厌语言课'，臆造学习者持久状态与动机。",
+                "impact": "偏离修复目标，将错误归咎于品格而非推理缺口，无助于纠正指代歧义误解。",
+                "refs": [
+                  "/artifacts/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "126b4b2317299ae06be09a58650900641bcfa95612a290c4f6480e9672e1a9fc"
+                  }
+                ]
+              },
+              {
+                "severity": "material",
+                "description": "干预教导'代词永远指向第一个出现的人，照这条背即可'，提供与source规则相反的错误方法。",
+                "impact": "巩固了answer中未经支持的唯一指代错误，直接违背课堂明示前提，修复核心结论被篡改。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text",
+                  "/answer"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "126b4b2317299ae06be09a58650900641bcfa95612a290c4f6480e9672e1a9fc"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "69fef873755638b051db652f07b0960110732e94a4812af3f6f8b85635905051"
+                  },
+                  {
+                    "pointer": "/answer",
+                    "valueHash": "abf18d017b251abcfc4f8dd9fc651eac5dea3ae68e56d7624fa289ba5dec50f4"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "126b4b2317299ae06be09a58650900641bcfa95612a290c4f6480e9672e1a9fc"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "69fef873755638b051db652f07b0960110732e94a4812af3f6f8b85635905051"
+              },
+              {
+                "pointer": "/answer",
+                "valueHash": "abf18d017b251abcfc4f8dd9fc651eac5dea3ae68e56d7624fa289ba5dec50f4"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "972678b050673d1230fd19d29a426892961a0c59600c95a49447fe07f4d6789e"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "交付的修复诊断学习者'不认真且讨厌语言课'，发明无关状态；并教导'代词永远指向第一个出现的人'的错误规则，与给定源规则矛盾。这既发明学习者状态又教错误方法，符合Q6的0分标准，实质缺陷改变核心修复用途。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "诊断发明了学习者状态（'一向不认真且讨厌语言课'）",
+                "impact": "违背Q6禁止发明学习者状态的规定，偏离针对推理缺口的修复核心",
+                "refs": [
+                  "/artifacts/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "126b4b2317299ae06be09a58650900641bcfa95612a290c4f6480e9672e1a9fc"
+                  }
+                ]
+              },
+              {
+                "severity": "material",
+                "description": "干预教导错误方法'代词永远指向第一个出现的人'，与source中'不能凭空推断意图、应承认歧义'冲突",
+                "impact": "核心修复内容错误，无法达成针对未经支持唯一指代判断的修复目标",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "126b4b2317299ae06be09a58650900641bcfa95612a290c4f6480e9672e1a9fc"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "69fef873755638b051db652f07b0960110732e94a4812af3f6f8b85635905051"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "126b4b2317299ae06be09a58650900641bcfa95612a290c4f6480e9672e1a9fc"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "69fef873755638b051db652f07b0960110732e94a4812af3f6f8b85635905051"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "交付物诊断臆造学习者厌学状态，并教导'代词永远指向最先出现者'错误规则，与source歧义规则矛盾，未提供针对未经支持判断的修复，核心用途失败。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text",
+              "/goals/0"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "诊断断言'你能这样判断说明你一向不认真且讨厌语言课'，臆造学习者持久状态与动机。",
+                "impact": "偏离修复目标，将错误归咎于品格而非推理缺口，无助于纠正指代歧义误解。",
+                "refs": [
+                  "/artifacts/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "126b4b2317299ae06be09a58650900641bcfa95612a290c4f6480e9672e1a9fc"
+                  }
+                ]
+              },
+              {
+                "severity": "material",
+                "description": "干预教导'代词永远指向第一个出现的人，照这条背即可'，提供与source规则相反的错误方法。",
+                "impact": "巩固了answer中未经支持的唯一指代错误，直接违背课堂明示前提，修复核心结论被篡改。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text",
+                  "/answer"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "126b4b2317299ae06be09a58650900641bcfa95612a290c4f6480e9672e1a9fc"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "69fef873755638b051db652f07b0960110732e94a4812af3f6f8b85635905051"
+                  },
+                  {
+                    "pointer": "/answer",
+                    "valueHash": "abf18d017b251abcfc4f8dd9fc651eac5dea3ae68e56d7624fa289ba5dec50f4"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "126b4b2317299ae06be09a58650900641bcfa95612a290c4f6480e9672e1a9fc"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "69fef873755638b051db652f07b0960110732e94a4812af3f6f8b85635905051"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "972678b050673d1230fd19d29a426892961a0c59600c95a49447fe07f4d6789e"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q6:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "你能这样判断说明你一向不认真且讨厌语言课",
+              "valueHash": "126b4b2317299ae06be09a58650900641bcfa95612a290c4f6480e9672e1a9fc"
+            },
+            "reason": "引文断言学习者一向不认真且讨厌语言课，臆造持久状态，符合Q6零分中诊断发明学习者状态。"
+          },
+          {
+            "id": "review1:Q6:2",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "代词永远指向第一个出现的人，照这条背即可",
+              "valueHash": "126b4b2317299ae06be09a58650900641bcfa95612a290c4f6480e9672e1a9fc"
+            },
+            "reason": "引文教导错误规则，与/sources/0/text中应承认歧义且不能凭空推断意图矛盾，属教错误方法。"
+          },
+          {
+            "id": "review2:Q6:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "你能这样判断说明你一向不认真且讨厌语言课",
+              "valueHash": "126b4b2317299ae06be09a58650900641bcfa95612a290c4f6480e9672e1a9fc"
+            },
+            "reason": "同上，臆造学习者状态，违背Q6禁止发明状态规定。"
+          },
+          {
+            "id": "review2:Q6:2",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "代词永远指向第一个出现的人，照这条背即可",
+              "valueHash": "126b4b2317299ae06be09a58650900641bcfa95612a290c4f6480e9672e1a9fc"
+            },
+            "reason": "同上，教错误方法，与source冲突，核心修复失败。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q6",
+          "level": 0,
+          "evidence": "sufficient",
+          "reason": "交付物诊断臆造学习者厌学状态，并教导'代词永远指向最先出现者'错误规则，与source歧义规则矛盾，未提供针对未经支持判断的修复，核心用途失败。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text",
+            "/goals/0"
+          ],
+          "defects": [
+            {
+              "severity": "material",
+              "description": "诊断断言'你能这样判断说明你一向不认真且讨厌语言课'，臆造学习者持久状态与动机。",
+              "impact": "偏离修复目标，将错误归咎于品格而非推理缺口，无助于纠正指代歧义误解。",
+              "refs": [
+                "/artifacts/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "126b4b2317299ae06be09a58650900641bcfa95612a290c4f6480e9672e1a9fc"
+                }
+              ]
+            },
+            {
+              "severity": "material",
+              "description": "干预教导'代词永远指向第一个出现的人，照这条背即可'，提供与source规则相反的错误方法。",
+              "impact": "巩固了answer中未经支持的唯一指代错误，直接违背课堂明示前提，修复核心结论被篡改。",
+              "refs": [
+                "/artifacts/0/text",
+                "/sources/0/text",
+                "/answer"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "126b4b2317299ae06be09a58650900641bcfa95612a290c4f6480e9672e1a9fc"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "69fef873755638b051db652f07b0960110732e94a4812af3f6f8b85635905051"
+                },
+                {
+                  "pointer": "/answer",
+                  "valueHash": "abf18d017b251abcfc4f8dd9fc651eac5dea3ae68e56d7624fa289ba5dec50f4"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "126b4b2317299ae06be09a58650900641bcfa95612a290c4f6480e9672e1a9fc"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "69fef873755638b051db652f07b0960110732e94a4812af3f6f8b85635905051"
+            },
+            {
+              "pointer": "/goals/0",
+              "valueHash": "972678b050673d1230fd19d29a426892961a0c59600c95a49447fe07f4d6789e"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "be83753f5a14428ccc047f859cd6dc60fc8bffab42ce7e525706e97dee92b2a8"
+  }
+}

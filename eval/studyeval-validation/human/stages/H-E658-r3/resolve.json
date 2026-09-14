@@ -1,0 +1,93 @@
+{
+  "inputIdentity": "0c778513af0774909a8f5c3a0c16f6a4bf8d126434d54b58d903d2ba76a45d8e",
+  "attempts": [
+    {
+      "physicalId": "adb22ef3-cec2-43b1-81bb-012526b42b97",
+      "caseId": "E658",
+      "runId": "H-E658-r3",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q2",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "核心目标0-2在artifact中均有准确可操作规则或示例：区分刻度细与准确、区间公式及示例、非重叠/重叠比较。但次要目标3要求说明重复平均不能消除共同偏差，artifact仅以'重复测量时也要留意共同偏差'未解释提醒，属局部深度缺口，核心用途成立，故评1分。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/3"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "次要延伸目标'说明重复平均不能自动消除共同方向的偏差'在lesson中仅以'重复测量时也要留意共同偏差'的未解释提醒出现，未展示平均不能消除共同偏差的原因或示例。",
+            "impact": "核心区间形成与比较用途成立，此局部缺口仅削弱次要目标深度，不改核心学习目的。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/3"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "9f85ff5b494d6fb3aa0a5fc03f7b2cba0075759e5a444afa89829072dffa4a9b"
+              },
+              {
+                "pointer": "/goals/3",
+                "valueHash": "714460aff55596ab6a2b0d42615a21b9c5be82487f745a68d7ee18049f26f951"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "9f85ff5b494d6fb3aa0a5fc03f7b2cba0075759e5a444afa89829072dffa4a9b"
+          },
+          {
+            "pointer": "/goals/3",
+            "valueHash": "714460aff55596ab6a2b0d42615a21b9c5be82487f745a68d7ee18049f26f951"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q2:1",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "重复测量时也要留意共同偏差。",
+          "valueHash": "9f85ff5b494d6fb3aa0a5fc03f7b2cba0075759e5a444afa89829072dffa4a9b"
+        },
+        "reason": "artifact仅此句提及重复测量，未解释共同方向偏差不被平均消除的机制，目标3要求说明该机制，故局部缺陷成立。"
+      },
+      {
+        "id": "review2:Q2:1",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "重复测量时也要留意共同偏差。",
+          "valueHash": "9f85ff5b494d6fb3aa0a5fc03f7b2cba0075759e5a444afa89829072dffa4a9b"
+        },
+        "reason": "同上，artifact未提供说明重复平均不能自动消除共同偏差的论证，仅提醒留意，次要目标深度不足但非核心。"
+      }
+    ]
+  }
+}

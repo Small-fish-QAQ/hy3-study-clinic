@@ -1,0 +1,174 @@
+{
+  "inputIdentity": "f4c0f5f2bc7ce16d16d87315d49a7f751ba6df927ae2a6a23b63938a8e972384",
+  "attempts": [
+    {
+      "physicalId": "c03517dc-8b90-482b-8695-46d4c8fa7dab",
+      "caseId": "E544",
+      "runId": "H-E544-r1",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q5",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "学生答案明确给出原平均6、中位4及改后平均8、中位4，满足必要c1；产品误判c1未满足并拒绝授分，实际withheld与应得granted冲突，构成实质评分错误。",
+        "refs": [
+          "/answer",
+          "/productJudgment/criteria/0",
+          "/rubric/0",
+          "/productJudgment/consequence"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "产品将必要标准c1错误判定为not_met，但学生答案已正确给出原平均6、中位4及修改后平均8、中位4。",
+            "impact": "导致错误拒绝授予学分，改变核心评分用途，使实际学分与应得不一致。",
+            "refs": [
+              "/answer",
+              "/productJudgment/criteria/0",
+              "/rubric/0"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/answer",
+                "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+              },
+              {
+                "pointer": "/productJudgment/criteria/0",
+                "valueHash": "f06e5b2e9ede05feb13e040db20dc87527f8dd4a6ef23a54bf1774d4b58bfc45"
+              },
+              {
+                "pointer": "/rubric/0",
+                "valueHash": "a1297a15ff2b3a0f739057b0447a410cb40c06ce923b05a3164b28df2ba398b4"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "grading": {
+          "criteria": [
+            {
+              "id": "c1",
+              "result": "met",
+              "reason": "学生全答明确给出原平均6、中位4以及修改后平均8、中位4，数值与题设一致。",
+              "refs": [
+                "/answer",
+                "/rubric/0"
+              ],
+              "required": true,
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+                },
+                {
+                  "pointer": "/rubric/0",
+                  "valueHash": "a1297a15ff2b3a0f739057b0447a410cb40c06ce923b05a3164b28df2ba398b4"
+                }
+              ]
+            },
+            {
+              "id": "c2",
+              "result": "met",
+              "reason": "答案指出改后总和32平均8，中间位置仍是两个4中位还为4，并说明最长那次拉高总和而没有移动中间值，解释总和增加使平均改变且中间两项仍为4使中位未变。",
+              "refs": [
+                "/answer",
+                "/rubric/1"
+              ],
+              "required": true,
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+                },
+                {
+                  "pointer": "/rubric/1",
+                  "valueHash": "46a9a9b0313c712bcf38afd5a6b9d93cea5b4f5f9ce44412a9a9122ea1b5461b"
+                }
+              ]
+            },
+            {
+              "id": "c3",
+              "result": "not_met",
+              "reason": "答案为连续段落，未使用小标题分开计算和解释，此条为非必要可选标准。",
+              "refs": [
+                "/answer",
+                "/rubric/2"
+              ],
+              "required": false,
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+                },
+                {
+                  "pointer": "/rubric/2",
+                  "valueHash": "c501d76a0d0bcb2526107e773e4c2486adf551bafedd0b5c028a4823e4cc1a95"
+                }
+              ]
+            }
+          ],
+          "warrantedCredit": "granted",
+          "actualCredit": "withheld"
+        },
+        "witnesses": [
+          {
+            "pointer": "/answer",
+            "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+          },
+          {
+            "pointer": "/productJudgment/criteria/0",
+            "valueHash": "f06e5b2e9ede05feb13e040db20dc87527f8dd4a6ef23a54bf1774d4b58bfc45"
+          },
+          {
+            "pointer": "/rubric/0",
+            "valueHash": "a1297a15ff2b3a0f739057b0447a410cb40c06ce923b05a3164b28df2ba398b4"
+          },
+          {
+            "pointer": "/productJudgment/consequence",
+            "valueHash": "e298549347889f278e833a49e1967d6d1d1c8f52afcb9de2ec7885d1b295867f"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q5:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/answer",
+          "quote": "原总和24，四次平均6；中间两个都是4，中位4。改后总和32，平均8，中间位置仍是两个4，中位还为4。",
+          "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+        },
+        "reason": "引文明确给出原平均6、中位4及改后平均8、中位4，满足rubric c1，但产品判c1 not_met，错误拒绝学分。"
+      },
+      {
+        "id": "review2:Q5:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/productJudgment/consequence",
+          "quote": "未授予本题学分。",
+          "valueHash": "e298549347889f278e833a49e1967d6d1d1c8f52afcb9de2ec7885d1b295867f"
+        },
+        "reason": "产品因误判c1 not_met而consequence为withheld，但/answer已满足c1，应granted，构成实质学分冲突。"
+      }
+    ]
+  }
+}

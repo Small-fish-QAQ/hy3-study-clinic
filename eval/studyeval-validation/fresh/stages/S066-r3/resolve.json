@@ -1,0 +1,236 @@
+{
+  "inputIdentity": "0342d7005e33e94b3b1bcdce3210313eb4b1bf9816734da7d335ab2397d30677",
+  "attempts": [
+    {
+      "physicalId": "27b6f203-5ea3-45cf-9a79-e16fd130a27f",
+      "caseId": "S066",
+      "runId": "S066-r3",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": "Defect verification quote must match original evidence."
+    },
+    {
+      "physicalId": "981f5c23-a165-4635-aa17-d0e07bbae067",
+      "caseId": "S066",
+      "runId": "S066-r3",
+      "stage": "resolve",
+      "outputAttempt": 2,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q5",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "重解任务得TACG及A-T/G-C正确；学生答案含序列与配对，必需c1c2产品判met正确，学分granted正确。可选c3未用小标题但产品误判met且反馈谎称使用，属局部可选错误，核心评分成立。",
+        "refs": [
+          "/answer",
+          "/rubric/0",
+          "/rubric/1",
+          "/rubric/2",
+          "/productJudgment/criteria/2",
+          "/productJudgment/feedback",
+          "/productJudgment/consequence"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "可选标准c3（分项小标题）学生答案为连续句无小标题，产品判met",
+            "impact": "不改变核心评分用途，c3非必需且学分granted仍正确",
+            "refs": [
+              "/answer",
+              "/rubric/2",
+              "/productJudgment/criteria/2"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/answer",
+                "valueHash": "f08ccfacfdeff745d2faff02198d7f364ce0e613d8ee2f26f23b8fa816db8274"
+              },
+              {
+                "pointer": "/rubric/2",
+                "valueHash": "6f8be15b0ef9ebb5a60baee2e77c77c6c953ccb7addda5722555779b819b7369"
+              },
+              {
+                "pointer": "/productJudgment/criteria/2",
+                "valueHash": "35e7bfb27d54bc5b8ed1699cd41203fb25e5e569d9ae5579798d7e7e02830b58"
+              }
+            ]
+          },
+          {
+            "severity": "local",
+            "description": "反馈声称'使用了分项小标题'与答案实际不符",
+            "impact": "外围反馈错误，不影响必需判定与学分授予",
+            "refs": [
+              "/productJudgment/feedback",
+              "/answer"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/productJudgment/feedback",
+                "valueHash": "5686190f0622de425026d24f2671a070c00a7452f1668d9321518dbbf3d74946"
+              },
+              {
+                "pointer": "/answer",
+                "valueHash": "f08ccfacfdeff745d2faff02198d7f364ce0e613d8ee2f26f23b8fa816db8274"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "grading": {
+          "criteria": [
+            {
+              "id": "c1",
+              "result": "met",
+              "reason": "答案明确写出互补串是TACG，满足必需",
+              "refs": [
+                "/answer",
+                "/rubric/0"
+              ],
+              "required": true,
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "f08ccfacfdeff745d2faff02198d7f364ce0e613d8ee2f26f23b8fa816db8274"
+                },
+                {
+                  "pointer": "/rubric/0",
+                  "valueHash": "6fe947ae7c7a78d14bc8936eb82fdb7b92f51cdea86673ee908623d0cb2421ba"
+                }
+              ]
+            },
+            {
+              "id": "c2",
+              "result": "met",
+              "reason": "答案陈述A对T，G对C，满足明确A配T、G配C",
+              "refs": [
+                "/answer",
+                "/rubric/1"
+              ],
+              "required": true,
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "f08ccfacfdeff745d2faff02198d7f364ce0e613d8ee2f26f23b8fa816db8274"
+                },
+                {
+                  "pointer": "/rubric/1",
+                  "valueHash": "bd66df53bb7d1e9a251f305678ac1e129dc39f36afd809fcfc894e104a962233"
+                }
+              ]
+            },
+            {
+              "id": "c3",
+              "result": "not_met",
+              "reason": "答案为连续句子未使用分项小标题，产品误判met但可选",
+              "refs": [
+                "/answer",
+                "/rubric/2"
+              ],
+              "required": false,
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "f08ccfacfdeff745d2faff02198d7f364ce0e613d8ee2f26f23b8fa816db8274"
+                },
+                {
+                  "pointer": "/rubric/2",
+                  "valueHash": "6f8be15b0ef9ebb5a60baee2e77c77c6c953ccb7addda5722555779b819b7369"
+                }
+              ]
+            }
+          ],
+          "warrantedCredit": "granted",
+          "actualCredit": "granted",
+          "actualCreditWitness": {
+            "pointer": "/productJudgment/consequence",
+            "valueHash": "dd515d1975b8e5a83bab3420bea5dacefe5451ac7cf617d23c4393cc79e4db99"
+          }
+        },
+        "witnesses": [
+          {
+            "pointer": "/answer",
+            "valueHash": "f08ccfacfdeff745d2faff02198d7f364ce0e613d8ee2f26f23b8fa816db8274"
+          },
+          {
+            "pointer": "/rubric/0",
+            "valueHash": "6fe947ae7c7a78d14bc8936eb82fdb7b92f51cdea86673ee908623d0cb2421ba"
+          },
+          {
+            "pointer": "/rubric/1",
+            "valueHash": "bd66df53bb7d1e9a251f305678ac1e129dc39f36afd809fcfc894e104a962233"
+          },
+          {
+            "pointer": "/rubric/2",
+            "valueHash": "6f8be15b0ef9ebb5a60baee2e77c77c6c953ccb7addda5722555779b819b7369"
+          },
+          {
+            "pointer": "/productJudgment/criteria/2",
+            "valueHash": "35e7bfb27d54bc5b8ed1699cd41203fb25e5e569d9ae5579798d7e7e02830b58"
+          },
+          {
+            "pointer": "/productJudgment/feedback",
+            "valueHash": "5686190f0622de425026d24f2671a070c00a7452f1668d9321518dbbf3d74946"
+          },
+          {
+            "pointer": "/productJudgment/consequence",
+            "valueHash": "dd515d1975b8e5a83bab3420bea5dacefe5451ac7cf617d23c4393cc79e4db99"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q5:1",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/answer",
+          "quote": "对应的互补串是TACG，因为A对T，G对C（T对A、C对G）。",
+          "valueHash": "f08ccfacfdeff745d2faff02198d7f364ce0e613d8ee2f26f23b8fa816db8274"
+        },
+        "reason": "答案无分项小标题，而/productJudgment/criteria/2判c3 met，证实可选标准误判"
+      },
+      {
+        "id": "review1:Q5:2",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/productJudgment/feedback",
+          "quote": "且使用了分项小标题。",
+          "valueHash": "5686190f0622de425026d24f2671a070c00a7452f1668d9321518dbbf3d74946"
+        },
+        "reason": "反馈声称使用小标题，但/answer为连续句无此格式，与事实不符"
+      },
+      {
+        "id": "review2:Q5:1",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/productJudgment/criteria/2",
+          "quote": null,
+          "valueHash": "35e7bfb27d54bc5b8ed1699cd41203fb25e5e569d9ae5579798d7e7e02830b58"
+        },
+        "reason": "/answer无小标题，产品对c3判met错误，属可选标准局部缺陷"
+      }
+    ]
+  }
+}

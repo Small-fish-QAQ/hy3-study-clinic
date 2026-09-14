@@ -1,0 +1,185 @@
+{
+  "status": "ready",
+  "message": "Lesson is ready.",
+  "course": {
+    "title": "会计等式怎样追踪日常交易"
+  },
+  "session": {
+    "status": "active",
+    "version": 11
+  },
+  "agenda": {
+    "version": 2,
+    "itemState": "queued"
+  },
+  "lesson": {
+    "objective": {
+      "title": "会计等式与交易双重影响及简化报表核对基础",
+      "whyNow": "在核对简化报表时，常只验证左右相等而忽略交易实质；我们需要先建立顺序更新与分类辨别的思维模型。",
+      "outcomes": [
+        {
+          "title": "顺序更新简化资产负债表并核对等式与交易实质",
+          "description": "依据会计分析核对原则，对给定交易序列连续更新简化资产负债表各项目，汇总核对等式平衡；并说明每笔交易为何影响对应类别而非仅写出左右相等的数，认识到等式平衡不能证明账户分类正确（例如把借款误记为所有者投入可能凑平总额却改变偿还义务实质）。"
+        }
+      ]
+    },
+    "prerequisites": [],
+    "segments": [
+      {
+        "index": 0,
+        "purpose": "orientation",
+        "explanation": "会计等式“资产=负债+所有者权益”要求每笔交易同时影响至少两个项目。资产是企业控制的资源如现金设备；负债是外部偿还义务；权益是剩余权益。顺序更新时，先辨明实际取得或付出什么、是否新欠款或偿旧债，再更新对应项目，最后汇总核对。等式平衡只说明总额计算无误，不能证明账户分类恰当。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 1,
+        "purpose": "worked_example",
+        "explanation": "下面用一组新数字演练连续更新：先投入、再借款、购设备、还款，观察每一步类别影响，而非仅凑数。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": {
+          "startingState": "企业设立初资产0、负债0、权益0。交易序列：①所有者投入现金800元；②向银行借入400元现金；③以现金300元购入设备；④以现金100元偿还银行本金。",
+          "inputs": [
+            "投入800现金",
+            "借入400现金",
+            "购设备300现金",
+            "偿本金100现金"
+          ],
+          "ruleOrProcedure": "每笔交易按实质更新对应项目：投入增现金与权益；借款增现金与负债；购设备为资产内部转换；还款减现金与负债。最后汇总核对等式。",
+          "steps": [
+            {
+              "action": "记录交易①：现金+800，权益+800",
+              "reason": "所有者投入属权益来源，资产与权益同增",
+              "resultingState": "现金800，设备0，资产800；负债0；权益800；等式800=0+800"
+            }
+          ],
+          "learnerDecision": null,
+          "result": null,
+          "whyResultFollows": null,
+          "origin": "hy3_synthesis",
+          "sources": [],
+          "interaction": {
+            "stage": "guided",
+            "modelledStepCount": 1,
+            "origin": "hy3_synthesis",
+            "sources": [],
+            "activity": {
+              "prompt": "给定上述交易序列，在已完成投入800后，继续完成借入、购设备与还款，最终现金、设备与负债各是多少？",
+              "options": [
+                {
+                  "id": "A",
+                  "text": "现金800元，设备300元，负债300元，等式1100=300+800"
+                },
+                {
+                  "id": "B",
+                  "text": "现金1100元，设备0元，负债0元，等式1100=0+1100"
+                },
+                {
+                  "id": "C",
+                  "text": "现金500元，设备300元，负债400元，等式800=400+400"
+                }
+              ],
+              "response": null,
+              "respondedAt": null,
+              "correct": null,
+              "feedback": null,
+              "debrief": null,
+              "credit": "none",
+              "misconception": null
+            },
+            "hint": null,
+            "scaffold": null,
+            "transfer": null
+          }
+        },
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 2,
+        "purpose": "comparison",
+        "explanation": "等式平衡仅是必要检查。若把借款误记为所有者投入，总额仍可能凑平，但企业原本的偿还义务被隐藏，违背负债定义。因此核对时必须说明每笔交易影响对应类别的理由。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": {
+          "text": "例如把借款600误记为投入，终态或可显示资产=0+权益而平衡，但企业实际仍欠债权人款，与事实不符；正确记录应体现负债增加。",
+          "origin": "hy3_synthesis",
+          "sources": []
+        },
+        "possibleMisconception": null,
+        "informalCheck": null
+      }
+    ],
+    "sourceReferencesAvailable": true,
+    "visuals": [],
+    "summary": {
+      "available": true,
+      "text": "通过逐笔更新资产、负债、权益并说明影响类别，可理解等式平衡仅是必要检查，不证明分类正确。",
+      "nextConnection": null,
+      "formalOpportunities": []
+    },
+    "plannedTime": {
+      "agendaMinutes": 11,
+      "activeMinutesMin": 14,
+      "activeMinutesMax": 22,
+      "basis": "locally_evaluated_learning_actions"
+    }
+  },
+  "progress": {
+    "stateVersion": 2,
+    "stateId": "lesson_execution_8d7cb1b8-fd96-4597-9fec-8d8f1092ab86",
+    "currentSegmentIndex": 0,
+    "segmentCount": 3,
+    "presentedSegmentIndexes": [],
+    "presentationStatus": "not_started",
+    "presentationCompletedAt": null
+  },
+  "currentInformalCheck": null,
+  "practice": {
+    "status": "locked",
+    "currentItemIndex": 0,
+    "itemCount": 1,
+    "item": {
+      "index": 0,
+      "objectiveTitle": "顺序更新简化资产负债表并核对等式与交易实质",
+      "construct": "apply",
+      "surface": "initial",
+      "supplementary": true,
+      "prompt": "账簿终态：现金700元，设备200元，总资产900元；负债0元，所有者权益900元，等式900=0+900平衡。银行流水显示企业曾借入300元现金并偿还300元本金，但账簿记录为所有者投入1200元与所有者提款300元。哪一解释符合事实？",
+      "options": [
+        {
+          "id": "teaching_brief_938d8dab-ca50-4b8a-9822-d695b6ea74bd_practice_1_initial_A",
+          "text": "借款被误记为所有者投入，偿还误记为提款，但总额凑平且终态一致"
+        },
+        {
+          "id": "teaching_brief_938d8dab-ca50-4b8a-9822-d695b6ea74bd_practice_1_initial_B",
+          "text": "所有者实际投入仅为900元，账簿多记投入300与提款300，流水无借款证据"
+        },
+        {
+          "id": "teaching_brief_938d8dab-ca50-4b8a-9822-d695b6ea74bd_practice_1_initial_C",
+          "text": "所有者实际投入600元且借款300元未偿还，负债应为300元"
+        }
+      ]
+    },
+    "attempts": [],
+    "recovery": null,
+    "completedAt": null,
+    "credit": "none"
+  },
+  "allowedActions": [
+    "start_lesson"
+  ]
+}

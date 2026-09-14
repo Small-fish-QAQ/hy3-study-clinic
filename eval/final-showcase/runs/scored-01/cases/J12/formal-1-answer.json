@@ -1,0 +1,77 @@
+{
+  "answerPolicy": "independent-visible-study-response-v1; no-author-key-rubric-or-review",
+  "answers": {
+    "assessment_item_cf49e645-9e25-47f9-b6ec-f91fc7b2b964": "(1) Y is heavier than X. (Since 7kg > 4kg, the comparative form heavier than correctly compares the two stones.)\n(2) Z is the heaviest of the three stones. (Since 10kg is the largest among 4kg, 7kg, 10kg, the superlative requires 'the' and the explicit range 'of the three stones'.)\n(3) Key difference: The comparative is for exactly two objects and normally uses 'than' to connect the second object (e.g., A is heavier than B). The superlative is for one object within a given set of three or more, and must use 'the' with an explicit range such as 'of the three' to indicate the comparison set; it does not pair with a single other object via 'than'."
+  },
+  "result": {
+    "assessmentVersionId": "assessment_version_4ae8945d-abae-43cf-a77b-f30c0ea1f5f0",
+    "title": "独立检查：区分两者比较与给定集合最高程度",
+    "attempt": {
+      "id": "assessment_attempt_22b5c30a-4c7d-4bf5-8cf7-0e29da1f64d0",
+      "assessmentVersionId": "assessment_version_4ae8945d-abae-43cf-a77b-f30c0ea1f5f0",
+      "workspaceId": "ws_816bd2f4-e553-4b22-a30f-d592a0164282",
+      "ordinal": 1,
+      "status": "submitted",
+      "responses": {
+        "assessment_item_cf49e645-9e25-47f9-b6ec-f91fc7b2b964": "(1) Y is heavier than X. (Since 7kg > 4kg, the comparative form heavier than correctly compares the two stones.)\n(2) Z is the heaviest of the three stones. (Since 10kg is the largest among 4kg, 7kg, 10kg, the superlative requires 'the' and the explicit range 'of the three stones'.)\n(3) Key difference: The comparative is for exactly two objects and normally uses 'than' to connect the second object (e.g., A is heavier than B). The superlative is for one object within a given set of three or more, and must use 'the' with an explicit range such as 'of the three' to indicate the comparison set; it does not pair with a single other object via 'than'."
+      },
+      "startedAt": "2026-09-14T12:00:45.896Z",
+      "submittedAt": "2026-09-14T12:01:25.648Z",
+      "cancelledAt": null
+    },
+    "items": [
+      {
+        "itemId": "assessment_item_cf49e645-9e25-47f9-b6ec-f91fc7b2b964",
+        "prompt": "假设有三个石头：石头X重4千克，石头Y重7千克，石头Z重10千克。请完成以下任务：(1) 写一句英语比较句，比较X和Y的重量（两者）；(2) 写一句英语最高级句子，指出Z在三个石头中最重；(3) 简要说明比较级与最高级在对象数量和范围交代上的关键区别。",
+        "purpose": "检验你是否能在自己的表述中说明这个关键能力。",
+        "sourceReferences": [
+          {
+            "materialTitle": "英语比较级与最高级",
+            "locationLabel": "第 1 段",
+            "excerpt": "英语比较级用来比较两个对象在某一方面的程度，常配合than；最高级表示某个对象在给定集合中达到最高程度，通常使用the并交代比较范围。例如“This box is lighter than that box.”比较这两个箱子的轻重；“This is the lightest box of the three.”把它放在指定的三个箱子中比较。最高级不是不受范围限制的“世界第一”。",
+            "advisory": false
+          }
+        ]
+      }
+    ],
+    "result": {
+      "gradeRecordId": "grade_446ed03e-81ee-4596-8ab5-cb03457438d4",
+      "demonstrated": true,
+      "summary": "你已经展示了这项关键能力。",
+      "minorNotice": null,
+      "criteria": [
+        {
+          "criterionId": "criterion_7f155164-8fba-4edc-b1e0-b1bd0acb69e7",
+          "label": "写出正确的两者比较句，使用比较级形式（如 lighter/heavier）比较 X 和 Y 的重量，方向符合给定质量数据（X轻Y重，故 X lighter 或 Y heavier），正确表达两者比较。",
+          "result": "met",
+          "message": "这一点已经在回答中体现。"
+        },
+        {
+          "criterionId": "criterion_cced6f56-b175-4c15-86d8-fec8660d79ac",
+          "label": "写出正确的最高级句，使用 the+最高级并明确交代范围（如 of the three stones），指出 Z 最重。",
+          "result": "met",
+          "message": "这一点已经在回答中体现。"
+        },
+        {
+          "criterionId": "criterion_56ac151a-171e-4d9d-9849-99f3ebc06a80",
+          "label": "说明比较级用于比较两个对象，最高级用于给定集合最高程度需交代范围（如 of the three），不是绝对无范围第一。",
+          "result": "met",
+          "message": "这一点已经在回答中体现。"
+        }
+      ],
+      "sourceReferences": [
+        {
+          "materialTitle": "英语比较级与最高级",
+          "locationLabel": "第 1 段",
+          "excerpt": "英语比较级用来比较两个对象在某一方面的程度，常配合than；最高级表示某个对象在给定集合中达到最高程度，通常使用the并交代比较范围。例如“This box is lighter than that box.”比较这两个箱子的轻重；“This is the lightest box of the three.”把它放在指定的三个箱子中比较。最高级不是不受范围限制的“世界第一”。",
+          "advisory": false
+        }
+      ],
+      "evidenceStatus": "supported",
+      "repairEpisodeId": null,
+      "progressionPending": false,
+      "reviewSchedulingPending": false
+    },
+    "review": null
+  }
+}

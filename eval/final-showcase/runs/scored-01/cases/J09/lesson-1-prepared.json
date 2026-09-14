@@ -1,0 +1,270 @@
+{
+  "status": "ready",
+  "message": "Lesson is ready.",
+  "course": {
+    "title": "植物体内的水分运输与蒸腾"
+  },
+  "session": {
+    "status": "active",
+    "version": 1
+  },
+  "agenda": {
+    "version": 1,
+    "itemState": "queued"
+  },
+  "lesson": {
+    "objective": {
+      "title": "植物水分吸收、蒸腾作用与收支平衡基础",
+      "whyNow": "已知植物靠根系吸水并经由木质部向上，但常忽视气孔与空气湿度如何共同决定叶片失水，导致误判蒸腾结果。",
+      "outcomes": [
+        {
+          "title": "解释根毛吸水、木质部运输与叶片蒸腾拉力的连贯机制",
+          "description": "解释根毛如何增加表面积从土壤吸水，木质部导管提供向上通路，叶片水分蒸发经气孔散失形成蒸腾，其拉力是水向上运输的重要动力而非叶片主动泵出液态水，并能沿“土壤供水、根吸收、木质部运输、叶蒸发、气孔散失”建立联系。"
+        },
+        {
+          "title": "应用条件判断蒸腾趋势及机制",
+          "description": "在给定的温度、光照、叶面积、气孔开度和供水等条件保持不变时，依据空气更干燥或适度空气流动等环境变化判断蒸腾增强趋势，并解释机制为叶内外水蒸气差异更大或移走湿润空气；排除极端大风或缺水引起的气孔关闭混入同一判断。"
+        }
+      ]
+    },
+    "prerequisites": [],
+    "segments": [
+      {
+        "index": 0,
+        "purpose": "orientation",
+        "explanation": "植物水分从土壤到叶片可连成一条链：土壤供水，根毛增加接触面积吸收水，木质部导管提供向上通路，叶片水分蒸发经气孔散失，蒸腾拉力成为向上运输的重要动力。根据资料中的规则，根毛利于吸水，木质部运水，气孔散失蒸气而非叶片泵出液态水，韧皮部另运有机物。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 1,
+        "purpose": "mechanism",
+        "explanation": "以根毛为例：根毛通过伸长增加根与土壤接触的表面积，这一结构变化直接提高从湿润土壤吸水的能力。与之分离看，叶片蒸发形成拉力，但拉力只是动力之一。以下展示一个机制效应关系。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [
+          {
+            "kind": "mechanism_effect",
+            "fromProposition": "根毛增加根与土壤接触的表面积",
+            "toProposition": "有利于从湿润土壤吸收水和溶于水的无机盐",
+            "origin": "source_grounded",
+            "sources": [
+              {
+                "referenceKey": "S1",
+                "materialTitle": "植物体内的水分运输与蒸腾",
+                "headingPath": [],
+                "pageNumber": null,
+                "slideNumber": null,
+                "locationLabel": "Source excerpt",
+                "exactExcerpt": "陆生植物需要把根部吸收的水送到茎和叶。根毛增加根与土壤接触的表面积，有利于从湿润土壤吸收水和溶于水的无机盐。木质部中的导管等结构提供水分向上运输的通路。叶片内的水分蒸发后，水蒸气主要经气孔散失到空气中，这个过程叫蒸腾。蒸腾形成的拉力是水在木质部向上运输的重要动力之一，不是叶片把整滴液态水主动泵到空气中。",
+                "classification": "exact_source_excerpt"
+              }
+            ]
+          }
+        ],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 2,
+        "purpose": "guided_practice",
+        "explanation": "在条件固定的正常范围内，比较空气湿度对蒸腾的影响。设同品种两株，其余条件一致仅空气湿度不同，可预测蒸腾强弱。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": {
+          "kind": "choose",
+          "prompt": "两株同种植物，土壤供水充足，温度、光照、叶面积相同。甲处在较湿空气，乙处在较干空气，气孔开度均0.5。以下哪项符合预测？",
+          "guidance": null,
+          "options": [
+            {
+              "id": "A",
+              "text": "乙蒸腾速率高于甲（如乙14 g/h，甲9 g/h）"
+            },
+            {
+              "id": "B",
+              "text": "甲蒸腾速率高于乙（如甲14 g/h，乙9 g/h）"
+            }
+          ],
+          "presented": false,
+          "response": null,
+          "respondedAt": null,
+          "correct": null,
+          "feedback": null,
+          "credit": "none"
+        }
+      },
+      {
+        "index": 3,
+        "purpose": "comparison",
+        "explanation": "前述比较依赖明确的前提边界。资料指出正常范围比较需固定温度、光照、叶面积、气孔开度和供水，不把极端大风或缺水引起的气孔关闭混进同一判断。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": {
+          "text": "在温度、光照、叶面积、气孔开度和供水相同的前提下比较空气湿度对蒸腾的影响，是正常条件判断；若引入极端大风使气孔关闭，则超出该前提，不能沿用‘空气干则蒸腾强’的结论。",
+          "origin": "hy3_synthesis",
+          "sources": []
+        },
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 4,
+        "purpose": "worked_example",
+        "explanation": "在温度、光照、叶面积、气孔开度和供水保持不变时，蒸腾趋势受空气湿度和空气流动共同影响。空气更干加大叶内外水蒸气差异；适度流动移走叶面附近湿润空气，也加大差异。两者可叠加增强，但都必须在正常条件范围内，不引入气孔关闭。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": {
+          "startingState": "两株同种植物：温度20℃、光照相同、叶面积相近、气孔开度0.5、土壤供水充足。X处在较湿空气（相对湿度80%）且静止；Y处在较干空气（相对湿度40%）且有适度风扇流动。",
+          "inputs": [
+            "温度、光照、叶面积、气孔开度、供水相同",
+            "X湿空气静止",
+            "Y干空气+适度流动"
+          ],
+          "ruleOrProcedure": "根据资料中的规则，固定其他条件时，空气更干使蒸气压差更大，适度流动移走湿润空气，均可增强蒸腾；正常范围内不混合气孔关闭。",
+          "steps": [
+            {
+              "action": "列出两株差异：X湿静止，Y干且流动",
+              "reason": "明确除湿度与流动外其余条件一致，符合正常比较前提",
+              "resultingState": "Y处在较干空气且有适度流动，X处在较湿空气且静止"
+            }
+          ],
+          "learnerDecision": null,
+          "result": null,
+          "whyResultFollows": null,
+          "origin": "hy3_synthesis",
+          "sources": [],
+          "interaction": {
+            "stage": "guided",
+            "modelledStepCount": 1,
+            "origin": "hy3_synthesis",
+            "sources": [],
+            "activity": {
+              "prompt": "给定上述案例事实，以下哪项是最合理的蒸腾结果？",
+              "options": [
+                {
+                  "id": "A",
+                  "text": "Y失水18克/小时，X失水9克/小时"
+                },
+                {
+                  "id": "B",
+                  "text": "X失水18克/小时，Y失水9克/小时"
+                },
+                {
+                  "id": "C",
+                  "text": "两株均失水12克/小时"
+                }
+              ],
+              "response": null,
+              "respondedAt": null,
+              "correct": null,
+              "feedback": null,
+              "debrief": null,
+              "credit": "none",
+              "misconception": null
+            },
+            "hint": null,
+            "scaffold": null,
+            "transfer": null
+          }
+        },
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 5,
+        "purpose": "comparison",
+        "explanation": "前述正常条件判断有明确边界。极端大风或缺水可引起气孔关闭，此时失水通道受限，不能把‘空气流动或干燥必增强蒸腾’直接套用。需将这类边界与固定条件比较分离。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": {
+          "text": "在温度、光照、叶面积、气孔开度和供水相同的前提下比较空气湿度或适度流动对蒸腾的影响，是正常条件判断；若引入极端大风使气孔关闭，则超出该前提，不能沿用‘空气干或流动则蒸腾强’的结论。",
+          "origin": "hy3_synthesis",
+          "sources": []
+        },
+        "possibleMisconception": null,
+        "informalCheck": null
+      }
+    ],
+    "sourceReferencesAvailable": true,
+    "visuals": [],
+    "summary": {
+      "available": true,
+      "text": "沿土壤供水—根毛吸收—木质部运输—叶片蒸发—气孔散失建立联系，并明白空气湿度与气孔开度共同决定蒸腾，极端条件改变前提。",
+      "nextConnection": null,
+      "formalOpportunities": []
+    },
+    "plannedTime": {
+      "agendaMinutes": 23,
+      "activeMinutesMin": 26,
+      "activeMinutesMax": 41,
+      "basis": "locally_evaluated_learning_actions"
+    }
+  },
+  "progress": {
+    "stateVersion": 2,
+    "stateId": "lesson_execution_2340fa63-2ffa-4e4b-800d-f866881822e8",
+    "currentSegmentIndex": 0,
+    "segmentCount": 6,
+    "presentedSegmentIndexes": [],
+    "presentationStatus": "not_started",
+    "presentationCompletedAt": null
+  },
+  "currentInformalCheck": null,
+  "practice": {
+    "status": "locked",
+    "currentItemIndex": 0,
+    "itemCount": 2,
+    "item": {
+      "index": 0,
+      "objectiveTitle": "解释根毛吸水、木质部运输与叶片蒸腾拉力的连贯机制",
+      "construct": "explain",
+      "surface": "initial",
+      "supplementary": true,
+      "prompt": "两株同种植物，土壤供水充足，温度、光照、叶面积相同。甲处在较湿空气，气孔开度0.6；乙处在较干空气，气孔开度0.1。实测甲蒸腾速率10 g/h，乙蒸腾速率4 g/h。以下哪项能解释该结果？",
+      "options": [
+        {
+          "id": "teaching_brief_057b3af7-5ce3-4baf-b2dc-c13caaf74d77_practice_1_initial_A",
+          "text": "乙气孔开度0.1限制水蒸气通道，使空气干燥带来的拉力被抵消，故乙蒸腾弱于甲"
+        },
+        {
+          "id": "teaching_brief_057b3af7-5ce3-4baf-b2dc-c13caaf74d77_practice_1_initial_B",
+          "text": "空气更干使乙蒸腾强于甲，观测值反映此结果"
+        },
+        {
+          "id": "teaching_brief_057b3af7-5ce3-4baf-b2dc-c13caaf74d77_practice_1_initial_C",
+          "text": "乙根毛更多导致吸水多，从而蒸腾更强"
+        }
+      ]
+    },
+    "attempts": [],
+    "recovery": null,
+    "completedAt": null,
+    "credit": "none"
+  },
+  "allowedActions": [
+    "start_lesson"
+  ]
+}

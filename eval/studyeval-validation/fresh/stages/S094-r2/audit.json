@@ -1,0 +1,54 @@
+{
+  "inputIdentity": "1b98dc7f0ecda33ee7d472b966452872b4ee21d8e85d484a36578291d206b565",
+  "attempts": [
+    {
+      "physicalId": "f9ed389a-5873-44dd-966f-6ce37708a9a1",
+      "caseId": "S094",
+      "runId": "S094-r2",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q2",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "lesson明确区分叙述者与作者，解释第一人称可报告自身感受但不可全知他人隐秘想法，并给出引用归属的可操作写法，准确覆盖全部核心与次要目标，达到working_fluency深度，无缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text",
+          "/goals"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "f06c41473aa7af3af43adc2ee10638ca2d93bffca4f99b6be4f4a14c7bf8e60c"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "bae368a359568cf22d196cf95dd79a50368bc21f0e49042a004744bc3b0af43c"
+          },
+          {
+            "pointer": "/goals",
+            "valueHash": "8b78e8c669075a0ea86f5033dbbe2b4722fc4b29b6264d26b8764fba22ae73f4"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

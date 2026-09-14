@@ -1,0 +1,57 @@
+{
+  "inputIdentity": "d61d960138e5109d232786c5a0b771bbd31df0798336c1c1c629c0911a66c9c4",
+  "attempts": [
+    {
+      "physicalId": "bb70a94d-9e8c-4d52-84d1-01b0a54368c9",
+      "caseId": "S040",
+      "runId": "S040-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": "U",
+        "evidence": "missing",
+        "reason": "门禁日志原始记录未提供（/sources空），边界声明不能访问且无其他证据。无法核实artifact中317访客主张真伪与证据权威，关键原始证据不可见，本维度无法决定。",
+        "refs": [
+          "/sources",
+          "/artifacts/0/text",
+          "/authorityBoundaries"
+        ],
+        "defects": [],
+        "missing": [
+          "/sources 为空，缺少门禁日志原始记录，无法验证317访客数主张",
+          "/authorityBoundaries 声明日志不能访问且无其他证据，故无独立证据可判定真相或捏造"
+        ],
+        "witnesses": [
+          {
+            "pointer": "/sources",
+            "valueHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "50c0ea16a08d45a6a85680bf663e6c80eca47fb0cbea23486746b660b684b17a"
+          },
+          {
+            "pointer": "/authorityBoundaries",
+            "valueHash": "6ffa6cc522755f05199994f58e5344ffb4a09636a1a3df0c6eb5ae1a064b5ccf"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

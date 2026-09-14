@@ -1,0 +1,36 @@
+{
+  "inputIdentity": "55beb88fd7e2639c26210dc2b2515b186a665ddafa5fa7065fc2e7d48cf1f5f1",
+  "attempts": [
+    {
+      "physicalId": "3073df16-58d0-44d9-ab16-620340f1fd00",
+      "caseId": "S068",
+      "runId": "S068-r1",
+      "stage": "blind-solution",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "status": "resolved",
+    "solution": "从资料抄出：激活操作允许的起点状态为“未激活”，终点状态为“有效”（原句：激活只能把未激活变为有效）。",
+    "refs": [
+      "/question/prompt",
+      "/sources/0/text"
+    ],
+    "witnesses": [
+      {
+        "pointer": "/question/prompt",
+        "valueHash": "f2cd6c08b9d046cedf630b82184bd09b37a81beb527ef9e494a6f6b2afc6fc14"
+      },
+      {
+        "pointer": "/sources/0/text",
+        "valueHash": "694fcf138ee515172ab2dd1c3a0a59baef8e0ee6b25086ed04ce3845111041ea"
+      }
+    ]
+  }
+}

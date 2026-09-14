@@ -1,0 +1,107 @@
+{
+  "inputIdentity": "a085371c3c0d45965b560a0ee893dff121104c136f0fb4ccbe2ee5aaf8235430",
+  "attempts": [
+    {
+      "physicalId": "147e35fc-3300-45d0-8809-cb1d2fe915fc",
+      "caseId": "S013",
+      "runId": "S013-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q4",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "题目初始高度未知却禁止言不足并强制唯一绝对高度，缺少决定性前提且要求否认欠定性，作者参考键“唯一最终高度3米”错误。测试实质无效，无法评估目标技能。",
+        "refs": [
+          "/question/prompt",
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "题设要求唯一最终绝对高度但初始高度未知，且禁止声明信息不足，构成不兼容响应要求与错误强制键",
+            "impact": "改变核心用途：无法合法回答，测试不能评估有符号高度计算技能",
+            "refs": [
+              "/question/prompt",
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "678fa04269e5dd9e77c27b3e192985ba0156440a8c8ece76a99a362a20b654b1"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "bb2d3c1987e82276f2054a2116dce18217820b6fa22681b3be43cd98fd24d8a3"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "1df9950edf389e68cc4353ad1c364ae71b323e3e1d130830ce39d9c5e25fe7f3"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "assessment": {
+          "key": "incorrect",
+          "validity": "invalid",
+          "exposure": "none",
+          "discrimination": "weak",
+          "demand": "reasoning",
+          "demandReason": "学生需从规则推导净变化并判断最终高度确定性；题目却禁止指出欠定，强制唯一答案，矛盾。",
+          "reason": "题目强制唯一高度禁言不足，作者键误为3米，priorExposure无泄露，但题无效无法区分技能。",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "678fa04269e5dd9e77c27b3e192985ba0156440a8c8ece76a99a362a20b654b1"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "bb2d3c1987e82276f2054a2116dce18217820b6fa22681b3be43cd98fd24d8a3"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "1df9950edf389e68cc4353ad1c364ae71b323e3e1d130830ce39d9c5e25fe7f3"
+            }
+          ]
+        },
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "678fa04269e5dd9e77c27b3e192985ba0156440a8c8ece76a99a362a20b654b1"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "bb2d3c1987e82276f2054a2116dce18217820b6fa22681b3be43cd98fd24d8a3"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "1df9950edf389e68cc4353ad1c364ae71b323e3e1d130830ce39d9c5e25fe7f3"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

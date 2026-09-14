@@ -1,0 +1,99 @@
+{
+  "inputIdentity": "4a537451b7ed4d0e5e9c5d0ebbe81364920d56c9ada7ffe2af2a23be4735a173",
+  "attempts": [
+    {
+      "physicalId": "1897513c-f542-4968-9c29-1103898b919c",
+      "caseId": "E705",
+      "runId": "H-E705-r2",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q2",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "Artifact声称只学读小数且小数越多越准，明确排除误差界限与区间比较，直接矛盾goals 1-3及source正确解释，摧毁核心覆盖目的。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/0",
+          "/goals/1",
+          "/goals/2",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "产物声称只要求读尺子小数位，小数写得越多必定越准，且误差界限与区间比较都不用学，否定目标1-3并传授错误断言。",
+            "impact": "矛盾并删除了区分分辨率与准确度、形成区间、比较区间等核心目标，且错误主张小数位多必准，摧毁声明的学习范围目的。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/0",
+              "/goals/1",
+              "/goals/2",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "4799744cc7668cbd8697be5870cadab058dc7fec6efec2c6a1bd24e6b123973e"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "974f091625a397eadb261006f5285e9c63c7ca6b839e6bdbb8c41f4bfff75e27"
+              },
+              {
+                "pointer": "/goals/1",
+                "valueHash": "b948cbdb264205a71c39bbf43fca64b81f119fd6bce83afbff737e5a078063b3"
+              },
+              {
+                "pointer": "/goals/2",
+                "valueHash": "a63a83b2364923d8e078ddf815b65a88e03ab9e5b2b372710e75e020c2056d1a"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "04ede0e2b943c283408af13f15e429c4d3f550318ac34096022b20c8a80a02fc"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "4799744cc7668cbd8697be5870cadab058dc7fec6efec2c6a1bd24e6b123973e"
+          },
+          {
+            "pointer": "/goals/0",
+            "valueHash": "974f091625a397eadb261006f5285e9c63c7ca6b839e6bdbb8c41f4bfff75e27"
+          },
+          {
+            "pointer": "/goals/1",
+            "valueHash": "b948cbdb264205a71c39bbf43fca64b81f119fd6bce83afbff737e5a078063b3"
+          },
+          {
+            "pointer": "/goals/2",
+            "valueHash": "a63a83b2364923d8e078ddf815b65a88e03ab9e5b2b372710e75e020c2056d1a"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "04ede0e2b943c283408af13f15e429c4d3f550318ac34096022b20c8a80a02fc"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

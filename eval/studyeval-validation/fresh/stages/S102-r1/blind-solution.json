@@ -1,0 +1,36 @@
+{
+  "inputIdentity": "dc9aa7ab2a9a1b948263419a99986de2b3911b7bdc2a814ef8d4043809e6ca60",
+  "attempts": [
+    {
+      "physicalId": "6ef8e018-3e8b-4089-a6ba-b27c868e0f94",
+      "caseId": "S102",
+      "runId": "S102-r1",
+      "stage": "blind-solution",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "status": "resolved",
+    "solution": "据/sources/0/text：甲UTC+2，乙UTC-3，甲比乙快5小时，甲换乙减5小时。甲地周三02:00减5小时为周二21:00（跨午夜日期变）。故乙地周二21:00。换算方向：从甲到乙减去5小时。",
+    "refs": [
+      "/sources/0/text",
+      "/question/prompt"
+    ],
+    "witnesses": [
+      {
+        "pointer": "/sources/0/text",
+        "valueHash": "e91a476a4c04f45c11b19a5dfa48093184e1d00ce14e633b64bdd8a96f40a0dd"
+      },
+      {
+        "pointer": "/question/prompt",
+        "valueHash": "c6c88f5ed52ee4eac992880ab59070f724ae9eaf51ca6e9c4bbc4172762f0471"
+      }
+    ]
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "inputIdentity": "ad6af7a19979b91e1b34b645c7f708d6eae4573074a46af4f2a7d600b6065afc",
+  "attempts": [
+    {
+      "physicalId": "1f1786fe-bc43-44b0-a5d5-77a256b97791",
+      "caseId": "S014",
+      "runId": "S014-r1",
+      "stage": "blind-solution",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "status": "resolved",
+    "solution": "资料明确声明“负值在海平面下”，故负高度表示在海平面下。",
+    "refs": [
+      "/sources/0/text",
+      "/question/prompt"
+    ],
+    "witnesses": [
+      {
+        "pointer": "/sources/0/text",
+        "valueHash": "1df9950edf389e68cc4353ad1c364ae71b323e3e1d130830ce39d9c5e25fe7f3"
+      },
+      {
+        "pointer": "/question/prompt",
+        "valueHash": "28b92e84fa93cd953d3165f1ec0b8a92a69100e2ac4b2b337c7b0959ca0f93c8"
+      }
+    ]
+  }
+}

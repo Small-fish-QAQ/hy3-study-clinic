@@ -1,0 +1,76 @@
+{
+  "inputIdentity": "24d0656d4006a98e69ddc47dbc76b5820f52c27273010d341b8a39053159536c",
+  "attempts": [
+    {
+      "physicalId": "0d18de7f-ea41-4f14-bcc6-6b5f9c3f22ba",
+      "caseId": "N-F01-tutor",
+      "runId": "H-N-F01-tutor-r3",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "产物准确转述来源中同现非因果的关键关系，自举读书节与喷药例子未与资料重复，边界说明与来源精神一致，无事实或归属缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "d70121f89a508edceaec3e092a9a3359d11d1a093baadfd5d9b047d0fd12cfaf"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      },
+      {
+        "dimension": "Q3",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "举例从同时发生前提出发，展示缺乏比较依据不能推断因果甚至可能反向，明确例子仅用于理解该原则及证明因果需其他依据，解释连接与限制充分。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "d70121f89a508edceaec3e092a9a3359d11d1a093baadfd5d9b047d0fd12cfaf"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "inputIdentity": "8bb9126b0b799ac8133158770699b76a17b569b566e05dce9b2add44db459196",
+  "attempts": [
+    {
+      "physicalId": "db078e94-d818-4f66-acac-c9fe4829eb69",
+      "caseId": "S094",
+      "runId": "S094-r2",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q2",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "课程文本准确区分叙述者与非作者，解释第一人称可知感受及需文本依据的限制，并给出引用归属标记的可操作写法，覆盖所有核心与次要目标达可用深度。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/0",
+          "/goals/1",
+          "/goals/2"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "f06c41473aa7af3af43adc2ee10638ca2d93bffca4f99b6be4f4a14c7bf8e60c"
+          },
+          {
+            "pointer": "/goals/0",
+            "valueHash": "2b41e2bf08ab98b4ef000c50cebd55a20f14a001d93a4acdd0bee2a73360a806"
+          },
+          {
+            "pointer": "/goals/1",
+            "valueHash": "22d8faa697faa2a740550cc0d1cafef65fe438b94828227c311203c1333a76d9"
+          },
+          {
+            "pointer": "/goals/2",
+            "valueHash": "e6a9fe5f3b015bae44d40471551088d7d08a745fa66ebc11c00ab452a5d7dff2"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

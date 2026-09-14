@@ -1,0 +1,260 @@
+{
+  "status": "ready",
+  "message": "Lesson is ready.",
+  "course": {
+    "title": "FIFO queues and service order"
+  },
+  "session": {
+    "status": "active",
+    "version": 1
+  },
+  "agenda": {
+    "version": 1,
+    "itemState": "queued"
+  },
+  "lesson": {
+    "objective": {
+      "title": "FIFO队列操作与单服务器调度模型",
+      "whyNow": "给定一段操作痕迹与最终队列状态，我们需要反推当初的入队顺序与操作序列，这要求先牢固掌握FIFO基本操作与空队列边界。",
+      "outcomes": [
+        {
+          "title": "解释FIFO队列特性与基本操作",
+          "description": "解释FIFO队列按先进先出顺序存储项目，enqueue在队尾添加，dequeue移除并返回队首，peek返回队首不移除，插入顺序（非字母序）决定下次dequeue，队列内容从首到尾用方括号书写。"
+        },
+        {
+          "title": "追踪完整操作序列并区分返回值与剩余状态",
+          "description": "从给定初始队列出发追踪完整操作序列，对每次enqueue/dequeue/peek说明返回值与剩余内容，区分返回值与剩余状态；对空队列执行dequeue或peek时报告empty且队列不变，不虚构项目或复用已移除项目；所有序列明确初始队列与操作无隐藏状态。"
+        }
+      ]
+    },
+    "prerequisites": [],
+    "segments": [
+      {
+        "index": 0,
+        "purpose": "orientation",
+        "explanation": "队列按先进先出顺序存储项目。enqueue在队尾添加，dequeue移除并返回队首，peek返回队首不移除。我们用方括号从首到尾书写队列。例如初始空，enqueue P、enqueue Q得到[P, Q]；dequeue返回P并留下[Q]；再enqueue R得到[Q, R]；peek返回Q且队列不变。插入顺序决定下次dequeue，而非字母序。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 1,
+        "purpose": "mechanism",
+        "explanation": "在单服务器调度中，FIFO等待队列决定服务顺序。任务到达时加入队尾；服务器空闲且队列非空时立即服务队首，正在服务的任务不在等待队列中。例如任务U到达时间0需3单位，任务V到达时间1需2单位，则U先服务(0-3)，V在队列[V]等待至3开始、5结束。到达顺序（非时长）决定离开顺序，短任务V不能越过早到任务U。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [
+          {
+            "kind": "mechanism_effect",
+            "fromProposition": "到达顺序决定任务入队顺序",
+            "toProposition": "服务顺序与到达顺序一致，早到任务先完成",
+            "origin": "hy3_synthesis",
+            "sources": []
+          }
+        ],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 2,
+        "purpose": "guided_practice",
+        "explanation": "结合基本操作可预测执行序列后的队列状态。下面用一个新案例检验：初始空队列，依次执行 enqueue K, enqueue L, dequeue, enqueue M, peek。我们跟踪每一步队首与内容变化。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": {
+          "kind": "choose",
+          "prompt": "新案例：初始队列空。依次执行 enqueue K, enqueue L, dequeue, enqueue M, peek。此时队列内容与peek返回什么？",
+          "guidance": null,
+          "options": [
+            {
+              "id": "A",
+              "text": "队列[L, M]，peek返回L"
+            },
+            {
+              "id": "B",
+              "text": "队列[K, L, M]，peek返回K"
+            }
+          ],
+          "presented": false,
+          "response": null,
+          "respondedAt": null,
+          "correct": null,
+          "feedback": null,
+          "credit": "none"
+        }
+      },
+      {
+        "index": 3,
+        "purpose": "comparison",
+        "explanation": "边界情况：对空队列执行dequeue或peek时，操作报告empty，队列保持不变，不返回项目也不复用已移除项目。例如初始空队列执行dequeue，仍为空[]且报告empty；之后enqueue N得到[N]。这与非空队列行为不同，需明确区分。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": {
+          "text": "若误以为空队列dequeue会返回最近移除的项目，则上述enqueue N前队列会错误地保留该项；实际规则明确不发明项目。",
+          "origin": "hy3_synthesis",
+          "sources": []
+        },
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 4,
+        "purpose": "worked_example",
+        "explanation": "在单服务器 FIFO 调度中，等待队列的 dequeue 对应任务开始服务：它移除并返回队首任务，而剩余等待队列不含该任务；peek 返回队首任务但不改变队列。下面用新案例跟踪：初始等待队列已有 [T1, T2]（T1 最早到达），此时新任务 T3 到达并入队尾。我们逐步观察操作对返回值和剩余队列的影响。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": {
+          "startingState": "初始等待队列 [T1, T2]；服务器空闲，即将服务 T1。新任务 T3 到达。",
+          "inputs": [
+            "dequeue T1",
+            "enqueue T3",
+            "peek",
+            "dequeue 下一任务"
+          ],
+          "ruleOrProcedure": "FIFO：dequeue 移除并返回队首；enqueue 加队尾；peek 返回队首不移除。服务开始即 dequeue 等待队列。",
+          "steps": [
+            {
+              "action": "执行 dequeue 开始服务 T1",
+              "reason": "队首 T1 移除并返回 T1",
+              "resultingState": "等待队列变为 [T2]；返回 T1"
+            }
+          ],
+          "learnerDecision": null,
+          "result": null,
+          "whyResultFollows": null,
+          "origin": "hy3_synthesis",
+          "sources": [],
+          "interaction": {
+            "stage": "guided",
+            "modelledStepCount": 1,
+            "origin": "hy3_synthesis",
+            "sources": [],
+            "activity": {
+              "prompt": "已执行 dequeue T1 后等待队列 [T2]，接下来 enqueue T3、peek、dequeue 开始服务队首。最终 dequeue 返回的任务及剩余等待队列是什么？",
+              "options": [
+                {
+                  "id": "A",
+                  "text": "dequeue 返回 T2，剩余 [T3]"
+                },
+                {
+                  "id": "B",
+                  "text": "dequeue 返回 T3，剩余 [T2]"
+                },
+                {
+                  "id": "C",
+                  "text": "dequeue 返回 T2，剩余 []"
+                }
+              ],
+              "response": null,
+              "respondedAt": null,
+              "correct": null,
+              "feedback": null,
+              "debrief": null,
+              "credit": "none",
+              "misconception": null
+            },
+            "hint": null,
+            "scaffold": null,
+            "transfer": null
+          }
+        },
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 5,
+        "purpose": "comparison",
+        "explanation": "空队列边界：当等待队列为空时，dequeue 或 peek 报告 empty，队列保持不变，不返回任务也不复用已移除任务。这与非空队列明确区分，追踪序列时必须单独处理该边界。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": {
+          "text": "若误以为空等待队列的 peek 会返回刚离开服务器的任务（如 T1），则会在 T1 完成服务后、新任务到达前错误地认为队列含 T1；实际规则明确空队列 peek 报告 empty 且不变，不复用已移除项目。",
+          "origin": "hy3_synthesis",
+          "sources": []
+        },
+        "possibleMisconception": null,
+        "informalCheck": null
+      }
+    ],
+    "sourceReferencesAvailable": true,
+    "visuals": [],
+    "summary": {
+      "available": true,
+      "text": "本部分通过独立案例建立FIFO队列的enqueue/dequeue/peek语义、单服务器等待队列的排序机制，以及空队列操作的边界行为；这些机制足以解释观察到的队列演变。",
+      "nextConnection": null,
+      "formalOpportunities": []
+    },
+    "plannedTime": {
+      "agendaMinutes": 23,
+      "activeMinutesMin": 26,
+      "activeMinutesMax": 41,
+      "basis": "locally_evaluated_learning_actions"
+    }
+  },
+  "progress": {
+    "stateVersion": 2,
+    "stateId": "lesson_execution_77accc67-44ad-478d-b6a1-140813cd87e9",
+    "currentSegmentIndex": 0,
+    "segmentCount": 6,
+    "presentedSegmentIndexes": [],
+    "presentationStatus": "not_started",
+    "presentationCompletedAt": null
+  },
+  "currentInformalCheck": null,
+  "practice": {
+    "status": "locked",
+    "currentItemIndex": 0,
+    "itemCount": 2,
+    "item": {
+      "index": 0,
+      "objectiveTitle": "解释FIFO队列特性与基本操作",
+      "construct": "explain",
+      "surface": "initial",
+      "supplementary": true,
+      "prompt": "假设：项目标识不同，队列容量充足，所有操作按给定顺序执行，无隐藏前置状态。观察记录：初始队列为空。在执行若干操作后，有一次dequeue返回了X，且此次dequeue之前队列中恰有两项；该dequeue之后执行了enqueue Z，随后peek返回Y，最终队列内容为[Y, Z]。下列给出的三条候选操作序列中，哪一条能完全解释该观察？",
+      "options": [
+        {
+          "id": "teaching_brief_8950167a-82d2-4141-9768-5adbc0f1d2af_practice_1_initial_A",
+          "text": "序列一：enqueue X，enqueue Y，dequeue（返回X），enqueue Z。最终队列[Y,Z]，peek返回Y，且dequeue前队列为[X,Y]共两项。"
+        },
+        {
+          "id": "teaching_brief_8950167a-82d2-4141-9768-5adbc0f1d2af_practice_1_initial_B",
+          "text": "序列二：enqueue X，dequeue（返回X），enqueue Y，enqueue Z。最终队列[Y,Z]，peek返回Y，且dequeue前队列仅[X]一项。"
+        },
+        {
+          "id": "teaching_brief_8950167a-82d2-4141-9768-5adbc0f1d2af_practice_1_initial_C",
+          "text": "序列三：enqueue Y，enqueue Z，dequeue（返回Y），enqueue X。最终队列[Z,X]，peek返回Z。"
+        }
+      ]
+    },
+    "attempts": [],
+    "recovery": null,
+    "completedAt": null,
+    "credit": "none"
+  },
+  "allowedActions": [
+    "start_lesson"
+  ]
+}

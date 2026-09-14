@@ -1,0 +1,180 @@
+{
+  "task": {
+    "caseId": "S001",
+    "runId": "S001-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S001.json",
+    "inputHash": "3bbf8c85a17dac21b46aa41b8ccf2add4c0d4e9d9bda5da9dd0c380b0955ee6a"
+  },
+  "inputHash": "3bbf8c85a17dac21b46aa41b8ccf2add4c0d4e9d9bda5da9dd0c380b0955ee6a",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "dd0a333b98073a062f5f355317fab69ffe824d6d340514071d928fe7e73bf986",
+    "stages": {
+      "goal-mapping": {
+        "goals": [
+          {
+            "index": 0,
+            "importance": "essential",
+            "status": "usable",
+            "reason": "现有内容通过具体例子说明复制后两条路径都存在且内容相同，实现了说明复制后源路径与目标路径状态的目标",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/0"
+            ],
+            "quote": "把a.txt复制到backup/a.txt后，两条路径都存在且内容相同；",
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "73f1127c4c7350fb2bd6bd1e59bb68d183be28b5bf45308cea179236756823d5"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "7532220c38978923873dc40d4d1cf66fd14c0bb961b641a9a3505fb3ee3407ff"
+              }
+            ]
+          },
+          {
+            "index": 1,
+            "importance": "essential",
+            "status": "usable",
+            "reason": "通过例子说明移动后原路径文件不存在，只剩目标路径，实现了说明移动后两条路径状态的目标",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/1"
+            ],
+            "quote": "移动到archive/a.txt后，原a.txt不存在，只剩目标路径。",
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "73f1127c4c7350fb2bd6bd1e59bb68d183be28b5bf45308cea179236756823d5"
+              },
+              {
+                "pointer": "/goals/1",
+                "valueHash": "2024f7c3f7abb8fd69338ad687ae12c5334ffdc39c71ed3651edf882ea55011f"
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "importance": "secondary",
+            "status": "usable",
+            "reason": "明确指出改名不能证明文本已转换成PDF结构，实现了说明改扩展名不证明格式转换的目标",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/2"
+            ],
+            "quote": "把名字改成a.pdf只是改名，不能据此证明文本已转换成PDF结构。",
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "73f1127c4c7350fb2bd6bd1e59bb68d183be28b5bf45308cea179236756823d5"
+              },
+              {
+                "pointer": "/goals/2",
+                "valueHash": "b524310b83946f4129f40f29a3aa35362a953ed7e94f6dd44c3c7a5466a7803b"
+              }
+            ]
+          }
+        ]
+      },
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "产物准确演示复制后双路径存在且内容同、移动后原路径消失；次要目标改扩展名不证格式转换以改名规则准确说明，达所需深度，无缺陷。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "73f1127c4c7350fb2bd6bd1e59bb68d183be28b5bf45308cea179236756823d5"
+              },
+              {
+                "pointer": "/goals",
+                "valueHash": "7a932054b76cbcdb228151a74683dc39d2febf3e855646878abc67edfe487d53"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "教学文本用具体实例准确演示了复制后双路径存在且同内容、移动后原路径消失、改名不证格式转换，覆盖全部核心与次要目标，深度足够。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "73f1127c4c7350fb2bd6bd1e59bb68d183be28b5bf45308cea179236756823d5"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "f077626b6cc0dcadf32134e02c41925aefa4067f55b8ae7509353fb99642dc40"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q2",
+          "level": 2,
+          "evidence": "sufficient",
+          "reason": "产物准确演示复制后双路径存在且内容同、移动后原路径消失；次要目标改扩展名不证格式转换以改名规则准确说明，达所需深度，无缺陷。",
+          "refs": [
+            "/artifacts/0/text",
+            "/goals"
+          ],
+          "defects": [],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "73f1127c4c7350fb2bd6bd1e59bb68d183be28b5bf45308cea179236756823d5"
+            },
+            {
+              "pointer": "/goals",
+              "valueHash": "7a932054b76cbcdb228151a74683dc39d2febf3e855646878abc67edfe487d53"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "6a166bc2fa00b33bc52485f2b21f8ada92252248887661dbe82886a201a56bd8"
+  }
+}

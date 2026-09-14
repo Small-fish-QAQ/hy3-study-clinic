@@ -1,0 +1,36 @@
+{
+  "inputIdentity": "658e5637e9f1df739255652e8142c7b5fa5531ff56f44ab8181830a36f592849",
+  "attempts": [
+    {
+      "physicalId": "a92d2527-e36a-4b95-afb9-1fd0fcb2902d",
+      "caseId": "S051",
+      "runId": "S051-r1",
+      "stage": "blind-solution",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "status": "resolved",
+    "solution": "依据/sources/0/text，二输入异或门XOR输出1的条件为：恰好一个输入为1（输入只取0或1）。题目要求直接抄写，故可接受解法为照抄“只有恰好一个输入为1时输出1”或等效表述。",
+    "refs": [
+      "/question/prompt",
+      "/sources/0/text"
+    ],
+    "witnesses": [
+      {
+        "pointer": "/question/prompt",
+        "valueHash": "baa31ac04a798dbeb2399ce369167178c41d3665a7f00098c16a1bc7480a4065"
+      },
+      {
+        "pointer": "/sources/0/text",
+        "valueHash": "abe0ee3fc063cc9ca8e5695fcc7196cbc85922a703ddb540aee12d9b2456e392"
+      }
+    ]
+  }
+}

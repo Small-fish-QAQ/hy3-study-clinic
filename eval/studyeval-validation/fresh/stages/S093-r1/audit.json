@@ -1,0 +1,69 @@
+{
+  "inputIdentity": "2ecfa7c6c342c09c1051842939fd9ef9eb91b74fe582278e96d9b93e3598122c",
+  "attempts": [
+    {
+      "physicalId": "859a86a4-6dee-4b1c-add3-7ac3d0486055",
+      "caseId": "S093",
+      "runId": "S093-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q3",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "artifact声称两句完全相同且第一句证明所有学生红帽并进入，但source明确两句意义不同且第一句仅限制进入者红帽。该局部解释核心错误，违背课堂前提且无法实现解释修饰语改变范围的目标。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "artifact断言两句完全相同且第一句已证明所有学生戴红帽且进入，错误解读句子范围，与source明示约定矛盾。",
+            "impact": "改变核心用途：学习者被教错误等价和错误范围，无法达成解释修饰语位置改变范围的目标。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "8b93f4d80238c5157affc1877b2c795abc610e710ff212d73435d308654fc9d0"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "9ef8039d157a3635d1da4128848b8da6aabf32e121261f1cd761712bb1417ab2"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "8b93f4d80238c5157affc1877b2c795abc610e710ff212d73435d308654fc9d0"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "9ef8039d157a3635d1da4128848b8da6aabf32e121261f1cd761712bb1417ab2"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "inputIdentity": "c5b986ad7e406d56e91c2f6a47208257510bdeda2f17e34b11118e128710e446",
+  "attempts": [
+    {
+      "physicalId": "254af54e-ac97-445b-8071-971cccf6c0e0",
+      "caseId": "S100",
+      "runId": "S100-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q3",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "产物仅以'答案是230'循环论证，未利用来源中位值变十倍规则或任何操作连接前提与结论，属中心解释循环无效，直接破坏解释23×10为何为230的核心目标，符合Q3的0分标准。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "解释循环论证，仅重复答案为答案，未展示任何从给定前提（如位值规则）到结果的推导连接",
+            "impact": "破坏核心解释用途，学习者无法得知乘10为何得230的真正原因",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "01930794f2bcf25d45922738eee4fb910521a7f24e00a72706970145af85a814"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "a5942766dca625dc9fdbcdb1a2ff0c61c8d65317777cec648fe36832bba69f03"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "01930794f2bcf25d45922738eee4fb910521a7f24e00a72706970145af85a814"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "a5942766dca625dc9fdbcdb1a2ff0c61c8d65317777cec648fe36832bba69f03"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

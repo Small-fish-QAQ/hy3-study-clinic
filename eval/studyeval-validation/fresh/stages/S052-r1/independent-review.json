@@ -1,0 +1,54 @@
+{
+  "inputIdentity": "2188f86e95970bd921db1b2f3fe8fb924e2099f534cd48e36e7656a316e93582",
+  "attempts": [
+    {
+      "physicalId": "84b79bb8-8154-4e96-8d42-dc94c27ac61a",
+      "caseId": "S052",
+      "runId": "S052-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q6",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "修复干预依据学习者仅暴露次序错误未示理由，识别比较字母位置疑点，给出cab/bac与abc/acb具体练习，要求指首异字母及首位同看次位，契合词典序规则，提供同技能可操作检查，无虚构或泛化缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/answer",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "e4e22ba55fa4a05ca2a3ce7b96aa7ac96f56eaf66d4841914023b35731d3817e"
+          },
+          {
+            "pointer": "/answer",
+            "valueHash": "948dc84c311f94f736381181143581872cf13a213125e81a3683ffed379fecb6"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "8e8aeb259dc1cfe4a1f03fa52d74d889ce63a71eb1e26a30d0128233ac115487"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

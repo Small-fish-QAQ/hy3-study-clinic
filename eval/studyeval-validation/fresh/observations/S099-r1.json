@@ -1,0 +1,248 @@
+{
+  "task": {
+    "caseId": "S099",
+    "runId": "S099-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S099.json",
+    "inputHash": "a0850fddcef8c631a5983acc2c178b6cf64a1096734eee5600a1cd515fde998b"
+  },
+  "inputHash": "a0850fddcef8c631a5983acc2c178b6cf64a1096734eee5600a1cd515fde998b",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "547dc6814fee287496b9794cc254f299dcc818ad8904d4bd4ca1d2c3e04c8780",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "交付的修复材料宣称改变下标是正确配平方法，直接违背源规则只能改系数，并鼓励错误操作，属于教授错误方法，核心修复用途失效。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "修复干预教导改变下标为正确配平方法，称水写为H2O2无问题，违背源规则只能改系数。",
+                "impact": "教授错误方法，使学习者巩固错误，完全无法实现纠正下标错误的学习目标，核心用途毁坏。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "75803b2e838303c8c2cc90e0abe0a188cce7a4a4ed365c3ebc158428220dd743"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "59437daaeac189d745ba28fdee3966ddf517f7bcc1363dd97ec06abb86dd3a0e"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "75803b2e838303c8c2cc90e0abe0a188cce7a4a4ed365c3ebc158428220dd743"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "59437daaeac189d745ba28fdee3966ddf517f7bcc1363dd97ec06abb86dd3a0e"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "交付修复宣称改变下标是配平方法并肯定H2O2，违背source不可改下标规则，且未纠正改下标错误。目标要求具体纠正与独立再检验完全缺失，核心教学用途被实质改变。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "交付修复文本称改变下标正是配平方法，肯定将水写为H2O2，违背source中不能改下标的规则，且未纠正改下标错误。",
+                "impact": "本应纠正改下标错误并独立再检验，却教错误方法并认可错误，实质改变核心教学用途。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "75803b2e838303c8c2cc90e0abe0a188cce7a4a4ed365c3ebc158428220dd743"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "59437daaeac189d745ba28fdee3966ddf517f7bcc1363dd97ec06abb86dd3a0e"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "75803b2e838303c8c2cc90e0abe0a188cce7a4a4ed365c3ebc158428220dd743"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "59437daaeac189d745ba28fdee3966ddf517f7bcc1363dd97ec06abb86dd3a0e"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "交付修复材料宣称改变下标是配平方法并肯定H2O2，直接违背source不可改下标规则，且未纠正改下标错误，反而教授错误方法，核心修复用途失效。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "修复干预教导改变下标为正确配平方法，称水写为H2O2无问题，违背源规则只能改系数。",
+                "impact": "教授错误方法，使学习者巩固错误，完全无法实现纠正下标错误的学习目标，核心用途毁坏。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "75803b2e838303c8c2cc90e0abe0a188cce7a4a4ed365c3ebc158428220dd743"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "59437daaeac189d745ba28fdee3966ddf517f7bcc1363dd97ec06abb86dd3a0e"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "75803b2e838303c8c2cc90e0abe0a188cce7a4a4ed365c3ebc158428220dd743"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "59437daaeac189d745ba28fdee3966ddf517f7bcc1363dd97ec06abb86dd3a0e"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q6:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "改变下标正是配平方法；你把水写为H2O2没有问题",
+              "valueHash": "75803b2e838303c8c2cc90e0abe0a188cce7a4a4ed365c3ebc158428220dd743"
+            },
+            "reason": "该引文直接教导改变下标为正确配平方法并肯定H2O2，违背/sources/0/text不可改下标规则，构成教授错误方法，指控成立。"
+          },
+          {
+            "id": "review2:Q6:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "改变下标正是配平方法；你把水写为H2O2没有问题",
+              "valueHash": "75803b2e838303c8c2cc90e0abe0a188cce7a4a4ed365c3ebc158428220dd743"
+            },
+            "reason": "该引文证实交付修复宣扬改变下标正确且认可H2O2，与source规则冲突，未纠正错误反而教错，material缺陷属实。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q6",
+          "level": 0,
+          "evidence": "sufficient",
+          "reason": "交付修复材料宣称改变下标是配平方法并肯定H2O2，直接违背source不可改下标规则，且未纠正改下标错误，反而教授错误方法，核心修复用途失效。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [
+            {
+              "severity": "material",
+              "description": "修复干预教导改变下标为正确配平方法，称水写为H2O2无问题，违背源规则只能改系数。",
+              "impact": "教授错误方法，使学习者巩固错误，完全无法实现纠正下标错误的学习目标，核心用途毁坏。",
+              "refs": [
+                "/artifacts/0/text",
+                "/sources/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "75803b2e838303c8c2cc90e0abe0a188cce7a4a4ed365c3ebc158428220dd743"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "59437daaeac189d745ba28fdee3966ddf517f7bcc1363dd97ec06abb86dd3a0e"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "75803b2e838303c8c2cc90e0abe0a188cce7a4a4ed365c3ebc158428220dd743"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "59437daaeac189d745ba28fdee3966ddf517f7bcc1363dd97ec06abb86dd3a0e"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "88f8ff40ed9b4f8e3a417afca79a434adad37695838d2459659fc8e0a9945b2c"
+  }
+}

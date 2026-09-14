@@ -1,0 +1,84 @@
+{
+  "inputIdentity": "0fe43c1f1b07a3817d94c73ac35aeb1d7acc17ec3a9d21379b91e74fe3fe4822",
+  "attempts": [
+    {
+      "physicalId": "1725795f-7315-4714-b732-59fa0790d2a5",
+      "caseId": "S060",
+      "runId": "S060-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q2",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "artifact教学文本断言第一人称总是作者本人且全知，与source正确规则及核心目标（区分叙述者/作者、第一人称限制）直接矛盾。核心目标被错误覆盖，改变学习用途，构成实质缺陷。次要目标‘引用标清说话人’虽提及但无法补救核心错误。故Q2评0。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/0",
+          "/goals/1",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "artifact声称第一人称‘我’总是作者本人且一定知道所有人物思想，直接矛盾核心目标‘区分叙述者与现实作者’和‘解释第一人称限制’",
+            "impact": "错误核心方法改变核心学习用途，学员被教导错误等同，无法达成区分与限制目标",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/0",
+              "/goals/1"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "a750d065c5417fa7e4b648d56cbe226380a18cdd6674a5a2ae6c5682c51c6b91"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "2b41e2bf08ab98b4ef000c50cebd55a20f14a001d93a4acdd0bee2a73360a806"
+              },
+              {
+                "pointer": "/goals/1",
+                "valueHash": "22d8faa697faa2a740550cc0d1cafef65fe438b94828227c311203c1333a76d9"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "a750d065c5417fa7e4b648d56cbe226380a18cdd6674a5a2ae6c5682c51c6b91"
+          },
+          {
+            "pointer": "/goals/0",
+            "valueHash": "2b41e2bf08ab98b4ef000c50cebd55a20f14a001d93a4acdd0bee2a73360a806"
+          },
+          {
+            "pointer": "/goals/1",
+            "valueHash": "22d8faa697faa2a740550cc0d1cafef65fe438b94828227c311203c1333a76d9"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "bae368a359568cf22d196cf95dd79a50368bc21f0e49042a004744bc3b0af43c"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

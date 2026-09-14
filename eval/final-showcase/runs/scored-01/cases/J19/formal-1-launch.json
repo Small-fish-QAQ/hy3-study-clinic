@@ -1,0 +1,44 @@
+{
+  "kind": "assessment",
+  "agendaItemId": "agenda_item_3fe29e49-83b6-46a9-b140-4667d6b1b57c",
+  "quiz": {
+    "id": "qz_e0daf447-be0c-4975-8536-3d362f2e3e8b",
+    "materialId": null,
+    "workspaceId": "ws_7380c08e-0cce-49ed-9e4a-73cbad5489c0",
+    "kind": "adaptive",
+    "assessmentMode": "concept_practice",
+    "config": {
+      "difficulty": "medium",
+      "types": [
+        "short_answer"
+      ],
+      "countPerType": 1
+    },
+    "questions": [
+      {
+        "id": "que_6782cef4-b4ee-4d2c-a038-86b88778aa43",
+        "index": 0,
+        "type": "short_answer",
+        "stem": "假设项目标识不同，队列容量充足，所有操作按给定顺序执行，无隐藏前置状态。初始队列内容为 [U, V]（U 先插入，V 后插入）。依次执行以下操作：1) dequeue；2) enqueue W；3) peek。请回答：(a) 第一次 dequeue 返回什么项目？(b) 执行 enqueue W 后队列内容是什么（用方括号从首到尾书写）？(c) 随后 peek 返回什么项目，此时队列内容是否改变？(d) 用 FIFO 队列的基本操作规则（enqueue 位置、dequeue 与 peek 对队首的作用、插入顺序决定下次 dequeue 而非字母序）简要解释上述结果。",
+        "conceptId": "con_b424cf23-a797-4fe6-984d-6ad4781c853c",
+        "conceptName": "队列的FIFO特性与基本操作",
+        "grounding": {
+          "blockId": "blk_0_61a5b659",
+          "quote": "A queue stores items in first-in, first-out order, abbreviated FIFO. Enqueue adds an item at the back. Dequeue removes and returns the item at the front. Peek returns the front item without removing it. We write queue contents from front to back in square brackets. The queue [A, B, C] will return A on the next dequeue, not C. The order of insertion determines this behavior, not alphabetical order.",
+          "startOffset": 0,
+          "endOffset": 400,
+          "occurrenceCount": 1,
+          "reanchored": false
+        },
+        "blueprintId": "bp_c80d1815-53bf-4ccc-a022-c53dffb35d0b",
+        "points": 2
+      }
+    ],
+    "targetConceptIds": [
+      "con_b424cf23-a797-4fe6-984d-6ad4781c853c"
+    ],
+    "createdAt": "2026-09-14T12:15:13.668Z"
+  },
+  "assessmentKind": "formal_checkpoint",
+  "formalAssessmentVersionId": "assessment_version_d3301cc5-bbda-477e-84fb-2c3dd9068630"
+}

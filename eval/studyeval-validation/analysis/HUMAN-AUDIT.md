@@ -1,0 +1,20 @@
+# Reserved human validation audit
+
+All 27 reserved cases completed all three passes before human labels were opened. The scored phase ran from 2026-09-13T20:01:04.827Z to 20:14:04.413Z. At 20:14:55Z the unchanged source-reproduction script re-extracted the six original answer sheets, checked exact normalized ratings/reasons and provenance, and the frozen analysis joined the new outputs by original case/input hash and dimension. No human labels or model results were changed.
+
+Primary: first-pass exact agreement with the 24 original numeric-consensus dimension slots from 21 cases is 22/24 = 91.67%. Quadratic-weighted kappa is 0.94839, mean absolute ordinal error 0.08333; both disagreements are adjacent 2→1. The prespecified case-cluster bootstrap interval is [0.80, 1.00]. All 68 individual ratings are numeric; agreement with them is 53/68 = 77.94%, kappa 0.83246, and all 15 disagreements are adjacent. Human-human agreement is 24/34 = 70.59%, with nine adjacent disagreements and one 0↔2 disagreement. Different agreement denominators do not establish model superiority over humans.
+
+Each complete pass independently has 22/24 consensus matches. The predeclared majority-of-three sensitivity also has 22/24; it does not improve or replace the primary result. Two non-consensus dimensions vary between 1 and 2 (E611/Q2 and N-F09-tutor/Q1), giving 32/34 exact three-pass stability and zero 0↔2 swings. All 81 observations / 102 dimension judgments are valid, with no U or INVALID.
+
+The two consensus discrepancies were manually read in full by the current task assistant:
+
+| Case | Human pair | StudyEval three passes | Interpretation |
+| --- | --- | --- | --- |
+| E366 / Q3 | 2, 2 | 1, 1, 1 | The short artifact correctly lists parallel cutting/mixing, subsequent time points, and the one-worker total. It does not explicitly explain waiting for the later prerequisite or derive the sequential total. The two humans accepted its clarity; StudyEval consistently requires a stronger explanation link. This is an explanation-depth boundary with a defensible stricter reading, retained as a primary mismatch. No relabeling or assertion that the human panel was wrong. |
+| N-F08-tutor / Q1 | 2, 2 | 1, 1, 1 | StudyEval repeatedly claims the course title is wrong because the source text has no title. That absence does not prove false attribution. The actual historical product source is titled 印章卡片的逻辑, while this evaluator packet's source representation omits the title. The logic example is sound under its explicit rule. This is an unwarranted local attribution penalty, not a discovered core content error; preserve the original 1 and the mismatch. |
+
+The original human 0↔2 disagreement is E074/Q4: one person accepted an answerable source-lookup question; the other regarded the in-source answer as exposure. The frozen evaluator gives 1 in all passes because retrieval is valid but weak for working fluency. That middle judgment reasonably distinguishes valid recall from application without converting the case to consensus. It remains in the ten non-consensus dimensions and all-individual analysis.
+
+Important limits: only 24/34 dimensions have two-rater numeric consensus, and those consensus slots are concentrated in Q1 (9) and Q3 (8). Q2/Q4/Q5 have two each and Q6 one. All 27 reserved cases share exact source text with allowed development cases, although the protected case inputs/answers/labels were not used for v2.0 calibration. This supports independent existing human-label alignment on held-out cases within known subject matter; it is not source-disjoint human validation. The separately frozen new product and evaluator sources address content generalization. No current assistant audit is represented as another human rating.
+
+Authoritative numbers and all case-level reasons: human-alignment.json. Original re-extraction receipt: human-source-reproduction.json. Source-lineage audit: human-source-lineage.json. Online raw requests/responses, stage judgments and inputs: ../runs/human/. The final automatic analysis will deterministically reproduce these same metrics at the end of the campaign.

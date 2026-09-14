@@ -1,0 +1,69 @@
+{
+  "inputIdentity": "4a537451b7ed4d0e5e9c5d0ebbe81364920d56c9ada7ffe2af2a23be4735a173",
+  "attempts": [
+    {
+      "physicalId": "1f4c0aae-c567-4f7b-b087-e24fa0360ef9",
+      "caseId": "E705",
+      "runId": "H-E705-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q2",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "产物lesson宣称只要求读尺小数且小数越多越准，误差区间不用学，直接矛盾声明目标1-4，核心学习范围被自身否定。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "artifact声称仅读小数位、小数多必准、误差界限与区间比较不用学，与goals中区分分辨率与准确、形成区间、比较区间及次要重复平均目标完全矛盾。",
+            "impact": "声明的学习范围被产物推翻，学习者按产物将获错误认知，核心教学目的失效。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "4799744cc7668cbd8697be5870cadab058dc7fec6efec2c6a1bd24e6b123973e"
+              },
+              {
+                "pointer": "/goals",
+                "valueHash": "8a4e42a310413343ffed86d2ae9a81c2cc492e69e9709e20cd9c1397db6e64bd"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "4799744cc7668cbd8697be5870cadab058dc7fec6efec2c6a1bd24e6b123973e"
+          },
+          {
+            "pointer": "/goals",
+            "valueHash": "8a4e42a310413343ffed86d2ae9a81c2cc492e69e9709e20cd9c1397db6e64bd"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

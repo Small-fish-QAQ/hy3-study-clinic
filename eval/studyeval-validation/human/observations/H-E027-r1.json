@@ -1,0 +1,197 @@
+{
+  "task": {
+    "caseId": "E027",
+    "runId": "H-E027-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E027.json",
+    "inputHash": "27e79ead871b1233fce22af4b7cd122a02e4e7a93fd14ff2f25e1b52c25d10ae",
+    "population": "controlled",
+    "sourceId": "F09"
+  },
+  "inputHash": "27e79ead871b1233fce22af4b7cd122a02e4e7a93fd14ff2f25e1b52c25d10ae",
+  "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "b2510ba6e38c5373e47f92883c677ffa924e2e576508dcb7308ac8e83681f1a8",
+    "stages": {
+      "blind-solution": {
+        "status": "resolved",
+        "solution": "总工作量1份。甲速1/8份/时，乙速1/4份/时。乙先做1小时完成1/4，剩3/4由甲独做需(3/4)/(1/8)=6时，总时1+6=7时。若自始合作合速3/8，耗时1/(3/8)=8/3时。比较：7>8/3，分段更长。题设保证可分恒速无开销，验算1/4+6/8=1。",
+        "refs": [
+          "/question/prompt"
+        ],
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "dcf5dd89a64f0379c2a16c155095996cbf9b1dfd98e7b21c0cebe9fb5974918a"
+          }
+        ]
+      },
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q4",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "题干明确假设，要求分段求解并比较。作者参考解正确未泄露。学生需应用分时段效率计算多步求解，达到working_fluency深度，判别力足。",
+            "refs": [
+              "/question/prompt",
+              "/artifacts/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "assessment": {
+              "key": "correct",
+              "validity": "valid",
+              "exposure": "none",
+              "discrimination": "adequate",
+              "demand": "application",
+              "demandReason": "学生须据题设约束组织分段方案：算甲乙速、乙1h完成量、甲独做剩余时间、总时间，再算合作时间比较，执行多步算术而非抄写现成公式。",
+              "reason": "题干给可加假设，求总时间并比较；作者参考解正确给出7h与8/3h比较且未提前展示（priorExposure空）；需应用方法而非纯检索，判别力足。",
+              "refs": [
+                "/question/prompt",
+                "/artifacts/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/question/prompt",
+                  "valueHash": "dcf5dd89a64f0379c2a16c155095996cbf9b1dfd98e7b21c0cebe9fb5974918a"
+                },
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "298f97e041cf6e72c2f79141bae8631b1df17304ecdaea27c01e89ba266e840d"
+                }
+              ]
+            },
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "dcf5dd89a64f0379c2a16c155095996cbf9b1dfd98e7b21c0cebe9fb5974918a"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "298f97e041cf6e72c2f79141bae8631b1df17304ecdaea27c01e89ba266e840d"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q4",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "题目给定独立可加假设，要求计算分段与合作的时长并比较；作者解正确且未提前泄露；学生需对新参数执行多步分数运算与比较，属应用而非检索，有效抽样目标技能。",
+            "refs": [
+              "/question/prompt",
+              "/artifacts/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "assessment": {
+              "key": "correct",
+              "validity": "valid",
+              "exposure": "none",
+              "discrimination": "adequate",
+              "demand": "application",
+              "demandReason": "学生须由甲8h乙4h算速度1/8、1/4，乙1h成1/4剩3/4，甲独做(3/4)/(1/8)=6h总7h；合作合速3/8需8/3h并比较，处理新实例而非抄写。",
+              "reason": "题目明示假设，求总时间并比较；作者参考解数值正确且未展示；无泄露；需应用计算，判别力足。",
+              "refs": [
+                "/question/prompt",
+                "/artifacts/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/question/prompt",
+                  "valueHash": "dcf5dd89a64f0379c2a16c155095996cbf9b1dfd98e7b21c0cebe9fb5974918a"
+                },
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "298f97e041cf6e72c2f79141bae8631b1df17304ecdaea27c01e89ba266e840d"
+                }
+              ]
+            },
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "dcf5dd89a64f0379c2a16c155095996cbf9b1dfd98e7b21c0cebe9fb5974918a"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "298f97e041cf6e72c2f79141bae8631b1df17304ecdaea27c01e89ba266e840d"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q4",
+          "level": 2,
+          "evidence": "sufficient",
+          "reason": "题干明确假设，要求分段求解并比较。作者参考解正确未泄露。学生需应用分时段效率计算多步求解，达到working_fluency深度，判别力足。",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text"
+          ],
+          "defects": [],
+          "missing": [],
+          "assessment": {
+            "key": "correct",
+            "validity": "valid",
+            "exposure": "none",
+            "discrimination": "adequate",
+            "demand": "application",
+            "demandReason": "学生须据题设约束组织分段方案：算甲乙速、乙1h完成量、甲独做剩余时间、总时间，再算合作时间比较，执行多步算术而非抄写现成公式。",
+            "reason": "题干给可加假设，求总时间并比较；作者参考解正确给出7h与8/3h比较且未提前展示（priorExposure空）；需应用方法而非纯检索，判别力足。",
+            "refs": [
+              "/question/prompt",
+              "/artifacts/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "dcf5dd89a64f0379c2a16c155095996cbf9b1dfd98e7b21c0cebe9fb5974918a"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "298f97e041cf6e72c2f79141bae8631b1df17304ecdaea27c01e89ba266e840d"
+              }
+            ]
+          },
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "dcf5dd89a64f0379c2a16c155095996cbf9b1dfd98e7b21c0cebe9fb5974918a"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "298f97e041cf6e72c2f79141bae8631b1df17304ecdaea27c01e89ba266e840d"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "1084b0258212628e3142259cc958a863f321e59c0c63524491cdec2d3120e295"
+  }
+}

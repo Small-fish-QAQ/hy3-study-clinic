@@ -1,0 +1,134 @@
+{
+  "inputIdentity": "4a7877f15ffa2e0eb40f7ad89194a89535937c348caedf875dcc32ef4d68173e",
+  "attempts": [
+    {
+      "physicalId": "937ebd92-b6d1-4a71-8b44-c9604e9deda2",
+      "caseId": "S008",
+      "runId": "S008-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q5",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "学生答案给出65度并利用内角和180度扣除两已知角，满足全部必需要求；可选结论句也成立。产品判定各标准met且授分granted，与独立复核一致。",
+        "refs": [
+          "/answer",
+          "/productJudgment/consequence",
+          "/rubric/0",
+          "/rubric/1",
+          "/rubric/2"
+        ],
+        "defects": [],
+        "missing": [],
+        "grading": {
+          "criteria": [
+            {
+              "id": "c1",
+              "result": "met",
+              "reason": "答案'由内角总和180°，计算180°-(48°+67°)=65°。'明确包含65°，满足第三角65度要求。",
+              "refs": [
+                "/answer",
+                "/rubric/0"
+              ],
+              "required": true,
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "0f636d95ae49771bae0a8feca7be7e58be55eb11f9971402f2ff4d679d328323"
+                },
+                {
+                  "pointer": "/rubric/0",
+                  "valueHash": "433a76d6f4a1dc7bb70ba7617eb9c24bfc16a306897f6751247f515dfb15ea94"
+                }
+              ]
+            },
+            {
+              "id": "c2",
+              "result": "met",
+              "reason": "答案写明'由内角总和180°，计算180°-(48°+67°)=65°'，利用内角和180度扣除已知两角48与67，满足依据要求。",
+              "refs": [
+                "/answer",
+                "/rubric/1"
+              ],
+              "required": true,
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "0f636d95ae49771bae0a8feca7be7e58be55eb11f9971402f2ff4d679d328323"
+                },
+                {
+                  "pointer": "/rubric/1",
+                  "valueHash": "eaca36faa72646063919361b272c1653cdc11b31eefa1de2268808c1d664b4db"
+                }
+              ]
+            },
+            {
+              "id": "c3",
+              "result": "met",
+              "reason": "答案整体为单句以句号结束，包含结论65°，可视作一句单独结论句，可选标准成立。",
+              "refs": [
+                "/answer",
+                "/rubric/2"
+              ],
+              "required": false,
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "0f636d95ae49771bae0a8feca7be7e58be55eb11f9971402f2ff4d679d328323"
+                },
+                {
+                  "pointer": "/rubric/2",
+                  "valueHash": "f4d8305144345c8dd339b126efc1afb13d48f79b84d7936aefeed088c54aad69"
+                }
+              ]
+            }
+          ],
+          "warrantedCredit": "granted",
+          "actualCredit": "granted",
+          "actualCreditWitness": {
+            "pointer": "/productJudgment/consequence",
+            "valueHash": "dd515d1975b8e5a83bab3420bea5dacefe5451ac7cf617d23c4393cc79e4db99"
+          }
+        },
+        "witnesses": [
+          {
+            "pointer": "/answer",
+            "valueHash": "0f636d95ae49771bae0a8feca7be7e58be55eb11f9971402f2ff4d679d328323"
+          },
+          {
+            "pointer": "/productJudgment/consequence",
+            "valueHash": "dd515d1975b8e5a83bab3420bea5dacefe5451ac7cf617d23c4393cc79e4db99"
+          },
+          {
+            "pointer": "/rubric/0",
+            "valueHash": "433a76d6f4a1dc7bb70ba7617eb9c24bfc16a306897f6751247f515dfb15ea94"
+          },
+          {
+            "pointer": "/rubric/1",
+            "valueHash": "eaca36faa72646063919361b272c1653cdc11b31eefa1de2268808c1d664b4db"
+          },
+          {
+            "pointer": "/rubric/2",
+            "valueHash": "f4d8305144345c8dd339b126efc1afb13d48f79b84d7936aefeed088c54aad69"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

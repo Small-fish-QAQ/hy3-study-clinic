@@ -1,0 +1,93 @@
+{
+  "inputIdentity": "676e4d9fac5a5accde7cefc64f421516d92328b8dff7c7d2103dedd3c887c1fb",
+  "attempts": [
+    {
+      "physicalId": "db84e1ef-9771-4087-ab66-4b3aa55d27c1",
+      "caseId": "S099",
+      "runId": "S099-r1",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q6",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "交付修复材料宣称改变下标是配平方法并肯定H2O2，直接违背source不可改下标规则，且未纠正改下标错误，反而教授错误方法，核心修复用途失效。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "修复干预教导改变下标为正确配平方法，称水写为H2O2无问题，违背源规则只能改系数。",
+            "impact": "教授错误方法，使学习者巩固错误，完全无法实现纠正下标错误的学习目标，核心用途毁坏。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "75803b2e838303c8c2cc90e0abe0a188cce7a4a4ed365c3ebc158428220dd743"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "59437daaeac189d745ba28fdee3966ddf517f7bcc1363dd97ec06abb86dd3a0e"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "75803b2e838303c8c2cc90e0abe0a188cce7a4a4ed365c3ebc158428220dd743"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "59437daaeac189d745ba28fdee3966ddf517f7bcc1363dd97ec06abb86dd3a0e"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q6:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "改变下标正是配平方法；你把水写为H2O2没有问题",
+          "valueHash": "75803b2e838303c8c2cc90e0abe0a188cce7a4a4ed365c3ebc158428220dd743"
+        },
+        "reason": "该引文直接教导改变下标为正确配平方法并肯定H2O2，违背/sources/0/text不可改下标规则，构成教授错误方法，指控成立。"
+      },
+      {
+        "id": "review2:Q6:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "改变下标正是配平方法；你把水写为H2O2没有问题",
+          "valueHash": "75803b2e838303c8c2cc90e0abe0a188cce7a4a4ed365c3ebc158428220dd743"
+        },
+        "reason": "该引文证实交付修复宣扬改变下标正确且认可H2O2，与source规则冲突，未纠正错误反而教错，material缺陷属实。"
+      }
+    ]
+  }
+}

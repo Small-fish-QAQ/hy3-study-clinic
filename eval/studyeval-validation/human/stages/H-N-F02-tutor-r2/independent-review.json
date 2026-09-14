@@ -1,0 +1,76 @@
+{
+  "inputIdentity": "b06f2fb619711456388c7d09316e33217d4fd674f9230832bd55b071d883d7a5",
+  "attempts": [
+    {
+      "physicalId": "1541e089-f9e9-477d-93e7-28610e196916",
+      "caseId": "N-F02-tutor",
+      "runId": "H-N-F02-tutor-r2",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "产物准确转述资料连续百分比基数规则，果园例子计算正确（500→400→480），边界说明与资料无运费满减等假设一致，无事实或归属缺陷。",
+        "refs": [
+          "/sources/0/text",
+          "/artifacts/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "eed51cb255d5d0e12ca505b4c60926d142df7cf81a0f73781aba0593d2870361"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "954d89e64d4ec170f31ac4dfe06ad06321e1631999a560553b02e626afa69d41"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      },
+      {
+        "dimension": "Q3",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "例子从500箱前提出发，明确展示第二步以400为当前基数算20%得80连接至480，解释不抵消因基数变动，并交代产量按比例无取整限制，展示关键操作与限制，充分。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "954d89e64d4ec170f31ac4dfe06ad06321e1631999a560553b02e626afa69d41"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "eed51cb255d5d0e12ca505b4c60926d142df7cf81a0f73781aba0593d2870361"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

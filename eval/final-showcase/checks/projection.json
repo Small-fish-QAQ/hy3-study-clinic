@@ -1,0 +1,115 @@
+{
+  "checkedAt": "2026-09-14T09:52:04.191Z",
+  "passed": true,
+  "recordedDevelopmentRun": "C:\\Users\\smallfish\\open-source\\hy3-study-clinic-v2-workspace\\research\\candidate23-hardening-2026-09-14\\runs\\mainline24-01",
+  "restoredTransfers": 15,
+  "checked": [
+    {
+      "id": "M01",
+      "segment": 1,
+      "condition": "题干未说明白板邻边垂直，仅给两邻边长8和15，要求评估能否直接用勾股求对角线",
+      "taskSha256": "419cc173d348c95caefd6fe273ed3d12bc25e7d915423c616eaf8d7fd3a2bb96",
+      "sourceArtifactSha256": "2c8df89663c6a9290896316436316a60a269d9e270c01ec59ae491224ed54a2b"
+    },
+    {
+      "id": "M01",
+      "segment": 3,
+      "condition": "题干未说明两已知边垂直，仅给两边长250厘米和70厘米，要求评估能否直接套用斜边平方减直角边平方求第三边长",
+      "taskSha256": "6a188a2790f5e65280deb9b26c9993881ec2a24b316df3e3f7b56b379a25d95a",
+      "sourceArtifactSha256": "2c8df89663c6a9290896316436316a60a269d9e270c01ec59ae491224ed54a2b"
+    },
+    {
+      "id": "M01",
+      "segment": 1,
+      "condition": "若题干改为‘从A向东南走15米到B，再向东北走20米到C，两段夹角明确为90度’",
+      "taskSha256": "8822ae223919f888bb13d7374b0bd7f9dedcc67bca81a32a67b304f57434a6d4",
+      "sourceArtifactSha256": "2c8df89663c6a9290896316436316a60a269d9e270c01ec59ae491224ed54a2b"
+    },
+    {
+      "id": "M02",
+      "segment": 3,
+      "condition": "若已知第n天存了30元（而非总量220元），求天数",
+      "taskSha256": "3886af0c29aee9f8c1e1d65258f7b1ab7f6fb2afd13e2d01291644a55afe87f3",
+      "sourceArtifactSha256": "0c4d99acb692a838b45ed8ef8d034f9bfea20916714aea23dcf5ee84f4408de1"
+    },
+    {
+      "id": "M02",
+      "segment": 1,
+      "condition": "若地形限制使第二段公差变为0且首排16，每排相同，共4排",
+      "taskSha256": "4302e4cd1a37b59ec0d28d60bf63b6361a2b4c3b4ecb385a784c834109c5c2b7",
+      "sourceArtifactSha256": "0c4d99acb692a838b45ed8ef8d034f9bfea20916714aea23dcf5ee84f4408de1"
+    },
+    {
+      "id": "M03",
+      "segment": 4,
+      "condition": "题目改为：仅授权区间内插值，且输入30单位（超出25）需要报告",
+      "taskSha256": "6ff44d765101cf50f2ee334b9259fbbe427b24db3bb334519901df648de6002e",
+      "sourceArtifactSha256": "c1c5794e93830ca2c0b23f72a1e7e7495a5416b40c7053ed7e43d8f3279ff4b7"
+    },
+    {
+      "id": "M03",
+      "segment": 1,
+      "condition": "题目明确禁止外推，且基于同表求输出60格时算得输入为18单位（超出区间[5,15]）",
+      "taskSha256": "04cca0056bc89077371d9f0446e5c313973079b27b5c33a36c00d7102991e45e",
+      "sourceArtifactSha256": "c1c5794e93830ca2c0b23f72a1e7e7495a5416b40c7053ed7e43d8f3279ff4b7"
+    },
+    {
+      "id": "M04",
+      "segment": 1,
+      "condition": "起点坐标改为(3,−2)，其他位移同前：第一段(−2,5)，第二段(3,−4)。",
+      "taskSha256": "08640b02f6c2b0e3220e58155e8d70d1b57a863d45416f652ff8110cad38c350",
+      "sourceArtifactSha256": "4d434a7cd7599050b94f10d1bfcf70c8e8b8a5161f51b983e2927dcb054d5934"
+    },
+    {
+      "id": "M04",
+      "segment": 3,
+      "condition": "起点坐标改为(2,1)，其他位移同前：第一段(7,−2)，第二段(−4,3)。",
+      "taskSha256": "f79cf25a4163bba3893a826e20efcf0e79d8818b9aa5be55117fcaa4218a71d0",
+      "sourceArtifactSha256": "4d434a7cd7599050b94f10d1bfcf70c8e8b8a5161f51b983e2927dcb054d5934"
+    },
+    {
+      "id": "M05",
+      "segment": 4,
+      "condition": "若终态体积要求用升表示，且已知1升=1000毫升，但其他条件不变",
+      "taskSha256": "407dc7d0eb796c43ca6cd03ba0412cea22a683cb9881f3da448f313400ab3c53",
+      "sourceArtifactSha256": "e8cde429c0f5c389e163aea69e303216dcf7dbded994bfcb7682708d6bf478c0"
+    },
+    {
+      "id": "M05",
+      "segment": 3,
+      "condition": "体积单位不一致：初态2000毫升，末态3升，需先换算为同单位再算乘积",
+      "taskSha256": "5a3ebfbc0e78b80d612ba64cf7a56ea3641c393edc4110fe3761fe854046212b",
+      "sourceArtifactSha256": "e8cde429c0f5c389e163aea69e303216dcf7dbded994bfcb7682708d6bf478c0"
+    },
+    {
+      "id": "M06",
+      "segment": 3,
+      "condition": "电源并非理想，接入后端电压跌至9伏（而非固定10伏），其余连接与电阻不变",
+      "taskSha256": "b397e96825edb84092d99e8ebbe5f71797fe83b81288f33ace1221ad01d61e15",
+      "sourceArtifactSha256": "4e7f4d49932e09fa0fe3041a47d6fb762dfd3bcea5d209a7171cceccfc6cd7ab"
+    },
+    {
+      "id": "M06",
+      "segment": 2,
+      "condition": "若电源非理想，规定端电压随总电导变为U=12/(1+0.2*G总)。初始G0=1/6S→U0=12/(1+0.0333)=11.61V；新增后G1=1/4S→U1=12/(1+0.05)=11.43V。",
+      "taskSha256": "e956be823fd4767d2532333fde7808d43949865762c321e57cb8ba819dc88d61",
+      "sourceArtifactSha256": "4e7f4d49932e09fa0fe3041a47d6fb762dfd3bcea5d209a7171cceccfc6cd7ab"
+    },
+    {
+      "id": "M07",
+      "segment": 1,
+      "condition": "若题设改为铜块初温0摄氏度、末温60摄氏度，其他不变",
+      "taskSha256": "c11ef36a4318c95f8060ac66737c61905d11d0396ba14ad68e4db69759612b1b",
+      "sourceArtifactSha256": "183b47b161847cc0a61e78c646afcecedc6ee6b65baeac9a09bfe568e8099adb"
+    },
+    {
+      "id": "M07",
+      "segment": 3,
+      "condition": "若系统并非绝热，容器质量0.1千克、比热容1000焦/(千克·摄氏度)、初温10摄氏度且吸热不可忽略，右侧加上0.1×1000×(T−10) 计入方程右侧",
+      "taskSha256": "b53f838352e819523255f6b9bf737b2d9405ca32798e1563ce5399618bd61963",
+      "sourceArtifactSha256": "183b47b161847cc0a61e78c646afcecedc6ee6b65baeac9a09bfe568e8099adb"
+    }
+  ],
+  "privateAndFutureFieldsExcluded": true,
+  "visibleGuidanceFeedbackAndChangedConditionsIncluded": true
+}

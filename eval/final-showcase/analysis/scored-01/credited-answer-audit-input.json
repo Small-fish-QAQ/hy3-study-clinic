@@ -1,0 +1,1619 @@
+[
+  {
+    "id": "J01",
+    "evidence": {
+      "id": "evidence_02e64c45-e29b-442d-9aa9-26b539af54a4",
+      "attempt_id": "assessment_attempt_791fcef7-c8df-424b-a301-f9b7b46ca96e",
+      "grade_record_id": "grade_f56ceb1f-035c-40c9-856c-fc39a17ee8f7",
+      "assessment_version_id": "assessment_version_87ae9ea6-1722-4f32-8a9a-5e2b2a0e0b87",
+      "item_id": "assessment_item_718850f2-a257-41b8-ba3c-20815d2ae1e1",
+      "target_learning_unit_id": "cun_be9bb6af-3400-43d5-966a-8311730d48db",
+      "conclusion": "supported",
+      "policy_version": "formal-assessment-evidence-v2-criterion-gate",
+      "source_binding_ids": "[\"blk_0_ef43e284\"]",
+      "created_at": "2026-09-14T11:30:39.556Z"
+    },
+    "item": {
+      "id": "assessment_item_718850f2-a257-41b8-ba3c-20815d2ae1e1",
+      "sourceQuestionId": "que_d89217df-26d5-4133-9848-a9904e357d2a",
+      "index": 0,
+      "targetLearningUnitId": "cun_be9bb6af-3400-43d5-966a-8311730d48db",
+      "targetObjectiveId": "obj_d40bdb29-5326-4bb2-a706-8332319335ba",
+      "representation": "recall",
+      "questionType": "short_answer",
+      "prompt": "两个正整数的公因数，是能同时把两个数整除的正整数；其中最大的叫最大公因数。给定正整数15和25。学习者乙说：“最大公因数就是两数中较小的那个，所以结果是15。”请依据公因数的定义解释该说法为什么不正确，并给出正确的最大公因数。",
+      "rubric": [
+        {
+          "id": "criterion_05ef1e2d-bb27-4fa0-b6cf-bdf11a136e90",
+          "text": "指出15不能整除25，因此15不满足同时整除两数的公因数定义，故不能是最大公因数。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_ef43e284"
+          ]
+        },
+        {
+          "id": "criterion_bc5f72b4-fea0-4b3c-8ca1-ab6deadcd607",
+          "text": "正确得出15与25的最大公因数为5（可列举公因数1、5或说明5同时整除两者且最大）。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_ef43e284"
+          ]
+        }
+      ],
+      "sourceBindings": [
+        {
+          "materialId": "mat_a7cd1fad-6e99-4880-9121-f74a132063d6",
+          "materialRevisionId": "rev_c2f6c0b3-0a10-409b-9791-856377950eb5",
+          "sourceBlockId": "blk_0_ef43e284",
+          "quote": "最大公因数是一个共同的整除尺度，不是把两个数相加，也不是选择较小数就一定正确。",
+          "contentOrigin": "extracted_original",
+          "authoritative": true
+        }
+      ],
+      "formalEligible": true,
+      "policyReason": "FORMAL_ELIGIBLE"
+    },
+    "grade": {
+      "id": "grade_f56ceb1f-035c-40c9-856c-fc39a17ee8f7",
+      "attemptId": "assessment_attempt_791fcef7-c8df-424b-a301-f9b7b46ca96e",
+      "assessmentVersionId": "assessment_version_87ae9ea6-1722-4f32-8a9a-5e2b2a0e0b87",
+      "grader": "hy3",
+      "rubricVersion": "formal-short-answer-v1",
+      "status": "current",
+      "judgment": {
+        "score": 1,
+        "criterionResults": [
+          {
+            "criterionId": "criterion_05ef1e2d-bb27-4fa0-b6cf-bdf11a136e90",
+            "result": "met"
+          },
+          {
+            "criterionId": "criterion_bc5f72b4-fea0-4b3c-8ca1-ab6deadcd607",
+            "result": "met"
+          }
+        ],
+        "feedback": "回答已覆盖主要评分标准。"
+      },
+      "supersedesId": null,
+      "createdAt": "2026-09-14T11:30:39.555Z"
+    },
+    "attempt": {
+      "id": "assessment_attempt_791fcef7-c8df-424b-a301-f9b7b46ca96e",
+      "assessment_version_id": "assessment_version_87ae9ea6-1722-4f32-8a9a-5e2b2a0e0b87",
+      "workspace_id": "ws_0659984a-faa1-4224-bfd3-0ead42873177",
+      "ordinal": 1,
+      "status": "submitted",
+      "responses": "{\"assessment_item_718850f2-a257-41b8-ba3c-20815d2ae1e1\":\"根据公因数的定义，公因数必须是能同时整除两个正整数的数。对于15和25，较小数是15，但15不能整除25（25÷15≈1.667，不是整数），因此15不是15和25的公因数，更不可能是最大公因数。所以“最大公因数就是两数中较小的那个”的说法不正确，它误将较小数直接当作公因数，而忽略了同时整除的条件。正确求解：15的因数有1、3、5、15；25的因数有1、5、25；两者公因数为1和5，其中最大的是5。故15和25的最大公因数是5。\"}",
+      "started_at": "2026-09-14T11:29:54.300Z",
+      "submitted_at": "2026-09-14T11:30:27.175Z",
+      "cancelled_at": null,
+      "exposure_tracking_version": 1
+    }
+  },
+  {
+    "id": "J02",
+    "evidence": {
+      "id": "evidence_15cb10ee-4456-4405-b863-6ebd6dba65df",
+      "attempt_id": "assessment_attempt_33d18f0e-9426-4177-b15b-233a75aee767",
+      "grade_record_id": "grade_6e0ea65c-9852-416e-9412-7c042be97ef5",
+      "assessment_version_id": "assessment_version_86fbef0f-c554-4aaf-9085-6722340db45c",
+      "item_id": "assessment_item_3ed429f6-b17e-4af8-a762-002620e48044",
+      "target_learning_unit_id": "cun_bd2d2019-9c80-43cd-b1f2-769a3f748bd3",
+      "conclusion": "supported",
+      "policy_version": "formal-assessment-evidence-v2-criterion-gate",
+      "source_binding_ids": "[\"blk_0_473f5b2b\",\"blk_1_a7d14c01\"]",
+      "created_at": "2026-09-14T11:38:50.272Z"
+    },
+    "item": {
+      "id": "assessment_item_3ed429f6-b17e-4af8-a762-002620e48044",
+      "sourceQuestionId": "que_34166394-d58c-411f-998f-9d56de4b1f34",
+      "index": 0,
+      "targetLearningUnitId": "cun_bd2d2019-9c80-43cd-b1f2-769a3f748bd3",
+      "targetObjectiveId": "obj_744521b8-de9f-4851-a9d0-1f9de87b1d2f",
+      "representation": "recall",
+      "questionType": "short_answer",
+      "prompt": "三角形HJK与LMN相似，题目约定H↔L、J↔M、K↔N。已知HJK的边长：HJ=4厘米，JK=6厘米，HK=5厘米；LMN的边长：LM=12厘米，MN=18厘米，LN=15厘米。请完成以下任务：\n(1) 指出HJK与LMN中哪些边互为对应，并说明为何不能仅按图形中边的位置或最长边来猜测对应；\n(2) 计算从HJK到LMN的相似比k，并写清“新图形相对原图形”的方向；\n(3) 若反过来从LMN看HJK，相似比是多少？",
+      "rubric": [
+        {
+          "id": "criterion_b9e7af9f-7fb2-4219-8ca1-091f37daf1c3",
+          "text": "正确列出边对应（HJ↔LM, JK↔MN, HK↔LN），并说明不能按图形位置或最长边混淆对应，须依题目顶点配对。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_473f5b2b",
+            "blk_1_a7d14c01"
+          ]
+        },
+        {
+          "id": "criterion_280e0556-07eb-41ee-8f40-3954f53ec8c5",
+          "text": "计算从HJK到LMN的相似比k=LM÷HJ=12÷4=3，并明确写出“新图形LMN相对原图形HJK”的方向。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_473f5b2b",
+            "blk_1_a7d14c01"
+          ]
+        },
+        {
+          "id": "criterion_7808bdc4-6221-44d6-b6db-23b9272c4f2b",
+          "text": "给出反向相似比为1/k=1/3。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_473f5b2b",
+            "blk_1_a7d14c01"
+          ]
+        }
+      ],
+      "sourceBindings": [
+        {
+          "materialId": "mat_d71acd1d-bcbf-4438-ad1d-83db9eacf365",
+          "materialRevisionId": "rev_f3c564fb-106d-4afb-be5b-907963653e24",
+          "sourceBlockId": "blk_0_473f5b2b",
+          "quote": "若写作三角形ABC与DEF相似，并约定A对应D、B对应E、C对应F，那么AB对应DE、BC对应EF、AC对应DF。对应边不能只按图上看起来的位置猜测，尤其不能把最长边和不对应的短边混在同一比例中。",
+          "contentOrigin": "extracted_original",
+          "authoritative": true
+        },
+        {
+          "materialId": "mat_d71acd1d-bcbf-4438-ad1d-83db9eacf365",
+          "materialRevisionId": "rev_f3c564fb-106d-4afb-be5b-907963653e24",
+          "sourceBlockId": "blk_1_a7d14c01",
+          "quote": "从ABC到DEF的相似比定义为k=DE÷AB，k为正数。在这个方向下，DEF的每一条对应长度都是ABC的k倍：DE=k×AB、EF=k×BC、DF=k×AC。若反过来从DEF看ABC，相似比是1/k。写清“新图形相对原图形”可以避免把放大和缩小算反。只知道某一对边长之比，并不能在未获相似条件时推断其他边也按这个比例变化。",
+          "contentOrigin": "extracted_original",
+          "authoritative": true
+        }
+      ],
+      "formalEligible": true,
+      "policyReason": "FORMAL_ELIGIBLE"
+    },
+    "grade": {
+      "id": "grade_6e0ea65c-9852-416e-9412-7c042be97ef5",
+      "attemptId": "assessment_attempt_33d18f0e-9426-4177-b15b-233a75aee767",
+      "assessmentVersionId": "assessment_version_86fbef0f-c554-4aaf-9085-6722340db45c",
+      "grader": "hy3",
+      "rubricVersion": "formal-short-answer-v1",
+      "status": "current",
+      "judgment": {
+        "score": 1,
+        "criterionResults": [
+          {
+            "criterionId": "criterion_b9e7af9f-7fb2-4219-8ca1-091f37daf1c3",
+            "result": "met"
+          },
+          {
+            "criterionId": "criterion_280e0556-07eb-41ee-8f40-3954f53ec8c5",
+            "result": "met"
+          },
+          {
+            "criterionId": "criterion_7808bdc4-6221-44d6-b6db-23b9272c4f2b",
+            "result": "met"
+          }
+        ],
+        "feedback": "回答已覆盖主要评分标准。"
+      },
+      "supersedesId": null,
+      "createdAt": "2026-09-14T11:38:50.270Z"
+    },
+    "attempt": {
+      "id": "assessment_attempt_33d18f0e-9426-4177-b15b-233a75aee767",
+      "assessment_version_id": "assessment_version_86fbef0f-c554-4aaf-9085-6722340db45c",
+      "workspace_id": "ws_3674308a-cd4d-4482-8bf2-9c1dce9ca447",
+      "ordinal": 1,
+      "status": "submitted",
+      "responses": "{\"assessment_item_3ed429f6-b17e-4af8-a762-002620e48044\":\"(1) 对应边为：HJ↔LM，JK↔MN，HK↔LN（由题目约定H↔L、J↔M、K↔N得出）。不能仅按图形中边的位置或最长边猜测对应，因为相似对应是由写明的顶点配对决定的；图形位置可能旋转或任意摆放，最长边若未按顶点对应也可能不匹配。若仅凭位置或最长边，可能把不对应的边（如HJ与LN）放入同一比例，得到错误相似比，破坏相似一致性。\\n(2) 从HJK到LMN，新图形为LMN，原图形为HJK，相似比k = 新图形对应边长 ÷ 原图形对应边长 = LM/HJ = 12/4 = 3；用JK与MN核对：18/6=3，HK与LN核对：15/5=3，三边比一致。故k=3，表示LMN的每条对应边长是HJK的3倍。\\n(3) 反过来从LMN看HJK，新图形为HJK，原图形为LMN，相似比 = 1/k = 1/3。\"}",
+      "started_at": "2026-09-14T11:37:41.411Z",
+      "submitted_at": "2026-09-14T11:38:27.958Z",
+      "cancelled_at": null,
+      "exposure_tracking_version": 1
+    }
+  },
+  {
+    "id": "J04",
+    "evidence": {
+      "id": "evidence_b899036b-bb15-4556-8ef9-cbf0ad0fb9d1",
+      "attempt_id": "assessment_attempt_bff8bbbe-f386-42c4-a92f-cda2eae354e4",
+      "grade_record_id": "grade_5c803ed3-f1b0-43f0-914c-f70017f5308e",
+      "assessment_version_id": "assessment_version_96305bb0-f3c3-4a6b-bd4c-cae72db969c1",
+      "item_id": "assessment_item_def676d0-3a28-4554-8f65-dd9c41b694ca",
+      "target_learning_unit_id": "cun_13c3bf14-145b-4bba-a2c7-2fbe00ffb542",
+      "conclusion": "supported",
+      "policy_version": "formal-assessment-evidence-v2-criterion-gate",
+      "source_binding_ids": "[\"blk_0_29807624\",\"blk_1_874766f4\"]",
+      "created_at": "2026-09-14T11:32:05.655Z"
+    },
+    "item": {
+      "id": "assessment_item_def676d0-3a28-4554-8f65-dd9c41b694ca",
+      "sourceQuestionId": "que_2e6ea3c1-0875-4eac-a3dd-823fa9b887cf",
+      "index": 0,
+      "targetLearningUnitId": "cun_13c3bf14-145b-4bba-a2c7-2fbe00ffb542",
+      "targetObjectiveId": "obj_6a599e0b-de86-4230-a952-3fbba29362d8",
+      "representation": "recall",
+      "questionType": "short_answer",
+      "prompt": "某次测验中，7名学生的得分已按从小到大排序如下（单位：分）：62, 68, 75, 80, 85, 90, 95。请严格按本课明确约定（先求整体中位数，奇数个去掉正中后分低高半组，再取各组中位数）计算Q1与Q3，写出中间过程与结果。",
+      "rubric": [
+        {
+          "id": "criterion_883e8cca-3901-4157-9ec9-7f24657690fb",
+          "text": "正确按奇数约定求整体中位数并分半：整体中位数80，低半组62,68,75，高半组85,90,95。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_29807624",
+            "blk_1_874766f4"
+          ]
+        },
+        {
+          "id": "criterion_ee3a89f5-75f5-4a4f-beb0-ec53c4373d1e",
+          "text": "正确应用组内中位数规则得出Q1=68分（低半组正中）和Q3=90分（高半组正中）。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_29807624",
+            "blk_1_874766f4"
+          ]
+        }
+      ],
+      "sourceBindings": [
+        {
+          "materialId": "mat_4621dac0-9e9e-48dd-a990-42713b77a1f7",
+          "materialRevisionId": "rev_f01219cf-e118-4ab6-afed-a1bf3eeeafd0",
+          "sourceBlockId": "blk_0_29807624",
+          "quote": "四分位数用来描述排序数据内部的位置。本课只使用一种明确约定：先把至少4个数据从小到大排列，求整体中位数；若数据个数为偶数，分成数量相等的低半组与高半组；若为奇数，去掉正中的那个数据后，再把左右两边分别作为低半组与高半组。低半组的中位数记为Q1，高半组的中位数记为Q3。某些软件采用其他插值约定，题目使用本课方法时不要混用。",
+          "contentOrigin": "extracted_original",
+          "authoritative": true
+        },
+        {
+          "materialId": "mat_4621dac0-9e9e-48dd-a990-42713b77a1f7",
+          "materialRevisionId": "rev_f01219cf-e118-4ab6-afed-a1bf3eeeafd0",
+          "sourceBlockId": "blk_1_874766f4",
+          "quote": "求一个组的中位数也有规则：奇数个数取排序后的正中数据；偶数个数取中间两个数据的平均。四分位数按位置确定，不能直接把最小值与最大值平均来充当Q1或Q3，也不能只把数据个数除以4就把所得数当成观测值。若原始记录没有排序，要先排序，重复的观测值仍各占一个位置。",
+          "contentOrigin": "extracted_original",
+          "authoritative": true
+        }
+      ],
+      "formalEligible": true,
+      "policyReason": "FORMAL_ELIGIBLE"
+    },
+    "grade": {
+      "id": "grade_5c803ed3-f1b0-43f0-914c-f70017f5308e",
+      "attemptId": "assessment_attempt_bff8bbbe-f386-42c4-a92f-cda2eae354e4",
+      "assessmentVersionId": "assessment_version_96305bb0-f3c3-4a6b-bd4c-cae72db969c1",
+      "grader": "hy3",
+      "rubricVersion": "formal-short-answer-v1",
+      "status": "current",
+      "judgment": {
+        "score": 1,
+        "criterionResults": [
+          {
+            "criterionId": "criterion_883e8cca-3901-4157-9ec9-7f24657690fb",
+            "result": "met"
+          },
+          {
+            "criterionId": "criterion_ee3a89f5-75f5-4a4f-beb0-ec53c4373d1e",
+            "result": "met"
+          }
+        ],
+        "feedback": "回答已覆盖主要评分标准。"
+      },
+      "supersedesId": null,
+      "createdAt": "2026-09-14T11:32:05.652Z"
+    },
+    "attempt": {
+      "id": "assessment_attempt_bff8bbbe-f386-42c4-a92f-cda2eae354e4",
+      "assessment_version_id": "assessment_version_96305bb0-f3c3-4a6b-bd4c-cae72db969c1",
+      "workspace_id": "ws_e86bd300-f608-48d9-ab68-5c38d87e489c",
+      "ordinal": 1,
+      "status": "submitted",
+      "responses": "{\"assessment_item_def676d0-3a28-4554-8f65-dd9c41b694ca\":\"排序数据：62, 68, 75, 80, 85, 90, 95（单位：分）。共7个，为奇数个，整体中位数为正中的第4个数80分。去掉80后，低半组为左侧62, 68, 75，高半组为右侧85, 90, 95。低半组有3个（奇数），其中位数为中间值68分，故Q1=68分；高半组有3个（奇数），其中位数为中间值90分，故Q3=90分。最终结果：Q1=68分，Q3=90分。\"}",
+      "started_at": "2026-09-14T11:31:13.828Z",
+      "submitted_at": "2026-09-14T11:31:54.387Z",
+      "cancelled_at": null,
+      "exposure_tracking_version": 1
+    }
+  },
+  {
+    "id": "J06",
+    "evidence": {
+      "id": "evidence_0076eae6-06c6-4685-8d8b-6c884da66ae0",
+      "attempt_id": "assessment_attempt_80f45fcd-9dea-458d-8c94-a0f36e4fdf19",
+      "grade_record_id": "grade_477fcbf9-9c69-4aae-97b0-596cb8505544",
+      "assessment_version_id": "assessment_version_671cab0d-1998-4637-a694-72133ada5c88",
+      "item_id": "assessment_item_4309c9af-8ff1-4837-a287-0fae22b31d62",
+      "target_learning_unit_id": "cun_0f47f974-b971-4b50-bf55-e19d08494a94",
+      "conclusion": "supported",
+      "policy_version": "formal-assessment-evidence-v2-criterion-gate",
+      "source_binding_ids": "[\"blk_0_f303fda2\"]",
+      "created_at": "2026-09-14T11:38:44.831Z"
+    },
+    "item": {
+      "id": "assessment_item_4309c9af-8ff1-4837-a287-0fae22b31d62",
+      "sourceQuestionId": "que_7c3eb02f-6c4e-4215-acc6-44e2cb6134c5",
+      "index": 0,
+      "targetLearningUnitId": "cun_0f47f974-b971-4b50-bf55-e19d08494a94",
+      "targetObjectiveId": "obj_2593a51a-0648-45ca-9721-f0e2ece852e9",
+      "representation": "recall",
+      "questionType": "short_answer",
+      "prompt": "某物体质量 3 千克，在同一参考系中以 2 米每秒低速平动。请解释根据经典低速平动动能模型，如何表示其平动动能（写出公式并说明各量意义与单位），并指出该模型不自动涵盖哪些能量或运动。",
+      "rubric": [
+        {
+          "id": "criterion_4e460297-ad3c-4d8f-84cd-45ca3d0e7ad6",
+          "text": "正确写出公式 E=1/2 m v²，并说明 m 为质量、v 为速率（速度大小），质量用千克、速率用米每秒时结果为焦耳。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_f303fda2"
+          ]
+        },
+        {
+          "id": "criterion_a8276c78-d9ad-4890-a593-897e1636ed4b",
+          "text": "指出该模型不自动涵盖接近光速的运动，也不自动并入转动能量或其他储能。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_f303fda2"
+          ]
+        }
+      ],
+      "sourceBindings": [
+        {
+          "materialId": "mat_1704689b-236d-47c7-a6a0-afd926ad842c",
+          "materialRevisionId": "rev_e3df07d9-5db3-41c4-a60c-e540bacaddbc",
+          "sourceBlockId": "blk_0_f303fda2",
+          "quote": "在同一参考系中，普通低速运动物体的平动动能可用E=1/2×m×v²表示。m是质量，v是速率，即速度的大小；质量用千克、速率用米每秒时，动能用焦耳。该式属于经典低速模型，本课不讨论接近光速的运动，也不把物体的转动能量或其他储能自动并入这个平动动能式。",
+          "contentOrigin": "extracted_original",
+          "authoritative": true
+        }
+      ],
+      "formalEligible": true,
+      "policyReason": "FORMAL_ELIGIBLE"
+    },
+    "grade": {
+      "id": "grade_477fcbf9-9c69-4aae-97b0-596cb8505544",
+      "attemptId": "assessment_attempt_80f45fcd-9dea-458d-8c94-a0f36e4fdf19",
+      "assessmentVersionId": "assessment_version_671cab0d-1998-4637-a694-72133ada5c88",
+      "grader": "hy3",
+      "rubricVersion": "formal-short-answer-v1",
+      "status": "current",
+      "judgment": {
+        "score": 1,
+        "criterionResults": [
+          {
+            "criterionId": "criterion_4e460297-ad3c-4d8f-84cd-45ca3d0e7ad6",
+            "result": "met"
+          },
+          {
+            "criterionId": "criterion_a8276c78-d9ad-4890-a593-897e1636ed4b",
+            "result": "met"
+          }
+        ],
+        "feedback": "回答已覆盖主要评分标准。"
+      },
+      "supersedesId": null,
+      "createdAt": "2026-09-14T11:38:44.827Z"
+    },
+    "attempt": {
+      "id": "assessment_attempt_80f45fcd-9dea-458d-8c94-a0f36e4fdf19",
+      "assessment_version_id": "assessment_version_671cab0d-1998-4637-a694-72133ada5c88",
+      "workspace_id": "ws_f37040d0-a7b6-403c-9c48-43a9814d4662",
+      "ordinal": 1,
+      "status": "submitted",
+      "responses": "{\"assessment_item_4309c9af-8ff1-4837-a287-0fae22b31d62\":\"根据经典低速平动动能模型，物体的平动动能用公式 E = 1/2 × m × v² 表示。各量意义与单位：E 为平动动能，单位焦耳（J）；m 为质量，单位千克（kg），本题物体 m=3 kg；v 为速率即速度的大小，单位米每秒（m/s），本题物体 v=2 m/s。代入表示其平动动能：E = 1/2 × 3 × 2² = 6 焦耳。该模型不自动涵盖：1）接近光速的运动（不属于经典低速模型）；2）物体的转动能量；3）其他储能形式（如内能、势能等未并入平动动能式）；4）模型仅适用于同一参考系，不跨参考系直接套用或凭质量排名判断。它只计同一参考系下低速平动动能，不指示运动方向。\"}",
+      "started_at": "2026-09-14T11:37:45.225Z",
+      "submitted_at": "2026-09-14T11:38:27.504Z",
+      "cancelled_at": null,
+      "exposure_tracking_version": 1
+    }
+  },
+  {
+    "id": "J08",
+    "evidence": {
+      "id": "evidence_6d434589-a56f-4a68-a4cd-c4ecb04013c6",
+      "attempt_id": "assessment_attempt_4b57e7a5-a38f-4635-9d8a-54f5a69975be",
+      "grade_record_id": "grade_ea90754d-3fdf-4067-bc16-c129a6f0a1be",
+      "assessment_version_id": "assessment_version_f51d845f-a160-4dcf-a87e-ba8b77366e0c",
+      "item_id": "assessment_item_cc0a56f7-0e82-4f08-9ad5-8e13c38b484e",
+      "target_learning_unit_id": "cun_ed9a4556-b9c0-4a63-a02d-fee5effdc3e7",
+      "conclusion": "supported",
+      "policy_version": "formal-assessment-evidence-v2-criterion-gate",
+      "source_binding_ids": "[\"blk_5_25f25eca\",\"blk_0_08c587b5\",\"blk_1_f645005d\"]",
+      "created_at": "2026-09-14T11:47:12.894Z"
+    },
+    "item": {
+      "id": "assessment_item_cc0a56f7-0e82-4f08-9ad5-8e13c38b484e",
+      "sourceQuestionId": "que_47bc9164-c158-4d34-a104-5a756e52d626",
+      "index": 0,
+      "targetLearningUnitId": "cun_ed9a4556-b9c0-4a63-a02d-fee5effdc3e7",
+      "targetObjectiveId": "obj_94eca2c3-9e98-41c0-aa36-c3e78371205f",
+      "representation": "recall",
+      "questionType": "short_answer",
+      "prompt": "某设备铭牌标注额定功率为2000瓦。在本次测试中，题目明确授权所给为实际平均功率：设备以实际平均功率 0.5 千瓦运行了 3 小时。请回答：\n(1) 本次消耗电能为多少千瓦时？\n(2) 为什么不能仅凭铭牌额定功率 2000 瓦乘以时间来计算本次实际耗电？\n(3) 千瓦时是哪种物理量单位？它与焦耳的换算关系是什么？",
+      "rubric": [
+        {
+          "id": "criterion_20c44a2e-0929-4f60-859e-a2ce6f70c843",
+          "text": "正确计算电能为 1.5 千瓦时，体现使用题目授权的实际平均功率乘以时间（0.5 kW × 3 h）。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_5_25f25eca",
+            "blk_0_08c587b5",
+            "blk_1_f645005d"
+          ]
+        },
+        {
+          "id": "criterion_e5b26abd-c82c-4ca4-b040-1336207ee7ca",
+          "text": "解释铭牌额定功率是标称参数，不一定等于实际功率，因此不能用其直接乘时间得实际耗电，而需实际平均功率等。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_5_25f25eca",
+            "blk_0_08c587b5",
+            "blk_1_f645005d"
+          ]
+        },
+        {
+          "id": "criterion_11f41797-f7e7-4375-b75f-c1ada1691427",
+          "text": "说明千瓦时是能量单位（非功率单位），并给出换算 1 千瓦时 = 3600000 焦耳（或 1 kW·h = 1000×3600 J）。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_5_25f25eca",
+            "blk_0_08c587b5",
+            "blk_1_f645005d"
+          ]
+        }
+      ],
+      "sourceBindings": [
+        {
+          "materialId": "mat_e0dccb56-2bc7-4b65-86ba-c0e0e3189c1f",
+          "materialRevisionId": "rev_0cd6ce24-f161-4f5f-a8c0-f1d2d3d88fe6",
+          "sourceBlockId": "blk_5_25f25eca",
+          "quote": "设备铭牌上的额定功率是规定条件下的标称参数，不一定等于整个使用过程中持续的实际功率。会启停或调节的设备，需要实际平均功率、各阶段运行时间或电表读数才能估算该次耗电。读到“实际恒定功率”或“该段实际平均功率”时，才按题目授权直接相乘。本课题例明确提供这些量，不讨论待机、线路损耗或未列出的附加费用。解释计算时说明输入是哪种功率、时间如何换算、求的是能量还是费用，避免把功率排名直接写成耗电排名。",
+          "contentOrigin": "extracted_original",
+          "authoritative": true
+        },
+        {
+          "materialId": "mat_e0dccb56-2bc7-4b65-86ba-c0e0e3189c1f",
+          "materialRevisionId": "rev_0cd6ce24-f161-4f5f-a8c0-f1d2d3d88fe6",
+          "sourceBlockId": "blk_0_08c587b5",
+          "quote": "功率描述能量转移或消耗的快慢，电能描述一段时间内累计消耗了多少。实际功率恒定时，电能E=P×t。若P用瓦、t用秒，E用焦耳，因为1瓦=1焦耳每秒。日常电表常用千瓦时：1千瓦功率持续1小时对应1千瓦时，它是能量单位，不是“每小时的功率”，也不是一种比千瓦更大的功率单位。",
+          "contentOrigin": "extracted_original",
+          "authoritative": true
+        },
+        {
+          "materialId": "mat_e0dccb56-2bc7-4b65-86ba-c0e0e3189c1f",
+          "materialRevisionId": "rev_0cd6ce24-f161-4f5f-a8c0-f1d2d3d88fe6",
+          "sourceBlockId": "blk_1_f645005d",
+          "quote": "换算关系为1千瓦=1000瓦，1小时=3600秒，所以1千瓦时=1000×3600=3600000焦耳。计算时应选定一套一致单位。例如一台设备实际恒定功率为800瓦，运行1.5小时，先换成0.8千瓦，电能为0.8×1.5=1.2千瓦时。也可用800瓦乘5400秒，得到4320000焦耳，再除以3600000，仍为1.2千瓦时。",
+          "contentOrigin": "extracted_original",
+          "authoritative": true
+        }
+      ],
+      "formalEligible": true,
+      "policyReason": "FORMAL_ELIGIBLE"
+    },
+    "grade": {
+      "id": "grade_ea90754d-3fdf-4067-bc16-c129a6f0a1be",
+      "attemptId": "assessment_attempt_4b57e7a5-a38f-4635-9d8a-54f5a69975be",
+      "assessmentVersionId": "assessment_version_f51d845f-a160-4dcf-a87e-ba8b77366e0c",
+      "grader": "hy3",
+      "rubricVersion": "formal-short-answer-v1",
+      "status": "current",
+      "judgment": {
+        "score": 1,
+        "criterionResults": [
+          {
+            "criterionId": "criterion_20c44a2e-0929-4f60-859e-a2ce6f70c843",
+            "result": "met"
+          },
+          {
+            "criterionId": "criterion_e5b26abd-c82c-4ca4-b040-1336207ee7ca",
+            "result": "met"
+          },
+          {
+            "criterionId": "criterion_11f41797-f7e7-4375-b75f-c1ada1691427",
+            "result": "met"
+          }
+        ],
+        "feedback": "回答已覆盖主要评分标准。"
+      },
+      "supersedesId": null,
+      "createdAt": "2026-09-14T11:47:12.891Z"
+    },
+    "attempt": {
+      "id": "assessment_attempt_4b57e7a5-a38f-4635-9d8a-54f5a69975be",
+      "assessment_version_id": "assessment_version_f51d845f-a160-4dcf-a87e-ba8b77366e0c",
+      "workspace_id": "ws_4bb19e5b-525e-4fff-ba78-ecbbf2b718af",
+      "ordinal": 1,
+      "status": "submitted",
+      "responses": "{\"assessment_item_cc0a56f7-0e82-4f08-9ad5-8e13c38b484e\":\"(1) 本次消耗电能 = 实际平均功率 × 时间 = 0.5 千瓦 × 3 小时 = 1.5 千瓦时。题目明确授权所给为实际平均功率，可直接相乘。\\n(2) 不能仅凭铭牌额定功率2000瓦（合2千瓦）乘时间，因为额定功率是规定条件下的标称参数，不一定等于整个使用过程持续的实际功率；本题实际平均功率仅为0.5千瓦，用额定值会高估耗电。\\n(3) 千瓦时是电能（能量）单位，不是功率单位。换算：1千瓦=1000瓦，1小时=3600秒，1瓦=1焦耳/秒，故1千瓦时 = 1000 × 3600 = 3600000 焦耳。\"}",
+      "started_at": "2026-09-14T11:46:18.474Z",
+      "submitted_at": "2026-09-14T11:46:57.132Z",
+      "cancelled_at": null,
+      "exposure_tracking_version": 1
+    }
+  },
+  {
+    "id": "J09",
+    "evidence": {
+      "id": "evidence_59e243bd-fef1-41de-a054-f6efeacfc20e",
+      "attempt_id": "assessment_attempt_a4b1304d-028e-4bc5-a341-470ebba86ff2",
+      "grade_record_id": "grade_41fe7499-175d-4cda-b945-56fb46c6515e",
+      "assessment_version_id": "assessment_version_cc580cfd-9c64-4c3f-a13e-3daefff5ec4e",
+      "item_id": "assessment_item_efcc2fb3-0800-4231-ac1e-cbcd3b25ff31",
+      "target_learning_unit_id": "cun_3101aa4b-f653-419d-a822-47fe68a7cd9b",
+      "conclusion": "supported",
+      "policy_version": "formal-assessment-evidence-v2-criterion-gate",
+      "source_binding_ids": "[\"blk_0_a1ba8aa8\"]",
+      "created_at": "2026-09-14T11:54:39.446Z"
+    },
+    "item": {
+      "id": "assessment_item_efcc2fb3-0800-4231-ac1e-cbcd3b25ff31",
+      "sourceQuestionId": "que_05c03303-4464-4d3e-a8cb-61d27b91a3cb",
+      "index": 0,
+      "targetLearningUnitId": "cun_3101aa4b-f653-419d-a822-47fe68a7cd9b",
+      "targetObjectiveId": "obj_58f897da-a539-474a-ac10-ba11caceae8d",
+      "representation": "recall",
+      "questionType": "short_answer",
+      "prompt": "温室中一株番茄苗，根毛完好，木质部通畅，叶片气孔开放，土壤湿润。请沿“土壤供水、根吸收、木质部运输、叶蒸发、气孔散失”的链条，解释这株植物体内水分从土壤到叶片散失的连贯机制：根毛如何增加表面积从土壤吸水，木质部中的导管等结构如何提供向上通路，叶片水分蒸发经气孔散失形成蒸腾，其拉力如何成为水向上运输的重要动力而非叶片主动泵出液态水。",
+      "rubric": [
+        {
+          "id": "criterion_5e2ed1ed-ae98-4411-bfa0-488b0d35c5e6",
+          "text": "描述根毛增加根与土壤接触的表面积，有利于从湿润土壤吸收水",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_a1ba8aa8"
+          ]
+        },
+        {
+          "id": "criterion_63658889-9d1c-4a50-bb73-7e80358069fa",
+          "text": "说明木质部中的导管等结构提供水分向上运输的通路",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_a1ba8aa8"
+          ]
+        },
+        {
+          "id": "criterion_199f9d6f-cf7b-4816-85a2-da9786ae718e",
+          "text": "说明叶片内水分蒸发经气孔散失形成蒸腾，蒸腾拉力是水向上运输的重要动力之一，且不是叶片把整滴液态水主动泵到空气中",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_a1ba8aa8"
+          ]
+        }
+      ],
+      "sourceBindings": [
+        {
+          "materialId": "mat_7be119da-11ce-4ae1-ba28-4744ee1a7207",
+          "materialRevisionId": "rev_25ec1cd0-a1fa-4f6f-948e-5814d4ce22bf",
+          "sourceBlockId": "blk_0_a1ba8aa8",
+          "quote": "陆生植物需要把根部吸收的水送到茎和叶。根毛增加根与土壤接触的表面积，有利于从湿润土壤吸收水和溶于水的无机盐。木质部中的导管等结构提供水分向上运输的通路。叶片内的水分蒸发后，水蒸气主要经气孔散失到空气中，这个过程叫蒸腾。蒸腾形成的拉力是水在木质部向上运输的重要动力之一，不是叶片把整滴液态水主动泵到空气中。",
+          "contentOrigin": "extracted_original",
+          "authoritative": true
+        }
+      ],
+      "formalEligible": true,
+      "policyReason": "FORMAL_ELIGIBLE"
+    },
+    "grade": {
+      "id": "grade_41fe7499-175d-4cda-b945-56fb46c6515e",
+      "attemptId": "assessment_attempt_a4b1304d-028e-4bc5-a341-470ebba86ff2",
+      "assessmentVersionId": "assessment_version_cc580cfd-9c64-4c3f-a13e-3daefff5ec4e",
+      "grader": "hy3",
+      "rubricVersion": "formal-short-answer-v1",
+      "status": "current",
+      "judgment": {
+        "score": 1,
+        "criterionResults": [
+          {
+            "criterionId": "criterion_5e2ed1ed-ae98-4411-bfa0-488b0d35c5e6",
+            "result": "met"
+          },
+          {
+            "criterionId": "criterion_63658889-9d1c-4a50-bb73-7e80358069fa",
+            "result": "met"
+          },
+          {
+            "criterionId": "criterion_199f9d6f-cf7b-4816-85a2-da9786ae718e",
+            "result": "met"
+          }
+        ],
+        "feedback": "回答已覆盖主要评分标准。"
+      },
+      "supersedesId": null,
+      "createdAt": "2026-09-14T11:54:39.444Z"
+    },
+    "attempt": {
+      "id": "assessment_attempt_a4b1304d-028e-4bc5-a341-470ebba86ff2",
+      "assessment_version_id": "assessment_version_cc580cfd-9c64-4c3f-a13e-3daefff5ec4e",
+      "workspace_id": "ws_3ea868be-3cd1-4ed9-9eb8-85cc7750c3aa",
+      "ordinal": 1,
+      "status": "submitted",
+      "responses": "{\"assessment_item_efcc2fb3-0800-4231-ac1e-cbcd3b25ff31\":\"土壤湿润为番茄苗提供可用水分。根毛完好使根与土壤接触的表面积增大，有利于从湿润土壤中吸收水分及溶于水的无机盐。吸收的水进入木质部，木质部中的导管等结构通畅，形成从根到茎叶的连续向上通道，将水向上运输。在叶片中，水分蒸发成水蒸气，由于气孔开放，水蒸气主要经气孔散失到空气中，这一过程称为蒸腾。蒸腾导致叶内水势降低，产生从叶向根的拉力，该拉力是水在木质部向上运输的重要动力之一；叶片并不是把整滴液态水主动泵到空气中，而是先蒸发再以水蒸气形式经气孔扩散丢失。\"}",
+      "started_at": "2026-09-14T11:53:37.131Z",
+      "submitted_at": "2026-09-14T11:54:18.828Z",
+      "cancelled_at": null,
+      "exposure_tracking_version": 1
+    }
+  },
+  {
+    "id": "J11",
+    "evidence": {
+      "id": "evidence_84b619ab-20bc-4bb3-8f6b-77f7d88691ab",
+      "attempt_id": "assessment_attempt_970cf468-047b-40a4-bb47-45e0febeb4b1",
+      "grade_record_id": "grade_37a9b8e1-4ab0-47e4-923c-b6b24554f253",
+      "assessment_version_id": "assessment_version_3080dbb9-be89-45eb-9930-36e6128164aa",
+      "item_id": "assessment_item_244de78d-0c20-411a-8ae4-bc8507400f0f",
+      "target_learning_unit_id": "cun_3f1eedeb-279b-4224-94b9-4f6bdec3e545",
+      "conclusion": "supported",
+      "policy_version": "formal-assessment-evidence-v2-criterion-gate",
+      "source_binding_ids": "[\"blk_0_1c59de98\"]",
+      "created_at": "2026-09-14T11:52:15.613Z"
+    },
+    "item": {
+      "id": "assessment_item_244de78d-0c20-411a-8ae4-bc8507400f0f",
+      "sourceQuestionId": "que_bf371bc6-abc6-44ba-ba23-1bfc3277c56a",
+      "index": 0,
+      "targetLearningUnitId": "cun_3f1eedeb-279b-4224-94b9-4f6bdec3e545",
+      "targetObjectiveId": "obj_f8d9786b-3848-4f7d-b703-a32b217ef98c",
+      "representation": "recall",
+      "questionType": "short_answer",
+      "prompt": "给定新句子（假设适用本课规则）：主动句 'The mechanic repairs the car.' 及其相应被动句 'The car is repaired by the mechanic.' 请识别：1) 主动句中动作的施事、动作、受事分别是什么；2) 被动句的语法主语是什么，它是施事还是受事，实际动作执行者是谁？",
+      "rubric": [
+        {
+          "id": "criterion_892d415a-9859-4a1f-a78d-2528b74d051d",
+          "text": "正确指出主动句施事为the mechanic、动作为repairs、受事为the car",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_1c59de98"
+          ]
+        },
+        {
+          "id": "criterion_1102e1d9-208a-40c5-be42-171d2a7f57b8",
+          "text": "正确指出被动句语法主语为the car且为受事（非施事），实际执行者是the mechanic",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_1c59de98"
+          ]
+        }
+      ],
+      "sourceBindings": [
+        {
+          "materialId": "mat_13a97d5a-fea5-464d-a807-06b5c9bf0cea",
+          "materialRevisionId": "rev_c84b5b67-3266-4765-8bea-97adcb08af07",
+          "sourceBlockId": "blk_0_1c59de98",
+          "quote": "英语主动句通常把动作的施事放在主语位置，如“The editor checks the report.”编辑是检查动作的执行者，报告是受到检查的对象。相应被动句为“The report is checked by the editor.”报告成为语法主语，但它仍是动作的受事，并没有变成检查别人的执行者。改变语态可以改变叙述重点，而不必改变所报告的事件。",
+          "contentOrigin": "extracted_original",
+          "authoritative": true
+        }
+      ],
+      "formalEligible": true,
+      "policyReason": "FORMAL_ELIGIBLE"
+    },
+    "grade": {
+      "id": "grade_37a9b8e1-4ab0-47e4-923c-b6b24554f253",
+      "attemptId": "assessment_attempt_970cf468-047b-40a4-bb47-45e0febeb4b1",
+      "assessmentVersionId": "assessment_version_3080dbb9-be89-45eb-9930-36e6128164aa",
+      "grader": "hy3",
+      "rubricVersion": "formal-short-answer-v1",
+      "status": "current",
+      "judgment": {
+        "score": 1,
+        "criterionResults": [
+          {
+            "criterionId": "criterion_892d415a-9859-4a1f-a78d-2528b74d051d",
+            "result": "met"
+          },
+          {
+            "criterionId": "criterion_1102e1d9-208a-40c5-be42-171d2a7f57b8",
+            "result": "met"
+          }
+        ],
+        "feedback": "回答已覆盖主要评分标准。"
+      },
+      "supersedesId": null,
+      "createdAt": "2026-09-14T11:52:15.610Z"
+    },
+    "attempt": {
+      "id": "assessment_attempt_970cf468-047b-40a4-bb47-45e0febeb4b1",
+      "assessment_version_id": "assessment_version_3080dbb9-be89-45eb-9930-36e6128164aa",
+      "workspace_id": "ws_166d6de9-6ed3-4fad-a032-31a2af00ad78",
+      "ordinal": 1,
+      "status": "submitted",
+      "responses": "{\"assessment_item_244de78d-0c20-411a-8ae4-bc8507400f0f\":\"1) 主动句'The mechanic repairs the car.'中：施事是'The mechanic'（执行动作的主语），动作是'repairs'（动词repair的一般现在时单数形式），受事是'the car'（宾语，承受动作的对象）。2) 被动句'The car is repaired by the mechanic.'的语法主语是'The car'；它是受事（原受事移动为语法主语，仍承受动作，并非变成执行者）；实际动作执行者是'the mechanic'（位于by短语中的原施事）。\"}",
+      "started_at": "2026-09-14T11:51:20.952Z",
+      "submitted_at": "2026-09-14T11:52:04.539Z",
+      "cancelled_at": null,
+      "exposure_tracking_version": 1
+    }
+  },
+  {
+    "id": "J12",
+    "evidence": {
+      "id": "evidence_487bf7b0-78d0-4595-94d3-51471d4c78cb",
+      "attempt_id": "assessment_attempt_22b5c30a-4c7d-4bf5-8cf7-0e29da1f64d0",
+      "grade_record_id": "grade_446ed03e-81ee-4596-8ab5-cb03457438d4",
+      "assessment_version_id": "assessment_version_4ae8945d-abae-43cf-a77b-f30c0ea1f5f0",
+      "item_id": "assessment_item_cf49e645-9e25-47f9-b6ec-f91fc7b2b964",
+      "target_learning_unit_id": "cun_998da65d-478f-4dd1-9d7e-a7b899300a46",
+      "conclusion": "supported",
+      "policy_version": "formal-assessment-evidence-v2-criterion-gate",
+      "source_binding_ids": "[\"blk_0_fc2cce75\"]",
+      "created_at": "2026-09-14T12:01:48.121Z"
+    },
+    "item": {
+      "id": "assessment_item_cf49e645-9e25-47f9-b6ec-f91fc7b2b964",
+      "sourceQuestionId": "que_21dff483-9019-4e2f-b53a-c8366210f733",
+      "index": 0,
+      "targetLearningUnitId": "cun_998da65d-478f-4dd1-9d7e-a7b899300a46",
+      "targetObjectiveId": "obj_93f3a151-eb65-4ad4-b9e6-31d5d5c5db17",
+      "representation": "recall",
+      "questionType": "short_answer",
+      "prompt": "假设有三个石头：石头X重4千克，石头Y重7千克，石头Z重10千克。请完成以下任务：(1) 写一句英语比较句，比较X和Y的重量（两者）；(2) 写一句英语最高级句子，指出Z在三个石头中最重；(3) 简要说明比较级与最高级在对象数量和范围交代上的关键区别。",
+      "rubric": [
+        {
+          "id": "criterion_7f155164-8fba-4edc-b1e0-b1bd0acb69e7",
+          "text": "写出正确的两者比较句，使用比较级形式（如 lighter/heavier）比较 X 和 Y 的重量，方向符合给定质量数据（X轻Y重，故 X lighter 或 Y heavier），正确表达两者比较。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_fc2cce75"
+          ]
+        },
+        {
+          "id": "criterion_cced6f56-b175-4c15-86d8-fec8660d79ac",
+          "text": "写出正确的最高级句，使用 the+最高级并明确交代范围（如 of the three stones），指出 Z 最重。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_fc2cce75"
+          ]
+        },
+        {
+          "id": "criterion_56ac151a-171e-4d9d-9849-99f3ebc06a80",
+          "text": "说明比较级用于比较两个对象，最高级用于给定集合最高程度需交代范围（如 of the three），不是绝对无范围第一。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_fc2cce75"
+          ]
+        }
+      ],
+      "sourceBindings": [
+        {
+          "materialId": "mat_74a3298d-7a9c-41cb-9184-0e7ac6521291",
+          "materialRevisionId": "rev_99b6392e-4994-4ced-8d3d-f1ad13c2bdd7",
+          "sourceBlockId": "blk_0_fc2cce75",
+          "quote": "英语比较级用来比较两个对象在某一方面的程度，常配合than；最高级表示某个对象在给定集合中达到最高程度，通常使用the并交代比较范围。例如“This box is lighter than that box.”比较这两个箱子的轻重；“This is the lightest box of the three.”把它放在指定的三个箱子中比较。最高级不是不受范围限制的“世界第一”。",
+          "contentOrigin": "extracted_original",
+          "authoritative": true
+        }
+      ],
+      "formalEligible": true,
+      "policyReason": "FORMAL_ELIGIBLE"
+    },
+    "grade": {
+      "id": "grade_446ed03e-81ee-4596-8ab5-cb03457438d4",
+      "attemptId": "assessment_attempt_22b5c30a-4c7d-4bf5-8cf7-0e29da1f64d0",
+      "assessmentVersionId": "assessment_version_4ae8945d-abae-43cf-a77b-f30c0ea1f5f0",
+      "grader": "hy3",
+      "rubricVersion": "formal-short-answer-v1",
+      "status": "current",
+      "judgment": {
+        "score": 1,
+        "criterionResults": [
+          {
+            "criterionId": "criterion_7f155164-8fba-4edc-b1e0-b1bd0acb69e7",
+            "result": "met"
+          },
+          {
+            "criterionId": "criterion_cced6f56-b175-4c15-86d8-fec8660d79ac",
+            "result": "met"
+          },
+          {
+            "criterionId": "criterion_56ac151a-171e-4d9d-9849-99f3ebc06a80",
+            "result": "met"
+          }
+        ],
+        "feedback": "回答已覆盖主要评分标准。"
+      },
+      "supersedesId": null,
+      "createdAt": "2026-09-14T12:01:48.119Z"
+    },
+    "attempt": {
+      "id": "assessment_attempt_22b5c30a-4c7d-4bf5-8cf7-0e29da1f64d0",
+      "assessment_version_id": "assessment_version_4ae8945d-abae-43cf-a77b-f30c0ea1f5f0",
+      "workspace_id": "ws_816bd2f4-e553-4b22-a30f-d592a0164282",
+      "ordinal": 1,
+      "status": "submitted",
+      "responses": "{\"assessment_item_cf49e645-9e25-47f9-b6ec-f91fc7b2b964\":\"(1) Y is heavier than X. (Since 7kg > 4kg, the comparative form heavier than correctly compares the two stones.)\\n(2) Z is the heaviest of the three stones. (Since 10kg is the largest among 4kg, 7kg, 10kg, the superlative requires 'the' and the explicit range 'of the three stones'.)\\n(3) Key difference: The comparative is for exactly two objects and normally uses 'than' to connect the second object (e.g., A is heavier than B). The superlative is for one object within a given set of three or more, and must use 'the' with an explicit range such as 'of the three' to indicate the comparison set; it does not pair with a single other object via 'than'.\"}",
+      "started_at": "2026-09-14T12:00:45.896Z",
+      "submitted_at": "2026-09-14T12:01:25.648Z",
+      "cancelled_at": null,
+      "exposure_tracking_version": 1
+    }
+  },
+  {
+    "id": "J13",
+    "evidence": {
+      "id": "evidence_59a87886-1c58-43b7-ae3c-667491bbaa89",
+      "attempt_id": "assessment_attempt_399c29b2-de0f-4c61-bcf5-cb825333b449",
+      "grade_record_id": "grade_ca667060-db0d-45e8-9e5d-efe7db4c2081",
+      "assessment_version_id": "assessment_version_deb3fbd8-b14e-4428-ac5f-38cb1478e2e7",
+      "item_id": "assessment_item_71ed8b33-ffdd-4288-81d5-2cda16b523c8",
+      "target_learning_unit_id": "cun_e31af6e4-acf1-4362-84d5-538900ca4da0",
+      "conclusion": "supported",
+      "policy_version": "formal-assessment-evidence-v2-criterion-gate",
+      "source_binding_ids": "[\"blk_0_31f0b672\",\"blk_5_a88bc01f\"]",
+      "created_at": "2026-09-14T11:56:47.424Z"
+    },
+    "item": {
+      "id": "assessment_item_71ed8b33-ffdd-4288-81d5-2cda16b523c8",
+      "sourceQuestionId": "que_24216651-0b0b-49e8-86fd-1fca81a22768",
+      "index": 0,
+      "targetLearningUnitId": "cun_e31af6e4-acf1-4362-84d5-538900ca4da0",
+      "targetObjectiveId": "obj_9076931b-7855-4bbc-8bc2-c00b9efe29c5",
+      "representation": "recall",
+      "questionType": "short_answer",
+      "prompt": "某课外材料写道：“物质Z在20°C时的溶解度为25，表示每100克Z的饱和溶液中含溶质25克。”该材料还声称：“因为教学固体X在20°C溶解度为30、50°C溶解度为60，所以所有固体的溶解度都随温度按此比例翻倍。”根据本课仅提供的X数据与规则，请回答：(1) 本课定义的固体溶解度以什么为溶剂基准？分母是什么？(2) 为何不能将X的数据规律推广到所有固体？",
+      "rubric": [
+        {
+          "id": "criterion_1876ee06-6c7c-478a-a094-c52aac323df2",
+          "text": "正确说明溶解度定义以100克溶剂（水）为基准，分母不是溶液（可指出Z材料错误在误用溶液分母）。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_31f0b672",
+            "blk_5_a88bc01f"
+          ]
+        },
+        {
+          "id": "criterion_155d487c-fe41-4b46-91f8-12392d7bd9ef",
+          "text": "明确说明本课规则仅使用给定X的数据，不把它推广为所有固体随温度变化的共同数值规律（指出Z材料推广错误）。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_31f0b672",
+            "blk_5_a88bc01f"
+          ]
+        }
+      ],
+      "sourceBindings": [
+        {
+          "materialId": "mat_81c6f736-fcbb-4861-a03e-a842e2ba8ba5",
+          "materialRevisionId": "rev_bb986720-b58e-4256-9d7d-935d4a5de580",
+          "sourceBlockId": "blk_0_31f0b672",
+          "quote": "一种固体在给定温度下的溶解度，表示达到饱和时，每100克溶剂中最多能溶解多少克这种固体。本课溶剂都是水，溶解度单位写成“克溶质每100克水”。例如某教学用固体X在20摄氏度的溶解度为30，表示100克水最多溶解30克X，形成130克饱和溶液。分母100克是水，不是已经配好的溶液。",
+          "contentOrigin": "extracted_original",
+          "authoritative": true
+        },
+        {
+          "materialId": "mat_81c6f736-fcbb-4861-a03e-a842e2ba8ba5",
+          "materialRevisionId": "rev_bb986720-b58e-4256-9d7d-935d4a5de580",
+          "sourceBlockId": "blk_5_a88bc01f",
+          "quote": "这些规则只使用给定X的数据，不把它推广为所有固体随温度变化的共同数值规律。",
+          "contentOrigin": "extracted_original",
+          "authoritative": true
+        }
+      ],
+      "formalEligible": true,
+      "policyReason": "FORMAL_ELIGIBLE"
+    },
+    "grade": {
+      "id": "grade_ca667060-db0d-45e8-9e5d-efe7db4c2081",
+      "attemptId": "assessment_attempt_399c29b2-de0f-4c61-bcf5-cb825333b449",
+      "assessmentVersionId": "assessment_version_deb3fbd8-b14e-4428-ac5f-38cb1478e2e7",
+      "grader": "hy3",
+      "rubricVersion": "formal-short-answer-v1",
+      "status": "current",
+      "judgment": {
+        "score": 1,
+        "criterionResults": [
+          {
+            "criterionId": "criterion_1876ee06-6c7c-478a-a094-c52aac323df2",
+            "result": "met"
+          },
+          {
+            "criterionId": "criterion_155d487c-fe41-4b46-91f8-12392d7bd9ef",
+            "result": "met"
+          }
+        ],
+        "feedback": "回答已覆盖主要评分标准。"
+      },
+      "supersedesId": null,
+      "createdAt": "2026-09-14T11:56:47.421Z"
+    },
+    "attempt": {
+      "id": "assessment_attempt_399c29b2-de0f-4c61-bcf5-cb825333b449",
+      "assessment_version_id": "assessment_version_deb3fbd8-b14e-4428-ac5f-38cb1478e2e7",
+      "workspace_id": "ws_f4a68d01-048c-43be-9eb4-b1a387fcea8c",
+      "ordinal": 1,
+      "status": "submitted",
+      "responses": "{\"assessment_item_71ed8b33-ffdd-4288-81d5-2cda16b523c8\":\"(1) 本课定义的固体溶解度以“水”为溶剂基准（本课溶剂都是水），分母是溶剂即水的质量，具体表述为“每100克水”最多能溶解的溶质克数，而不是每100克饱和溶液的质量。例如X在20°C溶解度30表示100克水最多溶30克X，形成130克溶液，分母100克是水。\\n(2) 不能将X的数据规律推广到所有固体，因为本课仅提供了教学固体X在20°C（溶解度30）和50°C（溶解度60）这两个特定温度下的数据，并未提供任何其他固体或X在其他温度的溶解度信息。本课规则明确限定：这些计算只使用给定X的数据，不把它推广为所有固体随温度变化的共同数值规律；任何超出X或这两温度的外推（如认为所有固体溶解度都随温度按此比例翻倍，或对其它固体套用X的析出量）都属越界。不同固体的溶解度温度依赖各不相同，无依据从X推知全体。\"}",
+      "started_at": "2026-09-14T11:55:59.710Z",
+      "submitted_at": "2026-09-14T11:56:34.323Z",
+      "cancelled_at": null,
+      "exposure_tracking_version": 1
+    }
+  },
+  {
+    "id": "J14",
+    "evidence": {
+      "id": "evidence_e0fe94dc-225e-4860-96f6-16596465a91d",
+      "attempt_id": "assessment_attempt_e434665f-0b36-4b9d-9d1b-5f5a608497b4",
+      "grade_record_id": "grade_84f5e175-99c2-4651-bf14-403663d3c0ab",
+      "assessment_version_id": "assessment_version_43c8dadd-50bf-4f34-873a-5e64a6f2e52e",
+      "item_id": "assessment_item_89af1e95-fef3-43f7-84f0-9d993a00c69a",
+      "target_learning_unit_id": "cun_4f3ee1bc-5fc0-42db-93a9-b51cf22d89e6",
+      "conclusion": "supported",
+      "policy_version": "formal-assessment-evidence-v2-criterion-gate",
+      "source_binding_ids": "[\"blk_0_2f7357da\",\"blk_1_bb7ed29f\"]",
+      "created_at": "2026-09-14T12:04:38.864Z"
+    },
+    "item": {
+      "id": "assessment_item_89af1e95-fef3-43f7-84f0-9d993a00c69a",
+      "sourceQuestionId": "que_22f61468-4951-4391-bdd0-24a6e7d58a3c",
+      "index": 0,
+      "targetLearningUnitId": "cun_4f3ee1bc-5fc0-42db-93a9-b51cf22d89e6",
+      "targetObjectiveId": "obj_da153328-06cb-49d7-9e1e-e073f967bccf",
+      "representation": "recall",
+      "questionType": "short_answer",
+      "prompt": "有一份盐溶液，总质量140克，质量分数25%（即小数0.25）。本课假设盐完全溶解、无蒸发洒失，质量以克计。请计算该溶液中盐的质量和水的质量；写出溶质质量分数的定义并指出其分母；同时说明若用算出的盐质量除以水质量得到的比例能否当作溶液的质量分数，为什么。",
+      "rubric": [
+        {
+          "id": "criterion_2d80cd92-d248-42ea-a907-d96dcb00b9e2",
+          "text": "正确计算盐质量=140×0.25=35克，水质量=140-35=105克（或等价表述）。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_2f7357da",
+            "blk_1_bb7ed29f"
+          ]
+        },
+        {
+          "id": "criterion_12a5e2a5-b743-4383-ae8e-b46c558debf3",
+          "text": "正确陈述溶质质量分数定义为溶质质量÷溶液总质量，分母为溶液总质量（溶质与溶剂质量之和）。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_2f7357da",
+            "blk_1_bb7ed29f"
+          ]
+        },
+        {
+          "id": "criterion_e8a2385b-f333-41b8-9c1a-bc0f2ff6cc24",
+          "text": "指出盐质量除以水质量得到的是盐与水的质量比，不能当作溶液质量分数。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_2f7357da",
+            "blk_1_bb7ed29f"
+          ]
+        }
+      ],
+      "sourceBindings": [
+        {
+          "materialId": "mat_d6b6e347-bbed-4e5b-b8f4-16ea0c9596dd",
+          "materialRevisionId": "rev_fb6f19ad-9fec-44a6-accc-da7425aeae97",
+          "sourceBlockId": "blk_0_2f7357da",
+          "quote": "溶液由溶质和溶剂组成。溶质质量分数定义为“溶质质量÷溶液总质量”，常写成百分数。溶液总质量是溶质与溶剂质量之和。例如把20克盐完全溶在80克水中，溶液质量为100克，盐的质量分数为20/100=20%。若用20除以80得到25%，那是盐与水的质量比，不能当作该溶液的质量分数。",
+          "contentOrigin": "extracted_original",
+          "authoritative": true
+        },
+        {
+          "materialId": "mat_d6b6e347-bbed-4e5b-b8f4-16ea0c9596dd",
+          "materialRevisionId": "rev_fb6f19ad-9fec-44a6-accc-da7425aeae97",
+          "sourceBlockId": "blk_1_bb7ed29f",
+          "quote": "本课所有盐都能完全溶解，不发生化学反应，没有洒失或蒸发；讨论的质量均以克计，不从体积推质量。可以把百分数写成小数计算：20%就是0.20，所以200克、质量分数15%的盐溶液含盐200×0.15=30克，其余170克为水。给出总质量与质量分数，可以分别恢复溶质和溶剂质量。",
+          "contentOrigin": "extracted_original",
+          "authoritative": true
+        }
+      ],
+      "formalEligible": true,
+      "policyReason": "FORMAL_ELIGIBLE"
+    },
+    "grade": {
+      "id": "grade_84f5e175-99c2-4651-bf14-403663d3c0ab",
+      "attemptId": "assessment_attempt_e434665f-0b36-4b9d-9d1b-5f5a608497b4",
+      "assessmentVersionId": "assessment_version_43c8dadd-50bf-4f34-873a-5e64a6f2e52e",
+      "grader": "hy3",
+      "rubricVersion": "formal-short-answer-v1",
+      "status": "current",
+      "judgment": {
+        "score": 1,
+        "criterionResults": [
+          {
+            "criterionId": "criterion_2d80cd92-d248-42ea-a907-d96dcb00b9e2",
+            "result": "met"
+          },
+          {
+            "criterionId": "criterion_12a5e2a5-b743-4383-ae8e-b46c558debf3",
+            "result": "met"
+          },
+          {
+            "criterionId": "criterion_e8a2385b-f333-41b8-9c1a-bc0f2ff6cc24",
+            "result": "met"
+          }
+        ],
+        "feedback": "回答已覆盖主要评分标准。"
+      },
+      "supersedesId": null,
+      "createdAt": "2026-09-14T12:04:38.860Z"
+    },
+    "attempt": {
+      "id": "assessment_attempt_e434665f-0b36-4b9d-9d1b-5f5a608497b4",
+      "assessment_version_id": "assessment_version_43c8dadd-50bf-4f34-873a-5e64a6f2e52e",
+      "workspace_id": "ws_aa72a586-24eb-4155-8564-179b5ef34c4b",
+      "ordinal": 1,
+      "status": "submitted",
+      "responses": "{\"assessment_item_89af1e95-fef3-43f7-84f0-9d993a00c69a\":\"盐的质量 = 140克 × 0.25 = 35克；水的质量 = 140克 - 35克 = 105克。\\n溶质质量分数的定义：溶质质量 ÷ 溶液总质量，常写成百分数。其分母是溶液总质量（溶质质量与溶剂质量之和）。\\n不能用盐质量除以水质量（35÷105≈33.3%）当作溶液的质量分数。因为该结果只是盐与水的质量比，而质量分数要求的分母必须是溶液总质量（盐+水），不是单独的水；以溶剂为分母会得到错误的浓度，违背本课定义与边界。\"}",
+      "started_at": "2026-09-14T12:03:44.931Z",
+      "submitted_at": "2026-09-14T12:04:25.111Z",
+      "cancelled_at": null,
+      "exposure_tracking_version": 1
+    }
+  },
+  {
+    "id": "J15",
+    "evidence": {
+      "id": "evidence_23741b0a-7f98-4072-bfd4-29eb5426df7d",
+      "attempt_id": "assessment_attempt_553ad754-ae31-470d-bc3e-62f394849b73",
+      "grade_record_id": "grade_ab9c6444-c047-4f7f-aa40-27a5b9dc146f",
+      "assessment_version_id": "assessment_version_b5a810f7-a150-4f60-aad2-685264f25467",
+      "item_id": "assessment_item_139ec0b3-97b0-4523-b08a-8b62340e9b32",
+      "target_learning_unit_id": "cun_ff5a4042-e060-42c2-8b61-90feb22cef87",
+      "conclusion": "supported",
+      "policy_version": "formal-assessment-evidence-v2-criterion-gate",
+      "source_binding_ids": "[\"blk_5_6aff60be\",\"blk_0_88541812\",\"blk_1_00f6e77d\",\"blk_2_046873c3\"]",
+      "created_at": "2026-09-14T12:10:02.476Z"
+    },
+    "item": {
+      "id": "assessment_item_139ec0b3-97b0-4523-b08a-8b62340e9b32",
+      "sourceQuestionId": "que_499f8353-d860-4a1e-ad81-87c2800ccd8c",
+      "index": 0,
+      "targetLearningUnitId": "cun_ff5a4042-e060-42c2-8b61-90feb22cef87",
+      "targetObjectiveId": "obj_e5f34fb0-8bf5-48dc-ad5c-da2d0bdaea70",
+      "representation": "recall",
+      "questionType": "short_answer",
+      "prompt": "某服务企业采用本课简化的权责发生制模型：模型中没有税费、坏账、退款、利息或预收款；所有收入都来自已经完成的服务。期初应收账款为0。根据模型，收入按服务完成确认，收款不新增收入。应收账款滚动关系：期末应收=期初应收+本期新增赊销收入-本期收回的应收款。三月1日，企业完成500元服务并当场收款。三月10日，完成800元服务，约定四月付款。三月20日，收到上述800元欠款中的200元。请计算三月服务收入、现金流入与月末应收账款，并说明三月20日收款为何不新增服务收入。",
+      "rubric": [
+        {
+          "id": "criterion_afc12545-93ab-479c-8122-727353433895",
+          "text": "正确计算三月服务收入为1300元（500+800），现金流入为700元（500+200），月末应收账款为600元（期初0+赊销800-收回200）。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_5_6aff60be",
+            "blk_0_88541812",
+            "blk_1_00f6e77d",
+            "blk_2_046873c3"
+          ]
+        },
+        {
+          "id": "criterion_6b62993b-70a7-40b5-98b0-472c906699d4",
+          "text": "说明三月20日收款是收回已确认收入的债权（或指向原有债权），不新增服务收入，因为收入已在服务完成时发生，重复计算会虚增同一服务的收入。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_5_6aff60be",
+            "blk_0_88541812",
+            "blk_1_00f6e77d",
+            "blk_2_046873c3"
+          ]
+        }
+      ],
+      "sourceBindings": [
+        {
+          "materialId": "mat_4e10c35d-4743-44b3-9f0a-154e65279ed8",
+          "materialRevisionId": "rev_1176b9ac-4850-4156-a47f-fc3b64a32763",
+          "sourceBlockId": "blk_5_6aff60be",
+          "quote": "一般的应收账款滚动关系为：期末应收=期初应收+本期新增赊销收入-本期收回的应收款。例如期初400元，本期赊销700元、收回应收500元，则期末600元。这里“收回的应收款”包括本期或以前期间形成的欠款；当场收现的服务不先制造一笔未收余额。每一项都应按实际事件的性质归入。",
+          "contentOrigin": "extracted_original",
+          "authoritative": true
+        },
+        {
+          "materialId": "mat_4e10c35d-4743-44b3-9f0a-154e65279ed8",
+          "materialRevisionId": "rev_1176b9ac-4850-4156-a47f-fc3b64a32763",
+          "sourceBlockId": "blk_0_88541812",
+          "quote": "本课使用一个简化的权责发生制服务企业模型：服务已经按合同完成且客户有付款义务时确认收入；收到现金是另一件事。若服务已完成但客户尚未付款，企业确认应收账款，表示将来向客户收取款项的权利。收入描述本期已赚取的金额，现金流入描述本期实际收到的钱，二者可能发生在不同期间。",
+          "contentOrigin": "extracted_original",
+          "authoritative": true
+        },
+        {
+          "materialId": "mat_4e10c35d-4743-44b3-9f0a-154e65279ed8",
+          "materialRevisionId": "rev_1176b9ac-4850-4156-a47f-fc3b64a32763",
+          "sourceBlockId": "blk_1_00f6e77d",
+          "quote": "模型中没有税费、坏账、退款、利息或预收款；所有收入都来自已经完成的服务。期初应收账款为0。九月3日，企业完成600元服务并当场收款：九月收入增加600元，现金增加600元，应收账款不变。九月10日，又完成900元服务，约定十月付款：九月收入增加900元，应收账款增加900元，当天现金没有增加。",
+          "contentOrigin": "extracted_original",
+          "authoritative": true
+        },
+        {
+          "materialId": "mat_4e10c35d-4743-44b3-9f0a-154e65279ed8",
+          "materialRevisionId": "rev_1176b9ac-4850-4156-a47f-fc3b64a32763",
+          "sourceBlockId": "blk_2_046873c3",
+          "quote": "九月20日，企业收到上述900元欠款中的300元。现金增加300元，应收账款减少300元，剩600元；这次收款不再新增服务收入，因为对应的900元服务收入已经在九月10日确认。若把收回旧欠款再算一次收入，会把同一服务的收入重复计算。记录收款时要能指向原有债权，而不能只看银行账户有钱进来。",
+          "contentOrigin": "extracted_original",
+          "authoritative": true
+        }
+      ],
+      "formalEligible": true,
+      "policyReason": "FORMAL_ELIGIBLE"
+    },
+    "grade": {
+      "id": "grade_ab9c6444-c047-4f7f-aa40-27a5b9dc146f",
+      "attemptId": "assessment_attempt_553ad754-ae31-470d-bc3e-62f394849b73",
+      "assessmentVersionId": "assessment_version_b5a810f7-a150-4f60-aad2-685264f25467",
+      "grader": "hy3",
+      "rubricVersion": "formal-short-answer-v1",
+      "status": "current",
+      "judgment": {
+        "score": 1,
+        "criterionResults": [
+          {
+            "criterionId": "criterion_afc12545-93ab-479c-8122-727353433895",
+            "result": "met"
+          },
+          {
+            "criterionId": "criterion_6b62993b-70a7-40b5-98b0-472c906699d4",
+            "result": "met"
+          }
+        ],
+        "feedback": "回答已覆盖主要评分标准。"
+      },
+      "supersedesId": null,
+      "createdAt": "2026-09-14T12:10:02.471Z"
+    },
+    "attempt": {
+      "id": "assessment_attempt_553ad754-ae31-470d-bc3e-62f394849b73",
+      "assessment_version_id": "assessment_version_b5a810f7-a150-4f60-aad2-685264f25467",
+      "workspace_id": "ws_bfc8318b-69ac-49ef-81bb-04e4712b56e9",
+      "ordinal": 1,
+      "status": "submitted",
+      "responses": "{\"assessment_item_139ec0b3-97b0-4523-b08a-8b62340e9b32\":\"三月服务收入 = 500（3月1日当场完成收现）+ 800（3月10日完成赊销）= 1300元。现金流入 = 500（3月1日收现）+ 200（3月20日收回旧欠款）= 700元。月末应收账款 = 期初0 + 本期新增赊销收入800 - 本期收回应收款200 = 600元（3月1日当场收现不产生应收，3月10日赊销使应收增至800，3月20日收款减至600）。三月20日收款不新增服务收入的原因：对应的800元服务已在3月10日服务完成且客户产生付款义务时确认了收入，当时已记入应收账款；3月20日收到200元只是将原有债权的一部分变现为现金，属于收回前期形成的应收款，并未提供新的服务。若再次计入收入会重复计算同一笔服务收入。记录收款应指向原有债权而非仅看现金流入。\"}",
+      "started_at": "2026-09-14T12:09:17.612Z",
+      "submitted_at": "2026-09-14T12:09:51.778Z",
+      "cancelled_at": null,
+      "exposure_tracking_version": 1
+    }
+  },
+  {
+    "id": "J16",
+    "evidence": {
+      "id": "evidence_c8953c98-da45-4928-b48f-f3726a5bee62",
+      "attempt_id": "assessment_attempt_f30c385f-c7b0-47f3-9d03-ca6147197eea",
+      "grade_record_id": "grade_c81f3e6f-6457-4513-865c-0d509e00c9cd",
+      "assessment_version_id": "assessment_version_847ff769-16cf-40e9-a11b-5c235ac6a9c4",
+      "item_id": "assessment_item_e2606c6a-32c3-4a33-bd2d-8fc74d6b61c2",
+      "target_learning_unit_id": "cun_f5a29706-f9a9-41df-aa02-021b294751f5",
+      "conclusion": "supported",
+      "policy_version": "formal-assessment-evidence-v2-criterion-gate",
+      "source_binding_ids": "[\"blk_0_d670ebbb\",\"blk_1_7c7605da\",\"blk_2_0c41f77b\"]",
+      "created_at": "2026-09-14T12:17:00.800Z"
+    },
+    "item": {
+      "id": "assessment_item_e2606c6a-32c3-4a33-bd2d-8fc74d6b61c2",
+      "sourceQuestionId": "que_5a655c29-6e76-4a95-ab7a-5dac1367abfd",
+      "index": 0,
+      "targetLearningUnitId": "cun_f5a29706-f9a9-41df-aa02-021b294751f5",
+      "targetObjectiveId": "obj_317202ae-88d4-49c3-a97f-f5572ac94c66",
+      "representation": "recall",
+      "questionType": "short_answer",
+      "prompt": "某新设企业刚成立时资产、负债、所有者权益均为0。依次发生两笔交易：(1)所有者投入现金500元；(2)向银行借入300元现金。请完成以下任务：\n1. 写出简化企业的会计等式，并分别定义资产、负债和所有者权益。\n2. 说明此时企业银行存款（现金）总额为800元，解释为何这800元不能等同于企业赚了800元利润，并指明两笔交易对等式右侧项目的影响区别。",
+      "rubric": [
+        {
+          "id": "criterion_57df3633-91d7-4e1e-9040-a6e6aad2161c",
+          "text": "正确写出等式“资产=负债+所有者权益”，并定义资产为企业控制的经济资源、负债为向外部债权人承担的偿还义务、所有者权益为资产扣除负债后归属于所有者的剩余权益。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_d670ebbb",
+            "blk_1_7c7605da",
+            "blk_2_0c41f77b"
+          ]
+        },
+        {
+          "id": "criterion_bffc7477-1f95-48a9-8d22-6a78d9ee3c83",
+          "text": "解释800元现金由所有者投入500元（增加所有者权益）和银行借款300元（增加负债）构成，说明投入为权益来源非收入、借款产生还款义务而非利润，因此不能仅因现金增加视为利润，并指明投入增权益、借款增负债的右侧影响区别。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_d670ebbb",
+            "blk_1_7c7605da",
+            "blk_2_0c41f77b"
+          ]
+        }
+      ],
+      "sourceBindings": [
+        {
+          "materialId": "mat_995394ff-48eb-4c27-87f7-e31c1e839c11",
+          "materialRevisionId": "rev_64df4353-f51e-49b6-b4e2-463108273ac4",
+          "sourceBlockId": "blk_0_d670ebbb",
+          "quote": "一个简化企业的会计等式为“资产=负债+所有者权益”。资产是企业控制的经济资源，例如现金和设备；负债是向外部债权人承担的偿还义务；所有者权益是资产扣除负债后归属于所有者的剩余权益。等式不是说资产只能来自股东投入，也不是说企业银行存款一定等于利润。",
+          "contentOrigin": "extracted_original",
+          "authoritative": true
+        },
+        {
+          "materialId": "mat_995394ff-48eb-4c27-87f7-e31c1e839c11",
+          "materialRevisionId": "rev_64df4353-f51e-49b6-b4e2-463108273ac4",
+          "sourceBlockId": "blk_1_7c7605da",
+          "quote": "本课只记录明确给出的交易，没有税费、利息、折旧、收入或费用；设备按购入成本记录。企业刚设立时三个总额均为0。所有者投入现金1000元后，现金资产增加1000元，所有者权益增加1000元，负债仍为0。此时1000=0+1000。所有者投入属于权益来源，在本模型中不记作营业收入。",
+          "contentOrigin": "extracted_original",
+          "authoritative": true
+        },
+        {
+          "materialId": "mat_995394ff-48eb-4c27-87f7-e31c1e839c11",
+          "materialRevisionId": "rev_64df4353-f51e-49b6-b4e2-463108273ac4",
+          "sourceBlockId": "blk_2_0c41f77b",
+          "quote": "企业向银行借入600元现金后，现金从1000元增至1600元，负债增加到600元，所有者权益仍为1000元。等式为1600=600+1000。借款使企业手里有更多现金，同时产生还款义务，因此不能仅因现金增加600元就称为赚了600元利润。",
+          "contentOrigin": "extracted_original",
+          "authoritative": true
+        }
+      ],
+      "formalEligible": true,
+      "policyReason": "FORMAL_ELIGIBLE"
+    },
+    "grade": {
+      "id": "grade_c81f3e6f-6457-4513-865c-0d509e00c9cd",
+      "attemptId": "assessment_attempt_f30c385f-c7b0-47f3-9d03-ca6147197eea",
+      "assessmentVersionId": "assessment_version_847ff769-16cf-40e9-a11b-5c235ac6a9c4",
+      "grader": "hy3",
+      "rubricVersion": "formal-short-answer-v1",
+      "status": "current",
+      "judgment": {
+        "score": 1,
+        "criterionResults": [
+          {
+            "criterionId": "criterion_57df3633-91d7-4e1e-9040-a6e6aad2161c",
+            "result": "met"
+          },
+          {
+            "criterionId": "criterion_bffc7477-1f95-48a9-8d22-6a78d9ee3c83",
+            "result": "met"
+          }
+        ],
+        "feedback": "回答已覆盖主要评分标准。"
+      },
+      "supersedesId": null,
+      "createdAt": "2026-09-14T12:17:00.799Z"
+    },
+    "attempt": {
+      "id": "assessment_attempt_f30c385f-c7b0-47f3-9d03-ca6147197eea",
+      "assessment_version_id": "assessment_version_847ff769-16cf-40e9-a11b-5c235ac6a9c4",
+      "workspace_id": "ws_25aae2aa-e773-4461-998c-2e750424aa3e",
+      "ordinal": 1,
+      "status": "submitted",
+      "responses": "{\"assessment_item_e2606c6a-32c3-4a33-bd2d-8fc74d6b61c2\":\"1. 简化企业的会计等式为“资产=负债+所有者权益”。\\n资产：企业控制的经济资源，例如现金和设备。\\n负债：企业向外部债权人承担的偿还义务。\\n所有者权益：资产扣除负债后归属于所有者的剩余权益。\\n\\n2. 交易后企业现金（银行存款）为500+300=800元。这800元不能等同于企业赚了800元利润，因为本课模型不记录收入或费用，利润并非仅由现金增加得出。其中500元来自所有者投入，属于权益来源，不记作营业收入；300元来自银行借款，同时产生还款义务，属于负债而非经营利润。企业未发生营利活动，利润仍为0。\\n两笔交易对等式右侧项目的影响区别：\\n(1) 所有者投入现金500元：现金资产+500，所有者权益+500，负债不变（0）。右侧由0+0变为0+500。\\n(2) 向银行借入300元现金：现金资产+300，负债+300，所有者权益不变（500）。右侧由0+500变为300+500。\\n可见，同样增加资产，第一笔增加的是所有者权益，第二笔增加的是负债，二者性质不同，均不形成利润。\"}",
+      "started_at": "2026-09-14T12:16:10.175Z",
+      "submitted_at": "2026-09-14T12:16:48.445Z",
+      "cancelled_at": null,
+      "exposure_tracking_version": 1
+    }
+  },
+  {
+    "id": "J17",
+    "evidence": {
+      "id": "evidence_4729055f-9ebd-43ca-9887-842f2d7fa938",
+      "attempt_id": "assessment_attempt_694cc558-e30a-427b-8ad9-ebe6e789dcb6",
+      "grade_record_id": "grade_dc067ba3-7b7f-4f39-8636-481cf36c34b1",
+      "assessment_version_id": "assessment_version_6ab3274a-30e6-4825-b8ca-043da47ee4c2",
+      "item_id": "assessment_item_ff5c97e0-9c7d-41dd-9ced-6d2447d345e5",
+      "target_learning_unit_id": "cun_102e303c-80c0-4100-a6e2-5e086b9b98b9",
+      "conclusion": "supported",
+      "policy_version": "formal-assessment-evidence-v2-criterion-gate",
+      "source_binding_ids": "[\"blk_0_6f502b39\",\"blk_5_4da07976\",\"blk_1_ca453a0e\"]",
+      "created_at": "2026-09-14T12:11:22.049Z"
+    },
+    "item": {
+      "id": "assessment_item_ff5c97e0-9c7d-41dd-9ced-6d2447d345e5",
+      "sourceQuestionId": "que_e8e50656-0c69-4309-a543-a41b67dc1564",
+      "index": 0,
+      "targetLearningUnitId": "cun_102e303c-80c0-4100-a6e2-5e086b9b98b9",
+      "targetObjectiveId": "obj_f507edf7-239a-4dcd-86ce-162300832bb9",
+      "representation": "recall",
+      "questionType": "short_answer",
+      "prompt": "现有左表 Authors(author_id, name) 包含行 (1, 'Lee'), (2, 'Mo')；右表 Books(book_id, author_id, title) 包含行 (101,1,'A'), (102,1,'B'), (103,2,'C')。关系连接根据显式条件（如 author_id 相等）组合两表行，左表每一行独立检查右表所有行，键相等则产生配对行，且此机制不自动汇总。请解释关系连接基于显式条件组合行的机制，并基于上述数据说明为什么作者 'Lee' 在连接结果中会出现多次（即一个左表行可以匹配多个右表行）。",
+      "rubric": [
+        {
+          "id": "criterion_a5c78f75-c42c-48e9-824d-a2cf9d9cb881",
+          "text": "解释关系连接基于显式条件（如 author_id 相等）组合两表行，左表每行独立检查右表，键相等则产生配对行。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_6f502b39",
+            "blk_5_4da07976",
+            "blk_1_ca453a0e"
+          ]
+        },
+        {
+          "id": "criterion_56009fca-7390-4ca4-9891-8204f4b7fe12",
+          "text": "基于给定数据说明 Lee 因右表有两行 author_id=1 而匹配多次，在结果中重复出现，体现左行多匹配。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_6f502b39",
+            "blk_5_4da07976",
+            "blk_1_ca453a0e"
+          ]
+        }
+      ],
+      "sourceBindings": [
+        {
+          "materialId": "mat_20bfb00c-71d0-446b-a1ef-e4a8cbb4d2df",
+          "materialRevisionId": "rev_b92fa7b1-9f6c-40a1-b495-ad67b980554a",
+          "sourceBlockId": "blk_0_6f502b39",
+          "quote": "A relational join combines rows from two tables according to a stated condition.",
+          "contentOrigin": "extracted_original",
+          "authoritative": true
+        },
+        {
+          "materialId": "mat_20bfb00c-71d0-446b-a1ef-e4a8cbb4d2df",
+          "materialRevisionId": "rev_b92fa7b1-9f6c-40a1-b495-ad67b980554a",
+          "sourceBlockId": "blk_5_4da07976",
+          "quote": "To work out a result, take each customer row, find every order with the same identifier, and emit each matching pair.",
+          "contentOrigin": "extracted_original",
+          "authoritative": true
+        },
+        {
+          "materialId": "mat_20bfb00c-71d0-446b-a1ef-e4a8cbb4d2df",
+          "materialRevisionId": "rev_b92fa7b1-9f6c-40a1-b495-ad67b980554a",
+          "sourceBlockId": "blk_1_ca453a0e",
+          "quote": "Ada appears twice because two separate order rows match Ada's customer row.",
+          "contentOrigin": "extracted_original",
+          "authoritative": true
+        }
+      ],
+      "formalEligible": true,
+      "policyReason": "FORMAL_ELIGIBLE"
+    },
+    "grade": {
+      "id": "grade_dc067ba3-7b7f-4f39-8636-481cf36c34b1",
+      "attemptId": "assessment_attempt_694cc558-e30a-427b-8ad9-ebe6e789dcb6",
+      "assessmentVersionId": "assessment_version_6ab3274a-30e6-4825-b8ca-043da47ee4c2",
+      "grader": "hy3",
+      "rubricVersion": "formal-short-answer-v1",
+      "status": "current",
+      "judgment": {
+        "score": 1,
+        "criterionResults": [
+          {
+            "criterionId": "criterion_a5c78f75-c42c-48e9-824d-a2cf9d9cb881",
+            "result": "met"
+          },
+          {
+            "criterionId": "criterion_56009fca-7390-4ca4-9891-8204f4b7fe12",
+            "result": "met"
+          }
+        ],
+        "feedback": "回答已覆盖主要评分标准。"
+      },
+      "supersedesId": null,
+      "createdAt": "2026-09-14T12:11:22.047Z"
+    },
+    "attempt": {
+      "id": "assessment_attempt_694cc558-e30a-427b-8ad9-ebe6e789dcb6",
+      "assessment_version_id": "assessment_version_6ab3274a-30e6-4825-b8ca-043da47ee4c2",
+      "workspace_id": "ws_56f35c57-1dc4-426c-a413-a104a3375c58",
+      "ordinal": 1,
+      "status": "submitted",
+      "responses": "{\"assessment_item_ff5c97e0-9c7d-41dd-9ced-6d2447d345e5\":\"关系连接机制：根据显式条件（如 Authors.author_id = Books.author_id），对左表每一行独立扫描右表所有行；只要右表某行的连接键与左表行相等，就产生一个由两行组合而成的结果行。该过程按配对逐一发射，不自动汇总或合并多个匹配。\\n\\n基于给定数据：Authors 有 (1,'Lee') 和 (2,'Mo')；Books 有 (101,1,'A')、(102,1,'B')、(103,2,'C')。以 author_id 相等为条件，处理左行 Lee (author_id=1) 时，检查 Books 全部行：book_id=101 的 author_id=1，相等，生成组合行 (Lee,101,'A')；book_id=102 的 author_id=1，相等，生成组合行 (Lee,102,'B')；book_id=103 的 author_id=2，不相等，无配对。因此 Lee 这一个左表行因为右表中存在两行满足键相等，被配对两次，在连接结果中出现两次（例如内连接结果包含 (Lee,101,'A'), (Lee,102,'B'), (Mo,103,'C')）。这正说明一个左表行可以匹配多个右表行，且连接机制不会把这两行合并为单行。\"}",
+      "started_at": "2026-09-14T12:10:32.563Z",
+      "submitted_at": "2026-09-14T12:11:08.049Z",
+      "cancelled_at": null,
+      "exposure_tracking_version": 1
+    }
+  },
+  {
+    "id": "J19",
+    "evidence": {
+      "id": "evidence_993383ac-e3bc-4a7b-a1e9-cfd16ed54f0a",
+      "attempt_id": "assessment_attempt_b2c426c4-dd59-45e3-860a-e4c636bdcc48",
+      "grade_record_id": "grade_15e996f6-c450-4bb5-b886-934815fd807c",
+      "assessment_version_id": "assessment_version_d3301cc5-bbda-477e-84fb-2c3dd9068630",
+      "item_id": "assessment_item_cb434c40-e09b-4e47-929c-8849b0cf926e",
+      "target_learning_unit_id": "cun_5646302b-1aa6-4579-8bc1-7e2d1d653f67",
+      "conclusion": "supported",
+      "policy_version": "formal-assessment-evidence-v2-criterion-gate",
+      "source_binding_ids": "[\"blk_0_61a5b659\"]",
+      "created_at": "2026-09-14T12:17:22.369Z"
+    },
+    "item": {
+      "id": "assessment_item_cb434c40-e09b-4e47-929c-8849b0cf926e",
+      "sourceQuestionId": "que_6782cef4-b4ee-4d2c-a038-86b88778aa43",
+      "index": 0,
+      "targetLearningUnitId": "cun_5646302b-1aa6-4579-8bc1-7e2d1d653f67",
+      "targetObjectiveId": "obj_d25a5ec4-2376-4c51-8088-7aa80790cd54",
+      "representation": "recall",
+      "questionType": "short_answer",
+      "prompt": "假设项目标识不同，队列容量充足，所有操作按给定顺序执行，无隐藏前置状态。初始队列内容为 [U, V]（U 先插入，V 后插入）。依次执行以下操作：1) dequeue；2) enqueue W；3) peek。请回答：(a) 第一次 dequeue 返回什么项目？(b) 执行 enqueue W 后队列内容是什么（用方括号从首到尾书写）？(c) 随后 peek 返回什么项目，此时队列内容是否改变？(d) 用 FIFO 队列的基本操作规则（enqueue 位置、dequeue 与 peek 对队首的作用、插入顺序决定下次 dequeue 而非字母序）简要解释上述结果。",
+      "rubric": [
+        {
+          "id": "criterion_0f5f2683-d25d-438f-931b-83951b6fb277",
+          "text": "第一次 dequeue 返回 U，因为 dequeue 移除并返回队首，初始队首为 U（插入顺序最早）。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_61a5b659"
+          ]
+        },
+        {
+          "id": "criterion_1b536aa7-47a9-4627-abcf-7b6917db5b2e",
+          "text": "执行 enqueue W 后队列内容为 [V, W]，方括号从首到尾书写，enqueue 在队尾添加 W 于 V 之后。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_61a5b659"
+          ]
+        },
+        {
+          "id": "criterion_e6d764a0-82e2-4694-93b0-11bb93312aa9",
+          "text": "peek 返回 V 且队列内容不改变（仍为 [V, W]），因为 peek 返回队首但不移除。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_61a5b659"
+          ]
+        },
+        {
+          "id": "criterion_2cc9099e-669a-4456-9d02-cebfd35b2c32",
+          "text": "解释体现 FIFO 插入顺序决定操作对象而非字母序，并正确描述 enqueue/dequeue/peek 语义（enqueue 队尾，dequeue 移除返回队首，peek 返回队首不移除）。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_61a5b659"
+          ]
+        }
+      ],
+      "sourceBindings": [
+        {
+          "materialId": "mat_0f8b9ce8-84db-4360-bdd4-0214c94a0154",
+          "materialRevisionId": "rev_85eb519d-8e12-4f81-9d1a-2da6e27983a2",
+          "sourceBlockId": "blk_0_61a5b659",
+          "quote": "A queue stores items in first-in, first-out order, abbreviated FIFO. Enqueue adds an item at the back. Dequeue removes and returns the item at the front. Peek returns the front item without removing it. We write queue contents from front to back in square brackets. The queue [A, B, C] will return A on the next dequeue, not C. The order of insertion determines this behavior, not alphabetical order.",
+          "contentOrigin": "extracted_original",
+          "authoritative": true
+        }
+      ],
+      "formalEligible": true,
+      "policyReason": "FORMAL_ELIGIBLE"
+    },
+    "grade": {
+      "id": "grade_15e996f6-c450-4bb5-b886-934815fd807c",
+      "attemptId": "assessment_attempt_b2c426c4-dd59-45e3-860a-e4c636bdcc48",
+      "assessmentVersionId": "assessment_version_d3301cc5-bbda-477e-84fb-2c3dd9068630",
+      "grader": "hy3",
+      "rubricVersion": "formal-short-answer-v1",
+      "status": "current",
+      "judgment": {
+        "score": 1,
+        "criterionResults": [
+          {
+            "criterionId": "criterion_0f5f2683-d25d-438f-931b-83951b6fb277",
+            "result": "met"
+          },
+          {
+            "criterionId": "criterion_1b536aa7-47a9-4627-abcf-7b6917db5b2e",
+            "result": "met"
+          },
+          {
+            "criterionId": "criterion_e6d764a0-82e2-4694-93b0-11bb93312aa9",
+            "result": "met"
+          },
+          {
+            "criterionId": "criterion_2cc9099e-669a-4456-9d02-cebfd35b2c32",
+            "result": "met"
+          }
+        ],
+        "feedback": "回答已覆盖主要评分标准。"
+      },
+      "supersedesId": null,
+      "createdAt": "2026-09-14T12:17:22.366Z"
+    },
+    "attempt": {
+      "id": "assessment_attempt_b2c426c4-dd59-45e3-860a-e4c636bdcc48",
+      "assessment_version_id": "assessment_version_d3301cc5-bbda-477e-84fb-2c3dd9068630",
+      "workspace_id": "ws_7380c08e-0cce-49ed-9e4a-73cbad5489c0",
+      "ordinal": 1,
+      "status": "submitted",
+      "responses": "{\"assessment_item_cb434c40-e09b-4e47-929c-8849b0cf926e\":\"(a) 第一次 dequeue 返回 U。(b) 执行 enqueue W 后队列内容为 [V, W]。(c) 随后 peek 返回 V，此时队列内容不改变，仍为 [V, W]。(d) 根据 FIFO 基本规则：enqueue 在队尾添加，故 W 排在 V 之后；dequeue 移除并返回队首，因 U 比 V 先插入（插入顺序决定下次 dequeue，而非字母序），故先移除 U，留下 V 为队首；peek 返回队首 V 但不移除，因此队列保持 [V, W]。\"}",
+      "started_at": "2026-09-14T12:16:17.220Z",
+      "submitted_at": "2026-09-14T12:17:07.008Z",
+      "cancelled_at": null,
+      "exposure_tracking_version": 1
+    }
+  },
+  {
+    "id": "J20",
+    "evidence": {
+      "id": "evidence_c815a880-69f4-4a87-aa08-05ebc368fd2b",
+      "attempt_id": "assessment_attempt_1beec758-7a26-47c0-ab82-3ce4c8a290d6",
+      "grade_record_id": "grade_256d2a6d-390f-43c2-a49d-4124e72fd754",
+      "assessment_version_id": "assessment_version_0473f5e0-6ebf-4278-8566-d06dbb2eaa35",
+      "item_id": "assessment_item_80deab1a-e60a-4ecb-b757-3f221a4b206b",
+      "target_learning_unit_id": "cun_63c27604-1b9b-45e0-bda6-2f3b83be0004",
+      "conclusion": "supported",
+      "policy_version": "formal-assessment-evidence-v2-criterion-gate",
+      "source_binding_ids": "[\"blk_0_405aecb2\",\"blk_1_114bff63\",\"blk_2_19dacabd\"]",
+      "created_at": "2026-09-14T12:20:55.497Z"
+    },
+    "item": {
+      "id": "assessment_item_80deab1a-e60a-4ecb-b757-3f221a4b206b",
+      "sourceQuestionId": "que_d81cedbe-3136-4f92-b43d-7671b3a263f7",
+      "index": 0,
+      "targetLearningUnitId": "cun_63c27604-1b9b-45e0-bda6-2f3b83be0004",
+      "targetObjectiveId": "obj_b8700c3b-1dda-4311-9f64-3e93482104ff",
+      "representation": "recall",
+      "questionType": "short_answer",
+      "prompt": "假设函数 f(a): 先执行 a = a + 5，然后返回 a * 2。调用者持有变量 b = 3，执行 c = f(b)。请回答：(1) 在函数定义中 a 是什么？调用时提供的 b 的值扮演什么角色？(2) 解释按值传递如何将 b 的值绑定到 a，并说明函数内对 a 的赋值是否会影响调用者变量 b，为什么？(3) 调用结束后 c 和 b 的值分别是多少？展示你的推理过程。",
+      "rubric": [
+        {
+          "id": "criterion_255dd54e-477d-44e2-bafd-a94ff7c3ccb8",
+          "text": "指出函数定义中的 a 是参数（parameter），调用时提供的 b 的值（3）是实参（argument），体现参数与实参区别。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_405aecb2",
+            "blk_1_114bff63",
+            "blk_2_19dacabd"
+          ]
+        },
+        {
+          "id": "criterion_f4c82cac-6bfb-467c-973a-ab4e795fb88e",
+          "text": "解释按值传递将实参值绑定到局部参数 a，且函数内对 a 的赋值只改变本次调用的局部值，不影响调用者变量 b（局部隔离）。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_405aecb2",
+            "blk_1_114bff63",
+            "blk_2_19dacabd"
+          ]
+        },
+        {
+          "id": "criterion_9bf0b955-d569-4509-9815-3a869a68d299",
+          "text": "正确推导调用结果：局部 a 从 3 变为 8，返回 16 使 c 为 16；调用后 b 仍为 3，因局部重赋值不更新调用者且未显式赋值给 b。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_405aecb2",
+            "blk_1_114bff63",
+            "blk_2_19dacabd"
+          ]
+        }
+      ],
+      "sourceBindings": [
+        {
+          "materialId": "mat_395952d6-9906-434c-8321-6b6e5507e03c",
+          "materialRevisionId": "rev_96c1d965-8c4c-43b8-9937-8f2e908af8ea",
+          "sourceBlockId": "blk_0_405aecb2",
+          "quote": "A function is a named procedure that can receive values and return a result. In this lesson all values are numbers, passed by value. Each call creates its own local parameter names. Assigning to a local name changes that call's local value; it does not change a numeric variable in the caller. The functions shown have no files, global state, or other side effects.",
+          "contentOrigin": "extracted_original",
+          "authoritative": true
+        },
+        {
+          "materialId": "mat_395952d6-9906-434c-8321-6b6e5507e03c",
+          "materialRevisionId": "rev_96c1d965-8c4c-43b8-9937-8f2e908af8ea",
+          "sourceBlockId": "blk_1_114bff63",
+          "quote": "Consider the function adjust(x): first set x = x + 2, then return x * 3. The name x in the definition is a parameter. In adjust(4), the supplied number 4 is an argument. At the start of the call local x is 4; after the assignment it is 6; the returned value is 18. The call does not return 6 just because 6 was the last value assigned to x: the return expression multiplies it by 3.",
+          "contentOrigin": "extracted_original",
+          "authoritative": true
+        },
+        {
+          "materialId": "mat_395952d6-9906-434c-8321-6b6e5507e03c",
+          "materialRevisionId": "rev_96c1d965-8c4c-43b8-9937-8f2e908af8ea",
+          "sourceBlockId": "blk_2_19dacabd",
+          "quote": "Now let the caller have n = 4 and execute result = adjust(n). The value of n is supplied to the call, so result becomes 18. After the call n is still 4. The local reassignment of x does not update n. If the caller instead writes n = adjust(n), the returned 18 is explicitly assigned to n by the caller, so n becomes 18. These two caller statements have different effects even though the function body is identical.",
+          "contentOrigin": "extracted_original",
+          "authoritative": true
+        }
+      ],
+      "formalEligible": true,
+      "policyReason": "FORMAL_ELIGIBLE"
+    },
+    "grade": {
+      "id": "grade_256d2a6d-390f-43c2-a49d-4124e72fd754",
+      "attemptId": "assessment_attempt_1beec758-7a26-47c0-ab82-3ce4c8a290d6",
+      "assessmentVersionId": "assessment_version_0473f5e0-6ebf-4278-8566-d06dbb2eaa35",
+      "grader": "hy3",
+      "rubricVersion": "formal-short-answer-v1",
+      "status": "current",
+      "judgment": {
+        "score": 1,
+        "criterionResults": [
+          {
+            "criterionId": "criterion_255dd54e-477d-44e2-bafd-a94ff7c3ccb8",
+            "result": "met"
+          },
+          {
+            "criterionId": "criterion_f4c82cac-6bfb-467c-973a-ab4e795fb88e",
+            "result": "met"
+          },
+          {
+            "criterionId": "criterion_9bf0b955-d569-4509-9815-3a869a68d299",
+            "result": "met"
+          }
+        ],
+        "feedback": "回答已覆盖主要评分标准。"
+      },
+      "supersedesId": null,
+      "createdAt": "2026-09-14T12:20:55.494Z"
+    },
+    "attempt": {
+      "id": "assessment_attempt_1beec758-7a26-47c0-ab82-3ce4c8a290d6",
+      "assessment_version_id": "assessment_version_0473f5e0-6ebf-4278-8566-d06dbb2eaa35",
+      "workspace_id": "ws_8d200fc2-5481-408a-9775-3261ce4eb3de",
+      "ordinal": 1,
+      "status": "submitted",
+      "responses": "{\"assessment_item_80deab1a-e60a-4ecb-b757-3f221a4b206b\":\"(1) 在定义 f(a) 中，a 是参数（局部参数名）。调用时提供的 b 的值（3）是实参，扮演传入函数的数值角色，用于绑定到局部参数 a。\\n(2) 按值传递：调用 f(b) 时，b 的当前值 3 作为实参被提供给函数，函数调用创建局部参数 a 并绑定该值（a 初始为 3）。函数内 a = a+5 只改变本次调用的局部 a（变为8），因为数字是按值传递，局部 a 与调用者 b 是不同名字，且无引用关联，所以对 a 的赋值不会影响调用者变量 b。\\n(3) 推理：局部 a 起始 3，赋值后 a=8，返回 a*2=16。调用者语句 c = f(b) 将返回结果 16 赋给 c，未对 b 赋值。故调用结束后 c = 16，b = 3。\"}",
+      "started_at": "2026-09-14T12:20:06.438Z",
+      "submitted_at": "2026-09-14T12:20:42.177Z",
+      "cancelled_at": null,
+      "exposure_tracking_version": 1
+    }
+  }
+]

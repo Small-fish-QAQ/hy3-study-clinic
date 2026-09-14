@@ -1,0 +1,36 @@
+{
+  "id": "S014",
+  "dimensions": [
+    "Q4"
+  ],
+  "evidence": {
+    "sources": [
+      {
+        "id": "source",
+        "text": "本课堂把相对海平面的高度用有符号数表示。上升h米给当前高度加h，下降h米减h，负值在海平面下。不考虑运动时间。"
+      }
+    ],
+    "goals": [
+      "把连续上下变化应用到有符号高度计算"
+    ],
+    "prerequisites": [
+      "阅读所给规则",
+      "基本四则运算"
+    ],
+    "desiredDepth": "working_fluency",
+    "authorityBoundaries": [
+      "判断所附局部教学或任务的实际要求。作者参考答案为私有评估材料，未预先展示给学习者。数据与规则是明示课堂前提。"
+    ],
+    "artifacts": [
+      {
+        "id": "private-author-key",
+        "text": "海平面下。"
+      }
+    ],
+    "exposure": [],
+    "question": {
+      "prompt": "资料中负高度表示在海平面上还是下？",
+      "options": []
+    }
+  }
+}

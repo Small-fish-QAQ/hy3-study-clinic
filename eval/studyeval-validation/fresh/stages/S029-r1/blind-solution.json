@@ -1,0 +1,31 @@
+{
+  "inputIdentity": "f8dbf5b0fc35118b68824acee6ccbb7c3acf4496aa400c4c40cc40738cde541f",
+  "attempts": [
+    {
+      "physicalId": "a788dbe1-d2c3-4ec4-bdc3-f491fd1aea15",
+      "caseId": "S029",
+      "runId": "S029-r1",
+      "stage": "blind-solution",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "status": "resolved",
+    "solution": "题设给定五张不同明信片选两张，不放回但允许同一张自配有效。异类无序对C(5,2)=10，自配5种，总数15。或允许重复组合C(5+2-1,2)=15。",
+    "refs": [
+      "/question/prompt"
+    ],
+    "witnesses": [
+      {
+        "pointer": "/question/prompt",
+        "valueHash": "f58c1f0050bd20369aed62a2fd5d37814baa28f76c4456e31f662993449ef862"
+      }
+    ]
+  }
+}

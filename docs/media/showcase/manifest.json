@@ -1,0 +1,41 @@
+{
+  "capturedOn": "2026-09-14",
+  "productCommit": "84b3c2fbce7e6523e43a8fa66df42bb6e37fa149",
+  "sourceRun": "final-showcase/scored-01",
+  "sourceId": "J04",
+  "originalDatabaseSha256": "cc9f7331d3e6acbb8e763f12e2aae1a57836cfbd19207c56c0cc6036f652cf68",
+  "originalSnapshotSha256": "28ccaa804d21c261d50430d525a4c3cef6dbeb8154109024b201b333ad7f42f3",
+  "mode": "Current UI rendering a copy of an actual completed Hy3 showcase database; Fake provider used only for isolated display, with no new generation or grading",
+  "originalScoredDatabaseOpenedByDisplay": false,
+  "checks": {
+    "desktopHorizontalOverflow": false,
+    "mobileHorizontalOverflow": false,
+    "consoleErrors": 0,
+    "consoleWarnings": 0,
+    "imageAssetsLoaded": true,
+    "routeProgress": "3/5",
+    "teachingProgress": "2/2",
+    "objectivesWithFormalEvidence": "1/3",
+    "actualAnswerVisible": true
+  },
+  "assets": [
+    {
+      "file": "formal-desktop.webp",
+      "originalScreenshot": "showcase-formal-desktop.png",
+      "width": 1440,
+      "viewportHeight": 1000,
+      "sha256": "9b9cb655cfab2dbfb5e24f21e0d59c3dd2a38ab7c1cf2871f4ee2bf77eafac99",
+      "originalScreenshotSha256": "c39f3bdf1e5ab2ced955ea1ae3eb4e605569f8f744ee23018a9ababd3d053292",
+      "transformation": "WebP quality 92, full screenshot; no crop, content replacement or state editing"
+    },
+    {
+      "file": "formal-mobile.webp",
+      "originalScreenshot": "showcase-formal-mobile-full.png",
+      "width": 390,
+      "viewportHeight": 844,
+      "sha256": "1ad351843d7a4aae3b0daa1797c7b5172a379fcb9dd8260c66a1606ac741a817",
+      "originalScreenshotSha256": "2092721368286af0fb64835e806781a8f009af25e67c5106987dae79e6d5d8e1",
+      "transformation": "WebP quality 92, full screenshot; no crop, content replacement or state editing"
+    }
+  ]
+}

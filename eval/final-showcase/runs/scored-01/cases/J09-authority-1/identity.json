@@ -1,0 +1,9 @@
+{
+  "provider": "hy3",
+  "model": "hy3",
+  "endpoint": "tokenhub.tencentmaas.com",
+  "productCommit": "84b3c2fbce7e6523e43a8fa66df42bb6e37fa149",
+  "visualProvider": "disabled",
+  "caseId": "J09-authority-1",
+  "ownerDatabaseOpened": false
+}

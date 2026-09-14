@@ -1,0 +1,69 @@
+{
+  "inputIdentity": "6bafd0ec107756b396439e0ac050c7b92eb355a8bd18e20cb69065a51466e7db",
+  "attempts": [
+    {
+      "physicalId": "1bba0372-5b9a-4b03-b0e8-59df3508f2e2",
+      "caseId": "S033",
+      "runId": "S033-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q3",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "lesson断言B齿多三倍故A转一圈B转三圈且同方向，与source正确规则（齿数反比、转向相反）矛盾，教导无效方法，核心解释错误。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "lesson错误声称齿数多三倍导致转速三倍且同向，正确应为转速反比且反向。",
+            "impact": "改变核心用途：学习者被教以相反的错误因果与方向，无法解释齿数决定转数和方向。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "f2ffbb0a81a36816805d82af8f8224a5604ec8e494677ec469aa6054103f5701"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "f2ffbb0a81a36816805d82af8f8224a5604ec8e494677ec469aa6054103f5701"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

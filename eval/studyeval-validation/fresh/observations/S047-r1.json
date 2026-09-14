@@ -1,0 +1,215 @@
+{
+  "task": {
+    "caseId": "S047",
+    "runId": "S047-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S047.json",
+    "inputHash": "43f0861e7c9a26a90f9806c7055b69b5e4df62f04b986010249fb426721a54c1"
+  },
+  "inputHash": "43f0861e7c9a26a90f9806c7055b69b5e4df62f04b986010249fb426721a54c1",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "39ae3006e34c9499ec910be12c1d09e736dcd7bec54d3ed2eaacad40bf959f8c",
+    "stages": {
+      "blind-solution": {
+        "status": "resolved",
+        "solution": "五张不同明信片互异，选两张无放回、不计顺序、禁自配。有序选法5×4=20，每对无序组合（如A,B与B,A）被计两次，除以2消除顺序重复，得10对。必要条件：对象互异、选二、无放回、无序、不自配。可接受解法：C(5,2)=5×4/2=10。",
+        "refs": [
+          "/question/prompt",
+          "/sources/0/text"
+        ],
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "ca51509a5ba3fefd4066a98e0cf30777287d5a985b78f665c152c10043b1e561"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "048d87f46cf5e71c40673f0c198589ef7169711c8e00773c1213c7b454b1dfde"
+          }
+        ]
+      },
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q4",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "题目有效要求学生应用规则计算5*4/2并解释除以2原因，作者键正确未泄露，达到working_fluency深度。",
+            "refs": [
+              "/question/prompt",
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "assessment": {
+              "key": "correct",
+              "validity": "valid",
+              "exposure": "none",
+              "discrimination": "adequate",
+              "demand": "application",
+              "demandReason": "学生需将一般规则用于n=5，执行5×4=20再除以2得10，并解释每对无序在有序计数中重复一次故除以2，超出抄写。",
+              "reason": "题干要求计算并解释；作者私有键5×4/2=10且说明正反各一次正确；priorExposure空无泄露；需应用与解释非纯检索，判别力足。",
+              "refs": [
+                "/question/prompt",
+                "/artifacts/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/question/prompt",
+                  "valueHash": "ca51509a5ba3fefd4066a98e0cf30777287d5a985b78f665c152c10043b1e561"
+                },
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "7d31921f32ad4191184c2c97bd606545eb038e2b6262e46985b6dbb2b15a87ed"
+                }
+              ]
+            },
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "ca51509a5ba3fefd4066a98e0cf30777287d5a985b78f665c152c10043b1e561"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "7d31921f32ad4191184c2c97bd606545eb038e2b6262e46985b6dbb2b15a87ed"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "048d87f46cf5e71c40673f0c198589ef7169711c8e00773c1213c7b454b1dfde"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q4",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "题干要求对5张明信片应用无放回无序规则计算并解释除以2，作者私钥正确，无提前曝光，需执行多步计算并解释，符合working_fluency深度且判别力充足。",
+            "refs": [
+              "/question/prompt",
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "assessment": {
+              "key": "correct",
+              "validity": "valid",
+              "exposure": "none",
+              "discrimination": "adequate",
+              "demand": "application",
+              "demandReason": "学生须根据5张互异明信片约束，计算5×4=20再除以2得10，并解释无序对在有序计数中重复两次故除以2，属依约束执行多步计算并解释，非抄写公式。",
+              "reason": "题干求具体实例对数及解释；作者解5×4/2=10且说明正反各一次正确；priorExposure空无泄题；需应用规则计算新实例并解释，判别力足。",
+              "refs": [
+                "/question/prompt",
+                "/artifacts/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/question/prompt",
+                  "valueHash": "ca51509a5ba3fefd4066a98e0cf30777287d5a985b78f665c152c10043b1e561"
+                },
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "7d31921f32ad4191184c2c97bd606545eb038e2b6262e46985b6dbb2b15a87ed"
+                }
+              ]
+            },
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "ca51509a5ba3fefd4066a98e0cf30777287d5a985b78f665c152c10043b1e561"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "7d31921f32ad4191184c2c97bd606545eb038e2b6262e46985b6dbb2b15a87ed"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "048d87f46cf5e71c40673f0c198589ef7169711c8e00773c1213c7b454b1dfde"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q4",
+          "level": 2,
+          "evidence": "sufficient",
+          "reason": "题目有效要求学生应用规则计算5*4/2并解释除以2原因，作者键正确未泄露，达到working_fluency深度。",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [],
+          "missing": [],
+          "assessment": {
+            "key": "correct",
+            "validity": "valid",
+            "exposure": "none",
+            "discrimination": "adequate",
+            "demand": "application",
+            "demandReason": "学生需将一般规则用于n=5，执行5×4=20再除以2得10，并解释每对无序在有序计数中重复一次故除以2，超出抄写。",
+            "reason": "题干要求计算并解释；作者私有键5×4/2=10且说明正反各一次正确；priorExposure空无泄露；需应用与解释非纯检索，判别力足。",
+            "refs": [
+              "/question/prompt",
+              "/artifacts/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "ca51509a5ba3fefd4066a98e0cf30777287d5a985b78f665c152c10043b1e561"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "7d31921f32ad4191184c2c97bd606545eb038e2b6262e46985b6dbb2b15a87ed"
+              }
+            ]
+          },
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "ca51509a5ba3fefd4066a98e0cf30777287d5a985b78f665c152c10043b1e561"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "7d31921f32ad4191184c2c97bd606545eb038e2b6262e46985b6dbb2b15a87ed"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "048d87f46cf5e71c40673f0c198589ef7169711c8e00773c1213c7b454b1dfde"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "15ed0f78fbcd35820b1377eaba267cf170145adefd3cd2554d7a4ada9e7bbc6d"
+  }
+}

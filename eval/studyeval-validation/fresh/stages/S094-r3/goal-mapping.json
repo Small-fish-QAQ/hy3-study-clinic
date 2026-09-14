@@ -1,0 +1,85 @@
+{
+  "inputIdentity": "448428d6c48bd778271fb660820f183f9eca2d4596a5dd5e3edb4eef3b63bcaa",
+  "attempts": [
+    {
+      "physicalId": "24fba3ad-b262-43f4-a60d-26644e679fb6",
+      "caseId": "S094",
+      "runId": "S094-r3",
+      "stage": "goal-mapping",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "goals": [
+      {
+        "index": 0,
+        "importance": "essential",
+        "status": "usable",
+        "reason": "artifact直接声明“我”是叙述者，不能直接当作作者本人，明确区分了叙述者与现实作者。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/0"
+        ],
+        "quote": "小说里的“我”是叙述者，不能直接当作作者本人。",
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "f06c41473aa7af3af43adc2ee10638ca2d93bffca4f99b6be4f4a14c7bf8e60c"
+          },
+          {
+            "pointer": "/goals/0",
+            "valueHash": "2b41e2bf08ab98b4ef000c50cebd55a20f14a001d93a4acdd0bee2a73360a806"
+          }
+        ]
+      },
+      {
+        "index": 1,
+        "importance": "essential",
+        "status": "usable",
+        "reason": "artifact说明第一人称能报告自己的感受，并限制断言他人隐秘想法需文本依据、不能凭视角全知，解释了能直接知道什么及限制。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/1"
+        ],
+        "quote": "它能报告自己的感受；要断言另一人物隐秘想法需要文本依据，不能凭第一人称视角全知。",
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "f06c41473aa7af3af43adc2ee10638ca2d93bffca4f99b6be4f4a14c7bf8e60c"
+          },
+          {
+            "pointer": "/goals/1",
+            "valueHash": "22d8faa697faa2a740550cc0d1cafef65fe438b94828227c311203c1333a76d9"
+          }
+        ]
+      },
+      {
+        "index": 2,
+        "importance": "secondary",
+        "status": "usable",
+        "reason": "artifact给出引用别人话语时标出归属的具体写法（“朋友说……”），实现了说明归属标记的目标。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/2"
+        ],
+        "quote": "引用朋友的话可写“朋友说……”来标出归属。",
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "f06c41473aa7af3af43adc2ee10638ca2d93bffca4f99b6be4f4a14c7bf8e60c"
+          },
+          {
+            "pointer": "/goals/2",
+            "valueHash": "e6a9fe5f3b015bae44d40471551088d7d08a745fa66ebc11c00ab452a5d7dff2"
+          }
+        ]
+      }
+    ]
+  }
+}

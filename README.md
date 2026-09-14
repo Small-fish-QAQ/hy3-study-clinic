@@ -7,7 +7,7 @@ A Hy3-powered learning system that turns your materials into a course, with guid
 [![CI](https://github.com/Small-fish-QAQ/hy3-study-clinic/actions/workflows/ci.yml/badge.svg)](https://github.com/Small-fish-QAQ/hy3-study-clinic/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 
-[截图导览](docs/DEMO.md) · [系统架构](#系统架构) · [快速运行](#快速运行) · [最终评估结果](docs/EVALUATION_RESULTS.md) · [评测样本与复现](eval/final-evaluation/README.md) · [Task 1 验收入口](#task-1-验收入口)
+[截图导览](docs/DEMO.md) · [系统架构](#系统架构) · [快速运行](#快速运行) · [最终评估结果](docs/FINAL_EVALUATION.md) · [20课showcase](eval/final-showcase/README.md) · [StudyEval验证](eval/studyeval-validation/README.md) · [Task 1 验收入口](#task-1-验收入口)
 
 ### ▶ 1 分 50 秒演示
 
@@ -97,52 +97,47 @@ npm run dev
 | 官方交付项                 | 仓库入口                                                                                                                                                                                                                                                                                         |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | 应用侧与开源项目           | [目标用户与场景](#为谁解决什么问题) · [Hy3 的必要性与职责](#为什么需要-hy3) · [应用源码](apps/) · [运行环境与 Hy3 配置](docs/SETUP.md) · [配置样例](.env.example)                                                                                                                                |
-| 评估方法设计               | [六维操作标准](docs/EVALUATION.md#六个操作维度) · [设计依据与流程](docs/EVALUATION.md#语义判断与本地计算) · [冻结评估实现](eval/final-evaluation/method/src/evaluator.mjs)                                                                                                                       |
-| 评测样本                   | [来源与构造](eval/final-evaluation/CONSTRUCTION.md) · [覆盖、难例与反例](eval/final-evaluation/CONSTRUCTION.md#frozen-population) · [完整数据集索引](eval/final-evaluation/dataset/public-cases.json)                                                                                            |
-| 有效性验证：判别力、一致性 | [三档与成对判别](docs/EVIDENCE_DIAGNOSTICS.md#24-个受控三元组未严格排序的-19-组是什么) · [重复波动](docs/EVIDENCE_DIAGNOSTICS.md#重复实验2944-之外的-15-组) · [人工标注与一致性](docs/HUMAN_VALIDATION.md)                                                                                       |
-| 对抗性验证（鼓励项）       | [对抗样本构造](eval/final-evaluation/CONSTRUCTION.md#what-the-controls-change) · [检测结果](docs/EVALUATION_RESULTS.md#判别力对抗性与重复一致性)                                                                                                                                                 |
-| 完整评测与复现             | [实验协议](eval/final-evaluation/PROTOCOL.md) · [完整结果表](eval/final-evaluation/results/complete-results.csv) · [全部材料](eval/final-evaluation/README.md) · [只读复核脚本](eval/final-evaluation/scripts/) · [复核步骤](eval/final-evaluation/README.md#reproduce-the-published-statistics) |
-| 分析报告                   | [场景选择与解决方案](docs/PROJECT_PROPOSAL.md) · [典型 case 归因](docs/EVALUATION_RESULTS.md#可直接核查的典型案例与失败归因) · [失败模式与能力边界](docs/LIMITATIONS.md)                                                                                                                         |
+| 评估方法设计               | [六维操作标准](docs/EVALUATION.md#六个操作维度) · [v2判断流程](eval/studyeval/METHOD.md) · [冻结实现](eval/studyeval/evaluator.mjs) |
+| 评测样本                   | [20课来源与设计](eval/final-showcase/DESIGN.md) · [showcase完整清单](eval/final-showcase/dataset/schedule.json) · [评估器对照、难例与反例](eval/studyeval-validation/dataset/registry.json) |
+| 有效性验证：判别力、一致性 | [三档、成对与重复验证](eval/studyeval-validation/README.md) · [保留人类对齐](eval/studyeval-validation/analysis/HUMAN-AUDIT.md) |
+| 对抗性验证（鼓励项）       | [18个独立对抗案例](eval/studyeval-validation/dataset/cases/) · [完整检测结果](eval/studyeval-validation/analysis/fresh-metrics.json) |
+| 完整评测与复现             | [showcase冻结协议](eval/final-showcase/PROTOCOL.md) · [产品全部结果与复核](eval/final-showcase/README.md) · [StudyEval全部观察与复现](eval/studyeval-validation/README.md) |
+| 分析报告                   | [场景选择与解决方案](docs/PROJECT_PROPOSAL.md) · [最终分析](docs/FINAL_EVALUATION.md) · [失败模式与能力边界](docs/LIMITATIONS.md) |
 | 2 分钟以内 demo            | [1 分 50 秒视频与观看路线](docs/DEMO.md)                                                                                                                                                                                                                                                         |
 
 ## 评估与已验证的范围
 
-**截至 2026-09-12：最终机器评估、两位盲评独立模型审阅和三位真实人类标注均已完成。**
+**最终提交：冻结的 Candidate 23 产品showcase + StudyEval v2.0新样本验证 + 保留人类对齐。**
 
-StudyEval 用六个操作维度检查教学内容、题目、评分和补救。最终运行覆盖 **16 个来源、20 门真实 Hy3 课程、209 个评测案例，完成 279/279 次观察**；包括受控质量对照、难例、对抗输入和自然产品输出。全部输入、327 条维度结果、冻结方法及人类核验材料现已[公开并可离线核查](eval/final-evaluation/README.md)。
+20课showcase完成 **15/20条首个正式检查点旅程（75%）**：20课完成准备，17课完成教学，15课通过Formal并写入受支持、已应用的证据。全部20课、指标和策略在评分前冻结，之后没有调产品、替换案例或选择性重跑。完整来源、逐课结果和实际作答见[最终评估](docs/FINAL_EVALUATION.md)。
 
-| 检验                 | 主要结果                                      | 分母与解释                                                                                         |
-| -------------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| 受控成对判别         | **40/50 数值配对排序正确（80.0%）**           | 另有 22 对含 U；全部预定配对为 40/72（55.6%）。构造预期是预先假设，不是人类真值。                  |
-| 对抗检测             | **24/24 检出为 0**                            | 六类各四例，包括填充、术语、伪造支持、注入、前提变化和已见解答；不推断通用安全率。                 |
-| 人类共识与 StudyEval | **20 一致 / 2 相邻 / 0 极性反转 / 2 U**       | 24/34 个维度形成二人共识；其中数值可比的 22 个维度一致 20 个。其余 10 个维度不裁决、不隐去。       |
-| 严格三档与重复稳定性 | **5/24 组三档严格排序；29/44 组重复完全一致** | 分别要求整组 2>1>0 和三次类别相同。重复相对首次有一次 0→2；三次范围共两组跨越 0 和 2（含一组 U）。 |
+[![Study Clinic最终产品showcase与StudyEval v2验证概览](docs/media/showcase/evaluation-overview.png)](docs/media/showcase/evaluation-overview.svg)
 
-[冻结记录的事后诊断分解](docs/EVIDENCE_DIAGNOSTICS.md)：19 组非严格排序中，10 组含 U、9 组全数值但并列，可比数值对没有方向倒置。强–差的 24 个配对机会中，18 个为 2 对 0、6 个含 U；粗粒度区分强于完整三档分辨率，不能用条件子集替代 5/24。
+构造前研究稳定的历史材料和成功学习过程，以产品在正常适用条件下的展示质量为明确目标，选择完整、自包含、有解释、例题和应用深度的新讲义。助手逐项复核后，**12/20条完整旅程未发现实质题目或作答缺陷**；另3条获证记录中的题目或附加断言问题仍公开保留，不用持久化成功掩盖语义问题。
 
-六份原始人类答卷提供 68 条评分，27 个题目共 34 个维度各由两人填写。下表将完全一致、相邻等级、严重 0↔2 分歧与 U 分开；所有人类评分均为数值，没有跳过或缺答。
+| 检验 | 结果 | 范围 |
+| --- | --- | --- |
+| 产品首个检查点旅程 | **15/20** | 20课全分母；教学17/20，Formal及应用证据15/20 |
+| 证据与重放 | **0/30反例获证；15/15重放一致** | 另10个反例机会未到达；50/50数据库与45/45绑定检查通过 |
+| StudyEval构造参考等级 | **70/72** | 24个新语义家族，每个好/中/差三档；参考是构造假设 |
+| 严格三档 / 成对顺序 | **22/24组 / 70/72对** | 每组三档须2>1>0；两对并列，无反向排序 |
+| 对抗 / 重复一致 | **18/18例 / 12/12组** | 重复组预先选定，各评三次 |
+| 保留人类共识 | **22/24** | 共识二次加权kappa 0.948；全部68条原评分匹配53条 |
 
-| 比较                     |   n | 完全一致 EXACT | 相邻 ADJACENT | 0↔2 POLARITY |   U | 跳过/缺答 |
-| ------------------------ | --: | -------------: | ------------: | -----------: | --: | --------: |
-| 人类 ↔ 人类              |  34 |             24 |             9 |            1 |   0 |         0 |
-| 人类共识 ↔ StudyEval     |  24 |             20 |             2 |            0 |   2 |         0 |
-| 人类共识 ↔ Max 模型      |  24 |             24 |             0 |            0 |   0 |         0 |
-| 人类共识 ↔ Fable 模型    |  24 |             23 |             1 |            0 |   0 |         0 |
-| 全部人类评分 ↔ StudyEval |  68 |             49 |            12 |            1 |   6 |         0 |
+[StudyEval验证包](eval/studyeval-validation/README.md)保留102个唯一新输入和207次新样本/人类观察，支持无密钥离线重算。它在评估器冻结后、Candidate 23之前完成；不当作20课产品成绩。人类对齐是已知来源上的案例级保留，非来源互斥验证，原有分歧和流程元数据缺失均保留。
 
-唯一的人类 0↔2 分歧来自“复述已有答案是否构成先前泄题”的歧义项，Max/Fable 此前也独立标记了它；全部人类评分与 StudyEval 的唯一严重分歧也是同一项。全部 34 条首次模型判断中，StudyEval、Max、Fable 两两均无 0↔2 反转；这是独立于机器重复实验的另一项比较。人类共识仅覆盖 24 个维度，全部 68 条评分又包含同题依赖；[逐题分析](docs/HUMAN_VALIDATION.md)保留分歧和来源，不把任一模型当作人类真值。
+产品showcase使用合成学习者与有意选择的完整正常材料，不能外推任意上传资料。首个Formal检查点不是完整课程毕业，持久化证据也不是长期掌握；实际获证作答另有助手内容复核，不能由数据库校验替代语义判断。
 
-首次机器判断仍有 **48/239 个 U、7/239 个 INVALID**。人类答卷未提供开始/结束时间及外部帮助说明，实际用时与盲评执行条件无法由空白字段核实。[完整结果](docs/EVALUATION_RESULTS.md)保留这些限制、生成失败、所有分母及重复转变。
+[三个可核查的学习过程](eval/final-showcase/EXAMPLES.md)展示四分位数、赊销收入和关系连接的实际题目、作答与评分依据。它们是全20课运行中的说明性摘录，失败课程继续保留在同一分母中。
 
-| 证据                                              | 能回答什么                                                       | 当前边界                                                                              |
-| ------------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| [2026-09-12 最终评估](docs/EVALUATION_RESULTS.md) | 六维判别力、重复稳定性、对抗性、自然产品表现与人类核验           | 机器、模型审阅和人类标注完成；小样本、U/INVALID、重复波动与正式证据可用率限制仍保留。 |
-| 自动化测试与 `eval:fake`                          | 来源校验、状态转换、隔离、重复提交、失败恢复等规则是否按设计执行 | 可在当前代码上复现；不测量真实教学质量。                                              |
-| [产品演示](docs/DEMO.md)                          | 界面与学习过程实际是什么样                                       | 展示用途，不作为教学效果或总体成功率的实验。                                          |
+Candidate 23冻结前通过 **2,878项产品测试、22项StudyEval测试及三平台CI**。开发回归的代表性旅程由16/24升至20/24，旧套件教学保持20/20，但Formal准入和独立响应获证有所下降；这些混合开发结果没有拼入新showcase。2026-09-12的全部原始结果、独立模型审阅和人类答卷仍可从[历史报告](docs/EVALUATION_RESULTS.md)核查。
 
-Formal（正式测评）采用“支持不足则拒绝”的保守门控，未通过来源、构念或语义支持校验的候选不能成为正式学习证据。完整流程为 20 门建课 → 18 门完成课程准备 → 15 门 Lesson 就绪 → 13 门完成讲解及练习流程 → 11 门尝试 Formal → 5 门生成候选 → **4 门准入 / 2 门产生受支持证据**。**4/20 仍是端到端可用性摘要**；[逐阶段记录](docs/EVIDENCE_DIAGNOSTICS.md#formal保留-20-门课程的完整漏斗)区分了 6 门生成前支持门控拒绝与上游、生成/执行失败。后续应在保持权威边界的前提下，提高合格证据的生成与交付可用率。
+```bash
+node eval/studyeval-validation/scripts/verify.mjs
+node eval/final-showcase/publication/verify.mjs
+```
 
-可复现检查及单独列出的历史在线小样本见 [验证说明](docs/VERIFICATION.md)。本项目尚无学习效果实验，不声称提升了成绩、记忆保持或长期掌握率。
+运行范围与证据链见[验证说明](docs/VERIFICATION.md)。本项目尚无学习效果实验，不声称提升成绩、记忆保持或长期掌握率。
 
 ## 当前限制
 

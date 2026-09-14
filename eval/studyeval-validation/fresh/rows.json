@@ -1,0 +1,1136 @@
+[
+  {
+    "caseId": "S001",
+    "runId": "S001-r1",
+    "replicate": 1,
+    "dimension": "Q2",
+    "level": 2,
+    "reason": "产物准确演示复制后双路径存在且内容同、移动后原路径消失；次要目标改扩展名不证格式转换以改名规则准确说明，达所需深度，无缺陷。",
+    "inputHash": "3bbf8c85a17dac21b46aa41b8ccf2add4c0d4e9d9bda5da9dd0c380b0955ee6a"
+  },
+  {
+    "caseId": "S002",
+    "runId": "S002-r1",
+    "replicate": 1,
+    "dimension": "Q1",
+    "level": 0,
+    "reason": "Lesson断言同名磁极相吸且切断后产生单极，直接违背source模型（同名相斥、每段皆有南北极）。goals要求核对这两点，错误改变核心结论与学习用途，属实质缺陷。Override无权限已忽略。",
+    "inputHash": "071957d84fac577acd3b81f0228824640592a072f43b86d8ea627d905a72a8db"
+  },
+  {
+    "caseId": "S003",
+    "runId": "S003-r1",
+    "replicate": 1,
+    "dimension": "Q1",
+    "level": 0,
+    "reason": "交付物lesson断言同名相吸及切开成单极，与source同名相斥、每段双极直接矛盾。goals要求核对二者，错误改变核心机制与结论，实质缺陷，故0。",
+    "inputHash": "ffaff0fa72ff0c49394be6114831051a2b01dbe106d9f2c95a0f3870a17788e9"
+  },
+  {
+    "caseId": "S004",
+    "runId": "S004-r1",
+    "replicate": 1,
+    "dimension": "Q5",
+    "level": 2,
+    "reason": "学生提交空字符串，评分器判定required未满足且拒绝学分，反馈准确。重解题目并集为{1,2,3}，空答明显不符，评分器质量高。",
+    "inputHash": "f87c2aab9604db99fccff230ebf6beb136c02461890f4d9adfcb3533e65dbb34"
+  },
+  {
+    "caseId": "S005",
+    "runId": "S005-r1",
+    "replicate": 1,
+    "dimension": "Q2",
+    "level": 1,
+    "reason": "artifact准确说明复制保留源并建目标、移动使源消失目标存，核心目标完整可用；但次要目标'改扩展名不证格式转换'在artifact中完全缺失，source有而未整合，属局部覆盖缺口不影响核心用途，评1。",
+    "inputHash": "2bd6051e242f45131e6a8b5db02b5047edd861b331e2f55039ead5d1e26accd4"
+  },
+  {
+    "caseId": "S006",
+    "runId": "S006-r1",
+    "replicate": 1,
+    "dimension": "Q4",
+    "level": 2,
+    "reason": "题目在给定规则下可答，要求逐步应用状态转换并说明依据，符合working_fluency；作者私有键正确未泄露，有效抽测目标技能。",
+    "inputHash": "1f4afcd7cf4f8a35c5d5ce0fff26c9bae115b4f23abd5d6325fbbc86385fec71"
+  },
+  {
+    "caseId": "S007",
+    "runId": "S007-r1",
+    "replicate": 1,
+    "dimension": "Q1",
+    "level": 1,
+    "reason": "核心频率-音调-振幅区分与源一致；但artifact误称资料乐器例为小提琴，源证为长笛，属外围归属错，修正后核心用途不变。",
+    "inputHash": "eb1f57f0324ad5aa44ff6c39a697b72085c1b55178ead6026587885aaae83803"
+  },
+  {
+    "caseId": "S008",
+    "runId": "S008-r1",
+    "replicate": 1,
+    "dimension": "Q5",
+    "level": 2,
+    "reason": "重解确认第三角65度；学生答案含依据与结果，必需要求c1c2满足，可选c3单句结论也满足；产品判定全met且授分granted准确。",
+    "inputHash": "a61d4752eb6a9e7275948561ea71c6465e01d181e2998e400ad08a86ee62e00f"
+  },
+  {
+    "caseId": "S009",
+    "runId": "S009-r1",
+    "replicate": 1,
+    "dimension": "Q5",
+    "level": 0,
+    "reason": "任务要求按规则写ATGC互补序列并说明A/G配对；学生答案给TACG及A配T、G配C，满足c1,c2必需。产品误判c1未满足称TACG错误并withheld，实质错拒必需含义且学分冲突，故0。",
+    "inputHash": "db38d1f1b7b44e5a3def6c15fe9cf92871b0f9962b2238d8093e4abe17a70c31"
+  },
+  {
+    "caseId": "S010",
+    "runId": "S010-r1",
+    "replicate": 1,
+    "dimension": "Q1",
+    "level": 1,
+    "reason": "核心闰年判断与世纪年规则正确且有source支持；但artifact错误归属资料先用1900举例，实际source例子顺序为2000后1900，属局部归属不准确，修正后核心教学完好。",
+    "inputHash": "21f058c02815fa2abe7c1d436db73d9d5c2d1242b974185328723e174986de9a"
+  },
+  {
+    "caseId": "S011",
+    "runId": "S011-r1",
+    "replicate": 1,
+    "dimension": "Q1",
+    "level": 2,
+    "reason": "artifact准确复述source中同名相斥异名相吸及切断仍具两极的规则，与goals核对磁极作用和切断解释一致，无事实或归属缺陷。",
+    "inputHash": "e4e73fdcc60bdaa79a10d6512f30928081a1983f0cce5d59eecb67ec87a5e139"
+  },
+  {
+    "caseId": "S012",
+    "runId": "S012-r1",
+    "replicate": 1,
+    "dimension": "Q3",
+    "level": 1,
+    "reason": "产物仅断言B转1/3圈且反向符合资料，未展示齿数12/36如何通过啮合规则推导转数比与方向。结论正确但解释连接缺失，属局部缺陷，未教错误方法，核心结论成立。",
+    "inputHash": "c1eb68e9f051ef917d2af2c6c0beeec0d9751490347b166389dfb8708c546ae9"
+  },
+  {
+    "caseId": "S013",
+    "runId": "S013-r1",
+    "replicate": 1,
+    "dimension": "Q4",
+    "level": 0,
+    "reason": "题设禁言不足并强制唯一绝对高度，但初始未知，source规则需加初始值只能得相对+3。作者键误为3米且拒绝欠定，题目无效无法评估目标技能。",
+    "inputHash": "74a30e156b2d4670f3bd13119229c10d7bc7bc4bc8a2851398b0295b9f731757"
+  },
+  {
+    "caseId": "S014",
+    "runId": "S014-r1",
+    "replicate": 1,
+    "dimension": "Q4",
+    "level": 1,
+    "reason": "题目问负高度含义，资料明说负值在海平面下，作者键正确。但声明深度working_fluency要求执行解释，此题仅检索事实，判别力弱，局部缺陷。",
+    "inputHash": "e56a0ab39088de8a3a007839bf76d22b0b05f4824c35f1e5fc809542fb4471ef"
+  },
+  {
+    "caseId": "S015",
+    "runId": "S015-r1",
+    "replicate": 1,
+    "dimension": "Q3",
+    "level": 0,
+    "reason": "lesson错误声称负指数等于结果前加负号并算得2^(-3)=-8，且称0有倒数，违背source规则与解释负指数为倒数的目标，教授无效方法，实质缺陷。",
+    "inputHash": "5c7300941c55355fcf1fba0fa675306b09ccfa2855c38343d4451744f00f903a"
+  },
+  {
+    "caseId": "S016",
+    "runId": "S016-r1",
+    "replicate": 1,
+    "dimension": "Q1",
+    "level": 2,
+    "reason": "前提设317居民每人一票，artifact推出317张票并声明非真实调查，主张、计算与限制均由给定假设支持，无事实或归属缺陷。",
+    "inputHash": "1faaa181f082f750b461d8c3eaeca4f7c77317f23c419fff2bf1ee162658b136"
+  },
+  {
+    "caseId": "S017",
+    "runId": "S017-r1",
+    "replicate": 1,
+    "dimension": "Q4",
+    "level": 2,
+    "reason": "题目给定初始高度与升降量，要求计算最终高度并解释负号。作者键-12+7-4=-9米且说明海平面下9米，正确且未预先展示。任务需应用规则执行多步计算并解释，符合working_fluency深度，判别力充足。",
+    "inputHash": "edaaa8a61f60cdc4591b26f5b0c2db02f7ce29644e54e375ed3f40fd5787f4c3"
+  },
+  {
+    "caseId": "S018",
+    "runId": "S018-r1",
+    "replicate": 1,
+    "dimension": "Q1",
+    "level": 1,
+    "reason": "artifact正确传达同名相斥异名相吸及切断仍具南北极，与source核心一致；但错误称资料先介绍圆环磁铁，source明确先条形后圆环，属外围归属错误，核心教学机制完好，故评1。",
+    "inputHash": "691b3d83cd3b3b2148cd2413b59f46f3b1c25e4b3841b1cf4005d75f8d45d1d7"
+  },
+  {
+    "caseId": "S019",
+    "runId": "S019-r1",
+    "replicate": 1,
+    "dimension": "Q5",
+    "level": 1,
+    "reason": "必需要素c1,c2学生答案均满足，产品授分granted正确；仅可选c3误判为met且反馈称用了项目符号，实为普通句，属局部缺陷不影响核心评分。",
+    "inputHash": "e7b02587b7dfab66cb503645a55f6e4da7bb6a84ace28489184106b0d3834027"
+  },
+  {
+    "caseId": "S020",
+    "runId": "S020-r1",
+    "replicate": 1,
+    "dimension": "Q3",
+    "level": 1,
+    "reason": "产物给出正确例子2^(-3)=1/8及公式a^(-n)=1/a^n且a≠0，但仅令记忆，未从所给前提展示负指数为何表倒数的推导或理由，缺失解释连接，核心结论正确故局部缺陷。",
+    "inputHash": "25f54bb34f47a164cd564507804bd28672654f1d2b660bdabb62fe0000a9a1c3"
+  },
+  {
+    "caseId": "S021",
+    "runId": "S021-r1",
+    "replicate": 1,
+    "dimension": "Q1",
+    "level": 2,
+    "reason": "artifact正确算得3072字节=3 KiB与3.072 kB，说明基数差异且不暗示内容变好，与source的单位定义及质量无关声明一致，归属课堂前提无缺陷。",
+    "inputHash": "a1144ca224bbe39f7746def6dd77455aa433ddd61b84c3179727d42324359ad5"
+  },
+  {
+    "caseId": "S022",
+    "runId": "S022-r1",
+    "replicate": 1,
+    "dimension": "Q5",
+    "level": 2,
+    "reason": "独立依规则得ATGC互补为TACG，A配T、G配C。学生答案给出TACG并说明A对T、G对C，满足两必需标准；未用分项小标题非必需判not_met正确。评分器授分准确，无缺陷。",
+    "inputHash": "025ef17ca5bf2c92685fefe5c48564471e721e5414c072e07215fef1c7ded91f"
+  },
+  {
+    "caseId": "S023",
+    "runId": "S023-r1",
+    "replicate": 1,
+    "dimension": "Q2",
+    "level": 2,
+    "reason": "课程方案设定按编号查脚注并解释补充信息的单元目标，设计配对活动与两次正确检查，保留脚注阅读目标且具操作深度，符合working_fluency要求。",
+    "inputHash": "bdee83b2172b4f2cfe7adf3e150c497ed63624b5ecd196f13f2b93d83fec106d"
+  },
+  {
+    "caseId": "S024",
+    "runId": "S024-r1",
+    "replicate": 1,
+    "dimension": "Q6",
+    "level": 2,
+    "reason": "交付物针对“她一定是小乔”的错误，依据规则指出两人皆可能，示范改名改写，并给出安娜贝拉新句要求列解释与改写，构成具体可迁移的下一检查，完整满足诊断与修复标准。",
+    "inputHash": "7ba74f3eeb001ab1e37f3e24117aa77d2d715a1d1de9955170754623eae0a8b1"
+  },
+  {
+    "caseId": "S025",
+    "runId": "S025-r1",
+    "replicate": 1,
+    "dimension": "Q3",
+    "level": 2,
+    "reason": "解释将1写为a^0并应用已知除法规则，展示a^(-n)来自指数相减且等于1/a^n，举例区分负数并给出a≠0限制，链接前提操作结论与边界，符合充分标准。",
+    "inputHash": "3a99771b87e0f0d95d1f3b2fe1c15383dbb5286b6993b782a07311e861c03f36"
+  },
+  {
+    "caseId": "S026",
+    "runId": "S026-r1",
+    "replicate": 1,
+    "dimension": "Q4",
+    "level": 0,
+    "reason": "题目禁止不确定强制唯一确定，与源欠定矛盾；作者答案政策强制123拒其他，错误键且禁用正确欠定回答，测试无效无法评估目标技能。",
+    "inputHash": "9109f9e7274d3e3590657fa1001af873886e7d739bbba5278f6c093cdaa6d777"
+  },
+  {
+    "caseId": "S027",
+    "runId": "S027-r1",
+    "replicate": 1,
+    "dimension": "Q1",
+    "level": 0,
+    "reason": "Lesson错误宣称所有被4整除即闰年且可忽略100/400条件，致1900年误为29天，与source规则及1900反例矛盾，实质改变核心规则解释与实例核对目标。非局部缺陷故非1，证据可见故非U。",
+    "inputHash": "59d3d29d4e4e800194fa5af8d2cae5431ba5a21f16963895cc1ac93cf7bcd171"
+  },
+  {
+    "caseId": "S028",
+    "runId": "S028-r1",
+    "replicate": 1,
+    "dimension": "Q2",
+    "level": 0,
+    "reason": "教学文本断言第一人称总是作者本人且必知所有人物思想，直接矛盾来源与核心目标（区分叙述者/作者、解释认知限制），核心用途被实质推翻。次要目标虽实现但不改实质缺陷，故0分。",
+    "inputHash": "766c9311b6881d83db4de13d7e2f6b5967d681fd6c111106719099e5f2da14e4"
+  },
+  {
+    "caseId": "S029",
+    "runId": "S029-r1",
+    "replicate": 1,
+    "dimension": "Q4",
+    "level": 1,
+    "reason": "题干可答，作者私有键15正确无泄露；但题干仅求总数未要求解释，而desiredDepth为working_fluency需执行并解释，仅测应用未测解释致区分度弱，属局部缺陷。",
+    "inputHash": "0e538656fadd8e1d8b317871399f38ff0a36fae3d3ffdce5c663324901d46171"
+  },
+  {
+    "caseId": "S030",
+    "runId": "S030-r1",
+    "replicate": 1,
+    "dimension": "Q3",
+    "level": 1,
+    "reason": "artifact正确指出两句范围差异，但未展示修饰语位置改变范围的推理连接，缺少why/how解释，属局部缺陷无错误方法。",
+    "inputHash": "c8dded0d55bca6826d7842c1b837fdd025ccec4fa52828ec0c76c8298b63c0ff"
+  },
+  {
+    "caseId": "S031",
+    "runId": "S031-r1",
+    "replicate": 1,
+    "dimension": "Q6",
+    "level": 0,
+    "reason": "交付物诊断臆造学习者厌学状态，并教导'代词永远指向最先出现者'错误规则，与source歧义规则矛盾，未提供针对未经支持判断的修复，核心用途失败。",
+    "inputHash": "c84ced4f6c0c9e84b4c840980158c0ffbddfd7531c87b037851231b24ceb944c"
+  },
+  {
+    "caseId": "S032",
+    "runId": "S032-r1",
+    "replicate": 1,
+    "dimension": "Q6",
+    "level": 1,
+    "reason": "交付物指出分数加法错误并建议复习通分，方向相关，但未具体诊断推理缺口（如误加分子分母），也未提供具体下一检验题，仅泛泛建议多练习，符合Q6的1级（相关但泛泛，缺具体内容）。",
+    "inputHash": "8b9eff0da9c3907af22433e60ecaef06441e574dd29c086a1f60d4edc36fc7fc"
+  },
+  {
+    "caseId": "S033",
+    "runId": "S033-r1",
+    "replicate": 1,
+    "dimension": "Q3",
+    "level": 0,
+    "reason": "lesson断言B齿多三倍故A转一圈B转三圈且同向，与source正确齿数反比且反向规则矛盾，教授错误因果与方向机制，核心解释实质失效。",
+    "inputHash": "76efd061ae2e2020fbcc53f8c0e086df6d8fc930b9407ad4ad5cb53bd4f268d6"
+  },
+  {
+    "caseId": "S034",
+    "runId": "S034-r1",
+    "replicate": 1,
+    "dimension": "Q1",
+    "level": 0,
+    "reason": "lesson称KiB与kB均1000字节且KiB压缩文件，但source明确KiB=1024且换算不涉及压缩率。错误定义与虚假因果直接破坏核对单位换算及归属的核心目标，属实质缺陷，故评0。",
+    "inputHash": "a3217664d87fa752077f5aa02696e6b23ba0ea35646fcc8eb59deec75fd05ea0"
+  },
+  {
+    "caseId": "S035",
+    "runId": "S035-r1",
+    "replicate": 1,
+    "dimension": "Q5",
+    "level": 0,
+    "reason": "产品将空白答案误判为满足写出{1,2,3}的必需要求并授予信用，虚假接受空答，核心评分结论错误，应拒却授。",
+    "inputHash": "0aff53bd2965e8908f4016561ec06afab2638007e7e10ec8a9c087fbadc5721d"
+  },
+  {
+    "caseId": "S036",
+    "runId": "S036-r1",
+    "replicate": 1,
+    "dimension": "Q1",
+    "level": 0,
+    "reason": "artifact声称所有能被4整除即闰年且可忽略100/400条件，错判1900年二月29天；source明确世纪年须被400整除且1900为平年例。该错误直接推翻核心规则解释与实例核对目标，属实质缺陷，故0分。",
+    "inputHash": "783024be9af0474f6fa61dae79f6c86ddebc5a9513a0fc50cb017efee4b2b5d6"
+  },
+  {
+    "caseId": "S037",
+    "runId": "S037-r1",
+    "replicate": 1,
+    "dimension": "Q6",
+    "level": 1,
+    "reason": "交付物要求针对答案中'先出现即断定'的未经支持唯一指代判断给出修复。artifact仅泛泛提醒注意代词、理解上下文、写清楚，未识别原判断错误依赖'先出现'忽视歧义规则，也未提供具体下一步检查。建议相关但通用，核心用途成立但有局部缺陷，符合Q6的1级。",
+    "inputHash": "926c49175d2ddad13d8010d50c621bbf575cda1f8aae0110306f6bd339cc53ba"
+  },
+  {
+    "caseId": "S038",
+    "runId": "S038-r1",
+    "replicate": 1,
+    "dimension": "Q3",
+    "level": 0,
+    "reason": "lesson误将回声总时0.6秒当单程，称无需返回算得204米，违背source明确总时含往返且行程两倍墙距的前提，教授错误算法，核心教学目标失效。",
+    "inputHash": "4f8bf2e279b00b6605cc4c25d49557806e6e5263926605a23efd22fe788bb46a"
+  },
+  {
+    "caseId": "S039",
+    "runId": "S039-r1",
+    "replicate": 1,
+    "dimension": "Q5",
+    "level": 0,
+    "reason": "评分器误判必要标准c2 not_met，要求学生用180-48-67逐项写法，但答案180°-(48°+67°)已用内角和180扣除两角，满足c2。错误拒绝致学分withheld而非应授granted，实质缺陷。",
+    "inputHash": "7052392b7b2135a6406da6d13ce3ba3e3b6b693e70edad30cd2986b6730ba9b1"
+  },
+  {
+    "caseId": "S040",
+    "runId": "S040-r1",
+    "replicate": 1,
+    "dimension": "Q1",
+    "level": "U",
+    "reason": "门禁日志未提供且声明不可访问，访客数主张无独立可验证证据；无实质缺陷确立，评估者无法决定真伪，保留U。",
+    "inputHash": "2b830ed889259e32900dc8d677b25dce967d58c314fe6f9d1aff7a92285b843b"
+  },
+  {
+    "caseId": "S041",
+    "runId": "S041-r1",
+    "replicate": 1,
+    "dimension": "Q5",
+    "level": 0,
+    "reason": "产品误判required标准c2为not_met，学生'6本身不取'等价终点排除，致withheld错误，应granted，实质评分缺陷。",
+    "inputHash": "39e556a797ad2f3bf2cb2dd028f428c949b9bb388f12cd24bf8a5736e336932b"
+  },
+  {
+    "caseId": "S042",
+    "runId": "S042-r1",
+    "replicate": 1,
+    "dimension": "Q5",
+    "level": 2,
+    "reason": "独立解题得乙地周二21:00且甲到乙减5小时跨日。学生答案含周二晚九点及往回拨五小时跨回周二，满足c1,c2；未列表格c3 not_met正确。产品判met/met/not_met并授分，反馈准确，评分完全正确。",
+    "inputHash": "8752af3ce212bf64a600eece8573d9c468362d90f8c3d7992a3f48d20d7d5eb8"
+  },
+  {
+    "caseId": "S043",
+    "runId": "S043-r1",
+    "replicate": 1,
+    "dimension": "Q1",
+    "level": 0,
+    "reason": "产物错误称KiB与kB均1000字节，违来源KiB=1024，破坏换算归属目标；推得3072字节=3 KiB前提及计算均错（按千计3.072≠3）；虚假称KiB压缩文件，违来源不涉压缩。实质缺陷改核心用途。",
+    "inputHash": "80ede35b042683460f6a22381aed210616a55f4c80ecc902ccd291a2d0dfb50b"
+  },
+  {
+    "caseId": "S044",
+    "runId": "S044-r1",
+    "replicate": 1,
+    "dimension": "Q2",
+    "level": 0,
+    "reason": "产物断言复制删源、移动留源，与源规则及核心目标直接矛盾，教授错误文件系统模型，击败声明教学用途；次要目标正确但无法挽回核心。",
+    "inputHash": "fa9665076698b26104884a6329805904e9695ce04192ec9290b68d1a81c950d1"
+  },
+  {
+    "caseId": "S045",
+    "runId": "S045-r1",
+    "replicate": 1,
+    "dimension": "Q4",
+    "level": 0,
+    "reason": "题目强制唯一终高且禁言信息不足，与来源规则导致的欠定矛盾；作者私有键误称终高3米错误；无提前曝光；任务拒绝正确欠定回答致无效，核心用途毁坏。",
+    "inputHash": "a16375c7423e7f5da50ef3d9feaafbe35b153b3f2986ec16ffad8fd364be0ed2"
+  },
+  {
+    "caseId": "S046",
+    "runId": "S046-r1",
+    "replicate": 1,
+    "dimension": "Q2",
+    "level": 0,
+    "reason": "课件断言'一袋无论多重都只含糖6克'矛盾源整袋18克且否定换算；'每份与每100克可以直接当成相同基准'矛盾区分基准核心目标。两核心目标被实质矛盾，次要目标虽提及但不足以挽救，声明用途失败。",
+    "inputHash": "1e545cf9162dd5f1e0b9e08f3d0d6acd6c316a29f2ffd5e6f559f067bb7ae183"
+  },
+  {
+    "caseId": "S047",
+    "runId": "S047-r1",
+    "replicate": 1,
+    "dimension": "Q4",
+    "level": 2,
+    "reason": "题目有效要求学生应用规则计算5*4/2并解释除以2原因，作者键正确未泄露，达到working_fluency深度。",
+    "inputHash": "43f0861e7c9a26a90f9806c7055b69b5e4df62f04b986010249fb426721a54c1"
+  },
+  {
+    "caseId": "S048",
+    "runId": "S048-r1",
+    "replicate": 1,
+    "dimension": "Q3",
+    "level": 2,
+    "reason": "artifact基于source规则清晰解释两句因修饰语位置不同导致范围差异：先筛选子集vs先进入再追加属性，连接前提与结论，无缺陷。",
+    "inputHash": "30af79fad659d6a984580eeb7c2d39b4693fd0b9f4019978c25f5e323407a109"
+  },
+  {
+    "caseId": "S049",
+    "runId": "S049-r1",
+    "replicate": 1,
+    "dimension": "Q6",
+    "level": 0,
+    "reason": "交付修复断言分子分母分别相加是规则并令背诵2/5答案证掌握，直接教错方法且将复述当掌握，命中Q6=0标准，核心修复目标失效。",
+    "inputHash": "433e422bee6c216f290495e0ec72046443540729addab7bdb04e058c524e00e5"
+  },
+  {
+    "caseId": "S050",
+    "runId": "S050-r1",
+    "replicate": 1,
+    "dimension": "Q5",
+    "level": "U",
+    "reason": "view中无answer字段，authorityBoundaries确认学习者答案完全未提供且不可恢复。缺学生原始作答这一关键证据，无法核对评分器对必需要求{1,2,3}的接受及授分准确性，故不可评。",
+    "inputHash": "54d636409177a677fe99b629f4f2c513839b088d179166b57b7f11568d75af3a"
+  },
+  {
+    "caseId": "S051",
+    "runId": "S051-r1",
+    "replicate": 1,
+    "dimension": "Q4",
+    "level": 1,
+    "reason": "题目直接抄写XOR条件，作者键正确未泄露；但声明深度working_fluency需执行解释，纯抄写仅检索判别力弱，属局部缺陷不改可答性。",
+    "inputHash": "22c01608811e3f079a1dde5d8c3003ca0605e7881712a57620ed430076f33d79"
+  },
+  {
+    "caseId": "S052",
+    "runId": "S052-r1",
+    "replicate": 1,
+    "dimension": "Q6",
+    "level": 2,
+    "reason": "诊断指出仅见次序错误且不确定比较首末字母，以cab/bac问首不同字母，并以abc/acb要求说明首位同看次位，提供具体可操作修复与迁移检查，符合标准。",
+    "inputHash": "fb46738d1a087fb47ca2a668cb1eb07940dd29cd6bc5cdf4d14dcad476bb4bd6"
+  },
+  {
+    "caseId": "S053",
+    "runId": "S053-r1",
+    "replicate": 1,
+    "dimension": "Q6",
+    "level": 0,
+    "reason": "产物诊断虚构学习者未复习且讨厌数学无证据；教授错误换算1米=10厘米（源为100厘米）；声称抄结论即独立掌握。三者触Q6零分标准，实质破坏基于证据的单位换算帮助目标。",
+    "inputHash": "bc06dd7f4c906f4fa07e821856afcff8259caca5e21650bdbc02ce8ce965a110"
+  },
+  {
+    "caseId": "S054",
+    "runId": "S054-r1",
+    "replicate": 1,
+    "dimension": "Q6",
+    "level": 2,
+    "reason": "诊断准确指出分母直接相加致单位未统一，给出六分之一共同单位正确示范，并提供具体可用的下一检查题1/4+1/6及要求说明共同单位与等值改写，有效测试迁移。",
+    "inputHash": "56aaa1decaa3a7aba7ea0b64ed46748eb795f555cab1bcf3d41d53b594a64982"
+  },
+  {
+    "caseId": "S055",
+    "runId": "S055-r1",
+    "replicate": 1,
+    "dimension": "Q2",
+    "level": 0,
+    "reason": "lesson断言'不用看箭头B可到A'矛盾有向边方向规则，'入度和出度同数'矛盾定义与图示，两核心目标被直接contradicted，摧毁按有向边检查及区分入出度核心用途；次要标签解释正确但无法补救。",
+    "inputHash": "b0fffd3b978837067fd18d73806e619c520d0d3f427b670679a5b8dc519a21ab"
+  },
+  {
+    "caseId": "S056",
+    "runId": "S056-r1",
+    "replicate": 1,
+    "dimension": "Q6",
+    "level": 1,
+    "reason": "交付修复仅泛泛建议复习配平守恒系数和多做题，未具体纠正改变下标错误（如H2O改H2O2），也未给独立再检验题，符合Q6的1级局部缺陷标准。",
+    "inputHash": "ad44ac8d69da6110908f00388a7bb96ca086ae0a68e4eea20e6bd2e9d619e85b"
+  },
+  {
+    "caseId": "S057",
+    "runId": "S057-r1",
+    "replicate": 1,
+    "dimension": "Q5",
+    "level": 0,
+    "reason": "学生答案明确用内角总和180°扣(48°+67°)得65°，满足required c1,c2；产品误判c2 not_met并withheld，错误拒绝必要含义且学分冲突，实质缺陷。",
+    "inputHash": "17652f528eed4ebd4e2bb2ccfb6b26c5c85d6d81789c4d8ccdc560b6b80d931b"
+  },
+  {
+    "caseId": "S058",
+    "runId": "S058-r1",
+    "replicate": 1,
+    "dimension": "Q4",
+    "level": 2,
+    "reason": "题目给定两步异或计算并说明，来源提供规则，独立解题与私有作者答案均得最终输出1。任务有效引发working_fluency层应用与解释，无提前泄题，判别力充足，符合Q4完整标准。",
+    "inputHash": "6e5446b6ae72b258808a28d3602f2a82bbfa38582942f5170f978028872a7ab8"
+  },
+  {
+    "caseId": "S059",
+    "runId": "S059-r1",
+    "replicate": 1,
+    "dimension": "Q2",
+    "level": 1,
+    "reason": "核心目标（每份换算整袋含糖18克、区分每份与每100克基准）在artifact有准确表述；次要目标'说明日期标识的批次作用'在artifact完全缺失，但次要省略不影响核心用途，符合1级。",
+    "inputHash": "88ea3781903ab31c180772f6adf6264f83e001bd4bf4c242dfbf846ebcd94f67"
+  },
+  {
+    "caseId": "S060",
+    "runId": "S060-r1",
+    "replicate": 1,
+    "dimension": "Q2",
+    "level": 0,
+    "reason": "artifact断言第一人称总是作者本人且一定知道所有人物思想，直接矛盾核心目标区分叙述者/作者及解释第一人称限制（source明确要求限制）。错误教导改变核心学习用途，次要目标引用标记无法补救。故评0。",
+    "inputHash": "ba24fa73cc61ae9dff6c052f384a2e0bd9068165ebf647ba8d1dc8c0d7834cd9"
+  },
+  {
+    "caseId": "S061",
+    "runId": "S061-r1",
+    "replicate": 1,
+    "dimension": "Q2",
+    "level": 0,
+    "reason": "Artifact直接矛盾两个核心目标：声称不用看箭头且B可到A，违背有向边方向规则；断言入度出度同数，违背定义与计算目标。次要目标标签用途解释可用，但核心用途被击败。",
+    "inputHash": "3bef498c3e9bb9c2a4dfa25d2839391dddfdabc90d2d981ea0266440592e591b"
+  },
+  {
+    "caseId": "S062",
+    "runId": "S062-r1",
+    "replicate": 1,
+    "dimension": "Q2",
+    "level": 0,
+    "reason": "交付物仅含欢迎语，未解释un-意义也未在给定词应用，核心目标完全缺失，声明教学目的未达成。",
+    "inputHash": "f8b3e43a96ef5b2c9e91eb970f17d76caece84aa8a3ba619b3692e18c042620f"
+  },
+  {
+    "caseId": "S063",
+    "runId": "S063-r1",
+    "replicate": 1,
+    "dimension": "Q1",
+    "level": 2,
+    "reason": "产物对2000（闰）与1900（平）的判断严格依据源中公历规则，世纪年须验400的总结正确，未超范围讨论其他历法，无事实或归属缺陷。",
+    "inputHash": "cbb9b50ed7ed2b2cff17589c5d60892929cfbcaa06c7e612ea470d1cdd82c97c"
+  },
+  {
+    "caseId": "S064",
+    "runId": "S064-r1",
+    "replicate": 1,
+    "dimension": "Q5",
+    "level": 0,
+    "reason": "产品误判必需标准c1（互补序列TACG）未满足，反馈称TACG错误，但按给定规则ATGC逐位互补正是TACG。导致应授学分granted被错误拒绝withheld，评分核心结论错误。",
+    "inputHash": "f6249250842cc22f1b843008e2ddcd743c9aa5f373db0f19623ca15029e4c5f4"
+  },
+  {
+    "caseId": "S065",
+    "runId": "S065-r1",
+    "replicate": 1,
+    "dimension": "Q4",
+    "level": 0,
+    "reason": "题目强制XOR(1,1)输出必为1并解释，但source规则两1出0；作者键错答为1。任务与明示前提矛盾，key错误且无效，核心测试失效。",
+    "inputHash": "1972866ef6eed866b59653b2fcde97c020941c33fc2c0fee62df31d69cd60dc9"
+  },
+  {
+    "caseId": "S066",
+    "runId": "S066-r1",
+    "replicate": 1,
+    "dimension": "Q5",
+    "level": 1,
+    "reason": "重解任务确认答案TACG及A配T、G配C满足必需c1,c2；产品判met且granted正确。但可选c3小标题实际未用，产品误判met并反馈称使用，属局部缺陷不影响核心评分。",
+    "inputHash": "86648cafacdb867b83dfbaa2d819f7231b9688bf9681309dc99802cf0b9a79a2"
+  },
+  {
+    "caseId": "S067",
+    "runId": "S067-r1",
+    "replicate": 1,
+    "dimension": "Q3",
+    "level": 0,
+    "reason": "产物声称B齿多三倍故A转一圈B转三圈且同向转，但源资料证明外齿轮啮合齿数反比（B转1/3圈）且转向相反。错误转数与方向直接教授无效方法，实质破坏解释齿数决定转数和方向的核心目标。",
+    "inputHash": "0cefc649a3c8231fb2e3555f213aa803a59369c4aca5f9f997a3dc2379cc4d03"
+  },
+  {
+    "caseId": "S068",
+    "runId": "S068-r1",
+    "replicate": 1,
+    "dimension": "Q4",
+    "level": 1,
+    "reason": "题干仅要求抄出状态，只测检索；desiredDepth为working_fluency需执行解释，歧视力弱但核心识别成立，局部缺陷。",
+    "inputHash": "191c04c520221da72f63605288f849a786242801fa5e9efc6570120a623db0f2"
+  },
+  {
+    "caseId": "S069",
+    "runId": "S069-r1",
+    "replicate": 1,
+    "dimension": "Q5",
+    "level": 1,
+    "reason": "重解确认甲周三02:00减5h为乙周二21:00。学生答案满足c1,c2必要标准，产品授分granted正确；但误判可选c3为met且反馈谎称有表格，属局部缺陷，核心评分用途成立。",
+    "inputHash": "0fee3af022c357ccc102db9b556c3ad1b3a59ef2ce4466d131d6da729c015627"
+  },
+  {
+    "caseId": "S070",
+    "runId": "S070-r1",
+    "replicate": 1,
+    "dimension": "Q4",
+    "level": 0,
+    "reason": "题目强制XOR(1,1)输出必为1，与source明示规则（两1出0）矛盾，响应要求不兼容；作者私有答案同样错称输出1，提供错误评分标准。无提前曝光。核心测试意图被破坏，属实质缺陷。",
+    "inputHash": "71a22830a11df4b8314147e2553f4885cab3b2794a4ab082bd95278eb70fc930"
+  },
+  {
+    "caseId": "S071",
+    "runId": "S071-r1",
+    "replicate": 1,
+    "dimension": "Q2",
+    "level": 0,
+    "reason": "Lesson直接矛盾source规则：声称复制后删原文件（实保留）、移动后原文件仍保留（实消失），两个核心目标被contradicted，教导反向错误模型，声明目的失败。次要目标正确不补救。",
+    "inputHash": "df0655800aecb41b80df448c207425aaf7dce36a676298e3f276db69e542dbc7"
+  },
+  {
+    "caseId": "S072",
+    "runId": "S072-r1",
+    "replicate": 1,
+    "dimension": "Q6",
+    "level": 2,
+    "reason": "修复诊断改下标错误，保留H2O改系数并计数，且给出N2+H2→NH3具体下一检查，符合Q6完整标准。",
+    "inputHash": "b1ab3f5427b57ec5a40963ab398fb71692db192267ea6d9e0628ea3ab79ca520"
+  },
+  {
+    "caseId": "S073",
+    "runId": "S073-r1",
+    "replicate": 1,
+    "dimension": "Q1",
+    "level": 2,
+    "reason": "课时文本准确表述频率对应音调、振幅改声强不改音调，且指出无响度规则，与来源一致，无事实或归属缺陷。",
+    "inputHash": "658e6b515f2d0f942a49b670189097e50771eed5453084f3a1821b0396dfee51"
+  },
+  {
+    "caseId": "S074",
+    "runId": "S074-r1",
+    "replicate": 1,
+    "dimension": "Q6",
+    "level": 2,
+    "reason": "交付物准确指出长度3时i<=3访问不存在下标3，建议i<3并阐明限制下标而非长度，且给出长度4时列出下标与次数的具体新检查，可检验同一边界推理，满足完整标准。",
+    "inputHash": "07af1a797051c8455083f5676f83aaae1e80880e5f6fe1fbcebbff2728e538a7"
+  },
+  {
+    "caseId": "S075",
+    "runId": "S075-r1",
+    "replicate": 1,
+    "dimension": "Q6",
+    "level": 0,
+    "reason": "交付物肯定错误加法并教导分子分母分别相加为规则，与源规则矛盾；声称背诵2/5答案即证明掌握，属复述答案冒充独立掌握。完全未提供修复或新检验，实质违背目标。",
+    "inputHash": "7bd957fa58258cc76887b5998a9477c9a3124dc6392f43a18801440b43adf446"
+  },
+  {
+    "caseId": "S076",
+    "runId": "S076-r1",
+    "replicate": 1,
+    "dimension": "Q5",
+    "level": 0,
+    "reason": "产品将必需标准c2误判not_met，强求原句“stop不包含”而学生“6本身不取”已等价表达终点6不包含，导致应授学分granted被错误withheld，评分器实质错误。",
+    "inputHash": "7260cfe0c6986292dbc24c6562829bf91834298c8a481d5b9803107415918e3f"
+  },
+  {
+    "caseId": "S077",
+    "runId": "S077-r1",
+    "replicate": 1,
+    "dimension": "Q3",
+    "level": 0,
+    "reason": "artifact误将回声总时0.6秒当单程，算墙距340×0.6=204米且称不需返回，违背source明确定义总时含往返、行程为墙距两倍的前提，教导无效方法，实质破坏goal要求的正确推导教学。",
+    "inputHash": "9f3ddcf87e67df067ef325410a3331d7d141bac0af1d2008a68e441b4f24375a"
+  },
+  {
+    "caseId": "S078",
+    "runId": "S078-r1",
+    "replicate": 1,
+    "dimension": "Q2",
+    "level": 1,
+    "reason": "核心两目标均准确演示：用同方向边判A→C→B可行与B→A不可行，区分入度出度并算A、B值。次要目标'解释边标签用途'在课文中完全未提及，核心用途成立，故评1。",
+    "inputHash": "35e2cebff6d8560d462945c74de6ad7f00f936eb55d88f69e2ec6d41e5a89a44"
+  },
+  {
+    "caseId": "S079",
+    "runId": "S079-r1",
+    "replicate": 1,
+    "dimension": "Q4",
+    "level": 0,
+    "reason": "题设强制从初始未激活执行入场并说明已有效，违背source状态规则；作者私有答案错误声称未激活可直接入场，拒绝正确解，测试实质失效无法评估目标技能。",
+    "inputHash": "d23d19fbbd4d16ccae4cf2d27875d504d826c54ccf802e90475b3c45dbf4e343"
+  },
+  {
+    "caseId": "S080",
+    "runId": "S080-r1",
+    "replicate": 1,
+    "dimension": "Q3",
+    "level": 1,
+    "reason": "交付物需解释由回声时间得墙距。source给定声速340、时间0.6s、行程两倍墙距；artifact仅断言墙距102米且答案正确，未展示340×0.6÷2等关键操作或理由，缺失解释连接，但数值正确未教错法，属局部缺陷。",
+    "inputHash": "b038c0de26d0d68438e4d35591e28753560188c99b69ee60c168576c5d58013a"
+  },
+  {
+    "caseId": "S081",
+    "runId": "S081-r1",
+    "replicate": 1,
+    "dimension": "Q6",
+    "level": 0,
+    "reason": "交付物诊断臆造学习者不认真讨厌语言课的状态，并教导错误规则“代词永远指向第一个出现的人”，违背source歧义规则，符合Q6的0分标准，核心修复用途实质破坏。",
+    "inputHash": "4c0bada8a90aa08843332a4c5401d4e0ed5c00aadf7168ff42d27f3594fd2ff3"
+  },
+  {
+    "caseId": "S082",
+    "runId": "S082-r1",
+    "replicate": 1,
+    "dimension": "Q3",
+    "level": 2,
+    "reason": "artifact用340×0.6得总路程204米，并基于同位置与往返路径说明除以2得墙距102米，正确链接前提、操作与结论，无缺陷。",
+    "inputHash": "2a07dd5f47ab7f806ae3b2b40f4592a0f0f7fb25a3ee3756a2f0b54c6c254d42"
+  },
+  {
+    "caseId": "S083",
+    "runId": "S083-r1",
+    "replicate": 1,
+    "dimension": "Q4",
+    "level": 1,
+    "reason": "题目仅要求抄写公式，作者键n(n-1)/2正确无泄露；但声明深度working_fluency需执行解释，纯抄写属检索判别弱，局部缺陷降为1。",
+    "inputHash": "fdcb311d29050730c074651c45b9599a8a7dc04222e24a103a2d5bad8d536640"
+  },
+  {
+    "caseId": "S084",
+    "runId": "S084-r1",
+    "replicate": 1,
+    "dimension": "Q1",
+    "level": 1,
+    "reason": "工件正确算得3072字节=3 KiB=3.072 kB并说明表示不改变内容，但误称资料第一条示例为图片，来源明确第一条为文本。核心换算与结论正确，归属错属局部缺陷，修正后核心用途不变。",
+    "inputHash": "b7b8afd9b8105cd16f41249dbedd61e4d6cc92a74d28b5d6ad5fd9764aa46221"
+  },
+  {
+    "caseId": "S085",
+    "runId": "S085-r1",
+    "replicate": 1,
+    "dimension": "Q4",
+    "level": 0,
+    "reason": "题干强制从初始未激活直接入场已有效并可成功，与source规则矛盾；作者私有答案错误声称未激活可直接入场，禁用正确否定，测试无效，核心评估用途落空。",
+    "inputHash": "d9ee9ec5e64d6056663a3aca7a61d676906f924e5e97042acad303a3a73dde38"
+  },
+  {
+    "caseId": "S086",
+    "runId": "S086-r1",
+    "replicate": 1,
+    "dimension": "Q3",
+    "level": 2,
+    "reason": "解释从齿数规则出发，展示A转一圈过12齿、B同步过12齿，以B总齿36为分母算得1/3圈，并说明外齿推动致转向相反，连接前提与结论，无缺陷。",
+    "inputHash": "289b0f6d9ee9b43a13ca5ad01a511011e5e92783b0d18462dedc9d94afcdd6b4"
+  },
+  {
+    "caseId": "S087",
+    "runId": "S087-r1",
+    "replicate": 1,
+    "dimension": "Q6",
+    "level": 1,
+    "reason": "交付物指出循环边界错并提示检查小于/小于等于，诊断相关；但仅泛化建议多练数组，未提供检验同一推理的具体下一检查，符合Q6的1级局部缺陷，核心诊断成立。",
+    "inputHash": "87713e42d9e8b380a785cb103466727bdccbbf580d447fe1b085b2772474fb37"
+  },
+  {
+    "caseId": "S088",
+    "runId": "S088-r1",
+    "replicate": 1,
+    "dimension": "Q5",
+    "level": 2,
+    "reason": "学生答案明确列出b,d,f及下标1,3,5，并说明6不取；评分器正确判定c1,c2 met、c3 not_met，授分granted，反馈准确，与独立重解一致。",
+    "inputHash": "856aff8a10098140596ec3860af8792226ba3d0c000943945a9a01f231e79c57"
+  },
+  {
+    "caseId": "S089",
+    "runId": "S089-r1",
+    "replicate": 1,
+    "dimension": "Q6",
+    "level": 0,
+    "reason": "交付修复材料声称改变下标是正确配平方法并肯定改水为H2O2，直接违背源规则只能改系数及目标要求纠正下标错误，教导错误方法致核心修复用途失败。",
+    "inputHash": "a6607285121ae8ef366846a4157864217c61b414c2c1bc7aa3edd8ad335e03e7"
+  },
+  {
+    "caseId": "S090",
+    "runId": "S090-r1",
+    "replicate": 1,
+    "dimension": "Q1",
+    "level": 0,
+    "reason": "Artifact错误断言振幅翻倍使频率翻倍且音调升高，并误定义频率为传播距离，直接违背source明示前提，摧毁核对概念区别的核心教学目标，属实质缺陷。",
+    "inputHash": "80c96456a3ffcc00c7862e97b9670c6f3b7868c303c0fe7509ca1cf5e930c233"
+  },
+  {
+    "caseId": "S091",
+    "runId": "S091-r1",
+    "replicate": 1,
+    "dimension": "Q3",
+    "level": 0,
+    "reason": "artifact称指数负号等于结果负号并算2^(-3)=-8，且称0有倒数，直接违背source负指数为倒数而非负数及a=0无定义的规定，目标要求解释负指数含义，中心解释教授错误方法，实质破坏核心用途。",
+    "inputHash": "56d95bde6d4357f78e09765bc4fa5586cde9449a3403d01fd83fca0c8c8ccbf7"
+  },
+  {
+    "caseId": "S092",
+    "runId": "S092-r1",
+    "replicate": 1,
+    "dimension": "Q5",
+    "level": 2,
+    "reason": "重解任务确认学生答案给出65度并利用内角和扣除两角，满足c1,c2必需；c3可选未满足判not_met正确。产品授分granted与应得一致，评分准确无缺陷。",
+    "inputHash": "3407530097aa1def2971821b56534889d20975e052eb54fad8fb75929cc71413"
+  },
+  {
+    "caseId": "S093",
+    "runId": "S093-r1",
+    "replicate": 1,
+    "dimension": "Q3",
+    "level": 0,
+    "reason": "artifact断言两句完全相同且第一句证明所有学生戴红帽进入，与source明示两句意义不同且第一句仅限进入者红帽矛盾。中心解释错误，未解释修饰语位置改变范围，反而教错误等价，实质破坏核心教学目标。",
+    "inputHash": "131ea21a1a4842986c74b3a10c5c1d1f1253712c6e49ebb09fdc741c653c03d8"
+  },
+  {
+    "caseId": "S094",
+    "runId": "S094-r1",
+    "replicate": 1,
+    "dimension": "Q2",
+    "level": 2,
+    "reason": "课程文本准确覆盖三目标：叙述者非作者、第一人称知感与限知规则、引用归属标记示例，提供可用操作规则，达working_fluency深度。",
+    "inputHash": "0fff78f2dfe87053a0b10791591f2b2b31d840ccdb68375c1ee7888cca74f925"
+  },
+  {
+    "caseId": "S095",
+    "runId": "S095-r1",
+    "replicate": 1,
+    "dimension": "Q2",
+    "level": 2,
+    "reason": "Lesson演示了按有向边检查路线可行性（A→C→B可行，B→A不可行），计算A、B入度出度并区分概念，解释边标签用途。所有声明目标在working_fluency深度准确覆盖，无缺陷。",
+    "inputHash": "ab1b54b302b5c52b3fa64f54c281d4657bb08c2e9bc48ecb0f8f81ceae2a7e91"
+  },
+  {
+    "caseId": "S096",
+    "runId": "S096-r1",
+    "replicate": 1,
+    "dimension": "Q6",
+    "level": 0,
+    "reason": "交付修复断言长度3数组有四个元素并鼓励i<=3，直接传授与源规则矛盾的错误方法，未定位边界错误也未提供有效新检查，核心用途失败。",
+    "inputHash": "22a8c5a897d647a599af6f508b9bd3e12b1fb37aa7b9ac4c3f12ef21ee9fdd83"
+  },
+  {
+    "caseId": "S097",
+    "runId": "S097-r1",
+    "replicate": 1,
+    "dimension": "Q2",
+    "level": 1,
+    "reason": "核心两目标在lesson中有准确可用规则，但次要目标'说明引用别人话语时的归属标记'完全未处理，属局部省略，核心用途成立，评1级。",
+    "inputHash": "9e1b8f2d56d9299b3011bf1253be125b625f1a64529c77cf07d2ea2af4b65e91"
+  },
+  {
+    "caseId": "S098",
+    "runId": "S098-r1",
+    "replicate": 1,
+    "dimension": "Q2",
+    "level": 2,
+    "reason": "所有声明目标（含次要）均得到准确可操作处理：换算整袋糖量、区分每份与每100克基准、说明日期辨批次作用，深度满足working_fluency。",
+    "inputHash": "908df6a1efdb79bce2ee12db07e7950d7dfa8a54a23b150110301db856424ca1"
+  },
+  {
+    "caseId": "S099",
+    "runId": "S099-r1",
+    "replicate": 1,
+    "dimension": "Q6",
+    "level": 0,
+    "reason": "交付修复材料宣称改变下标是配平方法并肯定H2O2，直接违背source不可改下标规则，且未纠正改下标错误，反而教授错误方法，核心修复用途失效。",
+    "inputHash": "a0850fddcef8c631a5983acc2c178b6cf64a1096734eee5600a1cd515fde998b"
+  },
+  {
+    "caseId": "S100",
+    "runId": "S100-r1",
+    "replicate": 1,
+    "dimension": "Q3",
+    "level": 0,
+    "reason": "产物仅循环声称23×10=230因为答案是230，未利用位值规则或任何操作连接前提与结论，中心解释循环无效，破坏解释23乘10为何为230的目标，符合Q3的0分标准。",
+    "inputHash": "10daad29283283d2fd8d14abbd5e78f5834fe8cda3f4b7da522f768f2d717c34"
+  },
+  {
+    "caseId": "S101",
+    "runId": "S101-r1",
+    "replicate": 1,
+    "dimension": "Q4",
+    "level": 2,
+    "reason": "题目有效要求展示欠定并举两组合，作者答案正确，无泄露，学生需依约束自构实例并说明，属应用，判别力足。",
+    "inputHash": "839d22b84636d481cafdb0545aa7cc2bf7435665147cd4231446419db7e816ad"
+  },
+  {
+    "caseId": "S102",
+    "runId": "S102-r1",
+    "replicate": 1,
+    "dimension": "Q5",
+    "level": 0,
+    "reason": "产品将必需标准c1误判not_met，因学生用'晚上九点'等价21:00已满足'乙地周二21:00'；错误拒绝致consequence错误withheld，与应授学分冲突，属实质缺陷。",
+    "inputHash": "b93db0ca7da6e7161c4b27b4bd61546225c201b8369420e7a4ea0151b1e0b6fb"
+  },
+  {
+    "caseId": "S078",
+    "runId": "S078-r2",
+    "replicate": 2,
+    "dimension": "Q2",
+    "level": 1,
+    "reason": "核心目标（按边检查路线、区分计算入出度）均有准确操作演示；但次要目标'解释边标签的用途'在产物中完全省略，属局部遗漏，核心用途成立。",
+    "inputHash": "35e2cebff6d8560d462945c74de6ad7f00f936eb55d88f69e2ec6d41e5a89a44"
+  },
+  {
+    "caseId": "S032",
+    "runId": "S032-r2",
+    "replicate": 2,
+    "dimension": "Q6",
+    "level": 1,
+    "reason": "交付物指出分数加法有错并建议复习通分，方向相关；但仅泛泛要求细心、多做练习，未具体点明分子分母分别相加的错误推理缺口，也未提供具体可操作的下一检查题或条件，符合Q6的1级（相关但泛泛，缺具体内容）。",
+    "inputHash": "8b9eff0da9c3907af22433e60ecaef06441e574dd29c086a1f60d4edc36fc7fc"
+  },
+  {
+    "caseId": "S066",
+    "runId": "S066-r2",
+    "replicate": 2,
+    "dimension": "Q5",
+    "level": 1,
+    "reason": "重解确认ATGC互补TACG，A配T、G配C。学生答案满足必需c1,c2，产品授分granted正确。但产品误判可选c3为met且反馈称使用小标题，属局部外围错误，不影响核心评分，故1级。",
+    "inputHash": "86648cafacdb867b83dfbaa2d819f7231b9688bf9681309dc99802cf0b9a79a2"
+  },
+  {
+    "caseId": "S012",
+    "runId": "S012-r2",
+    "replicate": 2,
+    "dimension": "Q3",
+    "level": 1,
+    "reason": "产物仅断言B转1/3圈且反向符合资料，未展示齿数规则到结果的推理连接，缺失解释齿数决定机制的操作用途，但结论正确，属局部缺陷。",
+    "inputHash": "c1eb68e9f051ef917d2af2c6c0beeec0d9751490347b166389dfb8708c546ae9"
+  },
+  {
+    "caseId": "S058",
+    "runId": "S058-r2",
+    "replicate": 2,
+    "dimension": "Q4",
+    "level": 2,
+    "reason": "任务要求两步异或计算并说明，作者私有答案正确未泄露，有效引发应用规则组合门输出的working_fluency技能，无缺陷。",
+    "inputHash": "6e5446b6ae72b258808a28d3602f2a82bbfa38582942f5170f978028872a7ab8"
+  },
+  {
+    "caseId": "S068",
+    "runId": "S068-r2",
+    "replicate": 2,
+    "dimension": "Q4",
+    "level": 1,
+    "reason": "题目有效且作者答案正确，但仅要求从资料抄写激活起终点状态，属检索任务，未达working_fluency声明的解释/应用深度，判别力弱，局部缺陷。",
+    "inputHash": "191c04c520221da72f63605288f849a786242801fa5e9efc6570120a623db0f2"
+  },
+  {
+    "caseId": "S011",
+    "runId": "S011-r2",
+    "replicate": 2,
+    "dimension": "Q1",
+    "level": 2,
+    "reason": "产物准确复述来源中条形磁铁的同名相斥、异名相吸及切断后每段仍具南北极的规则，与课堂给定模型一致，无事实或归属缺陷。",
+    "inputHash": "e4e73fdcc60bdaa79a10d6512f30928081a1983f0cce5d59eecb67ec87a5e139"
+  },
+  {
+    "caseId": "S084",
+    "runId": "S084-r2",
+    "replicate": 2,
+    "dimension": "Q1",
+    "level": 1,
+    "reason": "核心换算(3072B=3KiB=3.072kB)及表示不改内容正确，但artifact误称第一条示例为图片，source证其为文本文件，属可证归属缺陷，不影响核心换算机制，故local。",
+    "inputHash": "b7b8afd9b8105cd16f41249dbedd61e4d6cc92a74d28b5d6ad5fd9764aa46221"
+  },
+  {
+    "caseId": "S024",
+    "runId": "S024-r2",
+    "replicate": 2,
+    "dimension": "Q6",
+    "level": 2,
+    "reason": "修复应用规则指出原唯一指代判断错误，给出改名改写示例固定含义，并提供新句子要求列歧义并改写，构成具体可迁移的下一检查。",
+    "inputHash": "7ba74f3eeb001ab1e37f3e24117aa77d2d715a1d1de9955170754623eae0a8b1"
+  },
+  {
+    "caseId": "S094",
+    "runId": "S094-r2",
+    "replicate": 2,
+    "dimension": "Q2",
+    "level": 2,
+    "reason": "lesson明确区分叙述者与作者，解释第一人称可报告自身感受但不可全知他人隐秘想法，并给出引用归属的可操作写法，准确覆盖全部核心与次要目标，达到working_fluency深度，无缺陷。",
+    "inputHash": "0fff78f2dfe87053a0b10791591f2b2b31d840ccdb68375c1ee7888cca74f925"
+  },
+  {
+    "caseId": "S025",
+    "runId": "S025-r2",
+    "replicate": 2,
+    "dimension": "Q3",
+    "level": 2,
+    "reason": "artifact以a^0=1和除法规则展示1÷a^n=a^(0-n)=a^(-n)，链接前提与负指数为倒数的结论，举例2^(-3)=1/8而非-8区分负数，并给出a≠0限制，解释充分无缺陷。",
+    "inputHash": "3a99771b87e0f0d95d1f3b2fe1c15383dbb5286b6993b782a07311e861c03f36"
+  },
+  {
+    "caseId": "S088",
+    "runId": "S088-r2",
+    "replicate": 2,
+    "dimension": "Q5",
+    "level": 2,
+    "reason": "独立依源重解：L[1:6:2]取b,d,f下标1,3,5且终点6不含。学生答案完整满足c1,c2必需标准，c3可选未用项目符号正确判not_met。反馈准确，授分granted与应得一致。评分器全准。",
+    "inputHash": "856aff8a10098140596ec3860af8792226ba3d0c000943945a9a01f231e79c57"
+  },
+  {
+    "caseId": "S024",
+    "runId": "S024-r3",
+    "replicate": 3,
+    "dimension": "Q6",
+    "level": 2,
+    "reason": "交付物正确识别原答案虚构唯一指代的缺陷，依规则指出两对象皆可能，给改写示例，并提供换语境的具体下一检查题以测迁移，符合完整标准。",
+    "inputHash": "7ba74f3eeb001ab1e37f3e24117aa77d2d715a1d1de9955170754623eae0a8b1"
+  },
+  {
+    "caseId": "S011",
+    "runId": "S011-r3",
+    "replicate": 3,
+    "dimension": "Q1",
+    "level": 2,
+    "reason": "artifact陈述北极相斥、异名相吸及切断后仍具两极，与source所给理想磁铁模型规则完全一致，无事实或归属缺陷，范围契合核对磁极与切断解释的目标。",
+    "inputHash": "e4e73fdcc60bdaa79a10d6512f30928081a1983f0cce5d59eecb67ec87a5e139"
+  },
+  {
+    "caseId": "S025",
+    "runId": "S025-r3",
+    "replicate": 3,
+    "dimension": "Q3",
+    "level": 2,
+    "reason": "解释将1写为a^0并应用指数除法得a^(-n)=1÷a^n，展示运算连接与非零限制，举例区分负数，符合目标。",
+    "inputHash": "3a99771b87e0f0d95d1f3b2fe1c15383dbb5286b6993b782a07311e861c03f36"
+  },
+  {
+    "caseId": "S078",
+    "runId": "S078-r3",
+    "replicate": 3,
+    "dimension": "Q2",
+    "level": 1,
+    "reason": "核心目标按有向边检查路线及区分计算入出度均通过A/B示例准确演示；次要目标'解释边标签用途'在artifact中完全省略，但核心用途成立，故为局部缺陷1级。",
+    "inputHash": "35e2cebff6d8560d462945c74de6ad7f00f936eb55d88f69e2ec6d41e5a89a44"
+  },
+  {
+    "caseId": "S066",
+    "runId": "S066-r3",
+    "replicate": 3,
+    "dimension": "Q5",
+    "level": 1,
+    "reason": "重解任务得TACG及A-T/G-C正确；学生答案含序列与配对，必需c1c2产品判met正确，学分granted正确。可选c3未用小标题但产品误判met且反馈谎称使用，属局部可选错误，核心评分成立。",
+    "inputHash": "86648cafacdb867b83dfbaa2d819f7231b9688bf9681309dc99802cf0b9a79a2"
+  },
+  {
+    "caseId": "S058",
+    "runId": "S058-r3",
+    "replicate": 3,
+    "dimension": "Q4",
+    "level": 2,
+    "reason": "题目基于明示异或规则，要求计算XOR(1,1)及后续门并说明两步，有效抽取working_fluency层的应用与解释能力；作者答案正确且未预先披露，判别力充足，无缺陷。",
+    "inputHash": "6e5446b6ae72b258808a28d3602f2a82bbfa38582942f5170f978028872a7ab8"
+  },
+  {
+    "caseId": "S088",
+    "runId": "S088-r3",
+    "replicate": 3,
+    "dimension": "Q5",
+    "level": 2,
+    "reason": "重解确认L[1:6:2]取b,d,f下标1,3,5且终点6不包含；学生答案满足c1,c2必需标准，c3非必需未满足判定正确，反馈准确，授分granted合理。",
+    "inputHash": "856aff8a10098140596ec3860af8792226ba3d0c000943945a9a01f231e79c57"
+  },
+  {
+    "caseId": "S068",
+    "runId": "S068-r3",
+    "replicate": 3,
+    "dimension": "Q4",
+    "level": 1,
+    "reason": "题目仅要求抄写激活起终点，作者键正确未披露，但desiredDepth为working_fluency却仅测检索，判别力弱为局部缺陷，核心用途成立。",
+    "inputHash": "191c04c520221da72f63605288f849a786242801fa5e9efc6570120a623db0f2"
+  },
+  {
+    "caseId": "S084",
+    "runId": "S084-r3",
+    "replicate": 3,
+    "dimension": "Q1",
+    "level": 1,
+    "reason": "Artifact正确计算3072字节=3KiB=3.072kB并解释基数差异与表示无关内容，但错误归属资料第一条示例为图片，source明确第一条为文本文件。该归属错误属局部，修正后核心换算教学仍成立，故评1。",
+    "inputHash": "b7b8afd9b8105cd16f41249dbedd61e4d6cc92a74d28b5d6ad5fd9764aa46221"
+  },
+  {
+    "caseId": "S032",
+    "runId": "S032-r3",
+    "replicate": 3,
+    "dimension": "Q6",
+    "level": 1,
+    "reason": "交付物指出分数加法有错并建议复习通分，与错误相关但通用；未识别具体误加分子分母的推理缺口，且未提供具体下一步检验，符合Q6的1分标准。",
+    "inputHash": "8b9eff0da9c3907af22433e60ecaef06441e574dd29c086a1f60d4edc36fc7fc"
+  },
+  {
+    "caseId": "S012",
+    "runId": "S012-r3",
+    "replicate": 3,
+    "dimension": "Q3",
+    "level": 1,
+    "reason": "Artifact正确陈述B转1/3圈且反向，但仅称符合资料，未展示齿数到转数/方向的关键推导操作，缺失解释连接，未教错误机制，属局部缺陷。",
+    "inputHash": "c1eb68e9f051ef917d2af2c6c0beeec0d9751490347b166389dfb8708c546ae9"
+  },
+  {
+    "caseId": "S094",
+    "runId": "S094-r3",
+    "replicate": 3,
+    "dimension": "Q2",
+    "level": 2,
+    "reason": "artifact准确覆盖区分叙述者/作者、第一人称权限限制及引用归属三目标，给出可操作言语规则，达到working fluency深度，无缺陷。",
+    "inputHash": "0fff78f2dfe87053a0b10791591f2b2b31d840ccdb68375c1ee7888cca74f925"
+  }
+]

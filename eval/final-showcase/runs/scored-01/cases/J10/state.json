@@ -1,0 +1,105 @@
+{
+  "sourceId": "J10",
+  "sourceSha256": "b51235e08a78f4ff85739353b096f0d36c8def91810a779af30e1b9160fd3940",
+  "events": [
+    {
+      "at": "2026-09-14T11:37:15.931Z",
+      "stage": "preparation-step",
+      "state": "preparing_concepts",
+      "machineAction": "prepare_concepts"
+    },
+    {
+      "at": "2026-09-14T11:37:15.982Z",
+      "stage": "curriculum-accepted",
+      "curriculumId": "curriculum_d96ab8d2-ded3-4f55-b7bc-6b8e1d068a44"
+    },
+    {
+      "at": "2026-09-14T11:37:16.173Z",
+      "stage": "preparation-step",
+      "state": "validating_course_plan",
+      "machineAction": "prepare_course_plan"
+    },
+    {
+      "at": "2026-09-14T11:37:16.217Z",
+      "stage": "preparation-stop",
+      "state": "complete",
+      "blocker": null
+    },
+    {
+      "at": "2026-09-14T11:53:41.025Z",
+      "stage": "formal",
+      "status": "failed",
+      "error": {
+        "name": "AppError",
+        "code": "GROUNDING_FAILED",
+        "message": "生成的评估题均未通过本地校验(概念、题型或证据不合法),请重试。",
+        "details": {
+          "rejected": [
+            {
+              "stem": "假设一个正常体细胞有3条染色体，每条含一个DNA分子。根据本课模型，细胞先在分裂前的间期复制DNA，随后在有丝分裂过程中分配复制后的染色体，通常再经细胞质分裂形成两个细胞。请解释为什么说“DNA复制”和“染色体分配”是两个不同的动作，并说明它们分别导致了什么变化以及发生的先后顺序。",
+              "reason": "独立评分审核未通过：requiredCriteriaAppropriate=false: 评分点rubric_point:0将‘通常再经细胞质分裂形成两个细胞’作为必需说明部分，但题干仅要求解释‘DNA复制’和‘染色体分配’两个动作的不同、分别导致的变化及先后顺序，并未要求必须提及细胞质分裂；scoringChallenges中C1的替代答案未提胞质分裂仍完整满足题目任务，证明该细节非必需，属于过宽要求。；质疑成立：题目仅要求说明DNA复制和染色体分配两个动作的不同、变化及先后顺序，细胞质分裂是背景中提及的后续动作而非被解释对象；替代答案未包含该细节却已充分完成任务，证明评分点将其设为必需过于宽泛，非问题明确要求或逻辑必要。"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "teaching": [
+    {
+      "agendaItemId": "agenda_item_c264a839-fc9f-4367-9b04-96410a93dd04",
+      "learningUnitId": "cun_6dad9a6c-4a6f-4173-9282-9485a659778c",
+      "status": "completed",
+      "sessionId": "study_session_a9eda5d8-8f84-41f5-98c6-c82d805116ef",
+      "preparationAttempts": [
+        {
+          "attempt": 1,
+          "status": "ready"
+        }
+      ],
+      "practiceItems": 2
+    },
+    {
+      "agendaItemId": "agenda_item_b5101b85-954e-48df-a9c0-7f3bc5523067",
+      "learningUnitId": "cun_6dad9a6c-4a6f-4173-9282-9485a659778c",
+      "status": "completed",
+      "sessionId": "study_session_a9eda5d8-8f84-41f5-98c6-c82d805116ef",
+      "preparationAttempts": [
+        {
+          "attempt": 1,
+          "status": "ready"
+        }
+      ],
+      "practiceItems": 2
+    }
+  ],
+  "formal": [
+    {
+      "agendaItemId": "agenda_item_9fcd99ac-70dc-45bf-823d-cddb3e8584dc",
+      "objectiveIds": [],
+      "status": "failed",
+      "error": {
+        "name": "AppError",
+        "code": "GROUNDING_FAILED",
+        "message": "生成的评估题均未通过本地校验(概念、题型或证据不合法),请重试。",
+        "details": {
+          "rejected": [
+            {
+              "stem": "假设一个正常体细胞有3条染色体，每条含一个DNA分子。根据本课模型，细胞先在分裂前的间期复制DNA，随后在有丝分裂过程中分配复制后的染色体，通常再经细胞质分裂形成两个细胞。请解释为什么说“DNA复制”和“染色体分配”是两个不同的动作，并说明它们分别导致了什么变化以及发生的先后顺序。",
+              "reason": "独立评分审核未通过：requiredCriteriaAppropriate=false: 评分点rubric_point:0将‘通常再经细胞质分裂形成两个细胞’作为必需说明部分，但题干仅要求解释‘DNA复制’和‘染色体分配’两个动作的不同、分别导致的变化及先后顺序，并未要求必须提及细胞质分裂；scoringChallenges中C1的替代答案未提胞质分裂仍完整满足题目任务，证明该细节非必需，属于过宽要求。；质疑成立：题目仅要求说明DNA复制和染色体分配两个动作的不同、变化及先后顺序，细胞质分裂是背景中提及的后续动作而非被解释对象；替代答案未包含该细节却已充分完成任务，证明评分点将其设为必需过于宽泛，非问题明确要求或逻辑必要。"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "tutor": [],
+  "workspaceId": "ws_2778e5ca-95db-41a1-992f-5752ea138544",
+  "materialId": "mat_e3d3a90b-0bcc-4d91-b511-833addbb27ac",
+  "commandSequence": 27,
+  "contractId": "contract_22de877a-4c96-4bbd-be4d-2a05214e2779",
+  "status": "completed_with_observed_boundaries",
+  "counts": {
+    "physical": 33,
+    "logical": 32
+  }
+}

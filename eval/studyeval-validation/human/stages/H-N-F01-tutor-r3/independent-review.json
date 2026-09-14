@@ -1,0 +1,76 @@
+{
+  "inputIdentity": "35d0a404f128bb7941ae23a3f2a86622b830ac334613844d30168eb1fff432a1",
+  "attempts": [
+    {
+      "physicalId": "dce8dcad-9911-4b5d-9eb4-4d2956ccf60e",
+      "caseId": "N-F01-tutor",
+      "runId": "H-N-F01-tutor-r3",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "产物准确转述资料中同现非因果原则，自编假设例展示边界，未伪造证据，所有主张受F01支持，无事实或归属缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "d70121f89a508edceaec3e092a9a3359d11d1a093baadfd5d9b047d0fd12cfaf"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      },
+      {
+        "dimension": "Q3",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "针对目标，产物以读书节与喷药假设例解释同现非因果，说明无比较数据甚至可能减流故不能写因果，并交代适用边界与证明所需依据，解释连接充分。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "d70121f89a508edceaec3e092a9a3359d11d1a093baadfd5d9b047d0fd12cfaf"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

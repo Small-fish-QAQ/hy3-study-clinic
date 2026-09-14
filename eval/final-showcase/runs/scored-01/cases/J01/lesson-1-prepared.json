@@ -1,0 +1,258 @@
+{
+  "status": "ready",
+  "message": "Lesson is ready.",
+  "course": {
+    "title": "最大公因数与整块铺砖"
+  },
+  "session": {
+    "status": "active",
+    "version": 1
+  },
+  "agenda": {
+    "version": 1,
+    "itemState": "queued"
+  },
+  "lesson": {
+    "objective": {
+      "title": "最大公因数求解与铺砖模型应用",
+      "whyNow": "在用正方形砖铺整数长宽板前，必须先确定能同时整除长宽的最大边长；学习者常把较小数或求和当作最大公因数，导致砖尺寸或块数错误。",
+      "outcomes": [
+        {
+          "title": "解释公因数与最大公因数定义及常见误解",
+          "description": "解释两个正整数的公因数是能同时整除两者的正整数，其中最大的称为最大公因数；说明最大公因数是一个共同的整除尺度，而不是将两个数相加，也不必然是选择较小数。"
+        },
+        {
+          "title": "应用列表法与辗转相除法求最大公因数并验证最大性",
+          "description": "应用公因数列表法求两个正整数的最大公因数：列举各自因数、取交集得到公因数并穷尽列表以确认最大性，核对整除发现算错。应用辗转相除法：将较大数写为a=bq+r（0≤r<b），每步使用本步的除数和余数将数对替换为(b,r)，不能一直用最初两个数，直至余数为0时本步除数即为最大公因数（适用于第一步已整除），并核对原数整除；理解列表穷尽或辗转相除的等价变换提供最大性的依据，两种方法均可使用。"
+        }
+      ]
+    },
+    "prerequisites": [],
+    "segments": [
+      {
+        "index": 0,
+        "purpose": "orientation",
+        "explanation": "最大公因数研究两个正整数的共同整除尺度。设两数为12和20：12的因数有1,2,3,4,6,12；20的因数有1,2,4,5,10,20。能同时整除两者的正整数为1,2,4，其中4最大，故最大公因数是4。这清晰表明最大公因数不是两数相加（12+20=32），也不自动等于较小数12——12虽小却不能整除20。该模型为后续铺砖提供基础。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 1,
+        "purpose": "mechanism",
+        "explanation": "从机制看，公因数必须同时整除两个数，因此它是两数因数集合的交集元素。以24和36为例：24因数1,2,3,4,6,8,12,24；36因数1,2,3,4,6,9,12,18,36；交集为1,2,3,4,6,12，最大者12。因为选取依据是‘共同整除’而非数值大小比较，所以‘选较小数’只是偶然正确（当较小数恰为公因数时），不是充分规则。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [
+          {
+            "kind": "mechanism_effect",
+            "fromProposition": "能同时整除两数的正整数构成公因数集合",
+            "toProposition": "最大公因数取该集合最大值，而非两数之和或单纯较小数",
+            "origin": "hy3_synthesis",
+            "sources": []
+          }
+        ],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 2,
+        "purpose": "guided_practice",
+        "explanation": "我们再用一组数练习预测。给定30和45，若误用‘较小数即最大公因数’会得出什么？根据规则，公因数需同时整除两者。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": {
+          "kind": "choose",
+          "prompt": "给定正整数30和45。某人说最大公因数应是较小数30，因为30<45。但核查因数：30不能整除45（45÷30不是整数），而15能同时整除30和45且为公因数中最大。以下哪项成立？",
+          "guidance": null,
+          "options": [
+            {
+              "id": "A",
+              "text": "正确最大公因数为15，因为15同时整除30和45且是公因数中最大"
+            },
+            {
+              "id": "B",
+              "text": "正确最大公因数为30，因为较小数自然整除自身且不必整除45"
+            }
+          ],
+          "presented": false,
+          "response": null,
+          "respondedAt": null,
+          "correct": null,
+          "feedback": null,
+          "credit": "none"
+        }
+      },
+      {
+        "index": 3,
+        "purpose": "comparison",
+        "explanation": "需注意‘最大公因数不必然是较小数’是一条防错提示，而非反向绝对禁令。当两数相等如21和21时，较小数21同时整除两者，且因数中无更大正整数能整除21，此时最大公因数就是21。这源于整除事实，不是因为‘选较小’规则。若题目允许非整数边长或切割（铺砖模型外），结论还可能变化，须重读限制。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": {
+          "text": "反例：若误认为‘较小数永远不是最大公因数’，在21和21时会错拒21；正解依定义接受21。相较之下，在18和24时较小数18不整除24，才不是公因数。",
+          "origin": "hy3_synthesis",
+          "sources": []
+        },
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 4,
+        "purpose": "worked_example",
+        "explanation": "辗转相除法通过等价变换逐步缩小数对，保持公因数集合不变。以100和36为例，第一步将较大数写为除数与余数组合，后续必须改用本步的除数和余数，不能一直用最初两个数。当余数为0时，本步除数即为最大公因数；列表穷尽可交叉验证最大性。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": {
+          "startingState": "两数100和36，求最大公因数。已知规则：a=bq+r，每步用本步除数和余数替换数对，余0时除数即GCD。",
+          "inputs": [
+            "100",
+            "36"
+          ],
+          "ruleOrProcedure": "辗转相除法：将较大数写为 a=bq+r (0≤r<b)，用(b,r)替换(a,b)，重复至r=0，此时除数b为GCD；等价变换保证公因数相同。",
+          "steps": [
+            {
+              "action": "写第一步：100 = 36 × 2 + 28",
+              "reason": "100>36，商2余28，满足0≤28<36",
+              "resultingState": "当前数对变为(36,28)，余数28非0"
+            }
+          ],
+          "learnerDecision": null,
+          "result": null,
+          "whyResultFollows": null,
+          "origin": "hy3_synthesis",
+          "sources": [],
+          "interaction": {
+            "stage": "guided",
+            "modelledStepCount": 1,
+            "origin": "hy3_synthesis",
+            "sources": [],
+            "activity": {
+              "prompt": "给定100和36，已完成第一步得数对(36,28)。继续辗转相除，最终最大公因数是？",
+              "options": [
+                {
+                  "id": "A",
+                  "text": "4（经后续等价替换余数最终为0时除数4）"
+                },
+                {
+                  "id": "B",
+                  "text": "28（误把第一步余数当GCD）"
+                },
+                {
+                  "id": "C",
+                  "text": "2（仅看偶数因子未穷尽）"
+                }
+              ],
+              "response": null,
+              "respondedAt": null,
+              "correct": null,
+              "feedback": null,
+              "debrief": null,
+              "credit": "none",
+              "misconception": null
+            },
+            "hint": null,
+            "scaffold": null,
+            "transfer": null
+          }
+        },
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 5,
+        "purpose": "comparison",
+        "explanation": "铺砖正方形模型有明确适用边界：整数厘米边长、不切割、边平行。在此边界内最大砖边长等于长宽最大公因数。若题目允许切割、非整数边长或改变排列，原结论不直接适用，须重读限制。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": {
+          "text": "反例：若板长宽互质如35和12，整数模型最大砖边长1厘米；若题目允许切割或非整数边长，则不能直接套用GCD结论，须重读限制。相较之下，在84和60整数模型下12厘米正确。",
+          "origin": "hy3_synthesis",
+          "sources": []
+        },
+        "possibleMisconception": null,
+        "informalCheck": null
+      }
+    ],
+    "sourceReferencesAvailable": true,
+    "visuals": [],
+    "summary": {
+      "available": true,
+      "text": "最大公因数是两正整数公因数集合的最大值，由同时整除决定，不是相加也不是盲目取较小数；相等或倍数情形较小数可能恰为最大公因数，但须以整除验证。",
+      "nextConnection": null,
+      "formalOpportunities": []
+    },
+    "plannedTime": {
+      "agendaMinutes": 23,
+      "activeMinutesMin": 26,
+      "activeMinutesMax": 41,
+      "basis": "locally_evaluated_learning_actions"
+    }
+  },
+  "progress": {
+    "stateVersion": 2,
+    "stateId": "lesson_execution_ed0a4e42-c86f-440c-b683-fbcf7b74c3a0",
+    "currentSegmentIndex": 0,
+    "segmentCount": 6,
+    "presentedSegmentIndexes": [],
+    "presentationStatus": "not_started",
+    "presentationCompletedAt": null
+  },
+  "currentInformalCheck": null,
+  "practice": {
+    "status": "locked",
+    "currentItemIndex": 0,
+    "itemCount": 2,
+    "item": {
+      "index": 0,
+      "objectiveTitle": "解释公因数与最大公因数定义及常见误解",
+      "construct": "explain",
+      "surface": "initial",
+      "supplementary": true,
+      "prompt": "考虑正整数18和24。学习者甲说：最大公因数就是两数中较小的那个，所以结果是18。核查：18的因数有1,2,3,6,9,18；24的因数有1,2,3,4,6,8,12,24。二者公因数为1,2,3,6。观察到18不能整除24（24÷18不是整数），而6能同时整除18和24且为公因数中最大。以下哪项最符该观察？",
+      "options": [
+        {
+          "id": "teaching_brief_05b71b0a-9a78-41e0-9954-cafdaf601864_practice_1_initial_A",
+          "text": "正确最大公因数为6；学习者误将较小数当必然公因数，忽略同时整除要求。"
+        },
+        {
+          "id": "teaching_brief_05b71b0a-9a78-41e0-9954-cafdaf601864_practice_1_initial_B",
+          "text": "正确最大公因数为42（由18+24得到），学习者误将相加结果当公因数。"
+        },
+        {
+          "id": "teaching_brief_05b71b0a-9a78-41e0-9954-cafdaf601864_practice_1_initial_C",
+          "text": "正确最大公因数为18，因为18是较小数且能整除自身，不需整除24。"
+        }
+      ]
+    },
+    "attempts": [],
+    "recovery": null,
+    "completedAt": null,
+    "credit": "none"
+  },
+  "allowedActions": [
+    "start_lesson"
+  ]
+}

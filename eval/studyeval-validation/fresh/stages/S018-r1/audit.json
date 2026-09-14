@@ -1,0 +1,69 @@
+{
+  "inputIdentity": "40be44fcd53b31e84a0f3f9436b83043de02ad3b92880ad9a230b8909845e9bb",
+  "attempts": [
+    {
+      "physicalId": "6e79ec5d-0772-4247-9641-bec922f9dbfe",
+      "caseId": "S018",
+      "runId": "S018-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "artifact正确传达同名相斥异名相吸及切断仍具南北极，与source一致；但错误称资料先介绍圆环磁铁，source明确先条形后圆环。此属外围归属错误，核心教学机制完好，故评1。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "artifact声称'这份资料先介绍圆环磁铁'，而source明确'先讨论两根条形磁铁，后讨论圆环磁铁'",
+            "impact": "顺序归属错误不影响磁极相互作用与切断解释的核心正确性，目标用途仍成立",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "593963853c3660656d96b291ec610c4e8f22f2db5901d898c2ab27e956c10ffe"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "bd52c5a277bce71686f63dbe44ae0456d2b3036e28dc0d9ea741288fdb927b79"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "593963853c3660656d96b291ec610c4e8f22f2db5901d898c2ab27e956c10ffe"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "bd52c5a277bce71686f63dbe44ae0456d2b3036e28dc0d9ea741288fdb927b79"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

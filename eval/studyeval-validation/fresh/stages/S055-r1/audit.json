@@ -1,0 +1,88 @@
+{
+  "inputIdentity": "58be8bf878611d669247dd927eae56febb9040536f61635f84067e4baf51c6e0",
+  "attempts": [
+    {
+      "physicalId": "985e647d-57b6-4cf6-8b2b-a4c040542363",
+      "caseId": "S055",
+      "runId": "S055-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q2",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "lesson直接矛盾两项核心目标：称不用看箭头且B可到A，违背有向边方向规则；称入度出度同数，违背区分计算要求。核心学习用途被实质性误导，次要目标虽提及标签易读但无法补救。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "lesson声称'看到有边就可以走，不用看箭头，B也能直接走到A'，直接矛盾有向边必须顺方向的规则及给定图结构。",
+            "impact": "彻底破坏'按有向边检查路线可行性'核心目标，学习者会被错误教导。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "2a576634b7ef91ab126053b3c6c052c3bd54a8ad49ce703b7d739d66b6fa23c7"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "4a1ff16d1619a7f4b64cc932d8257c0a3341f94daa68120cf944ecd4a83e3b93"
+              }
+            ]
+          },
+          {
+            "severity": "material",
+            "description": "lesson声称'入度和出度是同一个数'，矛盾source对入度/出度的区分及图中节点度数差异。",
+            "impact": "彻底破坏'区分并计算节点入度和出度'核心目标，核心推导基础错误。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "2a576634b7ef91ab126053b3c6c052c3bd54a8ad49ce703b7d739d66b6fa23c7"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "4a1ff16d1619a7f4b64cc932d8257c0a3341f94daa68120cf944ecd4a83e3b93"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "2a576634b7ef91ab126053b3c6c052c3bd54a8ad49ce703b7d739d66b6fa23c7"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "4a1ff16d1619a7f4b64cc932d8257c0a3341f94daa68120cf944ecd4a83e3b93"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "assessmentVersionId": "assessment_version_0473f5e0-6ebf-4278-8566-d06dbb2eaa35",
+  "title": "独立检查：区分函数参数与实参并解释按值传递绑定",
+  "attempt": {
+    "id": "assessment_attempt_1beec758-7a26-47c0-ab82-3ce4c8a290d6",
+    "assessmentVersionId": "assessment_version_0473f5e0-6ebf-4278-8566-d06dbb2eaa35",
+    "workspaceId": "ws_8d200fc2-5481-408a-9775-3261ce4eb3de",
+    "ordinal": 1,
+    "status": "started",
+    "responses": {},
+    "startedAt": "2026-09-14T12:20:06.438Z",
+    "submittedAt": null,
+    "cancelledAt": null
+  },
+  "items": [
+    {
+      "itemId": "assessment_item_80deab1a-e60a-4ecb-b757-3f221a4b206b",
+      "prompt": "假设函数 f(a): 先执行 a = a + 5，然后返回 a * 2。调用者持有变量 b = 3，执行 c = f(b)。请回答：(1) 在函数定义中 a 是什么？调用时提供的 b 的值扮演什么角色？(2) 解释按值传递如何将 b 的值绑定到 a，并说明函数内对 a 的赋值是否会影响调用者变量 b，为什么？(3) 调用结束后 c 和 b 的值分别是多少？展示你的推理过程。",
+      "purpose": "检验你是否能在自己的表述中说明这个关键能力。",
+      "sourceReferences": [
+        {
+          "materialTitle": "Function arguments, local names, and returned values",
+          "locationLabel": "第 1 段",
+          "excerpt": "A function is a named procedure that can receive values and return a result. In this lesson all values are numbers, passed by value. Each call creates its own local parameter names. Assigning to a local name changes that call's local value; it does not change a numeric variable in the caller. The functions shown have no files, global state, or other side effects.",
+          "advisory": false
+        },
+        {
+          "materialTitle": "Function arguments, local names, and returned values",
+          "locationLabel": "第 2 段",
+          "excerpt": "Consider the function adjust(x): first set x = x + 2, then return x * 3. The name x in the definition is a parameter. In adjust(4), the supplied number 4 is an argument. At the start of the call local x is 4; after the assignment it is 6; the returned value is 18. The call does not return 6 just because 6 was the last value assigned to x: the return expression multiplies it by 3.",
+          "advisory": false
+        },
+        {
+          "materialTitle": "Function arguments, local names, and returned values",
+          "locationLabel": "第 3 段",
+          "excerpt": "Now let the caller have n = 4 and execute result = adjust(n). The value of n is supplied to the call, so result becomes 18. After the call n is still 4. The local reassignment of x does not update n. If the caller instead writes n = adjust(n), the returned 18 is explicitly assigned to n by the caller, so n becomes 18. These two caller statements have different effects even though the function body is identical.",
+          "advisory": false
+        }
+      ]
+    }
+  ],
+  "result": null,
+  "review": null
+}

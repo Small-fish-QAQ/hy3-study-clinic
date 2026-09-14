@@ -1,0 +1,339 @@
+{
+  "auditedAt": "2026-09-14T12:24:20.721Z",
+  "reviewer": "Current task assistant; not independent human labeling or model-based StudyEval scoring",
+  "scope": "All20 terminal outcomes and every credited primary Formal prompt, private key, required rubric and actual answer. Source audit preceded scoring. Delivered teaching was spot-checked, not fully sentence-certified.",
+  "policy": "Mechanical counts and all frozen cases remain unchanged. taskSound/answerSound mean no identified material defect in this review, not a proof of semantic truth.",
+  "rows": [
+    {
+      "id": "J01",
+      "title": "最大公因数与整块铺砖",
+      "credited": true,
+      "completeJourney": true,
+      "taskSound": true,
+      "answerSound": true,
+      "reason": "15 cannot divide 25; factor sets yield gcd 5. Both requested requirements met. Conceptual/near-application checkpoint, not all tiling goals.",
+      "auditedArtifacts": {
+        "runs/scored-01/cases/J01/source.json": "7c872611b43823547d21db26634ad1b4464e8e3d3fb8f2bc56994d7175a09e7c",
+        "runs/scored-01/cases/J01/state.json": "1a2395dff0b2aa782e02d5b9525d4f2ef5cdb208f217040d299df337210cf022",
+        "runs/scored-01/cases/J01/final.snapshot.json": "00b60244ad29b082d23565e3ff076466b18d3936a359fb2b4a38b30b128ca466",
+        "runs/scored-01/cases/J01/formal-1-before.json": "fe5f8d288c9abdbc007221ee21d78972d0a58e8df5f5d2105dd26c7d5ef68dcd",
+        "runs/scored-01/cases/J01/formal-1-version.json": "46a13c2695cba1d4c4d0635d95d5ad0a0de50fa55853f6ffc9860e67fbd6cab0",
+        "runs/scored-01/cases/J01/formal-1-answer.json": "33ca04ea83a09cfca2a1fc5ac6cd18ffe089834f14f344d6c91305ad8a009896"
+      }
+    },
+    {
+      "id": "J02",
+      "title": "相似图形中的长度比与面积比",
+      "credited": true,
+      "completeJourney": true,
+      "taskSound": false,
+      "answerSound": false,
+      "reason": "Correct correspondence and ratios 3 and 1/3, but task/rubric/answer overstate that matching longest sides is unreliable. Longest sides do correspond in the given similar scalene triangles; the source only forbids mismatching longest and noncorresponding short sides.",
+      "auditedArtifacts": {
+        "runs/scored-01/cases/J02/source.json": "d66a4d0b4e96325b168b6c583b780b940b6de66487f03d92191f7ccab14c67ff",
+        "runs/scored-01/cases/J02/state.json": "5260bc2ab47295b4d855b77566e89fdbab62e5bb3c9bf4468478502b3c158e21",
+        "runs/scored-01/cases/J02/final.snapshot.json": "2d43b931f485d50df1e6bcf0e8020fc817a2fc5ff63727a98cd4c9162418f0f0",
+        "runs/scored-01/cases/J02/formal-1-before.json": "7997c7d251c784c9d5c3e99dc563f74d6147f517bdf98336ea0942217d4e39a9",
+        "runs/scored-01/cases/J02/formal-1-version.json": "48121fb937968c00d7159bdf78edca8ff65894762281afcaf0d5364d483cd53a",
+        "runs/scored-01/cases/J02/formal-1-answer.json": "04cffa74385778ffaa7e63f6301ebf85f23c7111dc114d21c28d545d1ee841c8"
+      }
+    },
+    {
+      "id": "J03",
+      "title": "科学记数法怎样保留数值",
+      "credited": false,
+      "completeJourney": false,
+      "taskSound": null,
+      "answerSound": null,
+      "reason": "No teaching available after allowed retry. Generated L4 worked process repeatedly lacks required start/rule/transition/result structure; no Formal reached.",
+      "auditedArtifacts": {
+        "runs/scored-01/cases/J03/source.json": "9261b331845320cf1d6b39842f754501f6078400f9c6d1c8423a126555912166",
+        "runs/scored-01/cases/J03/state.json": "d59e70e1e3b287a93e41a3ac94488c780716d641e6ddce3e370ea3a0333922fb",
+        "runs/scored-01/cases/J03/final.snapshot.json": "099157ff69d16e3730e34523a37620374d526a02a58a58dbd9ef72e36a5b6cca"
+      }
+    },
+    {
+      "id": "J04",
+      "title": "四分位数与四分位距",
+      "credited": true,
+      "completeJourney": true,
+      "taskSound": true,
+      "answerSound": true,
+      "reason": "Under the explicit convention remove median 80; low half 62/68/75 and high half 85/90/95 give Q1=68, Q3=90. Process and units correct; all required steps explicitly requested.",
+      "auditedArtifacts": {
+        "runs/scored-01/cases/J04/source.json": "987e74c435ffe1fa54f256a2951253e6d959b023f79ce55749ef239136ad708e",
+        "runs/scored-01/cases/J04/state.json": "44030e601ae45aacbb4c93abb17f776adbbd350f1e7ca86c0006ae210c9686c1",
+        "runs/scored-01/cases/J04/final.snapshot.json": "28ccaa804d21c261d50430d525a4c3cef6dbeb8154109024b201b333ad7f42f3",
+        "runs/scored-01/cases/J04/formal-1-before.json": "16280cc53b8d2869d7f3340d559095caafdb5b6d38218b45da1c46e18d545cda",
+        "runs/scored-01/cases/J04/formal-1-version.json": "c71945c778387b6d0a3d0983752d0636ccd7eae009bfbba8ed6a5f82e2c58b5d",
+        "runs/scored-01/cases/J04/formal-1-answer.json": "da86bd5466c35063f96dc660610f79852d0b484224648ab579519286b25d9868"
+      }
+    },
+    {
+      "id": "J05",
+      "title": "杠杆平衡与力臂",
+      "credited": false,
+      "completeJourney": false,
+      "taskSound": null,
+      "answerSound": null,
+      "reason": "Teaching completed, Formal rejected. Correct 1.8 versus 1.5 torque calculation; reviewer treats the explanatory contrast with arbitrary length as a separate mandatory assertion despite the complete perpendicular-distance definition. Residual equivalence over-rejection; no admission or credit.",
+      "auditedArtifacts": {
+        "runs/scored-01/cases/J05/source.json": "8fe4f4e97f1ea7e6d3d37d3e49771884a8cd3dd2401472b28b506e0f41803265",
+        "runs/scored-01/cases/J05/state.json": "ad076f84e825978198f94b7f95f0ddf99da3e796e181a06b963aef2c2c5fecfe",
+        "runs/scored-01/cases/J05/final.snapshot.json": "f4d6009b81f6077df07e5dc4b9981d905542a8597c332f9b643595adc0bfa3a4"
+      }
+    },
+    {
+      "id": "J06",
+      "title": "动能为什么随速率的平方变化",
+      "credited": true,
+      "completeJourney": true,
+      "taskSound": true,
+      "answerSound": true,
+      "reason": "Correct E=.5mv^2, meanings and units, 6 J substitution, and excluded rotation, other storage and relativistic motion. Consistent-frame requirement is not read as frame-invariant energy.",
+      "auditedArtifacts": {
+        "runs/scored-01/cases/J06/source.json": "3ebdd8e392dd2a350fb344d0effba8feb0e28adefadc75f6853cfecea9691287",
+        "runs/scored-01/cases/J06/state.json": "0fc16e4f05b3d8172312350f01698433bf601a8eb0e17cde9f1bf06d248dfaf2",
+        "runs/scored-01/cases/J06/final.snapshot.json": "1f90893fe931cdb6f49f5217ab5bf9f56f6d065292f41aa03362dead3463ac1f",
+        "runs/scored-01/cases/J06/formal-1-before.json": "85b6ba2617c727acaa127b607a78969771acebdf7a86db93690fa7b91a55dab1",
+        "runs/scored-01/cases/J06/formal-1-version.json": "de40bee32180aaf564c129d20d350d5cd05d719b56fb26392f530a6999aa12f4",
+        "runs/scored-01/cases/J06/formal-1-answer.json": "9b2018b342efcca2091cef7588451c09c64d4ff8e21613835199bf8c8ecec5ce"
+      }
+    },
+    {
+      "id": "J07",
+      "title": "弹簧的伸长量与总长度",
+      "credited": false,
+      "completeJourney": false,
+      "taskSound": null,
+      "answerSound": null,
+      "reason": "Lesson checkpoint preserved but Practice unavailable after allowed retry. Evidence-contrast visibility failures and unjustified unique diagnostic explanations appear in generated candidates. No completed teaching or Formal credit.",
+      "auditedArtifacts": {
+        "runs/scored-01/cases/J07/source.json": "511779e14bd5a31363f1a4d06c2695d95e1412cb8ac6f244a84e4db36fd88e9d",
+        "runs/scored-01/cases/J07/state.json": "d2b90acea6494d84358945ceaa542978bd9c3e4e3a2b25ecc67b08c680a1c833",
+        "runs/scored-01/cases/J07/final.snapshot.json": "f052f4e48ae5f444bd274b564564040f30204234f3e41b9ad7faa4fc66da264c"
+      }
+    },
+    {
+      "id": "J08",
+      "title": "功率、电能与使用时长",
+      "credited": true,
+      "completeJourney": true,
+      "taskSound": true,
+      "answerSound": true,
+      "reason": "0.5 kW * 3 h = 1.5 kWh; the given 2 kW rating would overestimate this run; 3.6e6 J/kWh conversion correct. Required calculation and both interpretations explicitly asked.",
+      "auditedArtifacts": {
+        "runs/scored-01/cases/J08/source.json": "8d0082953abe9b3ab4ae4f7d32675d98247777087ee636f46222f44bfe0bb333",
+        "runs/scored-01/cases/J08/state.json": "edd9de929546f0c1b3d7c1a4b9e0f3af205979ca69fa97b655281e3420d86dd0",
+        "runs/scored-01/cases/J08/final.snapshot.json": "ea0fb010b240487f5fd52c062bf1a939813fc401135000c033fae068beba430b",
+        "runs/scored-01/cases/J08/formal-1-before.json": "2eb1614070c8069baa9edc63f587a9ab9d9b2a44b7b08e9eed4ec362d9f49783",
+        "runs/scored-01/cases/J08/formal-1-version.json": "7529acd9e135118252ce5900d3540e88d096fdda3b2dcf2e53f5b7f5b76b7f09",
+        "runs/scored-01/cases/J08/formal-1-answer.json": "cb5e10c7b787190aecd713cfca51439ab5790761d81b5ff63e10f412070abe34"
+      }
+    },
+    {
+      "id": "J09",
+      "title": "植物体内的水分运输与蒸腾",
+      "credited": true,
+      "completeJourney": true,
+      "taskSound": false,
+      "answerSound": true,
+      "reason": "Biological chain is aligned, but the prompt itself supplies essentially all required mechanism statements. Rearranging those statements meets the rubric without independent explanation. Material discrimination/disclosure caveat. Leaf-to-root wording is read as transmission of tension, with upward water transport explicitly stated.",
+      "auditedArtifacts": {
+        "runs/scored-01/cases/J09/source.json": "4f1929872a062fbf22e4f591b57d8674110461ec9c904569cfff74720e64d491",
+        "runs/scored-01/cases/J09/state.json": "5f6ccd2269fb798a4f3f1ddfcd76651b7911c38e8cc11302b6620e580e3f67b1",
+        "runs/scored-01/cases/J09/final.snapshot.json": "29710c773bf050784bf96af48bc81eca19b5410593d40596ba153ab3425ccd0b",
+        "runs/scored-01/cases/J09/formal-1-before.json": "98bba408905930a9926b8dcb1220c8d206f34febbf6ab15d964bf085585ddb50",
+        "runs/scored-01/cases/J09/formal-1-version.json": "316018cb69112e31023b3734fa099068acc3e2917cad9429f9f68483ad4bf586",
+        "runs/scored-01/cases/J09/formal-1-answer.json": "1ac48ad93b4919d6aff9a010e3d96e56a04e27a69096d994b096be1e8adf0549"
+      }
+    },
+    {
+      "id": "J10",
+      "title": "有丝分裂中的复制与分配",
+      "credited": false,
+      "completeJourney": false,
+      "taskSound": null,
+      "answerSound": null,
+      "reason": "Teaching completed; Formal rejected for requiring subsequent cytokinesis while the task asks only about DNA replication and chromosome distribution. Real extra rubric requirement; no learner answer/credit.",
+      "auditedArtifacts": {
+        "runs/scored-01/cases/J10/source.json": "5c98a7c103aa0d023e6e2d0d5b537de137d82c64c3d0c8430cdc4a35be05601f",
+        "runs/scored-01/cases/J10/state.json": "baa17f14262e310769e7169f040588da23050c78ecf29e20d22249b5a415e133",
+        "runs/scored-01/cases/J10/final.snapshot.json": "461b2140e78aa8efae64e37f84bc726aa8e60e65f6c372794ae45f6d97af7d1c"
+      }
+    },
+    {
+      "id": "J11",
+      "title": "英语主动句与被动句的对应",
+      "credited": true,
+      "completeJourney": true,
+      "taskSound": true,
+      "answerSound": true,
+      "reason": "Mechanic/action/car roles correct; passive grammatical subject remains the patient and mechanic remains agent. Role-recognition checkpoint, not all voice transformations.",
+      "auditedArtifacts": {
+        "runs/scored-01/cases/J11/source.json": "0c61e8503141d5e3b1f80f7a42ead9dc3b96e2b8e07a89d7c648032ef71b036e",
+        "runs/scored-01/cases/J11/state.json": "e4a6ce2d2d2b017c0085e0caf57fdb7575394cd492aa0730ecb512c6d557d707",
+        "runs/scored-01/cases/J11/final.snapshot.json": "3e2869332663d50d8c3a4f3d67ce4a825efa9a2b63fd5b8794e8243339ef7500",
+        "runs/scored-01/cases/J11/formal-1-before.json": "ee678466d1f01717981b92d435e2f65777fc07a57850ed6d2c264c86765c5b42",
+        "runs/scored-01/cases/J11/formal-1-version.json": "f74890e717d7416e40bcf99d02752bf3831826f303bb9e241f96bca2574c9f15",
+        "runs/scored-01/cases/J11/formal-1-answer.json": "b7f96b91bb9e11c507cec182a89abe912cac9ec69f082fa2ac50144a94ea207a"
+      }
+    },
+    {
+      "id": "J12",
+      "title": "英语比较级与最高级",
+      "credited": true,
+      "completeJourney": true,
+      "taskSound": false,
+      "answerSound": false,
+      "reason": "Comparison sentences and masses correct, but rubric and requested explanatory answer turn usually-the into must-the. Predicative superlatives can omit the, including Z is heaviest of the three stones. Material overstrong grammar requirement/generalization.",
+      "auditedArtifacts": {
+        "runs/scored-01/cases/J12/source.json": "b27ee5e3c7aefcb50c706890d6d66b05b90e81329cca34e2c916e64f13eeccb5",
+        "runs/scored-01/cases/J12/state.json": "50f9bb0c7df3babbce7bae6bcc78ef69991d4ad187f55d32f073c20bcd040549",
+        "runs/scored-01/cases/J12/final.snapshot.json": "cd31cf7c210930a8e33030d3a9fbd1bfa67477edbf2a0eda425975423ea9caf8",
+        "runs/scored-01/cases/J12/formal-1-before.json": "70479c9e4c2db05219909156a483ae5e354f51e427e20ba8edbb6833197f1518",
+        "runs/scored-01/cases/J12/formal-1-version.json": "60b9104e4274c0164eefaa9d6e8e4add0c5fef403f58aaf381ff04ad610a4711",
+        "runs/scored-01/cases/J12/formal-1-answer.json": "df63a6cca89adc9a8011ab8ed5bcf2bb51961573577a8ae1d5519b7a3c32a553"
+      }
+    },
+    {
+      "id": "J13",
+      "title": "溶解度、饱和与冷却析出",
+      "credited": true,
+      "completeJourney": true,
+      "taskSound": true,
+      "answerSound": true,
+      "reason": "Correct 100 g solvent versus solution denominator; 100+30=130 g illustration and restriction of extrapolation to the supplied X data. Conceptual scope, not all crystallization calculations.",
+      "auditedArtifacts": {
+        "runs/scored-01/cases/J13/source.json": "c94b61a088d17ea5566feb9c25240dd47cc897ee5340187857cfedef6f760d66",
+        "runs/scored-01/cases/J13/state.json": "3e5d36eb8219cc2c667fd6fed7af723048e5b78fb48ed5bf668eda4be03a3ca5",
+        "runs/scored-01/cases/J13/final.snapshot.json": "3e8c84b687899b7e8731e2bd157aee23dd794d01125b9f41fb4699c8e7f2d2a9",
+        "runs/scored-01/cases/J13/formal-1-before.json": "87c02a9bea380c8894278e267527d406610b1c8dc57608b25d8de6e871ac08e5",
+        "runs/scored-01/cases/J13/formal-1-version.json": "aa65ca5dced7b35a16274b9ce82c73f76e04d23ebbf3e69cfffb80fa9d5fca81",
+        "runs/scored-01/cases/J13/formal-1-answer.json": "47715f563c4beed650e32c5979a7ebfd0c052f7d104ce46f34b304a84a922124"
+      }
+    },
+    {
+      "id": "J14",
+      "title": "溶液质量分数与加水稀释",
+      "credited": true,
+      "completeJourney": true,
+      "taskSound": true,
+      "answerSound": true,
+      "reason": "140*.25=35 g salt, 105 g water. 35/140 is mass fraction; 35/105 is salt/water ratio. Required reasoning and units match the task.",
+      "auditedArtifacts": {
+        "runs/scored-01/cases/J14/source.json": "1104da88b75cc3a557865cb52469cb815fbf87af9a37ee5aca30f585745508f5",
+        "runs/scored-01/cases/J14/state.json": "ff6d2676fb2a95bd20c69fba5a8394598d1edec66854d265135f52410858a76a",
+        "runs/scored-01/cases/J14/final.snapshot.json": "4e04276e815385dcecaa89907187456c4325a518028aa191135b01cc628ba98b",
+        "runs/scored-01/cases/J14/formal-1-before.json": "f87cb58d61ed886626af68be1a7646f6a43670997b6416e384b41141aab993c6",
+        "runs/scored-01/cases/J14/formal-1-version.json": "666c4ebbd79d5c3e711816386ff15592fcfebe7c84e472d0df4c6a020a4b6a4a",
+        "runs/scored-01/cases/J14/formal-1-answer.json": "f15e5a3d46c0649304d3a55a690b1c7bed855eb7be88b3ced3b64bee90f52b57"
+      }
+    },
+    {
+      "id": "J15",
+      "title": "赊销收入、应收账款与现金",
+      "credited": true,
+      "completeJourney": true,
+      "taskSound": true,
+      "answerSound": true,
+      "reason": "March revenue 1300, cash received 700, closing receivable 600. The 200 collection converts an existing debt to cash without new service revenue. Correct event classification and no duplicate revenue.",
+      "auditedArtifacts": {
+        "runs/scored-01/cases/J15/source.json": "b1df6bd92413b9185fcb83885b3a2b6b906c1ad4339a0ccac0885e72882878c0",
+        "runs/scored-01/cases/J15/state.json": "aa9b54e7373af1e8d33920b94d92bcfb547c0a7ebff1ba586542cda2e4a6de03",
+        "runs/scored-01/cases/J15/final.snapshot.json": "1103df80e8e1690ef560b0776c33989572c00ae1b74835b73c1400fc7a721fe7",
+        "runs/scored-01/cases/J15/formal-1-before.json": "798b21884346c7a9c7bb10397999fee803c3d4f98e950709fe173abb7c119b0c",
+        "runs/scored-01/cases/J15/formal-1-version.json": "ee0eec9dc3cbda70216f3f5c7050a67af6537cb3886668dd19d34507ea81b47e",
+        "runs/scored-01/cases/J15/formal-1-answer.json": "5ec299e011d7ff1fd672518cfaaf40cd3327a4118f413266a78683e285f801d1"
+      }
+    },
+    {
+      "id": "J16",
+      "title": "会计等式怎样追踪日常交易",
+      "credited": true,
+      "completeJourney": true,
+      "taskSound": true,
+      "answerSound": true,
+      "reason": "Assets = liabilities + equity; 500 owner contribution increases equity, 300 bank borrowing increases liability, and cash totals 800. Neither financing transaction creates profit in the explicitly income/expense-free model. Definitions and transaction effects correct.",
+      "auditedArtifacts": {
+        "runs/scored-01/cases/J16/source.json": "925c13fa4b952759535b0758c03ee018f04c7e16ed2d58c8c25ee43e86a365a8",
+        "runs/scored-01/cases/J16/state.json": "dd1e7c14848e1e3d51b8c15d334dc0414686f3b30d326eb78229bacced8231c7",
+        "runs/scored-01/cases/J16/final.snapshot.json": "d249840e1eae5cb75fb4c6475c771fd84d995ef30a7ff55100bc06473da8aae8",
+        "runs/scored-01/cases/J16/formal-1-before.json": "bfa0b8714122657511f8587c492ec0f10aadccce5f41016aba34383802c7ac42",
+        "runs/scored-01/cases/J16/formal-1-version.json": "e692c6fa661acb884c9ff9043f18d0a331b414c622b40001871f85d6e97fb636",
+        "runs/scored-01/cases/J16/formal-1-answer.json": "6adfaa8e2d7196adab032cc3047a7ab48e505c0c7324084bea6fbd448a420557"
+      }
+    },
+    {
+      "id": "J17",
+      "title": "Joining related tables without losing unmatched rows",
+      "credited": true,
+      "completeJourney": true,
+      "taskSound": true,
+      "answerSound": true,
+      "reason": "Lee author_id=1 matches books 101 and 102, producing two combined rows; Mo matches 103. Correct multiplicity explanation on explicit data. Mechanism is scaffolded but identifying actual matching pairs is still required; unmatched-row behavior is not assessed at this first checkpoint.",
+      "auditedArtifacts": {
+        "runs/scored-01/cases/J17/source.json": "9e6a7994b915f51eb9499996e819e7e7b6fa50e2bbfd1b7c32075387d0f1bab0",
+        "runs/scored-01/cases/J17/state.json": "11b2597945a2653139df57a01df111367ca17307fdb32be5046d0309c504fdde",
+        "runs/scored-01/cases/J17/final.snapshot.json": "be3d8e5a989206b0ed09c19c2242ff2f703a7689fd092c2c3c46ae3f7cb1c740",
+        "runs/scored-01/cases/J17/formal-1-before.json": "fbc2e0b03664612ca17595b85d5769ad000c38408813d0fc793eefe410bd8238",
+        "runs/scored-01/cases/J17/formal-1-version.json": "728cdb393384bc8396bf2c1fda173b068eea9abe240d1501c7ce0619223dd75e",
+        "runs/scored-01/cases/J17/formal-1-answer.json": "a991d8b3c14e57eb802d8e21ed51a62eaa83015efdd8190d1de848655cdaf0a0"
+      }
+    },
+    {
+      "id": "J18",
+      "title": "Stable sorting by primary and secondary keys",
+      "credited": false,
+      "completeJourney": false,
+      "taskSound": null,
+      "answerSound": null,
+      "reason": "Generated Practice asks which sorting rule yields D,C,B,A without giving record keys. UI and learner receive the same incomplete task. None of the choices fits the source example values; learner explains this twice, then stops under the fixed choice-format budget. Product task omission, not a harness projection defect; no Formal credit.",
+      "auditedArtifacts": {
+        "runs/scored-01/cases/J18/source.json": "dbfb4dd18ed538cc502868a50c7954f8e305e4c4d978dad287878c21cba9dd98",
+        "runs/scored-01/cases/J18/state.json": "813fe010eba3735414e89984e00f212700a6590078241405c1c1f7e2a2f30785",
+        "runs/scored-01/cases/J18/final.snapshot.json": "f870558aed6c8e764a4ffe05c17c7282380f66d8f5f307bf2f13f4dd3fbc4858"
+      }
+    },
+    {
+      "id": "J19",
+      "title": "FIFO queues and service order",
+      "credited": true,
+      "completeJourney": true,
+      "taskSound": true,
+      "answerSound": true,
+      "reason": "From [U,V], dequeue returns U; enqueue W leaves [V,W]; peek returns V without changing the queue. All requested operation semantics and insertion-order reasoning correct. Simple state trace, not the entire service-timeline goal.",
+      "auditedArtifacts": {
+        "runs/scored-01/cases/J19/source.json": "52f94d6f6f2832674c2757bf5f31990b8abeb96b849e8ccc0ed9e09adf1592bc",
+        "runs/scored-01/cases/J19/state.json": "cad3ba5b687f2d56753e3188f62088374aee17ecebe6191683e8cd8a9d37d50c",
+        "runs/scored-01/cases/J19/final.snapshot.json": "9fb8bf34cd9f35f2f265a90cafb6931b256dc7f2a7788dc80467d42439f1fde9",
+        "runs/scored-01/cases/J19/formal-1-before.json": "b14204955b5310a82e5e3e64e64bdd260f9ad8578eff02ab338312288f0e3041",
+        "runs/scored-01/cases/J19/formal-1-version.json": "b562b6a6c7c56360ccc7aa85e71f639136363455258e608d5d905682765c3d1b",
+        "runs/scored-01/cases/J19/formal-1-answer.json": "6300bcf3f825fb78040164c050c31df095cdd2620e2139cd012d320efcbc1fce"
+      }
+    },
+    {
+      "id": "J20",
+      "title": "Function arguments, local names, and returned values",
+      "credited": true,
+      "completeJourney": true,
+      "taskSound": true,
+      "answerSound": true,
+      "reason": "In the explicit numeric pass-by-value model, parameter a receives argument value 3, becomes 8 locally and returns 16. Caller c=16 while b stays 3. Parameter/argument, local assignment and caller assignment are all correctly distinguished.",
+      "auditedArtifacts": {
+        "runs/scored-01/cases/J20/source.json": "0a7da86151547bd4fc5ba83c31a9a4d5b641d7eeed4abe635fd8e0f88559a31f",
+        "runs/scored-01/cases/J20/state.json": "6123fe7eb5d0975ae643f82d8b1bd2d5f4b2d35cb76770cba90e03c242f77604",
+        "runs/scored-01/cases/J20/final.snapshot.json": "f829de146bf6d7c2fad3d1d4998210267ada733935e8fb9d1cfc5109ef73d130",
+        "runs/scored-01/cases/J20/formal-1-before.json": "ba9cddc0081d43a2914053ac87b8f82d943b5e0ace816c0d03f1a307f43db754",
+        "runs/scored-01/cases/J20/formal-1-version.json": "a21b7c3310a2fa5b61a5c82f9596a03a19aa19fbd5ef88b97e7f4b4c0adcd763",
+        "runs/scored-01/cases/J20/formal-1-answer.json": "0e653dbd55a41a027c9cb06374f8afb5d2a1d9c0105a5b8a6dd3080a68142947"
+      }
+    }
+  ],
+  "counts": {
+    "creditedCourses": 15,
+    "materialTaskCaveats": 3,
+    "materialAnswerCaveats": 2,
+    "completeJourneysWithoutIdentifiedMaterialTaskOrAnswerDefect": 12
+  }
+}

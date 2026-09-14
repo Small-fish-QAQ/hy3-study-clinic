@@ -1,0 +1,731 @@
+[
+  {
+    "caseId": "E074",
+    "runId": "H-E074-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E074.json",
+    "inputHash": "1db95a987151a3b0561e54505a5d3699184d1f70508076077aa6d3cbb4ace9ce",
+    "population": "controlled",
+    "sourceId": "F09"
+  },
+  {
+    "caseId": "N-F05-tutor",
+    "runId": "H-N-F05-tutor-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-F05-tutor.json",
+    "inputHash": "e5df30e0c13100ce17282c86e71282ac7f2558dd968c0773fcabc87b642ff096",
+    "population": "natural",
+    "sourceId": "F05"
+  },
+  {
+    "caseId": "E094",
+    "runId": "H-E094-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E094.json",
+    "inputHash": "e8edfc4e6a7f698db1c4caa1e95476f9689a95e6b87d32336d8d0af4d8c95adb",
+    "population": "controlled",
+    "sourceId": "F01"
+  },
+  {
+    "caseId": "E967",
+    "runId": "H-E967-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E967.json",
+    "inputHash": "57247b05dcd3b0c88d34f5a5a5e57eeff3904547f864dbc3a87c803f7680f8be",
+    "population": "controlled",
+    "sourceId": "F03"
+  },
+  {
+    "caseId": "N-F02-tutor",
+    "runId": "H-N-F02-tutor-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-F02-tutor.json",
+    "inputHash": "03d50ecde50ddf9d85d9caf6ceb17427a247f4de31d09bd49f793bc33dc9fb65",
+    "population": "natural",
+    "sourceId": "F02"
+  },
+  {
+    "caseId": "E497",
+    "runId": "H-E497-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E497.json",
+    "inputHash": "b62b6128a5713adcb245bf537cd8bf0d306cd2e799a3fb5928a50de4353169ed",
+    "population": "controlled",
+    "sourceId": "F06"
+  },
+  {
+    "caseId": "E047",
+    "runId": "H-E047-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E047.json",
+    "inputHash": "ef8d7792ebda61812466b1f13a52756fbd35b533c300c281e79d0828bb15cf92",
+    "population": "controlled",
+    "sourceId": "F01"
+  },
+  {
+    "caseId": "E846",
+    "runId": "H-E846-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E846.json",
+    "inputHash": "d057f1ff411a69d4352c3da1c03e896e7b571ef9e91c4eea6add8b4dbf731e9b",
+    "population": "controlled",
+    "sourceId": "F06"
+  },
+  {
+    "caseId": "E658",
+    "runId": "H-E658-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E658.json",
+    "inputHash": "07fa108a650e1ccbcbd3dfcd13915bffcb5d1d9464320760a4ea5542d2c8ea6f",
+    "population": "controlled",
+    "sourceId": "F05"
+  },
+  {
+    "caseId": "N-F08-tutor",
+    "runId": "H-N-F08-tutor-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-F08-tutor.json",
+    "inputHash": "821be6a706b8d39de0de84d6d17b0fff2256a8e984214299069795eb546e598d",
+    "population": "natural",
+    "sourceId": "F08"
+  },
+  {
+    "caseId": "E544",
+    "runId": "H-E544-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E544.json",
+    "inputHash": "6ff2484f2b7fe1767ca3c539a575aa55551c2125913b7c1cf1c42f5c766b07a3",
+    "population": "controlled",
+    "sourceId": "F06"
+  },
+  {
+    "caseId": "E366",
+    "runId": "H-E366-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E366.json",
+    "inputHash": "9ddec8a0080a675ad35184be3719fb2aa7c0dea1fa6ed89b489fda08842779ba",
+    "population": "controlled",
+    "sourceId": "F10"
+  },
+  {
+    "caseId": "E027",
+    "runId": "H-E027-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E027.json",
+    "inputHash": "27e79ead871b1233fce22af4b7cd122a02e4e7a93fd14ff2f25e1b52c25d10ae",
+    "population": "controlled",
+    "sourceId": "F09"
+  },
+  {
+    "caseId": "E873",
+    "runId": "H-E873-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E873.json",
+    "inputHash": "1a75e7d9d68339a276ef3b9675f67332307ea9ae90fb1136a5b54b8b1fcf4106",
+    "population": "controlled",
+    "sourceId": "F03"
+  },
+  {
+    "caseId": "E141",
+    "runId": "H-E141-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E141.json",
+    "inputHash": "e1769cd39c01d626137a2c86d3a4d3f6cd710fed1646fb2e8570eb901c076049",
+    "population": "controlled",
+    "sourceId": "F01"
+  },
+  {
+    "caseId": "E705",
+    "runId": "H-E705-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E705.json",
+    "inputHash": "5b3183984d363b1023add0b5e9f28080511e53612f4a5411d761d0860cd94626",
+    "population": "controlled",
+    "sourceId": "F05"
+  },
+  {
+    "caseId": "E450",
+    "runId": "H-E450-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E450.json",
+    "inputHash": "ad04afa5a152f413121e43ba12b56273f0397aa1c6c32440892a06adae83a5ee",
+    "population": "controlled",
+    "sourceId": "F06"
+  },
+  {
+    "caseId": "N-F01-tutor",
+    "runId": "H-N-F01-tutor-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-F01-tutor.json",
+    "inputHash": "a03e021c3abfc0921f93c64381059ff54f10084a4e254b73ca45e64c55cb3e9e",
+    "population": "natural",
+    "sourceId": "F01"
+  },
+  {
+    "caseId": "E413",
+    "runId": "H-E413-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E413.json",
+    "inputHash": "dd39f264e0fd5760d77195257997a2ffc0d85b3366a467c458f5769bbaf9b980",
+    "population": "controlled",
+    "sourceId": "F10"
+  },
+  {
+    "caseId": "E121",
+    "runId": "H-E121-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E121.json",
+    "inputHash": "d4898bde5060ba76dd1d8f0f6f416c0e9fcc9b0b2206f38b77bd52cfe57af386",
+    "population": "controlled",
+    "sourceId": "F09"
+  },
+  {
+    "caseId": "N-F09-tutor",
+    "runId": "H-N-F09-tutor-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-F09-tutor.json",
+    "inputHash": "22e4040cd3ffd8ec6a389198142f453e0b1f9e0e75515078b7926885ff55af39",
+    "population": "natural",
+    "sourceId": "F09"
+  },
+  {
+    "caseId": "N-F03-tutor",
+    "runId": "H-N-F03-tutor-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-F03-tutor.json",
+    "inputHash": "278275b2f9f3d606ff2afde4dad0d40a93eb9aca4c40947e15619b0fdc9b9c57",
+    "population": "natural",
+    "sourceId": "F03"
+  },
+  {
+    "caseId": "E470",
+    "runId": "H-E470-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E470.json",
+    "inputHash": "dd377a458a8db124d451ed2aa0b7d3fef555e62146877d4dff5b197694b0c452",
+    "population": "controlled",
+    "sourceId": "F04"
+  },
+  {
+    "caseId": "N-F07-tutor",
+    "runId": "H-N-F07-tutor-r1",
+    "replicate": 1,
+    "path": "runs/final/cases/N-F07-tutor.json",
+    "inputHash": "b37e7384d5f4ffa0c9382488ecc79d26019020396378d497e43a8577f960a101",
+    "population": "natural",
+    "sourceId": "F07"
+  },
+  {
+    "caseId": "E611",
+    "runId": "H-E611-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E611.json",
+    "inputHash": "c0bfa347bcd1a8f2d3751c2acebc48d79c8b1403697b7568a78e5134036941fb",
+    "population": "controlled",
+    "sourceId": "F05"
+  },
+  {
+    "caseId": "E319",
+    "runId": "H-E319-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E319.json",
+    "inputHash": "1feb5f7c0f6db7f0655e47ce7b2776808e02b38f107576a096b6800295819796",
+    "population": "controlled",
+    "sourceId": "F10"
+  },
+  {
+    "caseId": "E920",
+    "runId": "H-E920-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E920.json",
+    "inputHash": "1cab0ebc541b0976c5c908c3d469d391c15ea2d9e8a5605ad9a520b45bb66302",
+    "population": "controlled",
+    "sourceId": "F03"
+  },
+  {
+    "caseId": "N-F07-tutor",
+    "runId": "H-N-F07-tutor-r2",
+    "replicate": 2,
+    "path": "runs/final/cases/N-F07-tutor.json",
+    "inputHash": "b37e7384d5f4ffa0c9382488ecc79d26019020396378d497e43a8577f960a101",
+    "population": "natural",
+    "sourceId": "F07"
+  },
+  {
+    "caseId": "E047",
+    "runId": "H-E047-r2",
+    "replicate": 2,
+    "path": "benchmark/cases/E047.json",
+    "inputHash": "ef8d7792ebda61812466b1f13a52756fbd35b533c300c281e79d0828bb15cf92",
+    "population": "controlled",
+    "sourceId": "F01"
+  },
+  {
+    "caseId": "E658",
+    "runId": "H-E658-r2",
+    "replicate": 2,
+    "path": "benchmark/cases/E658.json",
+    "inputHash": "07fa108a650e1ccbcbd3dfcd13915bffcb5d1d9464320760a4ea5542d2c8ea6f",
+    "population": "controlled",
+    "sourceId": "F05"
+  },
+  {
+    "caseId": "E450",
+    "runId": "H-E450-r2",
+    "replicate": 2,
+    "path": "benchmark/cases/E450.json",
+    "inputHash": "ad04afa5a152f413121e43ba12b56273f0397aa1c6c32440892a06adae83a5ee",
+    "population": "controlled",
+    "sourceId": "F06"
+  },
+  {
+    "caseId": "E141",
+    "runId": "H-E141-r2",
+    "replicate": 2,
+    "path": "benchmark/cases/E141.json",
+    "inputHash": "e1769cd39c01d626137a2c86d3a4d3f6cd710fed1646fb2e8570eb901c076049",
+    "population": "controlled",
+    "sourceId": "F01"
+  },
+  {
+    "caseId": "N-F08-tutor",
+    "runId": "H-N-F08-tutor-r2",
+    "replicate": 2,
+    "path": "runs/final/cases/N-F08-tutor.json",
+    "inputHash": "821be6a706b8d39de0de84d6d17b0fff2256a8e984214299069795eb546e598d",
+    "population": "natural",
+    "sourceId": "F08"
+  },
+  {
+    "caseId": "E497",
+    "runId": "H-E497-r2",
+    "replicate": 2,
+    "path": "benchmark/cases/E497.json",
+    "inputHash": "b62b6128a5713adcb245bf537cd8bf0d306cd2e799a3fb5928a50de4353169ed",
+    "population": "controlled",
+    "sourceId": "F06"
+  },
+  {
+    "caseId": "E873",
+    "runId": "H-E873-r2",
+    "replicate": 2,
+    "path": "benchmark/cases/E873.json",
+    "inputHash": "1a75e7d9d68339a276ef3b9675f67332307ea9ae90fb1136a5b54b8b1fcf4106",
+    "population": "controlled",
+    "sourceId": "F03"
+  },
+  {
+    "caseId": "E027",
+    "runId": "H-E027-r2",
+    "replicate": 2,
+    "path": "benchmark/cases/E027.json",
+    "inputHash": "27e79ead871b1233fce22af4b7cd122a02e4e7a93fd14ff2f25e1b52c25d10ae",
+    "population": "controlled",
+    "sourceId": "F09"
+  },
+  {
+    "caseId": "N-F09-tutor",
+    "runId": "H-N-F09-tutor-r2",
+    "replicate": 2,
+    "path": "runs/final/cases/N-F09-tutor.json",
+    "inputHash": "22e4040cd3ffd8ec6a389198142f453e0b1f9e0e75515078b7926885ff55af39",
+    "population": "natural",
+    "sourceId": "F09"
+  },
+  {
+    "caseId": "N-F02-tutor",
+    "runId": "H-N-F02-tutor-r2",
+    "replicate": 2,
+    "path": "runs/final/cases/N-F02-tutor.json",
+    "inputHash": "03d50ecde50ddf9d85d9caf6ceb17427a247f4de31d09bd49f793bc33dc9fb65",
+    "population": "natural",
+    "sourceId": "F02"
+  },
+  {
+    "caseId": "N-F05-tutor",
+    "runId": "H-N-F05-tutor-r2",
+    "replicate": 2,
+    "path": "runs/final/cases/N-F05-tutor.json",
+    "inputHash": "e5df30e0c13100ce17282c86e71282ac7f2558dd968c0773fcabc87b642ff096",
+    "population": "natural",
+    "sourceId": "F05"
+  },
+  {
+    "caseId": "N-F03-tutor",
+    "runId": "H-N-F03-tutor-r2",
+    "replicate": 2,
+    "path": "runs/final/cases/N-F03-tutor.json",
+    "inputHash": "278275b2f9f3d606ff2afde4dad0d40a93eb9aca4c40947e15619b0fdc9b9c57",
+    "population": "natural",
+    "sourceId": "F03"
+  },
+  {
+    "caseId": "E544",
+    "runId": "H-E544-r2",
+    "replicate": 2,
+    "path": "benchmark/cases/E544.json",
+    "inputHash": "6ff2484f2b7fe1767ca3c539a575aa55551c2125913b7c1cf1c42f5c766b07a3",
+    "population": "controlled",
+    "sourceId": "F06"
+  },
+  {
+    "caseId": "E611",
+    "runId": "H-E611-r2",
+    "replicate": 2,
+    "path": "benchmark/cases/E611.json",
+    "inputHash": "c0bfa347bcd1a8f2d3751c2acebc48d79c8b1403697b7568a78e5134036941fb",
+    "population": "controlled",
+    "sourceId": "F05"
+  },
+  {
+    "caseId": "E319",
+    "runId": "H-E319-r2",
+    "replicate": 2,
+    "path": "benchmark/cases/E319.json",
+    "inputHash": "1feb5f7c0f6db7f0655e47ce7b2776808e02b38f107576a096b6800295819796",
+    "population": "controlled",
+    "sourceId": "F10"
+  },
+  {
+    "caseId": "E366",
+    "runId": "H-E366-r2",
+    "replicate": 2,
+    "path": "benchmark/cases/E366.json",
+    "inputHash": "9ddec8a0080a675ad35184be3719fb2aa7c0dea1fa6ed89b489fda08842779ba",
+    "population": "controlled",
+    "sourceId": "F10"
+  },
+  {
+    "caseId": "E470",
+    "runId": "H-E470-r2",
+    "replicate": 2,
+    "path": "benchmark/cases/E470.json",
+    "inputHash": "dd377a458a8db124d451ed2aa0b7d3fef555e62146877d4dff5b197694b0c452",
+    "population": "controlled",
+    "sourceId": "F04"
+  },
+  {
+    "caseId": "E074",
+    "runId": "H-E074-r2",
+    "replicate": 2,
+    "path": "benchmark/cases/E074.json",
+    "inputHash": "1db95a987151a3b0561e54505a5d3699184d1f70508076077aa6d3cbb4ace9ce",
+    "population": "controlled",
+    "sourceId": "F09"
+  },
+  {
+    "caseId": "N-F01-tutor",
+    "runId": "H-N-F01-tutor-r2",
+    "replicate": 2,
+    "path": "runs/final/cases/N-F01-tutor.json",
+    "inputHash": "a03e021c3abfc0921f93c64381059ff54f10084a4e254b73ca45e64c55cb3e9e",
+    "population": "natural",
+    "sourceId": "F01"
+  },
+  {
+    "caseId": "E967",
+    "runId": "H-E967-r2",
+    "replicate": 2,
+    "path": "benchmark/cases/E967.json",
+    "inputHash": "57247b05dcd3b0c88d34f5a5a5e57eeff3904547f864dbc3a87c803f7680f8be",
+    "population": "controlled",
+    "sourceId": "F03"
+  },
+  {
+    "caseId": "E846",
+    "runId": "H-E846-r2",
+    "replicate": 2,
+    "path": "benchmark/cases/E846.json",
+    "inputHash": "d057f1ff411a69d4352c3da1c03e896e7b571ef9e91c4eea6add8b4dbf731e9b",
+    "population": "controlled",
+    "sourceId": "F06"
+  },
+  {
+    "caseId": "E920",
+    "runId": "H-E920-r2",
+    "replicate": 2,
+    "path": "benchmark/cases/E920.json",
+    "inputHash": "1cab0ebc541b0976c5c908c3d469d391c15ea2d9e8a5605ad9a520b45bb66302",
+    "population": "controlled",
+    "sourceId": "F03"
+  },
+  {
+    "caseId": "E121",
+    "runId": "H-E121-r2",
+    "replicate": 2,
+    "path": "benchmark/cases/E121.json",
+    "inputHash": "d4898bde5060ba76dd1d8f0f6f416c0e9fcc9b0b2206f38b77bd52cfe57af386",
+    "population": "controlled",
+    "sourceId": "F09"
+  },
+  {
+    "caseId": "E413",
+    "runId": "H-E413-r2",
+    "replicate": 2,
+    "path": "benchmark/cases/E413.json",
+    "inputHash": "dd39f264e0fd5760d77195257997a2ffc0d85b3366a467c458f5769bbaf9b980",
+    "population": "controlled",
+    "sourceId": "F10"
+  },
+  {
+    "caseId": "E705",
+    "runId": "H-E705-r2",
+    "replicate": 2,
+    "path": "benchmark/cases/E705.json",
+    "inputHash": "5b3183984d363b1023add0b5e9f28080511e53612f4a5411d761d0860cd94626",
+    "population": "controlled",
+    "sourceId": "F05"
+  },
+  {
+    "caseId": "E094",
+    "runId": "H-E094-r2",
+    "replicate": 2,
+    "path": "benchmark/cases/E094.json",
+    "inputHash": "e8edfc4e6a7f698db1c4caa1e95476f9689a95e6b87d32336d8d0af4d8c95adb",
+    "population": "controlled",
+    "sourceId": "F01"
+  },
+  {
+    "caseId": "N-F03-tutor",
+    "runId": "H-N-F03-tutor-r3",
+    "replicate": 3,
+    "path": "runs/final/cases/N-F03-tutor.json",
+    "inputHash": "278275b2f9f3d606ff2afde4dad0d40a93eb9aca4c40947e15619b0fdc9b9c57",
+    "population": "natural",
+    "sourceId": "F03"
+  },
+  {
+    "caseId": "E450",
+    "runId": "H-E450-r3",
+    "replicate": 3,
+    "path": "benchmark/cases/E450.json",
+    "inputHash": "ad04afa5a152f413121e43ba12b56273f0397aa1c6c32440892a06adae83a5ee",
+    "population": "controlled",
+    "sourceId": "F06"
+  },
+  {
+    "caseId": "E920",
+    "runId": "H-E920-r3",
+    "replicate": 3,
+    "path": "benchmark/cases/E920.json",
+    "inputHash": "1cab0ebc541b0976c5c908c3d469d391c15ea2d9e8a5605ad9a520b45bb66302",
+    "population": "controlled",
+    "sourceId": "F03"
+  },
+  {
+    "caseId": "N-F07-tutor",
+    "runId": "H-N-F07-tutor-r3",
+    "replicate": 3,
+    "path": "runs/final/cases/N-F07-tutor.json",
+    "inputHash": "b37e7384d5f4ffa0c9382488ecc79d26019020396378d497e43a8577f960a101",
+    "population": "natural",
+    "sourceId": "F07"
+  },
+  {
+    "caseId": "E094",
+    "runId": "H-E094-r3",
+    "replicate": 3,
+    "path": "benchmark/cases/E094.json",
+    "inputHash": "e8edfc4e6a7f698db1c4caa1e95476f9689a95e6b87d32336d8d0af4d8c95adb",
+    "population": "controlled",
+    "sourceId": "F01"
+  },
+  {
+    "caseId": "E658",
+    "runId": "H-E658-r3",
+    "replicate": 3,
+    "path": "benchmark/cases/E658.json",
+    "inputHash": "07fa108a650e1ccbcbd3dfcd13915bffcb5d1d9464320760a4ea5542d2c8ea6f",
+    "population": "controlled",
+    "sourceId": "F05"
+  },
+  {
+    "caseId": "E027",
+    "runId": "H-E027-r3",
+    "replicate": 3,
+    "path": "benchmark/cases/E027.json",
+    "inputHash": "27e79ead871b1233fce22af4b7cd122a02e4e7a93fd14ff2f25e1b52c25d10ae",
+    "population": "controlled",
+    "sourceId": "F09"
+  },
+  {
+    "caseId": "E047",
+    "runId": "H-E047-r3",
+    "replicate": 3,
+    "path": "benchmark/cases/E047.json",
+    "inputHash": "ef8d7792ebda61812466b1f13a52756fbd35b533c300c281e79d0828bb15cf92",
+    "population": "controlled",
+    "sourceId": "F01"
+  },
+  {
+    "caseId": "N-F01-tutor",
+    "runId": "H-N-F01-tutor-r3",
+    "replicate": 3,
+    "path": "runs/final/cases/N-F01-tutor.json",
+    "inputHash": "a03e021c3abfc0921f93c64381059ff54f10084a4e254b73ca45e64c55cb3e9e",
+    "population": "natural",
+    "sourceId": "F01"
+  },
+  {
+    "caseId": "E074",
+    "runId": "H-E074-r3",
+    "replicate": 3,
+    "path": "benchmark/cases/E074.json",
+    "inputHash": "1db95a987151a3b0561e54505a5d3699184d1f70508076077aa6d3cbb4ace9ce",
+    "population": "controlled",
+    "sourceId": "F09"
+  },
+  {
+    "caseId": "E121",
+    "runId": "H-E121-r3",
+    "replicate": 3,
+    "path": "benchmark/cases/E121.json",
+    "inputHash": "d4898bde5060ba76dd1d8f0f6f416c0e9fcc9b0b2206f38b77bd52cfe57af386",
+    "population": "controlled",
+    "sourceId": "F09"
+  },
+  {
+    "caseId": "N-F08-tutor",
+    "runId": "H-N-F08-tutor-r3",
+    "replicate": 3,
+    "path": "runs/final/cases/N-F08-tutor.json",
+    "inputHash": "821be6a706b8d39de0de84d6d17b0fff2256a8e984214299069795eb546e598d",
+    "population": "natural",
+    "sourceId": "F08"
+  },
+  {
+    "caseId": "E967",
+    "runId": "H-E967-r3",
+    "replicate": 3,
+    "path": "benchmark/cases/E967.json",
+    "inputHash": "57247b05dcd3b0c88d34f5a5a5e57eeff3904547f864dbc3a87c803f7680f8be",
+    "population": "controlled",
+    "sourceId": "F03"
+  },
+  {
+    "caseId": "E319",
+    "runId": "H-E319-r3",
+    "replicate": 3,
+    "path": "benchmark/cases/E319.json",
+    "inputHash": "1feb5f7c0f6db7f0655e47ce7b2776808e02b38f107576a096b6800295819796",
+    "population": "controlled",
+    "sourceId": "F10"
+  },
+  {
+    "caseId": "E413",
+    "runId": "H-E413-r3",
+    "replicate": 3,
+    "path": "benchmark/cases/E413.json",
+    "inputHash": "dd39f264e0fd5760d77195257997a2ffc0d85b3366a467c458f5769bbaf9b980",
+    "population": "controlled",
+    "sourceId": "F10"
+  },
+  {
+    "caseId": "E141",
+    "runId": "H-E141-r3",
+    "replicate": 3,
+    "path": "benchmark/cases/E141.json",
+    "inputHash": "e1769cd39c01d626137a2c86d3a4d3f6cd710fed1646fb2e8570eb901c076049",
+    "population": "controlled",
+    "sourceId": "F01"
+  },
+  {
+    "caseId": "N-F05-tutor",
+    "runId": "H-N-F05-tutor-r3",
+    "replicate": 3,
+    "path": "runs/final/cases/N-F05-tutor.json",
+    "inputHash": "e5df30e0c13100ce17282c86e71282ac7f2558dd968c0773fcabc87b642ff096",
+    "population": "natural",
+    "sourceId": "F05"
+  },
+  {
+    "caseId": "N-F09-tutor",
+    "runId": "H-N-F09-tutor-r3",
+    "replicate": 3,
+    "path": "runs/final/cases/N-F09-tutor.json",
+    "inputHash": "22e4040cd3ffd8ec6a389198142f453e0b1f9e0e75515078b7926885ff55af39",
+    "population": "natural",
+    "sourceId": "F09"
+  },
+  {
+    "caseId": "E846",
+    "runId": "H-E846-r3",
+    "replicate": 3,
+    "path": "benchmark/cases/E846.json",
+    "inputHash": "d057f1ff411a69d4352c3da1c03e896e7b571ef9e91c4eea6add8b4dbf731e9b",
+    "population": "controlled",
+    "sourceId": "F06"
+  },
+  {
+    "caseId": "E611",
+    "runId": "H-E611-r3",
+    "replicate": 3,
+    "path": "benchmark/cases/E611.json",
+    "inputHash": "c0bfa347bcd1a8f2d3751c2acebc48d79c8b1403697b7568a78e5134036941fb",
+    "population": "controlled",
+    "sourceId": "F05"
+  },
+  {
+    "caseId": "E497",
+    "runId": "H-E497-r3",
+    "replicate": 3,
+    "path": "benchmark/cases/E497.json",
+    "inputHash": "b62b6128a5713adcb245bf537cd8bf0d306cd2e799a3fb5928a50de4353169ed",
+    "population": "controlled",
+    "sourceId": "F06"
+  },
+  {
+    "caseId": "E366",
+    "runId": "H-E366-r3",
+    "replicate": 3,
+    "path": "benchmark/cases/E366.json",
+    "inputHash": "9ddec8a0080a675ad35184be3719fb2aa7c0dea1fa6ed89b489fda08842779ba",
+    "population": "controlled",
+    "sourceId": "F10"
+  },
+  {
+    "caseId": "E705",
+    "runId": "H-E705-r3",
+    "replicate": 3,
+    "path": "benchmark/cases/E705.json",
+    "inputHash": "5b3183984d363b1023add0b5e9f28080511e53612f4a5411d761d0860cd94626",
+    "population": "controlled",
+    "sourceId": "F05"
+  },
+  {
+    "caseId": "E470",
+    "runId": "H-E470-r3",
+    "replicate": 3,
+    "path": "benchmark/cases/E470.json",
+    "inputHash": "dd377a458a8db124d451ed2aa0b7d3fef555e62146877d4dff5b197694b0c452",
+    "population": "controlled",
+    "sourceId": "F04"
+  },
+  {
+    "caseId": "N-F02-tutor",
+    "runId": "H-N-F02-tutor-r3",
+    "replicate": 3,
+    "path": "runs/final/cases/N-F02-tutor.json",
+    "inputHash": "03d50ecde50ddf9d85d9caf6ceb17427a247f4de31d09bd49f793bc33dc9fb65",
+    "population": "natural",
+    "sourceId": "F02"
+  },
+  {
+    "caseId": "E873",
+    "runId": "H-E873-r3",
+    "replicate": 3,
+    "path": "benchmark/cases/E873.json",
+    "inputHash": "1a75e7d9d68339a276ef3b9675f67332307ea9ae90fb1136a5b54b8b1fcf4106",
+    "population": "controlled",
+    "sourceId": "F03"
+  },
+  {
+    "caseId": "E544",
+    "runId": "H-E544-r3",
+    "replicate": 3,
+    "path": "benchmark/cases/E544.json",
+    "inputHash": "6ff2484f2b7fe1767ca3c539a575aa55551c2125913b7c1cf1c42f5c766b07a3",
+    "population": "controlled",
+    "sourceId": "F06"
+  }
+]

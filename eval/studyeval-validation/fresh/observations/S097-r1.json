@@ -1,0 +1,315 @@
+{
+  "task": {
+    "caseId": "S097",
+    "runId": "S097-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S097.json",
+    "inputHash": "9e1b8f2d56d9299b3011bf1253be125b625f1a64529c77cf07d2ea2af4b65e91"
+  },
+  "inputHash": "9e1b8f2d56d9299b3011bf1253be125b625f1a64529c77cf07d2ea2af4b65e91",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "34649bdc424310de1b29df7bf776ce4264a30cc89b2f29d6570753c0acb7bfbe",
+    "stages": {
+      "goal-mapping": {
+        "goals": [
+          {
+            "index": 0,
+            "importance": "essential",
+            "status": "usable",
+            "reason": "artifact直接说明小说中的“我”是文本叙述者，不自动是现实作者，实现了区分叙述者与现实作者的核心目标。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/0"
+            ],
+            "quote": "小说中的“我”是文本叙述者，不自动是现实作者。",
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "2955c5a9173f69a8a98ac42c40be80a9884f2f9d92ab33f7700ef6f8ba35f4aa"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "2b41e2bf08ab98b4ef000c50cebd55a20f14a001d93a4acdd0bee2a73360a806"
+              }
+            ]
+          },
+          {
+            "index": 1,
+            "importance": "essential",
+            "status": "usable",
+            "reason": "artifact明确第一人称叙述者能说自己的感受（直接知道），并限制无依据不能知道另一人物未表达心思，解释了能直接知道什么及限制。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/1"
+            ],
+            "quote": "它可以说自己的感受，但没有依据时不能知道另一人物没表达的心思。",
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "2955c5a9173f69a8a98ac42c40be80a9884f2f9d92ab33f7700ef6f8ba35f4aa"
+              },
+              {
+                "pointer": "/goals/1",
+                "valueHash": "22d8faa697faa2a740550cc0d1cafef65fe438b94828227c311203c1333a76d9"
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "importance": "secondary",
+            "status": "missing",
+            "reason": "artifact仅讨论叙述者身份和认知限制，未提及引用他人话语时的归属标记，确实没有相关处理。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/2"
+            ],
+            "quote": "",
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "2955c5a9173f69a8a98ac42c40be80a9884f2f9d92ab33f7700ef6f8ba35f4aa"
+              },
+              {
+                "pointer": "/goals/2",
+                "valueHash": "e6a9fe5f3b015bae44d40471551088d7d08a745fa66ebc11c00ab452a5d7dff2"
+              }
+            ]
+          }
+        ]
+      },
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "lesson准确说明叙述者非现实作者及第一人称只能知自身感受、不知他人未表心思，覆盖两核心目标且规则可用；但完全未提及次要目标'引用话语归属标记'，属局部省略，核心用途成立，评1级。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/2"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "次要目标'说明引用别人话语时的归属标记'在lesson中无任何处理或提醒。",
+                "impact": "核心目标保持准确可用，省略次要目标不 defeat 声明目的，但使覆盖不完整，符合Q2的1级条件。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/goals/2"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "2955c5a9173f69a8a98ac42c40be80a9884f2f9d92ab33f7700ef6f8ba35f4aa"
+                  },
+                  {
+                    "pointer": "/goals/2",
+                    "valueHash": "e6a9fe5f3b015bae44d40471551088d7d08a745fa66ebc11c00ab452a5d7dff2"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "2955c5a9173f69a8a98ac42c40be80a9884f2f9d92ab33f7700ef6f8ba35f4aa"
+              },
+              {
+                "pointer": "/goals/2",
+                "valueHash": "e6a9fe5f3b015bae44d40471551088d7d08a745fa66ebc11c00ab452a5d7dff2"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "核心目标区分叙述者/作者及第一人称限制有准确解释，但次要目标'引用归属标记'在lesson中完全省略，属局部缺口，核心用途成立。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "次要目标'说明引用别人话语时的归属标记'在artifact(lesson)中未提及，完全省略",
+                "impact": "核心目标（区分叙述者与现实作者、第一人称知解限制）仍准确可用，不改变核心学习用途",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/goals"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "2955c5a9173f69a8a98ac42c40be80a9884f2f9d92ab33f7700ef6f8ba35f4aa"
+                  },
+                  {
+                    "pointer": "/goals",
+                    "valueHash": "8b78e8c669075a0ea86f5033dbbe2b4722fc4b29b6264d26b8764fba22ae73f4"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "2955c5a9173f69a8a98ac42c40be80a9884f2f9d92ab33f7700ef6f8ba35f4aa"
+              },
+              {
+                "pointer": "/goals",
+                "valueHash": "8b78e8c669075a0ea86f5033dbbe2b4722fc4b29b6264d26b8764fba22ae73f4"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "核心两目标在lesson中有准确可用规则，但次要目标'说明引用别人话语时的归属标记'完全未处理，属局部省略，核心用途成立，评1级。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/2"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "次要目标'说明引用别人话语时的归属标记'在lesson中无任何处理或提醒。",
+                "impact": "核心目标保持准确可用，省略次要目标不 defeat 声明目的，但使覆盖不完整，符合Q2的1级条件。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/goals/2"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "2955c5a9173f69a8a98ac42c40be80a9884f2f9d92ab33f7700ef6f8ba35f4aa"
+                  },
+                  {
+                    "pointer": "/goals/2",
+                    "valueHash": "e6a9fe5f3b015bae44d40471551088d7d08a745fa66ebc11c00ab452a5d7dff2"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "2955c5a9173f69a8a98ac42c40be80a9884f2f9d92ab33f7700ef6f8ba35f4aa"
+              },
+              {
+                "pointer": "/goals/2",
+                "valueHash": "e6a9fe5f3b015bae44d40471551088d7d08a745fa66ebc11c00ab452a5d7dff2"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q2:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "小说中的“我”是文本叙述者，不自动是现实作者。它可以说自己的感受，但没有依据时不能知道另一人物没表达的心思。",
+              "valueHash": "2955c5a9173f69a8a98ac42c40be80a9884f2f9d92ab33f7700ef6f8ba35f4aa"
+            },
+            "reason": "引文仅说明叙述者身份与认知限制，未提及引用他人话语归属标记，证实次要目标在artifact中缺失。"
+          },
+          {
+            "id": "review2:Q2:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "小说中的“我”是文本叙述者，不自动是现实作者。它可以说自己的感受，但没有依据时不能知道另一人物没表达的心思。",
+              "valueHash": "2955c5a9173f69a8a98ac42c40be80a9884f2f9d92ab33f7700ef6f8ba35f4aa"
+            },
+            "reason": "同前，artifact文本无引用归属内容，次要目标省略属实，影响仅为局部。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q2",
+          "level": 1,
+          "evidence": "sufficient",
+          "reason": "核心两目标在lesson中有准确可用规则，但次要目标'说明引用别人话语时的归属标记'完全未处理，属局部省略，核心用途成立，评1级。",
+          "refs": [
+            "/artifacts/0/text",
+            "/goals/2"
+          ],
+          "defects": [
+            {
+              "severity": "local",
+              "description": "次要目标'说明引用别人话语时的归属标记'在lesson中无任何处理或提醒。",
+              "impact": "核心目标保持准确可用，省略次要目标不 defeat 声明目的，但使覆盖不完整，符合Q2的1级条件。",
+              "refs": [
+                "/artifacts/0/text",
+                "/goals/2"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "2955c5a9173f69a8a98ac42c40be80a9884f2f9d92ab33f7700ef6f8ba35f4aa"
+                },
+                {
+                  "pointer": "/goals/2",
+                  "valueHash": "e6a9fe5f3b015bae44d40471551088d7d08a745fa66ebc11c00ab452a5d7dff2"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "2955c5a9173f69a8a98ac42c40be80a9884f2f9d92ab33f7700ef6f8ba35f4aa"
+            },
+            {
+              "pointer": "/goals/2",
+              "valueHash": "e6a9fe5f3b015bae44d40471551088d7d08a745fa66ebc11c00ab452a5d7dff2"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "45e93c4d077238e6d84b75a627c5b5e885f1b13e421e5325bf0b8f044a80995c"
+  }
+}

@@ -1,0 +1,248 @@
+{
+  "task": {
+    "caseId": "S018",
+    "runId": "S018-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S018.json",
+    "inputHash": "691b3d83cd3b3b2148cd2413b59f46f3b1c25e4b3841b1cf4005d75f8d45d1d7"
+  },
+  "inputHash": "691b3d83cd3b3b2148cd2413b59f46f3b1c25e4b3841b1cf4005d75f8d45d1d7",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "a017e32f49983adb0528e82c0806a7da13ad06afa677445cbfcdc4010a83bc13",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "artifact正确传达同名相斥异名相吸及切断仍具南北极，与source一致；但错误称资料先介绍圆环磁铁，source明确先条形后圆环。此属外围归属错误，核心教学机制完好，故评1。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "artifact声称'这份资料先介绍圆环磁铁'，而source明确'先讨论两根条形磁铁，后讨论圆环磁铁'",
+                "impact": "顺序归属错误不影响磁极相互作用与切断解释的核心正确性，目标用途仍成立",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "593963853c3660656d96b291ec610c4e8f22f2db5901d898c2ab27e956c10ffe"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "bd52c5a277bce71686f63dbe44ae0456d2b3036e28dc0d9ea741288fdb927b79"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "593963853c3660656d96b291ec610c4e8f22f2db5901d898c2ab27e956c10ffe"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "bd52c5a277bce71686f63dbe44ae0456d2b3036e28dc0d9ea741288fdb927b79"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "磁极作用与切断解释正确，但错误声称资料先介绍圆环磁铁，实际源先条形后圆环，属局部归属错误不影响核心教学。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "artifact称'这份资料先介绍圆环磁铁'，但source明确'先讨论两根条形磁铁，后讨论圆环磁铁'",
+                "impact": "顺序描述错误不改变磁极相斥相吸及切断仍有两极的核心解释用途",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "593963853c3660656d96b291ec610c4e8f22f2db5901d898c2ab27e956c10ffe"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "bd52c5a277bce71686f63dbe44ae0456d2b3036e28dc0d9ea741288fdb927b79"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "593963853c3660656d96b291ec610c4e8f22f2db5901d898c2ab27e956c10ffe"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "bd52c5a277bce71686f63dbe44ae0456d2b3036e28dc0d9ea741288fdb927b79"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "artifact正确传达同名相斥异名相吸及切断仍具南北极，与source核心一致；但错误称资料先介绍圆环磁铁，source明确先条形后圆环，属外围归属错误，核心教学机制完好，故评1。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "artifact声称'这份资料先介绍圆环磁铁'，而source明确'先讨论两根条形磁铁，后讨论圆环磁铁'",
+                "impact": "顺序归属错误不影响磁极相互作用与切断解释的核心正确性，目标用途仍成立",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "593963853c3660656d96b291ec610c4e8f22f2db5901d898c2ab27e956c10ffe"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "bd52c5a277bce71686f63dbe44ae0456d2b3036e28dc0d9ea741288fdb927b79"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "593963853c3660656d96b291ec610c4e8f22f2db5901d898c2ab27e956c10ffe"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "bd52c5a277bce71686f63dbe44ae0456d2b3036e28dc0d9ea741288fdb927b79"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q1:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "这份资料先介绍圆环磁铁。",
+              "valueHash": "593963853c3660656d96b291ec610c4e8f22f2db5901d898c2ab27e956c10ffe"
+            },
+            "reason": "artifact文字直接声称先介绍圆环，但source写明先条形后圆环，证实归属错误且为外围事实"
+          },
+          {
+            "id": "review2:Q1:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/sources/0/text",
+              "quote": "本资料先讨论两根条形磁铁，后讨论圆环磁铁。",
+              "valueHash": "bd52c5a277bce71686f63dbe44ae0456d2b3036e28dc0d9ea741288fdb927b79"
+            },
+            "reason": "source明确顺序，反驳artifact的先圆环说法，该缺陷为局部归属错误不影响核心机制"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q1",
+          "level": 1,
+          "evidence": "sufficient",
+          "reason": "artifact正确传达同名相斥异名相吸及切断仍具南北极，与source核心一致；但错误称资料先介绍圆环磁铁，source明确先条形后圆环，属外围归属错误，核心教学机制完好，故评1。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [
+            {
+              "severity": "local",
+              "description": "artifact声称'这份资料先介绍圆环磁铁'，而source明确'先讨论两根条形磁铁，后讨论圆环磁铁'",
+              "impact": "顺序归属错误不影响磁极相互作用与切断解释的核心正确性，目标用途仍成立",
+              "refs": [
+                "/artifacts/0/text",
+                "/sources/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "593963853c3660656d96b291ec610c4e8f22f2db5901d898c2ab27e956c10ffe"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "bd52c5a277bce71686f63dbe44ae0456d2b3036e28dc0d9ea741288fdb927b79"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "593963853c3660656d96b291ec610c4e8f22f2db5901d898c2ab27e956c10ffe"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "bd52c5a277bce71686f63dbe44ae0456d2b3036e28dc0d9ea741288fdb927b79"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "eeecaf7637bd093fae2279ed17981f055686f2960994a3cfa3f10d8bb825dd20"
+  }
+}

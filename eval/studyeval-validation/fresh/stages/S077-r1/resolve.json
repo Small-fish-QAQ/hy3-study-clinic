@@ -1,0 +1,93 @@
+{
+  "inputIdentity": "a4cec9e705ef3b850d422cfd6ae20235b731747f9b1a4497455011fd765c5dbe",
+  "attempts": [
+    {
+      "physicalId": "2f14e364-ee45-4350-a75c-673fa4453467",
+      "caseId": "S077",
+      "runId": "S077-r1",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q3",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "artifact误将回声总时0.6秒当单程，算墙距340×0.6=204米且称不需返回，违背source明确定义总时含往返、行程为墙距两倍的前提，教导无效方法，实质破坏goal要求的正确推导教学。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "artifact声称0.6秒仅为单程时间并得墙距204米，忽略返回行程；但source给定0.6秒为回声总时且行程是墙距两倍。",
+            "impact": "核心解释错误，学习者将用错误公式求墙距，破坏goal要求的正确推导教学。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "3bbce2de2fe1eeb758a911865d1912be311746bdcab655ec42447c7ca0aebbb0"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "79185b54dfbddde1df8e87303862dd09dbc298fe4bf0af82dc4cd087114a46d8"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "3bbce2de2fe1eeb758a911865d1912be311746bdcab655ec42447c7ca0aebbb0"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "79185b54dfbddde1df8e87303862dd09dbc298fe4bf0af82dc4cd087114a46d8"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q3:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "0.6秒只算到墙的一程，所以墙距340×0.6=204米，不需要考虑返回。",
+          "valueHash": "3bbce2de2fe1eeb758a911865d1912be311746bdcab655ec42447c7ca0aebbb0"
+        },
+        "reason": "引文声称0.6秒单程且不需返回，直接违背/sources/0/text中'发声到收到回声共0.6秒。声音先到墙再返回，行程是墙距的两倍'，证实核心方法错误。"
+      },
+      {
+        "id": "review2:Q3:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/sources/0/text",
+          "quote": "发声到收到回声共0.6秒。声音先到墙再返回，行程是墙距的两倍。",
+          "valueHash": "79185b54dfbddde1df8e87303862dd09dbc298fe4bf0af82dc4cd087114a46d8"
+        },
+        "reason": "引文给定总时与行程两倍前提，反证artifact中错误单程假设与计算为实质教学错误，指控成立。"
+      }
+    ]
+  }
+}

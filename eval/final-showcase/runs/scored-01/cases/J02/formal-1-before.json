@@ -1,0 +1,38 @@
+{
+  "assessmentVersionId": "assessment_version_86fbef0f-c554-4aaf-9085-6722340db45c",
+  "title": "独立检查：确定相似比方向并避免对应边混淆",
+  "attempt": {
+    "id": "assessment_attempt_33d18f0e-9426-4177-b15b-233a75aee767",
+    "assessmentVersionId": "assessment_version_86fbef0f-c554-4aaf-9085-6722340db45c",
+    "workspaceId": "ws_3674308a-cd4d-4482-8bf2-9c1dce9ca447",
+    "ordinal": 1,
+    "status": "started",
+    "responses": {},
+    "startedAt": "2026-09-14T11:37:41.411Z",
+    "submittedAt": null,
+    "cancelledAt": null
+  },
+  "items": [
+    {
+      "itemId": "assessment_item_3ed429f6-b17e-4af8-a762-002620e48044",
+      "prompt": "三角形HJK与LMN相似，题目约定H↔L、J↔M、K↔N。已知HJK的边长：HJ=4厘米，JK=6厘米，HK=5厘米；LMN的边长：LM=12厘米，MN=18厘米，LN=15厘米。请完成以下任务：\n(1) 指出HJK与LMN中哪些边互为对应，并说明为何不能仅按图形中边的位置或最长边来猜测对应；\n(2) 计算从HJK到LMN的相似比k，并写清“新图形相对原图形”的方向；\n(3) 若反过来从LMN看HJK，相似比是多少？",
+      "purpose": "检验你是否能在自己的表述中说明这个关键能力。",
+      "sourceReferences": [
+        {
+          "materialTitle": "相似图形中的长度比与面积比",
+          "locationLabel": "第 1 段",
+          "excerpt": "若写作三角形ABC与DEF相似，并约定A对应D、B对应E、C对应F，那么AB对应DE、BC对应EF、AC对应DF。对应边不能只按图上看起来的位置猜测，尤其不能把最长边和不对应的短边混在同一比例中。",
+          "advisory": false
+        },
+        {
+          "materialTitle": "相似图形中的长度比与面积比",
+          "locationLabel": "第 2 段",
+          "excerpt": "从ABC到DEF的相似比定义为k=DE÷AB，k为正数。在这个方向下，DEF的每一条对应长度都是ABC的k倍：DE=k×AB、EF=k×BC、DF=k×AC。若反过来从DEF看ABC，相似比是1/k。写清“新图形相对原图形”可以避免把放大和缩小算反。只知道某一对边长之比，并不能在未获相似条件时推断其他边也按这个比例变化。",
+          "advisory": false
+        }
+      ]
+    }
+  ],
+  "result": null,
+  "review": null
+}

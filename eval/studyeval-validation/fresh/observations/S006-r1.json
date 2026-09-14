@@ -1,0 +1,230 @@
+{
+  "task": {
+    "caseId": "S006",
+    "runId": "S006-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S006.json",
+    "inputHash": "1f4afcd7cf4f8a35c5d5ce0fff26c9bae115b4f23abd5d6325fbbc86385fec71"
+  },
+  "inputHash": "1f4afcd7cf4f8a35c5d5ce0fff26c9bae115b4f23abd5d6325fbbc86385fec71",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "c64c2addf9186ba70eaca7189928341913faae8690645dbf01502ffafd17a402",
+    "stages": {
+      "blind-solution": {
+        "status": "resolved",
+        "solution": "初始未激活。①激活：据/sources/0/text激活规则，未激活→有效，允许。②入场：据入场规则，有效→已使用，允许。③再次入场：据已使用不能再次入场，不允许。必要限制：状态转换仅限给定三种规则，无其它路径。",
+        "refs": [
+          "/question/prompt",
+          "/sources/0/text"
+        ],
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "5df22305082ed220c0e2918db98b043b6e7635d8494521996b06981567b53a53"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "694fcf138ee515172ab2dd1c3a0a59baef8e0ee6b25086ed04ce3845111041ea"
+          }
+        ]
+      },
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q4",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "题目在给定规则下可答，要求逐步应用状态转换并说明依据，符合working_fluency；作者私有键正确未泄露，有效抽测目标技能。",
+            "refs": [
+              "/question/prompt",
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "assessment": {
+              "key": "correct",
+              "validity": "valid",
+              "exposure": "none",
+              "discrimination": "adequate",
+              "demand": "application",
+              "demandReason": "学生须依据规则推导每步状态变化并解释依据，非单纯抄写公式。",
+              "reason": "题干要求序列操作并说明依据；作者答案(未激活→有效→已使用；第三步不允许)正确且priorExposure空；任务需应用解释，判别力足。",
+              "refs": [
+                "/question/prompt",
+                "/artifacts/0/text",
+                "/sources/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/question/prompt",
+                  "valueHash": "5df22305082ed220c0e2918db98b043b6e7635d8494521996b06981567b53a53"
+                },
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "28304bf086083ba25f5bb5967980735bb14b47a3eee96a43a719cc790ce2b2da"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "694fcf138ee515172ab2dd1c3a0a59baef8e0ee6b25086ed04ce3845111041ea"
+                }
+              ]
+            },
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "5df22305082ed220c0e2918db98b043b6e7635d8494521996b06981567b53a53"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "28304bf086083ba25f5bb5967980735bb14b47a3eee96a43a719cc790ce2b2da"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "694fcf138ee515172ab2dd1c3a0a59baef8e0ee6b25086ed04ce3845111041ea"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q4",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "题目在给定规则下可答，要求应用状态转换并说明依据，符合working_fluency深度；作者答案正确且未泄露，有效抽样目标技能。",
+            "refs": [
+              "/question/prompt",
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "assessment": {
+              "key": "correct",
+              "validity": "valid",
+              "exposure": "none",
+              "discrimination": "adequate",
+              "demand": "application",
+              "demandReason": "学生必须根据来源规则逐步推导状态变化并解释每步依据，非抄写现成公式。",
+              "reason": "题干要求执行序列并说明依据；作者键给出正确结论且与盲解一致，无矛盾；priorExposure空无泄露；需应用规则解释，判别力足。",
+              "refs": [
+                "/question/prompt",
+                "/artifacts/0/text",
+                "/sources/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/question/prompt",
+                  "valueHash": "5df22305082ed220c0e2918db98b043b6e7635d8494521996b06981567b53a53"
+                },
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "28304bf086083ba25f5bb5967980735bb14b47a3eee96a43a719cc790ce2b2da"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "694fcf138ee515172ab2dd1c3a0a59baef8e0ee6b25086ed04ce3845111041ea"
+                }
+              ]
+            },
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "5df22305082ed220c0e2918db98b043b6e7635d8494521996b06981567b53a53"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "28304bf086083ba25f5bb5967980735bb14b47a3eee96a43a719cc790ce2b2da"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "694fcf138ee515172ab2dd1c3a0a59baef8e0ee6b25086ed04ce3845111041ea"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q4",
+          "level": 2,
+          "evidence": "sufficient",
+          "reason": "题目在给定规则下可答，要求逐步应用状态转换并说明依据，符合working_fluency；作者私有键正确未泄露，有效抽测目标技能。",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [],
+          "missing": [],
+          "assessment": {
+            "key": "correct",
+            "validity": "valid",
+            "exposure": "none",
+            "discrimination": "adequate",
+            "demand": "application",
+            "demandReason": "学生须依据规则推导每步状态变化并解释依据，非单纯抄写公式。",
+            "reason": "题干要求序列操作并说明依据；作者答案(未激活→有效→已使用；第三步不允许)正确且priorExposure空；任务需应用解释，判别力足。",
+            "refs": [
+              "/question/prompt",
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "5df22305082ed220c0e2918db98b043b6e7635d8494521996b06981567b53a53"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "28304bf086083ba25f5bb5967980735bb14b47a3eee96a43a719cc790ce2b2da"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "694fcf138ee515172ab2dd1c3a0a59baef8e0ee6b25086ed04ce3845111041ea"
+              }
+            ]
+          },
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "5df22305082ed220c0e2918db98b043b6e7635d8494521996b06981567b53a53"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "28304bf086083ba25f5bb5967980735bb14b47a3eee96a43a719cc790ce2b2da"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "694fcf138ee515172ab2dd1c3a0a59baef8e0ee6b25086ed04ce3845111041ea"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "74be928cef69f00e7557d1040edd7d2cfdd7f005093473400acec1ea1d937bbc"
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "inputIdentity": "556e22f0a19a375a99037fcabf87d314716b1a7272c56245f945c17012297090",
+  "attempts": [
+    {
+      "physicalId": "5b144b67-e88e-49f9-8d7f-f137be843ba0",
+      "caseId": "E658",
+      "runId": "H-E658-r3",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q2",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "核心目标1-3均给出可操作规则或示例，但次要目标‘重复平均不能自动消除共同偏差’仅以‘留意共同偏差’提醒，未解释，属局部缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/3"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "次要延伸目标仅简化为未解释提醒‘重复测量时也要留意共同偏差’，未说明共同方向偏差不被平均消除的机制。",
+            "impact": "不改变核心教学用途，因核心区间与比较目标已可用，次要延伸非必需核心。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/3"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "9f85ff5b494d6fb3aa0a5fc03f7b2cba0075759e5a444afa89829072dffa4a9b"
+              },
+              {
+                "pointer": "/goals/3",
+                "valueHash": "714460aff55596ab6a2b0d42615a21b9c5be82487f745a68d7ee18049f26f951"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "9f85ff5b494d6fb3aa0a5fc03f7b2cba0075759e5a444afa89829072dffa4a9b"
+          },
+          {
+            "pointer": "/goals/3",
+            "valueHash": "714460aff55596ab6a2b0d42615a21b9c5be82487f745a68d7ee18049f26f951"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

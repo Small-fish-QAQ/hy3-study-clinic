@@ -1,0 +1,128 @@
+{
+  "task": {
+    "caseId": "S052",
+    "runId": "S052-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S052.json",
+    "inputHash": "fb46738d1a087fb47ca2a668cb1eb07940dd29cd6bc5cdf4d14dcad476bb4bd6"
+  },
+  "inputHash": "fb46738d1a087fb47ca2a668cb1eb07940dd29cd6bc5cdf4d14dcad476bb4bd6",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "0e25a5bcb287c315cd50f79f1f4e44efa4b1d9492d633214cba69a91fc5474f8",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "诊断指出仅见次序错误且不确定比较首末字母，以cab/bac问首不同字母，并以abc/acb要求说明首位同看次位，提供具体可操作修复与迁移检查，符合标准。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text",
+              "/answer"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "e4e22ba55fa4a05ca2a3ce7b96aa7ac96f56eaf66d4841914023b35731d3817e"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "8e8aeb259dc1cfe4a1f03fa52d74d889ce63a71eb1e26a30d0128233ac115487"
+              },
+              {
+                "pointer": "/answer",
+                "valueHash": "948dc84c311f94f736381181143581872cf13a213125e81a3683ffed379fecb6"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "修复干预依据学习者仅暴露次序错误未示理由，识别比较字母位置疑点，给出cab/bac与abc/acb具体练习，要求指首异字母及首位同看次位，契合词典序规则，提供同技能可操作检查，无虚构或泛化缺陷。",
+            "refs": [
+              "/artifacts/0/text",
+              "/answer",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "e4e22ba55fa4a05ca2a3ce7b96aa7ac96f56eaf66d4841914023b35731d3817e"
+              },
+              {
+                "pointer": "/answer",
+                "valueHash": "948dc84c311f94f736381181143581872cf13a213125e81a3683ffed379fecb6"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "8e8aeb259dc1cfe4a1f03fa52d74d889ce63a71eb1e26a30d0128233ac115487"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q6",
+          "level": 2,
+          "evidence": "sufficient",
+          "reason": "诊断指出仅见次序错误且不确定比较首末字母，以cab/bac问首不同字母，并以abc/acb要求说明首位同看次位，提供具体可操作修复与迁移检查，符合标准。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text",
+            "/answer"
+          ],
+          "defects": [],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "e4e22ba55fa4a05ca2a3ce7b96aa7ac96f56eaf66d4841914023b35731d3817e"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "8e8aeb259dc1cfe4a1f03fa52d74d889ce63a71eb1e26a30d0128233ac115487"
+            },
+            {
+              "pointer": "/answer",
+              "valueHash": "948dc84c311f94f736381181143581872cf13a213125e81a3683ffed379fecb6"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "2ad2801872356a20b2a2c675680079d8bfd117bb3737a231379fe3c2f0d0a2e3"
+  }
+}

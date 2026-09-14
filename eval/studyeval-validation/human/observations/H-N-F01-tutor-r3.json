@@ -1,0 +1,196 @@
+{
+  "task": {
+    "caseId": "N-F01-tutor",
+    "runId": "H-N-F01-tutor-r3",
+    "replicate": 3,
+    "path": "runs/final/cases/N-F01-tutor.json",
+    "inputHash": "a03e021c3abfc0921f93c64381059ff54f10084a4e254b73ca45e64c55cb3e9e",
+    "population": "natural",
+    "sourceId": "F01"
+  },
+  "inputHash": "a03e021c3abfc0921f93c64381059ff54f10084a4e254b73ca45e64c55cb3e9e",
+  "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "b6f66c9052ff9f007a717de87ba34ae254ecf2eff8c94c34bdfdf8685cf5aa8a",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "产物准确转述来源中同现非因果的关键关系，自举读书节与喷药例子未与资料重复，边界说明与来源精神一致，无事实或归属缺陷。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "d70121f89a508edceaec3e092a9a3359d11d1a093baadfd5d9b047d0fd12cfaf"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          },
+          {
+            "dimension": "Q3",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "举例从同时发生前提出发，展示缺乏比较依据不能推断因果甚至可能反向，明确例子仅用于理解该原则及证明因果需其他依据，解释连接与限制充分。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "d70121f89a508edceaec3e092a9a3359d11d1a093baadfd5d9b047d0fd12cfaf"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "产物准确转述资料中同现非因果原则，自编假设例展示边界，未伪造证据，所有主张受F01支持，无事实或归属缺陷。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "d70121f89a508edceaec3e092a9a3359d11d1a093baadfd5d9b047d0fd12cfaf"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          },
+          {
+            "dimension": "Q3",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "针对目标，产物以读书节与喷药假设例解释同现非因果，说明无比较数据甚至可能减流故不能写因果，并交代适用边界与证明所需依据，解释连接充分。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "d70121f89a508edceaec3e092a9a3359d11d1a093baadfd5d9b047d0fd12cfaf"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q1",
+          "level": 2,
+          "evidence": "sufficient",
+          "reason": "产物准确转述来源中同现非因果的关键关系，自举读书节与喷药例子未与资料重复，边界说明与来源精神一致，无事实或归属缺陷。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "d70121f89a508edceaec3e092a9a3359d11d1a093baadfd5d9b047d0fd12cfaf"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        },
+        {
+          "dimension": "Q3",
+          "level": 2,
+          "evidence": "sufficient",
+          "reason": "举例从同时发生前提出发，展示缺乏比较依据不能推断因果甚至可能反向，明确例子仅用于理解该原则及证明因果需其他依据，解释连接与限制充分。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "d70121f89a508edceaec3e092a9a3359d11d1a093baadfd5d9b047d0fd12cfaf"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "cdef58e0514de5397fc884ae94d4a767cb247128229afc4b49451d3e2d86a0b2"
+  }
+}

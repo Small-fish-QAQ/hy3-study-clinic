@@ -1,0 +1,49 @@
+{
+  "inputIdentity": "1c5b22ca3e2c45edfc479396dfade1a681ce00e6bf07b6af50edc6489c1d277d",
+  "attempts": [
+    {
+      "physicalId": "26ce1f7a-4205-4d27-b570-abb2500a6b0e",
+      "caseId": "E319",
+      "runId": "H-E319-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q3",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "artifact对两人及一人例均展示了从依赖与资源前提到取最大完成时刻/串行相加操作，再至各步时刻与总时的连接，并交代“合法不等于最快”的限制，无具体缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "33824fb66056692a54116221be7ec4cd5e188b08312f05d3d6de83b6860bc990"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "inputIdentity": "c246a01156be70b14a87254795263f694cb86864d3f0a2cf2a9e0fc1a72487d5",
+  "attempts": [
+    {
+      "physicalId": "bcbc2f6e-7685-4289-a81c-348b88180014",
+      "caseId": "E047",
+      "runId": "H-E047-r2",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "lesson准确概括source：两周六共30人次非30人；10卡中8份支持不推全体；长期未定；摘要可省分计但留试行与范围。所有主张、数字、限制均有source支撑，无事实或归属缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "2e571e3058700991121d7236da0f92ba22b0a611fa21687090c6e99237327e08"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

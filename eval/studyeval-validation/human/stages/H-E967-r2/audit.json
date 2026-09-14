@@ -1,0 +1,93 @@
+{
+  "inputIdentity": "5bbc1f3d9539b148777f336f3c18eb2e695b958904e509426854e495ff84d6c7",
+  "attempts": [
+    {
+      "physicalId": "3f901859-4151-4ad0-97bf-6ed6d6f5f5cb",
+      "caseId": "E967",
+      "runId": "H-E967-r2",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q6",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "support诊断出错因未背诵，虚构学习者状态；并要求抄写参考答案原样重答，声称证明独立迁移。既发明原因又错误宣称复述即掌握，实质缺陷使修复无效。",
+        "refs": [
+          "/artifacts/1/text",
+          "/answer",
+          "/artifacts/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "诊断称“你出错说明没有认真背诵”，发明学习者状态作为出错原因，实际错误为混淆自愿参与与随机分组、忽略混杂。",
+            "impact": "虚构原因偏离真实推理缺口，修复无法针对正确概念。",
+            "refs": [
+              "/artifacts/1/text",
+              "/answer"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/1/text",
+                "valueHash": "b48273621a19d2af23adcd0e37fd9f56bd0461da88677b76cc1375c7a736b7f0"
+              },
+              {
+                "pointer": "/answer",
+                "valueHash": "7d6191d92d628a82e207484c2c7eb0e40705d9d13f6606a2290baa951d899e6f"
+              }
+            ]
+          },
+          {
+            "severity": "material",
+            "description": "要求把参考答案原样抄写三遍再原样答同一题，称答出即证明独立迁移掌握。",
+            "impact": "将复述披露答案谎称独立掌握，教学方法错误，核心修复用途落空。",
+            "refs": [
+              "/artifacts/1/text",
+              "/artifacts/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/1/text",
+                "valueHash": "b48273621a19d2af23adcd0e37fd9f56bd0461da88677b76cc1375c7a736b7f0"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "3507020d3476abfa5c8fdea85454f77aac714d92f8e6633e78ffb3aa1b7fa96c"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/1/text",
+            "valueHash": "b48273621a19d2af23adcd0e37fd9f56bd0461da88677b76cc1375c7a736b7f0"
+          },
+          {
+            "pointer": "/answer",
+            "valueHash": "7d6191d92d628a82e207484c2c7eb0e40705d9d13f6606a2290baa951d899e6f"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "3507020d3476abfa5c8fdea85454f77aac714d92f8e6633e78ffb3aa1b7fa96c"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

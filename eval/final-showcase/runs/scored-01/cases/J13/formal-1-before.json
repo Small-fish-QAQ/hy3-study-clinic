@@ -1,0 +1,38 @@
+{
+  "assessmentVersionId": "assessment_version_deb3fbd8-b14e-4428-ac5f-38cb1478e2e7",
+  "title": "独立检查：解释溶解度定义的溶剂基准与数据局限",
+  "attempt": {
+    "id": "assessment_attempt_399c29b2-de0f-4c61-bcf5-cb825333b449",
+    "assessmentVersionId": "assessment_version_deb3fbd8-b14e-4428-ac5f-38cb1478e2e7",
+    "workspaceId": "ws_f4a68d01-048c-43be-9eb4-b1a387fcea8c",
+    "ordinal": 1,
+    "status": "started",
+    "responses": {},
+    "startedAt": "2026-09-14T11:55:59.710Z",
+    "submittedAt": null,
+    "cancelledAt": null
+  },
+  "items": [
+    {
+      "itemId": "assessment_item_71ed8b33-ffdd-4288-81d5-2cda16b523c8",
+      "prompt": "某课外材料写道：“物质Z在20°C时的溶解度为25，表示每100克Z的饱和溶液中含溶质25克。”该材料还声称：“因为教学固体X在20°C溶解度为30、50°C溶解度为60，所以所有固体的溶解度都随温度按此比例翻倍。”根据本课仅提供的X数据与规则，请回答：(1) 本课定义的固体溶解度以什么为溶剂基准？分母是什么？(2) 为何不能将X的数据规律推广到所有固体？",
+      "purpose": "检验你是否能在自己的表述中说明这个关键能力。",
+      "sourceReferences": [
+        {
+          "materialTitle": "溶解度、饱和与冷却析出",
+          "locationLabel": "第 1 段",
+          "excerpt": "一种固体在给定温度下的溶解度，表示达到饱和时，每100克溶剂中最多能溶解多少克这种固体。本课溶剂都是水，溶解度单位写成“克溶质每100克水”。例如某教学用固体X在20摄氏度的溶解度为30，表示100克水最多溶解30克X，形成130克饱和溶液。分母100克是水，不是已经配好的溶液。",
+          "advisory": false
+        },
+        {
+          "materialTitle": "溶解度、饱和与冷却析出",
+          "locationLabel": "第 6 段",
+          "excerpt": "这些规则只使用给定X的数据，不把它推广为所有固体随温度变化的共同数值规律。",
+          "advisory": false
+        }
+      ]
+    }
+  ],
+  "result": null,
+  "review": null
+}

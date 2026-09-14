@@ -14,6 +14,7 @@ export default tseslint.config(
       'apps/web/vite.config.ts',
       // Published frozen evaluator bytes are checked by identity and offline replay.
       'eval/final-evaluation/method/src/**',
+      'eval/final-showcase/**',
     ],
   },
   js.configs.recommended,

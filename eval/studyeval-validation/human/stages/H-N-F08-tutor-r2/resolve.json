@@ -1,0 +1,93 @@
+{
+  "inputIdentity": "31cdc0eade38ec061fdf6abd0373817cf110be62bdf46d703eff49d388c01dcd",
+  "attempts": [
+    {
+      "physicalId": "4dba58bd-9159-4209-9de8-1b27c5d7d927",
+      "caseId": "N-F08-tutor",
+      "runId": "H-N-F08-tutor-r2",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "核心单向规则、逆否及反例类比均获F08支持，但artifact称资料为《印章卡片的逻辑》而源无此标题，属外围归属不实；修正后核心教学不变，故1非2；无机制错误非0。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "产物将来源归属于名为《印章卡片的逻辑》的课程资料，但来源F08文本中无此标题。",
+            "impact": "不更改核心逻辑机制教学，修正标题后主要推理与用途不变。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "d95e4892d1c0484b032189c23a6497f13e1c86cf1cfda09729d923a3a8615fa9"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "132c532360b4bc6ac5b2aa8886b4b3bf89c500f85d4e1be08595f9a669823289"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "d95e4892d1c0484b032189c23a6497f13e1c86cf1cfda09729d923a3a8615fa9"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "132c532360b4bc6ac5b2aa8886b4b3bf89c500f85d4e1be08595f9a669823289"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q1:1",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "课程资料《印章卡片的逻辑》说明",
+          "valueHash": "d95e4892d1c0484b032189c23a6497f13e1c86cf1cfda09729d923a3a8615fa9"
+        },
+        "reason": "artifact确有此命名，而/sources/0/text全文无该标题，归属不准确但不影响核心逻辑，为local。"
+      },
+      {
+        "id": "review2:Q1:1",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "课程资料《印章卡片的逻辑》说明",
+          "valueHash": "d95e4892d1c0484b032189c23a6497f13e1c86cf1cfda09729d923a3a8615fa9"
+        },
+        "reason": "同前，artifact命名来源标题，source F08无此标题，属局部归属缺陷，修正不影响核心。"
+      }
+    ]
+  }
+}

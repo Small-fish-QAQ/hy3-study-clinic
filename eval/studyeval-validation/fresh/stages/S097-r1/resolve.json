@@ -1,0 +1,93 @@
+{
+  "inputIdentity": "99c452b753edb5c7c90a8a476ce7eeeeefef0f669e92f73bf13a356c33a63fef",
+  "attempts": [
+    {
+      "physicalId": "da7ce20c-b07e-43b5-b268-f5b0a57ffa00",
+      "caseId": "S097",
+      "runId": "S097-r1",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q2",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "核心两目标在lesson中有准确可用规则，但次要目标'说明引用别人话语时的归属标记'完全未处理，属局部省略，核心用途成立，评1级。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/2"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "次要目标'说明引用别人话语时的归属标记'在lesson中无任何处理或提醒。",
+            "impact": "核心目标保持准确可用，省略次要目标不 defeat 声明目的，但使覆盖不完整，符合Q2的1级条件。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/2"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "2955c5a9173f69a8a98ac42c40be80a9884f2f9d92ab33f7700ef6f8ba35f4aa"
+              },
+              {
+                "pointer": "/goals/2",
+                "valueHash": "e6a9fe5f3b015bae44d40471551088d7d08a745fa66ebc11c00ab452a5d7dff2"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "2955c5a9173f69a8a98ac42c40be80a9884f2f9d92ab33f7700ef6f8ba35f4aa"
+          },
+          {
+            "pointer": "/goals/2",
+            "valueHash": "e6a9fe5f3b015bae44d40471551088d7d08a745fa66ebc11c00ab452a5d7dff2"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q2:1",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "小说中的“我”是文本叙述者，不自动是现实作者。它可以说自己的感受，但没有依据时不能知道另一人物没表达的心思。",
+          "valueHash": "2955c5a9173f69a8a98ac42c40be80a9884f2f9d92ab33f7700ef6f8ba35f4aa"
+        },
+        "reason": "引文仅说明叙述者身份与认知限制，未提及引用他人话语归属标记，证实次要目标在artifact中缺失。"
+      },
+      {
+        "id": "review2:Q2:1",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "小说中的“我”是文本叙述者，不自动是现实作者。它可以说自己的感受，但没有依据时不能知道另一人物没表达的心思。",
+          "valueHash": "2955c5a9173f69a8a98ac42c40be80a9884f2f9d92ab33f7700ef6f8ba35f4aa"
+        },
+        "reason": "同前，artifact文本无引用归属内容，次要目标省略属实，影响仅为局部。"
+      }
+    ]
+  }
+}

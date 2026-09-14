@@ -1,0 +1,716 @@
+{
+  "task": {
+    "caseId": "S066",
+    "runId": "S066-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S066.json",
+    "inputHash": "86648cafacdb867b83dfbaa2d819f7231b9688bf9681309dc99802cf0b9a79a2"
+  },
+  "inputHash": "86648cafacdb867b83dfbaa2d819f7231b9688bf9681309dc99802cf0b9a79a2",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "0eb37553bf0de1dc8f26e1b4b6d2ec4e5780b8cfcf0b76023d4c407ae365da5d",
+    "stages": {
+      "blind-solution": {
+        "status": "resolved",
+        "solution": "依/sources/0/text规则：A配T、T配A、C配G、G配C，逐位不反转。ATGC互补：A→T, T→A, G→C, C→G，得TACG。A与T配对，G与C配对。",
+        "refs": [
+          "/question/prompt",
+          "/sources/0/text"
+        ],
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "cc603cb06211612a79535e1784979707102b3f2b7ef97c310e43b139a5d004d6"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "a847dc2f4e2b8785ff7703505780dfeccac7b1219ac0350602cefadeadf033e1"
+          }
+        ]
+      },
+      "blind-student": {
+        "criteria": [
+          {
+            "id": "c1",
+            "result": "met",
+            "reason": "答案明确写出互补串TACG，满足逐位互补不反转要求",
+            "refs": [
+              "/answer",
+              "/rubric/0"
+            ],
+            "required": true,
+            "witnesses": [
+              {
+                "pointer": "/answer",
+                "valueHash": "f08ccfacfdeff745d2faff02198d7f364ce0e613d8ee2f26f23b8fa816db8274"
+              },
+              {
+                "pointer": "/rubric/0",
+                "valueHash": "6fe947ae7c7a78d14bc8936eb82fdb7b92f51cdea86673ee908623d0cb2421ba"
+              }
+            ]
+          },
+          {
+            "id": "c2",
+            "result": "met",
+            "reason": "答案明确表述A对T、G对C，符合明确配对要求",
+            "refs": [
+              "/answer",
+              "/rubric/1"
+            ],
+            "required": true,
+            "witnesses": [
+              {
+                "pointer": "/answer",
+                "valueHash": "f08ccfacfdeff745d2faff02198d7f364ce0e613d8ee2f26f23b8fa816db8274"
+              },
+              {
+                "pointer": "/rubric/1",
+                "valueHash": "bd66df53bb7d1e9a251f305678ac1e129dc39f36afd809fcfc894e104a962233"
+              }
+            ]
+          },
+          {
+            "id": "c3",
+            "result": "not_met",
+            "reason": "答案未使用小标题分项，但该标准非必需不影响核心用途",
+            "refs": [
+              "/answer",
+              "/rubric/2"
+            ],
+            "required": false,
+            "witnesses": [
+              {
+                "pointer": "/answer",
+                "valueHash": "f08ccfacfdeff745d2faff02198d7f364ce0e613d8ee2f26f23b8fa816db8274"
+              },
+              {
+                "pointer": "/rubric/2",
+                "valueHash": "6f8be15b0ef9ebb5a60baee2e77c77c6c953ccb7addda5722555779b819b7369"
+              }
+            ]
+          }
+        ],
+        "warrantedCredit": "granted"
+      },
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q5",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "产品对必需标准c1,c2判定met且授予学分正确；但误将可选c3判met并反馈称使用小标题，实际答案无小标题。必需判定与学分一致，仅可选标准错判属局部缺陷。",
+            "refs": [
+              "/answer",
+              "/rubric/0",
+              "/rubric/1",
+              "/rubric/2",
+              "/productJudgment/criteria/2",
+              "/productJudgment/feedback"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "产品将非必需标准c3（分项小标题）错误判定为met，且反馈声称使用了分项小标题",
+                "impact": "不改变核心用途，因c3为可选，必需标准与学分授予均正确，不影响学习评估实质",
+                "refs": [
+                  "/answer",
+                  "/productJudgment/criteria/2",
+                  "/productJudgment/feedback"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/answer",
+                    "valueHash": "f08ccfacfdeff745d2faff02198d7f364ce0e613d8ee2f26f23b8fa816db8274"
+                  },
+                  {
+                    "pointer": "/productJudgment/criteria/2",
+                    "valueHash": "35e7bfb27d54bc5b8ed1699cd41203fb25e5e569d9ae5579798d7e7e02830b58"
+                  },
+                  {
+                    "pointer": "/productJudgment/feedback",
+                    "valueHash": "5686190f0622de425026d24f2671a070c00a7452f1668d9321518dbbf3d74946"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "grading": {
+              "criteria": [
+                {
+                  "id": "c1",
+                  "result": "met",
+                  "reason": "学生答案明确写出互补串TACG，满足逐位互补不反转要求",
+                  "refs": [
+                    "/answer",
+                    "/rubric/0"
+                  ],
+                  "required": true,
+                  "witnesses": [
+                    {
+                      "pointer": "/answer",
+                      "valueHash": "f08ccfacfdeff745d2faff02198d7f364ce0e613d8ee2f26f23b8fa816db8274"
+                    },
+                    {
+                      "pointer": "/rubric/0",
+                      "valueHash": "6fe947ae7c7a78d14bc8936eb82fdb7b92f51cdea86673ee908623d0cb2421ba"
+                    }
+                  ]
+                },
+                {
+                  "id": "c2",
+                  "result": "met",
+                  "reason": "答案明确表述A对T、G对C，符合明确配对要求",
+                  "refs": [
+                    "/answer",
+                    "/rubric/1"
+                  ],
+                  "required": true,
+                  "witnesses": [
+                    {
+                      "pointer": "/answer",
+                      "valueHash": "f08ccfacfdeff745d2faff02198d7f364ce0e613d8ee2f26f23b8fa816db8274"
+                    },
+                    {
+                      "pointer": "/rubric/1",
+                      "valueHash": "bd66df53bb7d1e9a251f305678ac1e129dc39f36afd809fcfc894e104a962233"
+                    }
+                  ]
+                },
+                {
+                  "id": "c3",
+                  "result": "not_met",
+                  "reason": "答案未使用小标题分项，仅为连续句子，但该标准非必需",
+                  "refs": [
+                    "/answer",
+                    "/rubric/2"
+                  ],
+                  "required": false,
+                  "witnesses": [
+                    {
+                      "pointer": "/answer",
+                      "valueHash": "f08ccfacfdeff745d2faff02198d7f364ce0e613d8ee2f26f23b8fa816db8274"
+                    },
+                    {
+                      "pointer": "/rubric/2",
+                      "valueHash": "6f8be15b0ef9ebb5a60baee2e77c77c6c953ccb7addda5722555779b819b7369"
+                    }
+                  ]
+                }
+              ],
+              "warrantedCredit": "granted",
+              "actualCredit": "granted",
+              "actualCreditWitness": {
+                "pointer": "/productJudgment/consequence",
+                "valueHash": "dd515d1975b8e5a83bab3420bea5dacefe5451ac7cf617d23c4393cc79e4db99"
+              }
+            },
+            "witnesses": [
+              {
+                "pointer": "/answer",
+                "valueHash": "f08ccfacfdeff745d2faff02198d7f364ce0e613d8ee2f26f23b8fa816db8274"
+              },
+              {
+                "pointer": "/rubric/0",
+                "valueHash": "6fe947ae7c7a78d14bc8936eb82fdb7b92f51cdea86673ee908623d0cb2421ba"
+              },
+              {
+                "pointer": "/rubric/1",
+                "valueHash": "bd66df53bb7d1e9a251f305678ac1e129dc39f36afd809fcfc894e104a962233"
+              },
+              {
+                "pointer": "/rubric/2",
+                "valueHash": "6f8be15b0ef9ebb5a60baee2e77c77c6c953ccb7addda5722555779b819b7369"
+              },
+              {
+                "pointer": "/productJudgment/criteria/2",
+                "valueHash": "35e7bfb27d54bc5b8ed1699cd41203fb25e5e569d9ae5579798d7e7e02830b58"
+              },
+              {
+                "pointer": "/productJudgment/feedback",
+                "valueHash": "5686190f0622de425026d24f2671a070c00a7452f1668d9321518dbbf3d74946"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q5",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "学生答案给出TACG并说明A配T、G配C，满足两必需标准；产品授予学分正确。但产品误判可选小标题标准met且反馈称使用了分项小标题，实际答案无小标题，属局部缺陷不影响核心评分准确性。",
+            "refs": [
+              "/answer",
+              "/rubric/0",
+              "/rubric/1",
+              "/rubric/2",
+              "/productJudgment/criteria/2",
+              "/productJudgment/feedback"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "产品判定可选标准c3为met且反馈称使用了分项小标题，但学生答案'对应的互补串是TACG，因为A对T，G对C（T对A、C对G）。'并无小标题分项。",
+                "impact": "不改变核心评分用途，因c3非必需，必需标准c1/c2满足且学分granted正确。",
+                "refs": [
+                  "/answer",
+                  "/productJudgment/criteria/2",
+                  "/productJudgment/feedback",
+                  "/rubric/2"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/answer",
+                    "valueHash": "f08ccfacfdeff745d2faff02198d7f364ce0e613d8ee2f26f23b8fa816db8274"
+                  },
+                  {
+                    "pointer": "/productJudgment/criteria/2",
+                    "valueHash": "35e7bfb27d54bc5b8ed1699cd41203fb25e5e569d9ae5579798d7e7e02830b58"
+                  },
+                  {
+                    "pointer": "/productJudgment/feedback",
+                    "valueHash": "5686190f0622de425026d24f2671a070c00a7452f1668d9321518dbbf3d74946"
+                  },
+                  {
+                    "pointer": "/rubric/2",
+                    "valueHash": "6f8be15b0ef9ebb5a60baee2e77c77c6c953ccb7addda5722555779b819b7369"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "grading": {
+              "criteria": [
+                {
+                  "id": "c1",
+                  "result": "met",
+                  "reason": "答案明确写出互补串TACG，满足逐位互补不反转要求",
+                  "refs": [
+                    "/answer",
+                    "/rubric/0"
+                  ],
+                  "required": true,
+                  "witnesses": [
+                    {
+                      "pointer": "/answer",
+                      "valueHash": "f08ccfacfdeff745d2faff02198d7f364ce0e613d8ee2f26f23b8fa816db8274"
+                    },
+                    {
+                      "pointer": "/rubric/0",
+                      "valueHash": "6fe947ae7c7a78d14bc8936eb82fdb7b92f51cdea86673ee908623d0cb2421ba"
+                    }
+                  ]
+                },
+                {
+                  "id": "c2",
+                  "result": "met",
+                  "reason": "答案明确表述A对T、G对C，符合明确配对要求",
+                  "refs": [
+                    "/answer",
+                    "/rubric/1"
+                  ],
+                  "required": true,
+                  "witnesses": [
+                    {
+                      "pointer": "/answer",
+                      "valueHash": "f08ccfacfdeff745d2faff02198d7f364ce0e613d8ee2f26f23b8fa816db8274"
+                    },
+                    {
+                      "pointer": "/rubric/1",
+                      "valueHash": "bd66df53bb7d1e9a251f305678ac1e129dc39f36afd809fcfc894e104a962233"
+                    }
+                  ]
+                },
+                {
+                  "id": "c3",
+                  "result": "not_met",
+                  "reason": "答案未使用小标题分项，仅为连续句子，不满足可选格式",
+                  "refs": [
+                    "/answer",
+                    "/rubric/2"
+                  ],
+                  "required": false,
+                  "witnesses": [
+                    {
+                      "pointer": "/answer",
+                      "valueHash": "f08ccfacfdeff745d2faff02198d7f364ce0e613d8ee2f26f23b8fa816db8274"
+                    },
+                    {
+                      "pointer": "/rubric/2",
+                      "valueHash": "6f8be15b0ef9ebb5a60baee2e77c77c6c953ccb7addda5722555779b819b7369"
+                    }
+                  ]
+                }
+              ],
+              "warrantedCredit": "granted",
+              "actualCredit": "granted",
+              "actualCreditWitness": {
+                "pointer": "/productJudgment/consequence",
+                "valueHash": "dd515d1975b8e5a83bab3420bea5dacefe5451ac7cf617d23c4393cc79e4db99"
+              }
+            },
+            "witnesses": [
+              {
+                "pointer": "/answer",
+                "valueHash": "f08ccfacfdeff745d2faff02198d7f364ce0e613d8ee2f26f23b8fa816db8274"
+              },
+              {
+                "pointer": "/rubric/0",
+                "valueHash": "6fe947ae7c7a78d14bc8936eb82fdb7b92f51cdea86673ee908623d0cb2421ba"
+              },
+              {
+                "pointer": "/rubric/1",
+                "valueHash": "bd66df53bb7d1e9a251f305678ac1e129dc39f36afd809fcfc894e104a962233"
+              },
+              {
+                "pointer": "/rubric/2",
+                "valueHash": "6f8be15b0ef9ebb5a60baee2e77c77c6c953ccb7addda5722555779b819b7369"
+              },
+              {
+                "pointer": "/productJudgment/criteria/2",
+                "valueHash": "35e7bfb27d54bc5b8ed1699cd41203fb25e5e569d9ae5579798d7e7e02830b58"
+              },
+              {
+                "pointer": "/productJudgment/feedback",
+                "valueHash": "5686190f0622de425026d24f2671a070c00a7452f1668d9321518dbbf3d74946"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q5",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "重解任务确认答案TACG及A配T、G配C满足必需c1,c2；产品判met且granted正确。但可选c3小标题实际未用，产品误判met并反馈称使用，属局部缺陷不影响核心评分。",
+            "refs": [
+              "/answer",
+              "/rubric/0",
+              "/rubric/1",
+              "/rubric/2",
+              "/productJudgment/criteria/2",
+              "/productJudgment/feedback"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "产品将可选标准c3（分项小标题）错误判定为met，且反馈声称使用了分项小标题",
+                "impact": "不改变核心评分用途，因c3非必需，必需标准c1/c2满足且学分granted正确",
+                "refs": [
+                  "/answer",
+                  "/productJudgment/criteria/2",
+                  "/productJudgment/feedback"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/answer",
+                    "valueHash": "f08ccfacfdeff745d2faff02198d7f364ce0e613d8ee2f26f23b8fa816db8274"
+                  },
+                  {
+                    "pointer": "/productJudgment/criteria/2",
+                    "valueHash": "35e7bfb27d54bc5b8ed1699cd41203fb25e5e569d9ae5579798d7e7e02830b58"
+                  },
+                  {
+                    "pointer": "/productJudgment/feedback",
+                    "valueHash": "5686190f0622de425026d24f2671a070c00a7452f1668d9321518dbbf3d74946"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "grading": {
+              "criteria": [
+                {
+                  "id": "c1",
+                  "result": "met",
+                  "reason": "答案明确写出互补串TACG，满足逐位互补不反转要求",
+                  "refs": [
+                    "/answer",
+                    "/rubric/0"
+                  ],
+                  "required": true,
+                  "witnesses": [
+                    {
+                      "pointer": "/answer",
+                      "valueHash": "f08ccfacfdeff745d2faff02198d7f364ce0e613d8ee2f26f23b8fa816db8274"
+                    },
+                    {
+                      "pointer": "/rubric/0",
+                      "valueHash": "6fe947ae7c7a78d14bc8936eb82fdb7b92f51cdea86673ee908623d0cb2421ba"
+                    }
+                  ]
+                },
+                {
+                  "id": "c2",
+                  "result": "met",
+                  "reason": "答案明确表述A对T、G对C，符合明确配对要求",
+                  "refs": [
+                    "/answer",
+                    "/rubric/1"
+                  ],
+                  "required": true,
+                  "witnesses": [
+                    {
+                      "pointer": "/answer",
+                      "valueHash": "f08ccfacfdeff745d2faff02198d7f364ce0e613d8ee2f26f23b8fa816db8274"
+                    },
+                    {
+                      "pointer": "/rubric/1",
+                      "valueHash": "bd66df53bb7d1e9a251f305678ac1e129dc39f36afd809fcfc894e104a962233"
+                    }
+                  ]
+                },
+                {
+                  "id": "c3",
+                  "result": "not_met",
+                  "reason": "答案未使用小标题分项，仅为连续句子，不满足可选格式",
+                  "refs": [
+                    "/answer",
+                    "/rubric/2"
+                  ],
+                  "required": false,
+                  "witnesses": [
+                    {
+                      "pointer": "/answer",
+                      "valueHash": "f08ccfacfdeff745d2faff02198d7f364ce0e613d8ee2f26f23b8fa816db8274"
+                    },
+                    {
+                      "pointer": "/rubric/2",
+                      "valueHash": "6f8be15b0ef9ebb5a60baee2e77c77c6c953ccb7addda5722555779b819b7369"
+                    }
+                  ]
+                }
+              ],
+              "warrantedCredit": "granted",
+              "actualCredit": "granted",
+              "actualCreditWitness": {
+                "pointer": "/productJudgment/consequence",
+                "valueHash": "dd515d1975b8e5a83bab3420bea5dacefe5451ac7cf617d23c4393cc79e4db99"
+              }
+            },
+            "witnesses": [
+              {
+                "pointer": "/answer",
+                "valueHash": "f08ccfacfdeff745d2faff02198d7f364ce0e613d8ee2f26f23b8fa816db8274"
+              },
+              {
+                "pointer": "/rubric/0",
+                "valueHash": "6fe947ae7c7a78d14bc8936eb82fdb7b92f51cdea86673ee908623d0cb2421ba"
+              },
+              {
+                "pointer": "/rubric/1",
+                "valueHash": "bd66df53bb7d1e9a251f305678ac1e129dc39f36afd809fcfc894e104a962233"
+              },
+              {
+                "pointer": "/rubric/2",
+                "valueHash": "6f8be15b0ef9ebb5a60baee2e77c77c6c953ccb7addda5722555779b819b7369"
+              },
+              {
+                "pointer": "/productJudgment/criteria/2",
+                "valueHash": "35e7bfb27d54bc5b8ed1699cd41203fb25e5e569d9ae5579798d7e7e02830b58"
+              },
+              {
+                "pointer": "/productJudgment/feedback",
+                "valueHash": "5686190f0622de425026d24f2671a070c00a7452f1668d9321518dbbf3d74946"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q5:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/answer",
+              "quote": "对应的互补串是TACG，因为A对T，G对C（T对A、C对G）。",
+              "valueHash": "f08ccfacfdeff745d2faff02198d7f364ce0e613d8ee2f26f23b8fa816db8274"
+            },
+            "reason": "学生答案为连续句子无小标题，证明可选c3未满足；产品判c3 met且反馈称使用小标题错误，但c3可选不影响核心评分。"
+          },
+          {
+            "id": "review2:Q5:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/productJudgment/feedback",
+              "quote": "答案的序列和配对都正确，且使用了分项小标题。",
+              "valueHash": "5686190f0622de425026d24f2671a070c00a7452f1668d9321518dbbf3d74946"
+            },
+            "reason": "反馈声称使用小标题，但/answer无小标题，证实产品误判可选c3为met属局部缺陷，必需判定与学分正确。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q5",
+          "level": 1,
+          "evidence": "sufficient",
+          "reason": "重解任务确认答案TACG及A配T、G配C满足必需c1,c2；产品判met且granted正确。但可选c3小标题实际未用，产品误判met并反馈称使用，属局部缺陷不影响核心评分。",
+          "refs": [
+            "/answer",
+            "/rubric/0",
+            "/rubric/1",
+            "/rubric/2",
+            "/productJudgment/criteria/2",
+            "/productJudgment/feedback"
+          ],
+          "defects": [
+            {
+              "severity": "local",
+              "description": "产品将可选标准c3（分项小标题）错误判定为met，且反馈声称使用了分项小标题",
+              "impact": "不改变核心评分用途，因c3非必需，必需标准c1/c2满足且学分granted正确",
+              "refs": [
+                "/answer",
+                "/productJudgment/criteria/2",
+                "/productJudgment/feedback"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "f08ccfacfdeff745d2faff02198d7f364ce0e613d8ee2f26f23b8fa816db8274"
+                },
+                {
+                  "pointer": "/productJudgment/criteria/2",
+                  "valueHash": "35e7bfb27d54bc5b8ed1699cd41203fb25e5e569d9ae5579798d7e7e02830b58"
+                },
+                {
+                  "pointer": "/productJudgment/feedback",
+                  "valueHash": "5686190f0622de425026d24f2671a070c00a7452f1668d9321518dbbf3d74946"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "grading": {
+            "criteria": [
+              {
+                "id": "c1",
+                "result": "met",
+                "reason": "答案明确写出互补串TACG，满足逐位互补不反转要求",
+                "refs": [
+                  "/answer",
+                  "/rubric/0"
+                ],
+                "required": true,
+                "witnesses": [
+                  {
+                    "pointer": "/answer",
+                    "valueHash": "f08ccfacfdeff745d2faff02198d7f364ce0e613d8ee2f26f23b8fa816db8274"
+                  },
+                  {
+                    "pointer": "/rubric/0",
+                    "valueHash": "6fe947ae7c7a78d14bc8936eb82fdb7b92f51cdea86673ee908623d0cb2421ba"
+                  }
+                ]
+              },
+              {
+                "id": "c2",
+                "result": "met",
+                "reason": "答案明确表述A对T、G对C，符合明确配对要求",
+                "refs": [
+                  "/answer",
+                  "/rubric/1"
+                ],
+                "required": true,
+                "witnesses": [
+                  {
+                    "pointer": "/answer",
+                    "valueHash": "f08ccfacfdeff745d2faff02198d7f364ce0e613d8ee2f26f23b8fa816db8274"
+                  },
+                  {
+                    "pointer": "/rubric/1",
+                    "valueHash": "bd66df53bb7d1e9a251f305678ac1e129dc39f36afd809fcfc894e104a962233"
+                  }
+                ]
+              },
+              {
+                "id": "c3",
+                "result": "not_met",
+                "reason": "答案未使用小标题分项，仅为连续句子，不满足可选格式",
+                "refs": [
+                  "/answer",
+                  "/rubric/2"
+                ],
+                "required": false,
+                "witnesses": [
+                  {
+                    "pointer": "/answer",
+                    "valueHash": "f08ccfacfdeff745d2faff02198d7f364ce0e613d8ee2f26f23b8fa816db8274"
+                  },
+                  {
+                    "pointer": "/rubric/2",
+                    "valueHash": "6f8be15b0ef9ebb5a60baee2e77c77c6c953ccb7addda5722555779b819b7369"
+                  }
+                ]
+              }
+            ],
+            "warrantedCredit": "granted",
+            "actualCredit": "granted",
+            "actualCreditWitness": {
+              "pointer": "/productJudgment/consequence",
+              "valueHash": "dd515d1975b8e5a83bab3420bea5dacefe5451ac7cf617d23c4393cc79e4db99"
+            }
+          },
+          "witnesses": [
+            {
+              "pointer": "/answer",
+              "valueHash": "f08ccfacfdeff745d2faff02198d7f364ce0e613d8ee2f26f23b8fa816db8274"
+            },
+            {
+              "pointer": "/rubric/0",
+              "valueHash": "6fe947ae7c7a78d14bc8936eb82fdb7b92f51cdea86673ee908623d0cb2421ba"
+            },
+            {
+              "pointer": "/rubric/1",
+              "valueHash": "bd66df53bb7d1e9a251f305678ac1e129dc39f36afd809fcfc894e104a962233"
+            },
+            {
+              "pointer": "/rubric/2",
+              "valueHash": "6f8be15b0ef9ebb5a60baee2e77c77c6c953ccb7addda5722555779b819b7369"
+            },
+            {
+              "pointer": "/productJudgment/criteria/2",
+              "valueHash": "35e7bfb27d54bc5b8ed1699cd41203fb25e5e569d9ae5579798d7e7e02830b58"
+            },
+            {
+              "pointer": "/productJudgment/feedback",
+              "valueHash": "5686190f0622de425026d24f2671a070c00a7452f1668d9321518dbbf3d74946"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "971f346910a5632f60e5bde4da0fcadda5a592ec9891a7d51824183a7dbed17d"
+  }
+}

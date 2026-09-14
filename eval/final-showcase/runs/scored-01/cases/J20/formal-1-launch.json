@@ -1,0 +1,62 @@
+{
+  "kind": "assessment",
+  "agendaItemId": "agenda_item_24ae49d3-24ff-4f52-9519-761789f08269",
+  "quiz": {
+    "id": "qz_6510c8f8-3d38-4777-a8d5-68cd71134157",
+    "materialId": null,
+    "workspaceId": "ws_8d200fc2-5481-408a-9775-3261ce4eb3de",
+    "kind": "adaptive",
+    "assessmentMode": "concept_practice",
+    "config": {
+      "difficulty": "medium",
+      "types": [
+        "short_answer"
+      ],
+      "countPerType": 1
+    },
+    "questions": [
+      {
+        "id": "que_d81cedbe-3136-4f92-b43d-7671b3a263f7",
+        "index": 0,
+        "type": "short_answer",
+        "stem": "假设函数 f(a): 先执行 a = a + 5，然后返回 a * 2。调用者持有变量 b = 3，执行 c = f(b)。请回答：(1) 在函数定义中 a 是什么？调用时提供的 b 的值扮演什么角色？(2) 解释按值传递如何将 b 的值绑定到 a，并说明函数内对 a 的赋值是否会影响调用者变量 b，为什么？(3) 调用结束后 c 和 b 的值分别是多少？展示你的推理过程。",
+        "conceptId": "con_c30a7b62-65e6-40f4-9a66-7a4c1b5c3872",
+        "conceptName": "参数与实参的区别",
+        "grounding": {
+          "blockId": "blk_0_405aecb2",
+          "quote": "A function is a named procedure that can receive values and return a result. In this lesson all values are numbers, passed by value. Each call creates its own local parameter names. Assigning to a local name changes that call's local value; it does not change a numeric variable in the caller. The functions shown have no files, global state, or other side effects.",
+          "startOffset": 0,
+          "endOffset": 365,
+          "occurrenceCount": 1,
+          "reanchored": false
+        },
+        "supplementaryEvidence": [
+          {
+            "blockId": "blk_1_114bff63",
+            "quote": "Consider the function adjust(x): first set x = x + 2, then return x * 3. The name x in the definition is a parameter. In adjust(4), the supplied number 4 is an argument. At the start of the call local x is 4; after the assignment it is 6; the returned value is 18. The call does not return 6 just because 6 was the last value assigned to x: the return expression multiplies it by 3.",
+            "startOffset": 0,
+            "endOffset": 382,
+            "occurrenceCount": 1,
+            "reanchored": false
+          },
+          {
+            "blockId": "blk_2_19dacabd",
+            "quote": "Now let the caller have n = 4 and execute result = adjust(n). The value of n is supplied to the call, so result becomes 18. After the call n is still 4. The local reassignment of x does not update n. If the caller instead writes n = adjust(n), the returned 18 is explicitly assigned to n by the caller, so n becomes 18. These two caller statements have different effects even though the function body is identical.",
+            "startOffset": 0,
+            "endOffset": 414,
+            "occurrenceCount": 1,
+            "reanchored": false
+          }
+        ],
+        "blueprintId": "bp_0d3bb9e8-7efb-4c21-87e3-9d85d5964820",
+        "points": 2
+      }
+    ],
+    "targetConceptIds": [
+      "con_c30a7b62-65e6-40f4-9a66-7a4c1b5c3872"
+    ],
+    "createdAt": "2026-09-14T12:19:03.730Z"
+  },
+  "assessmentKind": "formal_checkpoint",
+  "formalAssessmentVersionId": "assessment_version_0473f5e0-6ebf-4278-8566-d06dbb2eaa35"
+}

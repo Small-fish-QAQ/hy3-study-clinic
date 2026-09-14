@@ -1,0 +1,88 @@
+{
+  "inputIdentity": "4ce14f391fd084a059d8e0772973a2995e24699f7aa24e3933bfa63b029cd356",
+  "attempts": [
+    {
+      "physicalId": "48dce725-7057-4a33-aaed-baf0022ebebe",
+      "caseId": "S091",
+      "runId": "S091-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q3",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "artifact称指数前负号等于结果前负号，算2^(-3)=-8，教授错误机制，违背source正确规则及goals解释倒数的要求；又称0有倒数亦错。核心解释错误，教学用途实质破坏。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "artifact声称'指数前的负号等于结果前的负号，所以2^(-3)=-8'，将负指数错误等同于结果前加负号，违背source中a^(-n)=1/a^n及负指数不表示数前加负号的正确规则，且未展示倒数推导。",
+            "impact": "错误机制改变核心教学用途，学习者被教以无效方法，目标（解释负指数为倒数而非负数）完全失败。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "6aae95868d661b1ab8e48373b9ffb6b00e77e9766b05ea85f48ef6b7a99a2d16"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "8f66df12d54e18d234589d8c047330d6ce2ae196b074b8083cf0629060128d07"
+              }
+            ]
+          },
+          {
+            "severity": "material",
+            "description": "artifact补充'0也有倒数'，违背source中a=0时倒数式无定义的事实。",
+            "impact": "进一步传播错误数学事实，但核心已因主错误而material，此缺陷强化实质错误。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "6aae95868d661b1ab8e48373b9ffb6b00e77e9766b05ea85f48ef6b7a99a2d16"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "8f66df12d54e18d234589d8c047330d6ce2ae196b074b8083cf0629060128d07"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "6aae95868d661b1ab8e48373b9ffb6b00e77e9766b05ea85f48ef6b7a99a2d16"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "8f66df12d54e18d234589d8c047330d6ce2ae196b074b8083cf0629060128d07"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

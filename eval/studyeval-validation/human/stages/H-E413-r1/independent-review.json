@@ -1,0 +1,69 @@
+{
+  "inputIdentity": "4c7448b1022cafcd0b7affc847147a97a7cbd1e4ef3f0ba163b098f6a9fde551",
+  "attempts": [
+    {
+      "physicalId": "50d9ab15-0418-4024-9fb9-dd8836917359",
+      "caseId": "E413",
+      "runId": "H-E413-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q3",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "artifact错误声称盖章只需等调墨3分钟不必等裁纸，违背source明确依赖。推出错误时刻与人员无关，传授无效方法，实质破坏讲解用途。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "Artifact claims stamping starts after mixing only, ignoring cutting prerequisite.",
+            "impact": "Invalid dependency taught, wrong times and false staff independence destroy local explanation.",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "76700318469aedf9e8629802845116e5adb78030a2aeda7f5e8f9b787211831a"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "76700318469aedf9e8629802845116e5adb78030a2aeda7f5e8f9b787211831a"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

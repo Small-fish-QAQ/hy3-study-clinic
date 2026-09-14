@@ -1,0 +1,76 @@
+{
+  "inputIdentity": "cac4e82062ec9e12cf3b23af44641b92428f0a75a6700c9348678f9f91ed2014",
+  "attempts": [
+    {
+      "physicalId": "f6cac937-247e-4b5c-a3da-837308c02769",
+      "caseId": "N-F05-tutor",
+      "runId": "H-N-F05-tutor-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "tutor-reply主张区间模型、比较区间重叠证据不足、小数位多不更准确均与F05一致；自举电子秤例区间计算正确，边界说明符合资料限制，无事实或归属缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "b715f15b523c715661ff4e94ca664156d6b6b2f9aee0edb446e03f8a0b9be19b"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "04ede0e2b943c283408af13f15e429c4d3f550318ac34096022b20c8a80a02fc"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      },
+      {
+        "dimension": "Q3",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "产物以资料模型为前提，用电子秤新例展示由读数误差得区间并比较重叠，解释比区间不比读数及证据不足关系，并说明模型适用边界，连接充分，无缺失。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "b715f15b523c715661ff4e94ca664156d6b6b2f9aee0edb446e03f8a0b9be19b"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "04ede0e2b943c283408af13f15e429c4d3f550318ac34096022b20c8a80a02fc"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

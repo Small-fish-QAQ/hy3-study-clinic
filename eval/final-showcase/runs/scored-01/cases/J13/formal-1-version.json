@@ -1,0 +1,75 @@
+{
+  "id": "assessment_version_deb3fbd8-b14e-4428-ac5f-38cb1478e2e7",
+  "definitionId": "assessment_fcea2ba0-ee92-4a09-8fcb-63f99d94e7df",
+  "version": 1,
+  "predecessorId": null,
+  "status": "accepted",
+  "items": [
+    {
+      "id": "assessment_item_71ed8b33-ffdd-4288-81d5-2cda16b523c8",
+      "sourceQuestionId": "que_24216651-0b0b-49e8-86fd-1fca81a22768",
+      "index": 0,
+      "targetLearningUnitId": "cun_e31af6e4-acf1-4362-84d5-538900ca4da0",
+      "targetObjectiveId": "obj_9076931b-7855-4bbc-8bc2-c00b9efe29c5",
+      "representation": "recall",
+      "questionType": "short_answer",
+      "prompt": "某课外材料写道：“物质Z在20°C时的溶解度为25，表示每100克Z的饱和溶液中含溶质25克。”该材料还声称：“因为教学固体X在20°C溶解度为30、50°C溶解度为60，所以所有固体的溶解度都随温度按此比例翻倍。”根据本课仅提供的X数据与规则，请回答：(1) 本课定义的固体溶解度以什么为溶剂基准？分母是什么？(2) 为何不能将X的数据规律推广到所有固体？",
+      "rubric": [
+        {
+          "id": "criterion_1876ee06-6c7c-478a-a094-c52aac323df2",
+          "text": "正确说明溶解度定义以100克溶剂（水）为基准，分母不是溶液（可指出Z材料错误在误用溶液分母）。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_31f0b672",
+            "blk_5_a88bc01f"
+          ]
+        },
+        {
+          "id": "criterion_155d487c-fe41-4b46-91f8-12392d7bd9ef",
+          "text": "明确说明本课规则仅使用给定X的数据，不把它推广为所有固体随温度变化的共同数值规律（指出Z材料推广错误）。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_31f0b672",
+            "blk_5_a88bc01f"
+          ]
+        }
+      ],
+      "sourceBindings": [
+        {
+          "materialId": "mat_81c6f736-fcbb-4861-a03e-a842e2ba8ba5",
+          "materialRevisionId": "rev_bb986720-b58e-4256-9d7d-935d4a5de580",
+          "sourceBlockId": "blk_0_31f0b672",
+          "quote": "一种固体在给定温度下的溶解度，表示达到饱和时，每100克溶剂中最多能溶解多少克这种固体。本课溶剂都是水，溶解度单位写成“克溶质每100克水”。例如某教学用固体X在20摄氏度的溶解度为30，表示100克水最多溶解30克X，形成130克饱和溶液。分母100克是水，不是已经配好的溶液。",
+          "contentOrigin": "extracted_original",
+          "authoritative": true
+        },
+        {
+          "materialId": "mat_81c6f736-fcbb-4861-a03e-a842e2ba8ba5",
+          "materialRevisionId": "rev_bb986720-b58e-4256-9d7d-935d4a5de580",
+          "sourceBlockId": "blk_5_a88bc01f",
+          "quote": "这些规则只使用给定X的数据，不把它推广为所有固体随温度变化的共同数值规律。",
+          "contentOrigin": "extracted_original",
+          "authoritative": true
+        }
+      ],
+      "formalEligible": true,
+      "policyReason": "FORMAL_ELIGIBLE"
+    }
+  ],
+  "sourceRevisionIds": [
+    "rev_bb986720-b58e-4256-9d7d-935d4a5de580"
+  ],
+  "createdAt": "2026-09-14T11:55:59.700Z",
+  "acceptedAt": "2026-09-14T11:55:59.702Z",
+  "authorityMode": "formal",
+  "progressionContext": {
+    "quizId": "qz_ce45c3dd-92f5-42a7-a177-a34359df4fa4",
+    "contractVersionId": "contract_1cccff51-2a1f-450b-8f6a-475244802aaf",
+    "curriculumVersionId": "curriculum_6bf66edd-bd42-471f-a644-281c89bef5cb",
+    "studyPlanVersionId": "study_plan_b982649b-c47f-4c1f-892c-9af9f42e4e2d",
+    "agendaId": "agenda_9be71982-a7c7-4967-802f-50c33f597d49",
+    "agendaItemId": "agenda_item_01db5842-271b-40c5-8665-b7e9f3fd63db",
+    "assessmentKind": "formal_checkpoint",
+    "executionSourceManifestFingerprint": "manifest_47b1f768"
+  }
+}

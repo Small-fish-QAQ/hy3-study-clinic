@@ -1,0 +1,69 @@
+{
+  "inputIdentity": "c49d6dbae28c9ecab1d49e97e9f8a201c8bd6fc63d5dffe417a3876c21a3638e",
+  "attempts": [
+    {
+      "physicalId": "55733cae-b03d-48f3-8262-f4508944eff1",
+      "caseId": "S071",
+      "runId": "S071-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q2",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "Lesson文本声称复制后应删除源文件、移动后源文件必须保留，与源规则完全相反，直接矛盾两个核心目标的状态说明，导致学习者获得错误模型，声明目的失败。次要目标虽正确但无法弥补核心矛盾。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "Lesson states '复制完成后应删除原路径文件；移动后原路径文件必须仍保留', contradicting source rule that copy retains source and move removes it.",
+            "impact": "Defeats core goals of explaining correct post-copy and post-move states; learner taught inverse false model.",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "fc8fca96c682c31ee0bfd6ce56aa9a31702bf79d5f6f1463e1eaf5a8592a5052"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "f077626b6cc0dcadf32134e02c41925aefa4067f55b8ae7509353fb99642dc40"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "fc8fca96c682c31ee0bfd6ce56aa9a31702bf79d5f6f1463e1eaf5a8592a5052"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "f077626b6cc0dcadf32134e02c41925aefa4067f55b8ae7509353fb99642dc40"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

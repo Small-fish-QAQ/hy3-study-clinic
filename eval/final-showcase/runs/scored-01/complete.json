@@ -1,0 +1,373 @@
+{
+  "completedAt": "2026-09-14T12:20:56.060Z",
+  "results": [
+    {
+      "id": "J03",
+      "status": "completed_with_observed_boundaries",
+      "teaching": [
+        "failed"
+      ],
+      "formal": [],
+      "counts": {
+        "physical": 10,
+        "logical": 8
+      }
+    },
+    {
+      "id": "J01",
+      "status": "completed_with_observed_boundaries",
+      "teaching": [
+        "completed",
+        "completed"
+      ],
+      "formal": [
+        {
+          "status": "completed",
+          "demonstrated": true
+        }
+      ],
+      "counts": {
+        "physical": 31,
+        "logical": 29
+      }
+    },
+    {
+      "id": "J04",
+      "status": "completed_with_observed_boundaries",
+      "teaching": [
+        "completed",
+        "completed"
+      ],
+      "formal": [
+        {
+          "status": "completed",
+          "demonstrated": true
+        }
+      ],
+      "counts": {
+        "physical": 32,
+        "logical": 30
+      }
+    },
+    {
+      "id": "J05",
+      "status": "completed_with_observed_boundaries",
+      "teaching": [
+        "completed",
+        "completed"
+      ],
+      "formal": [
+        {
+          "status": "failed",
+          "error": {
+            "name": "AppError",
+            "code": "GROUNDING_FAILED",
+            "message": "生成的评估题均未通过本地校验(概念、题型或证据不合法),请重试。",
+            "details": {
+              "rejected": [
+                {
+                  "stem": "水平轻杆，支点O固定，忽略杆重，所有挂载力均竖直向下。左侧有 9 N 向下力，距支点水平距离 0.2 m；右侧有 5 N 向下力，距支点水平距离 0.3 m。请回答杆会向哪个方向转动，并解释为什么不能仅通过比较两个力的大小来判断转动效果。需说明力臂的定义以及转动效果由什么决定。",
+                  "reason": "独立评分审核未通过：结论限于题干所给轻杆模型（忽略杆重、支点固定、竖直向下力），依据blk_5不代替真实设备安全设计；未考虑杆重、摩擦、斜向力或空间约束等其他可能。；rubric_point:1 将“不是任意选取的杆长”作为必需定义的一部分，但题干仅要求“需说明力臂的定义”，未要求排除误解的否定句；该额外细节非题目明确要求或逻辑必要，构成隐藏必需要求，故requiredCriteriaAppropriate=false；替代答案在缺失否定细节情况下仍完整满足题干实质任务，证明将该否定细节设为必需评分点过强，属于题干未要求的隐藏必需，与requiredCriteriaAppropriate=false一致。"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "counts": {
+        "physical": 34,
+        "logical": 31
+      }
+    },
+    {
+      "id": "J07",
+      "status": "completed_with_observed_boundaries",
+      "teaching": [
+        "failed"
+      ],
+      "formal": [],
+      "counts": {
+        "physical": 18,
+        "logical": 15
+      }
+    },
+    {
+      "id": "J06",
+      "status": "completed_with_observed_boundaries",
+      "teaching": [
+        "completed",
+        "completed"
+      ],
+      "formal": [
+        {
+          "status": "completed",
+          "demonstrated": true
+        }
+      ],
+      "counts": {
+        "physical": 43,
+        "logical": 38
+      }
+    },
+    {
+      "id": "J02",
+      "status": "completed_with_observed_boundaries",
+      "teaching": [
+        "completed",
+        "completed"
+      ],
+      "formal": [
+        {
+          "status": "completed",
+          "demonstrated": true
+        }
+      ],
+      "counts": {
+        "physical": 37,
+        "logical": 34
+      }
+    },
+    {
+      "id": "J08",
+      "status": "completed_with_observed_boundaries",
+      "teaching": [
+        "completed",
+        "completed"
+      ],
+      "formal": [
+        {
+          "status": "completed",
+          "demonstrated": true
+        }
+      ],
+      "counts": {
+        "physical": 30,
+        "logical": 29
+      }
+    },
+    {
+      "id": "J11",
+      "status": "completed_with_observed_boundaries",
+      "teaching": [
+        "completed",
+        "completed"
+      ],
+      "formal": [
+        {
+          "status": "completed",
+          "demonstrated": true
+        }
+      ],
+      "counts": {
+        "physical": 30,
+        "logical": 29
+      }
+    },
+    {
+      "id": "J10",
+      "status": "completed_with_observed_boundaries",
+      "teaching": [
+        "completed",
+        "completed"
+      ],
+      "formal": [
+        {
+          "status": "failed",
+          "error": {
+            "name": "AppError",
+            "code": "GROUNDING_FAILED",
+            "message": "生成的评估题均未通过本地校验(概念、题型或证据不合法),请重试。",
+            "details": {
+              "rejected": [
+                {
+                  "stem": "假设一个正常体细胞有3条染色体，每条含一个DNA分子。根据本课模型，细胞先在分裂前的间期复制DNA，随后在有丝分裂过程中分配复制后的染色体，通常再经细胞质分裂形成两个细胞。请解释为什么说“DNA复制”和“染色体分配”是两个不同的动作，并说明它们分别导致了什么变化以及发生的先后顺序。",
+                  "reason": "独立评分审核未通过：requiredCriteriaAppropriate=false: 评分点rubric_point:0将‘通常再经细胞质分裂形成两个细胞’作为必需说明部分，但题干仅要求解释‘DNA复制’和‘染色体分配’两个动作的不同、分别导致的变化及先后顺序，并未要求必须提及细胞质分裂；scoringChallenges中C1的替代答案未提胞质分裂仍完整满足题目任务，证明该细节非必需，属于过宽要求。；质疑成立：题目仅要求说明DNA复制和染色体分配两个动作的不同、变化及先后顺序，细胞质分裂是背景中提及的后续动作而非被解释对象；替代答案未包含该细节却已充分完成任务，证明评分点将其设为必需过于宽泛，非问题明确要求或逻辑必要。"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "counts": {
+        "physical": 33,
+        "logical": 32
+      }
+    },
+    {
+      "id": "J09",
+      "status": "completed_with_observed_boundaries",
+      "teaching": [
+        "completed",
+        "completed"
+      ],
+      "formal": [
+        {
+          "status": "completed",
+          "demonstrated": true
+        }
+      ],
+      "counts": {
+        "physical": 40,
+        "logical": 36
+      }
+    },
+    {
+      "id": "J13",
+      "status": "completed_with_observed_boundaries",
+      "teaching": [
+        "completed",
+        "completed"
+      ],
+      "formal": [
+        {
+          "status": "completed",
+          "demonstrated": true
+        }
+      ],
+      "counts": {
+        "physical": 33,
+        "logical": 29
+      }
+    },
+    {
+      "id": "J12",
+      "status": "completed_with_observed_boundaries",
+      "teaching": [
+        "completed",
+        "completed"
+      ],
+      "formal": [
+        {
+          "status": "completed",
+          "demonstrated": true
+        }
+      ],
+      "counts": {
+        "physical": 40,
+        "logical": 35
+      }
+    },
+    {
+      "id": "J14",
+      "status": "completed_with_observed_boundaries",
+      "teaching": [
+        "completed",
+        "completed"
+      ],
+      "formal": [
+        {
+          "status": "completed",
+          "demonstrated": true
+        }
+      ],
+      "counts": {
+        "physical": 35,
+        "logical": 34
+      }
+    },
+    {
+      "id": "J18",
+      "status": "completed_with_observed_boundaries",
+      "teaching": [
+        "failed"
+      ],
+      "formal": [],
+      "counts": {
+        "physical": 17,
+        "logical": 16
+      }
+    },
+    {
+      "id": "J15",
+      "status": "completed_with_observed_boundaries",
+      "teaching": [
+        "completed"
+      ],
+      "formal": [
+        {
+          "status": "completed",
+          "demonstrated": true
+        }
+      ],
+      "counts": {
+        "physical": 28,
+        "logical": 23
+      }
+    },
+    {
+      "id": "J17",
+      "status": "completed_with_observed_boundaries",
+      "teaching": [
+        "completed",
+        "completed"
+      ],
+      "formal": [
+        {
+          "status": "completed",
+          "demonstrated": true
+        }
+      ],
+      "counts": {
+        "physical": 35,
+        "logical": 29
+      }
+    },
+    {
+      "id": "J16",
+      "status": "completed_with_observed_boundaries",
+      "teaching": [
+        "completed",
+        "completed"
+      ],
+      "formal": [
+        {
+          "status": "completed",
+          "demonstrated": true
+        }
+      ],
+      "counts": {
+        "physical": 38,
+        "logical": 35
+      }
+    },
+    {
+      "id": "J19",
+      "status": "completed_with_observed_boundaries",
+      "teaching": [
+        "completed",
+        "completed"
+      ],
+      "formal": [
+        {
+          "status": "completed",
+          "demonstrated": true
+        }
+      ],
+      "counts": {
+        "physical": 32,
+        "logical": 29
+      }
+    },
+    {
+      "id": "J20",
+      "status": "completed_with_observed_boundaries",
+      "teaching": [
+        "completed",
+        "completed"
+      ],
+      "formal": [
+        {
+          "status": "completed",
+          "demonstrated": true
+        }
+      ],
+      "counts": {
+        "physical": 33,
+        "logical": 29
+      }
+    }
+  ],
+  "inputsUnchanged": true,
+  "runtimeUnchanged": true,
+  "productUnchanged": true
+}

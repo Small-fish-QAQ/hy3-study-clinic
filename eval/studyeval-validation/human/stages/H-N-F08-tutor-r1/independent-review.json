@@ -1,0 +1,96 @@
+{
+  "inputIdentity": "0d20507e8df181dcdd9b54b7d43709c3446b300f290a53183ac149ef569a5581",
+  "attempts": [
+    {
+      "physicalId": "6f7c66cf-307a-41a8-84bc-5b45688f529d",
+      "caseId": "N-F08-tutor",
+      "runId": "H-N-F08-tutor-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "核心逻辑断言均被来源支持，但产物将未命名来源称为《印章卡片的逻辑》，属外围归属不准确，不影响核心教学。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "产物将未命名来源称为课程资料《印章卡片的逻辑》，但来源F08文本无此标题。",
+            "impact": "不改变核心机制解释；来源内容支持规则方向、逆否及反向不成立等主张。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "d95e4892d1c0484b032189c23a6497f13e1c86cf1cfda09729d923a3a8615fa9"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "132c532360b4bc6ac5b2aa8886b4b3bf89c500f85d4e1be08595f9a669823289"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "d95e4892d1c0484b032189c23a6497f13e1c86cf1cfda09729d923a3a8615fa9"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "132c532360b4bc6ac5b2aa8886b4b3bf89c500f85d4e1be08595f9a669823289"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      },
+      {
+        "dimension": "Q3",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "例子从前提展示单向推断、逆否与反例，并交代不补当且仅当等边界，解释连接充分，无缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "d95e4892d1c0484b032189c23a6497f13e1c86cf1cfda09729d923a3a8615fa9"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "132c532360b4bc6ac5b2aa8886b4b3bf89c500f85d4e1be08595f9a669823289"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,106 @@
+{
+  "inputIdentity": "f47acf530db059ab4715ac24ed1aa28e8abd5500721f8f1ec47ac007d87e4f73",
+  "attempts": [
+    {
+      "physicalId": "0e2685bd-d0f6-43e6-b3c4-c0fe084a2dce",
+      "caseId": "E611",
+      "runId": "H-E611-r3",
+      "stage": "goal-mapping",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "goals": [
+      {
+        "index": 0,
+        "importance": "essential",
+        "status": "usable",
+        "reason": "artifact明确指出刻度更细（分辨率）不保证校准更准（准确程度），以等价表述实现了区分读数分辨率与真实准确程度的目标。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/0"
+        ],
+        "quote": "刻度更细不保证校准更准",
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "c1ec4cc283b869ded4bd6704017dd84fadd61b71cdacc0ccea326fdeabd36eab"
+          },
+          {
+            "pointer": "/goals/0",
+            "valueHash": "974f091625a397eadb261006f5285e9c63c7ca6b839e6bdbb8c41f4bfff75e27"
+          }
+        ]
+      },
+      {
+        "index": 1,
+        "importance": "essential",
+        "status": "usable",
+        "reason": "artifact给出了使用给定误差上界e与读数r形成闭区间[r-e,r+e]的明确规则，并配以具体数值示例，满足可执行要求。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/1"
+        ],
+        "quote": "读数r、已知误差上界e给出闭区间[r-e,r+e]。例如读数7.2厘米、误差不超过0.1厘米，对应[7.1,7.3]。",
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "c1ec4cc283b869ded4bd6704017dd84fadd61b71cdacc0ccea326fdeabd36eab"
+          },
+          {
+            "pointer": "/goals/1",
+            "valueHash": "b948cbdb264205a71c39bbf43fca64b81f119fd6bce83afbff737e5a078063b3"
+          }
+        ]
+      },
+      {
+        "index": 2,
+        "importance": "essential",
+        "status": "usable",
+        "reason": "artifact通过两个区间示例说明了不重叠时前者必短、重叠时不能保证顺序的判断规则，覆盖了从区间推断大小关系的核心用途。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/2"
+        ],
+        "quote": "若另一物品区间[7.5,7.7]，前者必短；若区间重叠则仅凭界限不能保证顺序。",
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "c1ec4cc283b869ded4bd6704017dd84fadd61b71cdacc0ccea326fdeabd36eab"
+          },
+          {
+            "pointer": "/goals/2",
+            "valueHash": "a63a83b2364923d8e078ddf815b65a88e03ab9e5b2b372710e75e020c2056d1a"
+          }
+        ]
+      },
+      {
+        "index": 3,
+        "importance": "secondary",
+        "status": "usable",
+        "reason": "artifact以‘同向偏差也不会仅靠重复平均自动消失’直接说明了重复平均不能自动消除共同方向偏差，符合次要延伸目标。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/3"
+        ],
+        "quote": "同向偏差也不会仅靠重复平均自动消失。",
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "c1ec4cc283b869ded4bd6704017dd84fadd61b71cdacc0ccea326fdeabd36eab"
+          },
+          {
+            "pointer": "/goals/3",
+            "valueHash": "714460aff55596ab6a2b0d42615a21b9c5be82487f745a68d7ee18049f26f951"
+          }
+        ]
+      }
+    ]
+  }
+}

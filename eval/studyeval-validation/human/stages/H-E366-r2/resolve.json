@@ -1,0 +1,93 @@
+{
+  "inputIdentity": "8cc4633eb4042f37821c2ad5495c6d676c0224e754bcd7b35ee010303f586f8f",
+  "attempts": [
+    {
+      "physicalId": "d4000ea7-fed0-4d20-b12a-a23d4a8b67fe",
+      "caseId": "E366",
+      "runId": "H-E366-r2",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q3",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "产物给出两人12分与一人15分正确结论及资源条件，但仅列时刻结果未展示并行汇合需等较晚路径的关键推理连接。核心答案正确，缺失解释连接属局部缺陷，得1分。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "未展示从给定并行时长（裁纸4、调墨3）到盖章开始时刻（4）的关键操作理由，如未说明需等待较晚完成的裁纸路径。",
+            "impact": "结论正确且资源假设已交代，但学习者需自行发明汇合等待操作，不符合解释充分性停止条件中的关键连接展示。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "c7ff6a9c213d042e991ce0cb292305417dc1e88aa2002451772e47e4e0b76944"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "c7ff6a9c213d042e991ce0cb292305417dc1e88aa2002451772e47e4e0b76944"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q3:1",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "两人且工具互不冲突时",
+          "valueHash": "c7ff6a9c213d042e991ce0cb292305417dc1e88aa2002451772e47e4e0b76944"
+        },
+        "reason": "artifact明确给出资源假设边界，推翻指控中'未交代资源假设'部分；但缺失从前提推导时刻的关键操作（如等待较晚路径）属实，故整体缺陷认定为local推理缺失。"
+      },
+      {
+        "id": "review2:Q3:1",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "裁纸4分钟、调墨3分钟从0并行，盖章4到6",
+          "valueHash": "c7ff6a9c213d042e991ce0cb292305417dc1e88aa2002451772e47e4e0b76944"
+        },
+        "reason": "引文直接陈述结果时刻，未说明并行时盖章等待较晚完成者（裁纸4分）的操作理由，缺失解释连接，与指控一致，属local。"
+      }
+    ]
+  }
+}

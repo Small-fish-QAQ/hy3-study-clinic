@@ -1,0 +1,77 @@
+{
+  "inputIdentity": "37c18764730a15fb40eff9ca55d2648d95368381b711496b8526909c731c45ab",
+  "attempts": [
+    {
+      "physicalId": "a07022de-0f68-4256-b6d6-8752d74098de",
+      "caseId": "S058",
+      "runId": "S058-r2",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q4",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "任务要求两步异或计算并说明，作者私有答案正确未泄露，有效引发应用规则组合门输出的working_fluency技能，无缺陷。",
+        "refs": [
+          "/question/prompt",
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "assessment": {
+          "key": "correct",
+          "validity": "valid",
+          "exposure": "none",
+          "discrimination": "adequate",
+          "demand": "application",
+          "demandReason": "学生需根据给定异或定义计算XOR(1,1)=0并说明两输入均1，再将0与1异或得1并说明恰一输入1，执行多步计算并解释，非纯抄写。",
+          "reason": "题干要求先算XOR(1,1)再与1异或并说明两步；作者答案正确匹配；priorExposure空无泄露；需应用规则而非检索，判别力充足。",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text"
+          ],
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "5758ea989ce8c301f73b0ed45829a3609edbc221481bcd3270fc98a8791ac7a6"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "e2fbdaa35f160eedb1d82f24f5a2ed324cb0d811fcc88707f2aaa77fbe0d8576"
+            }
+          ]
+        },
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "5758ea989ce8c301f73b0ed45829a3609edbc221481bcd3270fc98a8791ac7a6"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "e2fbdaa35f160eedb1d82f24f5a2ed324cb0d811fcc88707f2aaa77fbe0d8576"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "abe0ee3fc063cc9ca8e5695fcc7196cbc85922a703ddb540aee12d9b2456e392"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

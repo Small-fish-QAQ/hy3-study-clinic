@@ -1,0 +1,1980 @@
+{
+  "publishedAt": "2026-09-14T12:24:21.791Z",
+  "kind": "BYTE_PRESERVING_SHOWCASE_PUBLICATION",
+  "originalCampaign": "final-showcase-2026-09-14",
+  "productCommit": "84b3c2fbce7e6523e43a8fa66df42bb6e37fa149",
+  "freezeSha256": "4c99f3a1e5a547cc80a565516da743a1d9a66de06b77f18a1240e6805981a915",
+  "publicationScope": "Every frozen source, protocol and driver; all primary/control terminal snapshots, teaching-preparation surfaces, learner packets, Formal inputs/answers/replays, complete analysis and receipt ledgers. Full databases and wire bodies are in the separately sealed release archive.",
+  "files": {
+    "dataset/courses/J01.json": {
+      "originalPath": "dataset/courses/J01.json",
+      "sha256": "e32c6d0ace9e646c74951c1a529dd5cca0e99d0505dd22cd52de629b7606e6b5",
+      "bytes": 3797
+    },
+    "dataset/courses/J02.json": {
+      "originalPath": "dataset/courses/J02.json",
+      "sha256": "134b5a4a2cd50639fdbb7a19eb3701585d7ac19d7030bf9d18e74c41f9bd34ef",
+      "bytes": 3682
+    },
+    "dataset/courses/J03.json": {
+      "originalPath": "dataset/courses/J03.json",
+      "sha256": "e9828cb5431d661b5518356a2b163a657fa6f13a9b4788809dd73562f0377e84",
+      "bytes": 3651
+    },
+    "dataset/courses/J04.json": {
+      "originalPath": "dataset/courses/J04.json",
+      "sha256": "f9999af5382ab3c9cd29fab85b412644d10e11beafcab477545941ee4a46bc02",
+      "bytes": 3747
+    },
+    "dataset/courses/J05.json": {
+      "originalPath": "dataset/courses/J05.json",
+      "sha256": "bf843a555a31314844c64c2f4c4d6c33231e94709b04290ea369ef06e0ae9b8d",
+      "bytes": 3758
+    },
+    "dataset/courses/J06.json": {
+      "originalPath": "dataset/courses/J06.json",
+      "sha256": "8d033588f09224f645fd55e48713ae764b01134d50062a3dd4c023ca55b8cd82",
+      "bytes": 3611
+    },
+    "dataset/courses/J07.json": {
+      "originalPath": "dataset/courses/J07.json",
+      "sha256": "0634456657d479e06b60b8232263a6eb8c2ed9547047dfa4047b6f0b8d7171a0",
+      "bytes": 3718
+    },
+    "dataset/courses/J08.json": {
+      "originalPath": "dataset/courses/J08.json",
+      "sha256": "b5309f7305d53219b054dcc266f71682abba0e413c8d5ae5288bc2efa9690274",
+      "bytes": 3800
+    },
+    "dataset/courses/J09.json": {
+      "originalPath": "dataset/courses/J09.json",
+      "sha256": "a087f24f0c1aea45a0fff055e8c7c39469a465b832eafbe66c05ead43d9038e2",
+      "bytes": 3916
+    },
+    "dataset/courses/J10.json": {
+      "originalPath": "dataset/courses/J10.json",
+      "sha256": "7bb7cd92b8bf43cbecbc6d6e5d456463fbb83afe19068a33f1e05c4713f60fa4",
+      "bytes": 3852
+    },
+    "dataset/courses/J11.json": {
+      "originalPath": "dataset/courses/J11.json",
+      "sha256": "77ebcc5c7655c7ad006db42b3cb387642f47a5a26b808010bdb935962f7a70f5",
+      "bytes": 4162
+    },
+    "dataset/courses/J12.json": {
+      "originalPath": "dataset/courses/J12.json",
+      "sha256": "d129208f93d0da9d72bc4f2a799e943e2338125edbc518dccc3a7cf32c15e3b3",
+      "bytes": 3944
+    },
+    "dataset/courses/J13.json": {
+      "originalPath": "dataset/courses/J13.json",
+      "sha256": "924e67fe46ff14acaab1088d23fe2549afaa77c078268e2e8f46c5a68b54eca9",
+      "bytes": 3667
+    },
+    "dataset/courses/J14.json": {
+      "originalPath": "dataset/courses/J14.json",
+      "sha256": "1080326de5d19874d9f6ed4a96d0b39f3eb4ad86e20d9c49a842d67e50c81dbe",
+      "bytes": 3842
+    },
+    "dataset/courses/J15.json": {
+      "originalPath": "dataset/courses/J15.json",
+      "sha256": "b83ced98885f3c9007c3fab1b12ec9a02fc3cd7a3563e0b2f117cb726e14a7a3",
+      "bytes": 3966
+    },
+    "dataset/courses/J16.json": {
+      "originalPath": "dataset/courses/J16.json",
+      "sha256": "03b682e887b9abbcf2f77455eed8ff4ececf5fe978fa2c0e72d9940d2c88db8f",
+      "bytes": 3846
+    },
+    "dataset/courses/J17.json": {
+      "originalPath": "dataset/courses/J17.json",
+      "sha256": "2a985cf13bc9fc01c6702fc0ea5a01133fa3f58d1580fcea06d6000628be8df2",
+      "bytes": 4030
+    },
+    "dataset/courses/J18.json": {
+      "originalPath": "dataset/courses/J18.json",
+      "sha256": "69b728f338f6fe245a052cb3afefaa0a65c21fb666988805b405c5279dfa36fe",
+      "bytes": 3989
+    },
+    "dataset/courses/J19.json": {
+      "originalPath": "dataset/courses/J19.json",
+      "sha256": "c44d8cdc5952ba894cbe97c6ede5639fe3163cdc9c2330176752e0bdd35468a2",
+      "bytes": 3927
+    },
+    "dataset/courses/J20.json": {
+      "originalPath": "dataset/courses/J20.json",
+      "sha256": "64aca3af611eddc3cbced03522bf857d11d90017ad27664a155ff2d298a9cd0d",
+      "bytes": 3939
+    },
+    "dataset/drafts/chemistry-accounting.mjs": {
+      "originalPath": "dataset/drafts/chemistry-accounting.mjs",
+      "sha256": "2022a9ff9d0c333e96188ca0b8d81493b05b994a8546ce5469c77f7aa597cc86",
+      "bytes": 11995
+    },
+    "dataset/drafts/computing.mjs": {
+      "originalPath": "dataset/drafts/computing.mjs",
+      "sha256": "2d3f1c518f9a24f3f71c24aec4ab4a940082193f7c40e48a75809e8dd01b287c",
+      "bytes": 12677
+    },
+    "dataset/drafts/life-language.mjs": {
+      "originalPath": "dataset/drafts/life-language.mjs",
+      "sha256": "7080bef5292891b4e53bc604c6416f78c5c133493fc97434acaba2158993b513",
+      "bytes": 12550
+    },
+    "dataset/drafts/mathematics.mjs": {
+      "originalPath": "dataset/drafts/mathematics.mjs",
+      "sha256": "7320ba3c9d04514cced91cb2c819d847002384f53b6286e27c4120515175a3ec",
+      "bytes": 11557
+    },
+    "dataset/drafts/physics.mjs": {
+      "originalPath": "dataset/drafts/physics.mjs",
+      "sha256": "e53b5c9bede570bfccc728e7ae71e76e1df7d0d12cef183581b5e70044f7085c",
+      "bytes": 11567
+    },
+    "dataset/historical-design-review.json": {
+      "originalPath": "dataset/historical-design-review.json",
+      "sha256": "e582b3452e7b91a229ea261f6cdde589efd09dcb8e18a3321336ad84ae52179d",
+      "bytes": 19079
+    },
+    "dataset/history-catalog.json": {
+      "originalPath": "dataset/history-catalog.json",
+      "sha256": "0d049452d88ee5cd516a2685dd93bbd79307888016f5b949c711338acd291509",
+      "bytes": 24052
+    },
+    "dataset/schedule.json": {
+      "originalPath": "dataset/schedule.json",
+      "sha256": "d9d92bbad16e931579a1311285d368fd3d9087f77a4a7a5d4ac808d1aa7df13e",
+      "bytes": 3203
+    },
+    "dataset/source-audit.json": {
+      "originalPath": "dataset/source-audit.json",
+      "sha256": "bc7e9a072a4db10845c639ba4abeb09ca1bb617fc786b5e6af1b133bae2f19a2",
+      "bytes": 27798
+    },
+    "product/learner.mjs": {
+      "originalPath": "product/learner.mjs",
+      "sha256": "00bc1c4803172e16dca4ca9c66ffa5c5e3ba2216d656830637092c1c1400d44e",
+      "bytes": 5944
+    },
+    "product/run-course.mjs": {
+      "originalPath": "product/run-course.mjs",
+      "sha256": "d4fe9394ff9045d2cc3bda94b0cdfb80e28f85e4b230feecdd6cd338d776a4c6",
+      "bytes": 22850
+    },
+    "product/runtime.mjs": {
+      "originalPath": "product/runtime.mjs",
+      "sha256": "cd433e5d1365662aa7c24bc87476cfab8296c8f626e7cb1219e051681f437685",
+      "bytes": 10320
+    },
+    "scripts/analyze.mjs": {
+      "originalPath": "scripts/analyze.mjs",
+      "sha256": "8db60b3613ee437e073c77f78fb347f67bf423640eb7cff55472d2befa86dbe1",
+      "bytes": 9471
+    },
+    "scripts/audit-sources.mjs": {
+      "originalPath": "scripts/audit-sources.mjs",
+      "sha256": "be32cf2ecd3af5df65bc9e521e7da57d16bffc1cbcb647c1a8148c3e08af26aa",
+      "bytes": 7090
+    },
+    "scripts/build-dataset.mjs": {
+      "originalPath": "scripts/build-dataset.mjs",
+      "sha256": "722a56b483d3aec55975c2ac09395f7281d9a12be03f8832d7a8b2dd85e29c92",
+      "bytes": 2466
+    },
+    "scripts/check-projection.mjs": {
+      "originalPath": "scripts/check-projection.mjs",
+      "sha256": "b4f458bc99c9ef969876356fe4d5c344c3a89f058540b366cefb3d2c54314f8e",
+      "bytes": 3475
+    },
+    "scripts/common.mjs": {
+      "originalPath": "scripts/common.mjs",
+      "sha256": "53d9ea45cc58953cdea6be4393cbcc1582f411550942a30b39a8930487d7ca69",
+      "bytes": 947
+    },
+    "scripts/freeze.mjs": {
+      "originalPath": "scripts/freeze.mjs",
+      "sha256": "98e4692c0416df5ec2528c38eb015fd926177b850eceffa4f2ec6d492b8acdee",
+      "bytes": 3810
+    },
+    "scripts/run.mjs": {
+      "originalPath": "scripts/run.mjs",
+      "sha256": "b8ae56b863e6e4881cb4249ab3e51a0a3458f0d5fc059ca00b5fceae5871446f",
+      "bytes": 2644
+    },
+    "scripts/study-history.mjs": {
+      "originalPath": "scripts/study-history.mjs",
+      "sha256": "1ce96e998498216bd99f404c6f3e681b198fea0ebac99cd3bd03b75961a6a8dc",
+      "bytes": 3444
+    },
+    "PROTOCOL.md": {
+      "originalPath": "PROTOCOL.md",
+      "sha256": "c704a4666b9c6f636207fee50cb3d7104e64c2e8ac626e0e260b091f40765adf",
+      "bytes": 7287
+    },
+    "DESIGN.md": {
+      "originalPath": "DESIGN.md",
+      "sha256": "8ac6b7055a1403d848d86b8d9846ad95a050edd6d4008bdf025bb3db0a46d13c",
+      "bytes": 5955
+    },
+    "checks/projection.json": {
+      "originalPath": "checks/projection.json",
+      "sha256": "1cb564404cf5bddc25ec249ca5efa7ad3fdbfbc29c621d56ec80560fc5bc063c",
+      "bytes": 5829
+    },
+    "FREEZE.json": {
+      "originalPath": "FREEZE.json",
+      "sha256": "4c99f3a1e5a547cc80a565516da743a1d9a66de06b77f18a1240e6805981a915",
+      "bytes": 138242
+    },
+    "FREEZE-RECEIPT.json": {
+      "originalPath": "FREEZE-RECEIPT.json",
+      "sha256": "0a59008aebb482ee1ebace0309048cfe47c5abf360c754eabb735df6a98557ec",
+      "bytes": 125
+    },
+    "analysis/scored-01/complete-results.csv": {
+      "originalPath": "analysis/scored-01/complete-results.csv",
+      "sha256": "1d710bab84856c61f2b7cd0586280e5eff6f647f90cce3de03471ffeccd0bc77",
+      "bytes": 6638
+    },
+    "analysis/scored-01/content-audit.json": {
+      "originalPath": "analysis/scored-01/content-audit.json",
+      "sha256": "447feff71fec5ae9091fe0cd08ebdafbeb53b3ff95836d7cd59fc86045b03d5a",
+      "bytes": 22907
+    },
+    "analysis/scored-01/credited-answer-audit-input.json": {
+      "originalPath": "analysis/scored-01/credited-answer-audit-input.json",
+      "sha256": "287e1f72d98dc71d6a326c1ae86f241e5abdc5dfa8fa96e410b779e17f1c197a",
+      "bytes": 91380
+    },
+    "analysis/scored-01/results.json": {
+      "originalPath": "analysis/scored-01/results.json",
+      "sha256": "882d73b2dc94705bef28dc68b92573e4249628a603b2ebe5ee79635c20a185cd",
+      "bytes": 19695
+    },
+    "analysis/scored-01/RESULTS.md": {
+      "originalPath": "analysis/scored-01/RESULTS.md",
+      "sha256": "582b7c1bf643b52217f189e72518d414ae43dd3081ccfb22b8c507fc05b16025",
+      "bytes": 6254
+    },
+    "analysis/scored-01/runtime-audit.json": {
+      "originalPath": "analysis/scored-01/runtime-audit.json",
+      "sha256": "3382b5b5e57bbcd6718adb3be80d68e43eaae3c0fc4de126a0e0f89056df8ee7",
+      "bytes": 19261
+    },
+    "runs/scored-01/identity.json": {
+      "originalPath": "runs/scored-01/identity.json",
+      "sha256": "3fab47717833753f4340961c3163be2ef063929645e34188c3ce2b59a351c254",
+      "bytes": 4139
+    },
+    "runs/scored-01/schedule.json": {
+      "originalPath": "runs/scored-01/schedule.json",
+      "sha256": "d9d92bbad16e931579a1311285d368fd3d9087f77a4a7a5d4ac808d1aa7df13e",
+      "bytes": 3203
+    },
+    "runs/scored-01/complete.json": {
+      "originalPath": "runs/scored-01/complete.json",
+      "sha256": "4a91715731907fc6a9fc8de77d963244858295b25f2da0fd5f76578507bf6ae7",
+      "bytes": 9619
+    },
+    "runs/scored-01/physical.jsonl": {
+      "originalPath": "runs/scored-01/physical.jsonl",
+      "sha256": "9be98d127510c6eb64efec0ec04a488b8ef17e496efdecc688202a4233fa5c02",
+      "bytes": 546259
+    },
+    "runs/scored-01/logical.jsonl": {
+      "originalPath": "runs/scored-01/logical.jsonl",
+      "sha256": "b5e96bd9eeb823db9c82805ce010dd3114113c759af95adb2863c5d44851e83d",
+      "bytes": 198029
+    },
+    "runs/scored-01/learner-output-attempts.jsonl": {
+      "originalPath": "runs/scored-01/learner-output-attempts.jsonl",
+      "sha256": "ae74d61f0c76fd43af90edd2c479e2ae68b6bb8e5fc7b8f41acc2938360c0031",
+      "bytes": 561
+    },
+    "runs/scored-01/cases/J01/after-teaching-1.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J01/after-teaching-1.snapshot.json",
+      "sha256": "be02bbcf09133be7c35363056079cca84c78b18b6d1921ed4e4d01bb1ff48ca7",
+      "bytes": 886905
+    },
+    "runs/scored-01/cases/J01/after-teaching-2.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J01/after-teaching-2.snapshot.json",
+      "sha256": "bfd63b55a4fa497bff8db1333a33b213ffb6c7af63b13a6fcfbb1720fed11463",
+      "bytes": 1058180
+    },
+    "runs/scored-01/cases/J01/final.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J01/final.snapshot.json",
+      "sha256": "00b60244ad29b082d23565e3ff076466b18d3936a359fb2b4a38b30b128ca466",
+      "bytes": 1252791
+    },
+    "runs/scored-01/cases/J01/formal-1-answer.json": {
+      "originalPath": "runs/scored-01/cases/J01/formal-1-answer.json",
+      "sha256": "33ca04ea83a09cfca2a1fc5ac6cd18ffe089834f14f344d6c91305ad8a009896",
+      "bytes": 4242
+    },
+    "runs/scored-01/cases/J01/formal-1-before.json": {
+      "originalPath": "runs/scored-01/cases/J01/formal-1-before.json",
+      "sha256": "fe5f8d288c9abdbc007221ee21d78972d0a58e8df5f5d2105dd26c7d5ef68dcd",
+      "bytes": 1464
+    },
+    "runs/scored-01/cases/J01/formal-1-launch.json": {
+      "originalPath": "runs/scored-01/cases/J01/formal-1-launch.json",
+      "sha256": "545631183d1722e438afd46f883a47231b9478dc03f41a1f373e59d8da7875f2",
+      "bytes": 1738
+    },
+    "runs/scored-01/cases/J01/formal-1-replay.json": {
+      "originalPath": "runs/scored-01/cases/J01/formal-1-replay.json",
+      "sha256": "5dc12a7da0251a9080893e173ce928d7d098b2ff3c6047b206a38f23d38a646a",
+      "bytes": 77
+    },
+    "runs/scored-01/cases/J01/formal-1-version.json": {
+      "originalPath": "runs/scored-01/cases/J01/formal-1-version.json",
+      "sha256": "46a13c2695cba1d4c4d0635d95d5ad0a0de50fa55853f6ffc9860e67fbd6cab0",
+      "bytes": 2905
+    },
+    "runs/scored-01/cases/J01/identity.json": {
+      "originalPath": "runs/scored-01/cases/J01/identity.json",
+      "sha256": "27e2995f20b2df936cb8d76f16bbe9d76e63967854fc674f477560243288699c",
+      "bytes": 229
+    },
+    "runs/scored-01/cases/J01/learner-responses.jsonl": {
+      "originalPath": "runs/scored-01/cases/J01/learner-responses.jsonl",
+      "sha256": "f51fe358ae3badb80f37b61bc1c0b63905811860b2b46eecba9a1abb13fb574d",
+      "bytes": 81764
+    },
+    "runs/scored-01/cases/J01/lesson-1-prepared.json": {
+      "originalPath": "runs/scored-01/cases/J01/lesson-1-prepared.json",
+      "sha256": "7aed182d3e06b6af5306734032c2158295d104312633b1c2d7685a9d0c99c30c",
+      "bytes": 11802
+    },
+    "runs/scored-01/cases/J01/lesson-2-prepared.json": {
+      "originalPath": "runs/scored-01/cases/J01/lesson-2-prepared.json",
+      "sha256": "16424e3de0fc3c7d4deb1006cfee36219acd075cfcc78c65a42427b2b6bf7e42",
+      "bytes": 8141
+    },
+    "runs/scored-01/cases/J01/source.json": {
+      "originalPath": "runs/scored-01/cases/J01/source.json",
+      "sha256": "7c872611b43823547d21db26634ad1b4464e8e3d3fb8f2bc56994d7175a09e7c",
+      "bytes": 3796
+    },
+    "runs/scored-01/cases/J01/state.json": {
+      "originalPath": "runs/scored-01/cases/J01/state.json",
+      "sha256": "1a2395dff0b2aa782e02d5b9525d4f2ef5cdb208f217040d299df337210cf022",
+      "bytes": 13614
+    },
+    "runs/scored-01/cases/J01-authority-1/after-control.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J01-authority-1/after-control.snapshot.json",
+      "sha256": "668985d6097c0446d1f9db4dc8a5a2cb25f61e2a45cdcffc06e42c386f5eac87",
+      "bytes": 1235436
+    },
+    "runs/scored-01/cases/J01-authority-1/answer.json": {
+      "originalPath": "runs/scored-01/cases/J01-authority-1/answer.json",
+      "sha256": "9845abd1c2f668c968785964987a016d4546cec1f7c5674dda7a7d8922501354",
+      "bytes": 3384
+    },
+    "runs/scored-01/cases/J01-authority-1/identity.json": {
+      "originalPath": "runs/scored-01/cases/J01-authority-1/identity.json",
+      "sha256": "9e9dc2ba1305b3897a1667b583a11f43666638eaf6ef1b756714527cc48d894b",
+      "bytes": 241
+    },
+    "runs/scored-01/cases/J01-insufficient-1/after-control.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J01-insufficient-1/after-control.snapshot.json",
+      "sha256": "576a2d62e269edfb3c5d5994ee3d8a71dbe475b56976ca07cb181b817e3b086d",
+      "bytes": 1235407
+    },
+    "runs/scored-01/cases/J01-insufficient-1/answer.json": {
+      "originalPath": "runs/scored-01/cases/J01-insufficient-1/answer.json",
+      "sha256": "3b469026ff296c4dd0ee25d7890357ae6a743e688c2c3159b4e46dd8bb9c9ec0",
+      "bytes": 3321
+    },
+    "runs/scored-01/cases/J01-insufficient-1/identity.json": {
+      "originalPath": "runs/scored-01/cases/J01-insufficient-1/identity.json",
+      "sha256": "275fd8175cf226f2e3796d77e5e76d53b3cbb69705d124ae0822ac13b36778cf",
+      "bytes": 244
+    },
+    "runs/scored-01/cases/J02/after-teaching-1.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J02/after-teaching-1.snapshot.json",
+      "sha256": "9eace432b8493620ad239bc9f9fabca9b009de0b9e13310e68e4ebc421fba6ed",
+      "bytes": 912112
+    },
+    "runs/scored-01/cases/J02/after-teaching-2.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J02/after-teaching-2.snapshot.json",
+      "sha256": "211e69822ea0e129039852f5407fffd1be8393602f6484ce5c416dbc97ec339b",
+      "bytes": 1075313
+    },
+    "runs/scored-01/cases/J02/final.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J02/final.snapshot.json",
+      "sha256": "2d43b931f485d50df1e6bcf0e8020fc817a2fc5ff63727a98cd4c9162418f0f0",
+      "bytes": 1283260
+    },
+    "runs/scored-01/cases/J02/formal-1-answer.json": {
+      "originalPath": "runs/scored-01/cases/J02/formal-1-answer.json",
+      "sha256": "04cffa74385778ffaa7e63f6301ebf85f23c7111dc114d21c28d545d1ee841c8",
+      "bytes": 6567
+    },
+    "runs/scored-01/cases/J02/formal-1-before.json": {
+      "originalPath": "runs/scored-01/cases/J02/formal-1-before.json",
+      "sha256": "7997c7d251c784c9d5c3e99dc563f74d6147f517bdf98336ea0942217d4e39a9",
+      "bytes": 2310
+    },
+    "runs/scored-01/cases/J02/formal-1-launch.json": {
+      "originalPath": "runs/scored-01/cases/J02/formal-1-launch.json",
+      "sha256": "06b2d10a4f768435ea2e5d63347a27985e3eb9b1ff671b8b507494f1934f5866",
+      "bytes": 2661
+    },
+    "runs/scored-01/cases/J02/formal-1-replay.json": {
+      "originalPath": "runs/scored-01/cases/J02/formal-1-replay.json",
+      "sha256": "5dc12a7da0251a9080893e173ce928d7d098b2ff3c6047b206a38f23d38a646a",
+      "bytes": 77
+    },
+    "runs/scored-01/cases/J02/formal-1-version.json": {
+      "originalPath": "runs/scored-01/cases/J02/formal-1-version.json",
+      "sha256": "48121fb937968c00d7159bdf78edca8ff65894762281afcaf0d5364d483cd53a",
+      "bytes": 4245
+    },
+    "runs/scored-01/cases/J02/identity.json": {
+      "originalPath": "runs/scored-01/cases/J02/identity.json",
+      "sha256": "bdef751ee734b71fbbb5d9036472dfc8a1786ad7da569f76e5120ce30d802cd1",
+      "bytes": 229
+    },
+    "runs/scored-01/cases/J02/learner-responses.jsonl": {
+      "originalPath": "runs/scored-01/cases/J02/learner-responses.jsonl",
+      "sha256": "a2bff6b840abdbaf3c64ea4818c9b42fc1b436876b6130077e2c4baa64018683",
+      "bytes": 79172
+    },
+    "runs/scored-01/cases/J02/lesson-1-after-explicit-retry.json": {
+      "originalPath": "runs/scored-01/cases/J02/lesson-1-after-explicit-retry.json",
+      "sha256": "45cf21b5d0dd3d7cf7613406daa138e830ee538e331526065c2baae1d418722a",
+      "bytes": 10930
+    },
+    "runs/scored-01/cases/J02/lesson-1-prepared.json": {
+      "originalPath": "runs/scored-01/cases/J02/lesson-1-prepared.json",
+      "sha256": "019a5a5a3c663a954677f4bb7428c0ade1616c235d6e9819157b58542b9b6520",
+      "bytes": 403
+    },
+    "runs/scored-01/cases/J02/lesson-2-prepared.json": {
+      "originalPath": "runs/scored-01/cases/J02/lesson-2-prepared.json",
+      "sha256": "b80b95ad33a339bb8abdd0321752d615eae27a67727223ab1a45e5c11bf26b53",
+      "bytes": 7395
+    },
+    "runs/scored-01/cases/J02/source.json": {
+      "originalPath": "runs/scored-01/cases/J02/source.json",
+      "sha256": "d66a4d0b4e96325b168b6c583b780b940b6de66487f03d92191f7ccab14c67ff",
+      "bytes": 3681
+    },
+    "runs/scored-01/cases/J02/state.json": {
+      "originalPath": "runs/scored-01/cases/J02/state.json",
+      "sha256": "5260bc2ab47295b4d855b77566e89fdbab62e5bb3c9bf4468478502b3c158e21",
+      "bytes": 20076
+    },
+    "runs/scored-01/cases/J02-authority-1/after-control.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J02-authority-1/after-control.snapshot.json",
+      "sha256": "da5e5d9c3bcf88b2ccd3f2aee3f1eb685f3dff8769e4869b0620bc5044859ed0",
+      "bytes": 1265402
+    },
+    "runs/scored-01/cases/J02-authority-1/answer.json": {
+      "originalPath": "runs/scored-01/cases/J02-authority-1/answer.json",
+      "sha256": "c7efd6792d41269fb0b5036eeae5ef5398dd3a243a6d969cd65bc5dbb50adee7",
+      "bytes": 5226
+    },
+    "runs/scored-01/cases/J02-authority-1/identity.json": {
+      "originalPath": "runs/scored-01/cases/J02-authority-1/identity.json",
+      "sha256": "9da7a39b5eaa4e4e7b9f34ca6429875f6e50043c29d2c6847721bc84a7c3e3ae",
+      "bytes": 241
+    },
+    "runs/scored-01/cases/J02-insufficient-1/after-control.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J02-insufficient-1/after-control.snapshot.json",
+      "sha256": "4daab89254e2e29c0c4d715f26cb157e5a8ba532574ff6f92989d25cdc58f969",
+      "bytes": 1265372
+    },
+    "runs/scored-01/cases/J02-insufficient-1/answer.json": {
+      "originalPath": "runs/scored-01/cases/J02-insufficient-1/answer.json",
+      "sha256": "1a1dc2fae5bf5e6317aac81347cbf7b24bb1073ddc188f43ca980a95066e54e5",
+      "bytes": 5163
+    },
+    "runs/scored-01/cases/J02-insufficient-1/identity.json": {
+      "originalPath": "runs/scored-01/cases/J02-insufficient-1/identity.json",
+      "sha256": "a97b05663d152e4f759388711a875e820e08009f0f49ec494777c6d486a27f7b",
+      "bytes": 244
+    },
+    "runs/scored-01/cases/J03/final.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J03/final.snapshot.json",
+      "sha256": "099157ff69d16e3730e34523a37620374d526a02a58a58dbd9ef72e36a5b6cca",
+      "bytes": 722524
+    },
+    "runs/scored-01/cases/J03/identity.json": {
+      "originalPath": "runs/scored-01/cases/J03/identity.json",
+      "sha256": "af84f1e48d220fc5d7864ebd5fb6f8b7e67dad9b41bac857730e864d4982033c",
+      "bytes": 229
+    },
+    "runs/scored-01/cases/J03/lesson-1-after-explicit-retry.json": {
+      "originalPath": "runs/scored-01/cases/J03/lesson-1-after-explicit-retry.json",
+      "sha256": "cdc973fe7ae0d4e45a9911ddc60a01fd2960dc034899d287eaf2aa6bcae44303",
+      "bytes": 397
+    },
+    "runs/scored-01/cases/J03/lesson-1-prepared.json": {
+      "originalPath": "runs/scored-01/cases/J03/lesson-1-prepared.json",
+      "sha256": "cdc973fe7ae0d4e45a9911ddc60a01fd2960dc034899d287eaf2aa6bcae44303",
+      "bytes": 397
+    },
+    "runs/scored-01/cases/J03/source.json": {
+      "originalPath": "runs/scored-01/cases/J03/source.json",
+      "sha256": "9261b331845320cf1d6b39842f754501f6078400f9c6d1c8423a126555912166",
+      "bytes": 3650
+    },
+    "runs/scored-01/cases/J03/state.json": {
+      "originalPath": "runs/scored-01/cases/J03/state.json",
+      "sha256": "d59e70e1e3b287a93e41a3ac94488c780716d641e6ddce3e370ea3a0333922fb",
+      "bytes": 2239
+    },
+    "runs/scored-01/cases/J04/after-teaching-1.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J04/after-teaching-1.snapshot.json",
+      "sha256": "e0bfd0dd9b49e8fa58ca5b27d192ec3906061f067c3ca620b14f339fc4bfaad2",
+      "bytes": 909365
+    },
+    "runs/scored-01/cases/J04/after-teaching-2.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J04/after-teaching-2.snapshot.json",
+      "sha256": "875c24945a1be7945070b579150b71d155c238cb61170e4db84269224db95351",
+      "bytes": 1084891
+    },
+    "runs/scored-01/cases/J04/final.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J04/final.snapshot.json",
+      "sha256": "28ccaa804d21c261d50430d525a4c3cef6dbeb8154109024b201b333ad7f42f3",
+      "bytes": 1281990
+    },
+    "runs/scored-01/cases/J04/formal-1-answer.json": {
+      "originalPath": "runs/scored-01/cases/J04/formal-1-answer.json",
+      "sha256": "da86bd5466c35063f96dc660610f79852d0b484224648ab579519286b25d9868",
+      "bytes": 5666
+    },
+    "runs/scored-01/cases/J04/formal-1-before.json": {
+      "originalPath": "runs/scored-01/cases/J04/formal-1-before.json",
+      "sha256": "16280cc53b8d2869d7f3340d559095caafdb5b6d38218b45da1c46e18d545cda",
+      "bytes": 2299
+    },
+    "runs/scored-01/cases/J04/formal-1-launch.json": {
+      "originalPath": "runs/scored-01/cases/J04/formal-1-launch.json",
+      "sha256": "cce67e8467db5c602efe1fcd07502844e5d9d1bc2cb702787867645e3214d098",
+      "bytes": 2687
+    },
+    "runs/scored-01/cases/J04/formal-1-replay.json": {
+      "originalPath": "runs/scored-01/cases/J04/formal-1-replay.json",
+      "sha256": "5dc12a7da0251a9080893e173ce928d7d098b2ff3c6047b206a38f23d38a646a",
+      "bytes": 77
+    },
+    "runs/scored-01/cases/J04/formal-1-version.json": {
+      "originalPath": "runs/scored-01/cases/J04/formal-1-version.json",
+      "sha256": "c71945c778387b6d0a3d0983752d0636ccd7eae009bfbba8ed6a5f82e2c58b5d",
+      "bytes": 3958
+    },
+    "runs/scored-01/cases/J04/identity.json": {
+      "originalPath": "runs/scored-01/cases/J04/identity.json",
+      "sha256": "181c50473ddd7e95e6bbfc9615a51c381c6b5c1d603c19ab63ca38be166c2e83",
+      "bytes": 229
+    },
+    "runs/scored-01/cases/J04/learner-responses.jsonl": {
+      "originalPath": "runs/scored-01/cases/J04/learner-responses.jsonl",
+      "sha256": "6ded3923f55fcc2e604badabbc0fb62f9a71782cf5813adfde45f8473d277da1",
+      "bytes": 99490
+    },
+    "runs/scored-01/cases/J04/lesson-1-prepared.json": {
+      "originalPath": "runs/scored-01/cases/J04/lesson-1-prepared.json",
+      "sha256": "832dc34b91d7d832f022ddfb863e98ddf730a3474801d5fca208a3d36696158b",
+      "bytes": 11530
+    },
+    "runs/scored-01/cases/J04/lesson-2-prepared.json": {
+      "originalPath": "runs/scored-01/cases/J04/lesson-2-prepared.json",
+      "sha256": "3a21116306219428b98ab038959672e624fdb597348356f5dae715dfc24839ca",
+      "bytes": 7092
+    },
+    "runs/scored-01/cases/J04/source.json": {
+      "originalPath": "runs/scored-01/cases/J04/source.json",
+      "sha256": "987e74c435ffe1fa54f256a2951253e6d959b023f79ce55749ef239136ad708e",
+      "bytes": 3746
+    },
+    "runs/scored-01/cases/J04/state.json": {
+      "originalPath": "runs/scored-01/cases/J04/state.json",
+      "sha256": "44030e601ae45aacbb4c93abb17f776adbbd350f1e7ca86c0006ae210c9686c1",
+      "bytes": 18906
+    },
+    "runs/scored-01/cases/J04-authority-1/after-control.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J04-authority-1/after-control.snapshot.json",
+      "sha256": "5e4a99275cb4f22d64210ec0bc01586e731ba64eac97663a51d962e141469c6b",
+      "bytes": 1264932
+    },
+    "runs/scored-01/cases/J04-authority-1/answer.json": {
+      "originalPath": "runs/scored-01/cases/J04-authority-1/answer.json",
+      "sha256": "d8f08a1a8c9bb758feed9aecb0a7650ee6bcb6279e6526030c64ac43874498c0",
+      "bytes": 5120
+    },
+    "runs/scored-01/cases/J04-authority-1/identity.json": {
+      "originalPath": "runs/scored-01/cases/J04-authority-1/identity.json",
+      "sha256": "ad23e211dda6e8d66a0ed172129d9375e336f8ff951f5ebd84738869031a1365",
+      "bytes": 241
+    },
+    "runs/scored-01/cases/J04-insufficient-1/after-control.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J04-insufficient-1/after-control.snapshot.json",
+      "sha256": "2570d7625502631eb294f25f747a529f4e91a654f1e2542fc0aeb70cbb4ba9ce",
+      "bytes": 1264902
+    },
+    "runs/scored-01/cases/J04-insufficient-1/answer.json": {
+      "originalPath": "runs/scored-01/cases/J04-insufficient-1/answer.json",
+      "sha256": "16c2d8c4a801dbad5805f55b695bea2fbcf602e6c3c5524550503d071bebd829",
+      "bytes": 5057
+    },
+    "runs/scored-01/cases/J04-insufficient-1/identity.json": {
+      "originalPath": "runs/scored-01/cases/J04-insufficient-1/identity.json",
+      "sha256": "cc7d49bac87bfea5b4b33891571a3a02deca32b8ee36a42077ac22cda4f4177a",
+      "bytes": 244
+    },
+    "runs/scored-01/cases/J05/after-teaching-1.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J05/after-teaching-1.snapshot.json",
+      "sha256": "ae52a6bce703c7ca52283d6a1ba303e452c18ac7c0d1bf7f024ef3ae5b1f5046",
+      "bytes": 868219
+    },
+    "runs/scored-01/cases/J05/after-teaching-2.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J05/after-teaching-2.snapshot.json",
+      "sha256": "43f4ab2b7b375b250b1a428f74af3ee60245c27fbe473599609839a27a4b2e99",
+      "bytes": 1035394
+    },
+    "runs/scored-01/cases/J05/final.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J05/final.snapshot.json",
+      "sha256": "f4d6009b81f6077df07e5dc4b9981d905542a8597c332f9b643595adc0bfa3a4",
+      "bytes": 1205110
+    },
+    "runs/scored-01/cases/J05/identity.json": {
+      "originalPath": "runs/scored-01/cases/J05/identity.json",
+      "sha256": "58f40ff01580b1c464737635042499efbc4310ed0e449bbd03a019ba306c4d3b",
+      "bytes": 229
+    },
+    "runs/scored-01/cases/J05/learner-responses.jsonl": {
+      "originalPath": "runs/scored-01/cases/J05/learner-responses.jsonl",
+      "sha256": "af174fa166f1dd62468136c51c7a17ee5b48d0f7bf1ac1db42573a83b44257ff",
+      "bytes": 66933
+    },
+    "runs/scored-01/cases/J05/lesson-1-prepared.json": {
+      "originalPath": "runs/scored-01/cases/J05/lesson-1-prepared.json",
+      "sha256": "21eb95465eec27dca2bee73fd30d7618d75296ae3e98905298b01a0f27114e19",
+      "bytes": 11342
+    },
+    "runs/scored-01/cases/J05/lesson-2-prepared.json": {
+      "originalPath": "runs/scored-01/cases/J05/lesson-2-prepared.json",
+      "sha256": "e665200d5661e1dae700ff7a7849fa160083f0d341390398bd4b8cb74621a94d",
+      "bytes": 7061
+    },
+    "runs/scored-01/cases/J05/source.json": {
+      "originalPath": "runs/scored-01/cases/J05/source.json",
+      "sha256": "8fe4f4e97f1ea7e6d3d37d3e49771884a8cd3dd2401472b28b506e0f41803265",
+      "bytes": 3757
+    },
+    "runs/scored-01/cases/J05/state.json": {
+      "originalPath": "runs/scored-01/cases/J05/state.json",
+      "sha256": "ad076f84e825978198f94b7f95f0ddf99da3e796e181a06b963aef2c2c5fecfe",
+      "bytes": 5103
+    },
+    "runs/scored-01/cases/J06/after-teaching-1.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J06/after-teaching-1.snapshot.json",
+      "sha256": "7afef5d2912e8d1a93e42a8d89203aaff0d89e313630eb4fcd6d47fe41cf3b4b",
+      "bytes": 947903
+    },
+    "runs/scored-01/cases/J06/after-teaching-2.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J06/after-teaching-2.snapshot.json",
+      "sha256": "480ceefcbb4b066d24dcb78f5694d6bb160b70283169902c09f809c2bbb4afa0",
+      "bytes": 1253761
+    },
+    "runs/scored-01/cases/J06/final.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J06/final.snapshot.json",
+      "sha256": "1f90893fe931cdb6f49f5217ab5bf9f56f6d065292f41aa03362dead3463ac1f",
+      "bytes": 1463781
+    },
+    "runs/scored-01/cases/J06/formal-1-answer.json": {
+      "originalPath": "runs/scored-01/cases/J06/formal-1-answer.json",
+      "sha256": "9b2018b342efcca2091cef7588451c09c64d4ff8e21613835199bf8c8ecec5ce",
+      "bytes": 5042
+    },
+    "runs/scored-01/cases/J06/formal-1-before.json": {
+      "originalPath": "runs/scored-01/cases/J06/formal-1-before.json",
+      "sha256": "85b6ba2617c727acaa127b607a78969771acebdf7a86db93690fa7b91a55dab1",
+      "bytes": 1650
+    },
+    "runs/scored-01/cases/J06/formal-1-launch.json": {
+      "originalPath": "runs/scored-01/cases/J06/formal-1-launch.json",
+      "sha256": "e754b9c7671cb43bcb6a1d51a23d5bf9b6e65f7d943c150e0cee0054b4682aba",
+      "bytes": 1907
+    },
+    "runs/scored-01/cases/J06/formal-1-replay.json": {
+      "originalPath": "runs/scored-01/cases/J06/formal-1-replay.json",
+      "sha256": "5dc12a7da0251a9080893e173ce928d7d098b2ff3c6047b206a38f23d38a646a",
+      "bytes": 77
+    },
+    "runs/scored-01/cases/J06/formal-1-version.json": {
+      "originalPath": "runs/scored-01/cases/J06/formal-1-version.json",
+      "sha256": "de40bee32180aaf564c129d20d350d5cd05d719b56fb26392f530a6999aa12f4",
+      "bytes": 3100
+    },
+    "runs/scored-01/cases/J06/identity.json": {
+      "originalPath": "runs/scored-01/cases/J06/identity.json",
+      "sha256": "6a259c08f3c12b7ad5260daa76067559c16fe349b8a021fd0268260c8c59502d",
+      "bytes": 229
+    },
+    "runs/scored-01/cases/J06/learner-responses.jsonl": {
+      "originalPath": "runs/scored-01/cases/J06/learner-responses.jsonl",
+      "sha256": "2d5b6c55b23b7c6404c31b00581f0bc9e8fd80d9c9c380291a7194bedc0bf6d6",
+      "bytes": 108073
+    },
+    "runs/scored-01/cases/J06/lesson-1-after-explicit-retry.json": {
+      "originalPath": "runs/scored-01/cases/J06/lesson-1-after-explicit-retry.json",
+      "sha256": "900a9efe58cf78e98e16c0768681c029e2d0929a3ddcd021a4a49215328d7889",
+      "bytes": 10322
+    },
+    "runs/scored-01/cases/J06/lesson-1-prepared.json": {
+      "originalPath": "runs/scored-01/cases/J06/lesson-1-prepared.json",
+      "sha256": "9acd07cd93ba7b8f4c9b90eba004b3aa07863a496aa5de8c7f7531772f5c8b6e",
+      "bytes": 403
+    },
+    "runs/scored-01/cases/J06/lesson-2-prepared.json": {
+      "originalPath": "runs/scored-01/cases/J06/lesson-2-prepared.json",
+      "sha256": "208a498f7ff1301f350a7a82dedf4369b40733103da0c80804d160e25ac39e39",
+      "bytes": 10683
+    },
+    "runs/scored-01/cases/J06/source.json": {
+      "originalPath": "runs/scored-01/cases/J06/source.json",
+      "sha256": "3ebdd8e392dd2a350fb344d0effba8feb0e28adefadc75f6853cfecea9691287",
+      "bytes": 3610
+    },
+    "runs/scored-01/cases/J06/state.json": {
+      "originalPath": "runs/scored-01/cases/J06/state.json",
+      "sha256": "0fc16e4f05b3d8172312350f01698433bf601a8eb0e17cde9f1bf06d248dfaf2",
+      "bytes": 15492
+    },
+    "runs/scored-01/cases/J06-authority-1/after-control.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J06-authority-1/after-control.snapshot.json",
+      "sha256": "d8380fc3308cfa822417eceba99e7f5c7690ddac8be6b133753f8d04309e48cb",
+      "bytes": 1443599
+    },
+    "runs/scored-01/cases/J06-authority-1/answer.json": {
+      "originalPath": "runs/scored-01/cases/J06-authority-1/answer.json",
+      "sha256": "f9d97e22349c285b85a6d265f6c3d1547aaee56620fe0cdfe63fb5a802b244aa",
+      "bytes": 3840
+    },
+    "runs/scored-01/cases/J06-authority-1/identity.json": {
+      "originalPath": "runs/scored-01/cases/J06-authority-1/identity.json",
+      "sha256": "d5699b67af3472f807d073115d3ad51055fd3f202b576933c7048b3a5eebabd1",
+      "bytes": 241
+    },
+    "runs/scored-01/cases/J06-insufficient-1/after-control.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J06-insufficient-1/after-control.snapshot.json",
+      "sha256": "833c414b25cf40d078c7610741e8bf179af9d7cb1518b4e5b8cacff521bcae3f",
+      "bytes": 1443569
+    },
+    "runs/scored-01/cases/J06-insufficient-1/answer.json": {
+      "originalPath": "runs/scored-01/cases/J06-insufficient-1/answer.json",
+      "sha256": "58d2ddc989f48546ec6e6513de62cc3fed54b2965c3f7d322b8be71a9982c804",
+      "bytes": 3777
+    },
+    "runs/scored-01/cases/J06-insufficient-1/identity.json": {
+      "originalPath": "runs/scored-01/cases/J06-insufficient-1/identity.json",
+      "sha256": "3a8504be33a46e78557a09ee7e061da5ac0607d95344a43ad8745365f729a286",
+      "bytes": 244
+    },
+    "runs/scored-01/cases/J07/final.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J07/final.snapshot.json",
+      "sha256": "f052f4e48ae5f444bd274b564564040f30204234f3e41b9ad7faa4fc66da264c",
+      "bytes": 765446
+    },
+    "runs/scored-01/cases/J07/identity.json": {
+      "originalPath": "runs/scored-01/cases/J07/identity.json",
+      "sha256": "2382ef12452ae8e2354d99c674b7a42602b61a127322cd044c6bdc66e96afdcd",
+      "bytes": 229
+    },
+    "runs/scored-01/cases/J07/lesson-1-after-explicit-retry.json": {
+      "originalPath": "runs/scored-01/cases/J07/lesson-1-after-explicit-retry.json",
+      "sha256": "0daf2eb5b2723c333a42776a65b324af84ed749a107efa5352f32bfe013b5fbe",
+      "bytes": 9338
+    },
+    "runs/scored-01/cases/J07/lesson-1-prepared.json": {
+      "originalPath": "runs/scored-01/cases/J07/lesson-1-prepared.json",
+      "sha256": "d6c240fa6b757ae9d2dd60937095dc97d597ac94bf22731e45594151a646d63f",
+      "bytes": 9338
+    },
+    "runs/scored-01/cases/J07/source.json": {
+      "originalPath": "runs/scored-01/cases/J07/source.json",
+      "sha256": "511779e14bd5a31363f1a4d06c2695d95e1412cb8ac6f244a84e4db36fd88e9d",
+      "bytes": 3717
+    },
+    "runs/scored-01/cases/J07/state.json": {
+      "originalPath": "runs/scored-01/cases/J07/state.json",
+      "sha256": "d2b90acea6494d84358945ceaa542978bd9c3e4e3a2b25ecc67b08c680a1c833",
+      "bytes": 2399
+    },
+    "runs/scored-01/cases/J08/after-teaching-1.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J08/after-teaching-1.snapshot.json",
+      "sha256": "0c6c4ae2f8f6713f73ede3135c4e63e91220c5b550905bdc2d6b100c8f34a9be",
+      "bytes": 865028
+    },
+    "runs/scored-01/cases/J08/after-teaching-2.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J08/after-teaching-2.snapshot.json",
+      "sha256": "1df3065594149e72cb8cfb7bcd07df6350c94eff5a4b0b5a2da0833d0a8889b9",
+      "bytes": 1042585
+    },
+    "runs/scored-01/cases/J08/final.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J08/final.snapshot.json",
+      "sha256": "ea0fb010b240487f5fd52c062bf1a939813fc401135000c033fae068beba430b",
+      "bytes": 1258049
+    },
+    "runs/scored-01/cases/J08/formal-1-answer.json": {
+      "originalPath": "runs/scored-01/cases/J08/formal-1-answer.json",
+      "sha256": "cb5e10c7b787190aecd713cfca51439ab5790761d81b5ff63e10f412070abe34",
+      "bytes": 7907
+    },
+    "runs/scored-01/cases/J08/formal-1-before.json": {
+      "originalPath": "runs/scored-01/cases/J08/formal-1-before.json",
+      "sha256": "2eb1614070c8069baa9edc63f587a9ab9d9b2a44b7b08e9eed4ec362d9f49783",
+      "bytes": 3097
+    },
+    "runs/scored-01/cases/J08/formal-1-launch.json": {
+      "originalPath": "runs/scored-01/cases/J08/formal-1-launch.json",
+      "sha256": "bfcf496149fcdc62e3dfc3982b0925d53d8f2b910df54a63461165c5e23d1044",
+      "bytes": 3483
+    },
+    "runs/scored-01/cases/J08/formal-1-replay.json": {
+      "originalPath": "runs/scored-01/cases/J08/formal-1-replay.json",
+      "sha256": "5dc12a7da0251a9080893e173ce928d7d098b2ff3c6047b206a38f23d38a646a",
+      "bytes": 77
+    },
+    "runs/scored-01/cases/J08/formal-1-version.json": {
+      "originalPath": "runs/scored-01/cases/J08/formal-1-version.json",
+      "sha256": "7529acd9e135118252ce5900d3540e88d096fdda3b2dcf2e53f5b7f5b76b7f09",
+      "bytes": 5376
+    },
+    "runs/scored-01/cases/J08/identity.json": {
+      "originalPath": "runs/scored-01/cases/J08/identity.json",
+      "sha256": "31794e67c7bb9a54aa3d1002a0785a87989e5281544bba62a4d5356bb28e4878",
+      "bytes": 229
+    },
+    "runs/scored-01/cases/J08/learner-responses.jsonl": {
+      "originalPath": "runs/scored-01/cases/J08/learner-responses.jsonl",
+      "sha256": "dc3763e29ad75d0680c9675845414b0b027446a937d7726cd018b20b02fe8180",
+      "bytes": 76767
+    },
+    "runs/scored-01/cases/J08/lesson-1-prepared.json": {
+      "originalPath": "runs/scored-01/cases/J08/lesson-1-prepared.json",
+      "sha256": "a73f8660dcd6228db3fa804f118e79ffb536608acfe2cf23e882256115f945d2",
+      "bytes": 11494
+    },
+    "runs/scored-01/cases/J08/lesson-2-prepared.json": {
+      "originalPath": "runs/scored-01/cases/J08/lesson-2-prepared.json",
+      "sha256": "f418e13f686c33bafc33709327ceaeb73dc7cfc1bb60a1e99e05f34c3729cd27",
+      "bytes": 7430
+    },
+    "runs/scored-01/cases/J08/source.json": {
+      "originalPath": "runs/scored-01/cases/J08/source.json",
+      "sha256": "8d0082953abe9b3ab4ae4f7d32675d98247777087ee636f46222f44bfe0bb333",
+      "bytes": 3799
+    },
+    "runs/scored-01/cases/J08/state.json": {
+      "originalPath": "runs/scored-01/cases/J08/state.json",
+      "sha256": "edd9de929546f0c1b3d7c1a4b9e0f3af205979ca69fa97b655281e3420d86dd0",
+      "bytes": 25023
+    },
+    "runs/scored-01/cases/J08-authority-1/after-control.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J08-authority-1/after-control.snapshot.json",
+      "sha256": "0430e7a4143bbf36f7f473b6e8509f33f45836114c1d1455911a41c40aa9c367",
+      "bytes": 1240626
+    },
+    "runs/scored-01/cases/J08-authority-1/answer.json": {
+      "originalPath": "runs/scored-01/cases/J08-authority-1/answer.json",
+      "sha256": "7c69c4eb18c12c5797a121a9d131e447430d86d0bf6def9d0198ef422f115039",
+      "bytes": 6976
+    },
+    "runs/scored-01/cases/J08-authority-1/identity.json": {
+      "originalPath": "runs/scored-01/cases/J08-authority-1/identity.json",
+      "sha256": "fae69d6a724d05cbf2ad3b9facac439e6f798d492f640ee11be8b3291f33bade",
+      "bytes": 241
+    },
+    "runs/scored-01/cases/J08-insufficient-1/after-control.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J08-insufficient-1/after-control.snapshot.json",
+      "sha256": "bc75031cad4542f437f881edfdbf170ddb579d5cc72c19456c78e138f5a3da54",
+      "bytes": 1240597
+    },
+    "runs/scored-01/cases/J08-insufficient-1/answer.json": {
+      "originalPath": "runs/scored-01/cases/J08-insufficient-1/answer.json",
+      "sha256": "7d1c687ffaeb0171ab7920b5c7309ec25e19b7f9708984b65fc24af5485f29ee",
+      "bytes": 6913
+    },
+    "runs/scored-01/cases/J08-insufficient-1/identity.json": {
+      "originalPath": "runs/scored-01/cases/J08-insufficient-1/identity.json",
+      "sha256": "3ceebff08b6ea3fc439f1b5d8f0b17b31b001c78496bba40004204ee9f3881ca",
+      "bytes": 244
+    },
+    "runs/scored-01/cases/J09/after-teaching-1.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J09/after-teaching-1.snapshot.json",
+      "sha256": "4412247e6bdcff2045a3ee566eec373284b6ba9e487b87b5e4baa6848952f8ea",
+      "bytes": 955060
+    },
+    "runs/scored-01/cases/J09/after-teaching-2.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J09/after-teaching-2.snapshot.json",
+      "sha256": "497da0683f9878d2df1207962de2ee1840532b793c9c1d8da8208bec1eccc9c6",
+      "bytes": 1246952
+    },
+    "runs/scored-01/cases/J09/final.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J09/final.snapshot.json",
+      "sha256": "29710c773bf050784bf96af48bc81eca19b5410593d40596ba153ab3425ccd0b",
+      "bytes": 1456919
+    },
+    "runs/scored-01/cases/J09/formal-1-answer.json": {
+      "originalPath": "runs/scored-01/cases/J09/formal-1-answer.json",
+      "sha256": "1ac48ad93b4919d6aff9a010e3d96e56a04e27a69096d994b096be1e8adf0549",
+      "bytes": 5670
+    },
+    "runs/scored-01/cases/J09/formal-1-before.json": {
+      "originalPath": "runs/scored-01/cases/J09/formal-1-before.json",
+      "sha256": "98bba408905930a9926b8dcb1220c8d206f34febbf6ab15d964bf085585ddb50",
+      "bytes": 1998
+    },
+    "runs/scored-01/cases/J09/formal-1-launch.json": {
+      "originalPath": "runs/scored-01/cases/J09/formal-1-launch.json",
+      "sha256": "62890338effab3578a1e323ce5e587a50525f81bcbb62d8fc5c57ac75f755ed9",
+      "bytes": 2234
+    },
+    "runs/scored-01/cases/J09/formal-1-replay.json": {
+      "originalPath": "runs/scored-01/cases/J09/formal-1-replay.json",
+      "sha256": "5dc12a7da0251a9080893e173ce928d7d098b2ff3c6047b206a38f23d38a646a",
+      "bytes": 77
+    },
+    "runs/scored-01/cases/J09/formal-1-version.json": {
+      "originalPath": "runs/scored-01/cases/J09/formal-1-version.json",
+      "sha256": "316018cb69112e31023b3734fa099068acc3e2917cad9429f9f68483ad4bf586",
+      "bytes": 3722
+    },
+    "runs/scored-01/cases/J09/identity.json": {
+      "originalPath": "runs/scored-01/cases/J09/identity.json",
+      "sha256": "dda40882aac9796be424351d29a30716ebc61de83a36537e0701d0da4038f857",
+      "bytes": 229
+    },
+    "runs/scored-01/cases/J09/learner-responses.jsonl": {
+      "originalPath": "runs/scored-01/cases/J09/learner-responses.jsonl",
+      "sha256": "b9f9193e578606b4babd914ce60425e334f8221f70be382de2f057f60a2306cf",
+      "bytes": 109517
+    },
+    "runs/scored-01/cases/J09/lesson-1-prepared.json": {
+      "originalPath": "runs/scored-01/cases/J09/lesson-1-prepared.json",
+      "sha256": "1b03cb0d39acb5edcead8ff96ef2fb07dd5ea9fddd6dda927ace40768667f4b7",
+      "bytes": 12154
+    },
+    "runs/scored-01/cases/J09/lesson-2-prepared.json": {
+      "originalPath": "runs/scored-01/cases/J09/lesson-2-prepared.json",
+      "sha256": "c02d4ed7391c6a12e64439f438c7cabdf979fac84ec723f88bb5e38a7c8a0243",
+      "bytes": 11095
+    },
+    "runs/scored-01/cases/J09/source.json": {
+      "originalPath": "runs/scored-01/cases/J09/source.json",
+      "sha256": "4f1929872a062fbf22e4f591b57d8674110461ec9c904569cfff74720e64d491",
+      "bytes": 3915
+    },
+    "runs/scored-01/cases/J09/state.json": {
+      "originalPath": "runs/scored-01/cases/J09/state.json",
+      "sha256": "5f6ccd2269fb798a4f3f1ddfcd76651b7911c38e8cc11302b6620e580e3f67b1",
+      "bytes": 17417
+    },
+    "runs/scored-01/cases/J09-authority-1/after-control.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J09-authority-1/after-control.snapshot.json",
+      "sha256": "3f772bafe96c446fc9d582aab1d48a3f0381ccc563d7b013f93a940c2f812eda",
+      "bytes": 1436879
+    },
+    "runs/scored-01/cases/J09-authority-1/answer.json": {
+      "originalPath": "runs/scored-01/cases/J09-authority-1/answer.json",
+      "sha256": "e96c43371e30a29a2421d7f3265e42f689f7cfc4e74f8476d543b481c424204b",
+      "bytes": 4573
+    },
+    "runs/scored-01/cases/J09-authority-1/identity.json": {
+      "originalPath": "runs/scored-01/cases/J09-authority-1/identity.json",
+      "sha256": "1874ec24fbca8ed4f900bd9e49cabbc4688ccaf694bb03e26ea0df07cfe26aad",
+      "bytes": 241
+    },
+    "runs/scored-01/cases/J09-insufficient-1/after-control.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J09-insufficient-1/after-control.snapshot.json",
+      "sha256": "2b48536c9dcc3ebf2dd98e169042d8f83b0d7be8f2d12aefbd77875924cb90d7",
+      "bytes": 1436846
+    },
+    "runs/scored-01/cases/J09-insufficient-1/answer.json": {
+      "originalPath": "runs/scored-01/cases/J09-insufficient-1/answer.json",
+      "sha256": "35778263425d52808145f86eb10d37bbe7c710d4b8936902d3fdedbc85d48a32",
+      "bytes": 4510
+    },
+    "runs/scored-01/cases/J09-insufficient-1/identity.json": {
+      "originalPath": "runs/scored-01/cases/J09-insufficient-1/identity.json",
+      "sha256": "238036fd63175ef240273e86146d39e5892bcba721e0160671142eba190916c9",
+      "bytes": 244
+    },
+    "runs/scored-01/cases/J10/after-teaching-1.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J10/after-teaching-1.snapshot.json",
+      "sha256": "9aa601c6e784c665eb3815162e4058ab46b7dcc912e402e6ff14813ec0fb323c",
+      "bytes": 890591
+    },
+    "runs/scored-01/cases/J10/after-teaching-2.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J10/after-teaching-2.snapshot.json",
+      "sha256": "43a9628a1eb7f3480cdd6034c54f4bdca891291a4c50eab00ba0862f3aa601aa",
+      "bytes": 1125335
+    },
+    "runs/scored-01/cases/J10/final.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J10/final.snapshot.json",
+      "sha256": "461b2140e78aa8efae64e37f84bc726aa8e60e65f6c372794ae45f6d97af7d1c",
+      "bytes": 1274065
+    },
+    "runs/scored-01/cases/J10/identity.json": {
+      "originalPath": "runs/scored-01/cases/J10/identity.json",
+      "sha256": "a5ea72a5f389340dcd4d5b59ce7a690492e073a11fd69e869886e3de892390f0",
+      "bytes": 229
+    },
+    "runs/scored-01/cases/J10/learner-responses.jsonl": {
+      "originalPath": "runs/scored-01/cases/J10/learner-responses.jsonl",
+      "sha256": "4911a3f1e6da6ed1d4babd543eab6050d99312e6f188ccbae739b9bc2065502e",
+      "bytes": 87271
+    },
+    "runs/scored-01/cases/J10/lesson-1-prepared.json": {
+      "originalPath": "runs/scored-01/cases/J10/lesson-1-prepared.json",
+      "sha256": "3f89ae9329951a3ab6b302b436f2afc97abf0dee970a45469505dace458ba336",
+      "bytes": 10112
+    },
+    "runs/scored-01/cases/J10/lesson-2-prepared.json": {
+      "originalPath": "runs/scored-01/cases/J10/lesson-2-prepared.json",
+      "sha256": "4e5c57bca60704ae7c5bfdf03639bc668fcc8dbeca668267b1dc8f96dcc12caf",
+      "bytes": 10031
+    },
+    "runs/scored-01/cases/J10/source.json": {
+      "originalPath": "runs/scored-01/cases/J10/source.json",
+      "sha256": "5c98a7c103aa0d023e6e2d0d5b537de137d82c64c3d0c8430cdc4a35be05601f",
+      "bytes": 3851
+    },
+    "runs/scored-01/cases/J10/state.json": {
+      "originalPath": "runs/scored-01/cases/J10/state.json",
+      "sha256": "baa17f14262e310769e7169f040588da23050c78ecf29e20d22249b5a415e133",
+      "bytes": 5275
+    },
+    "runs/scored-01/cases/J11/after-teaching-1.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J11/after-teaching-1.snapshot.json",
+      "sha256": "8f453927edf3faf0a8e4b11bb8a45b602b36a67e4fd4501f2d9e70f7791e0367",
+      "bytes": 918805
+    },
+    "runs/scored-01/cases/J11/after-teaching-2.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J11/after-teaching-2.snapshot.json",
+      "sha256": "50e7b58ade4e73f2824abb52570b11f785e290304d7e7a3e91047d9a9c16fa21",
+      "bytes": 1087173
+    },
+    "runs/scored-01/cases/J11/final.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J11/final.snapshot.json",
+      "sha256": "3e2869332663d50d8c3a4f3d67ce4a825efa9a2b63fd5b8794e8243339ef7500",
+      "bytes": 1331698
+    },
+    "runs/scored-01/cases/J11/formal-1-answer.json": {
+      "originalPath": "runs/scored-01/cases/J11/formal-1-answer.json",
+      "sha256": "b7f96b91bb9e11c507cec182a89abe912cac9ec69f082fa2ac50144a94ea207a",
+      "bytes": 4650
+    },
+    "runs/scored-01/cases/J11/formal-1-before.json": {
+      "originalPath": "runs/scored-01/cases/J11/formal-1-before.json",
+      "sha256": "ee678466d1f01717981b92d435e2f65777fc07a57850ed6d2c264c86765c5b42",
+      "bytes": 1776
+    },
+    "runs/scored-01/cases/J11/formal-1-launch.json": {
+      "originalPath": "runs/scored-01/cases/J11/formal-1-launch.json",
+      "sha256": "722c347426ea50b030e3369bbdcf302fbf629f6f4e33357fbaf4a144b638751e",
+      "bytes": 2027
+    },
+    "runs/scored-01/cases/J11/formal-1-replay.json": {
+      "originalPath": "runs/scored-01/cases/J11/formal-1-replay.json",
+      "sha256": "5dc12a7da0251a9080893e173ce928d7d098b2ff3c6047b206a38f23d38a646a",
+      "bytes": 77
+    },
+    "runs/scored-01/cases/J11/formal-1-version.json": {
+      "originalPath": "runs/scored-01/cases/J11/formal-1-version.json",
+      "sha256": "f74890e717d7416e40bcf99d02752bf3831826f303bb9e241f96bca2574c9f15",
+      "bytes": 3149
+    },
+    "runs/scored-01/cases/J11/identity.json": {
+      "originalPath": "runs/scored-01/cases/J11/identity.json",
+      "sha256": "3f12add8372363a50f75b4f2ca66a3bc80aaff1bc714c142e46277901defa85c",
+      "bytes": 229
+    },
+    "runs/scored-01/cases/J11/learner-responses.jsonl": {
+      "originalPath": "runs/scored-01/cases/J11/learner-responses.jsonl",
+      "sha256": "01378a062d95c639236d66a7d5311b5cdb18414b20a4e2f0019c3946e4855a3f",
+      "bytes": 84061
+    },
+    "runs/scored-01/cases/J11/lesson-1-prepared.json": {
+      "originalPath": "runs/scored-01/cases/J11/lesson-1-prepared.json",
+      "sha256": "2ef10b5bdda97383363606ed6c3d0bd454feeb0b116997ca0d675a6213f4c930",
+      "bytes": 10542
+    },
+    "runs/scored-01/cases/J11/lesson-2-prepared.json": {
+      "originalPath": "runs/scored-01/cases/J11/lesson-2-prepared.json",
+      "sha256": "0e4d044237ed0152b094c8f51ff3ec3b579f62872bc992d865200a2384820242",
+      "bytes": 7899
+    },
+    "runs/scored-01/cases/J11/source.json": {
+      "originalPath": "runs/scored-01/cases/J11/source.json",
+      "sha256": "0c61e8503141d5e3b1f80f7a42ead9dc3b96e2b8e07a89d7c648032ef71b036e",
+      "bytes": 4161
+    },
+    "runs/scored-01/cases/J11/state.json": {
+      "originalPath": "runs/scored-01/cases/J11/state.json",
+      "sha256": "e4a6ce2d2d2b017c0085e0caf57fdb7575394cd492aa0730ecb512c6d557d707",
+      "bytes": 15228
+    },
+    "runs/scored-01/cases/J11-authority-1/after-control.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J11-authority-1/after-control.snapshot.json",
+      "sha256": "6a1a3fd6effc6869d9b2ffd6836b60a43bf3f398591e2a99f84e002783774731",
+      "bytes": 1314647
+    },
+    "runs/scored-01/cases/J11-authority-1/answer.json": {
+      "originalPath": "runs/scored-01/cases/J11-authority-1/answer.json",
+      "sha256": "5ac9d4076ab5a5a83e27e66a0713dc688ff7bbeb8cb99eaba19aefd35a9eaab7",
+      "bytes": 3948
+    },
+    "runs/scored-01/cases/J11-authority-1/identity.json": {
+      "originalPath": "runs/scored-01/cases/J11-authority-1/identity.json",
+      "sha256": "92c7247e0dbdd2c88953f68cc934daa4847033bcb7786e6bede92ff038798a8e",
+      "bytes": 241
+    },
+    "runs/scored-01/cases/J11-insufficient-1/after-control.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J11-insufficient-1/after-control.snapshot.json",
+      "sha256": "db2a032ee6563f8d1c640210e267cec9c0e705d5ae5bf0e8cce875b3653695f9",
+      "bytes": 1314617
+    },
+    "runs/scored-01/cases/J11-insufficient-1/answer.json": {
+      "originalPath": "runs/scored-01/cases/J11-insufficient-1/answer.json",
+      "sha256": "bbbe77058681bdf771fa9fea1e61259fc88240d5fcc4c0e780165a7b1856d183",
+      "bytes": 3885
+    },
+    "runs/scored-01/cases/J11-insufficient-1/identity.json": {
+      "originalPath": "runs/scored-01/cases/J11-insufficient-1/identity.json",
+      "sha256": "3ab709041418086b05b4567e6865ac73ee55b221515aefa13022530526575a6d",
+      "bytes": 244
+    },
+    "runs/scored-01/cases/J12/after-teaching-1.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J12/after-teaching-1.snapshot.json",
+      "sha256": "7f75c013d77b2737eae69c065b3758cf7ea02ca798efdb1baa4e8276f12e2672",
+      "bytes": 914592
+    },
+    "runs/scored-01/cases/J12/after-teaching-2.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J12/after-teaching-2.snapshot.json",
+      "sha256": "5d12f583811497acbb4087d73ce0f61f3e181130a1a0eeb9c2e23d8f9feeaf60",
+      "bytes": 1064942
+    },
+    "runs/scored-01/cases/J12/final.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J12/final.snapshot.json",
+      "sha256": "cd31cf7c210930a8e33030d3a9fbd1bfa67477edbf2a0eda425975423ea9caf8",
+      "bytes": 1294999
+    },
+    "runs/scored-01/cases/J12/formal-1-answer.json": {
+      "originalPath": "runs/scored-01/cases/J12/formal-1-answer.json",
+      "sha256": "df63a6cca89adc9a8011ab8ed5bcf2bb51961573577a8ae1d5519b7a3c32a553",
+      "bytes": 5489
+    },
+    "runs/scored-01/cases/J12/formal-1-before.json": {
+      "originalPath": "runs/scored-01/cases/J12/formal-1-before.json",
+      "sha256": "70479c9e4c2db05219909156a483ae5e354f51e427e20ba8edbb6833197f1518",
+      "bytes": 1754
+    },
+    "runs/scored-01/cases/J12/formal-1-launch.json": {
+      "originalPath": "runs/scored-01/cases/J12/formal-1-launch.json",
+      "sha256": "bf42794455ce9e08c516982c3cdc6851b663a4f10be2a61e12287e0aa39a85fe",
+      "bytes": 2050
+    },
+    "runs/scored-01/cases/J12/formal-1-replay.json": {
+      "originalPath": "runs/scored-01/cases/J12/formal-1-replay.json",
+      "sha256": "5dc12a7da0251a9080893e173ce928d7d098b2ff3c6047b206a38f23d38a646a",
+      "bytes": 77
+    },
+    "runs/scored-01/cases/J12/formal-1-version.json": {
+      "originalPath": "runs/scored-01/cases/J12/formal-1-version.json",
+      "sha256": "60b9104e4274c0164eefaa9d6e8e4add0c5fef403f58aaf381ff04ad610a4711",
+      "bytes": 3678
+    },
+    "runs/scored-01/cases/J12/identity.json": {
+      "originalPath": "runs/scored-01/cases/J12/identity.json",
+      "sha256": "09d5603d9f84037f53e0af10af47778cf9b749f008a3ea48f751f3e23b6ade65",
+      "bytes": 229
+    },
+    "runs/scored-01/cases/J12/learner-responses.jsonl": {
+      "originalPath": "runs/scored-01/cases/J12/learner-responses.jsonl",
+      "sha256": "2710ddcec26aa0af2810162f105e8cf7a8eba2a78d5beba95724443d11779db4",
+      "bytes": 65505
+    },
+    "runs/scored-01/cases/J12/lesson-1-after-explicit-retry.json": {
+      "originalPath": "runs/scored-01/cases/J12/lesson-1-after-explicit-retry.json",
+      "sha256": "81a29f17f3494b7d284ecb72502718c274be52e3141617f28382191f1aeee448",
+      "bytes": 7958
+    },
+    "runs/scored-01/cases/J12/lesson-1-prepared.json": {
+      "originalPath": "runs/scored-01/cases/J12/lesson-1-prepared.json",
+      "sha256": "3cbd5236d8b8b08ea43d5d80a4a07a7d3a18893595bcdaf6400d01d4c7ff7824",
+      "bytes": 391
+    },
+    "runs/scored-01/cases/J12/lesson-2-prepared.json": {
+      "originalPath": "runs/scored-01/cases/J12/lesson-2-prepared.json",
+      "sha256": "27c9b5b28a93256f3e9572a2adeba104e5a8ed23c482ecaea628e503647890f2",
+      "bytes": 6541
+    },
+    "runs/scored-01/cases/J12/source.json": {
+      "originalPath": "runs/scored-01/cases/J12/source.json",
+      "sha256": "b27ee5e3c7aefcb50c706890d6d66b05b90e81329cca34e2c916e64f13eeccb5",
+      "bytes": 3943
+    },
+    "runs/scored-01/cases/J12/state.json": {
+      "originalPath": "runs/scored-01/cases/J12/state.json",
+      "sha256": "50f9bb0c7df3babbce7bae6bcc78ef69991d4ad187f55d32f073c20bcd040549",
+      "bytes": 17332
+    },
+    "runs/scored-01/cases/J12-authority-1/after-control.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J12-authority-1/after-control.snapshot.json",
+      "sha256": "ac926c0d63ac501187c8dd7e4cc3a369195863d3dbd0a972aee37efb04840103",
+      "bytes": 1277374
+    },
+    "runs/scored-01/cases/J12-authority-1/answer.json": {
+      "originalPath": "runs/scored-01/cases/J12-authority-1/answer.json",
+      "sha256": "0ac760b094782bea973c5ebe85a59e3f3998981f98b84a6171239f991b845f4a",
+      "bytes": 4440
+    },
+    "runs/scored-01/cases/J12-authority-1/identity.json": {
+      "originalPath": "runs/scored-01/cases/J12-authority-1/identity.json",
+      "sha256": "59183740b007c900cd6b87fda25471993fa2ea484b92da10c8aaac5e23eaabc4",
+      "bytes": 241
+    },
+    "runs/scored-01/cases/J12-insufficient-1/after-control.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J12-insufficient-1/after-control.snapshot.json",
+      "sha256": "ee2508b658ec7ad38d80b34b5c358b4391d43b7de7ebdfb714725be023b57a20",
+      "bytes": 1277344
+    },
+    "runs/scored-01/cases/J12-insufficient-1/answer.json": {
+      "originalPath": "runs/scored-01/cases/J12-insufficient-1/answer.json",
+      "sha256": "2fdbfec615ac3cf13ecff3c3ef784124dcd57b951943f565e743b597eaed86ed",
+      "bytes": 4377
+    },
+    "runs/scored-01/cases/J12-insufficient-1/identity.json": {
+      "originalPath": "runs/scored-01/cases/J12-insufficient-1/identity.json",
+      "sha256": "f63b2d9c8447af9534a6735600c07d755f12b7da5a4d2f880b058adcab4871a9",
+      "bytes": 244
+    },
+    "runs/scored-01/cases/J13/after-teaching-1.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J13/after-teaching-1.snapshot.json",
+      "sha256": "4c76d960db878a9ff81cc476386e61149a22e826df0c9a161f0707a217df63af",
+      "bytes": 859257
+    },
+    "runs/scored-01/cases/J13/after-teaching-2.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J13/after-teaching-2.snapshot.json",
+      "sha256": "3f1f2fe26c16d0f2b74928acba4b1654a75b94a01a52f6b76b38c8848924d22b",
+      "bytes": 1048420
+    },
+    "runs/scored-01/cases/J13/final.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J13/final.snapshot.json",
+      "sha256": "3e8c84b687899b7e8731e2bd157aee23dd794d01125b9f41fb4699c8e7f2d2a9",
+      "bytes": 1254436
+    },
+    "runs/scored-01/cases/J13/formal-1-answer.json": {
+      "originalPath": "runs/scored-01/cases/J13/formal-1-answer.json",
+      "sha256": "47715f563c4beed650e32c5979a7ebfd0c052f7d104ce46f34b304a84a922124",
+      "bytes": 6348
+    },
+    "runs/scored-01/cases/J13/formal-1-before.json": {
+      "originalPath": "runs/scored-01/cases/J13/formal-1-before.json",
+      "sha256": "87c02a9bea380c8894278e267527d406610b1c8dc57608b25d8de6e871ac08e5",
+      "bytes": 2149
+    },
+    "runs/scored-01/cases/J13/formal-1-launch.json": {
+      "originalPath": "runs/scored-01/cases/J13/formal-1-launch.json",
+      "sha256": "b0b8f5d6ad4ea42c4959f93d4a8d02ada7efc59d6c9ab67a7f5f269e6f6637f3",
+      "bytes": 2495
+    },
+    "runs/scored-01/cases/J13/formal-1-replay.json": {
+      "originalPath": "runs/scored-01/cases/J13/formal-1-replay.json",
+      "sha256": "5dc12a7da0251a9080893e173ce928d7d098b2ff3c6047b206a38f23d38a646a",
+      "bytes": 77
+    },
+    "runs/scored-01/cases/J13/formal-1-version.json": {
+      "originalPath": "runs/scored-01/cases/J13/formal-1-version.json",
+      "sha256": "aa65ca5dced7b35a16274b9ce82c73f76e04d23ebbf3e69cfffb80fa9d5fca81",
+      "bytes": 3850
+    },
+    "runs/scored-01/cases/J13/identity.json": {
+      "originalPath": "runs/scored-01/cases/J13/identity.json",
+      "sha256": "15bfabcb1e3e6a9d3b48698a4b9140282ac267a6345bfd16d1d81f75459bf53f",
+      "bytes": 229
+    },
+    "runs/scored-01/cases/J13/learner-responses.jsonl": {
+      "originalPath": "runs/scored-01/cases/J13/learner-responses.jsonl",
+      "sha256": "d87c752aec33c7244bb3242c5beb04626be36f5b813a45f1ef7eefd2dfd3cfcd",
+      "bytes": 78123
+    },
+    "runs/scored-01/cases/J13/lesson-1-prepared.json": {
+      "originalPath": "runs/scored-01/cases/J13/lesson-1-prepared.json",
+      "sha256": "25855b2f0e1eaed50828f028cb04aeacd6097ecb2ec53b09fd074f72fa0c5a40",
+      "bytes": 11147
+    },
+    "runs/scored-01/cases/J13/lesson-2-prepared.json": {
+      "originalPath": "runs/scored-01/cases/J13/lesson-2-prepared.json",
+      "sha256": "0621379eed047d9dece4fbfb23902fae83a4d8741e3e550eaf56c0bcd63eb345",
+      "bytes": 7271
+    },
+    "runs/scored-01/cases/J13/source.json": {
+      "originalPath": "runs/scored-01/cases/J13/source.json",
+      "sha256": "c94b61a088d17ea5566feb9c25240dd47cc897ee5340187857cfedef6f760d66",
+      "bytes": 3666
+    },
+    "runs/scored-01/cases/J13/state.json": {
+      "originalPath": "runs/scored-01/cases/J13/state.json",
+      "sha256": "3e5d36eb8219cc2c667fd6fed7af723048e5b78fb48ed5bf668eda4be03a3ca5",
+      "bytes": 18177
+    },
+    "runs/scored-01/cases/J13-authority-1/after-control.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J13-authority-1/after-control.snapshot.json",
+      "sha256": "5c379054087a189f7dfeea8d33b6f15fc2a06b83f588154558094d785ecf599c",
+      "bytes": 1236352
+    },
+    "runs/scored-01/cases/J13-authority-1/answer.json": {
+      "originalPath": "runs/scored-01/cases/J13-authority-1/answer.json",
+      "sha256": "39a278514226ed4d3936692807e4fe52602e01101dc9ea0b036b0537c4939763",
+      "bytes": 4692
+    },
+    "runs/scored-01/cases/J13-authority-1/identity.json": {
+      "originalPath": "runs/scored-01/cases/J13-authority-1/identity.json",
+      "sha256": "91ad7010fdb2625225b966e056dc2733816a21804e1d11743f76bdb39e1cad33",
+      "bytes": 241
+    },
+    "runs/scored-01/cases/J13-insufficient-1/after-control.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J13-insufficient-1/after-control.snapshot.json",
+      "sha256": "a3fc96f5f7bb3b9d8e2fe88927c9ef8b3dfdaa14d9ecef5f34d621635a41c536",
+      "bytes": 1236319
+    },
+    "runs/scored-01/cases/J13-insufficient-1/answer.json": {
+      "originalPath": "runs/scored-01/cases/J13-insufficient-1/answer.json",
+      "sha256": "d52e61b7476fe0b443c46c0fe6ea6c7d3a2e31dbb5a39a5d8a9ae7b0ea199c4c",
+      "bytes": 4629
+    },
+    "runs/scored-01/cases/J13-insufficient-1/identity.json": {
+      "originalPath": "runs/scored-01/cases/J13-insufficient-1/identity.json",
+      "sha256": "b400b5901ec8124d9e3e92df0be4147492cfb8d5d5f64e13cdcfc82c606c49f8",
+      "bytes": 244
+    },
+    "runs/scored-01/cases/J14/after-teaching-1.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J14/after-teaching-1.snapshot.json",
+      "sha256": "b973772bb814372700663e9fc96bdf082d619fa2f01260c960621d039828c980",
+      "bytes": 982605
+    },
+    "runs/scored-01/cases/J14/after-teaching-2.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J14/after-teaching-2.snapshot.json",
+      "sha256": "a476ca7749f98f09f03c3207bc63af1824c476fc614040bb6f368dbdfc32580f",
+      "bytes": 1278554
+    },
+    "runs/scored-01/cases/J14/final.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J14/final.snapshot.json",
+      "sha256": "4e04276e815385dcecaa89907187456c4325a518028aa191135b01cc628ba98b",
+      "bytes": 1493871
+    },
+    "runs/scored-01/cases/J14/formal-1-answer.json": {
+      "originalPath": "runs/scored-01/cases/J14/formal-1-answer.json",
+      "sha256": "f15e5a3d46c0649304d3a55a690b1c7bed855eb7be88b3ced3b64bee90f52b57",
+      "bytes": 6134
+    },
+    "runs/scored-01/cases/J14/formal-1-before.json": {
+      "originalPath": "runs/scored-01/cases/J14/formal-1-before.json",
+      "sha256": "f87cb58d61ed886626af68be1a7646f6a43670997b6416e384b41141aab993c6",
+      "bytes": 2300
+    },
+    "runs/scored-01/cases/J14/formal-1-launch.json": {
+      "originalPath": "runs/scored-01/cases/J14/formal-1-launch.json",
+      "sha256": "cc620fab4dea778c6cf6d390db8ce1a8e649a9f44a06666e8217b1e95b99c3d2",
+      "bytes": 2632
+    },
+    "runs/scored-01/cases/J14/formal-1-replay.json": {
+      "originalPath": "runs/scored-01/cases/J14/formal-1-replay.json",
+      "sha256": "5dc12a7da0251a9080893e173ce928d7d098b2ff3c6047b206a38f23d38a646a",
+      "bytes": 77
+    },
+    "runs/scored-01/cases/J14/formal-1-version.json": {
+      "originalPath": "runs/scored-01/cases/J14/formal-1-version.json",
+      "sha256": "666c4ebbd79d5c3e711816386ff15592fcfebe7c84e472d0df4c6a020a4b6a4a",
+      "bytes": 4252
+    },
+    "runs/scored-01/cases/J14/identity.json": {
+      "originalPath": "runs/scored-01/cases/J14/identity.json",
+      "sha256": "ff90df2bf09df768066f0b93110525d17b62124eaa3226c6196ed18a51f6ccff",
+      "bytes": 229
+    },
+    "runs/scored-01/cases/J14/learner-responses.jsonl": {
+      "originalPath": "runs/scored-01/cases/J14/learner-responses.jsonl",
+      "sha256": "267e42d96aab5a96f31b7e317414594d6ecc55b4ce43e70484a62211742c4ace",
+      "bytes": 143392
+    },
+    "runs/scored-01/cases/J14/lesson-1-prepared.json": {
+      "originalPath": "runs/scored-01/cases/J14/lesson-1-prepared.json",
+      "sha256": "d765c1a649d05f9540551c79d26b776a6055881cf7106cfd8f69f75345db3e6e",
+      "bytes": 11387
+    },
+    "runs/scored-01/cases/J14/lesson-2-prepared.json": {
+      "originalPath": "runs/scored-01/cases/J14/lesson-2-prepared.json",
+      "sha256": "303e993bd30b24e02fc7b307ae357123aac68dd17ae17754deeb42214e0fdd3a",
+      "bytes": 10862
+    },
+    "runs/scored-01/cases/J14/source.json": {
+      "originalPath": "runs/scored-01/cases/J14/source.json",
+      "sha256": "1104da88b75cc3a557865cb52469cb815fbf87af9a37ee5aca30f585745508f5",
+      "bytes": 3841
+    },
+    "runs/scored-01/cases/J14/state.json": {
+      "originalPath": "runs/scored-01/cases/J14/state.json",
+      "sha256": "ff6d2676fb2a95bd20c69fba5a8394598d1edec66854d265135f52410858a76a",
+      "bytes": 19769
+    },
+    "runs/scored-01/cases/J14-authority-1/after-control.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J14-authority-1/after-control.snapshot.json",
+      "sha256": "9e3a9bc4f5718d4336cc229b16b4dfec1469c3383d4d27109383ca7f071449e2",
+      "bytes": 1474007
+    },
+    "runs/scored-01/cases/J14-authority-1/answer.json": {
+      "originalPath": "runs/scored-01/cases/J14-authority-1/answer.json",
+      "sha256": "631412947abca10b2982c0b27e5a54be7beb7b8e63b59fabc4ab1c670bc04811",
+      "bytes": 5325
+    },
+    "runs/scored-01/cases/J14-authority-1/identity.json": {
+      "originalPath": "runs/scored-01/cases/J14-authority-1/identity.json",
+      "sha256": "c76a2684a660d2b5fe2c6d9ea44924f6bb824a340f03042605332b3945faa6bd",
+      "bytes": 241
+    },
+    "runs/scored-01/cases/J14-insufficient-1/after-control.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J14-insufficient-1/after-control.snapshot.json",
+      "sha256": "5187189d2411e4ed078de751cb52ea375accaf6820f2ea43f63c66ea384358d4",
+      "bytes": 1473977
+    },
+    "runs/scored-01/cases/J14-insufficient-1/answer.json": {
+      "originalPath": "runs/scored-01/cases/J14-insufficient-1/answer.json",
+      "sha256": "4ffdabbfc0dfe50cca1b8a2d2c653721af2eeac3445ae73a464564dab8850b9f",
+      "bytes": 5262
+    },
+    "runs/scored-01/cases/J14-insufficient-1/identity.json": {
+      "originalPath": "runs/scored-01/cases/J14-insufficient-1/identity.json",
+      "sha256": "aaa13b299f148d6fced3c383eb12d4d687ca7a36da53d2e530ae1e0e80a9fe5e",
+      "bytes": 244
+    },
+    "runs/scored-01/cases/J15/after-teaching-1.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J15/after-teaching-1.snapshot.json",
+      "sha256": "a97094bd9158ea8dde54773c6276ddf72e30162197613eefc068e3e58c207a34",
+      "bytes": 690734
+    },
+    "runs/scored-01/cases/J15/final.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J15/final.snapshot.json",
+      "sha256": "1103df80e8e1690ef560b0776c33989572c00ae1b74835b73c1400fc7a721fe7",
+      "bytes": 912625
+    },
+    "runs/scored-01/cases/J15/formal-1-answer.json": {
+      "originalPath": "runs/scored-01/cases/J15/formal-1-answer.json",
+      "sha256": "5ec299e011d7ff1fd672518cfaaf40cd3327a4118f413266a78683e285f801d1",
+      "bytes": 9246
+    },
+    "runs/scored-01/cases/J15/formal-1-before.json": {
+      "originalPath": "runs/scored-01/cases/J15/formal-1-before.json",
+      "sha256": "798b21884346c7a9c7bb10397999fee803c3d4f98e950709fe173abb7c119b0c",
+      "bytes": 3784
+    },
+    "runs/scored-01/cases/J15/formal-1-launch.json": {
+      "originalPath": "runs/scored-01/cases/J15/formal-1-launch.json",
+      "sha256": "dcd962e99e7fbb7110620ab4f4ed1c6554cfa92aaa3f3fd1c49480e388e53600",
+      "bytes": 4203
+    },
+    "runs/scored-01/cases/J15/formal-1-replay.json": {
+      "originalPath": "runs/scored-01/cases/J15/formal-1-replay.json",
+      "sha256": "5dc12a7da0251a9080893e173ce928d7d098b2ff3c6047b206a38f23d38a646a",
+      "bytes": 77
+    },
+    "runs/scored-01/cases/J15/formal-1-version.json": {
+      "originalPath": "runs/scored-01/cases/J15/formal-1-version.json",
+      "sha256": "ee0eec9dc3cbda70216f3f5c7050a67af6537cb3886668dd19d34507ea81b47e",
+      "bytes": 5924
+    },
+    "runs/scored-01/cases/J15/identity.json": {
+      "originalPath": "runs/scored-01/cases/J15/identity.json",
+      "sha256": "2a565894316128b75ad377c431872edfa1ea3ac873cb0dc86a467a50a0f38810",
+      "bytes": 229
+    },
+    "runs/scored-01/cases/J15/learner-responses.jsonl": {
+      "originalPath": "runs/scored-01/cases/J15/learner-responses.jsonl",
+      "sha256": "c59d17449d214e2e20dbe53d69b185875095f25ebe4b1fc7a1d17697779ceb6d",
+      "bytes": 26726
+    },
+    "runs/scored-01/cases/J15/lesson-1-prepared.json": {
+      "originalPath": "runs/scored-01/cases/J15/lesson-1-prepared.json",
+      "sha256": "85736f784feb1bf1ea8534b1280da8f1d62fc0e484de92e560aeda62cc346636",
+      "bytes": 8190
+    },
+    "runs/scored-01/cases/J15/source.json": {
+      "originalPath": "runs/scored-01/cases/J15/source.json",
+      "sha256": "b1df6bd92413b9185fcb83885b3a2b6b906c1ad4339a0ccac0885e72882878c0",
+      "bytes": 3965
+    },
+    "runs/scored-01/cases/J15/state.json": {
+      "originalPath": "runs/scored-01/cases/J15/state.json",
+      "sha256": "aa9b54e7373af1e8d33920b94d92bcfb547c0a7ebff1ba586542cda2e4a6de03",
+      "bytes": 27632
+    },
+    "runs/scored-01/cases/J15-authority-1/after-control.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J15-authority-1/after-control.snapshot.json",
+      "sha256": "b6063cd378b4b7221d9fd0fde5d8dd8bbd768c9fa13f0cb96b3662b21d497073",
+      "bytes": 901262
+    },
+    "runs/scored-01/cases/J15-authority-1/answer.json": {
+      "originalPath": "runs/scored-01/cases/J15-authority-1/answer.json",
+      "sha256": "6ebc23a5a31ed40f05c7e291689cca9390cdfda5eddd350b12508fa6ff3a6efd",
+      "bytes": 7860
+    },
+    "runs/scored-01/cases/J15-authority-1/identity.json": {
+      "originalPath": "runs/scored-01/cases/J15-authority-1/identity.json",
+      "sha256": "036d09e271188f6fae36608f249d532fb6ad658698e47a8d2a94315bb74b22e2",
+      "bytes": 241
+    },
+    "runs/scored-01/cases/J15-insufficient-1/after-control.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J15-insufficient-1/after-control.snapshot.json",
+      "sha256": "8a7439df2522f07e5a5b36ea0d0ec1353f077bc14a07dbd503916b8807454ad1",
+      "bytes": 901233
+    },
+    "runs/scored-01/cases/J15-insufficient-1/answer.json": {
+      "originalPath": "runs/scored-01/cases/J15-insufficient-1/answer.json",
+      "sha256": "5da27fff1e7e0a9bf789501e1962b6548fa408a6dbaebcb8d57142eecccd8543",
+      "bytes": 7797
+    },
+    "runs/scored-01/cases/J15-insufficient-1/identity.json": {
+      "originalPath": "runs/scored-01/cases/J15-insufficient-1/identity.json",
+      "sha256": "1fbb1f03dc1eca0368fa83e332e6aa099a6e48f7639a0ba682efa2921bbc1049",
+      "bytes": 244
+    },
+    "runs/scored-01/cases/J16/after-teaching-1.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J16/after-teaching-1.snapshot.json",
+      "sha256": "c9770f6e8a8d31e99805e2e42cb5f75e0024d857aff8e987e83d7bd4fe3d4f44",
+      "bytes": 923512
+    },
+    "runs/scored-01/cases/J16/after-teaching-2.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J16/after-teaching-2.snapshot.json",
+      "sha256": "6f9e2c8ee8982be51e41ebf0c22b9051bd9fe9e5b1d1d6253e1529257b0beed8",
+      "bytes": 1114030
+    },
+    "runs/scored-01/cases/J16/final.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J16/final.snapshot.json",
+      "sha256": "d249840e1eae5cb75fb4c6475c771fd84d995ef30a7ff55100bc06473da8aae8",
+      "bytes": 1344558
+    },
+    "runs/scored-01/cases/J16/formal-1-answer.json": {
+      "originalPath": "runs/scored-01/cases/J16/formal-1-answer.json",
+      "sha256": "6adfaa8e2d7196adab032cc3047a7ab48e505c0c7324084bea6fbd448a420557",
+      "bytes": 8397
+    },
+    "runs/scored-01/cases/J16/formal-1-before.json": {
+      "originalPath": "runs/scored-01/cases/J16/formal-1-before.json",
+      "sha256": "bfa0b8714122657511f8587c492ec0f10aadccce5f41016aba34383802c7ac42",
+      "bytes": 2852
+    },
+    "runs/scored-01/cases/J16/formal-1-launch.json": {
+      "originalPath": "runs/scored-01/cases/J16/formal-1-launch.json",
+      "sha256": "a38e13fb06daddf8cf5d01d8c4060a553bb80140b073af93f58f388ceec8d60b",
+      "bytes": 3238
+    },
+    "runs/scored-01/cases/J16/formal-1-replay.json": {
+      "originalPath": "runs/scored-01/cases/J16/formal-1-replay.json",
+      "sha256": "5dc12a7da0251a9080893e173ce928d7d098b2ff3c6047b206a38f23d38a646a",
+      "bytes": 77
+    },
+    "runs/scored-01/cases/J16/formal-1-version.json": {
+      "originalPath": "runs/scored-01/cases/J16/formal-1-version.json",
+      "sha256": "e692c6fa661acb884c9ff9043f18d0a331b414c622b40001871f85d6e97fb636",
+      "bytes": 5000
+    },
+    "runs/scored-01/cases/J16/identity.json": {
+      "originalPath": "runs/scored-01/cases/J16/identity.json",
+      "sha256": "654edbcb37031b71b8e38de138cf10ebef1c34da353f82b8a5c43eae570b7b73",
+      "bytes": 229
+    },
+    "runs/scored-01/cases/J16/learner-responses.jsonl": {
+      "originalPath": "runs/scored-01/cases/J16/learner-responses.jsonl",
+      "sha256": "1cb7dd17dcb5d3f6a15b124f16be4534628f9b6577905a49aa6b1db9532a6c93",
+      "bytes": 89676
+    },
+    "runs/scored-01/cases/J16/lesson-1-prepared.json": {
+      "originalPath": "runs/scored-01/cases/J16/lesson-1-prepared.json",
+      "sha256": "0aeacd93159db77202824607d1d453f82c23fb2ee72b89e3b9a0ae1587c289ac",
+      "bytes": 11723
+    },
+    "runs/scored-01/cases/J16/lesson-2-prepared.json": {
+      "originalPath": "runs/scored-01/cases/J16/lesson-2-prepared.json",
+      "sha256": "1ff303b7b7c4550e543fa6d4aeda7149fb06c506b8dfcafba0b91e69d6364b69",
+      "bytes": 7719
+    },
+    "runs/scored-01/cases/J16/source.json": {
+      "originalPath": "runs/scored-01/cases/J16/source.json",
+      "sha256": "925c13fa4b952759535b0758c03ee018f04c7e16ed2d58c8c25ee43e86a365a8",
+      "bytes": 3845
+    },
+    "runs/scored-01/cases/J16/state.json": {
+      "originalPath": "runs/scored-01/cases/J16/state.json",
+      "sha256": "dd1e7c14848e1e3d51b8c15d334dc0414686f3b30d326eb78229bacced8231c7",
+      "bytes": 23639
+    },
+    "runs/scored-01/cases/J16-authority-1/after-control.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J16-authority-1/after-control.snapshot.json",
+      "sha256": "2bc6cf5e29337d5f65e9ecb9bcb340a244b174989f23db55e980a5f29e1271bf",
+      "bytes": 1325736
+    },
+    "runs/scored-01/cases/J16-authority-1/answer.json": {
+      "originalPath": "runs/scored-01/cases/J16-authority-1/answer.json",
+      "sha256": "310a0b4fa695d185c2576d12da74585ac3f26805984600e90905e9c9c6e0d557",
+      "bytes": 6371
+    },
+    "runs/scored-01/cases/J16-authority-1/identity.json": {
+      "originalPath": "runs/scored-01/cases/J16-authority-1/identity.json",
+      "sha256": "d989a88ea1ffe7b6bf75711f6eabba79ae0c7bb215dfbe88bf55743eb351e99b",
+      "bytes": 241
+    },
+    "runs/scored-01/cases/J16-insufficient-1/after-control.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J16-insufficient-1/after-control.snapshot.json",
+      "sha256": "dfe7c95dae23828bc79c182db1cf84f39195c90faf68ae049163b343d5da53f3",
+      "bytes": 1325707
+    },
+    "runs/scored-01/cases/J16-insufficient-1/answer.json": {
+      "originalPath": "runs/scored-01/cases/J16-insufficient-1/answer.json",
+      "sha256": "c04cd544da0b4045f2cf7321c03203f2515dff2be5a40f6a67c46865c7099eeb",
+      "bytes": 6308
+    },
+    "runs/scored-01/cases/J16-insufficient-1/identity.json": {
+      "originalPath": "runs/scored-01/cases/J16-insufficient-1/identity.json",
+      "sha256": "bc0bca368afe3b315030c81ab7b98c01140256b73eac9f50305124cd8a1e81da",
+      "bytes": 244
+    },
+    "runs/scored-01/cases/J17/after-teaching-1.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J17/after-teaching-1.snapshot.json",
+      "sha256": "6b0c53e2f33d759cbc600e3c464aaca221a6270f8ff32e73e71857f105495f99",
+      "bytes": 882637
+    },
+    "runs/scored-01/cases/J17/after-teaching-2.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J17/after-teaching-2.snapshot.json",
+      "sha256": "c90787982cc706aff8752ee7cb165f9b26c75b2df016201c8486ae9ab6a01034",
+      "bytes": 1078555
+    },
+    "runs/scored-01/cases/J17/final.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J17/final.snapshot.json",
+      "sha256": "be3d8e5a989206b0ed09c19c2242ff2f703a7689fd092c2c3c46ae3f7cb1c740",
+      "bytes": 1307201
+    },
+    "runs/scored-01/cases/J17/formal-1-answer.json": {
+      "originalPath": "runs/scored-01/cases/J17/formal-1-answer.json",
+      "sha256": "a991d8b3c14e57eb802d8e21ed51a62eaa83015efdd8190d1de848655cdaf0a0",
+      "bytes": 6603
+    },
+    "runs/scored-01/cases/J17/formal-1-before.json": {
+      "originalPath": "runs/scored-01/cases/J17/formal-1-before.json",
+      "sha256": "fbc2e0b03664612ca17595b85d5769ad000c38408813d0fc793eefe410bd8238",
+      "bytes": 2245
+    },
+    "runs/scored-01/cases/J17/formal-1-launch.json": {
+      "originalPath": "runs/scored-01/cases/J17/formal-1-launch.json",
+      "sha256": "9dd5e90dd6d394fbd2d9012ed6714126a0459b9962b4e7e6ce7a6c43c11ba112",
+      "bytes": 2578
+    },
+    "runs/scored-01/cases/J17/formal-1-replay.json": {
+      "originalPath": "runs/scored-01/cases/J17/formal-1-replay.json",
+      "sha256": "5dc12a7da0251a9080893e173ce928d7d098b2ff3c6047b206a38f23d38a646a",
+      "bytes": 77
+    },
+    "runs/scored-01/cases/J17/formal-1-version.json": {
+      "originalPath": "runs/scored-01/cases/J17/formal-1-version.json",
+      "sha256": "728cdb393384bc8396bf2c1fda173b068eea9abe240d1501c7ce0619223dd75e",
+      "bytes": 4069
+    },
+    "runs/scored-01/cases/J17/identity.json": {
+      "originalPath": "runs/scored-01/cases/J17/identity.json",
+      "sha256": "e0d15a81362d6fbf29d1c7e56dd29e144b58f474ea4d779f9d25360da96de49f",
+      "bytes": 229
+    },
+    "runs/scored-01/cases/J17/learner-responses.jsonl": {
+      "originalPath": "runs/scored-01/cases/J17/learner-responses.jsonl",
+      "sha256": "c4c8675c1d0fd8820c06b6eb6fce9fc78bad258c4094b237b7ea7f677d15ac03",
+      "bytes": 87230
+    },
+    "runs/scored-01/cases/J17/lesson-1-prepared.json": {
+      "originalPath": "runs/scored-01/cases/J17/lesson-1-prepared.json",
+      "sha256": "88fba1d0eeeefeafc73b73321e8fe02cff465d1c197a173cbcde2e88533bcb70",
+      "bytes": 11231
+    },
+    "runs/scored-01/cases/J17/lesson-2-prepared.json": {
+      "originalPath": "runs/scored-01/cases/J17/lesson-2-prepared.json",
+      "sha256": "aba849fdcab5d95a06a713df7398812fb6623a42ce4b9c5b2b27cfc614afc1ec",
+      "bytes": 7654
+    },
+    "runs/scored-01/cases/J17/source.json": {
+      "originalPath": "runs/scored-01/cases/J17/source.json",
+      "sha256": "9e6a7994b915f51eb9499996e819e7e7b6fa50e2bbfd1b7c32075387d0f1bab0",
+      "bytes": 4029
+    },
+    "runs/scored-01/cases/J17/state.json": {
+      "originalPath": "runs/scored-01/cases/J17/state.json",
+      "sha256": "11b2597945a2653139df57a01df111367ca17307fdb32be5046d0309c504fdde",
+      "bytes": 18814
+    },
+    "runs/scored-01/cases/J17-authority-1/after-control.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J17-authority-1/after-control.snapshot.json",
+      "sha256": "d3f4dd869e459340b9bc78fa1e20909d206bb8b55ffe8150694a5a5f99773dfe",
+      "bytes": 1288915
+    },
+    "runs/scored-01/cases/J17-authority-1/answer.json": {
+      "originalPath": "runs/scored-01/cases/J17-authority-1/answer.json",
+      "sha256": "1b4e61c548c7e7e203eeebb7522615c9a9d7152a9f15adcb4f29efc4b307cbd7",
+      "bytes": 4787
+    },
+    "runs/scored-01/cases/J17-authority-1/identity.json": {
+      "originalPath": "runs/scored-01/cases/J17-authority-1/identity.json",
+      "sha256": "ee92d3b1f0c828afec307a0ee862b24cea1e77862e62bd413025e80249d9670c",
+      "bytes": 241
+    },
+    "runs/scored-01/cases/J17-insufficient-1/after-control.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J17-insufficient-1/after-control.snapshot.json",
+      "sha256": "d86746d20506762f986f26fde5e57d414b0662f5657c1bb79342347ac4bcdc03",
+      "bytes": 1288882
+    },
+    "runs/scored-01/cases/J17-insufficient-1/answer.json": {
+      "originalPath": "runs/scored-01/cases/J17-insufficient-1/answer.json",
+      "sha256": "12e805c01ff2a94538ddbde0da858262535aa3f3cc7c0117e73fea9fc25f646b",
+      "bytes": 4716
+    },
+    "runs/scored-01/cases/J17-insufficient-1/identity.json": {
+      "originalPath": "runs/scored-01/cases/J17-insufficient-1/identity.json",
+      "sha256": "b005d1875cabad07f7d63cde07cb78e158893beb11712d4b42db27bda3baa134",
+      "bytes": 244
+    },
+    "runs/scored-01/cases/J18/final.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J18/final.snapshot.json",
+      "sha256": "f870558aed6c8e764a4ffe05c17c7282380f66d8f5f307bf2f13f4dd3fbc4858",
+      "bytes": 846551
+    },
+    "runs/scored-01/cases/J18/identity.json": {
+      "originalPath": "runs/scored-01/cases/J18/identity.json",
+      "sha256": "1d55d1d3a1cc31d27734bed0f7e1efa71db59e546799cb280b0a7c642693d65a",
+      "bytes": 229
+    },
+    "runs/scored-01/cases/J18/learner-responses.jsonl": {
+      "originalPath": "runs/scored-01/cases/J18/learner-responses.jsonl",
+      "sha256": "12a221c4448a06fccdc5d78f0d57ef8e1d879d5155741453a52518580c14fa39",
+      "bytes": 18088
+    },
+    "runs/scored-01/cases/J18/lesson-1-prepared.json": {
+      "originalPath": "runs/scored-01/cases/J18/lesson-1-prepared.json",
+      "sha256": "e39b90c4f43d4c044e4e0d0fd4d3008abf3553109f1acc1414b3a8b8bb2c13b3",
+      "bytes": 10927
+    },
+    "runs/scored-01/cases/J18/source.json": {
+      "originalPath": "runs/scored-01/cases/J18/source.json",
+      "sha256": "dbfb4dd18ed538cc502868a50c7954f8e305e4c4d978dad287878c21cba9dd98",
+      "bytes": 3988
+    },
+    "runs/scored-01/cases/J18/state.json": {
+      "originalPath": "runs/scored-01/cases/J18/state.json",
+      "sha256": "813fe010eba3735414e89984e00f212700a6590078241405c1c1f7e2a2f30785",
+      "bytes": 1826
+    },
+    "runs/scored-01/cases/J19/after-teaching-1.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J19/after-teaching-1.snapshot.json",
+      "sha256": "785c536f08462498b91f9321afb72c25ab3dfe33563404fa0594777c8bcf9abd",
+      "bytes": 885422
+    },
+    "runs/scored-01/cases/J19/after-teaching-2.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J19/after-teaching-2.snapshot.json",
+      "sha256": "7a9f540d104f08b2be9ca8c06d597baaa717a59f540443e29a1cbe1221e261ea",
+      "bytes": 1061828
+    },
+    "runs/scored-01/cases/J19/final.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J19/final.snapshot.json",
+      "sha256": "9fb8bf34cd9f35f2f265a90cafb6931b256dc7f2a7788dc80467d42439f1fde9",
+      "bytes": 1295723
+    },
+    "runs/scored-01/cases/J19/formal-1-answer.json": {
+      "originalPath": "runs/scored-01/cases/J19/formal-1-answer.json",
+      "sha256": "6300bcf3f825fb78040164c050c31df095cdd2620e2139cd012d320efcbc1fce",
+      "bytes": 5578
+    },
+    "runs/scored-01/cases/J19/formal-1-before.json": {
+      "originalPath": "runs/scored-01/cases/J19/formal-1-before.json",
+      "sha256": "b14204955b5310a82e5e3e64e64bdd260f9ad8578eff02ab338312288f0e3041",
+      "bytes": 2022
+    },
+    "runs/scored-01/cases/J19/formal-1-launch.json": {
+      "originalPath": "runs/scored-01/cases/J19/formal-1-launch.json",
+      "sha256": "6945b33e8342fd074974ae944342571f1c55799289ca0c0c325a7663be5787bc",
+      "bytes": 2319
+    },
+    "runs/scored-01/cases/J19/formal-1-replay.json": {
+      "originalPath": "runs/scored-01/cases/J19/formal-1-replay.json",
+      "sha256": "5dc12a7da0251a9080893e173ce928d7d098b2ff3c6047b206a38f23d38a646a",
+      "bytes": 77
+    },
+    "runs/scored-01/cases/J19/formal-1-version.json": {
+      "originalPath": "runs/scored-01/cases/J19/formal-1-version.json",
+      "sha256": "b562b6a6c7c56360ccc7aa85e71f639136363455258e608d5d905682765c3d1b",
+      "bytes": 4197
+    },
+    "runs/scored-01/cases/J19/identity.json": {
+      "originalPath": "runs/scored-01/cases/J19/identity.json",
+      "sha256": "1c8a7cb02aa08818440de1074d55386da6066edfab956219cfc4b774ca44d249",
+      "bytes": 229
+    },
+    "runs/scored-01/cases/J19/learner-responses.jsonl": {
+      "originalPath": "runs/scored-01/cases/J19/learner-responses.jsonl",
+      "sha256": "ac50ddf1946e3a56426f2cab8ab30507c919495334824bacdfb0c31e965bd230",
+      "bytes": 79709
+    },
+    "runs/scored-01/cases/J19/lesson-1-prepared.json": {
+      "originalPath": "runs/scored-01/cases/J19/lesson-1-prepared.json",
+      "sha256": "c33509199b0b1a09e58a36dbd5d51da48f05e05d42fb9c97ff5ef9a7a4b0e17d",
+      "bytes": 11424
+    },
+    "runs/scored-01/cases/J19/lesson-2-prepared.json": {
+      "originalPath": "runs/scored-01/cases/J19/lesson-2-prepared.json",
+      "sha256": "6ba2235f216438e12a44fb54f3a28fd73be266a4d145aac791375e4689a8b1cf",
+      "bytes": 7407
+    },
+    "runs/scored-01/cases/J19/source.json": {
+      "originalPath": "runs/scored-01/cases/J19/source.json",
+      "sha256": "52f94d6f6f2832674c2757bf5f31990b8abeb96b849e8ccc0ed9e09adf1592bc",
+      "bytes": 3926
+    },
+    "runs/scored-01/cases/J19/state.json": {
+      "originalPath": "runs/scored-01/cases/J19/state.json",
+      "sha256": "cad3ba5b687f2d56753e3188f62088374aee17ecebe6191683e8cd8a9d37d50c",
+      "bytes": 18392
+    },
+    "runs/scored-01/cases/J19-authority-1/after-control.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J19-authority-1/after-control.snapshot.json",
+      "sha256": "284916246a52256030358da5ee64f9fd59f8a90159ca8acc83ac3d1784235484",
+      "bytes": 1278364
+    },
+    "runs/scored-01/cases/J19-authority-1/answer.json": {
+      "originalPath": "runs/scored-01/cases/J19-authority-1/answer.json",
+      "sha256": "84a451757dc831e406b7a402da4ce2c7aa1b89c46ba66043f866fecbbe15ce10",
+      "bytes": 4922
+    },
+    "runs/scored-01/cases/J19-authority-1/identity.json": {
+      "originalPath": "runs/scored-01/cases/J19-authority-1/identity.json",
+      "sha256": "64f59999c76fc79d10b5cd04654ba58a6d24a390063e672e9991f7ebaa762e6b",
+      "bytes": 241
+    },
+    "runs/scored-01/cases/J19-insufficient-1/after-control.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J19-insufficient-1/after-control.snapshot.json",
+      "sha256": "d099324b02d9608d9d4da0edbed256bb5502ee152addce2126add9bce556d498",
+      "bytes": 1278330
+    },
+    "runs/scored-01/cases/J19-insufficient-1/answer.json": {
+      "originalPath": "runs/scored-01/cases/J19-insufficient-1/answer.json",
+      "sha256": "79e70458294523f535c3d47cb2371c17e4b31774b8db92ea9916788a131d95fb",
+      "bytes": 4851
+    },
+    "runs/scored-01/cases/J19-insufficient-1/identity.json": {
+      "originalPath": "runs/scored-01/cases/J19-insufficient-1/identity.json",
+      "sha256": "0f35d83bcf08e44800d1dd94dd948dae4142c0b3f26941f6df56b8ec0becef5c",
+      "bytes": 244
+    },
+    "runs/scored-01/cases/J20/after-teaching-1.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J20/after-teaching-1.snapshot.json",
+      "sha256": "9ab03cb8cc3903cc42cf4577b065d28a67b522f139f829ea1459a3813d5e2a28",
+      "bytes": 818924
+    },
+    "runs/scored-01/cases/J20/after-teaching-2.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J20/after-teaching-2.snapshot.json",
+      "sha256": "c7a7b9a90e82481acd469f1be9148b75d2b3f3d1f90b158c4f3686b06959e985",
+      "bytes": 986721
+    },
+    "runs/scored-01/cases/J20/final.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J20/final.snapshot.json",
+      "sha256": "f829de146bf6d7c2fad3d1d4998210267ada733935e8fb9d1cfc5109ef73d130",
+      "bytes": 1206048
+    },
+    "runs/scored-01/cases/J20/formal-1-answer.json": {
+      "originalPath": "runs/scored-01/cases/J20/formal-1-answer.json",
+      "sha256": "0e653dbd55a41a027c9cb06374f8afb5d2a1d9c0105a5b8a6dd3080a68142947",
+      "bytes": 8069
+    },
+    "runs/scored-01/cases/J20/formal-1-before.json": {
+      "originalPath": "runs/scored-01/cases/J20/formal-1-before.json",
+      "sha256": "ba9cddc0081d43a2914053ac87b8f82d943b5e0ace816c0d03f1a307f43db754",
+      "bytes": 3017
+    },
+    "runs/scored-01/cases/J20/formal-1-launch.json": {
+      "originalPath": "runs/scored-01/cases/J20/formal-1-launch.json",
+      "sha256": "9282fed6a749ff05cc45f8d617d6b59a4bedd6838f9cfaae8da99820f5f65693",
+      "bytes": 3349
+    },
+    "runs/scored-01/cases/J20/formal-1-replay.json": {
+      "originalPath": "runs/scored-01/cases/J20/formal-1-replay.json",
+      "sha256": "5dc12a7da0251a9080893e173ce928d7d098b2ff3c6047b206a38f23d38a646a",
+      "bytes": 77
+    },
+    "runs/scored-01/cases/J20/formal-1-version.json": {
+      "originalPath": "runs/scored-01/cases/J20/formal-1-version.json",
+      "sha256": "a21b7c3310a2fa5b61a5c82f9596a03a19aa19fbd5ef88b97e7f4b4c0adcd763",
+      "bytes": 5312
+    },
+    "runs/scored-01/cases/J20/identity.json": {
+      "originalPath": "runs/scored-01/cases/J20/identity.json",
+      "sha256": "61173cec23a86ed235321bb3921feac216984cec763de9f261a476c7d7f5019d",
+      "bytes": 229
+    },
+    "runs/scored-01/cases/J20/learner-responses.jsonl": {
+      "originalPath": "runs/scored-01/cases/J20/learner-responses.jsonl",
+      "sha256": "b3189252464caac3c1b26625f28b399456e882f4ee030de7cd8040e626f64b5f",
+      "bytes": 71273
+    },
+    "runs/scored-01/cases/J20/lesson-1-prepared.json": {
+      "originalPath": "runs/scored-01/cases/J20/lesson-1-prepared.json",
+      "sha256": "0378f3d1e436d132fdee023f9e9ec9151cbc1599e58a2080b6a3b2f4bf124ca5",
+      "bytes": 9081
+    },
+    "runs/scored-01/cases/J20/lesson-2-prepared.json": {
+      "originalPath": "runs/scored-01/cases/J20/lesson-2-prepared.json",
+      "sha256": "1a7209bea37e70ccdc6757faa2fe94cb300d4b806849589c1c54f26d45b21596",
+      "bytes": 6811
+    },
+    "runs/scored-01/cases/J20/source.json": {
+      "originalPath": "runs/scored-01/cases/J20/source.json",
+      "sha256": "0a7da86151547bd4fc5ba83c31a9a4d5b641d7eeed4abe635fd8e0f88559a31f",
+      "bytes": 3938
+    },
+    "runs/scored-01/cases/J20/state.json": {
+      "originalPath": "runs/scored-01/cases/J20/state.json",
+      "sha256": "6123fe7eb5d0975ae643f82d8b1bd2d5f4b2d35cb76770cba90e03c242f77604",
+      "bytes": 24851
+    },
+    "runs/scored-01/cases/J20-authority-1/after-control.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J20-authority-1/after-control.snapshot.json",
+      "sha256": "02d67d1f8a05af9a73d91f83b5c1f823aae0114b9ea8047848990eae88ac1981",
+      "bytes": 1188262
+    },
+    "runs/scored-01/cases/J20-authority-1/answer.json": {
+      "originalPath": "runs/scored-01/cases/J20-authority-1/answer.json",
+      "sha256": "7ac1fbdc41c925a0aed6a611c6a0d34b3faebc4604d8b6673d51614b00ef1b15",
+      "bytes": 6862
+    },
+    "runs/scored-01/cases/J20-authority-1/identity.json": {
+      "originalPath": "runs/scored-01/cases/J20-authority-1/identity.json",
+      "sha256": "70398bb35911cce07baf0dc519334623d79dd6b7d28922cc132b753ffdc6788c",
+      "bytes": 241
+    },
+    "runs/scored-01/cases/J20-insufficient-1/after-control.snapshot.json": {
+      "originalPath": "runs/scored-01/cases/J20-insufficient-1/after-control.snapshot.json",
+      "sha256": "e4f477a1050322b0eeafb961e3d810b117226edd7e0632d19fcd7d14f5e98c3d",
+      "bytes": 1188226
+    },
+    "runs/scored-01/cases/J20-insufficient-1/answer.json": {
+      "originalPath": "runs/scored-01/cases/J20-insufficient-1/answer.json",
+      "sha256": "acd945528efea4e93bc323cc62fe571a56a54ececd927ad68e078af6ecc441a7",
+      "bytes": 6791
+    },
+    "runs/scored-01/cases/J20-insufficient-1/identity.json": {
+      "originalPath": "runs/scored-01/cases/J20-insufficient-1/identity.json",
+      "sha256": "d1261e30ffe4a0a452453b0155be852625b00ebedf04db60e915a369c788617a",
+      "bytes": 244
+    }
+  }
+}

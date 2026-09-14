@@ -1,0 +1,76 @@
+{
+  "inputIdentity": "0d20507e8df181dcdd9b54b7d43709c3446b300f290a53183ac149ef569a5581",
+  "attempts": [
+    {
+      "physicalId": "cee24043-1d8d-4002-997e-94980081b639",
+      "caseId": "N-F08-tutor",
+      "runId": "H-N-F08-tutor-r3",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "产物准确转述资料单向规则与逆否成立，自创考试例子正确展示充分非必要条件及边界，无事实或归属缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "d95e4892d1c0484b032189c23a6497f13e1c86cf1cfda09729d923a3a8615fa9"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "132c532360b4bc6ac5b2aa8886b4b3bf89c500f85d4e1be08595f9a669823289"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      },
+      {
+        "dimension": "Q3",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "例子从条件出发展示正向、逆否与反向谬误，明确操作选择与反例，并交代不补当且仅当的边界，解释连接充分。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "d95e4892d1c0484b032189c23a6497f13e1c86cf1cfda09729d923a3a8615fa9"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "132c532360b4bc6ac5b2aa8886b4b3bf89c500f85d4e1be08595f9a669823289"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

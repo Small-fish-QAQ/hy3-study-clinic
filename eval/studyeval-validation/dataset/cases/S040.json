@@ -1,0 +1,24 @@
+{
+  "id": "S040",
+  "dimensions": [
+    "Q1"
+  ],
+  "evidence": {
+    "sources": [],
+    "goals": [
+      "核实一条外部到访记录"
+    ],
+    "prerequisites": [],
+    "desiredDepth": "working_fluency",
+    "authorityBoundaries": [
+      "门禁日志没有提供，不能访问；访客数不是假设前提，必须核实实际事实。没有其他证据证明真或假。"
+    ],
+    "artifacts": [
+      {
+        "id": "claim",
+        "text": "本馆上周二实际接待了317位访客，这是门禁日志记录的事实。"
+      }
+    ],
+    "exposure": []
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "inputIdentity": "123fbafa6c6b9805c36cc45ec414ad63e7632554b4a16e32bdecfdf189a6e45a",
+  "attempts": [
+    {
+      "physicalId": "85a6d087-c997-46d9-b1dc-ecfd10bda04f",
+      "caseId": "S035",
+      "runId": "S035-r1",
+      "stage": "blind-student",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "criteria": [
+      {
+        "id": "required",
+        "result": "not_met",
+        "reason": "view.answer为空白字符串，未写出{1,2,3}或任何并集结果，缺失必要输出",
+        "refs": [
+          "/answer",
+          "/rubric/0"
+        ],
+        "required": true,
+        "witnesses": [
+          {
+            "pointer": "/answer",
+            "valueHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "pointer": "/rubric/0",
+            "valueHash": "41e3e9993ea73d3924609af1ca9150dfde326067be5fc53a6f4aec3ca0e10258"
+          }
+        ]
+      }
+    ],
+    "warrantedCredit": "withheld"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "inputIdentity": "63f454ba30366d1e152cee0e0389c30f19b453dba9d453cf99cb7c78db275f29",
+  "attempts": [
+    {
+      "physicalId": "8030a8ef-7024-4324-b77a-9210725ed13d",
+      "caseId": "E121",
+      "runId": "H-E121-r3",
+      "stage": "blind-solution",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "status": "resolved",
+    "solution": "总工作量1份。甲速1/8份/时，乙速1/4份/时。乙先做1小时完成1/4，剩余3/4。甲独做剩余需(3/4)/(1/8)=6时，总时间1+6=7时。从头合作合速3/8份/时，需1/(3/8)=8/3时。比较：7时>8/3时，乙先做甲独完远慢于合作。限制：严格依赖题设可分开、无重复、恒速、无开销；若合作方式不同则结论变。",
+    "refs": [
+      "/question/prompt"
+    ],
+    "witnesses": [
+      {
+        "pointer": "/question/prompt",
+        "valueHash": "dcf5dd89a64f0379c2a16c155095996cbf9b1dfd98e7b21c0cebe9fb5974918a"
+      }
+    ]
+  }
+}

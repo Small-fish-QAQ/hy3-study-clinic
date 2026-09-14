@@ -1,0 +1,283 @@
+{
+  "task": {
+    "caseId": "S056",
+    "runId": "S056-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S056.json",
+    "inputHash": "ad44ac8d69da6110908f00388a7bb96ca086ae0a68e4eea20e6bd2e9d619e85b"
+  },
+  "inputHash": "ad44ac8d69da6110908f00388a7bb96ca086ae0a68e4eea20e6bd2e9d619e85b",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "79e34640be0c72dd3039d6050b3cc3bfd67ed323f8c5293cd41fc0456e830175",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "交付的修复建议相关但泛泛，仅让复习守恒系数和多做相关题，未具体纠正改变下标的错误，也未给出具体下一步检查，符合Q6的1级标准。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/0",
+              "/answer"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "修复建议泛泛，未具体指出学生将H2O改为H2O2的改变下标错误，也未提供具体可使用的再检验题或条件。",
+                "impact": "核心用途（提供配平相关建议）成立，但缺失目标要求的具体纠正与独立再检验，属局部缺陷。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/goals/0",
+                  "/answer"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "4dcd617d62ddfa21f1a0db9a35d9f590eeccc9249699a024bbf3baa1d2f273f6"
+                  },
+                  {
+                    "pointer": "/goals/0",
+                    "valueHash": "df44a9a5408590f40907a7130b4254b35360c4f93b8aab8f59a260950db8f121"
+                  },
+                  {
+                    "pointer": "/answer",
+                    "valueHash": "e16225b1eff8991166dababd8058cab1ec0cbe17d1ddd5faddba138462339473"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "4dcd617d62ddfa21f1a0db9a35d9f590eeccc9249699a024bbf3baa1d2f273f6"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "df44a9a5408590f40907a7130b4254b35360c4f93b8aab8f59a260950db8f121"
+              },
+              {
+                "pointer": "/answer",
+                "valueHash": "e16225b1eff8991166dababd8058cab1ec0cbe17d1ddd5faddba138462339473"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "交付的修复建议仅泛泛提及配平、守恒与系数并推荐多做题，未针对改变下标的错误给出具体纠正，也未提供可使用的再检验。建议相关但通用，属局部缺陷。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/0",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "修复建议未指出改变下标的具体错误，也未提供独立再检验的具体检查。",
+                "impact": "核心修复方向（复习配平原则）相关，但缺失针对该错误的特定纠正与检验，不改变提供辅助的核心用途但局部不足。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/goals/0"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "4dcd617d62ddfa21f1a0db9a35d9f590eeccc9249699a024bbf3baa1d2f273f6"
+                  },
+                  {
+                    "pointer": "/goals/0",
+                    "valueHash": "df44a9a5408590f40907a7130b4254b35360c4f93b8aab8f59a260950db8f121"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "4dcd617d62ddfa21f1a0db9a35d9f590eeccc9249699a024bbf3baa1d2f273f6"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "df44a9a5408590f40907a7130b4254b35360c4f93b8aab8f59a260950db8f121"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "59437daaeac189d745ba28fdee3966ddf517f7bcc1363dd97ec06abb86dd3a0e"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "交付修复仅泛泛建议复习配平守恒系数和多做题，未具体纠正改变下标错误（如H2O改H2O2），也未给独立再检验题，符合Q6的1级局部缺陷标准。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/0",
+              "/answer"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "修复建议泛泛，未具体指出改变下标错误，也未提供具体可使用的再检验题或条件。",
+                "impact": "核心用途（提供配平相关建议）成立，但缺失目标要求的具体纠正与独立再检验，属局部缺陷。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/goals/0",
+                  "/answer"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "4dcd617d62ddfa21f1a0db9a35d9f590eeccc9249699a024bbf3baa1d2f273f6"
+                  },
+                  {
+                    "pointer": "/goals/0",
+                    "valueHash": "df44a9a5408590f40907a7130b4254b35360c4f93b8aab8f59a260950db8f121"
+                  },
+                  {
+                    "pointer": "/answer",
+                    "valueHash": "e16225b1eff8991166dababd8058cab1ec0cbe17d1ddd5faddba138462339473"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "4dcd617d62ddfa21f1a0db9a35d9f590eeccc9249699a024bbf3baa1d2f273f6"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "df44a9a5408590f40907a7130b4254b35360c4f93b8aab8f59a260950db8f121"
+              },
+              {
+                "pointer": "/answer",
+                "valueHash": "e16225b1eff8991166dababd8058cab1ec0cbe17d1ddd5faddba138462339473"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q6:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "化学方程式要配平，请复习守恒和系数，多做相关题。",
+              "valueHash": "4dcd617d62ddfa21f1a0db9a35d9f590eeccc9249699a024bbf3baa1d2f273f6"
+            },
+            "reason": "文本未提及改变下标错误，也未给具体再检验，符合泛泛建议缺陷。"
+          },
+          {
+            "id": "review2:Q6:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "化学方程式要配平，请复习守恒和系数，多做相关题。",
+              "valueHash": "4dcd617d62ddfa21f1a0db9a35d9f590eeccc9249699a024bbf3baa1d2f273f6"
+            },
+            "reason": "同前，未指出下标错误与提供检验，局部不足成立。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q6",
+          "level": 1,
+          "evidence": "sufficient",
+          "reason": "交付修复仅泛泛建议复习配平守恒系数和多做题，未具体纠正改变下标错误（如H2O改H2O2），也未给独立再检验题，符合Q6的1级局部缺陷标准。",
+          "refs": [
+            "/artifacts/0/text",
+            "/goals/0",
+            "/answer"
+          ],
+          "defects": [
+            {
+              "severity": "local",
+              "description": "修复建议泛泛，未具体指出改变下标错误，也未提供具体可使用的再检验题或条件。",
+              "impact": "核心用途（提供配平相关建议）成立，但缺失目标要求的具体纠正与独立再检验，属局部缺陷。",
+              "refs": [
+                "/artifacts/0/text",
+                "/goals/0",
+                "/answer"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "4dcd617d62ddfa21f1a0db9a35d9f590eeccc9249699a024bbf3baa1d2f273f6"
+                },
+                {
+                  "pointer": "/goals/0",
+                  "valueHash": "df44a9a5408590f40907a7130b4254b35360c4f93b8aab8f59a260950db8f121"
+                },
+                {
+                  "pointer": "/answer",
+                  "valueHash": "e16225b1eff8991166dababd8058cab1ec0cbe17d1ddd5faddba138462339473"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "4dcd617d62ddfa21f1a0db9a35d9f590eeccc9249699a024bbf3baa1d2f273f6"
+            },
+            {
+              "pointer": "/goals/0",
+              "valueHash": "df44a9a5408590f40907a7130b4254b35360c4f93b8aab8f59a260950db8f121"
+            },
+            {
+              "pointer": "/answer",
+              "valueHash": "e16225b1eff8991166dababd8058cab1ec0cbe17d1ddd5faddba138462339473"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "a3031d197ef9f186a62e4011ca1943aca3ea53c962f8a8f45190d5698c8e55e7"
+  }
+}

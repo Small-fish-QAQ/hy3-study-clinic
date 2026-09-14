@@ -1,0 +1,113 @@
+{
+  "task": {
+    "caseId": "S048",
+    "runId": "S048-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S048.json",
+    "inputHash": "30af79fad659d6a984580eeb7c2d39b4693fd0b9f4019978c25f5e323407a109"
+  },
+  "inputHash": "30af79fad659d6a984580eeb7c2d39b4693fd0b9f4019978c25f5e323407a109",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "b6ad0533e0cd908e29de8df195d77e345ba584bb9f39a6a88564e3f6fafb65ea",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q3",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "artifact基于source规则清晰解释两句因修饰语位置不同导致范围差异：先筛选子集vs先进入再追加属性，连接前提与结论，无缺陷。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "7f4f09e5c6f8ba6132e34a355019db89161ae7f14ba2040fdab28306f3e2972e"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "9ef8039d157a3635d1da4128848b8da6aabf32e121261f1cd761712bb1417ab2"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q3",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "解释正确链接课堂规则与两句修饰位置差异，说明范围限制不同且不可互换，无缺失连接。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "7f4f09e5c6f8ba6132e34a355019db89161ae7f14ba2040fdab28306f3e2972e"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "9ef8039d157a3635d1da4128848b8da6aabf32e121261f1cd761712bb1417ab2"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q3",
+          "level": 2,
+          "evidence": "sufficient",
+          "reason": "artifact基于source规则清晰解释两句因修饰语位置不同导致范围差异：先筛选子集vs先进入再追加属性，连接前提与结论，无缺陷。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "7f4f09e5c6f8ba6132e34a355019db89161ae7f14ba2040fdab28306f3e2972e"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "9ef8039d157a3635d1da4128848b8da6aabf32e121261f1cd761712bb1417ab2"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "bfa083f9bb6adb323efb58b293913e6b729538fad37c3c3eca40a073c4ab48c3"
+  }
+}

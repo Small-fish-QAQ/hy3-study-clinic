@@ -1,0 +1,69 @@
+{
+  "inputIdentity": "d5dc8e9db01ecb2fbac1204e4a456ed9c63779178da818ac68f87bdf98547636",
+  "attempts": [
+    {
+      "physicalId": "713f4ce6-901d-4b3e-a26e-f5f1551f94d0",
+      "caseId": "S100",
+      "runId": "S100-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q3",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "artifact仅循环声称23×10=230因为答案是230，未利用source中位值变十倍规则，无前提至结论的推理连接，中心解释循环无关，破坏解释目标。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/0",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "循环论证：23×10=230因为答案是230，230正确因为它是答案",
+            "impact": "未展示任何前提至结论的推理，核心解释用途失效",
+            "refs": [
+              "/artifacts/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "01930794f2bcf25d45922738eee4fb910521a7f24e00a72706970145af85a814"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "01930794f2bcf25d45922738eee4fb910521a7f24e00a72706970145af85a814"
+          },
+          {
+            "pointer": "/goals/0",
+            "valueHash": "8767ff128bd23c72c7dff0652a550264160083c2c48e531b521887db157e67d7"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "a5942766dca625dc9fdbcdb1a2ff0c61c8d65317777cec648fe36832bba69f03"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

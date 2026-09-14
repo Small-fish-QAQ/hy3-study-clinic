@@ -1,0 +1,398 @@
+{
+  "task": {
+    "caseId": "S014",
+    "runId": "S014-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S014.json",
+    "inputHash": "e56a0ab39088de8a3a007839bf76d22b0b05f4824c35f1e5fc809542fb4471ef"
+  },
+  "inputHash": "e56a0ab39088de8a3a007839bf76d22b0b05f4824c35f1e5fc809542fb4471ef",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "698fe86df2f7d43fcab3cbe965a79ed64965bb41fff6c8365688afb02a074c55",
+    "stages": {
+      "blind-solution": {
+        "status": "resolved",
+        "solution": "资料明确声明“负值在海平面下”，故负高度表示在海平面下。",
+        "refs": [
+          "/sources/0/text",
+          "/question/prompt"
+        ],
+        "witnesses": [
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "1df9950edf389e68cc4353ad1c364ae71b323e3e1d130830ce39d9c5e25fe7f3"
+          },
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "28b92e84fa93cd953d3165f1ec0b8a92a69100e2ac4b2b337c7b0959ca0f93c8"
+          }
+        ]
+      },
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q4",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "题目问负高度含义，资料明说负值在海平面下，作者答案正确。但声明深度working_fluency要求执行解释，此题仅检索事实，判别力弱，局部缺陷。",
+            "refs": [
+              "/question/prompt",
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "仅测试回忆资料中明确陈述，未要求应用连续变化或解释方法",
+                "impact": "核心考察规则记忆成立，但未达working_fluency深度，不改变核心用途",
+                "refs": [
+                  "/question/prompt",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/question/prompt",
+                    "valueHash": "28b92e84fa93cd953d3165f1ec0b8a92a69100e2ac4b2b337c7b0959ca0f93c8"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "1df9950edf389e68cc4353ad1c364ae71b323e3e1d130830ce39d9c5e25fe7f3"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "assessment": {
+              "key": "correct",
+              "validity": "valid",
+              "exposure": "none",
+              "discrimination": "weak",
+              "demand": "retrieval",
+              "demandReason": "学生只需从资料中识别并复述‘负值在海平面下’的现成术语，无需计算或解释。",
+              "reason": "题干直接问资料中负高度表示，作者答案‘海平面下。’与资料一致正确。priorExposure空无泄题。但desiredDepth为working_fluency，题仅检索，判别弱。",
+              "refs": [
+                "/question/prompt",
+                "/artifacts/0/text",
+                "/sources/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/question/prompt",
+                  "valueHash": "28b92e84fa93cd953d3165f1ec0b8a92a69100e2ac4b2b337c7b0959ca0f93c8"
+                },
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "c71699535a6fe580afa7ca2f7b05d27f8ad5a9b19b73ffd2b4cd76d6792dd334"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "1df9950edf389e68cc4353ad1c364ae71b323e3e1d130830ce39d9c5e25fe7f3"
+                }
+              ]
+            },
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "28b92e84fa93cd953d3165f1ec0b8a92a69100e2ac4b2b337c7b0959ca0f93c8"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "c71699535a6fe580afa7ca2f7b05d27f8ad5a9b19b73ffd2b4cd76d6792dd334"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "1df9950edf389e68cc4353ad1c364ae71b323e3e1d130830ce39d9c5e25fe7f3"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q4",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "问题询问资料中负高度含义，答案明文给出，仅需检索术语。作者键正确且未泄露，但声明深度working_fluency要求执行解释，纯回忆题判别力弱，得1。",
+            "refs": [
+              "/question/prompt",
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "题目仅要求回忆资料中现成术语，未要求学生应用规则计算或解释方法，与声明深度working_fluency不符。",
+                "impact": "不改变核心用途（检验负高度含义认知），但局部削弱判别力，无法证明操作流畅度。",
+                "refs": [
+                  "/question/prompt",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/question/prompt",
+                    "valueHash": "28b92e84fa93cd953d3165f1ec0b8a92a69100e2ac4b2b337c7b0959ca0f93c8"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "1df9950edf389e68cc4353ad1c364ae71b323e3e1d130830ce39d9c5e25fe7f3"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "assessment": {
+              "key": "correct",
+              "validity": "valid",
+              "exposure": "none",
+              "discrimination": "weak",
+              "demand": "retrieval",
+              "demandReason": "学生只需从资料中找出“负值在海平面下”并回答“海平面下”，无需选择规则、计算新实例、解释或比较。",
+              "reason": "题干直接问资料中负高度表示哪侧，来源明文“负值在海平面下”；作者私有键“海平面下。”一致；无priorExposure；但预期working_fluency需执行解释，此题仅检索，判别力弱。",
+              "refs": [
+                "/question/prompt",
+                "/artifacts/0/text",
+                "/sources/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/question/prompt",
+                  "valueHash": "28b92e84fa93cd953d3165f1ec0b8a92a69100e2ac4b2b337c7b0959ca0f93c8"
+                },
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "c71699535a6fe580afa7ca2f7b05d27f8ad5a9b19b73ffd2b4cd76d6792dd334"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "1df9950edf389e68cc4353ad1c364ae71b323e3e1d130830ce39d9c5e25fe7f3"
+                }
+              ]
+            },
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "28b92e84fa93cd953d3165f1ec0b8a92a69100e2ac4b2b337c7b0959ca0f93c8"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "c71699535a6fe580afa7ca2f7b05d27f8ad5a9b19b73ffd2b4cd76d6792dd334"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "1df9950edf389e68cc4353ad1c364ae71b323e3e1d130830ce39d9c5e25fe7f3"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q4",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "题目问负高度含义，资料明说负值在海平面下，作者键正确。但声明深度working_fluency要求执行解释，此题仅检索事实，判别力弱，局部缺陷。",
+            "refs": [
+              "/question/prompt",
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "仅测试回忆资料中明确陈述，未要求应用连续变化或解释方法",
+                "impact": "核心考察规则记忆成立，但未达working_fluency深度，不改变核心用途",
+                "refs": [
+                  "/question/prompt",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/question/prompt",
+                    "valueHash": "28b92e84fa93cd953d3165f1ec0b8a92a69100e2ac4b2b337c7b0959ca0f93c8"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "1df9950edf389e68cc4353ad1c364ae71b323e3e1d130830ce39d9c5e25fe7f3"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "assessment": {
+              "key": "correct",
+              "validity": "valid",
+              "exposure": "none",
+              "discrimination": "weak",
+              "demand": "retrieval",
+              "demandReason": "学生只需从资料中识别并复述‘负值在海平面下’的现成术语，无需计算或解释。",
+              "reason": "题干直接问资料中负高度表示，作者私有键‘海平面下。’与资料一致正确。priorExposure空无泄题。但desiredDepth为working_fluency，题仅检索，判别弱。",
+              "refs": [
+                "/question/prompt",
+                "/artifacts/0/text",
+                "/sources/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/question/prompt",
+                  "valueHash": "28b92e84fa93cd953d3165f1ec0b8a92a69100e2ac4b2b337c7b0959ca0f93c8"
+                },
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "c71699535a6fe580afa7ca2f7b05d27f8ad5a9b19b73ffd2b4cd76d6792dd334"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "1df9950edf389e68cc4353ad1c364ae71b323e3e1d130830ce39d9c5e25fe7f3"
+                }
+              ]
+            },
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "28b92e84fa93cd953d3165f1ec0b8a92a69100e2ac4b2b337c7b0959ca0f93c8"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "c71699535a6fe580afa7ca2f7b05d27f8ad5a9b19b73ffd2b4cd76d6792dd334"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "1df9950edf389e68cc4353ad1c364ae71b323e3e1d130830ce39d9c5e25fe7f3"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q4:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/question/prompt",
+              "quote": "资料中负高度表示在海平面上还是下？",
+              "valueHash": "28b92e84fa93cd953d3165f1ec0b8a92a69100e2ac4b2b337c7b0959ca0f93c8"
+            },
+            "reason": "题干仅询问资料中现成术语含义，未要求应用规则计算或解释，与desiredDepth working_fluency不符，缺陷存在但局部。"
+          },
+          {
+            "id": "review2:Q4:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/sources/0/text",
+              "quote": "负值在海平面下",
+              "valueHash": "1df9950edf389e68cc4353ad1c364ae71b323e3e1d130830ce39d9c5e25fe7f3"
+            },
+            "reason": "资料明文给出负高度含义，题目仅检索该陈述，未测试连续变化应用，local缺陷成立。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q4",
+          "level": 1,
+          "evidence": "sufficient",
+          "reason": "题目问负高度含义，资料明说负值在海平面下，作者键正确。但声明深度working_fluency要求执行解释，此题仅检索事实，判别力弱，局部缺陷。",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [
+            {
+              "severity": "local",
+              "description": "仅测试回忆资料中明确陈述，未要求应用连续变化或解释方法",
+              "impact": "核心考察规则记忆成立，但未达working_fluency深度，不改变核心用途",
+              "refs": [
+                "/question/prompt",
+                "/sources/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/question/prompt",
+                  "valueHash": "28b92e84fa93cd953d3165f1ec0b8a92a69100e2ac4b2b337c7b0959ca0f93c8"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "1df9950edf389e68cc4353ad1c364ae71b323e3e1d130830ce39d9c5e25fe7f3"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "assessment": {
+            "key": "correct",
+            "validity": "valid",
+            "exposure": "none",
+            "discrimination": "weak",
+            "demand": "retrieval",
+            "demandReason": "学生只需从资料中识别并复述‘负值在海平面下’的现成术语，无需计算或解释。",
+            "reason": "题干直接问资料中负高度表示，作者私有键‘海平面下。’与资料一致正确。priorExposure空无泄题。但desiredDepth为working_fluency，题仅检索，判别弱。",
+            "refs": [
+              "/question/prompt",
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "28b92e84fa93cd953d3165f1ec0b8a92a69100e2ac4b2b337c7b0959ca0f93c8"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "c71699535a6fe580afa7ca2f7b05d27f8ad5a9b19b73ffd2b4cd76d6792dd334"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "1df9950edf389e68cc4353ad1c364ae71b323e3e1d130830ce39d9c5e25fe7f3"
+              }
+            ]
+          },
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "28b92e84fa93cd953d3165f1ec0b8a92a69100e2ac4b2b337c7b0959ca0f93c8"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "c71699535a6fe580afa7ca2f7b05d27f8ad5a9b19b73ffd2b4cd76d6792dd334"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "1df9950edf389e68cc4353ad1c364ae71b323e3e1d130830ce39d9c5e25fe7f3"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "96ab860816ddb20580784f2b6ea9dfdf8b42eee0522b24334e5f45e17a944126"
+  }
+}

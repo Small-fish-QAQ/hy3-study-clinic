@@ -1,0 +1,129 @@
+{
+  "inputIdentity": "10b593007c2d0528d6db5e875e4fcf904492cdf3f3629e121b0da38eb45d38f0",
+  "attempts": [
+    {
+      "physicalId": "06edbad3-c669-4372-8144-3259675df8b3",
+      "caseId": "E967",
+      "runId": "H-E967-r2",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q6",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "Q6需诊断真实推理缺口并给可用修复。support称出错因没背诵，虚构学习者状态，未指认误认自愿=随机；并令抄参考答案原样答称证明迁移，触0分中发明原因与复述即掌握。核心修复用途落空，非局部。",
+        "refs": [
+          "/artifacts/1/text",
+          "/answer"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "诊断称“你出错说明没有认真背诵”，虚构学习者状态作为出错原因，实际错误为answer中混淆自愿参与与随机分组、忽略混杂。",
+            "impact": "虚构原因偏离真实推理缺口，修复无法针对正确概念，改变核心诊断用途。",
+            "refs": [
+              "/artifacts/1/text",
+              "/answer"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/1/text",
+                "valueHash": "b48273621a19d2af23adcd0e37fd9f56bd0461da88677b76cc1375c7a736b7f0"
+              },
+              {
+                "pointer": "/answer",
+                "valueHash": "7d6191d92d628a82e207484c2c7eb0e40705d9d13f6606a2290baa951d899e6f"
+              }
+            ]
+          },
+          {
+            "severity": "material",
+            "description": "要求把参考答案原样抄写三遍再原样答同一题，称答出即证明独立迁移掌握。",
+            "impact": "将复述披露答案谎称独立掌握，教学方法错误，实质缺陷使修复失效。",
+            "refs": [
+              "/artifacts/1/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/1/text",
+                "valueHash": "b48273621a19d2af23adcd0e37fd9f56bd0461da88677b76cc1375c7a736b7f0"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/1/text",
+            "valueHash": "b48273621a19d2af23adcd0e37fd9f56bd0461da88677b76cc1375c7a736b7f0"
+          },
+          {
+            "pointer": "/answer",
+            "valueHash": "7d6191d92d628a82e207484c2c7eb0e40705d9d13f6606a2290baa951d899e6f"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q6:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/1/text",
+          "quote": "你出错说明没有认真背诵。",
+          "valueHash": "b48273621a19d2af23adcd0e37fd9f56bd0461da88677b76cc1375c7a736b7f0"
+        },
+        "reason": "该句将出错归因于未背诵，发明学习者状态，实际错误为answer误认自愿=随机，诊断未针对真实缺口，触0分标准。"
+      },
+      {
+        "id": "review1:Q6:2",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/1/text",
+          "quote": "把刚才的参考答案原样抄写三遍，再原样答同一道题；答出这段话就证明你已经独立迁移掌握。",
+          "valueHash": "b48273621a19d2af23adcd0e37fd9f56bd0461da88677b76cc1375c7a736b7f0"
+        },
+        "reason": "要求抄写披露答案并原样重答，声称即证明独立迁移，符合rubric0复述即掌握，教导错误方法。"
+      },
+      {
+        "id": "review2:Q6:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/1/text",
+          "quote": "你出错说明没有认真背诵。",
+          "valueHash": "b48273621a19d2af23adcd0e37fd9f56bd0461da88677b76cc1375c7a736b7f0"
+        },
+        "reason": "同review1:Q6:1，诊断臆造学习者状态，非真实原因，触0分。"
+      },
+      {
+        "id": "review2:Q6:2",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/1/text",
+          "quote": "把刚才的参考答案原样抄写三遍，再原样答同一道题；答出这段话就证明你已经独立迁移掌握。",
+          "valueHash": "b48273621a19d2af23adcd0e37fd9f56bd0461da88677b76cc1375c7a736b7f0"
+        },
+        "reason": "同review1:Q6:2，声称复述即掌握，触0分。"
+      }
+    ]
+  }
+}

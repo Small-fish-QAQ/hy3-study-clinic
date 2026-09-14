@@ -1,0 +1,88 @@
+{
+  "inputIdentity": "eba729a3c05e33b719df46691db6cbb76eabe0179a26e8690aa4dfeecaed977c",
+  "attempts": [
+    {
+      "physicalId": "d865fa06-b4d3-4f16-ac3b-b32db4ffd27e",
+      "caseId": "E544",
+      "runId": "H-E544-r3",
+      "stage": "blind-student",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "criteria": [
+      {
+        "id": "c1",
+        "result": "met",
+        "reason": "答案明确给出原平均6、中位4，修改后平均8、中位4，与题设数据计算一致。",
+        "refs": [
+          "/answer",
+          "/rubric/0",
+          "/question/prompt"
+        ],
+        "required": true,
+        "witnesses": [
+          {
+            "pointer": "/answer",
+            "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+          },
+          {
+            "pointer": "/rubric/0",
+            "valueHash": "a1297a15ff2b3a0f739057b0447a410cb40c06ce923b05a3164b28df2ba398b4"
+          },
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "c72bdf5aa33b5c9b2a61dcde88889cc9c7e6ebaf01687c706d6d8539580d34da"
+          }
+        ]
+      },
+      {
+        "id": "c2",
+        "result": "met",
+        "reason": "答案指出改后总和32平均8，中间位置仍是两个4中位还为4，并说明最长那次拉高总和而没有移动中间值，解释了总和增加使平均改变且中间两项不变使中位未变。",
+        "refs": [
+          "/answer",
+          "/rubric/1"
+        ],
+        "required": true,
+        "witnesses": [
+          {
+            "pointer": "/answer",
+            "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+          },
+          {
+            "pointer": "/rubric/1",
+            "valueHash": "46a9a9b0313c712bcf38afd5a6b9d93cea5b4f5f9ce44412a9a9122ea1b5461b"
+          }
+        ]
+      },
+      {
+        "id": "c3",
+        "result": "not_met",
+        "reason": "答案为连续段落，未用小标题分开计算和解释，但该标准非必要不影响核心用途。",
+        "refs": [
+          "/answer",
+          "/rubric/2"
+        ],
+        "required": false,
+        "witnesses": [
+          {
+            "pointer": "/answer",
+            "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+          },
+          {
+            "pointer": "/rubric/2",
+            "valueHash": "c501d76a0d0bcb2526107e773e4c2486adf551bafedd0b5c028a4823e4cc1a95"
+          }
+        ]
+      }
+    ],
+    "warrantedCredit": "granted"
+  }
+}

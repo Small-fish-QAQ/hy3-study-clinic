@@ -1,0 +1,96 @@
+{
+  "inputIdentity": "e4274232f7069714cf443f3fa4f34dd1a50621d4078d0ce93bf5c24e8581c730",
+  "attempts": [
+    {
+      "physicalId": "ba2b7d20-33e4-4753-b7a4-cd3b639b6e8c",
+      "caseId": "S042",
+      "runId": "S042-r1",
+      "stage": "blind-student",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": "Each student criterion must be analyzed once."
+    },
+    {
+      "physicalId": "8d63bb8c-d160-4d29-85d0-2d065c332095",
+      "caseId": "S042",
+      "runId": "S042-r1",
+      "stage": "blind-student",
+      "outputAttempt": 2,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "criteria": [
+      {
+        "id": "c1",
+        "result": "met",
+        "reason": "学生答案'乙地是周二晚上九点'即周二21:00，满足乙地周二21:00",
+        "refs": [
+          "/answer",
+          "/rubric/0"
+        ],
+        "required": true,
+        "witnesses": [
+          {
+            "pointer": "/answer",
+            "valueHash": "89ca6d97fa4baf8d416204a00d7657425f1bcd562a92c2bab5ad336d10a0053d"
+          },
+          {
+            "pointer": "/rubric/0",
+            "valueHash": "04f832a6f433402126f73019928e65619c2b73270b9e40a1d1c1455b9aaf9762"
+          }
+        ]
+      },
+      {
+        "id": "c2",
+        "result": "met",
+        "reason": "学生答案'甲比乙快五小时，所以把周三凌晨两点往回拨五小时，跨回周二'表明由甲到乙减5小时并回到前一天",
+        "refs": [
+          "/answer",
+          "/rubric/1"
+        ],
+        "required": true,
+        "witnesses": [
+          {
+            "pointer": "/answer",
+            "valueHash": "89ca6d97fa4baf8d416204a00d7657425f1bcd562a92c2bab5ad336d10a0053d"
+          },
+          {
+            "pointer": "/rubric/1",
+            "valueHash": "9a4b846117363f96775f4de0256f3f77d03902a9507d0ec35e62f3817f0bf1be"
+          }
+        ]
+      },
+      {
+        "id": "c3",
+        "result": "not_met",
+        "reason": "学生答案为纯文本叙述，未列成两列表格，不满足该非必要标准",
+        "refs": [
+          "/answer",
+          "/rubric/2"
+        ],
+        "required": false,
+        "witnesses": [
+          {
+            "pointer": "/answer",
+            "valueHash": "89ca6d97fa4baf8d416204a00d7657425f1bcd562a92c2bab5ad336d10a0053d"
+          },
+          {
+            "pointer": "/rubric/2",
+            "valueHash": "c7dc0b88c588fc4f0e46e820834b1da7c4e8c69e5d2f4cf691ca19b9bdbeccc8"
+          }
+        ]
+      }
+    ],
+    "warrantedCredit": "granted"
+  }
+}

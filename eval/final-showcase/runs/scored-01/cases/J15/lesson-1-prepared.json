@@ -1,0 +1,184 @@
+{
+  "status": "ready",
+  "message": "Lesson is ready.",
+  "course": {
+    "title": "赊销收入、应收账款与现金"
+  },
+  "session": {
+    "status": "active",
+    "version": 1
+  },
+  "agenda": {
+    "version": 1,
+    "itemState": "queued"
+  },
+  "lesson": {
+    "objective": {
+      "title": "权责发生制下收入与应收账款的区分、追踪与计算",
+      "whyNow": "学习者常把现金与收入混为一谈，需要先在独立案例中建立滚动追踪模型，再应用于反推错误。",
+      "outcomes": [
+        {
+          "title": "区分收入与现金并运用滚动关系计算期间数值",
+          "description": "能够区分已赚取的服务收入与实际收款；追踪赊销增加应收账款以及后续收款减少应收账款而不新增收入，并将收款记录指向原有债权；运用应收账款滚动平衡公式（期末应收=期初应收+本期新增赊销收入-本期收回的应收款，其中收回的应收款包括本期或以前期间形成的欠款，当场收现不先制造未收余额）按给定期间计算服务收入、现金流入和期末应收账款；列出服务完成日、确认收入、是否收现和应收余额，并按所问期间汇总；在课程模型范围内（无税费、坏账、退款、利息或预收款，所有收入来自已完成服务，期初应收账款为0，核对关系不自动包含借款、股东投入或出售设备等其他现金来源）解释收入与现金流入期间差异。避免将收回旧欠款重复计为收入，避免仅看现金遗漏赊销或仅看收入误判现金。"
+        }
+      ]
+    },
+    "prerequisites": [],
+    "segments": [
+      {
+        "index": 0,
+        "purpose": "orientation",
+        "explanation": "设想一家咨询公司：期初应收0。4月1日完成300元服务并当场收款，现金与收入各增300，应收不变。4月8日完成700元服务，客户签字赊账，收入增700、应收增700、现金不动。4月18日客户汇来400元旧欠款，现金增400、应收减400，收入不再增加。由此可列出每笔事件的性质，并看到收入1000、现金700、期末应收300的来龙去脉。这个拆分说明，现金流入只是部分债权的变现，不是收入的全部。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 1,
+        "purpose": "worked_example",
+        "explanation": "用教材中的九月案例逐步演示公式。先确认当场收现不影响应收，再叠加赊销与收款，让公式自然推出月末数。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": {
+          "startingState": "九月期初应收0。九月3日完成600元服务当场收款；九月10日完成900元服务约定十月付款；九月20日收到上述900元欠款中300元。",
+          "inputs": [
+            "九月3日事件",
+            "九月10日事件",
+            "九月20日事件"
+          ],
+          "ruleOrProcedure": "期末应收=期初应收+本期新增赊销收入-本期收回的应收款；收入按服务完成确认，收款不新增收入。",
+          "steps": [
+            {
+              "action": "计入九月3日当场收现600",
+              "reason": "服务完成且收现，收入+600、现金+600、应收不变（0）",
+              "resultingState": "截至9月3日：收入600、现金600、应收0"
+            }
+          ],
+          "learnerDecision": null,
+          "result": null,
+          "whyResultFollows": null,
+          "origin": "hy3_synthesis",
+          "sources": [],
+          "interaction": {
+            "stage": "guided",
+            "modelledStepCount": 1,
+            "origin": "hy3_synthesis",
+            "sources": [],
+            "activity": {
+              "prompt": "基于已登记的九月3日状态及后续_pending的赊销与收款，九月末应收账款应为多少？",
+              "options": [
+                {
+                  "id": "A",
+                  "text": "600元"
+                },
+                {
+                  "id": "B",
+                  "text": "900元"
+                },
+                {
+                  "id": "C",
+                  "text": "300元"
+                }
+              ],
+              "response": null,
+              "respondedAt": null,
+              "correct": null,
+              "feedback": null,
+              "debrief": null,
+              "credit": "none",
+              "misconception": null
+            },
+            "hint": null,
+            "scaffold": null,
+            "transfer": null
+          }
+        },
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 2,
+        "purpose": "comparison",
+        "explanation": "本课模型明确排除税费、坏账、预收款及借款、股东投入等其他现金来源。若把一笔银行借款当作经营收款，会虚增现金流入却不产生收入或应收，破坏收入-客户现金=应收的核对关系。因此解释账面差异时，必须先确认现金是否全部来自客户；只有在此边界内，才能用滚动公式诊断错误。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": {
+          "text": "反例：若企业十月收到银行借款500元，现金属实增500，但服务收入与应收均为0；此时收入-现金≠应收是正常边界现象，不能误判为记账错误。",
+          "origin": "hy3_synthesis",
+          "sources": []
+        },
+        "possibleMisconception": null,
+        "informalCheck": null
+      }
+    ],
+    "sourceReferencesAvailable": true,
+    "visuals": [],
+    "summary": {
+      "available": true,
+      "text": "权责发生制下，收入确认看服务完成，现金看实际收付；应收账款滚动连接二者，且模型范围排除其他现金与债权。",
+      "nextConnection": null,
+      "formalOpportunities": []
+    },
+    "plannedTime": {
+      "agendaMinutes": 11,
+      "activeMinutesMin": 14,
+      "activeMinutesMax": 22,
+      "basis": "locally_evaluated_learning_actions"
+    }
+  },
+  "progress": {
+    "stateVersion": 2,
+    "stateId": "lesson_execution_505acec0-9131-451f-8cf8-e6ce4fd49406",
+    "currentSegmentIndex": 0,
+    "segmentCount": 3,
+    "presentedSegmentIndexes": [],
+    "presentationStatus": "not_started",
+    "presentationCompletedAt": null
+  },
+  "currentInformalCheck": null,
+  "practice": {
+    "status": "locked",
+    "currentItemIndex": 0,
+    "itemCount": 1,
+    "item": {
+      "index": 0,
+      "objectiveTitle": "区分收入与现金并运用滚动关系计算期间数值",
+      "construct": "apply",
+      "surface": "initial",
+      "supplementary": true,
+      "prompt": "五月期初应收0，期末观察：服务收入1100元，现金流入800元，月末应收300元。银行流水中的300元收款备注为收回前期欠款，且内部记录表明本月赊销在五月内均未收回。哪组事件构成能解释这些结果？",
+      "options": [
+        {
+          "id": "teaching_brief_e6acbc24-1f7c-4dbe-b348-72461c85c9ec_practice_1_initial_A",
+          "text": "赊销600元、当场收现500元、收回前期欠款300元"
+        },
+        {
+          "id": "teaching_brief_e6acbc24-1f7c-4dbe-b348-72461c85c9ec_practice_1_initial_B",
+          "text": "赊销300元、当场收现800元、收回前期欠款0元"
+        },
+        {
+          "id": "teaching_brief_e6acbc24-1f7c-4dbe-b348-72461c85c9ec_practice_1_initial_C",
+          "text": "赊销900元、当场收现200元、收回前期欠款300元及收回本月赊销300元"
+        }
+      ]
+    },
+    "attempts": [],
+    "recovery": null,
+    "completedAt": null,
+    "credit": "none"
+  },
+  "allowedActions": [
+    "start_lesson"
+  ]
+}

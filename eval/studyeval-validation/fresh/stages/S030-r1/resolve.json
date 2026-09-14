@@ -1,0 +1,93 @@
+{
+  "inputIdentity": "d9dd9a10a456a8749f0f71b7ee80a949c945887e3d09b1b72c03e5dc486e69e8",
+  "attempts": [
+    {
+      "physicalId": "00ca1ddd-25b2-4473-b670-117414d38c18",
+      "caseId": "S030",
+      "runId": "S030-r1",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q3",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "artifact正确指出两句范围差异，但未展示修饰语位置改变范围的推理连接，缺少why/how解释，属局部缺陷无错误方法。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "未解释修饰语位置如何改变范围，仅陈述结论与提醒注意修饰语",
+            "impact": "结论正确，核心差异已知，但解释连接缺失，不破坏正确性，仅局部不充分",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "1989045001413c4d18f546a65d32cefd3de7312dd6d8fe4e7e470d8521fe61c7"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "9ef8039d157a3635d1da4128848b8da6aabf32e121261f1cd761712bb1417ab2"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "1989045001413c4d18f546a65d32cefd3de7312dd6d8fe4e7e470d8521fe61c7"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "9ef8039d157a3635d1da4128848b8da6aabf32e121261f1cd761712bb1417ab2"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q3:1",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "第一句范围较窄，第二句把红帽属性给全部进入者。两句意义不同，要注意修饰语。",
+          "valueHash": "1989045001413c4d18f546a65d32cefd3de7312dd6d8fe4e7e470d8521fe61c7"
+        },
+        "reason": "引文仅陈述结论与提醒，未展示修饰语位置导致范围变化的推理连接，符合local缺陷指控。"
+      },
+      {
+        "id": "review2:Q3:1",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "第一句范围较窄，第二句把红帽属性给全部进入者。两句意义不同，要注意修饰语。",
+          "valueHash": "1989045001413c4d18f546a65d32cefd3de7312dd6d8fe4e7e470d8521fe61c7"
+        },
+        "reason": "引文仅陈述结论与提醒，未展示修饰语位置导致范围变化的推理连接，符合local缺陷指控。"
+      }
+    ]
+  }
+}

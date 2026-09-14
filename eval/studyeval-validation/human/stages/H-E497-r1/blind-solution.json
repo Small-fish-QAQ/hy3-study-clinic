@@ -1,0 +1,31 @@
+{
+  "inputIdentity": "166eb40a95efeda16c0ac9e8e2ccdb7877091996ebba3e8c6fe05ff0ef947041",
+  "attempts": [
+    {
+      "physicalId": "dc1991b0-33bf-4fd8-b225-8af5082aad28",
+      "caseId": "E497",
+      "runId": "H-E497-r1",
+      "stage": "blind-solution",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "status": "resolved",
+    "solution": "原数据2,4,4,14：平均=(2+4+4+14)/4=6分；中位=(4+4)/2=4分。改22后：平均=(2+4+4+22)/4=8分；中位=4分。变化不同因平均用全部求和，极值增8使平均增2；中位取中间两值均4，排序结构未变故不变。",
+    "refs": [
+      "/question/prompt"
+    ],
+    "witnesses": [
+      {
+        "pointer": "/question/prompt",
+        "valueHash": "c72bdf5aa33b5c9b2a61dcde88889cc9c7e6ebaf01687c706d6d8539580d34da"
+      }
+    ]
+  }
+}

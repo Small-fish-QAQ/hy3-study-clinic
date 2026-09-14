@@ -1,0 +1,69 @@
+{
+  "inputIdentity": "a40c8180826aba24decf9392d1f4538ee8a4a5007eeef51a49d9426921c89336",
+  "attempts": [
+    {
+      "physicalId": "c7752183-7fb1-4db9-bc7b-05d706a77f7b",
+      "caseId": "S036",
+      "runId": "S036-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "artifact声称所有被4整除年份均为闰年且忽略100/400条件，据此误判1900年二月29天。source明确公历闰年需满足100/400例外且1900年为平年。该错误直接推翻核心规则解释与实例核对目标，属实质缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "断言所有能被4整除的年份都是闰年，100和400条件可忽略，并错误推导1900年二月有29天",
+            "impact": "违背source规则与实例，破坏核对公历闰年规则及实例的核心教学目标",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "853685eab47e41df7ddef7354c0225b71a669fb7d649723b4972c34088946314"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "5e982eb2843152ea1b81d9f7793dbfb2609636664c75b2a6bab9a349cc3bf60b"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "853685eab47e41df7ddef7354c0225b71a669fb7d649723b4972c34088946314"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "5e982eb2843152ea1b81d9f7793dbfb2609636664c75b2a6bab9a349cc3bf60b"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,97 @@
+{
+  "inputIdentity": "4bc0172c2e5f6b1375bda44cab58a81e9fe524707e5ab4282a84c62b3a0d131f",
+  "attempts": [
+    {
+      "physicalId": "c3c15b61-dfb5-47d4-bdbd-21ba461b8d65",
+      "caseId": "E074",
+      "runId": "H-E074-r2",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q4",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "题目直接要求按来源说法检索小岚每小时完成量，来源明说六分之一份，作者答案正确且未提前曝光。但声明深度working_fluency下仅测检索，判别力弱，故为1。",
+        "refs": [
+          "/question/prompt",
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "题干明确要求“按来源已经给出的说法”取现成分数，未要求学生执行多步计算或解释方法，而desiredDepth为working_fluency。",
+            "impact": "单题抽样检索技能有效，但不符合声明深度对执行与解释的要求，局部削弱判别力，不推翻题目本身正确性。",
+            "refs": [
+              "/question/prompt",
+              "/desiredDepth"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "49e1da85f3fee2b4d52571aba4aaba877eb27ae39e2844eb59214cb1031b8e12"
+              },
+              {
+                "pointer": "/desiredDepth",
+                "valueHash": "ffc6fdfb6aedd605a4b7d1807dfd9cc571929860f9039a3db08c4bc8c2c7817b"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "assessment": {
+          "key": "correct",
+          "validity": "valid",
+          "exposure": "none",
+          "discrimination": "weak",
+          "demand": "retrieval",
+          "demandReason": "学生只需从来源文本中抄写已直接陈述的“六分之一份”，无需选择方法、计算新实例或解释。",
+          "reason": "题目问来源中已给出的每小时完成量；作者参考解为六分之一份正确；priorExposure空且artifact标明未展示，无曝光；仅检索故判别力弱。",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text"
+          ],
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "49e1da85f3fee2b4d52571aba4aaba877eb27ae39e2844eb59214cb1031b8e12"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "46d1eb519d3c2ddc96b67b6df65edb237d990b0caa1ca0de2ad879b3b04d1248"
+            }
+          ]
+        },
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "49e1da85f3fee2b4d52571aba4aaba877eb27ae39e2844eb59214cb1031b8e12"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "46d1eb519d3c2ddc96b67b6df65edb237d990b0caa1ca0de2ad879b3b04d1248"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

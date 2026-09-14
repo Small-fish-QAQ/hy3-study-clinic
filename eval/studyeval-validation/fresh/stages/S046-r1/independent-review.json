@@ -1,0 +1,88 @@
+{
+  "inputIdentity": "512f687d36fa02de14a9913dfa11a6f95aab86e9790c7a2ee65768e21bfb807d",
+  "attempts": [
+    {
+      "physicalId": "aeb69e28-a9ec-4c14-ba0a-7975f6e359e6",
+      "caseId": "S046",
+      "runId": "S046-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q2",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "Lesson contradicts both core goals: claims bag always 6g sugar ignoring conversion (actual 18g), and equates per-serving with per-100g base. Defeats declared purpose of converting amounts and distinguishing bases. Secondary batch note present but insufficient.",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "Lesson states '一袋无论多重都只含糖6克', contradicting source's correct conversion that a 90g bag (3 servings) contains 18g sugar.",
+            "impact": "Defeats core goal of converting per-serving to actual consumption amount; learner would compute wrong actual amount.",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "7133deb22efbcc58d48ffb3e1df54061ca22da836bdf8b7f55f070cf2cf2cc0f"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "68fdce4b60a730e16f15fa21fa915ae0a6300744628a556284f8e578fc6dc56c"
+              }
+            ]
+          },
+          {
+            "severity": "material",
+            "description": "Lesson states '每份与每100克可以直接当成相同基准', contradicting requirement to distinguish the two reporting bases (6g/30g vs 20g/100g).",
+            "impact": "Defeats core goal of distinguishing per-serving and per-100g bases; merges incompatible references.",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "7133deb22efbcc58d48ffb3e1df54061ca22da836bdf8b7f55f070cf2cf2cc0f"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "68fdce4b60a730e16f15fa21fa915ae0a6300744628a556284f8e578fc6dc56c"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "7133deb22efbcc58d48ffb3e1df54061ca22da836bdf8b7f55f070cf2cf2cc0f"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "68fdce4b60a730e16f15fa21fa915ae0a6300744628a556284f8e578fc6dc56c"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

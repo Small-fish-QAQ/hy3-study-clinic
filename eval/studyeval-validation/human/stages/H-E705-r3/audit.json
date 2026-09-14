@@ -1,0 +1,99 @@
+{
+  "inputIdentity": "92a076aa276b3eb61a1c8b6ac7762216fd224e481fbce8bf0a9704286cb5fb2e",
+  "attempts": [
+    {
+      "physicalId": "aacc5ad0-8ede-4141-abb7-a6c83ffd25d8",
+      "caseId": "E705",
+      "runId": "H-E705-r3",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q2",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "课程产物声称只要求读小数且小数越多越准，并明确不用学误差界限与区间比较，直接矛盾所有声明目标（区分分辨率与准确、用误差界成区间、判区间关系、平均偏差），摧毁声明学习目的。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/0",
+          "/goals/1",
+          "/goals/2",
+          "/goals/3"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "Artifact states only ruler decimal reading is required and that more decimals imply greater accuracy, and error bounds/interval comparison need not be learned, contradicting goals to distinguish resolution vs accuracy, use error bounds, compare intervals, and note averaging bias.",
+            "impact": "Core declared learning scope is explicitly excluded, so coverage fails at essential level and defeats purpose.",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/0",
+              "/goals/1",
+              "/goals/2",
+              "/goals/3"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "4799744cc7668cbd8697be5870cadab058dc7fec6efec2c6a1bd24e6b123973e"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "974f091625a397eadb261006f5285e9c63c7ca6b839e6bdbb8c41f4bfff75e27"
+              },
+              {
+                "pointer": "/goals/1",
+                "valueHash": "b948cbdb264205a71c39bbf43fca64b81f119fd6bce83afbff737e5a078063b3"
+              },
+              {
+                "pointer": "/goals/2",
+                "valueHash": "a63a83b2364923d8e078ddf815b65a88e03ab9e5b2b372710e75e020c2056d1a"
+              },
+              {
+                "pointer": "/goals/3",
+                "valueHash": "714460aff55596ab6a2b0d42615a21b9c5be82487f745a68d7ee18049f26f951"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "4799744cc7668cbd8697be5870cadab058dc7fec6efec2c6a1bd24e6b123973e"
+          },
+          {
+            "pointer": "/goals/0",
+            "valueHash": "974f091625a397eadb261006f5285e9c63c7ca6b839e6bdbb8c41f4bfff75e27"
+          },
+          {
+            "pointer": "/goals/1",
+            "valueHash": "b948cbdb264205a71c39bbf43fca64b81f119fd6bce83afbff737e5a078063b3"
+          },
+          {
+            "pointer": "/goals/2",
+            "valueHash": "a63a83b2364923d8e078ddf815b65a88e03ab9e5b2b372710e75e020c2056d1a"
+          },
+          {
+            "pointer": "/goals/3",
+            "valueHash": "714460aff55596ab6a2b0d42615a21b9c5be82487f745a68d7ee18049f26f951"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

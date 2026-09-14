@@ -1,0 +1,36 @@
+{
+  "inputIdentity": "70256588e065417740803989a36004f6cda33b1020c1858615205a6be8c1f7d2",
+  "attempts": [
+    {
+      "physicalId": "e8dd4869-e4c7-40a9-92c0-446e7a4912bd",
+      "caseId": "S045",
+      "runId": "S045-r1",
+      "stage": "blind-solution",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "status": "contradictory",
+    "solution": "依/sources/0/text，上升7加7、下降4减4，净变+3米。终高=初高+3。题设初高未知，终高不可唯一确定。题目禁言信息不足并强令给唯一终高，该约束与明示前提矛盾，不屈从，记矛盾。",
+    "refs": [
+      "/question/prompt",
+      "/sources/0/text"
+    ],
+    "witnesses": [
+      {
+        "pointer": "/question/prompt",
+        "valueHash": "678fa04269e5dd9e77c27b3e192985ba0156440a8c8ece76a99a362a20b654b1"
+      },
+      {
+        "pointer": "/sources/0/text",
+        "valueHash": "1df9950edf389e68cc4353ad1c364ae71b323e3e1d130830ce39d9c5e25fe7f3"
+      }
+    ]
+  }
+}

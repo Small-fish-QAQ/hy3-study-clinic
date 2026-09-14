@@ -1,0 +1,203 @@
+{
+  "status": "ready",
+  "message": "Lesson is ready.",
+  "course": {
+    "title": "英语比较级与最高级"
+  },
+  "session": {
+    "status": "active",
+    "version": 1
+  },
+  "agenda": {
+    "version": 1,
+    "itemState": "queued"
+  },
+  "lesson": {
+    "objective": {
+      "title": "比较级与最高级形式与用法：区分、构词与造句",
+      "whyNow": "学习者常把比较级和最高级混用，例如在只有两者时套用最高级，或在集合中误指最值。需要明确区分对象数量与范围标记。",
+      "outcomes": [
+        {
+          "title": "区分两者比较与给定集合最高程度",
+          "description": "能够区分比较级（常配合than比较两个对象在某方面的程度）与最高级（表示在给定集合中达到最高程度，通常使用the并交代比较范围，而非不受范围限制的绝对第一）。"
+        },
+        {
+          "title": "按给定词形规则构成比较级与最高级",
+          "description": "能够根据给定词形规则构成比较级与最高级：短形容词加-er/-est（如tall/taller/tallest），长形容词用more/most（如careful/more careful/most careful），不发音e结尾加-r/-st（如large/larger/largest），辅音字母加y结尾变y为i加-er/-est（如heavy/heavier/heaviest，避免heavyer错误），部分短词双写末尾辅音（如big/bigger/biggest），不规则词形good/better/best与bad/worse/worst；避免叠加两套标记（如not more bigger、not most tallest），并遵循本课明确给出的词形练习约定。"
+        }
+      ]
+    },
+    "prerequisites": [],
+    "segments": [
+      {
+        "index": 0,
+        "purpose": "orientation",
+        "explanation": "英语中比较级用于两个对象在某维度上的程度差异，常配合than；最高级表示在明确给出的集合中达到极致，通常用the并交代范围，如of the three。根据资料中的规则，先判定对象数量和比较维度，再选词形。例如两棵树：树1高2米，树2高3米，可写树2比树1高；三栋楼：楼A10米、楼B20米、楼C30米，楼C是三者中最高的。最高级不是脱离范围的绝对第一。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 1,
+        "purpose": "guided_practice",
+        "explanation": "我们再用体积例子巩固：给定三个盒子体积P=4升、Q=7升、R=10升，同单位可直接比。规则仍是两者用比较级、集合最高用最高级加范围。下面检验你能否在新数据中选对句子。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": {
+          "kind": "choose",
+          "prompt": "给定三个盒子：P容4升，Q容7升，R容10升。下列哪句正确？",
+          "guidance": null,
+          "options": [
+            {
+              "id": "A",
+              "text": "Q is larger than P."
+            },
+            {
+              "id": "B",
+              "text": "Q is the largest of the three boxes."
+            }
+          ],
+          "presented": false,
+          "response": null,
+          "respondedAt": null,
+          "correct": null,
+          "feedback": null,
+          "credit": "none"
+        }
+      },
+      {
+        "index": 2,
+        "purpose": "worked_example",
+        "explanation": "构词时需先判词尾特征：不发音e、辅音+y、双写辅音、长词用more/most、不规则。这些特征按本课给定清单互斥执行，不能叠加。例如pretty以辅音t加y结尾，变y为i加er得prettier；这展示从原级到比较级的路径。下面用另一个词thin演练判定与构词步骤。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": {
+          "startingState": "给定词thin，短形容词，末尾为n（辅音），前为元音i，尚未确定比较级形式。",
+          "inputs": [
+            "thin",
+            "规则：部分短词双写末尾辅音如big/bigger"
+          ],
+          "ruleOrProcedure": "短词双写末尾辅音加-er",
+          "steps": [
+            {
+              "action": "判定词长与末尾字母",
+              "reason": "thin为短形容词，末尾n是辅音，前为元音i，符合双写条件",
+              "resultingState": "确认适用双写末尾辅音加-er"
+            }
+          ],
+          "learnerDecision": null,
+          "result": null,
+          "whyResultFollows": null,
+          "origin": "hy3_synthesis",
+          "sources": [],
+          "interaction": {
+            "stage": "guided",
+            "modelledStepCount": 1,
+            "origin": "hy3_synthesis",
+            "sources": [],
+            "activity": {
+              "prompt": "给定词thin，已确认需双写末尾辅音加-er。其比较级应是？",
+              "options": [
+                {
+                  "id": "A",
+                  "text": "thinner"
+                },
+                {
+                  "id": "B",
+                  "text": "thiner"
+                },
+                {
+                  "id": "C",
+                  "text": "more thin"
+                }
+              ],
+              "response": null,
+              "respondedAt": null,
+              "correct": null,
+              "feedback": null,
+              "debrief": null,
+              "credit": "none",
+              "misconception": null
+            },
+            "hint": null,
+            "scaffold": null,
+            "transfer": null
+          }
+        },
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      }
+    ],
+    "sourceReferencesAvailable": true,
+    "visuals": [],
+    "summary": {
+      "available": true,
+      "text": "比较级连接两个对象用than，最高级在给定集合内用the和范围语；先定维度、对象数、数据方向，再选形。",
+      "nextConnection": null,
+      "formalOpportunities": []
+    },
+    "plannedTime": {
+      "agendaMinutes": 15,
+      "activeMinutesMin": 18,
+      "activeMinutesMax": 28,
+      "basis": "locally_evaluated_learning_actions"
+    }
+  },
+  "progress": {
+    "stateVersion": 4,
+    "stateId": "lesson_execution_498834f4-ddab-4f4f-9dad-5dd092dbf880",
+    "currentSegmentIndex": 0,
+    "segmentCount": 3,
+    "presentedSegmentIndexes": [],
+    "presentationStatus": "not_started",
+    "presentationCompletedAt": null
+  },
+  "currentInformalCheck": null,
+  "practice": {
+    "status": "locked",
+    "currentItemIndex": 0,
+    "itemCount": 2,
+    "item": {
+      "index": 0,
+      "objectiveTitle": "区分两者比较与给定集合最高程度",
+      "construct": "identify",
+      "surface": "initial",
+      "supplementary": true,
+      "prompt": "给定三个球：X重3千克，Y重6千克，Z重9千克。下列哪句正确使用了比较级或最高级？",
+      "options": [
+        {
+          "id": "teaching_brief_de31c171-16be-423a-9c3b-c332a06b973a_practice_1_initial_A",
+          "text": "Y is heavier than X."
+        },
+        {
+          "id": "teaching_brief_de31c171-16be-423a-9c3b-c332a06b973a_practice_1_initial_B",
+          "text": "Y is the heaviest of the three balls."
+        },
+        {
+          "id": "teaching_brief_de31c171-16be-423a-9c3b-c332a06b973a_practice_1_initial_C",
+          "text": "Y is the lighter of the three balls."
+        }
+      ]
+    },
+    "attempts": [],
+    "recovery": null,
+    "completedAt": null,
+    "credit": "none"
+  },
+  "allowedActions": [
+    "start_lesson"
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "inputIdentity": "fdba1afec38b50f6a3969cbe9699f0e8ef8d4b8b600bdf6ab7bd9ae62bf9a1a8",
+  "attempts": [
+    {
+      "physicalId": "996a6cbc-f26f-4f47-a77a-c0362db7ebae",
+      "caseId": "E873",
+      "runId": "H-E873-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q6",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "支持文本诊断学生将自愿等同随机的推理缺口，用高兴趣反例说明混杂，并给出提示卡随机但额外多练的下一检查，改变表面变量测试同技能，符合Q6完整标准。",
+        "refs": [
+          "/artifacts/1/text",
+          "/answer",
+          "/question/prompt"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/1/text",
+            "valueHash": "92b176354da78b28cb5522dcba0ee9141d78651ee215f63b5167216fd3796daf"
+          },
+          {
+            "pointer": "/answer",
+            "valueHash": "7d6191d92d628a82e207484c2c7eb0e40705d9d13f6606a2290baa951d899e6f"
+          },
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "40515ddefe7144a8c80977cc79f59af6231fa3747b5a992a6434f6ea76b34d40"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

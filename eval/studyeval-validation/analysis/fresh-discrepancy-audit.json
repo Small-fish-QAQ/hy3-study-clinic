@@ -1,0 +1,24 @@
+{
+  "reviewer": "Current Codex task assistant; not independent human gold labeling",
+  "policy": "Post-score explanation only. Preserve all frozen inputs, expected labels, observed scores and denominators. No case rerun or relabeling.",
+  "cases": {
+    "S008": {
+      "expected": 1,
+      "observed": 2,
+      "dimension": "Q5",
+      "classification": "optional-criterion interpretation and missed peripheral feedback claim",
+      "finding": "The entire student answer is one sentence containing both basis and calculation. The blind student reviewer treats that as satisfying the optional single separate conclusion sentence. That criterion wording has an interpretation boundary. However, product feedback explicitly says an additional independent conclusion sentence was written, while none follows the calculation. The frozen local-error reference remains defensible. Both reviews accept the auxiliary optional-criterion reading and overlook the literal feedback detail. Core answer and actual credit are correct; this is not wrong-work credit leakage.",
+      "rawInput": "dataset/studyeval/S008.json",
+      "rawObservation": "runs/fresh/observations/S008-r1.json"
+    },
+    "S029": {
+      "expected": 0,
+      "observed": 1,
+      "dimension": "Q4",
+      "classification": "incompatible conditions normalized into an unstated exception",
+      "finding": "The task simultaneously says to select without replacement and count selecting a card with itself. The blind solver silently treats self-pairing as an exception and solves the resulting with-repetition counting task as 15. Both reviews inherit that interpretation; adjudication discusses missing explanatory demand rather than the conflicting constraint. Explicitly changing the rule could create a valid task, but the frozen task states both at once. The model missed the intended material inconsistency and also penalized working-fluency application merely for not asking an explanation, a questionable extra demand. Keep expected 0 and observed 1; no rewrite to the clearer counterfactual task.",
+      "rawInput": "dataset/studyeval/S029.json",
+      "rawObservation": "runs/fresh/observations/S029-r1.json"
+    }
+  }
+}

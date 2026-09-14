@@ -1,0 +1,49 @@
+{
+  "inputIdentity": "d037f436c4266f3c6f56db256a972d593a313860bba2fb29f67405f4fa8a9441",
+  "attempts": [
+    {
+      "physicalId": "b54264b0-ed36-4292-a6fd-f8ae4d3e0a24",
+      "caseId": "S023",
+      "runId": "S023-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q2",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "课程方案设定按编号查脚注并解释补充信息的单元目标，设计配对活动与两次正确检查，保留脚注阅读目标且具操作深度，符合working_fluency要求。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/0"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "a3a1218d1df2c86d4597f8fe6c5392c6ea34cdea7a737f4c9895e66197b02fee"
+          },
+          {
+            "pointer": "/goals/0",
+            "valueHash": "51ad373335c102698c4fc2a62905c1a64cf257a30a1c7efb5a0285ea61cae3ea"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

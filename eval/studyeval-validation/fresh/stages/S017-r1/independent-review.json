@@ -1,0 +1,82 @@
+{
+  "inputIdentity": "9a6ce310daefd76be091b3dced1467a3a0d8852e87e728836bb1d624b50b0059",
+  "attempts": [
+    {
+      "physicalId": "28342937-d7ce-4cc3-8d13-3913b645f40d",
+      "caseId": "S017",
+      "runId": "S017-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q4",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "题目给定初始高度和连续变化，要求计算并解释符号，有效抽样目标技能；作者答案正确完整，无提前曝光，深度符合working_fluency。",
+        "refs": [
+          "/question/prompt",
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "assessment": {
+          "key": "correct",
+          "validity": "valid",
+          "exposure": "none",
+          "discrimination": "adequate",
+          "demand": "application",
+          "demandReason": "学生需根据规则对初始-12米依次加7减4执行多步计算，并解释负号表示海平面下，属应用而非抄写现成公式。",
+          "reason": "题干要求计算最终高度并解释正负号；作者参考解-12+7-4=-9米且说明仍在海平面下，正确；无priorExposure泄露；需组织计算并解释，判别力足。",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "11aa36867e15609f53328e9af088ae92d75e3088959b7c2537ab6fe614b21e3f"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "a8a95d87f6761ee86b8b557775b09a034f8c637b2bffcc36e61a691f84f98202"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "1df9950edf389e68cc4353ad1c364ae71b323e3e1d130830ce39d9c5e25fe7f3"
+            }
+          ]
+        },
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "11aa36867e15609f53328e9af088ae92d75e3088959b7c2537ab6fe614b21e3f"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "a8a95d87f6761ee86b8b557775b09a034f8c637b2bffcc36e61a691f84f98202"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "1df9950edf389e68cc4353ad1c364ae71b323e3e1d130830ce39d9c5e25fe7f3"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

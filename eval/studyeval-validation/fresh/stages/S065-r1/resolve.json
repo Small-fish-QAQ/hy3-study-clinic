@@ -1,0 +1,126 @@
+{
+  "inputIdentity": "bca3b06ae8fdc9dcd0d390d6aacc05a9c7c97da0ef8960dd6ee7046808205b99",
+  "attempts": [
+    {
+      "physicalId": "eb00689c-f1b7-4c55-9296-6e1dc681cc25",
+      "caseId": "S065",
+      "runId": "S065-r1",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q4",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "题目强制XOR(1,1)输出必为1并解释，但source规则两1出0；作者键错答为1。任务与明示前提矛盾，key错误且无效，核心测试失效。",
+        "refs": [
+          "/question/prompt",
+          "/sources/0/text",
+          "/artifacts/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "题目要求解释XOR(1,1)输出必定是1，但source明确两输入都1时输出0，导致不兼容回答要求且作者参考键错误拒绝正确解",
+            "impact": "改变核心用途：任务无法在真实规则下成立，学生被迫违背明示前提或无法正确回答",
+            "refs": [
+              "/question/prompt",
+              "/sources/0/text",
+              "/artifacts/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "a4781f9fd5ee23b934cb075dbbdbc0be7c3e9d3f2c61c29fc7e5eca2d3a57b0b"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "abe0ee3fc063cc9ca8e5695fcc7196cbc85922a703ddb540aee12d9b2456e392"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "90074a9dd86f13f48f8c9437a0d295c6f90dde37815ed2c400c505eace19aecf"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "assessment": {
+          "key": "incorrect",
+          "validity": "invalid",
+          "exposure": "none",
+          "discrimination": "weak",
+          "demand": "reasoning",
+          "demandReason": "学生需解释输出必定是1，但明示规则矛盾，无合法操作可完成；题设强制错误推理",
+          "reason": "题目：计算XOR(1,1)并解释为何输出必定是1，与source规则矛盾。作者答案：两输入都有1因此输出1，错。曝光：priorExposure空，无披露。判别力：题设强制错误键，无效，判别力弱。",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text"
+          ],
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "a4781f9fd5ee23b934cb075dbbdbc0be7c3e9d3f2c61c29fc7e5eca2d3a57b0b"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "90074a9dd86f13f48f8c9437a0d295c6f90dde37815ed2c400c505eace19aecf"
+            }
+          ]
+        },
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "a4781f9fd5ee23b934cb075dbbdbc0be7c3e9d3f2c61c29fc7e5eca2d3a57b0b"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "abe0ee3fc063cc9ca8e5695fcc7196cbc85922a703ddb540aee12d9b2456e392"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "90074a9dd86f13f48f8c9437a0d295c6f90dde37815ed2c400c505eace19aecf"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q4:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/question/prompt",
+          "quote": "计算XOR(1,1)，并解释为何输出必定是1。",
+          "valueHash": "a4781f9fd5ee23b934cb075dbbdbc0be7c3e9d3f2c61c29fc7e5eca2d3a57b0b"
+        },
+        "reason": "题目强制输出1，但/sources/0/text规定两输入都1时输出0，引文证明不兼容响应要求。"
+      },
+      {
+        "id": "review2:Q4:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "两输入都有1，因此输出1。",
+          "valueHash": "90074a9dd86f13f48f8c9437a0d295c6f90dde37815ed2c400c505eace19aecf"
+        },
+        "reason": "/question/prompt强制错误键，/sources/0/text规则矛盾，且本作者键错答为1，支持指控。"
+      }
+    ]
+  }
+}

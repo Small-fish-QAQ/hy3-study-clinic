@@ -1,0 +1,262 @@
+{
+  "status": "ready",
+  "message": "Lesson is ready.",
+  "course": {
+    "title": "功率、电能与使用时长"
+  },
+  "session": {
+    "status": "active",
+    "version": 1
+  },
+  "agenda": {
+    "version": 1,
+    "itemState": "queued"
+  },
+  "lesson": {
+    "objective": {
+      "title": "功率与电能基础：定义、千瓦时、电能计算与方案比较",
+      "whyNow": "已知某设备铭牌功率却测得电能与直觉不符，需要先建立功率与电能、额定与实际的区分模型才能解释。",
+      "outcomes": [
+        {
+          "title": "区分功率与电能、解释千瓦时单位及额定功率含义",
+          "description": "能够区分功率与累计电能，解释功率是能量转移或消耗的快慢、电能是一段时间内累计消耗的量；解释千瓦时是能量单位（1千瓦持续1小时对应1千瓦时），不是“每小时的功率”或更大功率单位，并说明其与焦耳的换算关系（1千瓦时=3600000焦耳）；解释设备铭牌额定功率只是规定条件下的标称参数，不一定等于整个使用过程的实际功率，因此确定实际耗电需要实际平均功率、各阶段运行时间或电表读数，而非额定功率本身。"
+        },
+        {
+          "title": "计算恒定或分段电能及统一或分时电价电费",
+          "description": "能够根据实际恒定功率或分段实际平均功率与时长计算电能，保持单位一致；分段时分别求每段电能再相加，不可简单平均功率后乘总时长；仅当题目明确授权实际功率（如“实际恒定功率”或“该段实际平均功率”）时直接相乘。能在给定统一或分时电价下计算电费：统一电价时电费=电能×电价；分时电价各段电能乘对应价再相加；金额与千瓦时分别保留单位；缺少价格规则时只报告电能不自行补出电费。"
+        }
+      ]
+    },
+    "prerequisites": [],
+    "segments": [
+      {
+        "index": 0,
+        "purpose": "orientation",
+        "explanation": "功率描述能量消耗的快慢，例如100瓦灯泡比1000瓦加热器每秒转换能量慢。电能是一段时间内累计消耗的量。日常用千瓦时作能量单位：1千瓦功率持续1小时对应1千瓦时，等于3600000焦耳。它绝不是“每小时的功率”，也不是比千瓦更大的功率单位。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 1,
+        "purpose": "mechanism",
+        "explanation": "当实际功率恒定时，电能等于功率乘时间。若取800瓦即0.8千瓦运行1.5小时，电能为0.8×1.5=1.2千瓦时。这说明千瓦时是这段累计能量的结果，而非某个瞬时的功率值。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [
+          {
+            "kind": "mechanism_effect",
+            "fromProposition": "实际恒定功率为0.8千瓦且运行1.5小时",
+            "toProposition": "累计电能为1.2千瓦时（能量单位，非功率）",
+            "origin": "hy3_synthesis",
+            "sources": []
+          }
+        ],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 2,
+        "purpose": "guided_practice",
+        "explanation": "若设备分阶段以不同实际平均功率运行，必须分段求电能再相加，不能简单平均功率乘总时长。下面用一个新案例检验该机制。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": {
+          "kind": "choose",
+          "prompt": "一台设备先以1.2千瓦实际平均功率工作0.5小时，再以0.3千瓦工作2小时。总电能是多少？",
+          "guidance": null,
+          "options": [
+            {
+              "id": "A",
+              "text": "1.2千瓦时（0.6+0.6）"
+            },
+            {
+              "id": "B",
+              "text": "1.875千瓦时（平均0.75千瓦乘2.5小时）"
+            },
+            {
+              "id": "C",
+              "text": "1.5千瓦时（1.2+0.3）"
+            }
+          ],
+          "presented": false,
+          "response": null,
+          "respondedAt": null,
+          "correct": null,
+          "feedback": null,
+          "credit": "none"
+        }
+      },
+      {
+        "index": 3,
+        "purpose": "comparison",
+        "explanation": "设备铭牌上的额定功率是规定条件下的标称参数，不一定等于整个使用过程的实际功率。会启停或调节的设备，需要实际平均功率、各阶段运行时间或电表读数才能估算该次耗电。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": {
+          "text": "铭牌额定功率1500瓦的电机在轻载时实际平均功率可能仅600瓦；若仅凭额定功率算1小时耗电为1.5千瓦时，便高估了实际电能。额定参数是标称，不是实际功耗的必然值。",
+          "origin": "hy3_synthesis",
+          "sources": []
+        },
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 4,
+        "purpose": "worked_example",
+        "explanation": "计算分时电费时，先把每段题目授权的实际平均功率乘时间得分段电能，再各乘对应时段电价后相加。若跨时段平均功率或电价，会错估费用。下面用新案例展示该机制。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": {
+          "startingState": "一台设备先以0.8千瓦实际平均功率运行1小时（峰时），再以0.4千瓦实际平均功率运行1.5小时（谷时）。峰时电价0.7元/千瓦时，谷时电价0.4元/千瓦时。题目明确授权所给为各段实际平均功率。",
+          "inputs": [
+            "第一段0.8千瓦、1小时、峰时价0.7元",
+            "第二段0.4千瓦、1.5小时、谷时价0.4元"
+          ],
+          "ruleOrProcedure": "分段电能=实际平均功率×时长；电费=各段电能×对应电价求和。",
+          "steps": [
+            {
+              "action": "计算第一段电能",
+              "reason": "题目授权实际平均功率，直接乘时间",
+              "resultingState": "第一段电能=0.8×1=0.8千瓦时"
+            }
+          ],
+          "learnerDecision": null,
+          "result": null,
+          "whyResultFollows": null,
+          "origin": "hy3_synthesis",
+          "sources": [],
+          "interaction": {
+            "stage": "guided",
+            "modelledStepCount": 1,
+            "origin": "hy3_synthesis",
+            "sources": [],
+            "activity": {
+              "prompt": "基于上述第一段电能0.8千瓦时及第二段给定参数，总电费应为多少？",
+              "options": [
+                {
+                  "id": "A",
+                  "text": "0.80元"
+                },
+                {
+                  "id": "B",
+                  "text": "0.88元"
+                },
+                {
+                  "id": "C",
+                  "text": "0.56元（只算第一段电费）"
+                }
+              ],
+              "response": null,
+              "respondedAt": null,
+              "correct": null,
+              "feedback": null,
+              "debrief": null,
+              "credit": "none",
+              "misconception": null
+            },
+            "hint": null,
+            "scaffold": null,
+            "transfer": null
+          }
+        },
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 5,
+        "purpose": "comparison",
+        "explanation": "当题目未给出任何价格规则时，即使算出电能也不能自行补出电费，只能报告电能值并注明单位千瓦时。这是与计算电费不同的边界。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": {
+          "text": "例如算出某设备总电能为2.0千瓦时，若误以为‘电费必定按常见0.6元计算’而写出1.2元，就超越了已知信息；正确做法是仅报告2.0千瓦时。额定功率不等于实际功耗，同样价格缺失不等于零电价。",
+          "origin": "hy3_synthesis",
+          "sources": []
+        },
+        "possibleMisconception": null,
+        "informalCheck": null
+      }
+    ],
+    "sourceReferencesAvailable": true,
+    "visuals": [],
+    "summary": {
+      "available": true,
+      "text": "功率是能量转移速率，电能是一段时间的累计；千瓦时是能量单位而非功率单位；额定功率只是标称，实际耗电需实际平均功率或电表读数。",
+      "nextConnection": null,
+      "formalOpportunities": []
+    },
+    "plannedTime": {
+      "agendaMinutes": 23,
+      "activeMinutesMin": 26,
+      "activeMinutesMax": 41,
+      "basis": "locally_evaluated_learning_actions"
+    }
+  },
+  "progress": {
+    "stateVersion": 2,
+    "stateId": "lesson_execution_33b47156-27b9-447d-8895-10e11e73eb99",
+    "currentSegmentIndex": 0,
+    "segmentCount": 6,
+    "presentedSegmentIndexes": [],
+    "presentationStatus": "not_started",
+    "presentationCompletedAt": null
+  },
+  "currentInformalCheck": null,
+  "practice": {
+    "status": "locked",
+    "currentItemIndex": 0,
+    "itemCount": 2,
+    "item": {
+      "index": 0,
+      "objectiveTitle": "区分功率与电能、解释千瓦时单位及额定功率含义",
+      "construct": "explain",
+      "surface": "initial",
+      "supplementary": true,
+      "prompt": "一台设备铭牌额定功率为1200瓦。基线测试：连续运行1小时，电表读数为0.9千瓦时。随后我们加入定时器，使设备在1小时窗口内仅前0.5小时通电、其余时间断电；该窗口电表读数为0.45千瓦时。设备通电期间实际平均功率未知但恒定。以下哪项解释符合干预结果？",
+      "options": [
+        {
+          "id": "teaching_brief_4fada771-f5cc-4ef3-b886-01e02e1eb3b3_practice_1_initial_A",
+          "text": "通电阶段实际平均功率为0.9千瓦（0.9千瓦×0.5小时=0.45千瓦时）"
+        },
+        {
+          "id": "teaching_brief_4fada771-f5cc-4ef3-b886-01e02e1eb3b3_practice_1_initial_B",
+          "text": "通电阶段实际平均功率为0.45千瓦且全程通电1小时（忽略定时器约束）"
+        },
+        {
+          "id": "teaching_brief_4fada771-f5cc-4ef3-b886-01e02e1eb3b3_practice_1_initial_C",
+          "text": "通电阶段实际平均功率为1.8千瓦但仅通电0.25小时"
+        }
+      ]
+    },
+    "attempts": [],
+    "recovery": null,
+    "completedAt": null,
+    "credit": "none"
+  },
+  "allowedActions": [
+    "start_lesson"
+  ]
+}

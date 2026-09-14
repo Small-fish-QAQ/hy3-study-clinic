@@ -1,0 +1,69 @@
+{
+  "inputIdentity": "87b4a646756ad7ec0926b53d2565859d73c4a02ac92142797980a3afc8e9a012",
+  "attempts": [
+    {
+      "physicalId": "1129fb1a-9104-4fca-92ef-471066dbd5ff",
+      "caseId": "E611",
+      "runId": "H-E611-r3",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q2",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "Lesson用闭区间公式与数值例示覆盖了区间形成和大小比较核心目标，并提及分辨率不等同准确度。但声明的次要延伸目标仅以'同向偏差也不会仅靠重复平均自动消失'提醒呈现，未解释或演示，属局部缩减，核心用途成立。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/3"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "次要延伸目标'说明重复平均不能自动消除共同方向的偏差'在lesson中仅表述为'同向偏差也不会仅靠重复平均自动消失'，未提供解释或示例（如固定偏移不消）。",
+            "impact": "核心区间形成与比较方法保持可用，不影响主要学习用途。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/3"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "c1ec4cc283b869ded4bd6704017dd84fadd61b71cdacc0ccea326fdeabd36eab"
+              },
+              {
+                "pointer": "/goals/3",
+                "valueHash": "714460aff55596ab6a2b0d42615a21b9c5be82487f745a68d7ee18049f26f951"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "c1ec4cc283b869ded4bd6704017dd84fadd61b71cdacc0ccea326fdeabd36eab"
+          },
+          {
+            "pointer": "/goals/3",
+            "valueHash": "714460aff55596ab6a2b0d42615a21b9c5be82487f745a68d7ee18049f26f951"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

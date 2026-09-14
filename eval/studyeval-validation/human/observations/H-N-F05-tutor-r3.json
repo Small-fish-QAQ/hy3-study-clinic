@@ -1,0 +1,196 @@
+{
+  "task": {
+    "caseId": "N-F05-tutor",
+    "runId": "H-N-F05-tutor-r3",
+    "replicate": 3,
+    "path": "runs/final/cases/N-F05-tutor.json",
+    "inputHash": "e5df30e0c13100ce17282c86e71282ac7f2558dd968c0773fcabc87b642ff096",
+    "population": "natural",
+    "sourceId": "F05"
+  },
+  "inputHash": "e5df30e0c13100ce17282c86e71282ac7f2558dd968c0773fcabc87b642ff096",
+  "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "cbdea731fa31836336ec7bd5fde76ff7cb878e44ad790c25ac9d74ef877b60be",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "作者回顾资料模型与边界准确，新举糖秤例子区间计算正确，重叠判断正确，适用边界与来源一致，无事实或归属缺陷。",
+            "refs": [
+              "/sources/0/text",
+              "/artifacts/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "04ede0e2b943c283408af13f15e429c4d3f550318ac34096022b20c8a80a02fc"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "b715f15b523c715661ff4e94ca664156d6b6b2f9aee0edb446e03f8a0b9be19b"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          },
+          {
+            "dimension": "Q3",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "局部解释以糖秤为例，展示从给定读数误差到区间运算及比较重叠的关键连接，并交代对称闭合等适用限制，符合充分性停止条件。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "b715f15b523c715661ff4e94ca664156d6b6b2f9aee0edb446e03f8a0b9be19b"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "04ede0e2b943c283408af13f15e429c4d3f550318ac34096022b20c8a80a02fc"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "产物复述资料闭区间模型、比区间不比读数及重叠证据不足均准确；自编糖秤例区间计算正确，边界说明与来源一致，无事实或归属缺陷。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "b715f15b523c715661ff4e94ca664156d6b6b2f9aee0edb446e03f8a0b9be19b"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "04ede0e2b943c283408af13f15e429c4d3f550318ac34096022b20c8a80a02fc"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          },
+          {
+            "dimension": "Q3",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "例子从给定读数误差推出区间并比较重叠，展示比区间不比读数及证据不足的关键连接，补充模型适用边界，操作骨架充分，满足解释停止条件。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "b715f15b523c715661ff4e94ca664156d6b6b2f9aee0edb446e03f8a0b9be19b"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "04ede0e2b943c283408af13f15e429c4d3f550318ac34096022b20c8a80a02fc"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q1",
+          "level": 2,
+          "evidence": "sufficient",
+          "reason": "作者回顾资料模型与边界准确，新举糖秤例子区间计算正确，重叠判断正确，适用边界与来源一致，无事实或归属缺陷。",
+          "refs": [
+            "/sources/0/text",
+            "/artifacts/0/text"
+          ],
+          "defects": [],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "04ede0e2b943c283408af13f15e429c4d3f550318ac34096022b20c8a80a02fc"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "b715f15b523c715661ff4e94ca664156d6b6b2f9aee0edb446e03f8a0b9be19b"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        },
+        {
+          "dimension": "Q3",
+          "level": 2,
+          "evidence": "sufficient",
+          "reason": "局部解释以糖秤为例，展示从给定读数误差到区间运算及比较重叠的关键连接，并交代对称闭合等适用限制，符合充分性停止条件。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "b715f15b523c715661ff4e94ca664156d6b6b2f9aee0edb446e03f8a0b9be19b"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "04ede0e2b943c283408af13f15e429c4d3f550318ac34096022b20c8a80a02fc"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "aa1d8b35bd629b9d99bf2cd950fded25bc6dee2c36fcc99ee03b4001cd7a4e56"
+  }
+}

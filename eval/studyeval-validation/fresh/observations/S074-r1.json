@@ -1,0 +1,118 @@
+{
+  "task": {
+    "caseId": "S074",
+    "runId": "S074-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S074.json",
+    "inputHash": "07af1a797051c8455083f5676f83aaae1e80880e5f6fe1fbcebbff2728e538a7"
+  },
+  "inputHash": "07af1a797051c8455083f5676f83aaae1e80880e5f6fe1fbcebbff2728e538a7",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "70d24c4b936e2b947293aa73c54087698fde2b3ac7f9ac4bad81c6f2f36b1d7b",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "交付物准确指出长度3时i<=3访问不存在下标3，建议i<3并阐明限制下标而非长度，且给出长度4时列出下标与次数的具体新检查，可检验同一边界推理，满足完整标准。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "59494a351f56294401a0511f84ee11519e67f7aea59aa02aa9cfa17db9c08fee"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "6213ff9a055ace79d0f400ff726e7c543da909a26d1040539112300cd2428c3c"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "artifact依据source规则指出i<=3越界，解释应i<3且条件限制下标，并提供长度4的具体新检查（列下标与次数并解释不访问4），可测同一推理迁移，完整达成目标且无缺陷。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text",
+              "/goals/0"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "59494a351f56294401a0511f84ee11519e67f7aea59aa02aa9cfa17db9c08fee"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "6213ff9a055ace79d0f400ff726e7c543da909a26d1040539112300cd2428c3c"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "6fb7babe6f9f343c4ddd6bbe66ce3122ef6c196c42b707ca0bd4afca18fa678a"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q6",
+          "level": 2,
+          "evidence": "sufficient",
+          "reason": "交付物准确指出长度3时i<=3访问不存在下标3，建议i<3并阐明限制下标而非长度，且给出长度4时列出下标与次数的具体新检查，可检验同一边界推理，满足完整标准。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "59494a351f56294401a0511f84ee11519e67f7aea59aa02aa9cfa17db9c08fee"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "6213ff9a055ace79d0f400ff726e7c543da909a26d1040539112300cd2428c3c"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "7b2a5c4fc5fd43da402d483cf38183f610e551d3b46b6ed18af0b604b2e4d359"
+  }
+}

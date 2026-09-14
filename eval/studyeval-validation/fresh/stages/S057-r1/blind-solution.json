@@ -1,0 +1,36 @@
+{
+  "inputIdentity": "692b34f0c0d33f0d5f6401e218462dbef66679909e207ffde0baf8676ecd2d0a",
+  "attempts": [
+    {
+      "physicalId": "93d0089d-2af9-4967-b02b-f2e55c388e02",
+      "caseId": "S057",
+      "runId": "S057-r1",
+      "stage": "blind-solution",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "status": "resolved",
+    "solution": "第三个内角为65度。依据：题设限定平面欧氏三角形，内角和180度（/sources/0/text）。已知两角48°和67°，第三角=180-48-67=65°。必要条件：三角形在平面欧氏几何中且所给两角为内角。",
+    "refs": [
+      "/question/prompt",
+      "/sources/0/text"
+    ],
+    "witnesses": [
+      {
+        "pointer": "/question/prompt",
+        "valueHash": "6f61eb04ce82ef7ee727074751c974cd23772a67cd1c4f2d369bd885aaf261bb"
+      },
+      {
+        "pointer": "/sources/0/text",
+        "valueHash": "c67a1809ad98f0e7218f13885bd43e3048970015da2fa92bb6684a0b6474ff10"
+      }
+    ]
+  }
+}

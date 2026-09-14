@@ -1,0 +1,224 @@
+{
+  "status": "ready",
+  "message": "Lesson is ready.",
+  "course": {
+    "title": "有丝分裂中的复制与分配"
+  },
+  "session": {
+    "status": "active",
+    "version": 10
+  },
+  "agenda": {
+    "version": 2,
+    "itemState": "queued"
+  },
+  "lesson": {
+    "objective": {
+      "title": "复制与分配的区别及染色体与细胞计数和遗传稳定性",
+      "whyNow": "常有人把DNA分子数、染色体条数和细胞个数混谈，或把减数分裂减半套用于有丝分裂；需要先建立复制与分配分步、计数按着丝粒、子细胞守恒的模型。",
+      "outcomes": [
+        {
+          "title": "解释正常有丝分裂如何保持遗传信息稳定",
+          "description": "解释在无突变、分配错误等异常的本课正常模型中，复制使每条染色体信息有两份，均等分离使每个子细胞各得一份完整集合，因此子细胞通常与母细胞保持相同遗传信息；并指出减数分裂形成配子另有规则，不能将其染色体减半结论套用于此。"
+        },
+        {
+          "title": "应用n轮完整分裂后细胞数计算规则",
+          "description": "应用规则：若所有细胞都继续完成一轮这样的分裂且没有细胞死亡，每个细胞变成两个，n轮后细胞数为初始数乘2的n次方（例如从1个开始三轮得8个，从2个开始两轮得8个）。识别轮数不是小时数，未给分裂周期时不能把轮数直接说成时间，且不可将细胞数增加与染色体计数混淆。"
+        }
+      ]
+    },
+    "prerequisites": [],
+    "segments": [
+      {
+        "index": 0,
+        "purpose": "orientation",
+        "explanation": "设想一个正常体细胞有2条染色体。根据资料中的规则，细胞先在间期复制DNA，使每条染色体的信息变成两份，此时DNA分子数加倍为4，但着丝粒数未变，染色体仍计为2条。随后有丝分裂将复制后的材料均等分配到两个子细胞，每个子细胞各得一份完整集合，因此子细胞各有2条染色体，遗传信息与母细胞相同。复制与分配是不同动作：前者增加份数，后者决定去向。这说明了正常有丝分裂保持遗传稳定的基本路径。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 1,
+        "purpose": "mechanism",
+        "explanation": "本课计数约定按着丝粒数目计染色体。例如某细胞复制前4条染色体各含一个DNA；DNA复制后每条出现两条姐妹染色单体，但共享一个着丝粒，因此整个细胞虽有8个DNA分子，染色体仍记为4条。可见DNA加倍并不自动等于染色体数记翻倍，复制与染色体计数变化之间存在这一计数机制的限制。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [
+          {
+            "kind": "mechanism_effect",
+            "fromProposition": "DNA复制后姐妹染色单体共享一个着丝粒",
+            "toProposition": "染色体计数仍按着丝粒数计为复制前数目，不变成两倍",
+            "origin": "hy3_synthesis",
+            "sources": []
+          }
+        ],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 2,
+        "purpose": "guided_practice",
+        "explanation": "若所有细胞都完成一轮正常有丝分裂且无死亡，细胞数乘2，但每个子细胞染色体数不变。例如从2个细胞开始，每细胞4条染色体，完成一轮后形成4个细胞，每个仍4条。这说明细胞数增加不等于遗传信息减半。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": {
+          "kind": "choose",
+          "prompt": "从2个正常体细胞（各4条染色体）开始，完成一轮有丝分裂且无细胞死亡。下列哪一结果正确？",
+          "guidance": null,
+          "options": [
+            {
+              "id": "A",
+              "text": "共4个细胞，每个有4条染色体"
+            },
+            {
+              "id": "B",
+              "text": "共4个细胞，每个有2条染色体"
+            }
+          ],
+          "presented": false,
+          "response": null,
+          "respondedAt": null,
+          "correct": null,
+          "feedback": null,
+          "credit": "none"
+        }
+      },
+      {
+        "index": 3,
+        "purpose": "worked_example",
+        "explanation": "应用多轮分裂计数时，先把初始细胞数记为N，每完成一轮所有细胞都变成两个，因此经过n轮总数=N×2^n。注意轮数是分裂次数，不是时间；也未改变单个细胞的染色体数目（正常模型下每子细胞仍4条）。下面的演算用一个新案例展示连续乘2的过程。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": {
+          "startingState": "实验起始有5个正常体细胞，每个细胞有4条染色体（按本课模型）。所有细胞都将完成后续轮次分裂且无死亡。",
+          "inputs": [
+            "轮数 n = 3",
+            "规则：每轮每个细胞变两个，染色体数每子细胞保持4条"
+          ],
+          "ruleOrProcedure": "根据资料中的规则：若所有细胞都继续完成一轮这样的分裂且没有细胞死亡，每个细胞变成两个，n轮后细胞数为初始数乘2的n次方；正常有丝分裂后每个子细胞染色体数与母细胞相同。",
+          "steps": [
+            {
+              "action": "计算第1轮结束后的细胞数",
+              "reason": "初始5细胞，每细胞完成一轮分裂成两个，无死亡，故乘2。",
+              "resultingState": "第1轮后共有10个细胞，每个细胞仍有4条染色体。"
+            }
+          ],
+          "learnerDecision": null,
+          "result": null,
+          "whyResultFollows": null,
+          "origin": "hy3_synthesis",
+          "sources": [],
+          "interaction": {
+            "stage": "guided",
+            "modelledStepCount": 1,
+            "origin": "hy3_synthesis",
+            "sources": [],
+            "activity": {
+              "prompt": "给定上述5个初始细胞、已完成1轮后状态，以及还要进行第2、3轮分裂（无死亡），下列哪项是第3轮结束后的正确结果？",
+              "options": [
+                {
+                  "id": "A",
+                  "text": "共40个细胞，每个有4条染色体"
+                },
+                {
+                  "id": "B",
+                  "text": "共32个细胞，每个有4条染色体"
+                },
+                {
+                  "id": "C",
+                  "text": "共20个细胞，每个有4条染色体"
+                }
+              ],
+              "response": null,
+              "respondedAt": null,
+              "correct": null,
+              "feedback": null,
+              "debrief": null,
+              "credit": "none",
+              "misconception": null
+            },
+            "hint": null,
+            "scaffold": null,
+            "transfer": null
+          }
+        },
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      }
+    ],
+    "sourceReferencesAvailable": true,
+    "visuals": [],
+    "summary": {
+      "available": true,
+      "text": "正常有丝分裂中，复制增加DNA份数但染色体计数受着丝粒约束；均等分离使每子细胞获完整集合，故遗传信息稳定，细胞数倍增不改变单细胞染色体数。",
+      "nextConnection": null,
+      "formalOpportunities": []
+    },
+    "plannedTime": {
+      "agendaMinutes": 19,
+      "activeMinutesMin": 22,
+      "activeMinutesMax": 33,
+      "basis": "locally_evaluated_learning_actions"
+    }
+  },
+  "progress": {
+    "stateVersion": 2,
+    "stateId": "lesson_execution_d017e8c1-d70b-4ff5-890f-3431f7363a80",
+    "currentSegmentIndex": 0,
+    "segmentCount": 4,
+    "presentedSegmentIndexes": [],
+    "presentationStatus": "not_started",
+    "presentationCompletedAt": null
+  },
+  "currentInformalCheck": null,
+  "practice": {
+    "status": "locked",
+    "currentItemIndex": 0,
+    "itemCount": 2,
+    "item": {
+      "index": 0,
+      "objectiveTitle": "解释正常有丝分裂如何保持遗传信息稳定",
+      "construct": "explain",
+      "surface": "initial",
+      "supplementary": true,
+      "prompt": "观察：某正常体细胞初始有4条染色体；复制后整个细胞有8个DNA分子但染色体仍计为4条；分裂完成後两个子细胞各得4条染色体，且遗传信息与母细胞相同。下列哪一解释最符合该观察？",
+      "options": [
+        {
+          "id": "teaching_brief_5518908f-d638-4810-b6f5-6c3b18aa9f1b_practice_1_initial_A",
+          "text": "复制使每条染色体信息成两份，均等分离让每子细胞获完整集合，故遗传信息稳定"
+        },
+        {
+          "id": "teaching_brief_5518908f-d638-4810-b6f5-6c3b18aa9f1b_practice_1_initial_B",
+          "text": "染色体数在分裂中减半，但DNA量补偿使遗传信息不变"
+        },
+        {
+          "id": "teaching_brief_5518908f-d638-4810-b6f5-6c3b18aa9f1b_practice_1_initial_C",
+          "text": "分配动作自行创造了新DNA，使子细胞获得完整信息"
+        }
+      ]
+    },
+    "attempts": [],
+    "recovery": null,
+    "completedAt": null,
+    "credit": "none"
+  },
+  "allowedActions": [
+    "start_lesson"
+  ]
+}

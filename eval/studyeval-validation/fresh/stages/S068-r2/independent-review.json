@@ -1,0 +1,102 @@
+{
+  "inputIdentity": "275d4040c25468d962588e7dfa8023a587b8e20638128a0777d21ae5a8aae717",
+  "attempts": [
+    {
+      "physicalId": "12b1889d-c5e1-4294-acac-7ce40954f602",
+      "caseId": "S068",
+      "runId": "S068-r2",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q4",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "题目有效且答案正确，但仅要求抄写状态，属检索任务，未达working_fluency声明的解释/应用深度，判别力弱。",
+        "refs": [
+          "/question/prompt",
+          "/sources/0/text",
+          "/artifacts/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "题目要求从资料抄出起点终点状态，仅测试检索复制，未要求学生执行状态转换或解释方法。",
+            "impact": "不改变核心抄写任务的正确性，但未能在声明深度working_fluency下评估技能，局部削弱判别力。",
+            "refs": [
+              "/question/prompt",
+              "/artifacts/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "f2cd6c08b9d046cedf630b82184bd09b37a81beb527ef9e494a6f6b2afc6fc14"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "05fae2f96046c439a12189503a85befc635039e3ffe61cf823fdc83dced5bca5"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "assessment": {
+          "key": "correct",
+          "validity": "valid",
+          "exposure": "none",
+          "discrimination": "weak",
+          "demand": "retrieval",
+          "demandReason": "学生只需从/sources/0/text复制“未激活”和“有效”两个词，无需选择规则、计算新实例、解释或比较。",
+          "reason": "题干要求抄出激活起终点；作者私有答案“未激活到有效”及盲解均正确；priorExposure空无泄露；任务仅检索，与working_fluency深度不符，判别力弱。",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "f2cd6c08b9d046cedf630b82184bd09b37a81beb527ef9e494a6f6b2afc6fc14"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "05fae2f96046c439a12189503a85befc635039e3ffe61cf823fdc83dced5bca5"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "694fcf138ee515172ab2dd1c3a0a59baef8e0ee6b25086ed04ce3845111041ea"
+            }
+          ]
+        },
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "f2cd6c08b9d046cedf630b82184bd09b37a81beb527ef9e494a6f6b2afc6fc14"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "694fcf138ee515172ab2dd1c3a0a59baef8e0ee6b25086ed04ce3845111041ea"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "05fae2f96046c439a12189503a85befc635039e3ffe61cf823fdc83dced5bca5"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

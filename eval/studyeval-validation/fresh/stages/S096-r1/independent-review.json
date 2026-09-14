@@ -1,0 +1,69 @@
+{
+  "inputIdentity": "94a4c4eb8f7ecf37213c7e7ac804e33d2608eed85411ee5151e40abfd462e423",
+  "attempts": [
+    {
+      "physicalId": "f9fd923b-107e-451a-8fda-47eb5c5b4400",
+      "caseId": "S096",
+      "runId": "S096-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q6",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "交付修复断言长度3数组有四个元素并鼓励i<=3，直接传授与源规则矛盾的错误方法，未定位边界错误，核心用途被实质逆转。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "修复文本称长度3数组有四个元素且i<=3访问0-3有效，传授错误下标方法，违背源中合法下标0到n-1的规则。",
+            "impact": "干预本应诊断边界错误并给新检查，却教错方法，使学习者巩固越界访问，实质改变修复与检验的核心学习用途。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "2f10d4082e6028907976ecad0f8e73e261a95961125f871da540369ded146964"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "6213ff9a055ace79d0f400ff726e7c543da909a26d1040539112300cd2428c3c"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "2f10d4082e6028907976ecad0f8e73e261a95961125f871da540369ded146964"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "6213ff9a055ace79d0f400ff726e7c543da909a26d1040539112300cd2428c3c"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

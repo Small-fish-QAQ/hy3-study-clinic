@@ -1,0 +1,93 @@
+{
+  "inputIdentity": "f87cf40fa5d1ce85de2604c8dd0a6f5ee38302cf94523fae3246a8fcc12edf26",
+  "attempts": [
+    {
+      "physicalId": "013bdc81-d1d3-4d2c-85cf-9ab444b35e36",
+      "caseId": "S093",
+      "runId": "S093-r1",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q3",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "artifact断言两句完全相同且第一句证明所有学生戴红帽进入，与source明示两句意义不同且第一句仅限进入者红帽矛盾。中心解释错误，未解释修饰语位置改变范围，反而教错误等价，实质破坏核心教学目标。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "artifact断言两句完全相同且第一句已证明所有学生戴红帽且进入，与source明示约定矛盾，且未展示修饰语位置改变范围的解释。",
+            "impact": "错误中心结论使学习者误解句子范围等价，破坏goals要求的解释修饰语位置改变范围的核心教学用途。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "8b93f4d80238c5157affc1877b2c795abc610e710ff212d73435d308654fc9d0"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "9ef8039d157a3635d1da4128848b8da6aabf32e121261f1cd761712bb1417ab2"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "8b93f4d80238c5157affc1877b2c795abc610e710ff212d73435d308654fc9d0"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "9ef8039d157a3635d1da4128848b8da6aabf32e121261f1cd761712bb1417ab2"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q3:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "两句完全相同，第一句已经证明所有学生都戴红帽且所有学生都进入。",
+          "valueHash": "8b93f4d80238c5157affc1877b2c795abc610e710ff212d73435d308654fc9d0"
+        },
+        "reason": "该引文断言两句等价且第一句证明所有学生红帽进入，与/sources/0/text明示两句不同且第一句仅限制进入者红帽矛盾，核心解释错误。"
+      },
+      {
+        "id": "review2:Q3:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "两句完全相同，第一句已经证明所有学生都戴红帽且所有学生都进入。",
+          "valueHash": "8b93f4d80238c5157affc1877b2c795abc610e710ff212d73435d308654fc9d0"
+        },
+        "reason": "artifact错误声称无差异且错误范围，与source矛盾，且未展示修饰语位置改变范围的解释，破坏goals核心用途，实质缺陷。"
+      }
+    ]
+  }
+}

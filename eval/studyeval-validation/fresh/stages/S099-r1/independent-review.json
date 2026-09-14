@@ -1,0 +1,69 @@
+{
+  "inputIdentity": "aa1f033530e39e167e687defa55479c0c610f609cc9a4761639747563a15289b",
+  "attempts": [
+    {
+      "physicalId": "b39f1d88-05c6-4c27-8896-655535d023dc",
+      "caseId": "S099",
+      "runId": "S099-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q6",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "交付修复宣称改变下标是配平方法并肯定H2O2，违背source不可改下标规则，且未纠正改下标错误。目标要求具体纠正与独立再检验完全缺失，核心教学用途被实质改变。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "交付修复文本称改变下标正是配平方法，肯定将水写为H2O2，违背source中不能改下标的规则，且未纠正改下标错误。",
+            "impact": "本应纠正改下标错误并独立再检验，却教错误方法并认可错误，实质改变核心教学用途。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "75803b2e838303c8c2cc90e0abe0a188cce7a4a4ed365c3ebc158428220dd743"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "59437daaeac189d745ba28fdee3966ddf517f7bcc1363dd97ec06abb86dd3a0e"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "75803b2e838303c8c2cc90e0abe0a188cce7a4a4ed365c3ebc158428220dd743"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "59437daaeac189d745ba28fdee3966ddf517f7bcc1363dd97ec06abb86dd3a0e"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

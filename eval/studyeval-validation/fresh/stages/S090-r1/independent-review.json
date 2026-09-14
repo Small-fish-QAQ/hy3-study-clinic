@@ -1,0 +1,88 @@
+{
+  "inputIdentity": "17bc5673581dd3cbccfbb22bbe6fc7776ce81f52bd6ebcea55c5f63ee7ffd172",
+  "attempts": [
+    {
+      "physicalId": "dbef0183-a2a6-4e9b-a512-d70e097b673f",
+      "caseId": "S090",
+      "runId": "S090-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "artifact断言振幅翻倍使频率翻倍且音调升高，并定义频率为传播距离，直接违背source中频率=每秒振动次数、振幅不决定频率与音调的明示前提。错误主张摧毁了核对概念区别的核心教学目标，属实质缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "声称振幅翻倍就使频率翻倍、音调一定升高，与source中振幅不决定频率、提高振幅不升高音调矛盾",
+            "impact": "颠覆音调/频率/振幅关系核心结论，破坏概念核对目标",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "762a9b1a698e3d5fdc466d1fc1e5272d1095b2f8972ab12bc45a83d78ffd96d2"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "7d4b5318383b8f1b4d45756898be01c9752196adf6665cc09ce68423b1d671b7"
+              }
+            ]
+          },
+          {
+            "severity": "material",
+            "description": "定义频率为声音每次传播的距离，而source明确频率为每秒振动次数(Hz)",
+            "impact": "错误定义核心物理量，使学习者建立根本错误概念",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "762a9b1a698e3d5fdc466d1fc1e5272d1095b2f8972ab12bc45a83d78ffd96d2"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "7d4b5318383b8f1b4d45756898be01c9752196adf6665cc09ce68423b1d671b7"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "762a9b1a698e3d5fdc466d1fc1e5272d1095b2f8972ab12bc45a83d78ffd96d2"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "7d4b5318383b8f1b4d45756898be01c9752196adf6665cc09ce68423b1d671b7"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

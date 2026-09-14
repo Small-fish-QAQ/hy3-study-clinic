@@ -1,0 +1,854 @@
+{
+  "at": "2026-09-14T12:23:18.225Z",
+  "partial": false,
+  "passed": true,
+  "errors": [],
+  "cold": [
+    {
+      "id": "J01",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J01-insufficient-1",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J01-authority-1",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J02",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J02-insufficient-1",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J02-authority-1",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J03",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J04",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J04-insufficient-1",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J04-authority-1",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J05",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J06",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J06-insufficient-1",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J06-authority-1",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J07",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J08",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J08-insufficient-1",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J08-authority-1",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J09",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J09-insufficient-1",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J09-authority-1",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J10",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J11",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J11-insufficient-1",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J11-authority-1",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J12",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J12-insufficient-1",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J12-authority-1",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J13",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J13-insufficient-1",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J13-authority-1",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J14",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J14-insufficient-1",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J14-authority-1",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J15",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J15-insufficient-1",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J15-authority-1",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J16",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J16-insufficient-1",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J16-authority-1",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J17",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J17-insufficient-1",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J17-authority-1",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J18",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J19",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J19-insufficient-1",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J19-authority-1",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J20",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J20-insufficient-1",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    },
+    {
+      "id": "J20-authority-1",
+      "passed": true,
+      "tables": 119,
+      "changed": []
+    }
+  ],
+  "bindings": [
+    {
+      "id": "J01",
+      "questionId": "que_d89217df-26d5-4133-9848-a9904e357d2a",
+      "passed": true,
+      "reviewVersion": "formal-scoring-independent-review-v3"
+    },
+    {
+      "id": "J01-insufficient-1",
+      "questionId": "que_d89217df-26d5-4133-9848-a9904e357d2a",
+      "passed": true,
+      "reviewVersion": "formal-scoring-independent-review-v3"
+    },
+    {
+      "id": "J01-authority-1",
+      "questionId": "que_d89217df-26d5-4133-9848-a9904e357d2a",
+      "passed": true,
+      "reviewVersion": "formal-scoring-independent-review-v3"
+    },
+    {
+      "id": "J02",
+      "questionId": "que_34166394-d58c-411f-998f-9d56de4b1f34",
+      "passed": true,
+      "reviewVersion": "formal-scoring-independent-review-v3"
+    },
+    {
+      "id": "J02-insufficient-1",
+      "questionId": "que_34166394-d58c-411f-998f-9d56de4b1f34",
+      "passed": true,
+      "reviewVersion": "formal-scoring-independent-review-v3"
+    },
+    {
+      "id": "J02-authority-1",
+      "questionId": "que_34166394-d58c-411f-998f-9d56de4b1f34",
+      "passed": true,
+      "reviewVersion": "formal-scoring-independent-review-v3"
+    },
+    {
+      "id": "J04",
+      "questionId": "que_2e6ea3c1-0875-4eac-a3dd-823fa9b887cf",
+      "passed": true,
+      "reviewVersion": "formal-scoring-independent-review-v3"
+    },
+    {
+      "id": "J04-insufficient-1",
+      "questionId": "que_2e6ea3c1-0875-4eac-a3dd-823fa9b887cf",
+      "passed": true,
+      "reviewVersion": "formal-scoring-independent-review-v3"
+    },
+    {
+      "id": "J04-authority-1",
+      "questionId": "que_2e6ea3c1-0875-4eac-a3dd-823fa9b887cf",
+      "passed": true,
+      "reviewVersion": "formal-scoring-independent-review-v3"
+    },
+    {
+      "id": "J06",
+      "questionId": "que_7c3eb02f-6c4e-4215-acc6-44e2cb6134c5",
+      "passed": true,
+      "reviewVersion": "formal-scoring-independent-review-v3"
+    },
+    {
+      "id": "J06-insufficient-1",
+      "questionId": "que_7c3eb02f-6c4e-4215-acc6-44e2cb6134c5",
+      "passed": true,
+      "reviewVersion": "formal-scoring-independent-review-v3"
+    },
+    {
+      "id": "J06-authority-1",
+      "questionId": "que_7c3eb02f-6c4e-4215-acc6-44e2cb6134c5",
+      "passed": true,
+      "reviewVersion": "formal-scoring-independent-review-v3"
+    },
+    {
+      "id": "J08",
+      "questionId": "que_47bc9164-c158-4d34-a104-5a756e52d626",
+      "passed": true,
+      "reviewVersion": "formal-scoring-independent-review-v3"
+    },
+    {
+      "id": "J08-insufficient-1",
+      "questionId": "que_47bc9164-c158-4d34-a104-5a756e52d626",
+      "passed": true,
+      "reviewVersion": "formal-scoring-independent-review-v3"
+    },
+    {
+      "id": "J08-authority-1",
+      "questionId": "que_47bc9164-c158-4d34-a104-5a756e52d626",
+      "passed": true,
+      "reviewVersion": "formal-scoring-independent-review-v3"
+    },
+    {
+      "id": "J09",
+      "questionId": "que_05c03303-4464-4d3e-a8cb-61d27b91a3cb",
+      "passed": true,
+      "reviewVersion": "formal-scoring-independent-review-v3"
+    },
+    {
+      "id": "J09-insufficient-1",
+      "questionId": "que_05c03303-4464-4d3e-a8cb-61d27b91a3cb",
+      "passed": true,
+      "reviewVersion": "formal-scoring-independent-review-v3"
+    },
+    {
+      "id": "J09-authority-1",
+      "questionId": "que_05c03303-4464-4d3e-a8cb-61d27b91a3cb",
+      "passed": true,
+      "reviewVersion": "formal-scoring-independent-review-v3"
+    },
+    {
+      "id": "J11",
+      "questionId": "que_bf371bc6-abc6-44ba-ba23-1bfc3277c56a",
+      "passed": true,
+      "reviewVersion": "formal-scoring-independent-review-v3"
+    },
+    {
+      "id": "J11-insufficient-1",
+      "questionId": "que_bf371bc6-abc6-44ba-ba23-1bfc3277c56a",
+      "passed": true,
+      "reviewVersion": "formal-scoring-independent-review-v3"
+    },
+    {
+      "id": "J11-authority-1",
+      "questionId": "que_bf371bc6-abc6-44ba-ba23-1bfc3277c56a",
+      "passed": true,
+      "reviewVersion": "formal-scoring-independent-review-v3"
+    },
+    {
+      "id": "J12",
+      "questionId": "que_21dff483-9019-4e2f-b53a-c8366210f733",
+      "passed": true,
+      "reviewVersion": "formal-scoring-independent-review-v3"
+    },
+    {
+      "id": "J12-insufficient-1",
+      "questionId": "que_21dff483-9019-4e2f-b53a-c8366210f733",
+      "passed": true,
+      "reviewVersion": "formal-scoring-independent-review-v3"
+    },
+    {
+      "id": "J12-authority-1",
+      "questionId": "que_21dff483-9019-4e2f-b53a-c8366210f733",
+      "passed": true,
+      "reviewVersion": "formal-scoring-independent-review-v3"
+    },
+    {
+      "id": "J13",
+      "questionId": "que_24216651-0b0b-49e8-86fd-1fca81a22768",
+      "passed": true,
+      "reviewVersion": "formal-scoring-independent-review-v3"
+    },
+    {
+      "id": "J13-insufficient-1",
+      "questionId": "que_24216651-0b0b-49e8-86fd-1fca81a22768",
+      "passed": true,
+      "reviewVersion": "formal-scoring-independent-review-v3"
+    },
+    {
+      "id": "J13-authority-1",
+      "questionId": "que_24216651-0b0b-49e8-86fd-1fca81a22768",
+      "passed": true,
+      "reviewVersion": "formal-scoring-independent-review-v3"
+    },
+    {
+      "id": "J14",
+      "questionId": "que_22f61468-4951-4391-bdd0-24a6e7d58a3c",
+      "passed": true,
+      "reviewVersion": "formal-scoring-independent-review-v3"
+    },
+    {
+      "id": "J14-insufficient-1",
+      "questionId": "que_22f61468-4951-4391-bdd0-24a6e7d58a3c",
+      "passed": true,
+      "reviewVersion": "formal-scoring-independent-review-v3"
+    },
+    {
+      "id": "J14-authority-1",
+      "questionId": "que_22f61468-4951-4391-bdd0-24a6e7d58a3c",
+      "passed": true,
+      "reviewVersion": "formal-scoring-independent-review-v3"
+    },
+    {
+      "id": "J15",
+      "questionId": "que_499f8353-d860-4a1e-ad81-87c2800ccd8c",
+      "passed": true,
+      "reviewVersion": "formal-scoring-independent-review-v3"
+    },
+    {
+      "id": "J15-insufficient-1",
+      "questionId": "que_499f8353-d860-4a1e-ad81-87c2800ccd8c",
+      "passed": true,
+      "reviewVersion": "formal-scoring-independent-review-v3"
+    },
+    {
+      "id": "J15-authority-1",
+      "questionId": "que_499f8353-d860-4a1e-ad81-87c2800ccd8c",
+      "passed": true,
+      "reviewVersion": "formal-scoring-independent-review-v3"
+    },
+    {
+      "id": "J16",
+      "questionId": "que_5a655c29-6e76-4a95-ab7a-5dac1367abfd",
+      "passed": true,
+      "reviewVersion": "formal-scoring-independent-review-v3"
+    },
+    {
+      "id": "J16-insufficient-1",
+      "questionId": "que_5a655c29-6e76-4a95-ab7a-5dac1367abfd",
+      "passed": true,
+      "reviewVersion": "formal-scoring-independent-review-v3"
+    },
+    {
+      "id": "J16-authority-1",
+      "questionId": "que_5a655c29-6e76-4a95-ab7a-5dac1367abfd",
+      "passed": true,
+      "reviewVersion": "formal-scoring-independent-review-v3"
+    },
+    {
+      "id": "J17",
+      "questionId": "que_e8e50656-0c69-4309-a543-a41b67dc1564",
+      "passed": true,
+      "reviewVersion": "formal-scoring-independent-review-v3"
+    },
+    {
+      "id": "J17-insufficient-1",
+      "questionId": "que_e8e50656-0c69-4309-a543-a41b67dc1564",
+      "passed": true,
+      "reviewVersion": "formal-scoring-independent-review-v3"
+    },
+    {
+      "id": "J17-authority-1",
+      "questionId": "que_e8e50656-0c69-4309-a543-a41b67dc1564",
+      "passed": true,
+      "reviewVersion": "formal-scoring-independent-review-v3"
+    },
+    {
+      "id": "J19",
+      "questionId": "que_6782cef4-b4ee-4d2c-a038-86b88778aa43",
+      "passed": true,
+      "reviewVersion": "formal-scoring-independent-review-v3"
+    },
+    {
+      "id": "J19-insufficient-1",
+      "questionId": "que_6782cef4-b4ee-4d2c-a038-86b88778aa43",
+      "passed": true,
+      "reviewVersion": "formal-scoring-independent-review-v3"
+    },
+    {
+      "id": "J19-authority-1",
+      "questionId": "que_6782cef4-b4ee-4d2c-a038-86b88778aa43",
+      "passed": true,
+      "reviewVersion": "formal-scoring-independent-review-v3"
+    },
+    {
+      "id": "J20",
+      "questionId": "que_d81cedbe-3136-4f92-b43d-7671b3a263f7",
+      "passed": true,
+      "reviewVersion": "formal-scoring-independent-review-v3"
+    },
+    {
+      "id": "J20-insufficient-1",
+      "questionId": "que_d81cedbe-3136-4f92-b43d-7671b3a263f7",
+      "passed": true,
+      "reviewVersion": "formal-scoring-independent-review-v3"
+    },
+    {
+      "id": "J20-authority-1",
+      "questionId": "que_d81cedbe-3136-4f92-b43d-7671b3a263f7",
+      "passed": true,
+      "reviewVersion": "formal-scoring-independent-review-v3"
+    }
+  ],
+  "replays": [
+    {
+      "id": "J01",
+      "passed": true,
+      "identicalResult": true,
+      "changedTables": [],
+      "newPhysicalCalls": 0
+    },
+    {
+      "id": "J02",
+      "passed": true,
+      "identicalResult": true,
+      "changedTables": [],
+      "newPhysicalCalls": 0
+    },
+    {
+      "id": "J04",
+      "passed": true,
+      "identicalResult": true,
+      "changedTables": [],
+      "newPhysicalCalls": 0
+    },
+    {
+      "id": "J06",
+      "passed": true,
+      "identicalResult": true,
+      "changedTables": [],
+      "newPhysicalCalls": 0
+    },
+    {
+      "id": "J08",
+      "passed": true,
+      "identicalResult": true,
+      "changedTables": [],
+      "newPhysicalCalls": 0
+    },
+    {
+      "id": "J09",
+      "passed": true,
+      "identicalResult": true,
+      "changedTables": [],
+      "newPhysicalCalls": 0
+    },
+    {
+      "id": "J11",
+      "passed": true,
+      "identicalResult": true,
+      "changedTables": [],
+      "newPhysicalCalls": 0
+    },
+    {
+      "id": "J12",
+      "passed": true,
+      "identicalResult": true,
+      "changedTables": [],
+      "newPhysicalCalls": 0
+    },
+    {
+      "id": "J13",
+      "passed": true,
+      "identicalResult": true,
+      "changedTables": [],
+      "newPhysicalCalls": 0
+    },
+    {
+      "id": "J14",
+      "passed": true,
+      "identicalResult": true,
+      "changedTables": [],
+      "newPhysicalCalls": 0
+    },
+    {
+      "id": "J15",
+      "passed": true,
+      "identicalResult": true,
+      "changedTables": [],
+      "newPhysicalCalls": 0
+    },
+    {
+      "id": "J16",
+      "passed": true,
+      "identicalResult": true,
+      "changedTables": [],
+      "newPhysicalCalls": 0
+    },
+    {
+      "id": "J17",
+      "passed": true,
+      "identicalResult": true,
+      "changedTables": [],
+      "newPhysicalCalls": 0
+    },
+    {
+      "id": "J19",
+      "passed": true,
+      "identicalResult": true,
+      "changedTables": [],
+      "newPhysicalCalls": 0
+    },
+    {
+      "id": "J20",
+      "passed": true,
+      "identicalResult": true,
+      "changedTables": [],
+      "newPhysicalCalls": 0
+    }
+  ],
+  "ordinary": [
+    {
+      "id": "J01",
+      "file": "after-teaching-1.snapshot.json",
+      "passed": true
+    },
+    {
+      "id": "J01",
+      "file": "after-teaching-2.snapshot.json",
+      "passed": true
+    },
+    {
+      "id": "J02",
+      "file": "after-teaching-1.snapshot.json",
+      "passed": true
+    },
+    {
+      "id": "J02",
+      "file": "after-teaching-2.snapshot.json",
+      "passed": true
+    },
+    {
+      "id": "J04",
+      "file": "after-teaching-1.snapshot.json",
+      "passed": true
+    },
+    {
+      "id": "J04",
+      "file": "after-teaching-2.snapshot.json",
+      "passed": true
+    },
+    {
+      "id": "J05",
+      "file": "after-teaching-1.snapshot.json",
+      "passed": true
+    },
+    {
+      "id": "J05",
+      "file": "after-teaching-2.snapshot.json",
+      "passed": true
+    },
+    {
+      "id": "J06",
+      "file": "after-teaching-1.snapshot.json",
+      "passed": true
+    },
+    {
+      "id": "J06",
+      "file": "after-teaching-2.snapshot.json",
+      "passed": true
+    },
+    {
+      "id": "J08",
+      "file": "after-teaching-1.snapshot.json",
+      "passed": true
+    },
+    {
+      "id": "J08",
+      "file": "after-teaching-2.snapshot.json",
+      "passed": true
+    },
+    {
+      "id": "J09",
+      "file": "after-teaching-1.snapshot.json",
+      "passed": true
+    },
+    {
+      "id": "J09",
+      "file": "after-teaching-2.snapshot.json",
+      "passed": true
+    },
+    {
+      "id": "J10",
+      "file": "after-teaching-1.snapshot.json",
+      "passed": true
+    },
+    {
+      "id": "J10",
+      "file": "after-teaching-2.snapshot.json",
+      "passed": true
+    },
+    {
+      "id": "J11",
+      "file": "after-teaching-1.snapshot.json",
+      "passed": true
+    },
+    {
+      "id": "J11",
+      "file": "after-teaching-2.snapshot.json",
+      "passed": true
+    },
+    {
+      "id": "J12",
+      "file": "after-teaching-1.snapshot.json",
+      "passed": true
+    },
+    {
+      "id": "J12",
+      "file": "after-teaching-2.snapshot.json",
+      "passed": true
+    },
+    {
+      "id": "J13",
+      "file": "after-teaching-1.snapshot.json",
+      "passed": true
+    },
+    {
+      "id": "J13",
+      "file": "after-teaching-2.snapshot.json",
+      "passed": true
+    },
+    {
+      "id": "J14",
+      "file": "after-teaching-1.snapshot.json",
+      "passed": true
+    },
+    {
+      "id": "J14",
+      "file": "after-teaching-2.snapshot.json",
+      "passed": true
+    },
+    {
+      "id": "J15",
+      "file": "after-teaching-1.snapshot.json",
+      "passed": true
+    },
+    {
+      "id": "J16",
+      "file": "after-teaching-1.snapshot.json",
+      "passed": true
+    },
+    {
+      "id": "J16",
+      "file": "after-teaching-2.snapshot.json",
+      "passed": true
+    },
+    {
+      "id": "J17",
+      "file": "after-teaching-1.snapshot.json",
+      "passed": true
+    },
+    {
+      "id": "J17",
+      "file": "after-teaching-2.snapshot.json",
+      "passed": true
+    },
+    {
+      "id": "J19",
+      "file": "after-teaching-1.snapshot.json",
+      "passed": true
+    },
+    {
+      "id": "J19",
+      "file": "after-teaching-2.snapshot.json",
+      "passed": true
+    },
+    {
+      "id": "J20",
+      "file": "after-teaching-1.snapshot.json",
+      "passed": true
+    },
+    {
+      "id": "J20",
+      "file": "after-teaching-2.snapshot.json",
+      "passed": true
+    }
+  ]
+}

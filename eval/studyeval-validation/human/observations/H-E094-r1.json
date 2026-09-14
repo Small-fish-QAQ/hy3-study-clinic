@@ -1,0 +1,250 @@
+{
+  "task": {
+    "caseId": "E094",
+    "runId": "H-E094-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E094.json",
+    "inputHash": "e8edfc4e6a7f698db1c4caa1e95476f9689a95e6b87d32336d8d0af4d8c95adb",
+    "population": "controlled",
+    "sourceId": "F01"
+  },
+  "inputHash": "e8edfc4e6a7f698db1c4caa1e95476f9689a95e6b87d32336d8d0af4d8c95adb",
+  "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "4a502f1bc36e7e5ce74d7815fe0987f487d5f44f0b3816d106f3566108e73e57",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "artifact核心主张（总人次30、不推不同居民、不外延、未决定）与source一致；但附带回顾颠倒两周六分项人次（称第一周六12、第二周六18，源为第一18第二12）。属外围事实错误，修正后核心教学完好。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "artifact末尾附带回顾称“第一个周六提前到馆十二人次，第二个周六十八人次”，但source明确写第一个周六十八人、第二个十二人，数字归属颠倒。",
+                "impact": "该错误仅涉及分项人次的周六归属，不影响总和30人次、人次非独立人数、意见卡不外延、长期未决定等核心教学结论与用途，修正细节后主体完好。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "e61e77f7f6072f97b02e43405189e4c092cff9effaf4ccc15fc43ac79fdeb951"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "e61e77f7f6072f97b02e43405189e4c092cff9effaf4ccc15fc43ac79fdeb951"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "lesson核心主张（总人次30、不可当不同居民、意见卡8/10支持、长期未定、摘要可省分周六人次）均与源文一致；但附带回顾将两周六人次颠倒（称第一周六12、第二周六18，源为18与12），属可证外围事实错误，修正后教学用途完整。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "附带回顾将第一个周六和第二个周六的提前到馆人次颠倒（称第一周六12、第二周六18，源文为第一周六18、第二周六12）",
+                "impact": "修正数字顺序后，核心教学点（总人次30、不去重、不外推、长期未决定、摘要可省略分周六人次）及预期用途均不受影响",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "e61e77f7f6072f97b02e43405189e4c092cff9effaf4ccc15fc43ac79fdeb951"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "e61e77f7f6072f97b02e43405189e4c092cff9effaf4ccc15fc43ac79fdeb951"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "核心主张（总人次30、非独立居民、意见卡不外延、长期未定、摘要可省分项）与源文一致；末尾回顾颠倒两周六分项人次（称第一12第二18，源为18与12），属可证局部事实错误，修正后教学用途完整。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "artifact末尾附带回顾称“第一个周六提前到馆十二人次，第二个周六十八人次”，但source明确第一个周六十八人、第二个十二人，数字归属颠倒。",
+                "impact": "该错误仅涉及分项人次的周六归属，不影响总和30、人次非独立人数、意见卡不外延、长期未决定等核心教学结论与用途，修正细节后主体完好。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "e61e77f7f6072f97b02e43405189e4c092cff9effaf4ccc15fc43ac79fdeb951"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "e61e77f7f6072f97b02e43405189e4c092cff9effaf4ccc15fc43ac79fdeb951"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q1:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "第一个周六提前到馆十二人次，第二个周六十八人次",
+              "valueHash": "e61e77f7f6072f97b02e43405189e4c092cff9effaf4ccc15fc43ac79fdeb951"
+            },
+            "reason": "该引文与/sources/0/text中“第一个周六有十八人提前到馆，第二个周六有十二人提前到馆”直接矛盾，证明数字归属颠倒；但仅外围分项错误，核心教学不受影响。"
+          },
+          {
+            "id": "review2:Q1:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "第一个周六提前到馆十二人次，第二个周六十八人次",
+              "valueHash": "e61e77f7f6072f97b02e43405189e4c092cff9effaf4ccc15fc43ac79fdeb951"
+            },
+            "reason": "同review1:Q1:1，引文证实artifact颠倒周报分项人次，source原文相反；属局部事实错误，不损核心用途。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q1",
+          "level": 1,
+          "evidence": "sufficient",
+          "reason": "核心主张（总人次30、非独立居民、意见卡不外延、长期未定、摘要可省分项）与源文一致；末尾回顾颠倒两周六分项人次（称第一12第二18，源为18与12），属可证局部事实错误，修正后教学用途完整。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [
+            {
+              "severity": "local",
+              "description": "artifact末尾附带回顾称“第一个周六提前到馆十二人次，第二个周六十八人次”，但source明确第一个周六十八人、第二个十二人，数字归属颠倒。",
+              "impact": "该错误仅涉及分项人次的周六归属，不影响总和30、人次非独立人数、意见卡不外延、长期未决定等核心教学结论与用途，修正细节后主体完好。",
+              "refs": [
+                "/artifacts/0/text",
+                "/sources/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "e61e77f7f6072f97b02e43405189e4c092cff9effaf4ccc15fc43ac79fdeb951"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "e61e77f7f6072f97b02e43405189e4c092cff9effaf4ccc15fc43ac79fdeb951"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "202aae1a11140cf79a89791c055fa2701b913441dcad2b7869f72dfebbe6c0ba"
+  }
+}

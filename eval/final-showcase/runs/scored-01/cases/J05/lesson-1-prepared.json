@@ -1,0 +1,259 @@
+{
+  "status": "ready",
+  "message": "Lesson is ready.",
+  "course": {
+    "title": "杠杆平衡与力臂"
+  },
+  "session": {
+    "status": "active",
+    "version": 1
+  },
+  "agenda": {
+    "version": 1,
+    "itemState": "queued"
+  },
+  "lesson": {
+    "objective": {
+      "title": "轻杆模型中的力臂、力矩与平衡条件应用",
+      "whyNow": "已知左侧受力与位置，但右侧力未知且干预后转向变化，如何区分力大小与力臂的贡献来推断原因？",
+      "outcomes": [
+        {
+          "title": "区分力臂与力大小并解释转动效果",
+          "description": "能够区分力的大小与力臂（力臂是支点到力的作用线的垂直距离，而非任意杆长）；解释转动效果由力和力臂共同决定，在水平轻杆竖直向下力模型中左向下力产生逆时针、右向下力产生顺时针转动效果；说明若遇斜向力、显著杆重或其他支承，应依据新作用线重新建模，不可直接将沿杆距离当作垂直力臂。"
+        },
+        {
+          "title": "计算力矩并判断杠杆平衡",
+          "description": "在明确几何和方向条件下（静止水平轻杆、竖直向下力，力臂为水平距离），应用公式M=F×d计算力矩并注意单位一致（如厘米需转换）；多挂载时分别计算每个力的力矩再求同方向之和；利用顺时针与逆时针力矩总和相等判断平衡与否。"
+        }
+      ]
+    },
+    "prerequisites": [],
+    "segments": [
+      {
+        "index": 0,
+        "purpose": "orientation",
+        "explanation": "在轻杆平衡问题中，转动效果由力和力臂共同决定。力臂是支点到力的作用线的垂直距离，不是杆长本身。本课先建立水平轻杆、竖直向下力、忽略杆重的模型，帮助区分力大小与力臂的作用。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 1,
+        "purpose": "mechanism",
+        "explanation": "以具体例子说明：左侧10 N向下力距支点0.3米，其力矩为3 N·m，产生逆时针效果；右侧6 N向下力距支点0.5米，力矩也为3 N·m，产生顺时针效果，二者抵消而平衡。可见力更大的一侧因力臂更短仍可平衡，转动效果由力与力臂乘积决定，而非单独力大小。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [
+          {
+            "kind": "mechanism_effect",
+            "fromProposition": "左侧10 N力臂0.3米产生3 N·m逆时针力矩",
+            "toProposition": "右侧6 N力臂0.5米产生3 N·m顺时针力矩使杆平衡",
+            "origin": "hy3_synthesis",
+            "sources": []
+          }
+        ],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 2,
+        "purpose": "guided_practice",
+        "explanation": "多挂载时需分别算力矩再求和。例如左侧5 N在0.2米、2 N在0.6米，左总力矩=5×0.2+2×0.6=2.2 N·m；右侧4 N放在0.5米得2.0 N·m。比较同方向总和可知转动趋势。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": {
+          "kind": "choose",
+          "prompt": "水平轻杆，支点固定，忽略杆重，力竖直向下。左侧挂载：5 N位于0.2米，2 N位于0.6米；右侧挂载：4 N位于0.5米。杆会如何转动？",
+          "guidance": null,
+          "options": [
+            {
+              "id": "A",
+              "text": "逆时针转动（左总力矩2.2 > 右2.0）"
+            },
+            {
+              "id": "B",
+              "text": "顺时针转动（误将左总力7 N乘0.2得1.4小于右2.0）"
+            }
+          ],
+          "presented": false,
+          "response": null,
+          "respondedAt": null,
+          "correct": null,
+          "feedback": null,
+          "credit": "none"
+        }
+      },
+      {
+        "index": 3,
+        "purpose": "comparison",
+        "explanation": "上述结论仅适用于水平轻杆、竖直向下力、忽略杆重且固定支点的模型。若力变为斜向，力臂应是到作用线的垂直距离，沿杆距离不再等于力臂，需重新建模。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": {
+          "text": "反例：若同一杆上施加斜向右下的力，其作用线不垂直杆，支点到作用线垂直距离小于沿杆距离；若仍把沿杆距离当力臂会高估力矩，模型失效。",
+          "origin": "hy3_synthesis",
+          "sources": []
+        },
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 4,
+        "purpose": "worked_example",
+        "explanation": "多个挂载作用在轻杆同侧时，不能把力简单相加再乘某个距离，而必须分别求每个力对支点的力矩后取同方向总和。支点左侧向下力产生逆时针力矩，右侧向下力产生顺时针力矩；平衡要求两侧总力矩相等。下面用一个新案例展示添加载荷后如何重新求和判断。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": {
+          "startingState": "水平轻杆，支点固定，忽略杆重，力竖直向下。左侧挂载：3 N位于0.4米，6 N位于0.2米；右侧已有挂载：5 N位于0.6米。此时尚未添加新载荷，杆转动趋势未判定。",
+          "inputs": [
+            "左侧两挂载",
+            "右侧已有挂载",
+            "待添加右侧2 N位于0.3米"
+          ],
+          "ruleOrProcedure": "力矩M=F×d，同方向力矩分别算出后求和；左为逆时针，右为顺时针；比较总和判转动方向。",
+          "steps": [
+            {
+              "action": "计算左侧总力矩",
+              "reason": "左两力均向下且在支点左侧，产生逆时针力矩，需分别乘距离后求和",
+              "resultingState": "左侧总力矩为2.4 N·m（3 N×0.4 m + 6 N×0.2 m）"
+            }
+          ],
+          "learnerDecision": null,
+          "result": null,
+          "whyResultFollows": null,
+          "origin": "hy3_synthesis",
+          "sources": [],
+          "interaction": {
+            "stage": "guided",
+            "modelledStepCount": 1,
+            "origin": "hy3_synthesis",
+            "sources": [],
+            "activity": {
+              "prompt": "给定上述左侧总力矩为2.4 N·m（3 N×0.4 m + 6 N×0.2 m）且将在右侧添加2 N位于0.3米（原右5 N@0.6米），添加后杆如何转动？",
+              "options": [
+                {
+                  "id": "A",
+                  "text": "顺时针转动（右总力矩3.6 > 左2.4）"
+                },
+                {
+                  "id": "B",
+                  "text": "平衡（误将左总力9 N乘0.3得2.7近似相等）"
+                },
+                {
+                  "id": "C",
+                  "text": "逆时针转动（仅算右原3.0而漏加新增0.6）"
+                }
+              ],
+              "response": null,
+              "respondedAt": null,
+              "correct": null,
+              "feedback": null,
+              "debrief": null,
+              "credit": "none",
+              "misconception": null
+            },
+            "hint": null,
+            "scaffold": null,
+            "transfer": null
+          }
+        },
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 5,
+        "purpose": "comparison",
+        "explanation": "前述平衡计算均假设杆自重可忽略且仅有指定挂载。若杆自身重量不可忽略，其重力会作用于杆的质量中心产生额外力矩，原轻杆结论不再直接适用。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": {
+          "text": "反例：若水平杆自重不可忽略且支点不在质心，例如均匀杆重10 N、质心距支点0.2米，其重力产生额外顺时针或逆时针力矩；若仍套用轻杆模型忽略该量，会错误判定平衡。",
+          "origin": "hy3_synthesis",
+          "sources": []
+        },
+        "possibleMisconception": null,
+        "informalCheck": null
+      }
+    ],
+    "sourceReferencesAvailable": true,
+    "visuals": [],
+    "summary": {
+      "available": true,
+      "text": "力臂是支点到力的作用线的垂直距离，力矩为力与力臂的乘积；平衡要求两侧力矩总和相等，分析时需分别处理各力的大小与位置。",
+      "nextConnection": null,
+      "formalOpportunities": []
+    },
+    "plannedTime": {
+      "agendaMinutes": 23,
+      "activeMinutesMin": 26,
+      "activeMinutesMax": 41,
+      "basis": "locally_evaluated_learning_actions"
+    }
+  },
+  "progress": {
+    "stateVersion": 2,
+    "stateId": "lesson_execution_eaec40c2-1d5b-4b48-9541-c7e78ef06b36",
+    "currentSegmentIndex": 0,
+    "segmentCount": 6,
+    "presentedSegmentIndexes": [],
+    "presentationStatus": "not_started",
+    "presentationCompletedAt": null
+  },
+  "currentInformalCheck": null,
+  "practice": {
+    "status": "locked",
+    "currentItemIndex": 0,
+    "itemCount": 2,
+    "item": {
+      "index": 0,
+      "objectiveTitle": "区分力臂与力大小并解释转动效果",
+      "construct": "explain",
+      "surface": "initial",
+      "supplementary": true,
+      "prompt": "水平轻杆，支点固定，忽略杆重，所有挂载力均竖直向下。左侧有4 N向下力，距支点0.25米；右侧有未知向下力F，距支点0.20米。初始杆平衡。后将右侧力移至距支点0.50米处，观察到杆顺时针转动。以下哪项关于原右力F的解释符合这些干预结果？",
+      "options": [
+        {
+          "id": "teaching_brief_118b005d-d2ff-4a2f-a076-c579d7546b98_practice_1_initial_A",
+          "text": "原右力为5 N，由初始平衡4×0.25=F×0.20推得，移动后右力矩2.5 N·m大于左力矩1.0 N·m，与顺时针观察一致"
+        },
+        {
+          "id": "teaching_brief_118b005d-d2ff-4a2f-a076-c579d7546b98_practice_1_initial_B",
+          "text": "原右力为2.5 N，假设左侧力为2 N时算得，移动后右力矩小于左力矩"
+        },
+        {
+          "id": "teaching_brief_118b005d-d2ff-4a2f-a076-c579d7546b98_practice_1_initial_C",
+          "text": "原右力为10 N，误将两侧力臂相加后除左力得到"
+        }
+      ]
+    },
+    "attempts": [],
+    "recovery": null,
+    "completedAt": null,
+    "credit": "none"
+  },
+  "allowedActions": [
+    "start_lesson"
+  ]
+}

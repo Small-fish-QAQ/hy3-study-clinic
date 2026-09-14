@@ -1,0 +1,96 @@
+{
+  "inputIdentity": "379212749f692bf09ab533d3cb595c787db638690a6459e012db0c5a26c32e2e",
+  "attempts": [
+    {
+      "physicalId": "2d72f044-3b8c-418d-ac40-6fb21c7f114a",
+      "caseId": "N-F09-tutor",
+      "runId": "H-N-F09-tutor-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "资料核心内容、计算与边界均被来源支持；仅artifact将无标题来源指称为《轮流做家务的工作量》属局部归因不准确，不改教学结论。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "Artifact attributes the provided source to a course material titled 《轮流做家务的工作量》, but source F09 has no such title.",
+            "impact": "Correcting the title does not alter the core mechanism, computations, or stated limits; quoted excerpt and principles remain accurate.",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "aff18385f24a6c262c334211a2f0b4cf24274b0ced6c491758a119a614223f39"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "aff18385f24a6c262c334211a2f0b4cf24274b0ced6c491758a119a614223f39"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      },
+      {
+        "dimension": "Q3",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "补充粉刷例完整展示前提、分段运算连接与结果，并说明适用边界，符合局部解释充分性停止条件，无缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "aff18385f24a6c262c334211a2f0b4cf24274b0ced6c491758a119a614223f39"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

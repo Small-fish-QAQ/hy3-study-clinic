@@ -1,0 +1,74 @@
+{
+  "inputIdentity": "8a546cedf73964a1fbd9bc54a76e1f7124d78d2a4ae8fafbdf783d8639571b95",
+  "attempts": [
+    {
+      "physicalId": "f0740089-b31c-46d8-a5b6-ecaec19aa156",
+      "caseId": "E920",
+      "runId": "H-E920-r3",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q6",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "支持建议重读来源、列条件、练新题，相关但通用；未点明学习者误将自愿等同随机分组的缺口，新题无内容条件，符合Q6的1分：建议通用或仅推荐无内容练习。",
+        "refs": [
+          "/artifacts/1/text",
+          "/answer",
+          "/question/prompt"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "支持未识别具体推理缺口（自愿≠随机，忽略混杂），仅泛泛要求回顾条件并推荐同主题新题而无内容",
+            "impact": "建议方向相关但缺乏针对性与可用下一步，核心修复意图成立但不够具体，属局部缺陷",
+            "refs": [
+              "/artifacts/1/text",
+              "/answer"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/1/text",
+                "valueHash": "4d9b4818aa1491288de36d3cf785ec2e7804231387da4c6670f21598747cfc02"
+              },
+              {
+                "pointer": "/answer",
+                "valueHash": "7d6191d92d628a82e207484c2c7eb0e40705d9d13f6606a2290baa951d899e6f"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/1/text",
+            "valueHash": "4d9b4818aa1491288de36d3cf785ec2e7804231387da4c6670f21598747cfc02"
+          },
+          {
+            "pointer": "/answer",
+            "valueHash": "7d6191d92d628a82e207484c2c7eb0e40705d9d13f6606a2290baa951d899e6f"
+          },
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "40515ddefe7144a8c80977cc79f59af6231fa3747b5a992a6434f6ea76b34d40"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

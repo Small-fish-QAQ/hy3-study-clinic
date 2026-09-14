@@ -1,0 +1,269 @@
+{
+  "status": "ready",
+  "message": "Lesson is ready.",
+  "course": {
+    "title": "溶液质量分数与加水稀释"
+  },
+  "session": {
+    "status": "active",
+    "version": 12
+  },
+  "agenda": {
+    "version": 2,
+    "itemState": "queued"
+  },
+  "lesson": {
+    "objective": {
+      "title": "溶质质量分数定义、稀释混合计算与结果核对",
+      "whyNow": "已知一份溶液的质量和分数，如何稳妥得到混合后的浓度？需要先建立质量分数与守恒的清晰模型。",
+      "outcomes": [
+        {
+          "title": "按质量合并同种溶质溶液并计算混合质量分数",
+          "description": "混合同种溶质的两份溶液时，先分别算盐量和总质量，再相加得总盐与总质量，用总盐除以总质量得混合质量分数；质量不同时不能直接平均百分数，若两份质量相等则简单平均在本模型中等于混合质量分数。"
+        },
+        {
+          "title": "用范围与守恒核对稀释或混合结果",
+          "description": "评估稀释或混合结果：只加水且没有移走盐时非零质量分数应下降；混合两份同种溶质溶液时结果应位于原来两种质量分数之间；范围检查有助于发现错误，但位于范围内不等于已经算对，还须核对盐量和总质量。认识加水不能把低浓度提高到高浓度，若目标更浓需要另一种明确的操作条件，本课的加水稀释式不会自动完成它。"
+        }
+      ]
+    },
+    "prerequisites": [],
+    "segments": [
+      {
+        "index": 0,
+        "purpose": "orientation",
+        "explanation": "溶质质量分数定义为溶质质量除以溶液总质量，写成百分数。例如取40克盐溶于160克水，溶液总质量200克，质量分数为40/200=20%。本课假设盐完全溶解、无蒸发洒失，讨论只限质量。稀释只加水时盐质量不变，溶液总质量增加，分数下降。这些基础是后续混合计算的前提。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 1,
+        "purpose": "worked_example",
+        "explanation": "混合同种溶质的两份溶液，正确做法是先分别求每份的含盐量，再加总得总盐与总质量，最后相除。下面用一个新案例展示步骤，但先只算第一步，后续由你完成。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": {
+          "startingState": "现有120克、质量分数15%的盐溶液与180克、质量分数25%的盐溶液，准备混合，混合后分数待求。",
+          "inputs": [
+            "120克、15%",
+            "180克、25%"
+          ],
+          "ruleOrProcedure": "总盐=各份质量×分数之和；总质量=各份质量之和；混合分数=总盐/总质量。",
+          "steps": [
+            {
+              "action": "计算第一份含盐量：120×0.15=18克，第二份含盐量：180×0.25=45克",
+              "reason": "按质量分数定义分别恢复溶质质量",
+              "resultingState": "第一份溶液含盐18克，第二份溶液含盐45克"
+            }
+          ],
+          "learnerDecision": null,
+          "result": null,
+          "whyResultFollows": null,
+          "origin": "hy3_synthesis",
+          "sources": [],
+          "interaction": {
+            "stage": "guided",
+            "modelledStepCount": 1,
+            "origin": "hy3_synthesis",
+            "sources": [],
+            "activity": {
+              "prompt": "已知第一份溶液含盐18克，第二份溶液含盐45克，两份总质量120+180=300克。混合后的质量分数是多少？",
+              "options": [
+                {
+                  "id": "A",
+                  "text": "21%"
+                },
+                {
+                  "id": "B",
+                  "text": "20%"
+                },
+                {
+                  "id": "C",
+                  "text": "22.5%"
+                }
+              ],
+              "response": null,
+              "respondedAt": null,
+              "correct": null,
+              "feedback": null,
+              "debrief": null,
+              "credit": "none",
+              "misconception": null
+            },
+            "hint": null,
+            "scaffold": null,
+            "transfer": null
+          }
+        },
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 2,
+        "purpose": "comparison",
+        "explanation": "混合结果除计算外，还可用边界核对：同种溶质混合且不加水时，混合分数必严格介于原两分数之间；只加水稀释时分数下降但盐量不变。但位于区间内不代表算对，仍须核算盐量与总质量。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": {
+          "text": "若把80克5%与120克35%溶液混合，有人得出40%——这超出原区间，立刻暴露错误；而得出20%虽在区间内，仍须验算总盐(4+42=46克)与总质量200克得23%，才能确认20%是错算。",
+          "origin": "hy3_synthesis",
+          "sources": []
+        },
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 3,
+        "purpose": "worked_example",
+        "explanation": "稀释时盐质量不变而总质量增加，因此质量分数必然下降；可通过先算盐量、再算新总质量求得分数，并用“应低于原浓度”做范围核对。下面用新案例展示步骤，先算盐量，后续由你完成。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": {
+          "startingState": "现有300克、质量分数25%的盐溶液，准备只加入150克水，最终质量分数待求。",
+          "inputs": [
+            "300克、25%",
+            "加水150克"
+          ],
+          "ruleOrProcedure": "只加水稀释：盐质量不变，新总质量=原质量+加水量；分数=原盐量/新总质量；结果应低于原分数。",
+          "steps": [
+            {
+              "action": "计算原盐量：300×0.25=75克",
+              "reason": "按质量分数定义恢复溶质质量",
+              "resultingState": "原溶液含盐75克，加水后盐仍75克"
+            }
+          ],
+          "learnerDecision": null,
+          "result": null,
+          "whyResultFollows": null,
+          "origin": "hy3_synthesis",
+          "sources": [],
+          "interaction": {
+            "stage": "guided",
+            "modelledStepCount": 1,
+            "origin": "hy3_synthesis",
+            "sources": [],
+            "activity": {
+              "prompt": "已知原溶液含盐75克，加水后总质量变为450克。稀释后的质量分数是多少？",
+              "options": [
+                {
+                  "id": "A",
+                  "text": "16.67%"
+                },
+                {
+                  "id": "B",
+                  "text": "25%"
+                },
+                {
+                  "id": "C",
+                  "text": "33.3%"
+                }
+              ],
+              "response": null,
+              "respondedAt": null,
+              "correct": null,
+              "feedback": null,
+              "debrief": null,
+              "credit": "none",
+              "misconception": null
+            },
+            "hint": null,
+            "scaffold": null,
+            "transfer": null
+          }
+        },
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 4,
+        "purpose": "comparison",
+        "explanation": "混合两份同种溶质溶液时，结果应位于原两分数之间，但这只是必要检查；位于区间内仍可能算错，必须核算总盐与总质量。下面用新案例说明边界。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": {
+          "text": "将90克12%与210克28%混合，有人得出20%（恰为两分数简单平均）。20%位于12%与28%之间，范围检查不能发现此错；必须核算总盐：90×0.12+210×0.28=10.8+58.8=69.6克，总质量300克，正确为23.2%，故20%错算。",
+          "origin": "hy3_synthesis",
+          "sources": []
+        },
+        "possibleMisconception": null,
+        "informalCheck": null
+      }
+    ],
+    "sourceReferencesAvailable": true,
+    "visuals": [],
+    "summary": {
+      "available": true,
+      "text": "溶质质量分数是溶质质量除以溶液总质量；混合时分别算盐、总质量再相除，质量不等不能简单平均百分数。",
+      "nextConnection": null,
+      "formalOpportunities": []
+    },
+    "plannedTime": {
+      "agendaMinutes": 21,
+      "activeMinutesMin": 24,
+      "activeMinutesMax": 38,
+      "basis": "locally_evaluated_learning_actions"
+    }
+  },
+  "progress": {
+    "stateVersion": 2,
+    "stateId": "lesson_execution_52a54b3a-3668-4eb7-a0b8-617e64f0ce6e",
+    "currentSegmentIndex": 0,
+    "segmentCount": 5,
+    "presentedSegmentIndexes": [],
+    "presentationStatus": "not_started",
+    "presentationCompletedAt": null
+  },
+  "currentInformalCheck": null,
+  "practice": {
+    "status": "locked",
+    "currentItemIndex": 0,
+    "itemCount": 2,
+    "item": {
+      "index": 0,
+      "objectiveTitle": "按质量合并同种溶质溶液并计算混合质量分数",
+      "construct": "apply",
+      "surface": "initial",
+      "supplementary": true,
+      "prompt": "将150克、质量分数10%的盐溶液与一份质量未知、质量分数30%的盐溶液混合，得到总质量250克、质量分数18%的混合液。另一份溶液的质量是多少？",
+      "options": [
+        {
+          "id": "teaching_brief_f0951ef7-149b-40bd-9542-53bfcde723a5_practice_1_initial_A",
+          "text": "100克"
+        },
+        {
+          "id": "teaching_brief_f0951ef7-149b-40bd-9542-53bfcde723a5_practice_1_initial_B",
+          "text": "150克"
+        },
+        {
+          "id": "teaching_brief_f0951ef7-149b-40bd-9542-53bfcde723a5_practice_1_initial_C",
+          "text": "225克"
+        }
+      ]
+    },
+    "attempts": [],
+    "recovery": null,
+    "completedAt": null,
+    "credit": "none"
+  },
+  "allowedActions": [
+    "start_lesson"
+  ]
+}

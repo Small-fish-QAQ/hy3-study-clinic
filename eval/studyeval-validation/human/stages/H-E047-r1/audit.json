@@ -1,0 +1,49 @@
+{
+  "inputIdentity": "c246a01156be70b14a87254795263f694cb86864d3f0a2cf2a9e0fc1a72487d5",
+  "attempts": [
+    {
+      "physicalId": "7fd1c06b-0f61-40f8-8beb-f7a6c2bd9624",
+      "caseId": "E047",
+      "runId": "H-E047-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "lesson准确复述来源数字（30人次、10卡8支持）、范围限制（非不同居民、非全体读者）和决策状态（未决定），并正确指导摘要可省略各自人次但保留试行与统计范围，所有主张均有source支持，无事实或归属缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "2e571e3058700991121d7236da0f92ba22b0a611fa21687090c6e99237327e08"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

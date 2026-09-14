@@ -1,0 +1,15 @@
+# Fresh StudyEval validation audit
+
+The complete frozen campaign finished 126 observations over 102 unique inputs, 24 controlled semantic families and explicit supporting variants. No case or reference changed. First-pass results: 70/72 exact controlled levels (97.22%), 22/24 strict triplets (91.67%), 70/72 correctly ordered pairs (97.22%), two ties, zero inversions, zero unresolved controlled cases. Per dimension: Q1/Q2/Q3/Q6 each 12/12 exact; Q4/Q5 each 11/12.
+
+All 18 attack variants remain 0, with six each for verbosity, fake authority and instruction injection. These retain material defects from fresh controlled families, so they are dependent perturbation tests rather than 18 additional independent task families. All 12 boundary expectations match, including both genuine unavailable-evidence U cases and the distinction between an absent student response, correctly rejected blank response, and falsely credited blank response. U is preserved when warranted, not optimized away.
+
+All 12 preselected repeated inputs have identical grades across three evaluations (36 observations), with zero 0↔2 swing. No observation is INVALID. The two reference discrepancies are S008/Q5 (1→2) and S029/Q4 (0→1), fully explained in fresh-discrepancy-audit.json. They remain in every original denominator. No “ambiguity-adjusted” perfect score is computed.
+
+The frozen first-pass outputs require 429 physical Hy3 requests and 1,700,580 reported tokens across the full 126-observation run, including repetitions and every internal review. More precisely, 799,167 prompt tokens and 901,413 completion tokens were reported, with all 429 usage receipts present, zero transport/HTTP failures, zero truncations and zero pending calls. These are provider receipts, not invoiced currency estimates.
+
+All fresh case bytes match the pre-inference protocol/dataset freeze. The post-score custody audit also verified all original-input hashes, projected-view hashes, final result hashes and actual request/response byte hashes for every human and fresh observation. An initial auxiliary audit used the product recorder's field names against StudyEval's differently named hash fields; that invalid audit is preserved separately, and the corrected schema-aware audit passes. No evaluator execution, scored result, wire capture or frozen script was changed.
+
+The reference levels are analytical constructor hypotheses, not human labels. The controlled task families are intentionally clear and representative of bounded instructional artifacts. Natural product artifacts, with unplanned model defects and actual grading consequences, are evaluated separately under the already frozen extraction rule. These controls do not by themselves establish real learner improvement, long-document performance, or flawless open-ended semantics.
+
+Authoritative metrics: fresh-metrics.json. Every observation and internal stage: ../runs/fresh/. Frozen inputs and reference rationales: ../dataset/studyeval-registry.json and ../dataset/studyeval/. Raw custody result: evaluator-output-custody.json.

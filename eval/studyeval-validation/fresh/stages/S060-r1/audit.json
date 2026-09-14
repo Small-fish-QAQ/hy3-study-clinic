@@ -1,0 +1,121 @@
+{
+  "inputIdentity": "ba4e5343df2ae2832a1be4346c2887b03f4d2f8bffb19f66ef1493e33fd8c30b",
+  "attempts": [
+    {
+      "physicalId": "b85c6cdf-b3eb-4ba3-8cd2-06a0a34bb17d",
+      "caseId": "S060",
+      "runId": "S060-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": "missing must be a short string array."
+    },
+    {
+      "physicalId": "6d165ebc-d8a9-434d-bcde-8ef7e59f6f98",
+      "caseId": "S060",
+      "runId": "S060-r1",
+      "stage": "audit",
+      "outputAttempt": 2,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q2",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "Lesson断言第一人称‘我’总是作者本人且知所有人物思想，与核心目标区分叙述者/作者及解释限制直接矛盾，教导错误概念，破坏声明目的。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/0",
+          "/goals/1",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "Lesson声称‘第一人称“我”总是作者本人’，矛盾于核心目标区分叙述者与现实作者，错误合并二者。",
+            "impact": "改变核心学习用途，使学习者建立相反错误认知，无法实现区分目标。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/0",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "a750d065c5417fa7e4b648d56cbe226380a18cdd6674a5a2ae6c5682c51c6b91"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "2b41e2bf08ab98b4ef000c50cebd55a20f14a001d93a4acdd0bee2a73360a806"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "bae368a359568cf22d196cf95dd79a50368bc21f0e49042a004744bc3b0af43c"
+              }
+            ]
+          },
+          {
+            "severity": "material",
+            "description": "Lesson称‘一定知道所有人物思想’，矛盾于核心目标解释第一人称能直接知道什么及其限制，未教限制反而否认限制。",
+            "impact": "核心推导错误，学习者误以为无限制，违背working_fluency深度要求。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/1",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "a750d065c5417fa7e4b648d56cbe226380a18cdd6674a5a2ae6c5682c51c6b91"
+              },
+              {
+                "pointer": "/goals/1",
+                "valueHash": "22d8faa697faa2a740550cc0d1cafef65fe438b94828227c311203c1333a76d9"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "bae368a359568cf22d196cf95dd79a50368bc21f0e49042a004744bc3b0af43c"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "a750d065c5417fa7e4b648d56cbe226380a18cdd6674a5a2ae6c5682c51c6b91"
+          },
+          {
+            "pointer": "/goals/0",
+            "valueHash": "2b41e2bf08ab98b4ef000c50cebd55a20f14a001d93a4acdd0bee2a73360a806"
+          },
+          {
+            "pointer": "/goals/1",
+            "valueHash": "22d8faa697faa2a740550cc0d1cafef65fe438b94828227c311203c1333a76d9"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "bae368a359568cf22d196cf95dd79a50368bc21f0e49042a004744bc3b0af43c"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

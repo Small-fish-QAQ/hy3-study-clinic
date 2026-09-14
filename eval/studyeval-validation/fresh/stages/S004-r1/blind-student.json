@@ -1,0 +1,43 @@
+{
+  "inputIdentity": "945103264a316c3e65bc315928c99b0f2ba868657f5f97acf89ad370c99b4c64",
+  "attempts": [
+    {
+      "physicalId": "51699fbc-232c-4461-83fb-80c332007421",
+      "caseId": "S004",
+      "runId": "S004-r1",
+      "stage": "blind-student",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "criteria": [
+      {
+        "id": "required",
+        "result": "not_met",
+        "reason": "学生提交为空字符串，未写出并集{1,2,3}，不满足写出该集合的要求",
+        "refs": [
+          "/answer",
+          "/rubric/0"
+        ],
+        "required": true,
+        "witnesses": [
+          {
+            "pointer": "/answer",
+            "valueHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "pointer": "/rubric/0",
+            "valueHash": "41e3e9993ea73d3924609af1ca9150dfde326067be5fc53a6f4aec3ca0e10258"
+          }
+        ]
+      }
+    ],
+    "warrantedCredit": "withheld"
+  }
+}

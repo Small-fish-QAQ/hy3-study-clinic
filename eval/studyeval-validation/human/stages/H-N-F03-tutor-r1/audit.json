@@ -1,0 +1,81 @@
+{
+  "inputIdentity": "7602896e9b7dc3b2890237b967fbf9564f4a6c93d719db327825505700e0ac99",
+  "attempts": [
+    {
+      "physicalId": "e015af5e-b4eb-4ff9-8c75-91d6b27f2b5c",
+      "caseId": "N-F03-tutor",
+      "runId": "H-N-F03-tutor-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "回复准确引述来源早餐调查不证因果原文，用运动鞋例解释观察差异不推因果并给边界，归属与事实无缺陷，核心结论成立。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "f653eac8024e376cef6ce8bcbe3cb4d70ebdcd1f839018aaf4434efdb4a309e6"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "944a460c4eccfdbd61d456dc9fc3969b0ed10c585ea05e87ccfe3e9b93549680"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      },
+      {
+        "dimension": "Q3",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "运动鞋例从观察差异前提出发，指出混杂可能故不推因果，明确自然观察与随机同条件边界，并套用三层框架，解释连接充分。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text",
+          "/goals/0"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "f653eac8024e376cef6ce8bcbe3cb4d70ebdcd1f839018aaf4434efdb4a309e6"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "944a460c4eccfdbd61d456dc9fc3969b0ed10c585ea05e87ccfe3e9b93549680"
+          },
+          {
+            "pointer": "/goals/0",
+            "valueHash": "8554fd2a6af26f8cda0d4670bec8b7daaade91997a1e3a766c77f315dc970152"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

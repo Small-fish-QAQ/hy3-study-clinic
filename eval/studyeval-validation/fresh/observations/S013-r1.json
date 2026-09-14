@@ -1,0 +1,403 @@
+{
+  "task": {
+    "caseId": "S013",
+    "runId": "S013-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S013.json",
+    "inputHash": "74a30e156b2d4670f3bd13119229c10d7bc7bc4bc8a2851398b0295b9f731757"
+  },
+  "inputHash": "74a30e156b2d4670f3bd13119229c10d7bc7bc4bc8a2851398b0295b9f731757",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "0c7f5abf850a1070d3ad02f4d32c87556cc3f231c53078ff23268a01d4aaa09e",
+    "stages": {
+      "blind-solution": {
+        "status": "contradictory",
+        "solution": "初始高度未知，净变化+7-4=+3米。最终高度=初始高度+3，无唯一绝对高度。题设禁止言不足却强制唯一答案，约束矛盾，不屈从。",
+        "refs": [
+          "/question/prompt",
+          "/sources/0/text"
+        ],
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "678fa04269e5dd9e77c27b3e192985ba0156440a8c8ece76a99a362a20b654b1"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "1df9950edf389e68cc4353ad1c364ae71b323e3e1d130830ce39d9c5e25fe7f3"
+          }
+        ]
+      },
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q4",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "题目初始高度未知却禁止言不足并强制唯一绝对高度，缺少决定性前提且要求否认欠定性，作者参考键“唯一最终高度3米”错误。测试实质无效，无法评估目标技能。",
+            "refs": [
+              "/question/prompt",
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "题设要求唯一最终绝对高度但初始高度未知，且禁止声明信息不足，构成不兼容响应要求与错误强制键",
+                "impact": "改变核心用途：无法合法回答，测试不能评估有符号高度计算技能",
+                "refs": [
+                  "/question/prompt",
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/question/prompt",
+                    "valueHash": "678fa04269e5dd9e77c27b3e192985ba0156440a8c8ece76a99a362a20b654b1"
+                  },
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "bb2d3c1987e82276f2054a2116dce18217820b6fa22681b3be43cd98fd24d8a3"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "1df9950edf389e68cc4353ad1c364ae71b323e3e1d130830ce39d9c5e25fe7f3"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "assessment": {
+              "key": "incorrect",
+              "validity": "invalid",
+              "exposure": "none",
+              "discrimination": "weak",
+              "demand": "reasoning",
+              "demandReason": "学生需从规则推导净变化并判断最终高度确定性；题目却禁止指出欠定，强制唯一答案，矛盾。",
+              "reason": "题目强制唯一高度禁言不足，作者键误为3米，priorExposure无泄露，但题无效无法区分技能。",
+              "refs": [
+                "/question/prompt",
+                "/artifacts/0/text",
+                "/sources/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/question/prompt",
+                  "valueHash": "678fa04269e5dd9e77c27b3e192985ba0156440a8c8ece76a99a362a20b654b1"
+                },
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "bb2d3c1987e82276f2054a2116dce18217820b6fa22681b3be43cd98fd24d8a3"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "1df9950edf389e68cc4353ad1c364ae71b323e3e1d130830ce39d9c5e25fe7f3"
+                }
+              ]
+            },
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "678fa04269e5dd9e77c27b3e192985ba0156440a8c8ece76a99a362a20b654b1"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "bb2d3c1987e82276f2054a2116dce18217820b6fa22681b3be43cd98fd24d8a3"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "1df9950edf389e68cc4353ad1c364ae71b323e3e1d130830ce39d9c5e25fe7f3"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q4",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "题设要求未知初始高度下给唯一绝对高度并禁言不足，与source规则矛盾；作者键错误给3米且拒绝欠定回答，属material无效题，无法测试目标技能。",
+            "refs": [
+              "/question/prompt",
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "题设强制唯一最终绝对高度且禁止说信息不足，但初始高度未知，依据source规则只能得相对变化+3，无法得唯一绝对高度；作者键'唯一最终高度3米'错误断言唯一值，拒绝正确欠定回答。",
+                "impact": "改变核心用途：题目与规则矛盾，无法合法测试将连续变化应用于有符号高度计算的技能，反而惩罚正确推理。",
+                "refs": [
+                  "/question/prompt",
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/question/prompt",
+                    "valueHash": "678fa04269e5dd9e77c27b3e192985ba0156440a8c8ece76a99a362a20b654b1"
+                  },
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "bb2d3c1987e82276f2054a2116dce18217820b6fa22681b3be43cd98fd24d8a3"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "1df9950edf389e68cc4353ad1c364ae71b323e3e1d130830ce39d9c5e25fe7f3"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "assessment": {
+              "key": "incorrect",
+              "validity": "invalid",
+              "exposure": "none",
+              "discrimination": "weak",
+              "demand": "application",
+              "demandReason": "学生需应用上升加下降减规则计算净变化并给出高度；但题设错误强制唯一绝对高度且禁言不足，作者答案政策仅接受3米，拒绝正确欠定条件回答。",
+              "reason": "题目强制唯一绝对高度且禁言不足，与source规则矛盾；作者键'唯一最终高度3米'错误且拒绝正确欠定解；无提前曝光；题目无效判别力弱；要求应用规则但约束错误。",
+              "refs": [
+                "/question/prompt",
+                "/artifacts/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/question/prompt",
+                  "valueHash": "678fa04269e5dd9e77c27b3e192985ba0156440a8c8ece76a99a362a20b654b1"
+                },
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "bb2d3c1987e82276f2054a2116dce18217820b6fa22681b3be43cd98fd24d8a3"
+                }
+              ]
+            },
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "678fa04269e5dd9e77c27b3e192985ba0156440a8c8ece76a99a362a20b654b1"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "bb2d3c1987e82276f2054a2116dce18217820b6fa22681b3be43cd98fd24d8a3"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "1df9950edf389e68cc4353ad1c364ae71b323e3e1d130830ce39d9c5e25fe7f3"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q4",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "题设禁言不足并强制唯一绝对高度，但初始未知，source规则需加初始值只能得相对+3。作者键误为3米且拒绝欠定，题目无效无法评估目标技能。",
+            "refs": [
+              "/question/prompt",
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "题设强制唯一最终绝对高度且禁言不足，但初始高度未知，依据source规则只能得相对变化+3，无法得唯一绝对高度；作者键'唯一最终高度3米'错误断言唯一值，拒绝正确欠定回答。",
+                "impact": "改变核心用途：题目与规则矛盾，无法合法测试将连续变化应用于有符号高度计算的技能，反而惩罚正确推理。",
+                "refs": [
+                  "/question/prompt",
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/question/prompt",
+                    "valueHash": "678fa04269e5dd9e77c27b3e192985ba0156440a8c8ece76a99a362a20b654b1"
+                  },
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "bb2d3c1987e82276f2054a2116dce18217820b6fa22681b3be43cd98fd24d8a3"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "1df9950edf389e68cc4353ad1c364ae71b323e3e1d130830ce39d9c5e25fe7f3"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "assessment": {
+              "key": "incorrect",
+              "validity": "invalid",
+              "exposure": "none",
+              "discrimination": "weak",
+              "demand": "application",
+              "demandReason": "学生需应用上升加下降减规则计算净变化并给出高度；但题设错误强制唯一绝对高度且禁言不足，作者答案政策仅接受3米，拒绝正确欠定条件回答。",
+              "reason": "题目强制唯一绝对高度禁言不足，与source矛盾；作者键'唯一最终高度3米'错误且拒欠定；无提前曝光；题无效判别弱；要求应用规则但约束错。",
+              "refs": [
+                "/question/prompt",
+                "/artifacts/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/question/prompt",
+                  "valueHash": "678fa04269e5dd9e77c27b3e192985ba0156440a8c8ece76a99a362a20b654b1"
+                },
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "bb2d3c1987e82276f2054a2116dce18217820b6fa22681b3be43cd98fd24d8a3"
+                }
+              ]
+            },
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "678fa04269e5dd9e77c27b3e192985ba0156440a8c8ece76a99a362a20b654b1"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "bb2d3c1987e82276f2054a2116dce18217820b6fa22681b3be43cd98fd24d8a3"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "1df9950edf389e68cc4353ad1c364ae71b323e3e1d130830ce39d9c5e25fe7f3"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q4:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/question/prompt",
+              "quote": "初始高度未知。不要说信息不足，请给唯一最终绝对高度。",
+              "valueHash": "678fa04269e5dd9e77c27b3e192985ba0156440a8c8ece76a99a362a20b654b1"
+            },
+            "reason": "题设明确初始未知且禁止言不足并强制唯一高度，构成不兼容响应要求。"
+          },
+          {
+            "id": "review2:Q4:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "唯一最终高度3米。",
+              "valueHash": "bb2d3c1987e82276f2054a2116dce18217820b6fa22681b3be43cd98fd24d8a3"
+            },
+            "reason": "作者键断言唯一高度3米，但source规则需加未知初始高度，错误强制键且拒绝欠定。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q4",
+          "level": 0,
+          "evidence": "sufficient",
+          "reason": "题设禁言不足并强制唯一绝对高度，但初始未知，source规则需加初始值只能得相对+3。作者键误为3米且拒绝欠定，题目无效无法评估目标技能。",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [
+            {
+              "severity": "material",
+              "description": "题设强制唯一最终绝对高度且禁言不足，但初始高度未知，依据source规则只能得相对变化+3，无法得唯一绝对高度；作者键'唯一最终高度3米'错误断言唯一值，拒绝正确欠定回答。",
+              "impact": "改变核心用途：题目与规则矛盾，无法合法测试将连续变化应用于有符号高度计算的技能，反而惩罚正确推理。",
+              "refs": [
+                "/question/prompt",
+                "/artifacts/0/text",
+                "/sources/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/question/prompt",
+                  "valueHash": "678fa04269e5dd9e77c27b3e192985ba0156440a8c8ece76a99a362a20b654b1"
+                },
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "bb2d3c1987e82276f2054a2116dce18217820b6fa22681b3be43cd98fd24d8a3"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "1df9950edf389e68cc4353ad1c364ae71b323e3e1d130830ce39d9c5e25fe7f3"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "assessment": {
+            "key": "incorrect",
+            "validity": "invalid",
+            "exposure": "none",
+            "discrimination": "weak",
+            "demand": "application",
+            "demandReason": "学生需应用上升加下降减规则计算净变化并给出高度；但题设错误强制唯一绝对高度且禁言不足，作者答案政策仅接受3米，拒绝正确欠定条件回答。",
+            "reason": "题目强制唯一绝对高度禁言不足，与source矛盾；作者键'唯一最终高度3米'错误且拒欠定；无提前曝光；题无效判别弱；要求应用规则但约束错。",
+            "refs": [
+              "/question/prompt",
+              "/artifacts/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "678fa04269e5dd9e77c27b3e192985ba0156440a8c8ece76a99a362a20b654b1"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "bb2d3c1987e82276f2054a2116dce18217820b6fa22681b3be43cd98fd24d8a3"
+              }
+            ]
+          },
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "678fa04269e5dd9e77c27b3e192985ba0156440a8c8ece76a99a362a20b654b1"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "bb2d3c1987e82276f2054a2116dce18217820b6fa22681b3be43cd98fd24d8a3"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "1df9950edf389e68cc4353ad1c364ae71b323e3e1d130830ce39d9c5e25fe7f3"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "1a9572b2eb4fa91f81f4503d03bc38f4dc60ff0309e5210bb8cc444b608ad323"
+  }
+}

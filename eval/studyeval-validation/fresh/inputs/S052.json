@@ -1,0 +1,28 @@
+{
+  "id": "S052",
+  "dimensions": [
+    "Q6"
+  ],
+  "evidence": {
+    "sources": [
+      {
+        "id": "rule",
+        "text": "词典排序本题逐字母比较，先比较第一处不同字母；a在b前，b在c前。"
+      }
+    ],
+    "goals": [
+      "用问题区分可疑的排序误解"
+    ],
+    "prerequisites": [],
+    "desiredDepth": "working_fluency",
+    "authorityBoundaries": [],
+    "artifacts": [
+      {
+        "id": "repair",
+        "text": "目前只看到次序错误，尚不知道你比较了首字母还是末字母。先看cab与bac，指出第一处不同字母，并按a、b、c次序判断；再把abc与acb排序，说明这次为什么第一位相同后还要看第二位。"
+      }
+    ],
+    "exposure": [],
+    "answer": "我把cab排在bac前，但没有写理由。"
+  }
+}

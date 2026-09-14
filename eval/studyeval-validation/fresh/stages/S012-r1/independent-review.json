@@ -1,0 +1,69 @@
+{
+  "inputIdentity": "7dc1eaf2bba9a87f59f137d09a6c730dcb268ad913bffc6fde619e04aec8989b",
+  "attempts": [
+    {
+      "physicalId": "a188a30c-67d1-4064-acb3-41bb279e1832",
+      "caseId": "S012",
+      "runId": "S012-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q3",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "局部解释仅陈述A转一圈B转1/3圈且反向并称符合资料，未展示齿数12与36如何推导转数比例及外啮合转向相反的关键连接。结论正确但解释缺失，属局部缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "artifact未展示从给定齿数到转数和方向的操作/推理连接，仅重复结论并引用资料。",
+            "impact": "结论本身正确，但未履行解释齿数决定机制的目标，核心教学解释用途局部受损但不产生错误认知。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "dcb7d49988d0f9be3af2f95cecf3aa3153067a25e4dbd0227238970bc2bca47c"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "dcb7d49988d0f9be3af2f95cecf3aa3153067a25e4dbd0227238970bc2bca47c"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

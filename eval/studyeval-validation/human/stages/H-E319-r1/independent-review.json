@@ -1,0 +1,49 @@
+{
+  "inputIdentity": "ddbcdf1e354bd3b66f59d5c1f97c3e04bea9f2603176e61219950c84a979a858",
+  "attempts": [
+    {
+      "physicalId": "0fc4aeb7-58b7-470c-a77b-c1858b538d2e",
+      "caseId": "E319",
+      "runId": "H-E319-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q3",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "artifact对两人及一人例子展示了基于依赖与资源的关键操作（取完成时刻较大值、串行前两步）并连接到总时长，且明确合法不等于最快的边界，无缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "33824fb66056692a54116221be7ec4cd5e188b08312f05d3d6de83b6860bc990"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

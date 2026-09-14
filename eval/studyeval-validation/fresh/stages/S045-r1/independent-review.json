@@ -1,0 +1,116 @@
+{
+  "inputIdentity": "955ce2e0f21269a2c66711081164d48e2403e4def16f5c110ed554c5ead0ac8d",
+  "attempts": [
+    {
+      "physicalId": "2526691a-2710-4392-ae8b-ec8ef97e38b6",
+      "caseId": "S045",
+      "runId": "S045-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q4",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "题目强制唯一终高且禁言信息不足，但初始未知，依规则终高=初高+3不可唯一确定。作者私有答案称唯一3米错误且与题设矛盾。任务要求否认欠定，属无效测试，核心用途毁坏。",
+        "refs": [
+          "/question/prompt",
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "题目要求给唯一最终绝对高度并禁止说信息不足，但初始高度未知，依规则终高=初高+3不可唯一确定，强制唯一答案与明示前提矛盾。",
+            "impact": "改变核心用途：正确回答应指出欠定，题设拒绝该合法回答，测试无效。",
+            "refs": [
+              "/question/prompt",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "678fa04269e5dd9e77c27b3e192985ba0156440a8c8ece76a99a362a20b654b1"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "1df9950edf389e68cc4353ad1c364ae71b323e3e1d130830ce39d9c5e25fe7f3"
+              }
+            ]
+          },
+          {
+            "severity": "material",
+            "description": "作者私有答案'唯一最终高度3米'错误，除非初高为0但未给定，实为净变化值误作终高。",
+            "impact": "提供错误键，证明任务设计缺陷，即使未展示也致material。",
+            "refs": [
+              "/artifacts/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "bb2d3c1987e82276f2054a2116dce18217820b6fa22681b3be43cd98fd24d8a3"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "assessment": {
+          "key": "incorrect",
+          "validity": "invalid",
+          "exposure": "none",
+          "discrimination": "weak",
+          "demand": "application",
+          "demandReason": "学生需应用规则计算净变+3并给出终高，但题设强制唯一终高错误约束，正确应指出欠定。",
+          "reason": "题干禁言信息不足强令唯一终高，与来源规则矛盾；作者答案误将净变3米作终高3米，错误且无效；无提前曝光；题设拒绝欠定回答故无效。",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "678fa04269e5dd9e77c27b3e192985ba0156440a8c8ece76a99a362a20b654b1"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "bb2d3c1987e82276f2054a2116dce18217820b6fa22681b3be43cd98fd24d8a3"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "1df9950edf389e68cc4353ad1c364ae71b323e3e1d130830ce39d9c5e25fe7f3"
+            }
+          ]
+        },
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "678fa04269e5dd9e77c27b3e192985ba0156440a8c8ece76a99a362a20b654b1"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "bb2d3c1987e82276f2054a2116dce18217820b6fa22681b3be43cd98fd24d8a3"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "1df9950edf389e68cc4353ad1c364ae71b323e3e1d130830ce39d9c5e25fe7f3"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

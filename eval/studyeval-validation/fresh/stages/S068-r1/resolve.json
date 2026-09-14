@@ -1,0 +1,131 @@
+{
+  "inputIdentity": "e2ebc708b333a90e44d435db66e89f31d56e0320a96123139447c654f7927f38",
+  "attempts": [
+    {
+      "physicalId": "42490688-5f1b-4b00-a3a0-c1d8dd5bd9b9",
+      "caseId": "S068",
+      "runId": "S068-r1",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q4",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "题干仅要求抄出状态，只测检索；desiredDepth为working_fluency需执行解释，歧视力弱但核心识别成立，局部缺陷。",
+        "refs": [
+          "/question/prompt",
+          "/artifacts/0/text",
+          "/sources/0/text",
+          "/desiredDepth"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "题干仅要求抄出激活起终点，未要求应用或解释，实际只测试检索，未达working_fluency深度",
+            "impact": "核心识别目标成立，但未能在声明深度抽样应用/解释技能，属局部缺陷不改核心用途",
+            "refs": [
+              "/question/prompt",
+              "/desiredDepth"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "f2cd6c08b9d046cedf630b82184bd09b37a81beb527ef9e494a6f6b2afc6fc14"
+              },
+              {
+                "pointer": "/desiredDepth",
+                "valueHash": "ffc6fdfb6aedd605a4b7d1807dfd9cc571929860f9039a3db08c4bc8c2c7817b"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "assessment": {
+          "key": "correct",
+          "validity": "valid",
+          "exposure": "none",
+          "discrimination": "weak",
+          "demand": "retrieval",
+          "demandReason": "学生只需从资料中抄出给定的术语'未激活'和'有效'，无需选择方法、计算新实例、解释或比较。",
+          "reason": "题目明确要求抄出激活起点终点；作者私有答案'未激活到有效'正确；priorExposure空未泄题；纯抄写术语为检索，歧视力弱，未达working_fluency深度。",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "f2cd6c08b9d046cedf630b82184bd09b37a81beb527ef9e494a6f6b2afc6fc14"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "05fae2f96046c439a12189503a85befc635039e3ffe61cf823fdc83dced5bca5"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "694fcf138ee515172ab2dd1c3a0a59baef8e0ee6b25086ed04ce3845111041ea"
+            }
+          ]
+        },
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "f2cd6c08b9d046cedf630b82184bd09b37a81beb527ef9e494a6f6b2afc6fc14"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "05fae2f96046c439a12189503a85befc635039e3ffe61cf823fdc83dced5bca5"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "694fcf138ee515172ab2dd1c3a0a59baef8e0ee6b25086ed04ce3845111041ea"
+          },
+          {
+            "pointer": "/desiredDepth",
+            "valueHash": "ffc6fdfb6aedd605a4b7d1807dfd9cc571929860f9039a3db08c4bc8c2c7817b"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q4:1",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/question/prompt",
+          "quote": "请从资料抄出“激活”操作允许的起点和终点状态。",
+          "valueHash": "f2cd6c08b9d046cedf630b82184bd09b37a81beb527ef9e494a6f6b2afc6fc14"
+        },
+        "reason": "题干明确要求'抄出'，仅测检索；view中/desiredDepth为working_fluency要求执行解释，故local缺陷成立。"
+      },
+      {
+        "id": "review2:Q4:1",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/question/prompt",
+          "quote": "请从资料抄出“激活”操作允许的起点和终点状态。",
+          "valueHash": "f2cd6c08b9d046cedf630b82184bd09b37a81beb527ef9e494a6f6b2afc6fc14"
+        },
+        "reason": "题干抄出即检索，desiredDepth working_fluency需应用解释，local缺陷成立。"
+      }
+    ]
+  }
+}

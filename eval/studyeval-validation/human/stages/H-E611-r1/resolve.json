@@ -1,0 +1,93 @@
+{
+  "inputIdentity": "318b240752872d532b66546be7f628a20378c05742882de99e87e6806a938a5f",
+  "attempts": [
+    {
+      "physicalId": "4b7d0d89-7f51-443a-b489-00da9150b6c0",
+      "caseId": "E611",
+      "runId": "H-E611-r1",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q2",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "artifact对目标0-2给出了准确规则与示例：区间公式、比较逻辑、分辨率不等同校准。但目标3（次要）仅以‘同向偏差也不会仅靠重复平均自动消失’提醒，无解释或演示，属未解释提醒，核心用途成立，故评1。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/3"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "次要延伸目标‘说明重复平均不能自动消除共同方向的偏差’在artifact中仅给出结论性提醒，缺少操作解释或代表演示（如系统偏差例子）。",
+            "impact": "核心目标（区分分辨率与准确、构建区间、比较区间）仍准确可用，不影响主要学习用途。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/3"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "c1ec4cc283b869ded4bd6704017dd84fadd61b71cdacc0ccea326fdeabd36eab"
+              },
+              {
+                "pointer": "/goals/3",
+                "valueHash": "714460aff55596ab6a2b0d42615a21b9c5be82487f745a68d7ee18049f26f951"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "c1ec4cc283b869ded4bd6704017dd84fadd61b71cdacc0ccea326fdeabd36eab"
+          },
+          {
+            "pointer": "/goals/3",
+            "valueHash": "714460aff55596ab6a2b0d42615a21b9c5be82487f745a68d7ee18049f26f951"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q2:1",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "同向偏差也不会仅靠重复平均自动消失。",
+          "valueHash": "c1ec4cc283b869ded4bd6704017dd84fadd61b71cdacc0ccea326fdeabd36eab"
+        },
+        "reason": "引文仅为结论性提醒，未解释系统偏差性质或给出示例，证实次要目标未充分展开。"
+      },
+      {
+        "id": "review2:Q2:1",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "同向偏差也不会仅靠重复平均自动消失。",
+          "valueHash": "c1ec4cc283b869ded4bd6704017dd84fadd61b71cdacc0ccea326fdeabd36eab"
+        },
+        "reason": "同审查1，artifact仅此句提及重复平均与同向偏差，无演示或解释，支持local缺陷指控。"
+      }
+    ]
+  }
+}

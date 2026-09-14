@@ -1,0 +1,36 @@
+{
+  "inputIdentity": "63f454ba30366d1e152cee0e0389c30f19b453dba9d453cf99cb7c78db275f29",
+  "attempts": [
+    {
+      "physicalId": "dc315949-6753-4e38-81a1-7989f0ab5842",
+      "caseId": "E121",
+      "runId": "H-E121-r1",
+      "stage": "blind-solution",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "status": "resolved",
+    "solution": "甲速1/8份/时，乙速1/4份/时。乙做1小时完成1/4，剩3/4。甲独做剩需(3/4)/(1/8)=6时。总时1+6=7时。若一开始就合作，合速3/8份/时，需1/(3/8)=8/3时。比较：7时>8/3时，先后做更慢。限制：依赖题设可分开无重复恒速无开销。",
+    "refs": [
+      "/question/prompt",
+      "/sources/0/text"
+    ],
+    "witnesses": [
+      {
+        "pointer": "/question/prompt",
+        "valueHash": "dcf5dd89a64f0379c2a16c155095996cbf9b1dfd98e7b21c0cebe9fb5974918a"
+      },
+      {
+        "pointer": "/sources/0/text",
+        "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+      }
+    ]
+  }
+}

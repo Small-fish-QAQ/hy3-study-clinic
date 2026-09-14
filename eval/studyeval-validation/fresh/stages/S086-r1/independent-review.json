@@ -1,0 +1,49 @@
+{
+  "inputIdentity": "84bfba5830cb3adb7d2a0c7499a3abd05b02bc5dc0abc09c97a09f61ce7456fa",
+  "attempts": [
+    {
+      "physicalId": "3d14761c-b5fc-432c-943e-99580e5ea4a0",
+      "caseId": "S086",
+      "runId": "S086-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q3",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "artifact从给定齿数规则出发，展示A转一圈通过12齿、B同步通过12齿，以B总齿36为分母算得1/3圈，并说明外齿推动致反向，关键连接与限制均已交代，符合解释充分性。",
+        "refs": [
+          "/sources/0/text",
+          "/artifacts/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "6dea7a5c5880d179a8bc894fd47834158730b64b81561de0839e0455b507d8bd"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,163 @@
+{
+  "inputIdentity": "236469433b961d2cda98dd630d9e717169094221b6257c1ce8400e0867e9c49d",
+  "attempts": [
+    {
+      "physicalId": "40734358-5dcd-4c63-95c7-64c9f2959fe9",
+      "caseId": "E846",
+      "runId": "H-E846-r3",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q2",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "产物声明只背平均数最公平、所有问题用平均数且不必学中位数与数据变化影响，直接矛盾目标0,1,2本质要求，核心覆盖失败。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/0",
+          "/goals/1",
+          "/goals/2"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "artifact排除中位数学习，目标0要求正确计算平均数和中位数",
+            "impact": "中位数计算目标缺失，核心用途破坏",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/0"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "5ab8b13b56d12e4dab0dc1fbb5b4aae81bc75071a57fa42297dda367438c47db"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "1b2009f0ac308e95b499485132f567842850dd56fabe70c0539e46aee4be87d9"
+              }
+            ]
+          },
+          {
+            "severity": "material",
+            "description": "artifact排除数据变化影响，目标1要求解释异常大值不同影响",
+            "impact": "目标1被明确否定，无法达成",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/1"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "5ab8b13b56d12e4dab0dc1fbb5b4aae81bc75071a57fa42297dda367438c47db"
+              },
+              {
+                "pointer": "/goals/1",
+                "valueHash": "cf035966053e78b93aaa1416ac63c9b166c8179903d63b20ad42bb4fdd69cade"
+              }
+            ]
+          },
+          {
+            "severity": "material",
+            "description": "artifact主张所有问题用平均数，目标2要求根据问题选指标并避免推断",
+            "impact": "目标2直接违背，声明目的失败",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/2"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "5ab8b13b56d12e4dab0dc1fbb5b4aae81bc75071a57fa42297dda367438c47db"
+              },
+              {
+                "pointer": "/goals/2",
+                "valueHash": "6c81063bc1178e9654fbc1007fbd52a5384101cd27c9cc188eb1751c121aad14"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "5ab8b13b56d12e4dab0dc1fbb5b4aae81bc75071a57fa42297dda367438c47db"
+          },
+          {
+            "pointer": "/goals/0",
+            "valueHash": "1b2009f0ac308e95b499485132f567842850dd56fabe70c0539e46aee4be87d9"
+          },
+          {
+            "pointer": "/goals/1",
+            "valueHash": "cf035966053e78b93aaa1416ac63c9b166c8179903d63b20ad42bb4fdd69cade"
+          },
+          {
+            "pointer": "/goals/2",
+            "valueHash": "6c81063bc1178e9654fbc1007fbd52a5384101cd27c9cc188eb1751c121aad14"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q2:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "所有问题都用平均数，不必学习中位数或数据变化的影响。",
+          "valueHash": "5ab8b13b56d12e4dab0dc1fbb5b4aae81bc75071a57fa42297dda367438c47db"
+        },
+        "reason": "文本明确声明不学中位数与数据变化影响且强制用平均数，证实指控并使本质目标缺失。"
+      },
+      {
+        "id": "review2:Q2:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "不必学习中位数",
+          "valueHash": "5ab8b13b56d12e4dab0dc1fbb5b4aae81bc75071a57fa42297dda367438c47db"
+        },
+        "reason": "原文逐字含'不必学习中位数'，直接否定目标0的中位数计算要求。"
+      },
+      {
+        "id": "review2:Q2:2",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "不必学习中位数或数据变化的影响",
+          "valueHash": "5ab8b13b56d12e4dab0dc1fbb5b4aae81bc75071a57fa42297dda367438c47db"
+        },
+        "reason": "原文否定数据变化影响学习，目标1要求解释异常值不同影响故被矛盾。"
+      },
+      {
+        "id": "review2:Q2:3",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "所有问题都用平均数",
+          "valueHash": "5ab8b13b56d12e4dab0dc1fbb5b4aae81bc75071a57fa42297dda367438c47db"
+        },
+        "reason": "原文强制所有问题用平均数，违背目标2根据问题选指标并避免推断。"
+      }
+    ]
+  }
+}

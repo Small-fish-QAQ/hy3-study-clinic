@@ -1,0 +1,271 @@
+{
+  "status": "ready",
+  "message": "Lesson is ready.",
+  "course": {
+    "title": "动能为什么随速率的平方变化"
+  },
+  "session": {
+    "status": "active",
+    "version": 11
+  },
+  "agenda": {
+    "version": 2,
+    "itemState": "queued"
+  },
+  "lesson": {
+    "objective": {
+      "title": "动能公式含义、单位统一计算与比例反求",
+      "whyNow": "若两辆小车质量和速率都变了，如何不重算绝对动能而快速判断谁动能更大？",
+      "outcomes": [
+        {
+          "title": "应用质量或速率变化时的动能比例比较",
+          "description": "应用比例关系比较动能：速率不变时动能与质量成正比；质量不变时动能随速率平方变化；两因素同时改变时分别比较再相乘（新质量为a倍、新速率为b倍则动能比a×b²）；使用同一参考系与单位，认识更重物体不一定动能更大。"
+        },
+        {
+          "title": "应用由动能和质量反求速率并区分方向与速率",
+          "description": "应用v²=2E/m由已知动能和质量求速率，取非负平方根；说明动能本身不指示运动方向，相反方向相同速率动能相同；若一维速度带负号仅表示方向，速率仍为正，动能不为负。"
+        }
+      ]
+    },
+    "prerequisites": [],
+    "segments": [
+      {
+        "index": 0,
+        "purpose": "orientation",
+        "explanation": "比较不同物体的动能时，先分别看质量和速率。例如小车P质量1千克、速率3米每秒，动能为4.5焦耳；小车Q质量3千克、速率1米每秒，动能为1.5焦耳。Q更重但动能更小，因为速率平方起了决定作用。这种分别比较再相乘的思路，适用于任何两因素同时改变的情形。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 1,
+        "purpose": "worked_example",
+        "explanation": "当同一物体两个属性都变，可先算初始动能，再用倍数乘积预测新动能。下面用例题展示步骤，但先只算第一步，后续留给你。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": {
+          "startingState": "物体乙质量5千克，以4米每秒运动（同一参考系，单位千克与米每秒）。",
+          "inputs": [
+            "初始质量5千克",
+            "初始速率4米每秒",
+            "变更后质量10千克（原2倍）",
+            "变更后速率2米每秒（原1/2）"
+          ],
+          "ruleOrProcedure": "E=1/2 m v²；两因素同变时动能比 = 质量倍数 × (速率倍数)²。",
+          "steps": [
+            {
+              "action": "计算初始动能：E初=1/2×5×4²",
+              "reason": "先平方速率4²=16，再乘质量与1/2",
+              "resultingState": "E初=40焦耳"
+            }
+          ],
+          "learnerDecision": null,
+          "result": null,
+          "whyResultFollows": null,
+          "origin": "hy3_synthesis",
+          "sources": [],
+          "interaction": {
+            "stage": "guided",
+            "modelledStepCount": 1,
+            "origin": "hy3_synthesis",
+            "sources": [],
+            "activity": {
+              "prompt": "物体乙质量变为10千克（原2倍），速率变为2米每秒（原1/2）。完成变更后，它的动能是多少？",
+              "options": [
+                {
+                  "id": "A",
+                  "text": "20焦耳"
+                },
+                {
+                  "id": "B",
+                  "text": "160焦耳"
+                },
+                {
+                  "id": "C",
+                  "text": "80焦耳"
+                }
+              ],
+              "response": null,
+              "respondedAt": null,
+              "correct": null,
+              "feedback": null,
+              "debrief": null,
+              "credit": "none",
+              "misconception": null
+            },
+            "hint": null,
+            "scaffold": null,
+            "transfer": null
+          }
+        },
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 2,
+        "purpose": "comparison",
+        "explanation": "经典动能式只适用于同一参考系下的低速平动，不自动包含转动或其他能量。因此不能跨参考系直接比速率，也不能仅凭‘更重’断定动能更大。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": {
+          "text": "误认为‘质量更大的物体动能一定更大’：实际上若轻物体速率足够高，其动能可能超过重物体，因动能含速率平方。",
+          "origin": "hy3_synthesis",
+          "sources": []
+        },
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 3,
+        "purpose": "worked_example",
+        "explanation": "已知动能和质量时，可把平动动能式改写为v²=2E/m，再取非负平方根得到速率。注意动能是标量，只与速率大小有关，不记录运动朝向；一维速度中的负号仅表方向，速率仍为正。下面用新案例展示步骤，先算平方，后续留给你。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": {
+          "startingState": "物体M质量4千克，动能8焦耳（同一参考系，经典低速）。",
+          "inputs": [
+            "质量4千克",
+            "动能8焦耳"
+          ],
+          "ruleOrProcedure": "E=1/2 m v² ⇒ v²=2E/m；速率v为非负平方根；动能不指示方向。",
+          "steps": [
+            {
+              "action": "计算速率平方：v²=2×8/4",
+              "reason": "代入E=8、m=4，先算分子2E=16，除以4得4",
+              "resultingState": "v²=4"
+            }
+          ],
+          "learnerDecision": null,
+          "result": null,
+          "whyResultFollows": null,
+          "origin": "hy3_synthesis",
+          "sources": [],
+          "interaction": {
+            "stage": "guided",
+            "modelledStepCount": 1,
+            "origin": "hy3_synthesis",
+            "sources": [],
+            "activity": {
+              "prompt": "物体M质量4千克，动能8焦耳。已算得v²=4。完成推导后，物体M的速率及方向信息如何？",
+              "options": [
+                {
+                  "id": "A",
+                  "text": "速率2米每秒，方向未知"
+                },
+                {
+                  "id": "B",
+                  "text": "速率4米每秒，方向未知"
+                },
+                {
+                  "id": "C",
+                  "text": "速率2米每秒，方向向东"
+                }
+              ],
+              "response": null,
+              "respondedAt": null,
+              "correct": null,
+              "feedback": null,
+              "debrief": null,
+              "credit": "none",
+              "misconception": null
+            },
+            "hint": null,
+            "scaffold": null,
+            "transfer": null
+          }
+        },
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 4,
+        "purpose": "comparison",
+        "explanation": "动能公式只覆盖低速平动，且由它反求速率时，得到的永远是速率大小。不能把动能数值符号或大小当作运动方向的证据；一维速度负号仅表示方向，速率仍为正，动能不为负。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": {
+          "text": "误认为动能为正就代表物体向特定方向运动：实际上动能只取决于速率平方，一维速度带负号仅表示方向，其速率仍为正，动能不会因此变为负数。",
+          "origin": "hy3_synthesis",
+          "sources": []
+        },
+        "possibleMisconception": null,
+        "informalCheck": null
+      }
+    ],
+    "sourceReferencesAvailable": true,
+    "visuals": [],
+    "summary": {
+      "available": true,
+      "text": "把质量倍数与速率平方倍数分开算再相乘，可得动能比；必须同一参考系与单位。",
+      "nextConnection": null,
+      "formalOpportunities": []
+    },
+    "plannedTime": {
+      "agendaMinutes": 21,
+      "activeMinutesMin": 24,
+      "activeMinutesMax": 38,
+      "basis": "locally_evaluated_learning_actions"
+    }
+  },
+  "progress": {
+    "stateVersion": 2,
+    "stateId": "lesson_execution_044a6353-919e-40f2-a68b-a2310079e654",
+    "currentSegmentIndex": 0,
+    "segmentCount": 5,
+    "presentedSegmentIndexes": [],
+    "presentationStatus": "not_started",
+    "presentationCompletedAt": null
+  },
+  "currentInformalCheck": null,
+  "practice": {
+    "status": "locked",
+    "currentItemIndex": 0,
+    "itemCount": 2,
+    "item": {
+      "index": 0,
+      "objectiveTitle": "应用质量或速率变化时的动能比例比较",
+      "construct": "apply",
+      "surface": "initial",
+      "supplementary": true,
+      "prompt": "物体A初始质量2千克、速率3米每秒，动能9焦耳。干预后动能变为36焦耳，且已知只改变质量与速率中的一个因素。干预后直接测得速率为3米每秒（与初始相同）。据此，干预实际改变了什么？",
+      "options": [
+        {
+          "id": "teaching_brief_ee0d2da4-33fa-4acc-8fdd-f3f8c2f59b05_practice_1_initial_A",
+          "text": "质量变为8千克，速率仍为3米每秒（动能36焦耳）"
+        },
+        {
+          "id": "teaching_brief_ee0d2da4-33fa-4acc-8fdd-f3f8c2f59b05_practice_1_initial_B",
+          "text": "速率变为6米每秒，质量仍为2千克（动能36焦耳）"
+        },
+        {
+          "id": "teaching_brief_ee0d2da4-33fa-4acc-8fdd-f3f8c2f59b05_practice_1_initial_C",
+          "text": "质量变为2千克，速率变为9米每秒（动能81焦耳）"
+        }
+      ]
+    },
+    "attempts": [],
+    "recovery": null,
+    "completedAt": null,
+    "credit": "none"
+  },
+  "allowedActions": [
+    "start_lesson"
+  ]
+}

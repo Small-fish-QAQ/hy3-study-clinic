@@ -1,0 +1,44 @@
+{
+  "kind": "assessment",
+  "agendaItemId": "agenda_item_4d8a58cd-f80c-4515-9f20-2b36a6f85893",
+  "quiz": {
+    "id": "qz_871aa332-d509-409c-8d35-1561e91d787f",
+    "materialId": null,
+    "workspaceId": "ws_0659984a-faa1-4224-bfd3-0ead42873177",
+    "kind": "adaptive",
+    "assessmentMode": "concept_practice",
+    "config": {
+      "difficulty": "medium",
+      "types": [
+        "short_answer"
+      ],
+      "countPerType": 1
+    },
+    "questions": [
+      {
+        "id": "que_d89217df-26d5-4133-9848-a9904e357d2a",
+        "index": 0,
+        "type": "short_answer",
+        "stem": "两个正整数的公因数，是能同时把两个数整除的正整数；其中最大的叫最大公因数。给定正整数15和25。学习者乙说：“最大公因数就是两数中较小的那个，所以结果是15。”请依据公因数的定义解释该说法为什么不正确，并给出正确的最大公因数。",
+        "conceptId": "con_c09f3c6f-d0ce-4691-9be7-5960e500bd8f",
+        "conceptName": "公因数与最大公因数",
+        "grounding": {
+          "blockId": "blk_0_ef43e284",
+          "quote": "最大公因数是一个共同的整除尺度，不是把两个数相加，也不是选择较小数就一定正确。",
+          "startOffset": 118,
+          "endOffset": 157,
+          "occurrenceCount": 1,
+          "reanchored": false
+        },
+        "blueprintId": "bp_f0591767-18f7-4689-8df7-8cc4be6ac026",
+        "points": 2
+      }
+    ],
+    "targetConceptIds": [
+      "con_c09f3c6f-d0ce-4691-9be7-5960e500bd8f"
+    ],
+    "createdAt": "2026-09-14T11:28:55.154Z"
+  },
+  "assessmentKind": "formal_checkpoint",
+  "formalAssessmentVersionId": "assessment_version_87ae9ea6-1722-4f32-8a9a-5e2b2a0e0b87"
+}

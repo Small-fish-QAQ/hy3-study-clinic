@@ -1,0 +1,98 @@
+{
+  "inputIdentity": "60781d260515caa1f62b44010ea2115c292c7999a5a2ecde53fdfa60b60a1693",
+  "attempts": [
+    {
+      "physicalId": "54509196-a9fa-43a9-b369-f249d4feaf07",
+      "caseId": "E920",
+      "runId": "H-E920-r3",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q6",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "support仅泛化建议重读来源规则与练同主题新题，未点明学生将自愿参与等同随机分组的具体推理缺口，也无新题具体内容，属相关但泛化建议，符合Q6的1分。",
+        "refs": [
+          "/artifacts/1/text",
+          "/answer",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "Support未识别学生答案中'自愿参加等于随机分组'的错误前提，仅泛泛建议重读与练题",
+            "impact": "建议与主题相关但缺乏针对性，未提供具体可用下一步检查，不改变其作为学习支持的存在，但未达完整标准",
+            "refs": [
+              "/artifacts/1/text",
+              "/answer"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/1/text",
+                "valueHash": "4d9b4818aa1491288de36d3cf785ec2e7804231387da4c6670f21598747cfc02"
+              },
+              {
+                "pointer": "/answer",
+                "valueHash": "7d6191d92d628a82e207484c2c7eb0e40705d9d13f6606a2290baa951d899e6f"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/1/text",
+            "valueHash": "4d9b4818aa1491288de36d3cf785ec2e7804231387da4c6670f21598747cfc02"
+          },
+          {
+            "pointer": "/answer",
+            "valueHash": "7d6191d92d628a82e207484c2c7eb0e40705d9d13f6606a2290baa951d899e6f"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "944a460c4eccfdbd61d456dc9fc3969b0ed10c585ea05e87ccfe3e9b93549680"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q6:1",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/artifacts/1/text",
+          "quote": "先重新阅读来源里与这道题相关的规则，把题目条件列清，再检查结论。建议练一道同主题的新题，完成后核对条件。",
+          "valueHash": "4d9b4818aa1491288de36d3cf785ec2e7804231387da4c6670f21598747cfc02"
+        },
+        "reason": "support文本未提及自愿或随机分组，未针对学生答案中'自愿参加等于随机分组'错误前提进行诊断，仅泛化建议，指控成立但属局部缺陷。"
+      },
+      {
+        "id": "review2:Q6:1",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/artifacts/1/text",
+          "quote": "先重新阅读来源里与这道题相关的规则，把题目条件列清，再检查结论。建议练一道同主题的新题，完成后核对条件。",
+          "valueHash": "4d9b4818aa1491288de36d3cf785ec2e7804231387da4c6670f21598747cfc02"
+        },
+        "reason": "support未识别具体推理缺口（自愿≠随机），仅泛泛要求回顾条件并推荐新题无内容，与原文一致，属局部缺陷，符合Q6的1分标准。"
+      }
+    ]
+  }
+}

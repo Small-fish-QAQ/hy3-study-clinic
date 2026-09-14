@@ -1,0 +1,67 @@
+{
+  "id": "S019",
+  "dimensions": [
+    "Q5"
+  ],
+  "evidence": {
+    "sources": [
+      {
+        "id": "source",
+        "text": "课堂切片L[start:stop:step]从start下标取值，逐次加step，达到stop前停止，stop不包含。列表下标从0开始。L=[a,b,c,d,e,f]，L[1:6:2]取下标1、3、5，即b、d、f。"
+      }
+    ],
+    "goals": [
+      "检查切片解释的语义评分"
+    ],
+    "prerequisites": [
+      "阅读所给规则",
+      "基本四则运算"
+    ],
+    "desiredDepth": "working_fluency",
+    "authorityBoundaries": [
+      "判断所附局部教学或任务的实际要求。作者参考答案为私有评估材料，未预先展示给学习者。数据与规则是明示课堂前提。"
+    ],
+    "artifacts": [],
+    "exposure": [],
+    "question": {
+      "prompt": "列出L[1:6:2]的元素及实际下标，并说明终点是否包含。",
+      "options": []
+    },
+    "rubric": [
+      {
+        "id": "c1",
+        "text": "元素b,d,f，对应1,3,5",
+        "required": true
+      },
+      {
+        "id": "c2",
+        "text": "终点6不包含",
+        "required": true
+      },
+      {
+        "id": "c3",
+        "text": "使用项目符号列表",
+        "required": false
+      }
+    ],
+    "answer": "取b、d、f，对应下标1、3、5。切片在6之前停止，6本身不取。",
+    "productJudgment": {
+      "criteria": [
+        {
+          "id": "c1",
+          "result": "met"
+        },
+        {
+          "id": "c2",
+          "result": "met"
+        },
+        {
+          "id": "c3",
+          "result": "met"
+        }
+      ],
+      "feedback": "必要内容正确，使用了项目符号列表。",
+      "consequence": "granted"
+    }
+  }
+}

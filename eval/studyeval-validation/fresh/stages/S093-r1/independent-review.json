@@ -1,0 +1,69 @@
+{
+  "inputIdentity": "bdcece8d46de5ce4186407fae861a0e83313341694e85dc65fc5aa055c9369cd",
+  "attempts": [
+    {
+      "physicalId": "c6c4261d-74d1-4a4e-90db-a7f6b4dca50c",
+      "caseId": "S093",
+      "runId": "S093-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q3",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "artifact声称两句完全相同且第一句证明所有学生戴红帽并进入，但source明确两句范围不同且第一句仅限制进入者戴红帽。该中心解释错误，直接违背解释修饰语位置改变范围的目标，实质破坏学习用途。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "artifact文本声称两句完全相同，且第一句已证明所有学生戴红帽且进入，与source明示规则矛盾，且未展示任何修饰语位置改变范围的解释，反而错误断言无差异。",
+            "impact": "错误中心结论使学习者误解句子范围等价，破坏goals要求的解释修饰语位置改变范围的核心教学用途。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "8b93f4d80238c5157affc1877b2c795abc610e710ff212d73435d308654fc9d0"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "9ef8039d157a3635d1da4128848b8da6aabf32e121261f1cd761712bb1417ab2"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "8b93f4d80238c5157affc1877b2c795abc610e710ff212d73435d308654fc9d0"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "9ef8039d157a3635d1da4128848b8da6aabf32e121261f1cd761712bb1417ab2"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

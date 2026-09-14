@@ -12,6 +12,8 @@ Implementation anchors: [local course compilation](https://github.com/Small-fish
 
 The browser does not call Hy3 directly. Credentials, unrevealed answer keys and private grading contracts remain server-side. Runtime schemas shared by client and server describe accepted transport data.
 
+Candidate 23 (`84b3c2f`) retains these ownership boundaries. Its reliability changes preserve mathematical symbols, use actually presented context for novelty, review semantic alternatives, normalize persisted review hashes and bound support-classification correction. The diagram's older source links remain valid historical anchors; the final submission audit checks the same responsibilities against Candidate 23.
+
 ## Repository map
 
 | Directory                                     | Responsibility                                                                                       |
@@ -103,4 +105,4 @@ The workflow can be repeated offline without an API key. This does not promise b
 
 An optional visual-description adapter is retained in code. Its outputs are advisory and cannot enter Formal Evidence, grading or mastery. The submitted language workflow and evaluation configuration keep `VISUAL_PROVIDER=disabled`; it is not a second submitted model path.
 
-Runtime safeguards and the existing structural runners are implementation evidence. The separate [StudyEval protocol](EVALUATION.md) describes quality judgments and evaluator validation; the [final public results](EVALUATION_RESULTS.md) include completed machine evaluation, independent model review and human annotation. Neither successful tests nor a positive model review establishes measured learning effectiveness.
+Runtime safeguards and the existing structural runners are implementation evidence. The separate [StudyEval protocol](EVALUATION.md) describes quality judgments and evaluator validation; the [current public results](FINAL_EVALUATION.md) distinguish Candidate 23 product journeys, StudyEval v2 validation and reserved human alignment. Neither successful tests nor a positive model review establishes measured learning effectiveness.

@@ -1,0 +1,154 @@
+{
+  "inputIdentity": "8ac11680d7acfa2bb1387753311a348bd6efaf0d7753f9821ef06f5ac2b477d9",
+  "attempts": [
+    {
+      "physicalId": "6701fbeb-071f-4fe3-a115-f9fe9d63f4da",
+      "caseId": "S076",
+      "runId": "S076-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q5",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "产品将必需标准c2错误判为not_met，强求原句“stop不包含”而拒“6本身不取”的等价表达，导致应授学分被错误withheld，与真实充分性冲突。",
+        "refs": [
+          "/answer",
+          "/rubric/1",
+          "/productJudgment/criteria/1",
+          "/productJudgment/consequence"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "产品错误拒绝必需标准c2：学生写“6本身不取”已表达终点6不包含，但反馈强求原句“stop不包含”才算数",
+            "impact": "改变核心评分用途，导致应授学分granted被错误拒绝为withheld，实际credit与warranted冲突",
+            "refs": [
+              "/answer",
+              "/rubric/1",
+              "/productJudgment/feedback"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/answer",
+                "valueHash": "1f1899d77938970be2b4fb911104eb79b857f3b9b11357fb92a3f0e5f47e5119"
+              },
+              {
+                "pointer": "/rubric/1",
+                "valueHash": "b9daadef9f56c4be53ec987a58f6d1caeda944fe4c21953d9197e49732389c53"
+              },
+              {
+                "pointer": "/productJudgment/feedback",
+                "valueHash": "ad240bbdd4fac5325da97c0115858dc7f08c6ab678c1cb34079ba6ee22d38904"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "grading": {
+          "criteria": [
+            {
+              "id": "c1",
+              "result": "met",
+              "reason": "学生答案“取b、d、f，对应下标1、3、5”明确列出元素与下标，满足必需元素及对应下标",
+              "refs": [
+                "/answer",
+                "/rubric/0"
+              ],
+              "required": true,
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "1f1899d77938970be2b4fb911104eb79b857f3b9b11357fb92a3f0e5f47e5119"
+                },
+                {
+                  "pointer": "/rubric/0",
+                  "valueHash": "6399550a90530ee1616215b1675defac00c772a340c4350897216a3724886f2c"
+                }
+              ]
+            },
+            {
+              "id": "c2",
+              "result": "met",
+              "reason": "学生答案“切片在6之前停止，6本身不取”清楚说明终点6不包含，满足必需终点排除含义",
+              "refs": [
+                "/answer",
+                "/rubric/1"
+              ],
+              "required": true,
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "1f1899d77938970be2b4fb911104eb79b857f3b9b11357fb92a3f0e5f47e5119"
+                },
+                {
+                  "pointer": "/rubric/1",
+                  "valueHash": "b9daadef9f56c4be53ec987a58f6d1caeda944fe4c21953d9197e49732389c53"
+                }
+              ]
+            },
+            {
+              "id": "c3",
+              "result": "not_met",
+              "reason": "学生答案为连续句子，未使用项目符号列表，可选格式未满足",
+              "refs": [
+                "/answer",
+                "/rubric/2"
+              ],
+              "required": false,
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "1f1899d77938970be2b4fb911104eb79b857f3b9b11357fb92a3f0e5f47e5119"
+                },
+                {
+                  "pointer": "/rubric/2",
+                  "valueHash": "d52851780736c28eed16df31e029f6ea5cfaf7332d14aae7be2022370d4bc979"
+                }
+              ]
+            }
+          ],
+          "warrantedCredit": "granted",
+          "actualCredit": "withheld",
+          "actualCreditWitness": {
+            "pointer": "/productJudgment/consequence",
+            "valueHash": "a3b3d76fdf1e33a8c7bde9a7152980d0de2656e3d541feafb198261dcc7cf51c"
+          }
+        },
+        "witnesses": [
+          {
+            "pointer": "/answer",
+            "valueHash": "1f1899d77938970be2b4fb911104eb79b857f3b9b11357fb92a3f0e5f47e5119"
+          },
+          {
+            "pointer": "/rubric/1",
+            "valueHash": "b9daadef9f56c4be53ec987a58f6d1caeda944fe4c21953d9197e49732389c53"
+          },
+          {
+            "pointer": "/productJudgment/criteria/1",
+            "valueHash": "a0ab216682d7691f7359af06b69525bb27eddc3c25c3e41a3aa7501a1ce909d1"
+          },
+          {
+            "pointer": "/productJudgment/consequence",
+            "valueHash": "a3b3d76fdf1e33a8c7bde9a7152980d0de2656e3d541feafb198261dcc7cf51c"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

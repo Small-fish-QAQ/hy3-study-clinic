@@ -1,0 +1,36 @@
+{
+  "inputIdentity": "166eb40a95efeda16c0ac9e8e2ccdb7877091996ebba3e8c6fe05ff0ef947041",
+  "attempts": [
+    {
+      "physicalId": "0eedd69b-67f1-4f7d-955d-d9d5e813a763",
+      "caseId": "E450",
+      "runId": "H-E450-r2",
+      "stage": "blind-solution",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "status": "resolved",
+    "solution": "原数据2,4,4,14：平均数=(2+4+4+14)/4=6分钟；中位数=(4+4)/2=4分钟。改14为22后：平均数=(2+4+4+22)/4=8分钟；中位数仍=4分钟。变化不同因平均数用全部数值求和除以n，极大値拉动总和；中位数取排序中间两数平均，本例中间两数为4,4不受端点改变影响。依据题设四条记录，不讨论去重。",
+    "refs": [
+      "/question/prompt",
+      "/sources/0/text"
+    ],
+    "witnesses": [
+      {
+        "pointer": "/question/prompt",
+        "valueHash": "c72bdf5aa33b5c9b2a61dcde88889cc9c7e6ebaf01687c706d6d8539580d34da"
+      },
+      {
+        "pointer": "/sources/0/text",
+        "valueHash": "a43f09ae51e1a19e3e4fe7ef6283f10eab5bf8c071e52a5d86e3c347cdbc2311"
+      }
+    ]
+  }
+}

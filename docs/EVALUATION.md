@@ -4,11 +4,11 @@
 
 ## 当前状态
 
-**最终机器评估、两位盲评独立模型审阅和真实人类标注均已完成。** 2026-09-12 冻结运行的 279 次观察全部完成；六份人类答卷提供 68 条评分，对 34 个维度形成 24 个相同判断。首次判断、重复观察、U、无效输出、未生成产品机会及人类分歧分别报告。具体分母见 [EVALUATION_RESULTS.md](EVALUATION_RESULTS.md)，人工来源与逐题分析见 [HUMAN_VALIDATION.md](HUMAN_VALIDATION.md)。
+当前评估器为 **StudyEval v2.0**，冻结提交 `64fdbc4d5fdcfffc3e10132f5881dec334803b8f`。冻结后新样本验证与保留人类对齐已完成：70/72 参考等级匹配、22/24 严格三档、70/72 成对顺序、18/18 对抗检出、12/12 重复组完全一致；人类共识22/24、全部原评分53/68。完整观察、限制与只读复核见 [StudyEval 验证包](../eval/studyeval-validation/README.md)。
 
-StudyEval 固定为 `studyeval-v1.5-micro-closure`（candidate SHA-256：`e088e986a5c968febcaf51f99511258fd452759b935fd454327f61dcaa38dfdb`），评估器开发已永久关闭。[评测材料](../eval/final-evaluation/README.md)公开原样冻结的八个模块、全部 209 个输入/279 次观察及完整结果，并提供模型原始评分、人类去元数据答卷和只读重算脚本。临时盲评禁运已在人类答卷冻结后解除；机器证据唯一权威来源仍为 `public-export-final-v6`。
+产品展示与评估器验证分开。Candidate 23 的全新20课 showcase 以完整、自包含、解释和例题充分的正常学习材料为设计目标；全部来源、分母、学习者策略和指标在评分前冻结。课程流程结果见 [最终评估入口](FINAL_EVALUATION.md)，设计依据见 [showcase 设计](../eval/final-showcase/DESIGN.md)。模型调用由相同 Hy3 家族承担，不构成人类学习效果或外部独立真值。
 
-下面给出六个维度的阅读摘要，精确判定以冻结的 [rubric](../eval/final-evaluation/method/src/rubric.mjs)、[prompts](../eval/final-evaluation/method/src/prompts.mjs)和证据约束实现为准。现有 `eval:fake` / `eval:hy3` 仍是另一组结构与接口检查，不能替代 StudyEval 教学质量评估。
+下面给出六个维度的阅读摘要，精确判定以冻结的 [v2 方法](../eval/studyeval/METHOD.md)、[rubric](../eval/studyeval/rubric.mjs)、[prompts](../eval/studyeval/prompts.mjs)和证据约束实现为准。现有 `eval:fake` / `eval:hy3` 是另一组结构与接口检查。2026-09-12 的 v1.5 运行、209 个输入、279 次观察及原人类评分继续保存在[历史证据包](../eval/final-evaluation/README.md)，原结果没有改写。
 
 历史小型新样本检查仍为 **SMALL FRESH CHECKPOINT FAIL**：16 个案例 / 3 个来源家族 / 32 个维度判断，20 个数值、12 个 U、无无效观察，正对照可用率不足。该语料、输出和全部衍生材料保持私有，并永久排除于最终新样本证据之外。新运行没有改写历史结论。
 
@@ -67,6 +67,6 @@ StudyEval 固定为 `studyeval-v1.5-micro-closure`（candidate SHA-256：`e088e9
 
 ## 复现与解释边界
 
-完整机器表格和聚合结果、来源与构造覆盖、执行方法、公开样本、成本记录和身份哈希均已提供。执行 `node eval/final-evaluation/scripts/verify-publication.mjs` 可无密钥重算已保存结果，检查可公开输入与观察及冻结方法哈希；该命令不运行评估器。已完成的原始响应重放属于冻结运行的历史审计，公开包不包含私有数据库、原始网络报文或完整付费运行驱动。
+执行 `node eval/studyeval-validation/scripts/verify.mjs` 可无密钥核查当前 v2 的207次已保存观察、输入投影、结果绑定和原字节，并重算新样本与人类对齐指标。独立在线复现步骤见[验证包说明](../eval/studyeval-validation/README.md)；它需要 Hy3 配置，并可能受服务端模型别名与随机性影响。历史包的 `node eval/final-evaluation/scripts/verify-publication.mjs` 继续重算2026-09-12原结果。
 
 人类答卷已经先行冻结并完成归一化，`python eval/final-evaluation/scripts/verify-human.py` 可从去元数据副本重算配对、二人相同判断子集和全部 68 条人类评分的比较。十个未达共识维度保留未裁决，空白时间和外部帮助元数据保持“未提供”；标注完成不等于执行条件完全可核实。模型比较、构造预期与机器自洽仍不作为人类真值，也不能证明成绩、记忆保持或长期掌握提升。

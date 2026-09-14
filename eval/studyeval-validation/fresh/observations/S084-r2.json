@@ -1,0 +1,248 @@
+{
+  "task": {
+    "caseId": "S084",
+    "runId": "S084-r2",
+    "replicate": 2,
+    "path": "dataset/studyeval/S084.json",
+    "inputHash": "b7b8afd9b8105cd16f41249dbedd61e4d6cc92a74d28b5d6ad5fd9764aa46221"
+  },
+  "inputHash": "b7b8afd9b8105cd16f41249dbedd61e4d6cc92a74d28b5d6ad5fd9764aa46221",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "559a6c8aa8953270f079659fb5f5a31fccce85f95fde249f10168043c7eccf1b",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "核心换算(3072B=3KiB=3.072kB)及表示不改内容结论正确，但artifact误称第一条示例为图片，source指明第一条为文本文件。属外围归属错误，修正后核心用途不变。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "Artifact states '资料第一条示例使用图片', contradicting source that first example is text file, second is image.",
+                "impact": "Core conversion and representation conclusion intact; correcting attribution leaves main teaching use unchanged.",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "8f5b7afa0804efc7b740aed2a819f388dcd9bc9151fe081f4c6ef990d3efd750"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "9962889a586bcebaf05685b990e16a73f43aca209ab59334e74cf9c8606897a1"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "8f5b7afa0804efc7b740aed2a819f388dcd9bc9151fe081f4c6ef990d3efd750"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "9962889a586bcebaf05685b990e16a73f43aca209ab59334e74cf9c8606897a1"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "换算数值与基数解释正确，内容无关声明符合source。但artifact误称第一条示例为图片，source证其为文本文件，属可证归属缺陷，不影响核心换算机制，故local。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "artifact称资料第一条示例使用图片，但source明确第一条用文本文件、第二条用图片，归属错误",
+                "impact": "核心单位换算答案(3KiB,3.072kB)与推理正确，修正归属后主要教学用途完好，但违反goals中来源归属核对",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "8f5b7afa0804efc7b740aed2a819f388dcd9bc9151fe081f4c6ef990d3efd750"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "9962889a586bcebaf05685b990e16a73f43aca209ab59334e74cf9c8606897a1"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "8f5b7afa0804efc7b740aed2a819f388dcd9bc9151fe081f4c6ef990d3efd750"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "9962889a586bcebaf05685b990e16a73f43aca209ab59334e74cf9c8606897a1"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "核心换算(3072B=3KiB=3.072kB)及表示不改内容正确，但artifact误称第一条示例为图片，source证其为文本文件，属可证归属缺陷，不影响核心换算机制，故local。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "Artifact states '资料第一条示例使用图片', contradicting source that first example is text file, second is image.",
+                "impact": "Core conversion and representation conclusion intact; correcting attribution leaves main teaching use unchanged.",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "8f5b7afa0804efc7b740aed2a819f388dcd9bc9151fe081f4c6ef990d3efd750"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "9962889a586bcebaf05685b990e16a73f43aca209ab59334e74cf9c8606897a1"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "8f5b7afa0804efc7b740aed2a819f388dcd9bc9151fe081f4c6ef990d3efd750"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "9962889a586bcebaf05685b990e16a73f43aca209ab59334e74cf9c8606897a1"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q1:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "资料第一条示例使用图片",
+              "valueHash": "8f5b7afa0804efc7b740aed2a819f388dcd9bc9151fe081f4c6ef990d3efd750"
+            },
+            "reason": "artifact称第一条示例为图片，但source明确第一条用文本文件、第二条用图片，归属错误属外围，修正后核心换算教学不变。"
+          },
+          {
+            "id": "review2:Q1:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/sources/0/text",
+              "quote": "资料第一条示例用一个文本文件",
+              "valueHash": "9962889a586bcebaf05685b990e16a73f43aca209ab59334e74cf9c8606897a1"
+            },
+            "reason": "source证第一条为文本文件，artifact误称图片，错误归属示例类型不影响核心换算推理，为local缺陷。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q1",
+          "level": 1,
+          "evidence": "sufficient",
+          "reason": "核心换算(3072B=3KiB=3.072kB)及表示不改内容正确，但artifact误称第一条示例为图片，source证其为文本文件，属可证归属缺陷，不影响核心换算机制，故local。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [
+            {
+              "severity": "local",
+              "description": "Artifact states '资料第一条示例使用图片', contradicting source that first example is text file, second is image.",
+              "impact": "Core conversion and representation conclusion intact; correcting attribution leaves main teaching use unchanged.",
+              "refs": [
+                "/artifacts/0/text",
+                "/sources/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "8f5b7afa0804efc7b740aed2a819f388dcd9bc9151fe081f4c6ef990d3efd750"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "9962889a586bcebaf05685b990e16a73f43aca209ab59334e74cf9c8606897a1"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "8f5b7afa0804efc7b740aed2a819f388dcd9bc9151fe081f4c6ef990d3efd750"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "9962889a586bcebaf05685b990e16a73f43aca209ab59334e74cf9c8606897a1"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "a8563c5c9350ba5c6492fdfe5e3f17cf906150f45a02a39f810c41d862c99c1d"
+  }
+}

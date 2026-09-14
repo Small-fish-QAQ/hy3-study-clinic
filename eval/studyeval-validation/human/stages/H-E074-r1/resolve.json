@@ -1,0 +1,131 @@
+{
+  "inputIdentity": "90b1620cb54a492dcba1714d2fdb7efd95fc0ebc4349bd863acaefbaea3f2f20",
+  "attempts": [
+    {
+      "physicalId": "5caf139b-3a46-4c60-a745-2220072fc9e3",
+      "caseId": "E074",
+      "runId": "H-E074-r1",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q4",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "题目问来源已给的小岚每小时完成量，作者解六分之一份正确且未泄露。但题仅测术语检索，声明深度working_fluency需执行解释，判别弱，属局部缺陷，核心提取用途成立。",
+        "refs": [
+          "/question/prompt",
+          "/sources/0/text",
+          "/artifacts/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "题目仅要求按来源给出的说法检索既述分数，未要求学生执行计算或解释速度推导，与desiredDepth=working_fluency不符。",
+            "impact": "核心提取任务成立且答案正确，但缺失方法执行与解释，仅削弱判别力，不改变核心作答用途。",
+            "refs": [
+              "/question/prompt",
+              "/sources/0/text",
+              "/artifacts/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "49e1da85f3fee2b4d52571aba4aaba877eb27ae39e2844eb59214cb1031b8e12"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "46d1eb519d3c2ddc96b67b6df65edb237d990b0caa1ca0de2ad879b3b04d1248"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "assessment": {
+          "key": "correct",
+          "validity": "valid",
+          "exposure": "none",
+          "discrimination": "weak",
+          "demand": "retrieval",
+          "demandReason": "学生只需从来源文本中复述“每小时完成六分之一份”这一既述术语，无需计算、解释或应用方法。",
+          "reason": "题干问来源中已给出的每小时完成量，作者参考解为六分之一份正确；无提前曝光；纯检索题判别力弱，未达working_fluency应用解释要求。",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "49e1da85f3fee2b4d52571aba4aaba877eb27ae39e2844eb59214cb1031b8e12"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "46d1eb519d3c2ddc96b67b6df65edb237d990b0caa1ca0de2ad879b3b04d1248"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+            }
+          ]
+        },
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "49e1da85f3fee2b4d52571aba4aaba877eb27ae39e2844eb59214cb1031b8e12"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "46d1eb519d3c2ddc96b67b6df65edb237d990b0caa1ca0de2ad879b3b04d1248"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q4:1",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/question/prompt",
+          "quote": "按来源已经给出的说法每小时完成几分之几份？",
+          "valueHash": "49e1da85f3fee2b4d52571aba4aaba877eb27ae39e2844eb59214cb1031b8e12"
+        },
+        "reason": "题干明确要求按来源说法回答，学生只需检索现成分数，未要求执行或解释，与working_fluency深度不符，缺陷成立。"
+      },
+      {
+        "id": "review2:Q4:1",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/question/prompt",
+          "quote": "按来源已经给出的说法每小时完成几分之几份？",
+          "valueHash": "49e1da85f3fee2b4d52571aba4aaba877eb27ae39e2844eb59214cb1031b8e12"
+        },
+        "reason": "同上，题目直接要求复述来源已给量，属检索，局部缺陷成立。"
+      }
+    ]
+  }
+}

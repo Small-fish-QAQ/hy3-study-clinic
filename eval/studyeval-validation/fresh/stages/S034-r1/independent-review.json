@@ -1,0 +1,88 @@
+{
+  "inputIdentity": "8d3b450e90aa1f1cee06f2a5960a98f9811123dbd73a6b4d78912c389124a816",
+  "attempts": [
+    {
+      "physicalId": "19347c78-dba7-4493-a326-24f8e583187a",
+      "caseId": "S034",
+      "runId": "S034-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "lesson断言KiB与kB同为1000字节且KiB压缩文件，与source明示KiB=1024及换算不涉及压缩率矛盾。错误事实改变单位换算核心机制与结论，破坏核对归属目标。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "lesson称'KiB和kB都表示1000字节'，但source明确二进制KiB为1024字节。",
+            "impact": "错误单位定义直接篡改核心换算规则，使学习者建立错误前提，破坏核对换算目标。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "915ce91058911fe5ef50e753f34714b3e5df40b8a16892eee876b0913e2da702"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "9962889a586bcebaf05685b990e16a73f43aca209ab59334e74cf9c8606897a1"
+              }
+            ]
+          },
+          {
+            "severity": "material",
+            "description": "lesson称'用KiB表示会压缩文件'，source指出大小换算不说明压缩率。",
+            "impact": "虚构压缩效应改变结论，无证据支持，误导对单位用途的理解。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "915ce91058911fe5ef50e753f34714b3e5df40b8a16892eee876b0913e2da702"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "9962889a586bcebaf05685b990e16a73f43aca209ab59334e74cf9c8606897a1"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "915ce91058911fe5ef50e753f34714b3e5df40b8a16892eee876b0913e2da702"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "9962889a586bcebaf05685b990e16a73f43aca209ab59334e74cf9c8606897a1"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

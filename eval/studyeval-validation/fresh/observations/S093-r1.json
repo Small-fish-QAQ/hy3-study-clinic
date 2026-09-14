@@ -1,0 +1,248 @@
+{
+  "task": {
+    "caseId": "S093",
+    "runId": "S093-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S093.json",
+    "inputHash": "131ea21a1a4842986c74b3a10c5c1d1f1253712c6e49ebb09fdc741c653c03d8"
+  },
+  "inputHash": "131ea21a1a4842986c74b3a10c5c1d1f1253712c6e49ebb09fdc741c653c03d8",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "543488927899bcb1702b4c60059960a4f351024c006ecbd639cade9405c419c6",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q3",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "artifact声称两句完全相同且第一句证明所有学生红帽并进入，但source明确两句意义不同且第一句仅限制进入者红帽。该局部解释核心错误，违背课堂前提且无法实现解释修饰语改变范围的目标。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "artifact断言两句完全相同且第一句已证明所有学生戴红帽且进入，错误解读句子范围，与source明示约定矛盾。",
+                "impact": "改变核心用途：学习者被教错误等价和错误范围，无法达成解释修饰语位置改变范围的目标。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "8b93f4d80238c5157affc1877b2c795abc610e710ff212d73435d308654fc9d0"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "9ef8039d157a3635d1da4128848b8da6aabf32e121261f1cd761712bb1417ab2"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "8b93f4d80238c5157affc1877b2c795abc610e710ff212d73435d308654fc9d0"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "9ef8039d157a3635d1da4128848b8da6aabf32e121261f1cd761712bb1417ab2"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q3",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "artifact声称两句完全相同且第一句证明所有学生戴红帽并进入，但source明确两句范围不同且第一句仅限制进入者戴红帽。该中心解释错误，直接违背解释修饰语位置改变范围的目标，实质破坏学习用途。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "artifact文本声称两句完全相同，且第一句已证明所有学生戴红帽且进入，与source明示规则矛盾，且未展示任何修饰语位置改变范围的解释，反而错误断言无差异。",
+                "impact": "错误中心结论使学习者误解句子范围等价，破坏goals要求的解释修饰语位置改变范围的核心教学用途。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "8b93f4d80238c5157affc1877b2c795abc610e710ff212d73435d308654fc9d0"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "9ef8039d157a3635d1da4128848b8da6aabf32e121261f1cd761712bb1417ab2"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "8b93f4d80238c5157affc1877b2c795abc610e710ff212d73435d308654fc9d0"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "9ef8039d157a3635d1da4128848b8da6aabf32e121261f1cd761712bb1417ab2"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q3",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "artifact断言两句完全相同且第一句证明所有学生戴红帽进入，与source明示两句意义不同且第一句仅限进入者红帽矛盾。中心解释错误，未解释修饰语位置改变范围，反而教错误等价，实质破坏核心教学目标。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "artifact断言两句完全相同且第一句已证明所有学生戴红帽且进入，与source明示约定矛盾，且未展示修饰语位置改变范围的解释。",
+                "impact": "错误中心结论使学习者误解句子范围等价，破坏goals要求的解释修饰语位置改变范围的核心教学用途。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "8b93f4d80238c5157affc1877b2c795abc610e710ff212d73435d308654fc9d0"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "9ef8039d157a3635d1da4128848b8da6aabf32e121261f1cd761712bb1417ab2"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "8b93f4d80238c5157affc1877b2c795abc610e710ff212d73435d308654fc9d0"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "9ef8039d157a3635d1da4128848b8da6aabf32e121261f1cd761712bb1417ab2"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q3:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "两句完全相同，第一句已经证明所有学生都戴红帽且所有学生都进入。",
+              "valueHash": "8b93f4d80238c5157affc1877b2c795abc610e710ff212d73435d308654fc9d0"
+            },
+            "reason": "该引文断言两句等价且第一句证明所有学生红帽进入，与/sources/0/text明示两句不同且第一句仅限制进入者红帽矛盾，核心解释错误。"
+          },
+          {
+            "id": "review2:Q3:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "两句完全相同，第一句已经证明所有学生都戴红帽且所有学生都进入。",
+              "valueHash": "8b93f4d80238c5157affc1877b2c795abc610e710ff212d73435d308654fc9d0"
+            },
+            "reason": "artifact错误声称无差异且错误范围，与source矛盾，且未展示修饰语位置改变范围的解释，破坏goals核心用途，实质缺陷。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q3",
+          "level": 0,
+          "evidence": "sufficient",
+          "reason": "artifact断言两句完全相同且第一句证明所有学生戴红帽进入，与source明示两句意义不同且第一句仅限进入者红帽矛盾。中心解释错误，未解释修饰语位置改变范围，反而教错误等价，实质破坏核心教学目标。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [
+            {
+              "severity": "material",
+              "description": "artifact断言两句完全相同且第一句已证明所有学生戴红帽且进入，与source明示约定矛盾，且未展示修饰语位置改变范围的解释。",
+              "impact": "错误中心结论使学习者误解句子范围等价，破坏goals要求的解释修饰语位置改变范围的核心教学用途。",
+              "refs": [
+                "/artifacts/0/text",
+                "/sources/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "8b93f4d80238c5157affc1877b2c795abc610e710ff212d73435d308654fc9d0"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "9ef8039d157a3635d1da4128848b8da6aabf32e121261f1cd761712bb1417ab2"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "8b93f4d80238c5157affc1877b2c795abc610e710ff212d73435d308654fc9d0"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "9ef8039d157a3635d1da4128848b8da6aabf32e121261f1cd761712bb1417ab2"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "91da11811f430a223e5ea515af5f1073aa457ab3ed19270e3e98cb4c69dbeb69"
+  }
+}

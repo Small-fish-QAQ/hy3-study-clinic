@@ -1,0 +1,77 @@
+{
+  "inputIdentity": "a43f05b9cb62a4ea2b15386f9c571693b0a22f0e899f6ba6b1a2bfd56a79e9fe",
+  "attempts": [
+    {
+      "physicalId": "372f8034-a072-40ca-bca0-aa7742d3de4b",
+      "caseId": "S058",
+      "runId": "S058-r2",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q4",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "题目需在给定异或规则下计算两级门输出并说明两步，有效引出working_fluency的应用与解释；作者密钥正确，未泄露，判别力足，无缺陷。",
+        "refs": [
+          "/question/prompt",
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "assessment": {
+          "key": "correct",
+          "validity": "valid",
+          "exposure": "none",
+          "discrimination": "adequate",
+          "demand": "application",
+          "demandReason": "学生必须应用异或规则到(1,1)和(0,1)，执行两步计算并解释每步原因，非直接抄写现成符号。",
+          "reason": "题干要求计算两级XOR并说明两步；作者参考解正确匹配规则，未提前曝光；任务需应用与解释，判别力充足。",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text"
+          ],
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "5758ea989ce8c301f73b0ed45829a3609edbc221481bcd3270fc98a8791ac7a6"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "e2fbdaa35f160eedb1d82f24f5a2ed324cb0d811fcc88707f2aaa77fbe0d8576"
+            }
+          ]
+        },
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "5758ea989ce8c301f73b0ed45829a3609edbc221481bcd3270fc98a8791ac7a6"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "e2fbdaa35f160eedb1d82f24f5a2ed324cb0d811fcc88707f2aaa77fbe0d8576"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "abe0ee3fc063cc9ca8e5695fcc7196cbc85922a703ddb540aee12d9b2456e392"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,250 @@
+{
+  "task": {
+    "caseId": "E413",
+    "runId": "H-E413-r2",
+    "replicate": 2,
+    "path": "benchmark/cases/E413.json",
+    "inputHash": "dd39f264e0fd5760d77195257997a2ffc0d85b3366a467c458f5769bbaf9b980",
+    "population": "controlled",
+    "sourceId": "F10"
+  },
+  "inputHash": "dd39f264e0fd5760d77195257997a2ffc0d85b3366a467c458f5769bbaf9b980",
+  "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "a282b3264a6030f8fc78302b6d2144c2d69b9aca6801eb96d5ebeca153005108",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q3",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "Artifact声称盖章仅须调墨3分钟完成即可开始且不必等裁纸，推出第5分钟盖完、第11分钟装袋，任何人员数同。但source明确盖章必须裁纸与调墨均完成后开始，且单人需15分。核心解释错误传授无效工序，违背题设依赖，破坏讲清步骤与边界的目标。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "Artifact错误断言盖章只要等调墨3分钟完成就能开始，不必等裁纸，并据此计算时间。",
+                "impact": "教导无效方法，违反source明确依赖条件，导致错误时刻与错误通用结论，实质破坏本地例子的推理展示与适用边界。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "76700318469aedf9e8629802845116e5adb78030a2aeda7f5e8f9b787211831a"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "76700318469aedf9e8629802845116e5adb78030a2aeda7f5e8f9b787211831a"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q3",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "artifact称盖章仅等调墨3分钟、不必等裁纸且任何人员数结果同；source明确定义盖章须裁纸与调墨均完成，且人员数改变并行与总时。该解释教无效方法，实质错误。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "断言盖章只要等调墨完成就能开始，不必等裁纸，且任何工作人员数量总时相同",
+                "impact": "教授错误的工序依赖与总时间计算，破坏讲清局部推理的核心目标",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "76700318469aedf9e8629802845116e5adb78030a2aeda7f5e8f9b787211831a"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "76700318469aedf9e8629802845116e5adb78030a2aeda7f5e8f9b787211831a"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q3",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "artifact断言盖章仅等调墨3分即可开始且不必等裁纸，推得第5分盖完、11分装袋且任何人员数同。source明确定义盖章须裁纸调墨均完成，且人员数改变并行与总时。该解释教无效方法，实质错误，破坏讲清步骤与边界的目标。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "Artifact错误断言盖章只要等调墨3分钟完成就能开始，不必等裁纸，并据此计算时间且称任何工作人员数量总时相同。",
+                "impact": "教导无效工序依赖与错误通用总时间，违反source题设，实质破坏本地例子的正确推理展示与适用边界教学。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "76700318469aedf9e8629802845116e5adb78030a2aeda7f5e8f9b787211831a"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "76700318469aedf9e8629802845116e5adb78030a2aeda7f5e8f9b787211831a"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q3:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "盖章只要等调墨3分钟完成就能开始，不必等裁纸。",
+              "valueHash": "76700318469aedf9e8629802845116e5adb78030a2aeda7f5e8f9b787211831a"
+            },
+            "reason": "引文直接支持指控：artifact称盖章不必等裁纸，但source要求裁纸调墨均完成，故教授无效方法，实质错误。"
+          },
+          {
+            "id": "review2:Q3:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "任何工作人员数量都一样。",
+              "valueHash": "76700318469aedf9e8629802845116e5adb78030a2aeda7f5e8f9b787211831a"
+            },
+            "reason": "引文显示artifact声称总时与人员数无关，但source明确两名12分一名15分，通用结论错误，属实质缺陷。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q3",
+          "level": 0,
+          "evidence": "sufficient",
+          "reason": "artifact断言盖章仅等调墨3分即可开始且不必等裁纸，推得第5分盖完、11分装袋且任何人员数同。source明确定义盖章须裁纸调墨均完成，且人员数改变并行与总时。该解释教无效方法，实质错误，破坏讲清步骤与边界的目标。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [
+            {
+              "severity": "material",
+              "description": "Artifact错误断言盖章只要等调墨3分钟完成就能开始，不必等裁纸，并据此计算时间且称任何工作人员数量总时相同。",
+              "impact": "教导无效工序依赖与错误通用总时间，违反source题设，实质破坏本地例子的正确推理展示与适用边界教学。",
+              "refs": [
+                "/artifacts/0/text",
+                "/sources/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "76700318469aedf9e8629802845116e5adb78030a2aeda7f5e8f9b787211831a"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "76700318469aedf9e8629802845116e5adb78030a2aeda7f5e8f9b787211831a"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "63bdd5ec5b129cdefb04516d91e2f6496468e55738028bd1ed4526df1e591979"
+  }
+}

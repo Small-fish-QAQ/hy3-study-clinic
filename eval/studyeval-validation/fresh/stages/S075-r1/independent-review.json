@@ -1,0 +1,93 @@
+{
+  "inputIdentity": "69ea545d51927a4c014414bb866d2257664b0b46be09f3cbcbec7ead2dfb388e",
+  "attempts": [
+    {
+      "physicalId": "fafa41b4-388b-47bb-91f1-4e7f3f9383e2",
+      "caseId": "S075",
+      "runId": "S075-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q6",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "交付修复称分子分母分别相加是规则，教授错误方法；并令背诵已披露答案2/5以证掌握。这同时满足Q6零分中教错方法与声称背诵披露答案即掌握，实质缺陷使修复核心用途失效。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text",
+          "/answer"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "修复断言分子分母分别相加就是规则，教授错误分数加法方法",
+            "impact": "与source正确规则矛盾，巩固错误概念，核心修复目标失败",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "2ec426213869722ad2cb36fe86a5d71a38493a181cfdf99da87fd0ece60563b3"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "c4d75b2db6f5aa30dcec740ff8a4b7e07282347099740e24a9f3e2fd0f4bef58"
+              }
+            ]
+          },
+          {
+            "severity": "material",
+            "description": "声称照2/5答案背诵即可证明掌握，将复述披露答案当作独立掌握",
+            "impact": "违背可用修复与新检验目标，未提供真正能力检验",
+            "refs": [
+              "/artifacts/0/text",
+              "/answer"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "2ec426213869722ad2cb36fe86a5d71a38493a181cfdf99da87fd0ece60563b3"
+              },
+              {
+                "pointer": "/answer",
+                "valueHash": "5fa9a6e988796acce4dd7a033670180448bc29a07a9fa5e48255977034751897"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "2ec426213869722ad2cb36fe86a5d71a38493a181cfdf99da87fd0ece60563b3"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "c4d75b2db6f5aa30dcec740ff8a4b7e07282347099740e24a9f3e2fd0f4bef58"
+          },
+          {
+            "pointer": "/answer",
+            "valueHash": "5fa9a6e988796acce4dd7a033670180448bc29a07a9fa5e48255977034751897"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

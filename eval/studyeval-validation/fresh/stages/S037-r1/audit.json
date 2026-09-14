@@ -1,0 +1,84 @@
+{
+  "inputIdentity": "0a6497c97194ddd6047bf2b047e103856cf7a270077d6d612037dd9a8dcac991",
+  "attempts": [
+    {
+      "physicalId": "59f61ad6-2715-461f-aca8-cb3b4bcfc17a",
+      "caseId": "S037",
+      "runId": "S037-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q6",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "交付物给出“注意代词，理解上下文”的泛泛建议，与代词歧义修复目标相关，但未识别答案中“先出现即断定”的具体推理缺口，也未提供具体下一检查，符合Q6的1级（相关但泛泛）。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text",
+          "/answer",
+          "/goals"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "修复建议仅泛泛提及注意代词和理解上下文，未指出原判断错误依赖'先出现'而忽视歧义规则，也未提供具体下一检查",
+            "impact": "建议相关但未针对具体推理缺口，核心修复意图存在但不够具体，不影响其作为相关建议的用途",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text",
+              "/answer"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "6b46f10376b784fb49b19173760a8a96c1740c38bd50358e50a15604d42bd78b"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "69fef873755638b051db652f07b0960110732e94a4812af3f6f8b85635905051"
+              },
+              {
+                "pointer": "/answer",
+                "valueHash": "abf18d017b251abcfc4f8dd9fc651eac5dea3ae68e56d7624fa289ba5dec50f4"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "6b46f10376b784fb49b19173760a8a96c1740c38bd50358e50a15604d42bd78b"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "69fef873755638b051db652f07b0960110732e94a4812af3f6f8b85635905051"
+          },
+          {
+            "pointer": "/answer",
+            "valueHash": "abf18d017b251abcfc4f8dd9fc651eac5dea3ae68e56d7624fa289ba5dec50f4"
+          },
+          {
+            "pointer": "/goals",
+            "valueHash": "b9e4e158abffcc62f4cf34757b4f6ee08e6e2bfe9534ef37cff583294437cbb2"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,269 @@
+{
+  "status": "ready",
+  "message": "Lesson is ready.",
+  "course": {
+    "title": "溶液质量分数与加水稀释"
+  },
+  "session": {
+    "status": "active",
+    "version": 1
+  },
+  "agenda": {
+    "version": 1,
+    "itemState": "queued"
+  },
+  "lesson": {
+    "objective": {
+      "title": "溶质质量分数定义、稀释混合计算与结果核对",
+      "whyNow": "有人拿到溶液总质量和质量分数，却用盐除以水得到比值当分数，恢复组分时出错，需要先建立正确分母与守恒模型。",
+      "outcomes": [
+        {
+          "title": "区分溶质溶剂溶液质量并计算质量分数及恢复组分质量",
+          "description": "能够区分溶质、溶剂与溶液质量；计算质量分数为溶质质量÷溶液总质量（而非溶质与溶剂质量比），并使用小数百分数由给定总质量和质量分数恢复溶质与溶剂质量。注意若用盐除以水的质量得到的是盐与水的质量比，不能当作溶液的质量分数。"
+        },
+        {
+          "title": "应用加水稀释溶质守恒求新浓度或加水量并报告核对",
+          "description": "仅在加水稀释时（无盐移除、所有盐完全溶解、不发生化学反应、质量均以克计、不从体积推质量），应用溶质质量守恒计算新浓度或所需加水量，报告原溶液质量、原盐量、最终总质量与加水量并使用同一套质量单位，通过代回检查验证溶质守恒与分母正确。注意质量分数不等于每升溶液含多少克盐，没有密度和体积资料时不作这类换算，本课题目给足质量与目标比例。"
+        }
+      ]
+    },
+    "prerequisites": [],
+    "segments": [
+      {
+        "index": 0,
+        "purpose": "orientation",
+        "explanation": "溶液由溶质和溶剂组成，溶液总质量是二者之和。质量分数定义为溶质质量÷溶液总质量，常写百分数；给出总质量和分数，可用小数恢复组分：溶质=总质量×分数，溶剂=总质量-溶质。注意溶质÷溶剂得到的是两者质量比，不是溶液分数。例如80克糖溶在120克水中，溶液200克，糖分数=80/200=40%，若用80/120≈67%则是糖与水之比。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 1,
+        "purpose": "worked_example",
+        "explanation": "只加水稀释时溶质质量守恒，目标总质量由盐量除以目标分数得到，加水量是目标总质量减初始总质量。下面用一个新案例演示该路径，并请预测具体结果。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": {
+          "startingState": "120克、质量分数25%的盐溶液（盐30克，水90克），要求只加水稀释到10%",
+          "inputs": [
+            "目标质量分数10%",
+            "只加水"
+          ],
+          "ruleOrProcedure": "溶质质量守恒：盐量=初始总质量×原分数；目标总质量=盐量÷目标分数；加水量=目标总质量-初始总质量",
+          "steps": [
+            {
+              "action": "计算原盐量",
+              "reason": "120×0.25=30克，溶质在只加水下不变",
+              "resultingState": "盐量确定为30克，水90克，总120克"
+            }
+          ],
+          "learnerDecision": null,
+          "result": null,
+          "whyResultFollows": null,
+          "origin": "hy3_synthesis",
+          "sources": [],
+          "interaction": {
+            "stage": "guided",
+            "modelledStepCount": 1,
+            "origin": "hy3_synthesis",
+            "sources": [],
+            "activity": {
+              "prompt": "基于上述120克25%溶液和只加水到10%的条件，哪个具体结果会出现？",
+              "options": [
+                {
+                  "id": "A",
+                  "text": "加180克水，最终总质量300克、分数10%"
+                },
+                {
+                  "id": "B",
+                  "text": "加120克水，最终总质量240克、分数12.5%"
+                },
+                {
+                  "id": "C",
+                  "text": "加300克水（把目标总质量当加水量）"
+                }
+              ],
+              "response": null,
+              "respondedAt": null,
+              "correct": null,
+              "feedback": null,
+              "debrief": null,
+              "credit": "none",
+              "misconception": null
+            },
+            "hint": null,
+            "scaffold": null,
+            "transfer": null
+          }
+        },
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 2,
+        "purpose": "comparison",
+        "explanation": "明确边界：质量分数的分母必须是溶液总质量，任何用溶质除以溶剂得到的比例都不是溶液质量分数，不能用于恢复组分或稀释计算。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": {
+          "text": "若用20克盐除以80克水得到25%，那是盐与水的质量比；该溶液的质量分数应为20/(20+80)=20%。把比值当分数会高估浓度。",
+          "origin": "hy3_synthesis",
+          "sources": []
+        },
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 3,
+        "purpose": "worked_example",
+        "explanation": "只加水稀释时，除计算加水量外，还需报告原溶液质量、原盐量、最终总质量与加水量，统一用克。算完应代回：盐量÷最终总质量是否等于目标分数，且盐量是否与初始一致。下面用80克50%溶液稀释到20%演示，请先算原盐量，再预测后续。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": {
+          "startingState": "80克、质量分数50%的盐溶液（盐40克，水40克），要求只加水稀释到20%",
+          "inputs": [
+            "目标质量分数20%",
+            "只加水"
+          ],
+          "ruleOrProcedure": "溶质质量守恒：盐量=初始总质量×原分数；目标总质量=盐量÷目标分数；加水量=目标总质量-初始总质量；报告原溶液质量、原盐量、最终总质量与加水量，单位克；代回检查盐量÷最终总质量=目标分数",
+          "steps": [
+            {
+              "action": "计算原盐量",
+              "reason": "80×0.50=40克，溶质只加水不变",
+              "resultingState": "盐量确定为40克，水40克，总80克"
+            }
+          ],
+          "learnerDecision": null,
+          "result": null,
+          "whyResultFollows": null,
+          "origin": "hy3_synthesis",
+          "sources": [],
+          "interaction": {
+            "stage": "guided",
+            "modelledStepCount": 1,
+            "origin": "hy3_synthesis",
+            "sources": [],
+            "activity": {
+              "prompt": "基于上述80克50%溶液和只加水到20%的条件，哪个具体结果会出现？",
+              "options": [
+                {
+                  "id": "A",
+                  "text": "加120克水，最终总质量200克、分数20%"
+                },
+                {
+                  "id": "B",
+                  "text": "加80克水，最终总质量160克、分数25%"
+                },
+                {
+                  "id": "C",
+                  "text": "加200克水（把目标总质量当加水量）"
+                }
+              ],
+              "response": null,
+              "respondedAt": null,
+              "correct": null,
+              "feedback": null,
+              "debrief": null,
+              "credit": "none",
+              "misconception": null
+            },
+            "hint": null,
+            "scaffold": null,
+            "transfer": null
+          }
+        },
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 4,
+        "purpose": "comparison",
+        "explanation": "质量分数不等于每升溶液含多少克盐。没有密度和体积资料时，不作这类换算。报告时始终使用质量单位，避免引入未给的体积信息。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": {
+          "text": "若没有密度和体积资料，不能把质量分数当作每升溶液含多少克盐。例如200克15%溶液含盐30克，但不知体积，不能说每升含150克盐；若误用体积换算会违背本课边界。",
+          "origin": "hy3_synthesis",
+          "sources": []
+        },
+        "possibleMisconception": null,
+        "informalCheck": null
+      }
+    ],
+    "sourceReferencesAvailable": true,
+    "visuals": [],
+    "summary": {
+      "available": true,
+      "text": "质量分数是溶质质量除以溶液总质量；由总质量和分数可恢复盐和水质量；只加水盐不变，混合需按质量加权总盐与总质量。",
+      "nextConnection": null,
+      "formalOpportunities": []
+    },
+    "plannedTime": {
+      "agendaMinutes": 21,
+      "activeMinutesMin": 24,
+      "activeMinutesMax": 38,
+      "basis": "locally_evaluated_learning_actions"
+    }
+  },
+  "progress": {
+    "stateVersion": 2,
+    "stateId": "lesson_execution_f9df5dd7-2110-4ddc-a689-55fba37f8685",
+    "currentSegmentIndex": 0,
+    "segmentCount": 5,
+    "presentedSegmentIndexes": [],
+    "presentationStatus": "not_started",
+    "presentationCompletedAt": null
+  },
+  "currentInformalCheck": null,
+  "practice": {
+    "status": "locked",
+    "currentItemIndex": 0,
+    "itemCount": 2,
+    "item": {
+      "index": 0,
+      "objectiveTitle": "区分溶质溶剂溶液质量并计算质量分数及恢复组分质量",
+      "construct": "apply",
+      "surface": "initial",
+      "supplementary": true,
+      "prompt": "有一份150克、质量分数20%的盐溶液（含盐30克，水120克）。进行某未知操作后，测得最终总质量200克、质量分数15%。以下哪项最能解释该变化？",
+      "options": [
+        {
+          "id": "teaching_brief_929d00da-1fcd-4836-8305-bf495e38057b_practice_1_initial_A",
+          "text": "加了50克水，盐仍为30克，30/200=15%"
+        },
+        {
+          "id": "teaching_brief_929d00da-1fcd-4836-8305-bf495e38057b_practice_1_initial_B",
+          "text": "加了10克盐，总质量160克，40/160=25%"
+        },
+        {
+          "id": "teaching_brief_929d00da-1fcd-4836-8305-bf495e38057b_practice_1_initial_C",
+          "text": "混合了100克10%溶液，总盐40克总质量250克，40/250=16%"
+        }
+      ]
+    },
+    "attempts": [],
+    "recovery": null,
+    "completedAt": null,
+    "credit": "none"
+  },
+  "allowedActions": [
+    "start_lesson"
+  ]
+}

@@ -1,0 +1,69 @@
+{
+  "inputIdentity": "a64e6446bf22902bd9acc385355d61d4bbd1fc57160b27f9ad385ad9f974d889",
+  "attempts": [
+    {
+      "physicalId": "5789c634-22c3-4d63-84b3-fdbab7c35f32",
+      "caseId": "S062",
+      "runId": "S062-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q2",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "交付物仅含欢迎语，完全未解释un-前缀意义或应用，核心目标缺失导致学习用途失败。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/0"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "核心目标'解释词表中前缀un-的意义并在给定词上应用'在artifact中无任何处理，仅见结束欢迎语。",
+            "impact": "改变核心用途：学习者未获得前缀规则或应用演示，声明教学目的完全未达成。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/0"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "ba5701b92bc7d14664cf6ebd8922e14ba99d362eaf01013e5db858ae4c2ff76a"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "e0d0ebf754fe4c4754e9e6e545be939741595f92a9cceff9da4b3a6be4251759"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "ba5701b92bc7d14664cf6ebd8922e14ba99d362eaf01013e5db858ae4c2ff76a"
+          },
+          {
+            "pointer": "/goals/0",
+            "valueHash": "e0d0ebf754fe4c4754e9e6e545be939741595f92a9cceff9da4b3a6be4251759"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "id": "S051",
+  "dimensions": [
+    "Q4"
+  ],
+  "evidence": {
+    "sources": [
+      {
+        "id": "source",
+        "text": "本课堂二输入异或门XOR只有恰好一个输入为1时输出1。两个输入都0或都1时输出0。输入只取0或1。"
+      }
+    ],
+    "goals": [
+      "应用异或规则组合多个门的输出"
+    ],
+    "prerequisites": [
+      "阅读所给规则",
+      "基本四则运算"
+    ],
+    "desiredDepth": "working_fluency",
+    "authorityBoundaries": [
+      "判断所附局部教学或任务的实际要求。作者参考答案为私有评估材料，未预先展示给学习者。数据与规则是明示课堂前提。"
+    ],
+    "artifacts": [
+      {
+        "id": "private-author-key",
+        "text": "恰好一个输入为1。"
+      }
+    ],
+    "exposure": [],
+    "question": {
+      "prompt": "直接抄写XOR门输出1的条件。",
+      "options": []
+    }
+  }
+}

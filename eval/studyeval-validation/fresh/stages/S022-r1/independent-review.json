@@ -1,0 +1,144 @@
+{
+  "inputIdentity": "28ec14d89e9c495d50e6626c5e4b7204e8970477a347ba31f31705b7d438f35e",
+  "attempts": [
+    {
+      "physicalId": "b53649e9-d901-4b1b-bd31-f76461f68d33",
+      "caseId": "S022",
+      "runId": "S022-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q5",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "重解任务：ATGC互补为TACG，A配T、G配C。学生答案含TACG及A对T、G对C，满足c1,c2；未用小标题c3非必需评not_met正确。产品授分granted与应得一致，反馈准确，评分器无误。",
+        "refs": [
+          "/answer",
+          "/question/prompt",
+          "/sources/0/text",
+          "/rubric/0",
+          "/rubric/1",
+          "/rubric/2",
+          "/productJudgment/consequence"
+        ],
+        "defects": [],
+        "missing": [],
+        "grading": {
+          "criteria": [
+            {
+              "id": "c1",
+              "result": "met",
+              "reason": "学生答案明确写出互补串TACG，满足互补序列为TACG的要求",
+              "refs": [
+                "/answer",
+                "/rubric/0"
+              ],
+              "required": true,
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "f08ccfacfdeff745d2faff02198d7f364ce0e613d8ee2f26f23b8fa816db8274"
+                },
+                {
+                  "pointer": "/rubric/0",
+                  "valueHash": "6fe947ae7c7a78d14bc8936eb82fdb7b92f51cdea86673ee908623d0cb2421ba"
+                }
+              ]
+            },
+            {
+              "id": "c2",
+              "result": "met",
+              "reason": "答案陈述A对T、G对C，满足明确A配T、G配C",
+              "refs": [
+                "/answer",
+                "/rubric/1"
+              ],
+              "required": true,
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "f08ccfacfdeff745d2faff02198d7f364ce0e613d8ee2f26f23b8fa816db8274"
+                },
+                {
+                  "pointer": "/rubric/1",
+                  "valueHash": "bd66df53bb7d1e9a251f305678ac1e129dc39f36afd809fcfc894e104a962233"
+                }
+              ]
+            },
+            {
+              "id": "c3",
+              "result": "not_met",
+              "reason": "答案未使用小标题分项，该标准非必需，评分为not_met正确",
+              "refs": [
+                "/answer",
+                "/rubric/2"
+              ],
+              "required": false,
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "f08ccfacfdeff745d2faff02198d7f364ce0e613d8ee2f26f23b8fa816db8274"
+                },
+                {
+                  "pointer": "/rubric/2",
+                  "valueHash": "6f8be15b0ef9ebb5a60baee2e77c77c6c953ccb7addda5722555779b819b7369"
+                }
+              ]
+            }
+          ],
+          "warrantedCredit": "granted",
+          "actualCredit": "granted",
+          "actualCreditWitness": {
+            "pointer": "/productJudgment/consequence",
+            "valueHash": "dd515d1975b8e5a83bab3420bea5dacefe5451ac7cf617d23c4393cc79e4db99"
+          }
+        },
+        "witnesses": [
+          {
+            "pointer": "/answer",
+            "valueHash": "f08ccfacfdeff745d2faff02198d7f364ce0e613d8ee2f26f23b8fa816db8274"
+          },
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "cc603cb06211612a79535e1784979707102b3f2b7ef97c310e43b139a5d004d6"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "a847dc2f4e2b8785ff7703505780dfeccac7b1219ac0350602cefadeadf033e1"
+          },
+          {
+            "pointer": "/rubric/0",
+            "valueHash": "6fe947ae7c7a78d14bc8936eb82fdb7b92f51cdea86673ee908623d0cb2421ba"
+          },
+          {
+            "pointer": "/rubric/1",
+            "valueHash": "bd66df53bb7d1e9a251f305678ac1e129dc39f36afd809fcfc894e104a962233"
+          },
+          {
+            "pointer": "/rubric/2",
+            "valueHash": "6f8be15b0ef9ebb5a60baee2e77c77c6c953ccb7addda5722555779b819b7369"
+          },
+          {
+            "pointer": "/productJudgment/consequence",
+            "valueHash": "dd515d1975b8e5a83bab3420bea5dacefe5451ac7cf617d23c4393cc79e4db99"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

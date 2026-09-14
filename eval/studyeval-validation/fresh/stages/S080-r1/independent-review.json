@@ -1,0 +1,69 @@
+{
+  "inputIdentity": "4b442f496c7f3480f455db315449894f287cbc4446a33865e3623b757a8e43a7",
+  "attempts": [
+    {
+      "physicalId": "9af8d791-acc3-45be-b244-1d0d1000da74",
+      "caseId": "S080",
+      "runId": "S080-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q3",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "artifact仅给出墙距102米并断言正确，未展示利用速度、时间与两倍行程关系求距离的操作（如340×0.6÷2），缺失从前提至结论的解释连接，符合Q3的1级：结论正确但解释缺失，未教错误方法，属局部缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "未展示从已知速度340m/s、时间0.6s及行程为两倍墙距推导102米的关键操作（乘并除以2），仅陈述结果并断言答案正确",
+            "impact": "学习者无法得知如何由回声时间得到墙距，缺失解释连接，但结果数值正确未教错方法",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "64075e736ad47e1c153752e6175e7a0b061c621f98bdf7847d6241d91d40d433"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "79185b54dfbddde1df8e87303862dd09dbc298fe4bf0af82dc4cd087114a46d8"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "64075e736ad47e1c153752e6175e7a0b061c621f98bdf7847d6241d91d40d433"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "79185b54dfbddde1df8e87303862dd09dbc298fe4bf0af82dc4cd087114a46d8"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

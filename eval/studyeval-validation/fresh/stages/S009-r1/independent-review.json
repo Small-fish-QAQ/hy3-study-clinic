@@ -1,0 +1,169 @@
+{
+  "inputIdentity": "27336bed46afcdb861d75b54a56fda750448ff854eb00277917861d05aa39a12",
+  "attempts": [
+    {
+      "physicalId": "037acf92-0086-4cd5-a8f0-801a6237bbe0",
+      "caseId": "S009",
+      "runId": "S009-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q5",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "产品错误判定必需标准c1未满足，称TACG错误并拒绝授分，但学生答案TACG正确且满足任务，必需含义被错误拒绝导致学分冲突。",
+        "refs": [
+          "/answer",
+          "/rubric/0",
+          "/productJudgment/criteria/0",
+          "/productJudgment/consequence",
+          "/sources/0/text",
+          "/question/prompt"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "产品判定c1 not_met并反馈'TACG是错误互补序列'，但依据给定规则ATGC互补正是TACG，学生答案正确。",
+            "impact": "错误拒绝必需标准直接改变核心评分结论，导致应授学分被无理withheld，违反评分准确性。",
+            "refs": [
+              "/answer",
+              "/rubric/0",
+              "/productJudgment/criteria/0",
+              "/productJudgment/feedback"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/answer",
+                "valueHash": "f08ccfacfdeff745d2faff02198d7f364ce0e613d8ee2f26f23b8fa816db8274"
+              },
+              {
+                "pointer": "/rubric/0",
+                "valueHash": "6fe947ae7c7a78d14bc8936eb82fdb7b92f51cdea86673ee908623d0cb2421ba"
+              },
+              {
+                "pointer": "/productJudgment/criteria/0",
+                "valueHash": "f06e5b2e9ede05feb13e040db20dc87527f8dd4a6ef23a54bf1774d4b58bfc45"
+              },
+              {
+                "pointer": "/productJudgment/feedback",
+                "valueHash": "4676e29ec81c9d5b15862ba78c37ca6728b107ff1ae473027e27c0e924d88b82"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "grading": {
+          "criteria": [
+            {
+              "id": "c1",
+              "result": "met",
+              "reason": "学生答案'对应的互补串是TACG'符合规则ATGC->TACG，满足必需互补序列要求",
+              "refs": [
+                "/answer",
+                "/rubric/0"
+              ],
+              "required": true,
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "f08ccfacfdeff745d2faff02198d7f364ce0e613d8ee2f26f23b8fa816db8274"
+                },
+                {
+                  "pointer": "/rubric/0",
+                  "valueHash": "6fe947ae7c7a78d14bc8936eb82fdb7b92f51cdea86673ee908623d0cb2421ba"
+                }
+              ]
+            },
+            {
+              "id": "c2",
+              "result": "met",
+              "reason": "答案'A对T，G对C'明确A配T、G配C",
+              "refs": [
+                "/answer",
+                "/rubric/1"
+              ],
+              "required": true,
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "f08ccfacfdeff745d2faff02198d7f364ce0e613d8ee2f26f23b8fa816db8274"
+                },
+                {
+                  "pointer": "/rubric/1",
+                  "valueHash": "bd66df53bb7d1e9a251f305678ac1e129dc39f36afd809fcfc894e104a962233"
+                }
+              ]
+            },
+            {
+              "id": "c3",
+              "result": "not_met",
+              "reason": "未使用小标题，但标准非必需不影响credit",
+              "refs": [
+                "/answer",
+                "/rubric/2"
+              ],
+              "required": false,
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "f08ccfacfdeff745d2faff02198d7f364ce0e613d8ee2f26f23b8fa816db8274"
+                },
+                {
+                  "pointer": "/rubric/2",
+                  "valueHash": "6f8be15b0ef9ebb5a60baee2e77c77c6c953ccb7addda5722555779b819b7369"
+                }
+              ]
+            }
+          ],
+          "warrantedCredit": "granted",
+          "actualCredit": "withheld",
+          "actualCreditWitness": {
+            "pointer": "/productJudgment/consequence",
+            "valueHash": "a3b3d76fdf1e33a8c7bde9a7152980d0de2656e3d541feafb198261dcc7cf51c"
+          }
+        },
+        "witnesses": [
+          {
+            "pointer": "/answer",
+            "valueHash": "f08ccfacfdeff745d2faff02198d7f364ce0e613d8ee2f26f23b8fa816db8274"
+          },
+          {
+            "pointer": "/rubric/0",
+            "valueHash": "6fe947ae7c7a78d14bc8936eb82fdb7b92f51cdea86673ee908623d0cb2421ba"
+          },
+          {
+            "pointer": "/productJudgment/criteria/0",
+            "valueHash": "f06e5b2e9ede05feb13e040db20dc87527f8dd4a6ef23a54bf1774d4b58bfc45"
+          },
+          {
+            "pointer": "/productJudgment/consequence",
+            "valueHash": "a3b3d76fdf1e33a8c7bde9a7152980d0de2656e3d541feafb198261dcc7cf51c"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "a847dc2f4e2b8785ff7703505780dfeccac7b1219ac0350602cefadeadf033e1"
+          },
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "cc603cb06211612a79535e1784979707102b3f2b7ef97c310e43b139a5d004d6"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

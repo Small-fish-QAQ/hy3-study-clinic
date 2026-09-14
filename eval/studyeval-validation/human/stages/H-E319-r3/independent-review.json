@@ -1,0 +1,54 @@
+{
+  "inputIdentity": "ddbcdf1e354bd3b66f59d5c1f97c3e04bea9f2603176e61219950c84a979a858",
+  "attempts": [
+    {
+      "physicalId": "8b11c010-b719-4d74-9a88-e7f9890d935a",
+      "caseId": "E319",
+      "runId": "H-E319-r3",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q3",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "artifact以依赖规则（取两前置完成较大值）连接前提与开工，分资源算得12/15分钟，并给“合法不等于最快”边界，覆盖局部例子推理与限制，无缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text",
+          "/goals/0"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "33824fb66056692a54116221be7ec4cd5e188b08312f05d3d6de83b6860bc990"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+          },
+          {
+            "pointer": "/goals/0",
+            "valueHash": "9993d328e7a9560cdfb74d56adf9b1d8c9f4a1c7c71c80ed3120d850114e0ea2"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

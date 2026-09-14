@@ -1,0 +1,49 @@
+{
+  "inputIdentity": "1b98dc7f0ecda33ee7d472b966452872b4ee21d8e85d484a36578291d206b565",
+  "attempts": [
+    {
+      "physicalId": "04cd87ff-dc65-44f0-86ad-b8dece9444dd",
+      "caseId": "S094",
+      "runId": "S094-r3",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q2",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "artifact准确覆盖区分叙述者/作者、第一人称权限限制及引用归属三目标，给出可操作言语规则，达到working fluency深度，无缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "f06c41473aa7af3af43adc2ee10638ca2d93bffca4f99b6be4f4a14c7bf8e60c"
+          },
+          {
+            "pointer": "/goals",
+            "valueHash": "8b78e8c669075a0ea86f5033dbbe2b4722fc4b29b6264d26b8764fba22ae73f4"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

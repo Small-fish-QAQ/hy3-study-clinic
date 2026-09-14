@@ -1,0 +1,101 @@
+{
+  "answerPolicy": "preregistered-insufficient",
+  "answers": {
+    "assessment_item_cc0a56f7-0e82-4f08-9ad5-8e13c38b484e": "我不知道这道题的答案，也没有完成所要求的推理或计算。"
+  },
+  "result": {
+    "assessmentVersionId": "assessment_version_f51d845f-a160-4dcf-a87e-ba8b77366e0c",
+    "title": "独立检查：区分功率与电能、解释千瓦时单位及额定功率含义",
+    "attempt": {
+      "id": "assessment_attempt_4b57e7a5-a38f-4635-9d8a-54f5a69975be",
+      "assessmentVersionId": "assessment_version_f51d845f-a160-4dcf-a87e-ba8b77366e0c",
+      "workspaceId": "ws_4bb19e5b-525e-4fff-ba78-ecbbf2b718af",
+      "ordinal": 1,
+      "status": "submitted",
+      "responses": {
+        "assessment_item_cc0a56f7-0e82-4f08-9ad5-8e13c38b484e": "我不知道这道题的答案，也没有完成所要求的推理或计算。"
+      },
+      "startedAt": "2026-09-14T11:46:18.474Z",
+      "submittedAt": "2026-09-14T11:46:18.615Z",
+      "cancelledAt": null
+    },
+    "items": [
+      {
+        "itemId": "assessment_item_cc0a56f7-0e82-4f08-9ad5-8e13c38b484e",
+        "prompt": "某设备铭牌标注额定功率为2000瓦。在本次测试中，题目明确授权所给为实际平均功率：设备以实际平均功率 0.5 千瓦运行了 3 小时。请回答：\n(1) 本次消耗电能为多少千瓦时？\n(2) 为什么不能仅凭铭牌额定功率 2000 瓦乘以时间来计算本次实际耗电？\n(3) 千瓦时是哪种物理量单位？它与焦耳的换算关系是什么？",
+        "purpose": "检验你是否能在自己的表述中说明这个关键能力。",
+        "sourceReferences": [
+          {
+            "materialTitle": "功率、电能与使用时长",
+            "locationLabel": "第 6 段",
+            "excerpt": "设备铭牌上的额定功率是规定条件下的标称参数，不一定等于整个使用过程中持续的实际功率。会启停或调节的设备，需要实际平均功率、各阶段运行时间或电表读数才能估算该次耗电。读到“实际恒定功率”或“该段实际平均功率”时，才按题目授权直接相乘。本课题例明确提供这些量，不讨论待机、线路损耗或未列出的附加费用。解释计算时说明输入是哪种功率、时间如何换算、求的是能量还是费用，避免把功率排名直接写成耗电排名。",
+            "advisory": false
+          },
+          {
+            "materialTitle": "功率、电能与使用时长",
+            "locationLabel": "第 1 段",
+            "excerpt": "功率描述能量转移或消耗的快慢，电能描述一段时间内累计消耗了多少。实际功率恒定时，电能E=P×t。若P用瓦、t用秒，E用焦耳，因为1瓦=1焦耳每秒。日常电表常用千瓦时：1千瓦功率持续1小时对应1千瓦时，它是能量单位，不是“每小时的功率”，也不是一种比千瓦更大的功率单位。",
+            "advisory": false
+          },
+          {
+            "materialTitle": "功率、电能与使用时长",
+            "locationLabel": "第 2 段",
+            "excerpt": "换算关系为1千瓦=1000瓦，1小时=3600秒，所以1千瓦时=1000×3600=3600000焦耳。计算时应选定一套一致单位。例如一台设备实际恒定功率为800瓦，运行1.5小时，先换成0.8千瓦，电能为0.8×1.5=1.2千瓦时。也可用800瓦乘5400秒，得到4320000焦耳，再除以3600000，仍为1.2千瓦时。",
+            "advisory": false
+          }
+        ]
+      }
+    ],
+    "result": {
+      "gradeRecordId": "grade_616afa21-dc9d-48a5-a2c4-6d2fe0896782",
+      "demonstrated": false,
+      "summary": "这次回答还没有回应题目要求的关键内容。",
+      "minorNotice": null,
+      "criteria": [
+        {
+          "criterionId": "criterion_20c44a2e-0929-4f60-859e-a2ce6f70c843",
+          "label": "正确计算电能为 1.5 千瓦时，体现使用题目授权的实际平均功率乘以时间（0.5 kW × 3 h）。",
+          "result": "not_met",
+          "message": "这一点还没有在回答中体现。"
+        },
+        {
+          "criterionId": "criterion_e5b26abd-c82c-4ca4-b040-1336207ee7ca",
+          "label": "解释铭牌额定功率是标称参数，不一定等于实际功率，因此不能用其直接乘时间得实际耗电，而需实际平均功率等。",
+          "result": "not_met",
+          "message": "这一点还没有在回答中体现。"
+        },
+        {
+          "criterionId": "criterion_11f41797-f7e7-4375-b75f-c1ada1691427",
+          "label": "说明千瓦时是能量单位（非功率单位），并给出换算 1 千瓦时 = 3600000 焦耳（或 1 kW·h = 1000×3600 J）。",
+          "result": "not_met",
+          "message": "这一点还没有在回答中体现。"
+        }
+      ],
+      "sourceReferences": [
+        {
+          "materialTitle": "功率、电能与使用时长",
+          "locationLabel": "第 6 段",
+          "excerpt": "设备铭牌上的额定功率是规定条件下的标称参数，不一定等于整个使用过程中持续的实际功率。会启停或调节的设备，需要实际平均功率、各阶段运行时间或电表读数才能估算该次耗电。读到“实际恒定功率”或“该段实际平均功率”时，才按题目授权直接相乘。本课题例明确提供这些量，不讨论待机、线路损耗或未列出的附加费用。解释计算时说明输入是哪种功率、时间如何换算、求的是能量还是费用，避免把功率排名直接写成耗电排名。",
+          "advisory": false
+        },
+        {
+          "materialTitle": "功率、电能与使用时长",
+          "locationLabel": "第 1 段",
+          "excerpt": "功率描述能量转移或消耗的快慢，电能描述一段时间内累计消耗了多少。实际功率恒定时，电能E=P×t。若P用瓦、t用秒，E用焦耳，因为1瓦=1焦耳每秒。日常电表常用千瓦时：1千瓦功率持续1小时对应1千瓦时，它是能量单位，不是“每小时的功率”，也不是一种比千瓦更大的功率单位。",
+          "advisory": false
+        },
+        {
+          "materialTitle": "功率、电能与使用时长",
+          "locationLabel": "第 2 段",
+          "excerpt": "换算关系为1千瓦=1000瓦，1小时=3600秒，所以1千瓦时=1000×3600=3600000焦耳。计算时应选定一套一致单位。例如一台设备实际恒定功率为800瓦，运行1.5小时，先换成0.8千瓦，电能为0.8×1.5=1.2千瓦时。也可用800瓦乘5400秒，得到4320000焦耳，再除以3600000，仍为1.2千瓦时。",
+          "advisory": false
+        }
+      ],
+      "evidenceStatus": "unavailable",
+      "repairEpisodeId": "repair_93366a55-d1dc-4187-9ef6-45714b9ca877",
+      "progressionPending": false,
+      "reviewSchedulingPending": false
+    },
+    "review": null
+  }
+}

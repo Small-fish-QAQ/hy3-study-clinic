@@ -1,0 +1,93 @@
+{
+  "inputIdentity": "8d2e0b9800a17ef69d23b673f87e3f05e4556941cef9fe61c20c1f79d107ebf6",
+  "attempts": [
+    {
+      "physicalId": "795bbd19-6d71-4f17-87cf-2e89aaa46598",
+      "caseId": "S080",
+      "runId": "S080-r1",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q3",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "交付物需解释由回声时间得墙距。source给定声速340、时间0.6s、行程两倍墙距；artifact仅断言墙距102米且答案正确，未展示340×0.6÷2等关键操作或理由，缺失解释连接，但数值正确未教错法，属局部缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "未展示从已知速度、时间、双倍行程到距离的关键运算连接，仅陈述结果并断言正确",
+            "impact": "核心教学目标（解释如何得墙距）未实现，但答案数值正确未改变最终结论，属局部缺陷",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "64075e736ad47e1c153752e6175e7a0b061c621f98bdf7847d6241d91d40d433"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "79185b54dfbddde1df8e87303862dd09dbc298fe4bf0af82dc4cd087114a46d8"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "64075e736ad47e1c153752e6175e7a0b061c621f98bdf7847d6241d91d40d433"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "79185b54dfbddde1df8e87303862dd09dbc298fe4bf0af82dc4cd087114a46d8"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q3:1",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "这面墙离发声者102米，答案正确；把102米作为最终距离即可。",
+          "valueHash": "64075e736ad47e1c153752e6175e7a0b061c621f98bdf7847d6241d91d40d433"
+        },
+        "reason": "引文仅给出距离结果和正确断言，未展示从source中速度、时间、双倍行程推导的任何操作或理由，支持缺失连接指控。"
+      },
+      {
+        "id": "review2:Q3:1",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "这面墙离发声者102米，答案正确；把102米作为最终距离即可。",
+          "valueHash": "64075e736ad47e1c153752e6175e7a0b061c621f98bdf7847d6241d91d40d433"
+        },
+        "reason": "artifact未显示乘并除以2等关键操作，仅陈述结果，证实解释连接缺失的局部缺陷。"
+      }
+    ]
+  }
+}

@@ -1,0 +1,196 @@
+{
+  "task": {
+    "caseId": "N-F01-tutor",
+    "runId": "H-N-F01-tutor-r2",
+    "replicate": 2,
+    "path": "runs/final/cases/N-F01-tutor.json",
+    "inputHash": "a03e021c3abfc0921f93c64381059ff54f10084a4e254b73ca45e64c55cb3e9e",
+    "population": "natural",
+    "sourceId": "F01"
+  },
+  "inputHash": "a03e021c3abfc0921f93c64381059ff54f10084a4e254b73ca45e64c55cb3e9e",
+  "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "b6f66c9052ff9f007a717de87ba34ae254ecf2eff8c94c34bdfdf8685cf5aa8a",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "tutor-reply准确归属资料中同现非因果原则，使用明确假设例子（图书馆与喷药）解释，边界说明符合资料；无事实或归属缺陷。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "d70121f89a508edceaec3e092a9a3359d11d1a093baadfd5d9b047d0fd12cfaf"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          },
+          {
+            "dimension": "Q3",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "例子从假设前提展示同现非因果推理：无比较数据甚至可能反向，连接结论；适用边界明确，无需额外算术，解释充分。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "d70121f89a508edceaec3e092a9a3359d11d1a093baadfd5d9b047d0fd12cfaf"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "产物准确转述资料中同现非因果原则，举例与边界说明均受来源支持，无事实错误、虚构证据或错误归属，核心主张完整符合资料。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "d70121f89a508edceaec3e092a9a3359d11d1a093baadfd5d9b047d0fd12cfaf"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          },
+          {
+            "dimension": "Q3",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "以读书节与喷药为例解释同现非因果，展示无比较数据且可能反向故不能臆断因果，并明确适用边界，解释连接充分，符合目标。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "d70121f89a508edceaec3e092a9a3359d11d1a093baadfd5d9b047d0fd12cfaf"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q1",
+          "level": 2,
+          "evidence": "sufficient",
+          "reason": "tutor-reply准确归属资料中同现非因果原则，使用明确假设例子（图书馆与喷药）解释，边界说明符合资料；无事实或归属缺陷。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "d70121f89a508edceaec3e092a9a3359d11d1a093baadfd5d9b047d0fd12cfaf"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        },
+        {
+          "dimension": "Q3",
+          "level": 2,
+          "evidence": "sufficient",
+          "reason": "例子从假设前提展示同现非因果推理：无比较数据甚至可能反向，连接结论；适用边界明确，无需额外算术，解释充分。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "d70121f89a508edceaec3e092a9a3359d11d1a093baadfd5d9b047d0fd12cfaf"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "f19b94533d7d6c5429273d5c5c2dc0a9639fafc23eb6c133e504e2c66046bb38"
+  }
+}

@@ -1,0 +1,248 @@
+{
+  "task": {
+    "caseId": "S100",
+    "runId": "S100-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S100.json",
+    "inputHash": "10daad29283283d2fd8d14abbd5e78f5834fe8cda3f4b7da522f768f2d717c34"
+  },
+  "inputHash": "10daad29283283d2fd8d14abbd5e78f5834fe8cda3f4b7da522f768f2d717c34",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "764dcec3357aa8877b98576e372a91b0bc4eaa5cb4a78a385fcb5333f80be2aa",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q3",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "artifact仅循环声称23×10=230因为答案是230，未利用source中位值变十倍规则，无前提至结论的推理连接，中心解释循环无关，破坏解释目标。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/0",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "循环论证：23×10=230因为答案是230，230正确因为它是答案",
+                "impact": "未展示任何前提至结论的推理，核心解释用途失效",
+                "refs": [
+                  "/artifacts/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "01930794f2bcf25d45922738eee4fb910521a7f24e00a72706970145af85a814"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "01930794f2bcf25d45922738eee4fb910521a7f24e00a72706970145af85a814"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "8767ff128bd23c72c7dff0652a550264160083c2c48e531b521887db157e67d7"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "a5942766dca625dc9fdbcdb1a2ff0c61c8d65317777cec648fe36832bba69f03"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q3",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "产物仅以'答案是230'循环论证，未利用来源中位值变十倍规则或任何操作连接前提与结论，属中心解释循环无效，直接破坏解释23×10为何为230的核心目标，符合Q3的0分标准。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "解释循环论证，仅重复答案为答案，未展示任何从给定前提（如位值规则）到结果的推导连接",
+                "impact": "破坏核心解释用途，学习者无法得知乘10为何得230的真正原因",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "01930794f2bcf25d45922738eee4fb910521a7f24e00a72706970145af85a814"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "a5942766dca625dc9fdbcdb1a2ff0c61c8d65317777cec648fe36832bba69f03"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "01930794f2bcf25d45922738eee4fb910521a7f24e00a72706970145af85a814"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "a5942766dca625dc9fdbcdb1a2ff0c61c8d65317777cec648fe36832bba69f03"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q3",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "产物仅循环声称23×10=230因为答案是230，未利用位值规则或任何操作连接前提与结论，中心解释循环无效，破坏解释23乘10为何为230的目标，符合Q3的0分标准。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text",
+              "/goals/0"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "循环论证：23×10=230因为答案是230，230正确因为它是答案，未展示任何前提至结论的推理连接",
+                "impact": "破坏核心解释用途，学习者无法得知乘10为何得230的真正原因",
+                "refs": [
+                  "/artifacts/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "01930794f2bcf25d45922738eee4fb910521a7f24e00a72706970145af85a814"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "01930794f2bcf25d45922738eee4fb910521a7f24e00a72706970145af85a814"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "a5942766dca625dc9fdbcdb1a2ff0c61c8d65317777cec648fe36832bba69f03"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "8767ff128bd23c72c7dff0652a550264160083c2c48e531b521887db157e67d7"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q3:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "因为答案就是230，而230正确的原因是它是答案",
+              "valueHash": "01930794f2bcf25d45922738eee4fb910521a7f24e00a72706970145af85a814"
+            },
+            "reason": "引文显示解释仅以答案为答案循环论证，未从给定前提推导结果，直接推翻解释目标，支持material缺陷。"
+          },
+          {
+            "id": "review2:Q3:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "23×10=230，因为答案就是230，而230正确的原因是它是答案",
+              "valueHash": "01930794f2bcf25d45922738eee4fb910521a7f24e00a72706970145af85a814"
+            },
+            "reason": "引文证明产物循环重复答案，未利用/sources/0/text中位值规则建立连接，核心解释失效，指控成立。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q3",
+          "level": 0,
+          "evidence": "sufficient",
+          "reason": "产物仅循环声称23×10=230因为答案是230，未利用位值规则或任何操作连接前提与结论，中心解释循环无效，破坏解释23乘10为何为230的目标，符合Q3的0分标准。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text",
+            "/goals/0"
+          ],
+          "defects": [
+            {
+              "severity": "material",
+              "description": "循环论证：23×10=230因为答案是230，230正确因为它是答案，未展示任何前提至结论的推理连接",
+              "impact": "破坏核心解释用途，学习者无法得知乘10为何得230的真正原因",
+              "refs": [
+                "/artifacts/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "01930794f2bcf25d45922738eee4fb910521a7f24e00a72706970145af85a814"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "01930794f2bcf25d45922738eee4fb910521a7f24e00a72706970145af85a814"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "a5942766dca625dc9fdbcdb1a2ff0c61c8d65317777cec648fe36832bba69f03"
+            },
+            {
+              "pointer": "/goals/0",
+              "valueHash": "8767ff128bd23c72c7dff0652a550264160083c2c48e531b521887db157e67d7"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "8e343692b3414375b71384cc089fdc89867e780ca4a6825e6100d7e90c8842ac"
+  }
+}

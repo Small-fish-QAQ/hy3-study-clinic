@@ -1,0 +1,62 @@
+{
+  "kind": "assessment",
+  "agendaItemId": "agenda_item_c990c7be-a62d-45ef-870d-a1f8fcca7177",
+  "quiz": {
+    "id": "qz_83b22705-3dcc-4a7e-87a9-f6bd016b0e32",
+    "materialId": null,
+    "workspaceId": "ws_25aae2aa-e773-4461-998c-2e750424aa3e",
+    "kind": "adaptive",
+    "assessmentMode": "concept_practice",
+    "config": {
+      "difficulty": "medium",
+      "types": [
+        "short_answer"
+      ],
+      "countPerType": 1
+    },
+    "questions": [
+      {
+        "id": "que_5a655c29-6e76-4a95-ab7a-5dac1367abfd",
+        "index": 0,
+        "type": "short_answer",
+        "stem": "某新设企业刚成立时资产、负债、所有者权益均为0。依次发生两笔交易：(1)所有者投入现金500元；(2)向银行借入300元现金。请完成以下任务：\n1. 写出简化企业的会计等式，并分别定义资产、负债和所有者权益。\n2. 说明此时企业银行存款（现金）总额为800元，解释为何这800元不能等同于企业赚了800元利润，并指明两笔交易对等式右侧项目的影响区别。",
+        "conceptId": "con_0e5a2628-b3b2-4a85-ad61-2fe5d81bbb43",
+        "conceptName": "会计基本等式",
+        "grounding": {
+          "blockId": "blk_0_d670ebbb",
+          "quote": "一个简化企业的会计等式为“资产=负债+所有者权益”。资产是企业控制的经济资源，例如现金和设备；负债是向外部债权人承担的偿还义务；所有者权益是资产扣除负债后归属于所有者的剩余权益。等式不是说资产只能来自股东投入，也不是说企业银行存款一定等于利润。",
+          "startOffset": 0,
+          "endOffset": 122,
+          "occurrenceCount": 1,
+          "reanchored": false
+        },
+        "supplementaryEvidence": [
+          {
+            "blockId": "blk_1_7c7605da",
+            "quote": "本课只记录明确给出的交易，没有税费、利息、折旧、收入或费用；设备按购入成本记录。企业刚设立时三个总额均为0。所有者投入现金1000元后，现金资产增加1000元，所有者权益增加1000元，负债仍为0。此时1000=0+1000。所有者投入属于权益来源，在本模型中不记作营业收入。",
+            "startOffset": 0,
+            "endOffset": 138,
+            "occurrenceCount": 1,
+            "reanchored": false
+          },
+          {
+            "blockId": "blk_2_0c41f77b",
+            "quote": "企业向银行借入600元现金后，现金从1000元增至1600元，负债增加到600元，所有者权益仍为1000元。等式为1600=600+1000。借款使企业手里有更多现金，同时产生还款义务，因此不能仅因现金增加600元就称为赚了600元利润。",
+            "startOffset": 0,
+            "endOffset": 119,
+            "occurrenceCount": 1,
+            "reanchored": false
+          }
+        ],
+        "blueprintId": "bp_1476ab80-c4a1-4df8-aca4-11dc0fefb6d7",
+        "points": 2
+      }
+    ],
+    "targetConceptIds": [
+      "con_0e5a2628-b3b2-4a85-ad61-2fe5d81bbb43"
+    ],
+    "createdAt": "2026-09-14T12:14:53.624Z"
+  },
+  "assessmentKind": "formal_checkpoint",
+  "formalAssessmentVersionId": "assessment_version_847ff769-16cf-40e9-a11b-5c235ac6a9c4"
+}

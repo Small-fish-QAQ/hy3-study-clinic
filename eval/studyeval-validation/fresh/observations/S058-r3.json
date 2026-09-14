@@ -1,0 +1,225 @@
+{
+  "task": {
+    "caseId": "S058",
+    "runId": "S058-r3",
+    "replicate": 3,
+    "path": "dataset/studyeval/S058.json",
+    "inputHash": "6e5446b6ae72b258808a28d3602f2a82bbfa38582942f5170f978028872a7ab8"
+  },
+  "inputHash": "6e5446b6ae72b258808a28d3602f2a82bbfa38582942f5170f978028872a7ab8",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "9936d89cbf1eb904cc46dd82d577b4234d911e93d5529b595ea7c26abd925cb3",
+    "stages": {
+      "blind-solution": {
+        "status": "resolved",
+        "solution": "第一步：据/sources/0/text，XOR(1,1)两输入均1，输出0。第二步：将0与1送入另一XOR门，恰一输入为1，输出1。最终输出为1。",
+        "refs": [
+          "/question/prompt",
+          "/sources/0/text"
+        ],
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "5758ea989ce8c301f73b0ed45829a3609edbc221481bcd3270fc98a8791ac7a6"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "abe0ee3fc063cc9ca8e5695fcc7196cbc85922a703ddb540aee12d9b2456e392"
+          }
+        ]
+      },
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q4",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "题目基于明示异或规则，要求计算XOR(1,1)及后续门并说明两步，有效抽取working_fluency层的应用与解释能力；作者答案正确且未预先披露，判别力充足，无缺陷。",
+            "refs": [
+              "/question/prompt",
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "assessment": {
+              "key": "correct",
+              "validity": "valid",
+              "exposure": "none",
+              "discrimination": "adequate",
+              "demand": "application",
+              "demandReason": "学生须根据规则计算XOR(1,1)=0，再将0与1送入门计算XOR(0,1)=1，并解释每步条件，非单纯抄写公式。",
+              "reason": "独立解题得最终1；作者键与盲解一致且正确。priorExposure空，无泄露。题目需多步计算与解释，判别力足，非纯检索。",
+              "refs": [
+                "/question/prompt",
+                "/artifacts/0/text",
+                "/sources/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/question/prompt",
+                  "valueHash": "5758ea989ce8c301f73b0ed45829a3609edbc221481bcd3270fc98a8791ac7a6"
+                },
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "e2fbdaa35f160eedb1d82f24f5a2ed324cb0d811fcc88707f2aaa77fbe0d8576"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "abe0ee3fc063cc9ca8e5695fcc7196cbc85922a703ddb540aee12d9b2456e392"
+                }
+              ]
+            },
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "5758ea989ce8c301f73b0ed45829a3609edbc221481bcd3270fc98a8791ac7a6"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "e2fbdaa35f160eedb1d82f24f5a2ed324cb0d811fcc88707f2aaa77fbe0d8576"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "abe0ee3fc063cc9ca8e5695fcc7196cbc85922a703ddb540aee12d9b2456e392"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q4",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "题目正确要求两步XOR计算并解释，作者密钥正确，未提前泄露，有效评估working_fluency中的应用与解释技能，判别力充足。",
+            "refs": [
+              "/question/prompt",
+              "/sources/0/text",
+              "/artifacts/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "assessment": {
+              "key": "correct",
+              "validity": "valid",
+              "exposure": "none",
+              "discrimination": "adequate",
+              "demand": "application",
+              "demandReason": "学生必须应用XOR规则计算XOR(1,1)和XOR(0,1)，并解释每步依据，非抄写现成数字。",
+              "reason": "题目为两步XOR组合；作者答案正确给出两步推理；priorExposure空无泄露；要求说明两步使判别力充足。",
+              "refs": [
+                "/question/prompt",
+                "/artifacts/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/question/prompt",
+                  "valueHash": "5758ea989ce8c301f73b0ed45829a3609edbc221481bcd3270fc98a8791ac7a6"
+                },
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "e2fbdaa35f160eedb1d82f24f5a2ed324cb0d811fcc88707f2aaa77fbe0d8576"
+                }
+              ]
+            },
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "5758ea989ce8c301f73b0ed45829a3609edbc221481bcd3270fc98a8791ac7a6"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "abe0ee3fc063cc9ca8e5695fcc7196cbc85922a703ddb540aee12d9b2456e392"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "e2fbdaa35f160eedb1d82f24f5a2ed324cb0d811fcc88707f2aaa77fbe0d8576"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q4",
+          "level": 2,
+          "evidence": "sufficient",
+          "reason": "题目基于明示异或规则，要求计算XOR(1,1)及后续门并说明两步，有效抽取working_fluency层的应用与解释能力；作者答案正确且未预先披露，判别力充足，无缺陷。",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [],
+          "missing": [],
+          "assessment": {
+            "key": "correct",
+            "validity": "valid",
+            "exposure": "none",
+            "discrimination": "adequate",
+            "demand": "application",
+            "demandReason": "学生须根据规则计算XOR(1,1)=0，再将0与1送入门计算XOR(0,1)=1，并解释每步条件，非单纯抄写公式。",
+            "reason": "独立解题得最终1；作者键与盲解一致且正确。priorExposure空，无泄露。题目需多步计算与解释，判别力足，非纯检索。",
+            "refs": [
+              "/question/prompt",
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "5758ea989ce8c301f73b0ed45829a3609edbc221481bcd3270fc98a8791ac7a6"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "e2fbdaa35f160eedb1d82f24f5a2ed324cb0d811fcc88707f2aaa77fbe0d8576"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "abe0ee3fc063cc9ca8e5695fcc7196cbc85922a703ddb540aee12d9b2456e392"
+              }
+            ]
+          },
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "5758ea989ce8c301f73b0ed45829a3609edbc221481bcd3270fc98a8791ac7a6"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "e2fbdaa35f160eedb1d82f24f5a2ed324cb0d811fcc88707f2aaa77fbe0d8576"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "abe0ee3fc063cc9ca8e5695fcc7196cbc85922a703ddb540aee12d9b2456e392"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "f15c1b9ebffb457018bfaefe4214b2afbe9ccd4d9da4ea3f496dd9bd5e5f334f"
+  }
+}

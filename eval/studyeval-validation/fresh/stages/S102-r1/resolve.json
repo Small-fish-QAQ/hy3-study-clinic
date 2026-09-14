@@ -1,0 +1,178 @@
+{
+  "inputIdentity": "6dc49cf39a86dc256118439a4494908737221104a9710c9ea8d172a19d7587ab",
+  "attempts": [
+    {
+      "physicalId": "40de8053-8f70-47ef-93d0-d54df210714c",
+      "caseId": "S102",
+      "runId": "S102-r1",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q5",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "产品将必需标准c1误判not_met，因学生用'晚上九点'等价21:00已满足'乙地周二21:00'；错误拒绝致consequence错误withheld，与应授学分冲突，属实质缺陷。",
+        "refs": [
+          "/answer",
+          "/rubric/0",
+          "/productJudgment/criteria/0",
+          "/productJudgment/consequence"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "产品将required c1错误判not_met，理由未用24小时制，但'周二晚上九点'即21:00满足'乙地周二21:00'",
+            "impact": "错误拒绝必要标准导致consequence错误withheld，与应授学分冲突，破坏评分核心用途",
+            "refs": [
+              "/answer",
+              "/rubric/0",
+              "/productJudgment/criteria/0"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/answer",
+                "valueHash": "89ca6d97fa4baf8d416204a00d7657425f1bcd562a92c2bab5ad336d10a0053d"
+              },
+              {
+                "pointer": "/rubric/0",
+                "valueHash": "04f832a6f433402126f73019928e65619c2b73270b9e40a1d1c1455b9aaf9762"
+              },
+              {
+                "pointer": "/productJudgment/criteria/0",
+                "valueHash": "f06e5b2e9ede05feb13e040db20dc87527f8dd4a6ef23a54bf1774d4b58bfc45"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "grading": {
+          "criteria": [
+            {
+              "id": "c1",
+              "result": "met",
+              "reason": "学生答'乙地是周二晚上九点'，晚上九点即21:00，与标准'乙地周二21:00'含义一致",
+              "refs": [
+                "/answer",
+                "/rubric/0"
+              ],
+              "required": true,
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "89ca6d97fa4baf8d416204a00d7657425f1bcd562a92c2bab5ad336d10a0053d"
+                },
+                {
+                  "pointer": "/rubric/0",
+                  "valueHash": "04f832a6f433402126f73019928e65619c2b73270b9e40a1d1c1455b9aaf9762"
+                }
+              ]
+            },
+            {
+              "id": "c2",
+              "result": "met",
+              "reason": "学生写'甲比乙快五小时，所以把周三凌晨两点往回拨五小时，跨回周二'，表达了从甲到乙减5小时并回到前一天的换算，满足标准",
+              "refs": [
+                "/answer",
+                "/rubric/1"
+              ],
+              "required": true,
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "89ca6d97fa4baf8d416204a00d7657425f1bcd562a92c2bab5ad336d10a0053d"
+                },
+                {
+                  "pointer": "/rubric/1",
+                  "valueHash": "9a4b846117363f96775f4de0256f3f77d03902a9507d0ec35e62f3817f0bf1be"
+                }
+              ]
+            },
+            {
+              "id": "c3",
+              "result": "not_met",
+              "reason": "标准为非必需，要求列两列表格，答案仅自然语言描述未列表格；不影响必要credit授予",
+              "refs": [
+                "/answer",
+                "/rubric/2"
+              ],
+              "required": false,
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "89ca6d97fa4baf8d416204a00d7657425f1bcd562a92c2bab5ad336d10a0053d"
+                },
+                {
+                  "pointer": "/rubric/2",
+                  "valueHash": "c7dc0b88c588fc4f0e46e820834b1da7c4e8c69e5d2f4cf691ca19b9bdbeccc8"
+                }
+              ]
+            }
+          ],
+          "warrantedCredit": "granted",
+          "actualCredit": "withheld",
+          "actualCreditWitness": {
+            "pointer": "/productJudgment/consequence",
+            "valueHash": "a3b3d76fdf1e33a8c7bde9a7152980d0de2656e3d541feafb198261dcc7cf51c"
+          }
+        },
+        "witnesses": [
+          {
+            "pointer": "/answer",
+            "valueHash": "89ca6d97fa4baf8d416204a00d7657425f1bcd562a92c2bab5ad336d10a0053d"
+          },
+          {
+            "pointer": "/rubric/0",
+            "valueHash": "04f832a6f433402126f73019928e65619c2b73270b9e40a1d1c1455b9aaf9762"
+          },
+          {
+            "pointer": "/productJudgment/criteria/0",
+            "valueHash": "f06e5b2e9ede05feb13e040db20dc87527f8dd4a6ef23a54bf1774d4b58bfc45"
+          },
+          {
+            "pointer": "/productJudgment/consequence",
+            "valueHash": "a3b3d76fdf1e33a8c7bde9a7152980d0de2656e3d541feafb198261dcc7cf51c"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q5:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/answer",
+          "quote": "乙地是周二晚上九点",
+          "valueHash": "89ca6d97fa4baf8d416204a00d7657425f1bcd562a92c2bab5ad336d10a0053d"
+        },
+        "reason": "学生答案明确以'晚上九点'表达21:00，语义满足rubric c1'乙地周二21:00'，产品判not_met错误"
+      },
+      {
+        "id": "review2:Q5:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/rubric/0/text",
+          "quote": "乙地周二21:00",
+          "valueHash": "8f22ce88540079235dcfa40824bc4d11cd68c589da4d362b47bc1f7f8f3d92b7"
+        },
+        "reason": "必需标准c1目标为周二21:00，学生答晚上九点等价，产品判not_met误拒必要含义导致credit错误withheld"
+      }
+    ]
+  }
+}

@@ -1,0 +1,218 @@
+{
+  "task": {
+    "caseId": "S040",
+    "runId": "S040-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S040.json",
+    "inputHash": "2b830ed889259e32900dc8d677b25dce967d58c314fe6f9d1aff7a92285b843b"
+  },
+  "inputHash": "2b830ed889259e32900dc8d677b25dce967d58c314fe6f9d1aff7a92285b843b",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "c7c64d28bdc4aeb50dfac032cb803526d1dfe8351377a9636853e6d6376827e3",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "Artifact声称上周二接待317位访客且为门禁日志记录事实，但authorityBoundaries指明门禁日志未提供、不能访问，访客数非假设前提须核实实际事实。无可用来源支持该证据权威归属，主张无依据，实质破坏核实外部到访记录的核心目标。",
+            "refs": [
+              "/artifacts/0/text",
+              "/authorityBoundaries/0"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "Artifact断言访客数为门禁日志记录事实，但给定资料中门禁日志未提供且不可访问，访客数也非假设前提，无任何来源支持该证据归属。",
+                "impact": "核心用途为核实外部到访记录，此无依据的权威声称使结论丧失支持，改变核心学习/核实目的。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/authorityBoundaries/0"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "50c0ea16a08d45a6a85680bf663e6c80eca47fb0cbea23486746b660b684b17a"
+                  },
+                  {
+                    "pointer": "/authorityBoundaries/0",
+                    "valueHash": "e35e20af307402fdc4dd752f8524dddc8eb5e3ab60a6f674a447d58e2f05f158"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "50c0ea16a08d45a6a85680bf663e6c80eca47fb0cbea23486746b660b684b17a"
+              },
+              {
+                "pointer": "/authorityBoundaries/0",
+                "valueHash": "e35e20af307402fdc4dd752f8524dddc8eb5e3ab60a6f674a447d58e2f05f158"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": "U",
+            "evidence": "missing",
+            "reason": "门禁日志原始记录未提供（/sources空），边界声明不能访问且无其他证据。无法核实artifact中317访客主张真伪与证据权威，关键原始证据不可见，本维度无法决定。",
+            "refs": [
+              "/sources",
+              "/artifacts/0/text",
+              "/authorityBoundaries"
+            ],
+            "defects": [],
+            "missing": [
+              "/sources 为空，缺少门禁日志原始记录，无法验证317访客数主张",
+              "/authorityBoundaries 声明日志不能访问且无其他证据，故无独立证据可判定真相或捏造"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/sources",
+                "valueHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "50c0ea16a08d45a6a85680bf663e6c80eca47fb0cbea23486746b660b684b17a"
+              },
+              {
+                "pointer": "/authorityBoundaries",
+                "valueHash": "6ffa6cc522755f05199994f58e5344ffb4a09636a1a3df0c6eb5ae1a064b5ccf"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": "U",
+            "evidence": "missing",
+            "reason": "门禁日志未提供且声明不可访问，访客数主张无独立可验证证据；无实质缺陷确立，评估者无法决定真伪，保留U。",
+            "refs": [
+              "/artifacts/0/text",
+              "/authorityBoundaries/0",
+              "/sources"
+            ],
+            "defects": [],
+            "missing": [
+              "/sources 为空数组，缺少门禁日志原始记录",
+              "/authorityBoundaries/0 声明日志不能访问且无其他证据，无法判定317主张真伪"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "50c0ea16a08d45a6a85680bf663e6c80eca47fb0cbea23486746b660b684b17a"
+              },
+              {
+                "pointer": "/authorityBoundaries/0",
+                "valueHash": "e35e20af307402fdc4dd752f8524dddc8eb5e3ab60a6f674a447d58e2f05f158"
+              },
+              {
+                "pointer": "/sources",
+                "valueHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q1:1",
+            "decision": "rejected",
+            "severity": "none",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "本馆上周二实际接待了317位访客，这是门禁日志记录的事实。",
+              "valueHash": "50c0ea16a08d45a6a85680bf663e6c80eca47fb0cbea23486746b660b684b17a"
+            },
+            "reason": "Artifact明确将访客数归属门禁日志作为来源，并非无任何来源归属；仅该日志不可访问，不构成established error或捏造，指控不成立。"
+          }
+        ],
+        "evidenceChecks": [
+          {
+            "id": "review2:Q1:missing",
+            "decision": "unavailable",
+            "evidence": {
+              "ref": "/sources",
+              "quote": null,
+              "valueHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+            },
+            "reason": "/sources为空数组，门禁日志原始记录未提供；/authorityBoundaries/0声明不能访问且无其他证据，决定性证据缺口使核实不可能，维度只能U。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q1",
+          "level": "U",
+          "evidence": "missing",
+          "reason": "门禁日志未提供且声明不可访问，访客数主张无独立可验证证据；无实质缺陷确立，评估者无法决定真伪，保留U。",
+          "refs": [
+            "/artifacts/0/text",
+            "/authorityBoundaries/0",
+            "/sources"
+          ],
+          "defects": [],
+          "missing": [
+            "/sources 为空数组，缺少门禁日志原始记录",
+            "/authorityBoundaries/0 声明日志不能访问且无其他证据，无法判定317主张真伪"
+          ],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "50c0ea16a08d45a6a85680bf663e6c80eca47fb0cbea23486746b660b684b17a"
+            },
+            {
+              "pointer": "/authorityBoundaries/0",
+              "valueHash": "e35e20af307402fdc4dd752f8524dddc8eb5e3ab60a6f674a447d58e2f05f158"
+            },
+            {
+              "pointer": "/sources",
+              "valueHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": [
+        {
+          "dimension": "Q1",
+          "reason": "/sources 为空数组，缺少门禁日志原始记录; /authorityBoundaries/0 声明日志不能访问且无其他证据，无法判定317主张真伪"
+        }
+      ]
+    },
+    "resultHash": "cf7ed2e5f726b9c8f10610109d631da94afea211b2aa5439bcd8432839000230"
+  }
+}

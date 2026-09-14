@@ -1,0 +1,184 @@
+{
+  "status": "ready",
+  "message": "Lesson is ready.",
+  "course": {
+    "title": "英语主动句与被动句的对应"
+  },
+  "session": {
+    "status": "active",
+    "version": 11
+  },
+  "agenda": {
+    "version": 2,
+    "itemState": "queued"
+  },
+  "lesson": {
+    "objective": {
+      "title": "主动与被动语态转换的基础概念与结构实践",
+      "whyNow": "给出被动句却不知其主动来源时，需要一套可逆向追溯的角色与结构规则。",
+      "outcomes": [
+        {
+          "title": "应用主动被动句逐步转换并保留完整信息",
+          "description": "对含有明确宾语的及物动词的一般现在时和一般过去时句子，应用逐步转换：先标出施事、受事与动作，移动位置，根据新主语选择正确be形式（am/is/are或was/were），使用给定过去分词（含不规则变化如write变written、make变made，不能写writed或maked），by后用人称代词宾格（they对应them等）；按题目要求完整保留原施事、受事、动作、时态、否定和明确时间语，最后逐项核对信息。注意本课仅讨论有明确宾语的及物动词、一般现在时和一般过去时，无宾语句子如The child slept不适用；主动否定转被动用was not等不保留did，被动否定转主动用does not加动词原形。"
+        }
+      ]
+    },
+    "prerequisites": [],
+    "segments": [
+      {
+        "index": 0,
+        "purpose": "orientation",
+        "explanation": "转换语态时，先确认句子含有明确宾语的及物动词，且时态为一般现在或一般过去。标出施事（动作执行者）与受事（动作承受者）；将受事移至主语位置，施事放入by后并使用宾格。根据新主语的数与时态选择be：现在用am/is/are，过去用was/were；使用给定过去分词，注意不规则变化如write→written、make→made。否定句需相应改用was not/were not或does not加原形，不保留did。最后逐项核对原施事、受事、动作、时态、否定与时间语是否完整保留。本课不处理无宾语句。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 1,
+        "purpose": "worked_example",
+        "explanation": "下面用一个新句子演练步骤：原句为一般过去时、复数施事与复数受事，且动词为不规则变化。我们逐步标角色并选择形式，最后由你得出被动句。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": {
+          "startingState": "主动句：'The students wrote the essays last week.' 要求转换为被动并完整保留信息。已知write的过去分词为written，they对应them。",
+          "inputs": [
+            "原句文本",
+            "write过去分词written",
+            "by后代词宾格them"
+          ],
+          "ruleOrProcedure": "受事主语+be合适形式+过去分词+by+施事宾格；一般过去复数用were；保留时间语last week。",
+          "steps": [
+            {
+              "action": "标出施事、受事、动作与时态：施事The students，受事the essays，动作wrote，时态一般过去，时间语last week。",
+              "reason": "明确角色才能移动位置并选be形式。",
+              "resultingState": "已识别受事the essays将作主语，施事The students将变them置于by后。"
+            }
+          ],
+          "learnerDecision": null,
+          "result": null,
+          "whyResultFollows": null,
+          "origin": "hy3_synthesis",
+          "sources": [],
+          "interaction": {
+            "stage": "guided",
+            "modelledStepCount": 1,
+            "origin": "hy3_synthesis",
+            "sources": [],
+            "activity": {
+              "prompt": "给定上述标角色结果，要求完整保留信息的被动句应是哪一句？",
+              "options": [
+                {
+                  "id": "A",
+                  "text": "The essays were written by them last week."
+                },
+                {
+                  "id": "B",
+                  "text": "The essay was written by them last week."
+                },
+                {
+                  "id": "C",
+                  "text": "The essays were writed by them last week."
+                }
+              ],
+              "response": null,
+              "respondedAt": null,
+              "correct": null,
+              "feedback": null,
+              "debrief": null,
+              "credit": "none",
+              "misconception": null
+            },
+            "hint": null,
+            "scaffold": null,
+            "transfer": null
+          }
+        },
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 2,
+        "purpose": "comparison",
+        "explanation": "并非所有句子都能用本转换。本课仅适用于带明确宾语的及物动词、一般现在或一般过去。无宾语的不及物句不在范围内。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": {
+          "text": "'The child slept.' 没有宾语，不能转为被动；而 'The editor checks the report.' 有宾语report，可转 'The report is checked by the editor.' 二者叙述重点不同但后者事件信息可完整保留。",
+          "origin": "hy3_synthesis",
+          "sources": []
+        },
+        "possibleMisconception": null,
+        "informalCheck": null
+      }
+    ],
+    "sourceReferencesAvailable": true,
+    "visuals": [],
+    "summary": {
+      "available": true,
+      "text": "转换核心是先定位施事受事与动作，按新主语的数和时态选be，用规定过去分词，by后接宾格，并核对所有信息保留；无宾语或超时态不在本课范围。",
+      "nextConnection": null,
+      "formalOpportunities": []
+    },
+    "plannedTime": {
+      "agendaMinutes": 11,
+      "activeMinutesMin": 14,
+      "activeMinutesMax": 22,
+      "basis": "locally_evaluated_learning_actions"
+    }
+  },
+  "progress": {
+    "stateVersion": 2,
+    "stateId": "lesson_execution_4e139736-ab80-415a-bedd-529dac8bc6a0",
+    "currentSegmentIndex": 0,
+    "segmentCount": 3,
+    "presentedSegmentIndexes": [],
+    "presentationStatus": "not_started",
+    "presentationCompletedAt": null
+  },
+  "currentInformalCheck": null,
+  "practice": {
+    "status": "locked",
+    "currentItemIndex": 0,
+    "itemCount": 1,
+    "item": {
+      "index": 0,
+      "objectiveTitle": "应用主动被动句逐步转换并保留完整信息",
+      "construct": "apply",
+      "surface": "initial",
+      "supplementary": true,
+      "prompt": "观察被动句：'The books were made by them in 2020.' 依据本课转换规则，哪一句主动原句最可能是其完整对应的来源？",
+      "options": [
+        {
+          "id": "teaching_brief_6b110322-6567-4caa-8f7a-2a4cd1afd18b_practice_1_initial_A",
+          "text": "The students made the books in 2020."
+        },
+        {
+          "id": "teaching_brief_6b110322-6567-4caa-8f7a-2a4cd1afd18b_practice_1_initial_B",
+          "text": "The student made the book in 2020."
+        },
+        {
+          "id": "teaching_brief_6b110322-6567-4caa-8f7a-2a4cd1afd18b_practice_1_initial_C",
+          "text": "The students maked the books in 2020."
+        }
+      ]
+    },
+    "attempts": [],
+    "recovery": null,
+    "completedAt": null,
+    "credit": "none"
+  },
+  "allowedActions": [
+    "start_lesson"
+  ]
+}

@@ -1,0 +1,446 @@
+{
+  "task": {
+    "caseId": "E141",
+    "runId": "H-E141-r2",
+    "replicate": 2,
+    "path": "benchmark/cases/E141.json",
+    "inputHash": "e1769cd39c01d626137a2c86d3a4d3f6cd710fed1646fb2e8570eb901c076049",
+    "population": "controlled",
+    "sourceId": "F01"
+  },
+  "inputHash": "e1769cd39c01d626137a2c86d3a4d3f6cd710fed1646fb2e8570eb901c076049",
+  "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "a3a22307e9cb9decaa8a07789535b1cfa144dccbf3bbe8476893570352f62cca",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "Artifact作为教学总结，其主张与source周报事实及警示直接矛盾：虚构三十位居民全支持、永久决定及全体代表性。错误改变核心结论与证据范围，属实质缺陷。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "断言三十人次说明三十位不同居民全部支持，但source明确人次非独立人数且意见卡仅部分支持、未填卡未知。",
+                "impact": "错误等同人次与居民并虚构全体支持，推翻准确反映数字对象与证据范围的核心要求。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "2a4ea755e5bfe2f048e166c46d9034be7eecbf1d6f06c61955a7f56cfaea9c3c"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+                  }
+                ]
+              },
+              {
+                "severity": "material",
+                "description": "声称书屋已经决定永久提前开门，source指出目前未宣布永久变更，仅提议延长试行待讨论。",
+                "impact": "虚构既定决策状态，破坏事件与待决定区分的教学目标，核心事实错误。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "2a4ea755e5bfe2f048e166c46d9034be7eecbf1d6f06c61955a7f56cfaea9c3c"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+                  }
+                ]
+              },
+              {
+                "severity": "material",
+                "description": "称意见调查代表所有读者，source强调不能外推全体且未统计其他时段。",
+                "impact": "错误扩展样本代表性，违背来源限制，使摘要范围主张失实。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "2a4ea755e5bfe2f048e166c46d9034be7eecbf1d6f06c61955a7f56cfaea9c3c"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "2a4ea755e5bfe2f048e166c46d9034be7eecbf1d6f06c61955a7f56cfaea9c3c"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "Artifact含三处实质错误：混淆人次与不同居民、谎称已决定永久开门、外推全体读者。均直接违背来源明确陈述，改变核心事实与范围结论，破坏教学总结的核对用途。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "断言'三十个到馆人次说明三十位不同居民全部支持'错误将人次等同独立居民，并将部分意见卡支持外推为全部支持。",
+                "impact": "违背来源对单位与证据范围的限制，改变事实实体与结论，破坏核对主张与范围的核心用途。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "2a4ea755e5bfe2f048e166c46d9034be7eecbf1d6f06c61955a7f56cfaea9c3c"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+                  }
+                ]
+              },
+              {
+                "severity": "material",
+                "description": "断言'书屋已经决定永久提前开门'与来源'目前没有宣布永久变更'直接矛盾。",
+                "impact": "错误描述决策状态，改变核心事件结论，使摘要失去忠实性。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "2a4ea755e5bfe2f048e166c46d9034be7eecbf1d6f06c61955a7f56cfaea9c3c"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+                  }
+                ]
+              },
+              {
+                "severity": "material",
+                "description": "断言'意见调查代表了所有读者'将有限样本外推为全体，来源明确禁止此推断。",
+                "impact": "错误扩展证据权威与范围，实质歪曲来源支持边界，核心结论失效。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "2a4ea755e5bfe2f048e166c46d9034be7eecbf1d6f06c61955a7f56cfaea9c3c"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "2a4ea755e5bfe2f048e166c46d9034be7eecbf1d6f06c61955a7f56cfaea9c3c"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "Artifact三处主张违背source事实与限制：混淆人次与居民、虚构永久决定、外推全体读者，实质改变核心结论与证据范围。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "断言三十人次说明三十位不同居民全部支持，错误等同单位并虚构全体支持。",
+                "impact": "违背来源单位与证据范围限制，破坏核对数字与范围的核心用途。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "2a4ea755e5bfe2f048e166c46d9034be7eecbf1d6f06c61955a7f56cfaea9c3c"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+                  }
+                ]
+              },
+              {
+                "severity": "material",
+                "description": "声称书屋已经决定永久提前开门，与来源未宣布永久变更矛盾。",
+                "impact": "虚构决策状态，改变核心事件结论，使摘要失去忠实性。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "2a4ea755e5bfe2f048e166c46d9034be7eecbf1d6f06c61955a7f56cfaea9c3c"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+                  }
+                ]
+              },
+              {
+                "severity": "material",
+                "description": "称意见调查代表所有读者，将有限样本外推为全体。",
+                "impact": "错误扩展证据权威与范围，实质歪曲来源支持边界。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "2a4ea755e5bfe2f048e166c46d9034be7eecbf1d6f06c61955a7f56cfaea9c3c"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "2a4ea755e5bfe2f048e166c46d9034be7eecbf1d6f06c61955a7f56cfaea9c3c"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q1:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "三十个到馆人次说明三十位不同居民全部支持。",
+              "valueHash": "2a4ea755e5bfe2f048e166c46d9034be7eecbf1d6f06c61955a7f56cfaea9c3c"
+            },
+            "reason": "Artifact断言等同人次与居民且全支持；source明确'不能把三十人次写成三十位不同居民'且意见卡仅部分，虚构全体支持与单位错误，实质改变范围。"
+          },
+          {
+            "id": "review1:Q1:2",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "书屋已经决定永久提前开门",
+              "valueHash": "2a4ea755e5bfe2f048e166c46d9034be7eecbf1d6f06c61955a7f56cfaea9c3c"
+            },
+            "reason": "Source:'目前没有宣布永久变更'且仅提议延长试行，artifact虚构既定决策，矛盾属核心事实错误。"
+          },
+          {
+            "id": "review1:Q1:3",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "说明意见调查代表了所有读者",
+              "valueHash": "2a4ea755e5bfe2f048e166c46d9034be7eecbf1d6f06c61955a7f56cfaea9c3c"
+            },
+            "reason": "Source:'不能把意见卡结果外推成全体读者支持率'且未统计其他时段，错误扩展代表性，歪曲证据边界。"
+          },
+          {
+            "id": "review2:Q1:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "三十个到馆人次说明三十位不同居民全部支持。",
+              "valueHash": "2a4ea755e5bfe2f048e166c46d9034be7eecbf1d6f06c61955a7f56cfaea9c3c"
+            },
+            "reason": "同review1:Q1:1，artifact错误等同单位并虚构全支持，source禁止且未给独立人数，material缺陷成立。"
+          },
+          {
+            "id": "review2:Q1:2",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "书屋已经决定永久提前开门",
+              "valueHash": "2a4ea755e5bfe2f048e166c46d9034be7eecbf1d6f06c61955a7f56cfaea9c3c"
+            },
+            "reason": "同review1:Q1:2，source未宣布永久变更，artifact虚构决策状态，核心结论被改。"
+          },
+          {
+            "id": "review2:Q1:3",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "说明意见调查代表了所有读者",
+              "valueHash": "2a4ea755e5bfe2f048e166c46d9034be7eecbf1d6f06c61955a7f56cfaea9c3c"
+            },
+            "reason": "同review1:Q1:3，source限制外推，artifact声称代表全体，实质错误扩展范围。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q1",
+          "level": 0,
+          "evidence": "sufficient",
+          "reason": "Artifact三处主张违背source事实与限制：混淆人次与居民、虚构永久决定、外推全体读者，实质改变核心结论与证据范围。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [
+            {
+              "severity": "material",
+              "description": "断言三十人次说明三十位不同居民全部支持，错误等同单位并虚构全体支持。",
+              "impact": "违背来源单位与证据范围限制，破坏核对数字与范围的核心用途。",
+              "refs": [
+                "/artifacts/0/text",
+                "/sources/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "2a4ea755e5bfe2f048e166c46d9034be7eecbf1d6f06c61955a7f56cfaea9c3c"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+                }
+              ]
+            },
+            {
+              "severity": "material",
+              "description": "声称书屋已经决定永久提前开门，与来源未宣布永久变更矛盾。",
+              "impact": "虚构决策状态，改变核心事件结论，使摘要失去忠实性。",
+              "refs": [
+                "/artifacts/0/text",
+                "/sources/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "2a4ea755e5bfe2f048e166c46d9034be7eecbf1d6f06c61955a7f56cfaea9c3c"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+                }
+              ]
+            },
+            {
+              "severity": "material",
+              "description": "称意见调查代表所有读者，将有限样本外推为全体。",
+              "impact": "错误扩展证据权威与范围，实质歪曲来源支持边界。",
+              "refs": [
+                "/artifacts/0/text",
+                "/sources/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "2a4ea755e5bfe2f048e166c46d9034be7eecbf1d6f06c61955a7f56cfaea9c3c"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "2a4ea755e5bfe2f048e166c46d9034be7eecbf1d6f06c61955a7f56cfaea9c3c"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "980e45c9c35938dd5a3ac0248c59b1c4fe74e30e1f67a8b2da9f93df0b2d27a3"
+  }
+}

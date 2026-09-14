@@ -1,0 +1,138 @@
+{
+  "inputIdentity": "f36f713aba155678366e3d91e5926b6fefca7bc857b8ebf1cc17c8d0cfcb269f",
+  "attempts": [
+    {
+      "physicalId": "6d0682ed-cfcd-4423-9058-891c4803b688",
+      "caseId": "S035",
+      "runId": "S035-r1",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q5",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "产品将空白答案误判为满足写出{1,2,3}的必需要求并授予信用，虚假接受空答，核心评分结论错误，应拒却授。",
+        "refs": [
+          "/answer",
+          "/rubric/0",
+          "/productJudgment/criteria/0",
+          "/productJudgment/consequence"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "空白答案被产品判定为met且consequence为granted",
+            "impact": "错误授予信用，核心评分结论错误，与应得信用冲突",
+            "refs": [
+              "/answer",
+              "/productJudgment/criteria/0",
+              "/productJudgment/consequence"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/answer",
+                "valueHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+              },
+              {
+                "pointer": "/productJudgment/criteria/0",
+                "valueHash": "bbdd989d920e7cbf5b63f26f5559d0c3c7645cb712c6ed1b9e2f872e4b937fbd"
+              },
+              {
+                "pointer": "/productJudgment/consequence",
+                "valueHash": "dd515d1975b8e5a83bab3420bea5dacefe5451ac7cf617d23c4393cc79e4db99"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "grading": {
+          "criteria": [
+            {
+              "id": "required",
+              "result": "not_met",
+              "reason": "学生全答为空字符串，未写出{1,2,3}或任何并集结果，不满足必需要求",
+              "refs": [
+                "/answer",
+                "/rubric/0"
+              ],
+              "required": true,
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                {
+                  "pointer": "/rubric/0",
+                  "valueHash": "41e3e9993ea73d3924609af1ca9150dfde326067be5fc53a6f4aec3ca0e10258"
+                }
+              ]
+            }
+          ],
+          "warrantedCredit": "withheld",
+          "actualCredit": "granted",
+          "actualCreditWitness": {
+            "pointer": "/productJudgment/consequence",
+            "valueHash": "dd515d1975b8e5a83bab3420bea5dacefe5451ac7cf617d23c4393cc79e4db99"
+          }
+        },
+        "witnesses": [
+          {
+            "pointer": "/answer",
+            "valueHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "pointer": "/rubric/0",
+            "valueHash": "41e3e9993ea73d3924609af1ca9150dfde326067be5fc53a6f4aec3ca0e10258"
+          },
+          {
+            "pointer": "/productJudgment/criteria/0",
+            "valueHash": "bbdd989d920e7cbf5b63f26f5559d0c3c7645cb712c6ed1b9e2f872e4b937fbd"
+          },
+          {
+            "pointer": "/productJudgment/consequence",
+            "valueHash": "dd515d1975b8e5a83bab3420bea5dacefe5451ac7cf617d23c4393cc79e4db99"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q5:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/answer",
+          "quote": "",
+          "valueHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "reason": "view.answer为空字符串，产品criteria required result为met且consequence granted，指控属实。"
+      },
+      {
+        "id": "review2:Q5:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/productJudgment/consequence",
+          "quote": "granted",
+          "valueHash": "dd515d1975b8e5a83bab3420bea5dacefe5451ac7cf617d23c4393cc79e4db99"
+        },
+        "reason": "产品将空白答案判定满足required并集输出并授予信用，/productJudgment/consequence为granted证实。"
+      }
+    ]
+  }
+}

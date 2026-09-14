@@ -1,0 +1,183 @@
+{
+  "inputIdentity": "f5635093cbe60e4979f64ab59e7c922d83ed340a6cd0eac925418b11c62ff182",
+  "attempts": [
+    {
+      "physicalId": "64eb0adc-36da-4cd9-90de-fa81f1fddcbc",
+      "caseId": "S069",
+      "runId": "S069-r1",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q5",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "重解确认甲周三02:00减5h为乙周二21:00。学生答案满足c1,c2必要标准，产品授分granted正确；但误判可选c3为met且反馈谎称有表格，属局部缺陷，核心评分用途成立。",
+        "refs": [
+          "/answer",
+          "/rubric/0",
+          "/rubric/1",
+          "/productJudgment"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "产品将非必需标准c3误判为met，且反馈声称给出了两列表格，但学生答案文本无表格。",
+            "impact": "不改变核心评分用途，必要标准c1,c2正确判定且学分granted恰当。",
+            "refs": [
+              "/answer",
+              "/productJudgment/feedback",
+              "/productJudgment/criteria/2",
+              "/rubric/2"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/answer",
+                "valueHash": "89ca6d97fa4baf8d416204a00d7657425f1bcd562a92c2bab5ad336d10a0053d"
+              },
+              {
+                "pointer": "/productJudgment/feedback",
+                "valueHash": "c73da15b94cfa2fc9b40060d3b41898dcba8363a927105243000de1c2eca67e8"
+              },
+              {
+                "pointer": "/productJudgment/criteria/2",
+                "valueHash": "35e7bfb27d54bc5b8ed1699cd41203fb25e5e569d9ae5579798d7e7e02830b58"
+              },
+              {
+                "pointer": "/rubric/2",
+                "valueHash": "c7dc0b88c588fc4f0e46e820834b1da7c4e8c69e5d2f4cf691ca19b9bdbeccc8"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "grading": {
+          "criteria": [
+            {
+              "id": "c1",
+              "result": "met",
+              "reason": "学生答案指明乙地周二晚上九点即21:00，满足乙地周二21:00",
+              "refs": [
+                "/answer",
+                "/rubric/0"
+              ],
+              "required": true,
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "89ca6d97fa4baf8d416204a00d7657425f1bcd562a92c2bab5ad336d10a0053d"
+                },
+                {
+                  "pointer": "/rubric/0",
+                  "valueHash": "04f832a6f433402126f73019928e65619c2b73270b9e40a1d1c1455b9aaf9762"
+                }
+              ]
+            },
+            {
+              "id": "c2",
+              "result": "met",
+              "reason": "答案说明甲比乙快五小时往回拨五小时跨回周二，即由甲到乙减5小时并回前一天",
+              "refs": [
+                "/answer",
+                "/rubric/1"
+              ],
+              "required": true,
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "89ca6d97fa4baf8d416204a00d7657425f1bcd562a92c2bab5ad336d10a0053d"
+                },
+                {
+                  "pointer": "/rubric/1",
+                  "valueHash": "9a4b846117363f96775f4de0256f3f77d03902a9507d0ec35e62f3817f0bf1be"
+                }
+              ]
+            },
+            {
+              "id": "c3",
+              "result": "not_met",
+              "reason": "答案仅为文本未列两列表格，该项非必需",
+              "refs": [
+                "/answer",
+                "/rubric/2"
+              ],
+              "required": false,
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "89ca6d97fa4baf8d416204a00d7657425f1bcd562a92c2bab5ad336d10a0053d"
+                },
+                {
+                  "pointer": "/rubric/2",
+                  "valueHash": "c7dc0b88c588fc4f0e46e820834b1da7c4e8c69e5d2f4cf691ca19b9bdbeccc8"
+                }
+              ]
+            }
+          ],
+          "warrantedCredit": "granted",
+          "actualCredit": "granted",
+          "actualCreditWitness": {
+            "pointer": "/productJudgment/consequence",
+            "valueHash": "dd515d1975b8e5a83bab3420bea5dacefe5451ac7cf617d23c4393cc79e4db99"
+          }
+        },
+        "witnesses": [
+          {
+            "pointer": "/answer",
+            "valueHash": "89ca6d97fa4baf8d416204a00d7657425f1bcd562a92c2bab5ad336d10a0053d"
+          },
+          {
+            "pointer": "/rubric/0",
+            "valueHash": "04f832a6f433402126f73019928e65619c2b73270b9e40a1d1c1455b9aaf9762"
+          },
+          {
+            "pointer": "/rubric/1",
+            "valueHash": "9a4b846117363f96775f4de0256f3f77d03902a9507d0ec35e62f3817f0bf1be"
+          },
+          {
+            "pointer": "/productJudgment",
+            "valueHash": "676b980471d8e00d3617c65a6ee35d2b3fe496cc58fca2b551a86ebc7c60ffe4"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q5:1",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/answer",
+          "quote": "乙地是周二晚上九点。甲比乙快五小时，所以把周三凌晨两点往回拨五小时，跨回周二。",
+          "valueHash": "89ca6d97fa4baf8d416204a00d7657425f1bcd562a92c2bab5ad336d10a0053d"
+        },
+        "reason": "学生答案文本无表格，但产品反馈声称给出了两列表格且c3判met，指控成立，因c3非必需属局部缺陷。"
+      },
+      {
+        "id": "review2:Q5:1",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/productJudgment/feedback",
+          "quote": "日期时刻及解释正确，而且给出了两列表格。",
+          "valueHash": "c73da15b94cfa2fc9b40060d3b41898dcba8363a927105243000de1c2eca67e8"
+        },
+        "reason": "反馈谎称有表格，且/answer无表格，c3非必需故局部缺陷，指控成立。"
+      }
+    ]
+  }
+}

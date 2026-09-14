@@ -1,0 +1,83 @@
+{
+  "inputIdentity": "42f54b489fc4da22b9c7d7635e7eaa3d1d661056dc2ce72ca126559f4030d47f",
+  "attempts": [
+    {
+      "physicalId": "1de42f61-9a86-43ec-9f47-e7a37f94b8d3",
+      "caseId": "E544",
+      "runId": "H-E544-r1",
+      "stage": "blind-student",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "criteria": [
+      {
+        "id": "c1",
+        "result": "met",
+        "reason": "答案明确给出原平均6、中位4以及修改后平均8、中位4，数值与题设要求一致。",
+        "refs": [
+          "/answer",
+          "/rubric/0"
+        ],
+        "required": true,
+        "witnesses": [
+          {
+            "pointer": "/answer",
+            "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+          },
+          {
+            "pointer": "/rubric/0",
+            "valueHash": "a1297a15ff2b3a0f739057b0447a410cb40c06ce923b05a3164b28df2ba398b4"
+          }
+        ]
+      },
+      {
+        "id": "c2",
+        "result": "met",
+        "reason": "答案指出改后总和32平均8，中间位置仍是两个4中位还为4，并说明最长那次拉高总和而没有移动中间值，解释了总和增加使平均改变且中间两项仍为4使中位未变。",
+        "refs": [
+          "/answer",
+          "/rubric/1"
+        ],
+        "required": true,
+        "witnesses": [
+          {
+            "pointer": "/answer",
+            "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+          },
+          {
+            "pointer": "/rubric/1",
+            "valueHash": "46a9a9b0313c712bcf38afd5a6b9d93cea5b4f5f9ce44412a9a9122ea1b5461b"
+          }
+        ]
+      },
+      {
+        "id": "c3",
+        "result": "not_met",
+        "reason": "答案为连续段落，未使用小标题分开计算和解释，但此条为非必要可选标准。",
+        "refs": [
+          "/answer",
+          "/rubric/2"
+        ],
+        "required": false,
+        "witnesses": [
+          {
+            "pointer": "/answer",
+            "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+          },
+          {
+            "pointer": "/rubric/2",
+            "valueHash": "c501d76a0d0bcb2526107e773e4c2486adf551bafedd0b5c028a4823e4cc1a95"
+          }
+        ]
+      }
+    ],
+    "warrantedCredit": "granted"
+  }
+}

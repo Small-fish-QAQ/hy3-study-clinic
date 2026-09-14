@@ -1,0 +1,69 @@
+{
+  "inputIdentity": "24213fb9d817693354c8950a57aeca2aefd578eb54be7e76f34fe2348d816133",
+  "attempts": [
+    {
+      "physicalId": "1528e91a-56f4-4bde-972c-5211d397f20e",
+      "caseId": "S077",
+      "runId": "S077-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q3",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "artifact误将回声总时0.6秒当单程，算墙距340×0.6=204米且称不需返回。source明确定义总时含往返、行程为墙距两倍。该局部解释中心错误，教导无效方法，违背前提，无法达成解释墙距推导的目标。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "artifact声称0.6秒仅为单程时间并得墙距204米，忽略返回行程；但source给定0.6秒为回声总时且行程是墙距两倍。",
+            "impact": "核心解释错误，学习者将用错误公式求墙距，破坏goal要求的正确推导教学。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "3bbce2de2fe1eeb758a911865d1912be311746bdcab655ec42447c7ca0aebbb0"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "79185b54dfbddde1df8e87303862dd09dbc298fe4bf0af82dc4cd087114a46d8"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "3bbce2de2fe1eeb758a911865d1912be311746bdcab655ec42447c7ca0aebbb0"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "79185b54dfbddde1df8e87303862dd09dbc298fe4bf0af82dc4cd087114a46d8"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

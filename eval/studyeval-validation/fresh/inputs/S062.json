@@ -1,0 +1,27 @@
+{
+  "id": "S062",
+  "dimensions": [
+    "Q2"
+  ],
+  "evidence": {
+    "sources": [
+      {
+        "id": "rule",
+        "text": "前缀un-在本课堂词表中表示对形容词意义的否定；给定happy为快乐，unhappy为不快乐。"
+      }
+    ],
+    "goals": [
+      "核心：解释词表中前缀un-的意义并在给定词上应用"
+    ],
+    "prerequisites": [],
+    "desiredDepth": "working_fluency",
+    "authorityBoundaries": [],
+    "artifacts": [
+      {
+        "id": "complete-delivery",
+        "text": "完整教学交付到此结束：欢迎大家学习英语。"
+      }
+    ],
+    "exposure": []
+  }
+}

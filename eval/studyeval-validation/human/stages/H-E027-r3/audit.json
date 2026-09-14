@@ -1,0 +1,72 @@
+{
+  "inputIdentity": "5be26ddbda8ccec3a6db6bf33002438394de473755ffd9a5e210ab34b05a9195",
+  "attempts": [
+    {
+      "physicalId": "e48210dd-3c27-480c-90f4-378065c06adb",
+      "caseId": "E027",
+      "runId": "H-E027-r3",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q4",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "题干给定可分开无重复等假设，要求乙先做甲独做总时并与合作比较。作者参考解正确且未展示，学生需多步计算与应用方法，判别力足，符合working_fluency，无缺陷。",
+        "refs": [
+          "/question/prompt",
+          "/artifacts/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "assessment": {
+          "key": "correct",
+          "validity": "valid",
+          "exposure": "none",
+          "discrimination": "adequate",
+          "demand": "application",
+          "demandReason": "学生须根据题设计算速度，分段求完成量与剩余时间得总时，再算合作时间比较，需多步运算与解释，非抄写现成值。",
+          "reason": "题干明确独立可加假设，要求计算乙先做甲独做总时并比较合作。作者参考解（未展示）正确：乙速1/4甲1/8，乙1h完1/4剩3/4甲需6h总7h；合作合速3/8需8/3h，前者更久。无提前曝光。任务需应用方法而非检索，判别力足。",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text"
+          ],
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "dcf5dd89a64f0379c2a16c155095996cbf9b1dfd98e7b21c0cebe9fb5974918a"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "298f97e041cf6e72c2f79141bae8631b1df17304ecdaea27c01e89ba266e840d"
+            }
+          ]
+        },
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "dcf5dd89a64f0379c2a16c155095996cbf9b1dfd98e7b21c0cebe9fb5974918a"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "298f97e041cf6e72c2f79141bae8631b1df17304ecdaea27c01e89ba266e840d"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

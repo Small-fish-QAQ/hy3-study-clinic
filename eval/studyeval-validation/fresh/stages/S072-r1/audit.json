@@ -1,0 +1,54 @@
+{
+  "inputIdentity": "a398fd005018d1e032dd25fd88a383eb31a35ccfb6118fda1c817e0049c5d5c9",
+  "attempts": [
+    {
+      "physicalId": "22137893-0260-40f4-8f23-0092794cecde",
+      "caseId": "S072",
+      "runId": "S072-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q6",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "修复诊断改下标错误，保留H2O改系数并计数，且给出N2+H2→NH3具体下一检查，符合Q6完整标准。",
+        "refs": [
+          "/artifacts/0/text",
+          "/answer",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "c984d217a8ba7622cabc5ae619c03efd1468b7270d5b64bc319da15715dff934"
+          },
+          {
+            "pointer": "/answer",
+            "valueHash": "e16225b1eff8991166dababd8058cab1ec0cbe17d1ddd5faddba138462339473"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "59437daaeac189d745ba28fdee3966ddf517f7bcc1363dd97ec06abb86dd3a0e"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,150 @@
+{
+  "inputIdentity": "6601c707e07e10fda6c2bfaebd57af2dd56fccc249bda36dce4986be04d8fdd4",
+  "attempts": [
+    {
+      "physicalId": "43ae0d09-bd10-4065-88d2-dcbc7f41fdc4",
+      "caseId": "E544",
+      "runId": "H-E544-r3",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q5",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "学生答案正确给出原平均6中位4及改后平均8中位4，满足c1、c2；产品误判c1未满足并拒绝学分，属必要标准错误拒绝，评分准确性缺陷为实质。",
+        "refs": [
+          "/answer",
+          "/productJudgment/criteria/0",
+          "/rubric/0",
+          "/question/prompt"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "产品判定c1为not_met，但学生答案明确给出了原平均6、中位4及改后平均8、中位4，正确满足必要数值。",
+            "impact": "错误拒绝required标准导致学分被错误withheld，改变核心评分结论。",
+            "refs": [
+              "/answer",
+              "/productJudgment/criteria/0",
+              "/rubric/0"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/answer",
+                "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+              },
+              {
+                "pointer": "/productJudgment/criteria/0",
+                "valueHash": "f06e5b2e9ede05feb13e040db20dc87527f8dd4a6ef23a54bf1774d4b58bfc45"
+              },
+              {
+                "pointer": "/rubric/0",
+                "valueHash": "a1297a15ff2b3a0f739057b0447a410cb40c06ce923b05a3164b28df2ba398b4"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "grading": {
+          "criteria": [
+            {
+              "id": "c1",
+              "result": "met",
+              "reason": "学生答案明确给出原总和24平均6、中位4，改后总和32平均8、中位4，与题设计算一致。",
+              "refs": [
+                "/answer",
+                "/rubric/0"
+              ],
+              "required": true,
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+                },
+                {
+                  "pointer": "/rubric/0",
+                  "valueHash": "a1297a15ff2b3a0f739057b0447a410cb40c06ce923b05a3164b28df2ba398b4"
+                }
+              ]
+            },
+            {
+              "id": "c2",
+              "result": "met",
+              "reason": "答案指出改后总和32平均8，中间位置仍是两个4中位还为4，并说明最长拉高总和未移动中间值，解释总和增加使平均改变且中间两项不变。",
+              "refs": [
+                "/answer",
+                "/rubric/1"
+              ],
+              "required": true,
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+                },
+                {
+                  "pointer": "/rubric/1",
+                  "valueHash": "46a9a9b0313c712bcf38afd5a6b9d93cea5b4f5f9ce44412a9a9122ea1b5461b"
+                }
+              ]
+            },
+            {
+              "id": "c3",
+              "result": "not_met",
+              "reason": "答案为连续段落，未用小标题分开，可选标准未满足，但非必要。",
+              "refs": [
+                "/answer",
+                "/rubric/2"
+              ],
+              "required": false,
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+                },
+                {
+                  "pointer": "/rubric/2",
+                  "valueHash": "c501d76a0d0bcb2526107e773e4c2486adf551bafedd0b5c028a4823e4cc1a95"
+                }
+              ]
+            }
+          ],
+          "warrantedCredit": "granted",
+          "actualCredit": "withheld"
+        },
+        "witnesses": [
+          {
+            "pointer": "/answer",
+            "valueHash": "2dbd8f5eac20c0d9599d28e8f235d8cb7b31ccfec422d5474479befdfdf7a8c5"
+          },
+          {
+            "pointer": "/productJudgment/criteria/0",
+            "valueHash": "f06e5b2e9ede05feb13e040db20dc87527f8dd4a6ef23a54bf1774d4b58bfc45"
+          },
+          {
+            "pointer": "/rubric/0",
+            "valueHash": "a1297a15ff2b3a0f739057b0447a410cb40c06ce923b05a3164b28df2ba398b4"
+          },
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "c72bdf5aa33b5c9b2a61dcde88889cc9c7e6ebaf01687c706d6d8539580d34da"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

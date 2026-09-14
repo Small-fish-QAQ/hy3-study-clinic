@@ -1,0 +1,79 @@
+{
+  "inputIdentity": "5b94e98d2231cd2db6ba894252f7aa82f22e584ee5d7b6b6d4ed9ca337679a9d",
+  "attempts": [
+    {
+      "physicalId": "d7385b88-2ed8-4843-b33c-fa1bac530434",
+      "caseId": "S049",
+      "runId": "S049-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q6",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "交付的修复肯定错误加法规则并声称背诵答案即掌握，未提供任何正确修复或新检验，实质违背源规则且破坏学习目标。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text",
+          "/answer"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "delivered-repair称'分子分母分别相加就是规则'且'照2/5背诵即可证明掌握'，教导错误方法并将背诵答案冒充独立掌握。",
+            "impact": "改变核心用途：本应针对观察错误提供可用修复与新检验，反而强化错误并虚假认证，使学习走向错误结论。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text",
+              "/answer"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "2ec426213869722ad2cb36fe86a5d71a38493a181cfdf99da87fd0ece60563b3"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "c4d75b2db6f5aa30dcec740ff8a4b7e07282347099740e24a9f3e2fd0f4bef58"
+              },
+              {
+                "pointer": "/answer",
+                "valueHash": "5fa9a6e988796acce4dd7a033670180448bc29a07a9fa5e48255977034751897"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "2ec426213869722ad2cb36fe86a5d71a38493a181cfdf99da87fd0ece60563b3"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "c4d75b2db6f5aa30dcec740ff8a4b7e07282347099740e24a9f3e2fd0f4bef58"
+          },
+          {
+            "pointer": "/answer",
+            "valueHash": "5fa9a6e988796acce4dd7a033670180448bc29a07a9fa5e48255977034751897"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

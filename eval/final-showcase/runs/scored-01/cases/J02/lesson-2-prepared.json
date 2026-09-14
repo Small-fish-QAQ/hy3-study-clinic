@@ -1,0 +1,184 @@
+{
+  "status": "ready",
+  "message": "Lesson is ready.",
+  "course": {
+    "title": "相似图形中的长度比与面积比"
+  },
+  "session": {
+    "status": "active",
+    "version": 11
+  },
+  "agenda": {
+    "version": 2,
+    "itemState": "queued"
+  },
+  "lesson": {
+    "objective": {
+      "title": "相似图形顶点对应规则与长度面积缩放规律",
+      "whyNow": "已知两三角形相似且对应顶点，但面对未知边长或面积时，常因搞错对应或缩放方向而算反，需要先建立可复用的推算步骤。",
+      "outcomes": [
+        {
+          "title": "应用步骤从长度比或面积比推算未知量并核对条件",
+          "description": "应用步骤计算未知对应长度、周长或面积：列出顶点与边对应，设定相似比方向，根据所问量选择k或k²，使用正根计算，并说明条件（已确立相似、比例一致、拒绝负根、若不一致则指出需核对）。"
+        }
+      ]
+    },
+    "prerequisites": [],
+    "segments": [
+      {
+        "index": 0,
+        "purpose": "orientation",
+        "explanation": "考虑△PQR与△STU，题目约定P↔S、Q↔T、R↔U。已知PQ=2厘米，ST=6厘米，则从PQR到STU的相似比k=ST÷PQ=3。此时QR对应TU、PR对应SU，不能因为ST是最长边就随意把PQR的最长边与之相比。若另给TU=9厘米，可核对QR=3厘米才满足同一k。这个方向约定避免了把放大算成缩小。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 1,
+        "purpose": "worked_example",
+        "explanation": "下面用另一对三角形演练完整步骤：先算相似比，再用面积规律。注意周边数据用于核对，不预先宣布最终面积。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": {
+          "startingState": "△XYZ与△UVW已确立相似，约定X↔U、Y↔V、Z↔W。已知XY=4厘米，YZ=5厘米，ZX=8厘米；UV=10厘米，VW=12.5厘米，WU=20厘米。△XYZ面积为20平方厘米。",
+          "inputs": [
+            "XY=4厘米",
+            "UV=10厘米",
+            "△XYZ面积=20平方厘米"
+          ],
+          "ruleOrProcedure": "从XYZ到UVW的相似比k=UV÷XY（正数）；面积比=k²；新面积=原面积×k²。",
+          "steps": [
+            {
+              "action": "列出顶点对应并算方向相似比：k = UV / XY = 10 / 4",
+              "reason": "根据对应顶点U对X、V对Y，边UV对XY，用新图形UVW相对原图形XYZ的方向",
+              "resultingState": "k = 2.5，且VW/YZ=12.5/5=2.5、WU/ZX=20/8=2.5，三边比一致"
+            }
+          ],
+          "learnerDecision": null,
+          "result": null,
+          "whyResultFollows": null,
+          "origin": "hy3_synthesis",
+          "sources": [],
+          "interaction": {
+            "stage": "guided",
+            "modelledStepCount": 1,
+            "origin": "hy3_synthesis",
+            "sources": [],
+            "activity": {
+              "prompt": "根据已算得k=2.5且三边比一致，△UVW的面积应是？",
+              "options": [
+                {
+                  "id": "A",
+                  "text": "125平方厘米"
+                },
+                {
+                  "id": "B",
+                  "text": "3.2平方厘米"
+                },
+                {
+                  "id": "C",
+                  "text": "50平方厘米"
+                }
+              ],
+              "response": null,
+              "respondedAt": null,
+              "correct": null,
+              "feedback": null,
+              "debrief": null,
+              "credit": "none",
+              "misconception": null
+            },
+            "hint": null,
+            "scaffold": null,
+            "transfer": null
+          }
+        },
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 2,
+        "purpose": "comparison",
+        "explanation": "必须注意：本课所有推算都建立在题目已明确两图形相似的前提下。若仅知道两个三角形面积相等，绝不能推出它们形状相同，也就不能使用长度比k或面积比k²去预测对方边长。相似关系是外部给定条件，不是从面积数值反证出来的。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": {
+          "text": "例如一个直角边3、4、斜边5的直角三角形面积为6平方厘米；另一个底6厘米、高2厘米的三角形面积也为6平方厘米，但三边比例完全不同，二者不相似。若误把面积相等当相似，就会错误套用k²规律。",
+          "origin": "hy3_synthesis",
+          "sources": []
+        },
+        "possibleMisconception": null,
+        "informalCheck": null
+      }
+    ],
+    "sourceReferencesAvailable": true,
+    "visuals": [],
+    "summary": {
+      "available": true,
+      "text": "先列顶点与边对应，再按新图形相对原图形定相似比k>0，长度与周长乘k、面积乘k²，用另一条边核对k一致，拒绝负根。",
+      "nextConnection": null,
+      "formalOpportunities": []
+    },
+    "plannedTime": {
+      "agendaMinutes": 11,
+      "activeMinutesMin": 14,
+      "activeMinutesMax": 22,
+      "basis": "locally_evaluated_learning_actions"
+    }
+  },
+  "progress": {
+    "stateVersion": 2,
+    "stateId": "lesson_execution_61714b51-20f9-456c-91e6-f5689ddd737e",
+    "currentSegmentIndex": 0,
+    "segmentCount": 3,
+    "presentedSegmentIndexes": [],
+    "presentationStatus": "not_started",
+    "presentationCompletedAt": null
+  },
+  "currentInformalCheck": null,
+  "practice": {
+    "status": "locked",
+    "currentItemIndex": 0,
+    "itemCount": 1,
+    "item": {
+      "index": 0,
+      "objectiveTitle": "应用步骤从长度比或面积比推算未知量并核对条件",
+      "construct": "apply",
+      "surface": "initial",
+      "supplementary": true,
+      "prompt": "△ABC与△DEF已明确相似，A↔D、B↔E、C↔F。原AB=3,BC=4,AC=5；DE=6,EF=8,DF=10。对△DEF施加某操作后得到△DEF'。测得△DEF'与△ABC的周长比为2，面积比为9。以下哪项正确？",
+      "options": [
+        {
+          "id": "teaching_brief_136868b7-3823-4a5a-b8c0-209ef8ad0fbf_practice_1_initial_A",
+          "text": "操作未保持形状相似，因为周长比2要求面积比为4，与测得的9矛盾"
+        },
+        {
+          "id": "teaching_brief_136868b7-3823-4a5a-b8c0-209ef8ad0fbf_practice_1_initial_B",
+          "text": "DEF'与ABC整体相似比为3，即DE' = 3×AB、EF' = 3×BC、DF' = 3×AC"
+        },
+        {
+          "id": "teaching_brief_136868b7-3823-4a5a-b8c0-209ef8ad0fbf_practice_1_initial_C",
+          "text": "原△ABC与△DEF并不相似，面积比9只是数值巧合"
+        }
+      ]
+    },
+    "attempts": [],
+    "recovery": null,
+    "completedAt": null,
+    "credit": "none"
+  },
+  "allowedActions": [
+    "start_lesson"
+  ]
+}

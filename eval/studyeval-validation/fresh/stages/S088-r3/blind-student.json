@@ -1,0 +1,96 @@
+{
+  "inputIdentity": "c0a4ae67ab00e9ae0e66361f5e297a5a34d32692b15371d74c8ad619eda57e26",
+  "attempts": [
+    {
+      "physicalId": "0cf3da83-2fd3-429b-a60d-096d3bcebca1",
+      "caseId": "S088",
+      "runId": "S088-r3",
+      "stage": "blind-student",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": "Ordinal/student credit must follow required meanings."
+    },
+    {
+      "physicalId": "c58952f2-b380-4a5c-81dc-2f9a0c5b2e4a",
+      "caseId": "S088",
+      "runId": "S088-r3",
+      "stage": "blind-student",
+      "outputAttempt": 2,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "criteria": [
+      {
+        "id": "c1",
+        "result": "met",
+        "reason": "答案明确取b、d、f，对应下标1、3、5，满足元素与下标要求",
+        "refs": [
+          "/answer",
+          "/rubric/0"
+        ],
+        "required": true,
+        "witnesses": [
+          {
+            "pointer": "/answer",
+            "valueHash": "1f1899d77938970be2b4fb911104eb79b857f3b9b11357fb92a3f0e5f47e5119"
+          },
+          {
+            "pointer": "/rubric/0",
+            "valueHash": "6399550a90530ee1616215b1675defac00c772a340c4350897216a3724886f2c"
+          }
+        ]
+      },
+      {
+        "id": "c2",
+        "result": "met",
+        "reason": "答案说明切片在6之前停止，6本身不取，满足终点6不包含",
+        "refs": [
+          "/answer",
+          "/rubric/1"
+        ],
+        "required": true,
+        "witnesses": [
+          {
+            "pointer": "/answer",
+            "valueHash": "1f1899d77938970be2b4fb911104eb79b857f3b9b11357fb92a3f0e5f47e5119"
+          },
+          {
+            "pointer": "/rubric/1",
+            "valueHash": "b9daadef9f56c4be53ec987a58f6d1caeda944fe4c21953d9197e49732389c53"
+          }
+        ]
+      },
+      {
+        "id": "c3",
+        "result": "not_met",
+        "reason": "答案为普通句子，未使用项目符号列表，但标准非必要不影响核心信用",
+        "refs": [
+          "/answer",
+          "/rubric/2"
+        ],
+        "required": false,
+        "witnesses": [
+          {
+            "pointer": "/answer",
+            "valueHash": "1f1899d77938970be2b4fb911104eb79b857f3b9b11357fb92a3f0e5f47e5119"
+          },
+          {
+            "pointer": "/rubric/2",
+            "valueHash": "d52851780736c28eed16df31e029f6ea5cfaf7332d14aae7be2022370d4bc979"
+          }
+        ]
+      }
+    ],
+    "warrantedCredit": "granted"
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "inputIdentity": "9e9cc374ea06af26301c0b5dd933a781dd1bd35a27d32ddfd021844ca30f52db",
+  "attempts": [
+    {
+      "physicalId": "428d89e7-3191-49d1-b995-5bdd108d4568",
+      "caseId": "S027",
+      "runId": "S027-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "Lesson断言所有被4整除年份均为闰年，1900年二月29天且可忽略100/400条件，违背source规则及1900反例，破坏核对规则与实例的核心目标，属实质教学错误。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "Artifact lesson声称所有能被4整除年份都是闰年，1900年二月有29天，100和400条件可忽略，与source所给公历规则（1900不能被400整除为平年28天）直接矛盾。",
+            "impact": "错误规则改变闰年判定核心机制与实例答案，使学习者形成错误必要条件和结论，直接破坏goals中核对规则解释及实例的用途。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "853685eab47e41df7ddef7354c0225b71a669fb7d649723b4972c34088946314"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "5e982eb2843152ea1b81d9f7793dbfb2609636664c75b2a6bab9a349cc3bf60b"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "853685eab47e41df7ddef7354c0225b71a669fb7d649723b4972c34088946314"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "5e982eb2843152ea1b81d9f7793dbfb2609636664c75b2a6bab9a349cc3bf60b"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

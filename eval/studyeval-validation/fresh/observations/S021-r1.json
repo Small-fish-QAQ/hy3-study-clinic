@@ -1,0 +1,113 @@
+{
+  "task": {
+    "caseId": "S021",
+    "runId": "S021-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S021.json",
+    "inputHash": "a1144ca224bbe39f7746def6dd77455aa433ddd61b84c3179727d42324359ad5"
+  },
+  "inputHash": "a1144ca224bbe39f7746def6dd77455aa433ddd61b84c3179727d42324359ad5",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "7517aeda6564211caebda59e3e54178a1be98a71eac84b424dbfcc09cfca3632",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "artifact正确算得3072字节=3 KiB与3.072 kB，说明基数差异且不暗示内容变好，与source的单位定义及质量无关声明一致，归属课堂前提无缺陷。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "8afdc8a16be985b2b672462a1afa0e0f087f5b87a37356f6bfa6cf393136a011"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "9962889a586bcebaf05685b990e16a73f43aca209ab59334e74cf9c8606897a1"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "artifact正确计算3072字节为3 KiB与3.072 kB，依据来源给出的二进制与十进制基数差异，并正确指出同字节量不同数值表示不代表文件变大或变好，符合核对换算及来源的goal，无事实或归属缺陷。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "8afdc8a16be985b2b672462a1afa0e0f087f5b87a37356f6bfa6cf393136a011"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "9962889a586bcebaf05685b990e16a73f43aca209ab59334e74cf9c8606897a1"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q1",
+          "level": 2,
+          "evidence": "sufficient",
+          "reason": "artifact正确算得3072字节=3 KiB与3.072 kB，说明基数差异且不暗示内容变好，与source的单位定义及质量无关声明一致，归属课堂前提无缺陷。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "8afdc8a16be985b2b672462a1afa0e0f087f5b87a37356f6bfa6cf393136a011"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "9962889a586bcebaf05685b990e16a73f43aca209ab59334e74cf9c8606897a1"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "cbf8ea73e9ad273ad41c7dfcce66f49a000132748cf1d444ba1acbd8f27b1d82"
+  }
+}

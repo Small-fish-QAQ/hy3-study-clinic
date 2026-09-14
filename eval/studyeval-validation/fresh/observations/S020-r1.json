@@ -1,0 +1,228 @@
+{
+  "task": {
+    "caseId": "S020",
+    "runId": "S020-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S020.json",
+    "inputHash": "25f54bb34f47a164cd564507804bd28672654f1d2b660bdabb62fe0000a9a1c3"
+  },
+  "inputHash": "25f54bb34f47a164cd564507804bd28672654f1d2b660bdabb62fe0000a9a1c3",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "08ea6677ae07cc2665c5e8f2c325a47ca16c7b4d289ead473a1447cc3f31c9d0",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q3",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "产物给出正确公式2^(-3)=1/8及a≠0限制，但未展示从指数规则推导负指数为倒数的理由，仅令记忆，缺失解释性连接，属局部缺陷。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "未展示从前提规则到负指数公式的推导或理由，仅给出结论和记忆指令",
+                "impact": "核心结论正确但学习者未被教导为何负指数表示倒数而非负数，解释目标未充分达成",
+                "refs": [
+                  "/artifacts/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "503612323f61641afcb92e50d949e6ee494cd24f0dd8e33adf41d74483f34a66"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "503612323f61641afcb92e50d949e6ee494cd24f0dd8e33adf41d74483f34a66"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "8f66df12d54e18d234589d8c047330d6ce2ae196b074b8083cf0629060128d07"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q3",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "产物给出2^(-3)=1/8及公式a^(-n)=1/a^n且a≠0，结论正确且限制无误。但仅要求记住公式，未从所给前提展示推导负指数为何表倒数，缺失解释连接，属局部缺陷，核心用途成立故评1。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "未展示从已知规则(如a^0=1、指数除法)到a^(-n)=1/a^n的推导，仅陈述公式与例子并要求记忆，未解释'为何'。",
+                "impact": "核心公式与反例正确，目标中'解释为何'未满足但不改变正确性，局部教学用途仍成立。",
+                "refs": [
+                  "/artifacts/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "503612323f61641afcb92e50d949e6ee494cd24f0dd8e33adf41d74483f34a66"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "503612323f61641afcb92e50d949e6ee494cd24f0dd8e33adf41d74483f34a66"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "8f66df12d54e18d234589d8c047330d6ce2ae196b074b8083cf0629060128d07"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q3",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "产物给出正确例子2^(-3)=1/8及公式a^(-n)=1/a^n且a≠0，但仅令记忆，未从所给前提展示负指数为何表倒数的推导或理由，缺失解释连接，核心结论正确故局部缺陷。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "未展示从已知规则(如a^0=1、指数除法)到a^(-n)=1/a^n的推导，仅陈述公式与例子并要求记忆，未解释'为何'。",
+                "impact": "核心公式与反例正确，目标中'解释为何'未满足但不改变正确性，局部教学用途仍成立。",
+                "refs": [
+                  "/artifacts/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "503612323f61641afcb92e50d949e6ee494cd24f0dd8e33adf41d74483f34a66"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "503612323f61641afcb92e50d949e6ee494cd24f0dd8e33adf41d74483f34a66"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "8f66df12d54e18d234589d8c047330d6ce2ae196b074b8083cf0629060128d07"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q3:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "2^(-3)=1/8而不是-8，a^(-n)=1/a^n且a不能为0。请记住这条公式。",
+              "valueHash": "503612323f61641afcb92e50d949e6ee494cd24f0dd8e33adf41d74483f34a66"
+            },
+            "reason": "引文仅给出公式与记忆指令，未包含从前提规则推导负指数为倒数的理由，缺陷指控成立，影响为局部。"
+          },
+          {
+            "id": "review2:Q3:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "2^(-3)=1/8而不是-8，a^(-n)=1/a^n且a不能为0。请记住这条公式。",
+              "valueHash": "503612323f61641afcb92e50d949e6ee494cd24f0dd8e33adf41d74483f34a66"
+            },
+            "reason": "同review1，artifact未展示推导，仅陈述公式，缺失解释连接，local缺陷成立。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q3",
+          "level": 1,
+          "evidence": "sufficient",
+          "reason": "产物给出正确例子2^(-3)=1/8及公式a^(-n)=1/a^n且a≠0，但仅令记忆，未从所给前提展示负指数为何表倒数的推导或理由，缺失解释连接，核心结论正确故局部缺陷。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [
+            {
+              "severity": "local",
+              "description": "未展示从已知规则(如a^0=1、指数除法)到a^(-n)=1/a^n的推导，仅陈述公式与例子并要求记忆，未解释'为何'。",
+              "impact": "核心公式与反例正确，目标中'解释为何'未满足但不改变正确性，局部教学用途仍成立。",
+              "refs": [
+                "/artifacts/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "503612323f61641afcb92e50d949e6ee494cd24f0dd8e33adf41d74483f34a66"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "503612323f61641afcb92e50d949e6ee494cd24f0dd8e33adf41d74483f34a66"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "8f66df12d54e18d234589d8c047330d6ce2ae196b074b8083cf0629060128d07"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "b410e884aa6253c37ee8e3b009c5b3067abe4f9942e98d64b5b464b33c8fc549"
+  }
+}

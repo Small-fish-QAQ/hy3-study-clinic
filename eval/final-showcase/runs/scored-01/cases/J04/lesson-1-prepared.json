@@ -1,0 +1,269 @@
+{
+  "status": "ready",
+  "message": "Lesson is ready.",
+  "course": {
+    "title": "四分位数与四分位距"
+  },
+  "session": {
+    "status": "active",
+    "version": 1
+  },
+  "agenda": {
+    "version": 1,
+    "itemState": "queued"
+  },
+  "lesson": {
+    "objective": {
+      "title": "四分位数与四分位距：约定、计算与标记",
+      "whyNow": "面对一批新记录的离散程度描述，需要先统一四分位数算法才能可靠比较中间跨度。",
+      "outcomes": [
+        {
+          "title": "应用本课分半约定求Q1与Q3",
+          "description": "对至少4个数据先从小到大排序（若原始记录未排序则先排序，重复观测值各占一个位置），应用本课明确约定：求整体中位数；若数据个数为偶数则分成数量相等的低半组与高半组，若为奇数则去掉正中数据后左右分别为低高半组；再用组内中位数规则（奇数取正中、偶数取中间两平均）取低半组中位数得Q1、高半组中位数得Q3。不得用最小值与最大值平均充当Q1或Q3，也不能只把数据个数除以4当作观测值，仅使用此约定不混用其他软件插值。"
+        },
+        {
+          "title": "计算IQR并解释其作为中间半数跨度的离散指标属性",
+          "description": "计算IQR=Q3−Q1，并解释IQR是排序数据中间一半的跨度，携带与数据相同的单位（如分钟单位则用分钟，不能把IQR说成记录个数），是一种离散程度指标而非均值也非全距；较小的IQR仅说明按该约定中间部分比较集中，不保证最大值小，也不保证每个个体彼此接近。比较数据集时需保留同样的单位和四分位数约定。"
+        }
+      ]
+    },
+    "prerequisites": [],
+    "segments": [
+      {
+        "index": 0,
+        "purpose": "orientation",
+        "explanation": "先对至少4个数据从小到大排序，重复值各占位置。求整体中位数：偶数取中间两平均，奇数取正中。随后按奇偶分半——偶数把数据均分为低、高半组；奇数去掉正中那个后再分左右。最后低半组的中位数记为Q1，高半组的中位数记为Q3。例如9个排序数据3、5、7、9、11、13、15、17、19，整体中位数11，去掉后低半组3、5、7、9（偶4个）故Q1=(5+7)/2=6；高半组13、15、17、19故Q3=(15+17)/2=16。该机制说明Q1/Q3由组内位置决定，不是最小最大平均。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 1,
+        "purpose": "worked_example",
+        "explanation": "通过一个偶数新案例演练约定：先定整体中位数并分半，再算组中位数。以下步骤展示具体拆分，暂停处由你完成组内计算。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": {
+          "startingState": "已排序的8个响应时间（分钟）：1、4、6、8、10、12、14、18。",
+          "inputs": [
+            "整体中位数计算",
+            "分半取组中位数"
+          ],
+          "ruleOrProcedure": "本课约定：偶数个数据等分低高半组，各组中位数用组内规则（偶则中间两平均）得Q1/Q3。",
+          "steps": [
+            {
+              "action": "确定整体中位数",
+              "reason": "偶数8个，取第4与第5平均：(8+10)/2=9",
+              "resultingState": "整体中位数为9，低半组为前4个1、4、6、8，高半组为后4个10、12、14、18。"
+            }
+          ],
+          "learnerDecision": null,
+          "result": null,
+          "whyResultFollows": null,
+          "origin": "hy3_synthesis",
+          "sources": [],
+          "interaction": {
+            "stage": "guided",
+            "modelledStepCount": 1,
+            "origin": "hy3_synthesis",
+            "sources": [],
+            "activity": {
+              "prompt": "基于上述分半结果，低半组与高半组的中位数（即Q1与Q3）分别是多少？",
+              "options": [
+                {
+                  "id": "A",
+                  "text": "Q1=5分钟，Q3=13分钟"
+                },
+                {
+                  "id": "B",
+                  "text": "Q1=4分钟，Q3=14分钟"
+                },
+                {
+                  "id": "C",
+                  "text": "Q1=6分钟，Q3=12分钟"
+                }
+              ],
+              "response": null,
+              "respondedAt": null,
+              "correct": null,
+              "feedback": null,
+              "debrief": null,
+              "credit": "none",
+              "misconception": null
+            },
+            "hint": null,
+            "scaffold": null,
+            "transfer": null
+          }
+        },
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 2,
+        "purpose": "comparison",
+        "explanation": "明确边界：本课约定只认排序后分半组的组内中位数。任何把极值平均或单纯除4当位置的做法都越界，会导致错误Q1/Q3。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": {
+          "text": "错误做法：把最小值与最大值平均充当Q1或Q3，例如(4+30)/2=17当作Q3；或仅把数据个数除以4当作观测值位置。正确约定始终基于排序后分半组的组内中位数，不混用其他软件插值。",
+          "origin": "hy3_synthesis",
+          "sources": []
+        },
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 3,
+        "purpose": "worked_example",
+        "explanation": "用一个含重复值且单位为秒的新案例演练IQR计算，并强调IQR携带原单位、是中间半数跨度而非记录个数。先展示排序与分半，暂停后由你完成组中位数与IQR推导。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": {
+          "startingState": "已排序的8个请求耗时（秒）：2、2、2、2、8、8、8、8。",
+          "inputs": [
+            "整体中位数与分半",
+            "计算Q1、Q3与IQR"
+          ],
+          "ruleOrProcedure": "本课约定：偶数个数据等分低高半组，各组中位数用组内规则（偶则中间两平均）得Q1/Q3；IQR=Q3−Q1，单位与原始数据相同，不是记录个数。",
+          "steps": [
+            {
+              "action": "确定整体中位数并分半",
+              "reason": "偶数8个，取第4与第5平均：(2+8)/2=5",
+              "resultingState": "整体中位数为5秒，低半组为前4个2、2、2、2，高半组为后4个8、8、8、8。"
+            }
+          ],
+          "learnerDecision": null,
+          "result": null,
+          "whyResultFollows": null,
+          "origin": "hy3_synthesis",
+          "sources": [],
+          "interaction": {
+            "stage": "guided",
+            "modelledStepCount": 1,
+            "origin": "hy3_synthesis",
+            "sources": [],
+            "activity": {
+              "prompt": "基于上述分半结果，低半组与高半组的中位数及IQR（带单位）分别是多少？",
+              "options": [
+                {
+                  "id": "A",
+                  "text": "Q1=2秒，Q3=8秒，IQR=6秒"
+                },
+                {
+                  "id": "B",
+                  "text": "Q1=2秒，Q3=8秒，IQR=6个记录"
+                },
+                {
+                  "id": "C",
+                  "text": "Q1=2秒，Q3=8秒，IQR=8秒"
+                }
+              ],
+              "response": null,
+              "respondedAt": null,
+              "correct": null,
+              "feedback": null,
+              "debrief": null,
+              "credit": "none",
+              "misconception": null
+            },
+            "hint": null,
+            "scaffold": null,
+            "transfer": null
+          }
+        },
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 4,
+        "purpose": "comparison",
+        "explanation": "明确边界：IQR只是排序后中间一半的跨度，单位同原数据；较小IQR仅说明中间部分集中，不保证最大值小，也不保证每个个体彼此接近。比较时须保留同样单位和四分位数约定。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": {
+          "text": "错误认识：把IQR说成记录个数（如‘IQR=6个请求’），或认为IQR较小就代表最大值小、所有数据彼此接近。正确边界：IQR是Q3−Q1的差，单位同原数据；较小IQR仅说明中间半数集中，不保证最大值小，也不保证每个个体彼此接近；比较时须保留同样单位和四分位数约定。",
+          "origin": "hy3_synthesis",
+          "sources": []
+        },
+        "possibleMisconception": null,
+        "informalCheck": null
+      }
+    ],
+    "sourceReferencesAvailable": true,
+    "visuals": [],
+    "summary": {
+      "available": true,
+      "text": "本课约定以排序后分半、组内中位数确定Q1/Q3；偶数等分两半，奇数去正中再分半，均不依赖极值平均或外部插值。",
+      "nextConnection": null,
+      "formalOpportunities": []
+    },
+    "plannedTime": {
+      "agendaMinutes": 21,
+      "activeMinutesMin": 24,
+      "activeMinutesMax": 38,
+      "basis": "locally_evaluated_learning_actions"
+    }
+  },
+  "progress": {
+    "stateVersion": 2,
+    "stateId": "lesson_execution_79abd16a-4a00-411c-b81f-d72f0f88662c",
+    "currentSegmentIndex": 0,
+    "segmentCount": 5,
+    "presentedSegmentIndexes": [],
+    "presentationStatus": "not_started",
+    "presentationCompletedAt": null
+  },
+  "currentInformalCheck": null,
+  "practice": {
+    "status": "locked",
+    "currentItemIndex": 0,
+    "itemCount": 2,
+    "item": {
+      "index": 0,
+      "objectiveTitle": "应用本课分半约定求Q1与Q3",
+      "construct": "apply",
+      "surface": "initial",
+      "supplementary": true,
+      "prompt": "新观测记录已按分钟从小到大排序：4、6、9、11、13、14、18、20、22、30，共10个。按本课约定，低半组与高半组各含5个，组内中位数取正中。求Q1与Q3。",
+      "options": [
+        {
+          "id": "teaching_brief_54df0211-ea91-498b-920f-49c88010e556_practice_1_initial_A",
+          "text": "Q1=9分钟，Q3=20分钟"
+        },
+        {
+          "id": "teaching_brief_54df0211-ea91-498b-920f-49c88010e556_practice_1_initial_B",
+          "text": "Q1=13分钟，Q3=14分钟"
+        },
+        {
+          "id": "teaching_brief_54df0211-ea91-498b-920f-49c88010e556_practice_1_initial_C",
+          "text": "Q1=7.5分钟，Q3=21分钟"
+        }
+      ]
+    },
+    "attempts": [],
+    "recovery": null,
+    "completedAt": null,
+    "credit": "none"
+  },
+  "allowedActions": [
+    "start_lesson"
+  ]
+}

@@ -1,0 +1,134 @@
+{
+  "inputIdentity": "4d3788df467478771224b5d78c29e90bdf98691a794f29f658d41ff65934d7ca",
+  "attempts": [
+    {
+      "physicalId": "34400b21-f7b5-43e1-a9f6-9fd923de5c72",
+      "caseId": "S067",
+      "runId": "S067-r1",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q3",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "产物声称B齿多三倍故A转一圈B转三圈且同向转，但源资料证明外齿轮啮合齿数反比（B转1/3圈）且转向相反。错误转数与方向直接教授无效方法，实质破坏解释齿数决定转数和方向的核心目标。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "artifact断言'B齿多三倍，所以A转一圈时B转三圈'，错误正比推导，正确齿数反比B转1/3圈",
+            "impact": "错误转数结论违背goals解释齿数决定转数要求，教无效方法，破坏核心教学用途",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "f2ffbb0a81a36816805d82af8f8224a5604ec8e494677ec469aa6054103f5701"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+              }
+            ]
+          },
+          {
+            "severity": "material",
+            "description": "artifact断言'齿轮啮合会使两轮同方向转'，但外齿轮啮合转向相反",
+            "impact": "错误转向规则违背goals解释方向要求，改变核心用途",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "f2ffbb0a81a36816805d82af8f8224a5604ec8e494677ec469aa6054103f5701"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "f2ffbb0a81a36816805d82af8f8224a5604ec8e494677ec469aa6054103f5701"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q3:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "B齿多三倍，所以A转一圈时B转三圈",
+          "valueHash": "f2ffbb0a81a36816805d82af8f8224a5604ec8e494677ec469aa6054103f5701"
+        },
+        "reason": "artifact主张正比转数，但source明确'A转一圈通过12齿，因此B转三分之一圈'，齿数决定转数关系颠倒，教无效方法。"
+      },
+      {
+        "id": "review1:Q3:2",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "齿轮啮合会使两轮同方向转",
+          "valueHash": "f2ffbb0a81a36816805d82af8f8224a5604ec8e494677ec469aa6054103f5701"
+        },
+        "reason": "source明确'转向相反'，artifact错误方向规则破坏goals解释方向要求。"
+      },
+      {
+        "id": "review2:Q3:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "B齿多三倍，所以A转一圈时B转三圈",
+          "valueHash": "f2ffbb0a81a36816805d82af8f8224a5604ec8e494677ec469aa6054103f5701"
+        },
+        "reason": "source证明B转1/3圈，错误因果颠倒齿数-转数关系，实质缺陷。"
+      },
+      {
+        "id": "review2:Q3:2",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "齿轮啮合会使两轮同方向转",
+          "valueHash": "f2ffbb0a81a36816805d82af8f8224a5604ec8e494677ec469aa6054103f5701"
+        },
+        "reason": "source转向相反，错误方向规则改变核心用途。"
+      }
+    ]
+  }
+}

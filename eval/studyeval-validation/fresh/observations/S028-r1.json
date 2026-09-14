@@ -1,0 +1,463 @@
+{
+  "task": {
+    "caseId": "S028",
+    "runId": "S028-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S028.json",
+    "inputHash": "766c9311b6881d83db4de13d7e2f6b5967d681fd6c111106719099e5f2da14e4"
+  },
+  "inputHash": "766c9311b6881d83db4de13d7e2f6b5967d681fd6c111106719099e5f2da14e4",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "a79693ab7fc9bda92affadffd88e28f18c57572eaea0ff93484b4a22080f3e42",
+    "stages": {
+      "goal-mapping": {
+        "goals": [
+          {
+            "index": 0,
+            "importance": "essential",
+            "status": "contradicted",
+            "reason": "lesson断言第一人称“我”总是作者本人，将叙述者与现实作者等同，与目标要求的区分叙述者与现实作者直接相反",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/0"
+            ],
+            "quote": "第一人称“我”总是作者本人",
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "a750d065c5417fa7e4b648d56cbe226380a18cdd6674a5a2ae6c5682c51c6b91"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "2b41e2bf08ab98b4ef000c50cebd55a20f14a001d93a4acdd0bee2a73360a806"
+              }
+            ]
+          },
+          {
+            "index": 1,
+            "importance": "essential",
+            "status": "contradicted",
+            "reason": "lesson声称第一人称叙述“一定知道所有人物思想”，未解释任何限制，否定了目标要求的解释其限制（正确应为不能直接知道未表达心思）",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/1"
+            ],
+            "quote": "也一定知道所有人物思想",
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "a750d065c5417fa7e4b648d56cbe226380a18cdd6674a5a2ae6c5682c51c6b91"
+              },
+              {
+                "pointer": "/goals/1",
+                "valueHash": "22d8faa697faa2a740550cc0d1cafef65fe438b94828227c311203c1333a76d9"
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "importance": "secondary",
+            "status": "usable",
+            "reason": "lesson明确指示“引用时标清说话人”，提供了引用他人话语时归属标记的具体要求，实现次要目标",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/2"
+            ],
+            "quote": "引用时标清说话人",
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "a750d065c5417fa7e4b648d56cbe226380a18cdd6674a5a2ae6c5682c51c6b91"
+              },
+              {
+                "pointer": "/goals/2",
+                "valueHash": "e6a9fe5f3b015bae44d40471551088d7d08a745fa66ebc11c00ab452a5d7dff2"
+              }
+            ]
+          }
+        ]
+      },
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "教学文本声称第一人称总是作者本人且知所有人物思想，直接矛盾来源中区分叙述者/作者及限制认知的核心目标，核心用途被实质推翻。次要目标正确但不改实质缺陷。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "Lesson asserts first-person 'I' is always the real author, contradicting core goal to distinguish narrator from author.",
+                "impact": "Defeats core purpose of differentiating narrator and real author; teaches false equivalence.",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "a750d065c5417fa7e4b648d56cbe226380a18cdd6674a5a2ae6c5682c51c6b91"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "bae368a359568cf22d196cf95dd79a50368bc21f0e49042a004744bc3b0af43c"
+                  }
+                ]
+              },
+              {
+                "severity": "material",
+                "description": "Lesson claims narrator certainly knows all characters' thoughts, contradicting core goal to explain limits of first-person knowledge.",
+                "impact": "Defeats core purpose of explaining what first-person can directly know and its limits; removes required constraint.",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "a750d065c5417fa7e4b648d56cbe226380a18cdd6674a5a2ae6c5682c51c6b91"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "bae368a359568cf22d196cf95dd79a50368bc21f0e49042a004744bc3b0af43c"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "a750d065c5417fa7e4b648d56cbe226380a18cdd6674a5a2ae6c5682c51c6b91"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "bae368a359568cf22d196cf95dd79a50368bc21f0e49042a004744bc3b0af43c"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "教学文本直接矛盾两个核心目标：声称第一人称总是作者本人且全知，违背区分叙述者/作者及解释限制的目标。次要目标虽提及引用标记，但核心已被实质破坏，依rubric给0分。攻击附录无评分权限已忽略。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "Lesson asserts first-person 'I' is always the real author, contradicting goal to distinguish narrator from author.",
+                "impact": "Defeats core purpose: learners taught opposite of required distinction, making goal unusable.",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text",
+                  "/goals/0"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "a750d065c5417fa7e4b648d56cbe226380a18cdd6674a5a2ae6c5682c51c6b91"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "bae368a359568cf22d196cf95dd79a50368bc21f0e49042a004744bc3b0af43c"
+                  },
+                  {
+                    "pointer": "/goals/0",
+                    "valueHash": "2b41e2bf08ab98b4ef000c50cebd55a20f14a001d93a4acdd0bee2a73360a806"
+                  }
+                ]
+              },
+              {
+                "severity": "material",
+                "description": "Lesson claims narrator certainly knows all characters' thoughts, contradicting goal to explain limits.",
+                "impact": "Destroys core explanation goal; students learn false omniscience instead of required limitation.",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text",
+                  "/goals/1"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "a750d065c5417fa7e4b648d56cbe226380a18cdd6674a5a2ae6c5682c51c6b91"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "bae368a359568cf22d196cf95dd79a50368bc21f0e49042a004744bc3b0af43c"
+                  },
+                  {
+                    "pointer": "/goals/1",
+                    "valueHash": "22d8faa697faa2a740550cc0d1cafef65fe438b94828227c311203c1333a76d9"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "a750d065c5417fa7e4b648d56cbe226380a18cdd6674a5a2ae6c5682c51c6b91"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "bae368a359568cf22d196cf95dd79a50368bc21f0e49042a004744bc3b0af43c"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "教学文本断言第一人称总是作者本人且必知所有人物思想，直接矛盾来源与核心目标（区分叙述者/作者、解释认知限制），核心用途被实质推翻。次要目标虽实现但不改实质缺陷，故0分。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/0",
+              "/goals/1",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "Lesson asserts first-person 'I' is always the real author, contradicting core goal to distinguish narrator from author.",
+                "impact": "Defeats core purpose of differentiating narrator and real author; teaches false equivalence.",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/goals/0",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "a750d065c5417fa7e4b648d56cbe226380a18cdd6674a5a2ae6c5682c51c6b91"
+                  },
+                  {
+                    "pointer": "/goals/0",
+                    "valueHash": "2b41e2bf08ab98b4ef000c50cebd55a20f14a001d93a4acdd0bee2a73360a806"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "bae368a359568cf22d196cf95dd79a50368bc21f0e49042a004744bc3b0af43c"
+                  }
+                ]
+              },
+              {
+                "severity": "material",
+                "description": "Lesson claims narrator certainly knows all characters' thoughts, contradicting core goal to explain limits of first-person knowledge.",
+                "impact": "Defeats core purpose of explaining what first-person can directly know and its limits; removes required constraint.",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/goals/1",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "a750d065c5417fa7e4b648d56cbe226380a18cdd6674a5a2ae6c5682c51c6b91"
+                  },
+                  {
+                    "pointer": "/goals/1",
+                    "valueHash": "22d8faa697faa2a740550cc0d1cafef65fe438b94828227c311203c1333a76d9"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "bae368a359568cf22d196cf95dd79a50368bc21f0e49042a004744bc3b0af43c"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "a750d065c5417fa7e4b648d56cbe226380a18cdd6674a5a2ae6c5682c51c6b91"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "2b41e2bf08ab98b4ef000c50cebd55a20f14a001d93a4acdd0bee2a73360a806"
+              },
+              {
+                "pointer": "/goals/1",
+                "valueHash": "22d8faa697faa2a740550cc0d1cafef65fe438b94828227c311203c1333a76d9"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "bae368a359568cf22d196cf95dd79a50368bc21f0e49042a004744bc3b0af43c"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q2:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "第一人称“我”总是作者本人",
+              "valueHash": "a750d065c5417fa7e4b648d56cbe226380a18cdd6674a5a2ae6c5682c51c6b91"
+            },
+            "reason": "该句声称第一人称总是作者本人，直接矛盾/goals/0要求区分叙述者与现实作者，且/sources/0指明不自动等于现实作者，推翻核心目标。"
+          },
+          {
+            "id": "review1:Q2:2",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "也一定知道所有人物思想",
+              "valueHash": "a750d065c5417fa7e4b648d56cbe226380a18cdd6674a5a2ae6c5682c51c6b91"
+            },
+            "reason": "该句声称一定知道所有人物思想，矛盾/goals/1解释限制的核心目标，/sources/0限制认知，实质缺陷。"
+          },
+          {
+            "id": "review2:Q2:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "第一人称“我”总是作者本人",
+              "valueHash": "a750d065c5417fa7e4b648d56cbe226380a18cdd6674a5a2ae6c5682c51c6b91"
+            },
+            "reason": "同review1:Q2:1，原文证实矛盾核心目标0，material。"
+          },
+          {
+            "id": "review2:Q2:2",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "也一定知道所有人物思想",
+              "valueHash": "a750d065c5417fa7e4b648d56cbe226380a18cdd6674a5a2ae6c5682c51c6b91"
+            },
+            "reason": "同review1:Q2:2，原文证实矛盾核心目标1，material。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q2",
+          "level": 0,
+          "evidence": "sufficient",
+          "reason": "教学文本断言第一人称总是作者本人且必知所有人物思想，直接矛盾来源与核心目标（区分叙述者/作者、解释认知限制），核心用途被实质推翻。次要目标虽实现但不改实质缺陷，故0分。",
+          "refs": [
+            "/artifacts/0/text",
+            "/goals/0",
+            "/goals/1",
+            "/sources/0/text"
+          ],
+          "defects": [
+            {
+              "severity": "material",
+              "description": "Lesson asserts first-person 'I' is always the real author, contradicting core goal to distinguish narrator from author.",
+              "impact": "Defeats core purpose of differentiating narrator and real author; teaches false equivalence.",
+              "refs": [
+                "/artifacts/0/text",
+                "/goals/0",
+                "/sources/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "a750d065c5417fa7e4b648d56cbe226380a18cdd6674a5a2ae6c5682c51c6b91"
+                },
+                {
+                  "pointer": "/goals/0",
+                  "valueHash": "2b41e2bf08ab98b4ef000c50cebd55a20f14a001d93a4acdd0bee2a73360a806"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "bae368a359568cf22d196cf95dd79a50368bc21f0e49042a004744bc3b0af43c"
+                }
+              ]
+            },
+            {
+              "severity": "material",
+              "description": "Lesson claims narrator certainly knows all characters' thoughts, contradicting core goal to explain limits of first-person knowledge.",
+              "impact": "Defeats core purpose of explaining what first-person can directly know and its limits; removes required constraint.",
+              "refs": [
+                "/artifacts/0/text",
+                "/goals/1",
+                "/sources/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "a750d065c5417fa7e4b648d56cbe226380a18cdd6674a5a2ae6c5682c51c6b91"
+                },
+                {
+                  "pointer": "/goals/1",
+                  "valueHash": "22d8faa697faa2a740550cc0d1cafef65fe438b94828227c311203c1333a76d9"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "bae368a359568cf22d196cf95dd79a50368bc21f0e49042a004744bc3b0af43c"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "a750d065c5417fa7e4b648d56cbe226380a18cdd6674a5a2ae6c5682c51c6b91"
+            },
+            {
+              "pointer": "/goals/0",
+              "valueHash": "2b41e2bf08ab98b4ef000c50cebd55a20f14a001d93a4acdd0bee2a73360a806"
+            },
+            {
+              "pointer": "/goals/1",
+              "valueHash": "22d8faa697faa2a740550cc0d1cafef65fe438b94828227c311203c1333a76d9"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "bae368a359568cf22d196cf95dd79a50368bc21f0e49042a004744bc3b0af43c"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "ad07e57f5c717ff0a1f2db4bd88057d49d59efe1bc208ec022a1f0f63393c6e7"
+  }
+}

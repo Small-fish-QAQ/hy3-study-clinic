@@ -1,0 +1,36 @@
+{
+  "inputIdentity": "6d8b510eb3710307af07f7c643bf0e253f742c2b52c153cf925c95bba8979420",
+  "attempts": [
+    {
+      "physicalId": "ee21757d-5324-4810-b426-0be1097ceb3b",
+      "caseId": "S026",
+      "runId": "S026-r1",
+      "stage": "blind-solution",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "status": "contradictory",
+    "solution": "据/sources/0/text，密码为1-5中三位不同数字有序，共5×4×3=60种，无其它线索无法唯一确定。/question/prompt禁止不确定且强制唯一确定，条件与要求矛盾，不屈从编造。",
+    "refs": [
+      "/question/prompt",
+      "/sources/0/text"
+    ],
+    "witnesses": [
+      {
+        "pointer": "/question/prompt",
+        "valueHash": "39815d10f4ddb495b3e707c994ae16e233ed84581c64cdfe9bbd74910f5edf0f"
+      },
+      {
+        "pointer": "/sources/0/text",
+        "valueHash": "61e32c85918a722e54332a389f76c5ef0721b03afb46040da613635927625724"
+      }
+    ]
+  }
+}

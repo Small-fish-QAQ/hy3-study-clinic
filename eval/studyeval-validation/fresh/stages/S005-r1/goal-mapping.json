@@ -1,0 +1,85 @@
+{
+  "inputIdentity": "f1e0f81f0b5c87ef26e5d9b66873430fcfec6da80d49eb9c09334b916c01c094",
+  "attempts": [
+    {
+      "physicalId": "790b2cc1-dda0-49a5-9cc5-1fc837b886d8",
+      "caseId": "S005",
+      "runId": "S005-r1",
+      "stage": "goal-mapping",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "goals": [
+      {
+        "index": 0,
+        "importance": "essential",
+        "status": "usable",
+        "reason": "artifact明确说明复制保留源文件并创建相同内容的目标，实现了说明复制后源路径与目标路径状态的核心目标。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/0"
+        ],
+        "quote": "复制保留源文件并创建相同内容的目标；",
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "40c4cc92e70defc3da0128c4041246cc57f4f23848ab1460eacc73b8fbb0adb2"
+          },
+          {
+            "pointer": "/goals/0",
+            "valueHash": "7532220c38978923873dc40d4d1cf66fd14c0bb961b641a9a3505fb3ee3407ff"
+          }
+        ]
+      },
+      {
+        "index": 1,
+        "importance": "essential",
+        "status": "usable",
+        "reason": "artifact明确说明移动使源路径不再存在、目标路径保存文件，实现了说明移动后两条路径状态的核心目标。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/1"
+        ],
+        "quote": "移动使源路径不再存在、目标路径保存文件。",
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "40c4cc92e70defc3da0128c4041246cc57f4f23848ab1460eacc73b8fbb0adb2"
+          },
+          {
+            "pointer": "/goals/1",
+            "valueHash": "2024f7c3f7abb8fd69338ad687ae12c5334ffdc39c71ed3651edf882ea55011f"
+          }
+        ]
+      },
+      {
+        "index": 2,
+        "importance": "secondary",
+        "status": "missing",
+        "reason": "artifact仅描述复制和移动的状态，未提及文件扩展名与格式转换的关系，缺少说明改扩展名不证明格式转换的处理。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/2"
+        ],
+        "quote": "",
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "40c4cc92e70defc3da0128c4041246cc57f4f23848ab1460eacc73b8fbb0adb2"
+          },
+          {
+            "pointer": "/goals/2",
+            "valueHash": "b524310b83946f4129f40f29a3aa35362a953ed7e94f6dd44c3c7a5466a7803b"
+          }
+        ]
+      }
+    ]
+  }
+}

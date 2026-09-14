@@ -1,0 +1,44 @@
+{
+  "id": "S035",
+  "dimensions": [
+    "Q5"
+  ],
+  "evidence": {
+    "sources": [
+      {
+        "id": "rule",
+        "text": "假定集合A={1,2}，B={2,3}，并集包含属于任一集合的所有不同元素，为{1,2,3}。"
+      }
+    ],
+    "goals": [
+      "检查针对并集题的评分"
+    ],
+    "prerequisites": [],
+    "desiredDepth": "working_fluency",
+    "authorityBoundaries": [],
+    "artifacts": [],
+    "exposure": [],
+    "question": {
+      "prompt": "写出A与B的并集。",
+      "options": []
+    },
+    "rubric": [
+      {
+        "id": "required",
+        "text": "写出{1,2,3}，顺序不限",
+        "required": true
+      }
+    ],
+    "answer": "",
+    "productJudgment": {
+      "criteria": [
+        {
+          "id": "required",
+          "result": "met"
+        }
+      ],
+      "feedback": "空白答案已完整表示并集，授予信用。",
+      "consequence": "granted"
+    }
+  }
+}

@@ -1,0 +1,183 @@
+{
+  "status": "ready",
+  "message": "Lesson is ready.",
+  "course": {
+    "title": "功率、电能与使用时长"
+  },
+  "session": {
+    "status": "active",
+    "version": 11
+  },
+  "agenda": {
+    "version": 2,
+    "itemState": "queued"
+  },
+  "lesson": {
+    "objective": {
+      "title": "功率与电能基础：定义、千瓦时、电能计算与方案比较",
+      "whyNow": "筹备聚会时需从两种电热设备中选一个更省电的方案，但仅看标称功率会误判，需要建立结合功率与时长的电能模型。",
+      "outcomes": [
+        {
+          "title": "结合功率与时长比较使用方案耗电",
+          "description": "能够结合功率与时长比较使用方案，计算各自累计电能并判断给定过程中哪台耗电更少，且不将此次结论推广为普遍节能或等效服务量，仅针对给定过程。"
+        }
+      ]
+    },
+    "prerequisites": [],
+    "segments": [
+      {
+        "index": 0,
+        "purpose": "orientation",
+        "explanation": "功率表示能量转移的快慢，电能是一定时间累计消耗的能量。当实际功率恒定且单位一致时，电能等于功率乘时间：若用千瓦和小时，结果就是千瓦时。如果过程分多段，每段用该段实际平均功率乘其时长得到分段电能，再加总；不能简单对功率取平均后乘总时长，因为各段持续时间不同。日常电表以千瓦时计量，它是能量单位而非功率单位。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 1,
+        "purpose": "worked_example",
+        "explanation": "下面用一个新案例演练：两台设备在给定的实际功率和时长下，分别计算电能并比较谁耗电少。注意先把所有量统一到千瓦与小时，再相乘。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": {
+          "startingState": "设备M标称无关，已知实际恒定功率600瓦，运行20分钟；设备N已知实际平均功率200瓦，运行1.5小时。两者服务量不讨论，仅比给定过程耗电。",
+          "inputs": [
+            "M: 600瓦, 20分钟",
+            "N: 200瓦, 1.5小时"
+          ],
+          "ruleOrProcedure": "统一单位为千瓦与小时：1千瓦=1000瓦，1小时=60分钟；电能E=P(kW)×t(h)；分别算后比较数值。",
+          "steps": [
+            {
+              "action": "将M的功率与时间转换：600瓦=0.6千瓦，20分钟=20/60=1/3小时≈0.333小时；同时记录N给定200瓦即0.2千瓦、1.5小时",
+              "reason": "保持单位一致才能直接得千瓦时",
+              "resultingState": "M已转换为0.6千瓦、1/3小时，N为0.2千瓦、1.5小时"
+            }
+          ],
+          "learnerDecision": null,
+          "result": null,
+          "whyResultFollows": null,
+          "origin": "hy3_synthesis",
+          "sources": [],
+          "interaction": {
+            "stage": "guided",
+            "modelledStepCount": 1,
+            "origin": "hy3_synthesis",
+            "sources": [],
+            "activity": {
+              "prompt": "基于上述状态（M已转换为0.6千瓦、1/3小时，N为0.2千瓦、1.5小时），哪台在此过程中的累计电能更少？",
+              "options": [
+                {
+                  "id": "A",
+                  "text": "M耗电0.2千瓦时，N耗电0.3千瓦时，M更少"
+                },
+                {
+                  "id": "B",
+                  "text": "M耗电0.3千瓦时，N耗电0.2千瓦时，N更少"
+                },
+                {
+                  "id": "C",
+                  "text": "两者均耗电0.25千瓦时，相同"
+                }
+              ],
+              "response": null,
+              "respondedAt": null,
+              "correct": null,
+              "feedback": null,
+              "debrief": null,
+              "credit": "none",
+              "misconception": null
+            },
+            "hint": null,
+            "scaffold": null,
+            "transfer": null
+          }
+        },
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 2,
+        "purpose": "comparison",
+        "explanation": "算出某次过程哪台耗电少，并不等于证明该设备在任意任务中都更节能，也不说明它们提供了同等服务。结论只绑定本次给定的功率与时长组合。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": {
+          "text": "例如设备A以900瓦运行10分钟耗电0.15千瓦时，设备B以300瓦运行2小时耗电0.6千瓦时，A本次更少；但不能推广为A永远比B省电，也不能认为两者完成相同服务量。",
+          "origin": "hy3_synthesis",
+          "sources": []
+        },
+        "possibleMisconception": null,
+        "informalCheck": null
+      }
+    ],
+    "sourceReferencesAvailable": true,
+    "visuals": [],
+    "summary": {
+      "available": true,
+      "text": "电能是功率在时间段内的累计，恒定功率用E=P×t，分段则分段求和；比较耗电必须同时用给定过程的功率和时长计算，结论仅限于该过程。",
+      "nextConnection": null,
+      "formalOpportunities": []
+    },
+    "plannedTime": {
+      "agendaMinutes": 11,
+      "activeMinutesMin": 14,
+      "activeMinutesMax": 22,
+      "basis": "locally_evaluated_learning_actions"
+    }
+  },
+  "progress": {
+    "stateVersion": 2,
+    "stateId": "lesson_execution_9355a892-b496-4850-838e-79847b01c083",
+    "currentSegmentIndex": 0,
+    "segmentCount": 3,
+    "presentedSegmentIndexes": [],
+    "presentationStatus": "not_started",
+    "presentationCompletedAt": null
+  },
+  "currentInformalCheck": null,
+  "practice": {
+    "status": "locked",
+    "currentItemIndex": 0,
+    "itemCount": 1,
+    "item": {
+      "index": 0,
+      "objectiveTitle": "结合功率与时长比较使用方案耗电",
+      "construct": "evaluate",
+      "surface": "initial",
+      "supplementary": true,
+      "prompt": "某次测试中，设备P运行0.5小时耗电0.4千瓦时，设备Q运行2小时耗电0.6千瓦时。根据这些数据，哪组隐藏的实际平均功率最能解释观测结果？",
+      "options": [
+        {
+          "id": "teaching_brief_df0f3b44-8b2f-4916-9acb-25f5ff62593f_practice_1_initial_A",
+          "text": "设备P实际平均功率0.8千瓦，设备Q实际平均功率0.3千瓦"
+        },
+        {
+          "id": "teaching_brief_df0f3b44-8b2f-4916-9acb-25f5ff62593f_practice_1_initial_B",
+          "text": "设备P实际平均功率0.3千瓦，设备Q实际平均功率0.8千瓦"
+        },
+        {
+          "id": "teaching_brief_df0f3b44-8b2f-4916-9acb-25f5ff62593f_practice_1_initial_C",
+          "text": "设备P与设备Q实际平均功率均为0.4千瓦"
+        }
+      ]
+    },
+    "attempts": [],
+    "recovery": null,
+    "completedAt": null,
+    "credit": "none"
+  },
+  "allowedActions": [
+    "start_lesson"
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "id": "S100",
+  "dimensions": [
+    "Q3"
+  ],
+  "evidence": {
+    "sources": [
+      {
+        "id": "rule",
+        "text": "十进制自然数乘10时，各位数字的位值变成原来的十倍；例如23变230。"
+      }
+    ],
+    "goals": [
+      "解释23乘10为何为230"
+    ],
+    "prerequisites": [],
+    "desiredDepth": "working_fluency",
+    "authorityBoundaries": [],
+    "artifacts": [
+      {
+        "id": "explanation",
+        "text": "23×10=230，因为答案就是230，而230正确的原因是它是答案。"
+      }
+    ],
+    "exposure": []
+  }
+}

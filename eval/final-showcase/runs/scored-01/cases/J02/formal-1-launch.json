@@ -1,0 +1,54 @@
+{
+  "kind": "assessment",
+  "agendaItemId": "agenda_item_99b3c2ef-3f51-4f5f-9751-5769638b7105",
+  "quiz": {
+    "id": "qz_0405891d-2299-4d44-9988-1d8295e74c3c",
+    "materialId": null,
+    "workspaceId": "ws_3674308a-cd4d-4482-8bf2-9c1dce9ca447",
+    "kind": "adaptive",
+    "assessmentMode": "concept_practice",
+    "config": {
+      "difficulty": "medium",
+      "types": [
+        "short_answer"
+      ],
+      "countPerType": 1
+    },
+    "questions": [
+      {
+        "id": "que_34166394-d58c-411f-998f-9d56de4b1f34",
+        "index": 0,
+        "type": "short_answer",
+        "stem": "三角形HJK与LMN相似，题目约定H↔L、J↔M、K↔N。已知HJK的边长：HJ=4厘米，JK=6厘米，HK=5厘米；LMN的边长：LM=12厘米，MN=18厘米，LN=15厘米。请完成以下任务：\n(1) 指出HJK与LMN中哪些边互为对应，并说明为何不能仅按图形中边的位置或最长边来猜测对应；\n(2) 计算从HJK到LMN的相似比k，并写清“新图形相对原图形”的方向；\n(3) 若反过来从LMN看HJK，相似比是多少？",
+        "conceptId": "con_6adc534d-c48a-40db-bceb-296745c3a763",
+        "conceptName": "相似比的定义与方向",
+        "grounding": {
+          "blockId": "blk_0_473f5b2b",
+          "quote": "若写作三角形ABC与DEF相似，并约定A对应D、B对应E、C对应F，那么AB对应DE、BC对应EF、AC对应DF。对应边不能只按图上看起来的位置猜测，尤其不能把最长边和不对应的短边混在同一比例中。",
+          "startOffset": 49,
+          "endOffset": 147,
+          "occurrenceCount": 1,
+          "reanchored": false
+        },
+        "supplementaryEvidence": [
+          {
+            "blockId": "blk_1_a7d14c01",
+            "quote": "从ABC到DEF的相似比定义为k=DE÷AB，k为正数。在这个方向下，DEF的每一条对应长度都是ABC的k倍：DE=k×AB、EF=k×BC、DF=k×AC。若反过来从DEF看ABC，相似比是1/k。写清“新图形相对原图形”可以避免把放大和缩小算反。只知道某一对边长之比，并不能在未获相似条件时推断其他边也按这个比例变化。",
+            "startOffset": 0,
+            "endOffset": 161,
+            "occurrenceCount": 1,
+            "reanchored": false
+          }
+        ],
+        "blueprintId": "bp_a5ebaa78-9c70-4d4a-a6aa-b74f5e9d9d61",
+        "points": 2
+      }
+    ],
+    "targetConceptIds": [
+      "con_6adc534d-c48a-40db-bceb-296745c3a763"
+    ],
+    "createdAt": "2026-09-14T11:35:36.073Z"
+  },
+  "assessmentKind": "formal_checkpoint",
+  "formalAssessmentVersionId": "assessment_version_86fbef0f-c554-4aaf-9085-6722340db45c"
+}

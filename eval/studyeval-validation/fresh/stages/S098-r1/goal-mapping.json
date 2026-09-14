@@ -1,0 +1,85 @@
+{
+  "inputIdentity": "9e8b931039f7cca708b9c230b29ef5b76b8861a0be4b9d0aad898893ea426721",
+  "attempts": [
+    {
+      "physicalId": "f049f2b8-a3c0-4676-a121-13c87e86d120",
+      "caseId": "S098",
+      "runId": "S098-r1",
+      "stage": "goal-mapping",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "goals": [
+      {
+        "index": 0,
+        "importance": "essential",
+        "status": "usable",
+        "reason": "artifact通过整袋90克除以每份30克得3份，再乘每份糖6克得18克，展示了从每份含量到实际食用量（整袋）含量的换算方法，计算正确且符合给定前提。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/0"
+        ],
+        "quote": "整袋90克包含90÷30=3份，因此糖6×3=18克。",
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "f83a50b56f9534c12f527194fee68004b7f5536171b682e50023ee31374792e2"
+          },
+          {
+            "pointer": "/goals/0",
+            "valueHash": "d00f6a0777096e29c941990ef83976c45d7a6297cb337b9439ad3b262e15fae5"
+          }
+        ]
+      },
+      {
+        "index": 1,
+        "importance": "essential",
+        "status": "usable",
+        "reason": "artifact计算每100克含糖量并明确指出比较标签前需统一基准，不能将每份6克与每100克20克视为同一食用量，实现了两个报告基准的区分。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/1"
+        ],
+        "quote": "每100克糖6÷30×100=20克，比较标签前要统一基准，不能把6克与20克当成同一食用量。",
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "f83a50b56f9534c12f527194fee68004b7f5536171b682e50023ee31374792e2"
+          },
+          {
+            "pointer": "/goals/1",
+            "valueHash": "cc917d2aec98364dbd0e1578c297faf88ec801582389efb073c4f83537439e6b"
+          }
+        ]
+      },
+      {
+        "index": 2,
+        "importance": "secondary",
+        "status": "usable",
+        "reason": "artifact明确说明日期可辨别批次且不改变换算，满足了说明日期标识批次作用的目标。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/2"
+        ],
+        "quote": "日期可辨别批次，不改变本组换算。",
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "f83a50b56f9534c12f527194fee68004b7f5536171b682e50023ee31374792e2"
+          },
+          {
+            "pointer": "/goals/2",
+            "valueHash": "51cacb911299eb1ad2e2b165a33d978c9e6438802b47aad3ac9a36ffe43e134d"
+          }
+        ]
+      }
+    ]
+  }
+}

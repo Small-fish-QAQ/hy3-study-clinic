@@ -1,0 +1,21 @@
+{
+  "status": "retry_available",
+  "message": "Lesson preparation can be retried.",
+  "course": {
+    "title": "相似图形中的长度比与面积比"
+  },
+  "session": {
+    "status": "active",
+    "version": 1
+  },
+  "agenda": {
+    "version": 1,
+    "itemState": "queued"
+  },
+  "lesson": null,
+  "progress": null,
+  "currentInformalCheck": null,
+  "allowedActions": [
+    "retry_preparation"
+  ]
+}

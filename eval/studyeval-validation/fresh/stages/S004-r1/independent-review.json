@@ -1,0 +1,89 @@
+{
+  "inputIdentity": "b8dbf4c2a61c3654b05cfdef0ea050704d2b963a4beff1f0c8c5d2506c36d0e5",
+  "attempts": [
+    {
+      "physicalId": "e9c82416-ee73-48ca-9c16-313b89e07e18",
+      "caseId": "S004",
+      "runId": "S004-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q5",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "学生提交为空字符串，产品正确判定required未满足并拒绝授分，反馈准确描述空提交，与实际应得及行为一致。",
+        "refs": [
+          "/answer",
+          "/rubric/0",
+          "/productJudgment/criteria/0",
+          "/productJudgment/consequence"
+        ],
+        "defects": [],
+        "missing": [],
+        "grading": {
+          "criteria": [
+            {
+              "id": "required",
+              "result": "not_met",
+              "reason": "学生答案空字符串未写出任何并集元素，不满足写出{1,2,3}的必要要求",
+              "refs": [
+                "/answer",
+                "/rubric/0"
+              ],
+              "required": true,
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                {
+                  "pointer": "/rubric/0",
+                  "valueHash": "41e3e9993ea73d3924609af1ca9150dfde326067be5fc53a6f4aec3ca0e10258"
+                }
+              ]
+            }
+          ],
+          "warrantedCredit": "withheld",
+          "actualCredit": "withheld",
+          "actualCreditWitness": {
+            "pointer": "/productJudgment/consequence",
+            "valueHash": "a3b3d76fdf1e33a8c7bde9a7152980d0de2656e3d541feafb198261dcc7cf51c"
+          }
+        },
+        "witnesses": [
+          {
+            "pointer": "/answer",
+            "valueHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "pointer": "/rubric/0",
+            "valueHash": "41e3e9993ea73d3924609af1ca9150dfde326067be5fc53a6f4aec3ca0e10258"
+          },
+          {
+            "pointer": "/productJudgment/criteria/0",
+            "valueHash": "c78f80dc96db58dc73686a225b449d9b6f0d6e0707837cb079df01fc367adeab"
+          },
+          {
+            "pointer": "/productJudgment/consequence",
+            "valueHash": "a3b3d76fdf1e33a8c7bde9a7152980d0de2656e3d541feafb198261dcc7cf51c"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

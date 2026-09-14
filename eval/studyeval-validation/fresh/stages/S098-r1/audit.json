@@ -1,0 +1,49 @@
+{
+  "inputIdentity": "acc73213417315b4d000c263ee1a26fc42ff5d4a8e3d71101966a093e0eb0947",
+  "attempts": [
+    {
+      "physicalId": "68e6b41f-7913-4f82-9693-12b0001ba8bd",
+      "caseId": "S098",
+      "runId": "S098-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q2",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "所有声明目标（含次要）均得到准确可操作处理：换算整袋糖量、区分每份与每100克基准、说明日期辨批次作用，深度满足working_fluency。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "f83a50b56f9534c12f527194fee68004b7f5536171b682e50023ee31374792e2"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "68fdce4b60a730e16f15fa21fa915ae0a6300744628a556284f8e578fc6dc56c"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

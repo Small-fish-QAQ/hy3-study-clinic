@@ -1,0 +1,385 @@
+{
+  "task": {
+    "caseId": "S044",
+    "runId": "S044-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S044.json",
+    "inputHash": "fa9665076698b26104884a6329805904e9695ce04192ec9290b68d1a81c950d1"
+  },
+  "inputHash": "fa9665076698b26104884a6329805904e9695ce04192ec9290b68d1a81c950d1",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "89fd8754d634798f0d021a0fc809151f348ff5bb097a95e2b41ce4c3dca19ab7",
+    "stages": {
+      "goal-mapping": {
+        "goals": [
+          {
+            "index": 0,
+            "importance": "essential",
+            "status": "contradicted",
+            "reason": "产物文本声称'复制完成后应删除原路径文件'，与来源规则（复制保留原路径文件）矛盾，且未提及目标路径产生相同内容，因此未正确说明两路径状态且核心结论错误。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/0",
+              "/sources/0/text"
+            ],
+            "quote": "复制完成后应删除原路径文件",
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "fc8fca96c682c31ee0bfd6ce56aa9a31702bf79d5f6f1463e1eaf5a8592a5052"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "7532220c38978923873dc40d4d1cf66fd14c0bb961b641a9a3505fb3ee3407ff"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "f077626b6cc0dcadf32134e02c41925aefa4067f55b8ae7509353fb99642dc40"
+              }
+            ]
+          },
+          {
+            "index": 1,
+            "importance": "essential",
+            "status": "contradicted",
+            "reason": "产物文本声称'移动后原路径文件必须仍保留'，与来源规则（移动后原路径不再有文件）矛盾，且未说明目标路径状态，错误描述移动后两路径状态。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/1",
+              "/sources/0/text"
+            ],
+            "quote": "移动后原路径文件必须仍保留",
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "fc8fca96c682c31ee0bfd6ce56aa9a31702bf79d5f6f1463e1eaf5a8592a5052"
+              },
+              {
+                "pointer": "/goals/1",
+                "valueHash": "2024f7c3f7abb8fd69338ad687ae12c5334ffdc39c71ed3651edf882ea55011f"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "f077626b6cc0dcadf32134e02c41925aefa4067f55b8ae7509353fb99642dc40"
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "importance": "secondary",
+            "status": "usable",
+            "reason": "产物明确写'改扩展名不等于转换内容'，等价于目标要求的说明扩展名改动不证明格式转换，与来源一致。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/2"
+            ],
+            "quote": "改扩展名不等于转换内容",
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "fc8fca96c682c31ee0bfd6ce56aa9a31702bf79d5f6f1463e1eaf5a8592a5052"
+              },
+              {
+                "pointer": "/goals/2",
+                "valueHash": "b524310b83946f4129f40f29a3aa35362a953ed7e94f6dd44c3c7a5466a7803b"
+              }
+            ]
+          }
+        ]
+      },
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "产物称复制后删源、移动后留源，与源规则（复制留源、移动删源）直接矛盾，核心目标被反驳，学习者将获错误规则；次要目标正确。覆盖实质失败。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "Lesson states '复制完成后应删除原路径文件；移动后原路径文件必须仍保留', contradicting source rules that copy keeps source and move removes it.",
+                "impact": "Defeats declared core purpose of explaining correct post-copy and post-move path states; teaches inverse false rules.",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "fc8fca96c682c31ee0bfd6ce56aa9a31702bf79d5f6f1463e1eaf5a8592a5052"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "f077626b6cc0dcadf32134e02c41925aefa4067f55b8ae7509353fb99642dc40"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "fc8fca96c682c31ee0bfd6ce56aa9a31702bf79d5f6f1463e1eaf5a8592a5052"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "f077626b6cc0dcadf32134e02c41925aefa4067f55b8ae7509353fb99642dc40"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "教学文本错误声称复制删源、移动留源，直接矛盾源规则与核心目标，导致教授正确状态的目的失败。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text",
+              "/goals/0",
+              "/goals/1"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "产物断言复制后应删原文件、移动后原路径必须保留，违背源规则及核心目标要求的正确状态。",
+                "impact": "核心目标被矛盾，学习者获错误文件系统模型，声明教学用途被击败。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text",
+                  "/goals/0",
+                  "/goals/1"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "fc8fca96c682c31ee0bfd6ce56aa9a31702bf79d5f6f1463e1eaf5a8592a5052"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "f077626b6cc0dcadf32134e02c41925aefa4067f55b8ae7509353fb99642dc40"
+                  },
+                  {
+                    "pointer": "/goals/0",
+                    "valueHash": "7532220c38978923873dc40d4d1cf66fd14c0bb961b641a9a3505fb3ee3407ff"
+                  },
+                  {
+                    "pointer": "/goals/1",
+                    "valueHash": "2024f7c3f7abb8fd69338ad687ae12c5334ffdc39c71ed3651edf882ea55011f"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "fc8fca96c682c31ee0bfd6ce56aa9a31702bf79d5f6f1463e1eaf5a8592a5052"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "f077626b6cc0dcadf32134e02c41925aefa4067f55b8ae7509353fb99642dc40"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "7532220c38978923873dc40d4d1cf66fd14c0bb961b641a9a3505fb3ee3407ff"
+              },
+              {
+                "pointer": "/goals/1",
+                "valueHash": "2024f7c3f7abb8fd69338ad687ae12c5334ffdc39c71ed3651edf882ea55011f"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "产物断言复制删源、移动留源，与源规则及核心目标直接矛盾，教授错误文件系统模型，击败声明教学用途；次要目标正确但无法挽回核心。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text",
+              "/goals/0",
+              "/goals/1"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "产物声称复制完成后应删除原路径文件、移动后原路径文件必须仍保留，与源规则（复制保留原路径、移动后原路径不再有）及核心目标要求的正确状态矛盾。",
+                "impact": "核心目标被反驳，学习者获得相反错误规则，声明教学用途被击败。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text",
+                  "/goals/0",
+                  "/goals/1"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "fc8fca96c682c31ee0bfd6ce56aa9a31702bf79d5f6f1463e1eaf5a8592a5052"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "f077626b6cc0dcadf32134e02c41925aefa4067f55b8ae7509353fb99642dc40"
+                  },
+                  {
+                    "pointer": "/goals/0",
+                    "valueHash": "7532220c38978923873dc40d4d1cf66fd14c0bb961b641a9a3505fb3ee3407ff"
+                  },
+                  {
+                    "pointer": "/goals/1",
+                    "valueHash": "2024f7c3f7abb8fd69338ad687ae12c5334ffdc39c71ed3651edf882ea55011f"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "fc8fca96c682c31ee0bfd6ce56aa9a31702bf79d5f6f1463e1eaf5a8592a5052"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "f077626b6cc0dcadf32134e02c41925aefa4067f55b8ae7509353fb99642dc40"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "7532220c38978923873dc40d4d1cf66fd14c0bb961b641a9a3505fb3ee3407ff"
+              },
+              {
+                "pointer": "/goals/1",
+                "valueHash": "2024f7c3f7abb8fd69338ad687ae12c5334ffdc39c71ed3651edf882ea55011f"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q2:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "复制完成后应删除原路径文件；移动后原路径文件必须仍保留。",
+              "valueHash": "fc8fca96c682c31ee0bfd6ce56aa9a31702bf79d5f6f1463e1eaf5a8592a5052"
+            },
+            "reason": "该引文直接声称复制删源、移动留源，与/sources/0/text中复制保留原路径、移动后原路径不再有文件的规则矛盾，证实核心目标被推翻。"
+          },
+          {
+            "id": "review2:Q2:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "复制完成后应删除原路径文件；移动后原路径文件必须仍保留。",
+              "valueHash": "fc8fca96c682c31ee0bfd6ce56aa9a31702bf79d5f6f1463e1eaf5a8592a5052"
+            },
+            "reason": "同review1，产物断言违背源规则及核心目标要求的正确状态，缺陷实质存在且为material。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q2",
+          "level": 0,
+          "evidence": "sufficient",
+          "reason": "产物断言复制删源、移动留源，与源规则及核心目标直接矛盾，教授错误文件系统模型，击败声明教学用途；次要目标正确但无法挽回核心。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text",
+            "/goals/0",
+            "/goals/1"
+          ],
+          "defects": [
+            {
+              "severity": "material",
+              "description": "产物声称复制完成后应删除原路径文件、移动后原路径文件必须仍保留，与源规则（复制保留原路径、移动后原路径不再有）及核心目标要求的正确状态矛盾。",
+              "impact": "核心目标被反驳，学习者获得相反错误规则，声明教学用途被击败。",
+              "refs": [
+                "/artifacts/0/text",
+                "/sources/0/text",
+                "/goals/0",
+                "/goals/1"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "fc8fca96c682c31ee0bfd6ce56aa9a31702bf79d5f6f1463e1eaf5a8592a5052"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "f077626b6cc0dcadf32134e02c41925aefa4067f55b8ae7509353fb99642dc40"
+                },
+                {
+                  "pointer": "/goals/0",
+                  "valueHash": "7532220c38978923873dc40d4d1cf66fd14c0bb961b641a9a3505fb3ee3407ff"
+                },
+                {
+                  "pointer": "/goals/1",
+                  "valueHash": "2024f7c3f7abb8fd69338ad687ae12c5334ffdc39c71ed3651edf882ea55011f"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "fc8fca96c682c31ee0bfd6ce56aa9a31702bf79d5f6f1463e1eaf5a8592a5052"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "f077626b6cc0dcadf32134e02c41925aefa4067f55b8ae7509353fb99642dc40"
+            },
+            {
+              "pointer": "/goals/0",
+              "valueHash": "7532220c38978923873dc40d4d1cf66fd14c0bb961b641a9a3505fb3ee3407ff"
+            },
+            {
+              "pointer": "/goals/1",
+              "valueHash": "2024f7c3f7abb8fd69338ad687ae12c5334ffdc39c71ed3651edf882ea55011f"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "f3dff5463646d53cc786903b97acfdd88a69d42eec156993f00e2663b0e36f60"
+  }
+}

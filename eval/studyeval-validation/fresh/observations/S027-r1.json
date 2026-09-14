@@ -1,0 +1,248 @@
+{
+  "task": {
+    "caseId": "S027",
+    "runId": "S027-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S027.json",
+    "inputHash": "59d3d29d4e4e800194fa5af8d2cae5431ba5a21f16963895cc1ac93cf7bcd171"
+  },
+  "inputHash": "59d3d29d4e4e800194fa5af8d2cae5431ba5a21f16963895cc1ac93cf7bcd171",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "b8fbd3cde9671e07b91899b64e0c02d03da82ecb983bf76f7cf4d281970ffdcd",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "课程文本错误宣称所有被4整除年份均为闰年，因此1900年2月29天且忽略100/400条件，与来源规则及核对规则实例的目标直接矛盾，实质改变核心机制与答案。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "课程声称所有能被4整除的年份都是闰年，1900年二月有29天，忽略100和400条件。",
+                "impact": "改变闰年核心规则、必要条件与实例答案，破坏核对规则解释及实例的目标用途。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "853685eab47e41df7ddef7354c0225b71a669fb7d649723b4972c34088946314"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "5e982eb2843152ea1b81d9f7793dbfb2609636664c75b2a6bab9a349cc3bf60b"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "853685eab47e41df7ddef7354c0225b71a669fb7d649723b4972c34088946314"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "5e982eb2843152ea1b81d9f7793dbfb2609636664c75b2a6bab9a349cc3bf60b"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "Lesson断言所有被4整除年份均为闰年，1900年二月29天且可忽略100/400条件，违背source规则及1900反例，破坏核对规则与实例的核心目标，属实质教学错误。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "Artifact lesson声称所有能被4整除年份都是闰年，1900年二月有29天，100和400条件可忽略，与source所给公历规则（1900不能被400整除为平年28天）直接矛盾。",
+                "impact": "错误规则改变闰年判定核心机制与实例答案，使学习者形成错误必要条件和结论，直接破坏goals中核对规则解释及实例的用途。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "853685eab47e41df7ddef7354c0225b71a669fb7d649723b4972c34088946314"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "5e982eb2843152ea1b81d9f7793dbfb2609636664c75b2a6bab9a349cc3bf60b"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "853685eab47e41df7ddef7354c0225b71a669fb7d649723b4972c34088946314"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "5e982eb2843152ea1b81d9f7793dbfb2609636664c75b2a6bab9a349cc3bf60b"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "Lesson错误宣称所有被4整除即闰年且可忽略100/400条件，致1900年误为29天，与source规则及1900反例矛盾，实质改变核心规则解释与实例核对目标。非局部缺陷故非1，证据可见故非U。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "Artifact lesson声称所有能被4整除年份都是闰年，1900年二月有29天，100和400条件可忽略，与source公历规则矛盾。",
+                "impact": "错误规则改变闰年判定核心机制与实例答案，使学习者形成错误必要条件，直接破坏goals中核对规则解释及实例的用途。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "853685eab47e41df7ddef7354c0225b71a669fb7d649723b4972c34088946314"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "5e982eb2843152ea1b81d9f7793dbfb2609636664c75b2a6bab9a349cc3bf60b"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "853685eab47e41df7ddef7354c0225b71a669fb7d649723b4972c34088946314"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "5e982eb2843152ea1b81d9f7793dbfb2609636664c75b2a6bab9a349cc3bf60b"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q1:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "所有能被4整除的年份都是闰年，因此1900年二月有29天；100和400条件可以忽略。",
+              "valueHash": "853685eab47e41df7ddef7354c0225b71a669fb7d649723b4972c34088946314"
+            },
+            "reason": "引文证实artifact错误主张所有被4整除即闰年且忽略条件，与source公历规则矛盾，实质改变核心机制与实例答案。"
+          },
+          {
+            "id": "review2:Q1:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "所有能被4整除的年份都是闰年，因此1900年二月有29天；100和400条件可以忽略。",
+              "valueHash": "853685eab47e41df7ddef7354c0225b71a669fb7d649723b4972c34088946314"
+            },
+            "reason": "原文确证lesson错误声称忽略100/400条件且1900年29天，违背source规则及1900反例，破坏核对目标。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q1",
+          "level": 0,
+          "evidence": "sufficient",
+          "reason": "Lesson错误宣称所有被4整除即闰年且可忽略100/400条件，致1900年误为29天，与source规则及1900反例矛盾，实质改变核心规则解释与实例核对目标。非局部缺陷故非1，证据可见故非U。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [
+            {
+              "severity": "material",
+              "description": "Artifact lesson声称所有能被4整除年份都是闰年，1900年二月有29天，100和400条件可忽略，与source公历规则矛盾。",
+              "impact": "错误规则改变闰年判定核心机制与实例答案，使学习者形成错误必要条件，直接破坏goals中核对规则解释及实例的用途。",
+              "refs": [
+                "/artifacts/0/text",
+                "/sources/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "853685eab47e41df7ddef7354c0225b71a669fb7d649723b4972c34088946314"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "5e982eb2843152ea1b81d9f7793dbfb2609636664c75b2a6bab9a349cc3bf60b"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "853685eab47e41df7ddef7354c0225b71a669fb7d649723b4972c34088946314"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "5e982eb2843152ea1b81d9f7793dbfb2609636664c75b2a6bab9a349cc3bf60b"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "0196ab7c05877aa5b841465784ec37c33ba463c1283f8ba3929055cd8dc9b1e5"
+  }
+}

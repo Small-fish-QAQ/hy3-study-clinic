@@ -1,0 +1,49 @@
+{
+  "inputIdentity": "a42a876b8caf743f305fe6782b41322218f9def290c44e8912141bf5bdc5175e",
+  "attempts": [
+    {
+      "physicalId": "a5522a40-34ea-4275-92b5-5a7ea92fbc9d",
+      "caseId": "S024",
+      "runId": "S024-r2",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q6",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "修复正确应用规则识别原句歧义，给出具体改写示例，并提议新句子作为同技能迁移检查，符合Q6完整标准。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "ec7647254d93213dd9b21e35be2e319148cdb778ea291fc0ec72f50427519fae"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "69fef873755638b051db652f07b0960110732e94a4812af3f6f8b85635905051"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

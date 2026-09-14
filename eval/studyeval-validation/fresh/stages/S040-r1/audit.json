@@ -1,0 +1,69 @@
+{
+  "inputIdentity": "842bb9257263c86a90e5376151e09f115b73229b28b8c24a05eeb1c93c282907",
+  "attempts": [
+    {
+      "physicalId": "4064c255-eebd-4a98-8441-cdeab8dbc9a6",
+      "caseId": "S040",
+      "runId": "S040-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "Artifact声称上周二接待317位访客且为门禁日志记录事实，但authorityBoundaries指明门禁日志未提供、不能访问，访客数非假设前提须核实实际事实。无可用来源支持该证据权威归属，主张无依据，实质破坏核实外部到访记录的核心目标。",
+        "refs": [
+          "/artifacts/0/text",
+          "/authorityBoundaries/0"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "Artifact断言访客数为门禁日志记录事实，但给定资料中门禁日志未提供且不可访问，访客数也非假设前提，无任何来源支持该证据归属。",
+            "impact": "核心用途为核实外部到访记录，此无依据的权威声称使结论丧失支持，改变核心学习/核实目的。",
+            "refs": [
+              "/artifacts/0/text",
+              "/authorityBoundaries/0"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "50c0ea16a08d45a6a85680bf663e6c80eca47fb0cbea23486746b660b684b17a"
+              },
+              {
+                "pointer": "/authorityBoundaries/0",
+                "valueHash": "e35e20af307402fdc4dd752f8524dddc8eb5e3ab60a6f674a447d58e2f05f158"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "50c0ea16a08d45a6a85680bf663e6c80eca47fb0cbea23486746b660b684b17a"
+          },
+          {
+            "pointer": "/authorityBoundaries/0",
+            "valueHash": "e35e20af307402fdc4dd752f8524dddc8eb5e3ab60a6f674a447d58e2f05f158"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

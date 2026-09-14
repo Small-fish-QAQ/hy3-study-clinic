@@ -1,0 +1,36 @@
+{
+  "id": "S083",
+  "dimensions": [
+    "Q4"
+  ],
+  "evidence": {
+    "sources": [
+      {
+        "id": "source",
+        "text": "从n个不同对象中选两个，不放回且不计顺序，每一对只算一次；可先计n(n-1)个有序选法再除以2。自配不允许。"
+      }
+    ],
+    "goals": [
+      "根据不放回和不计顺序条件计算组合"
+    ],
+    "prerequisites": [
+      "阅读所给规则",
+      "基本四则运算"
+    ],
+    "desiredDepth": "working_fluency",
+    "authorityBoundaries": [
+      "判断所附局部教学或任务的实际要求。作者参考答案为私有评估材料，未预先展示给学习者。数据与规则是明示课堂前提。"
+    ],
+    "artifacts": [
+      {
+        "id": "private-author-key",
+        "text": "n(n-1)/2。"
+      }
+    ],
+    "exposure": [],
+    "question": {
+      "prompt": "从资料抄出n个对象选两个不计顺序的公式。",
+      "options": []
+    }
+  }
+}

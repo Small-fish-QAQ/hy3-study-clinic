@@ -1,0 +1,76 @@
+{
+  "inputIdentity": "bf135398c5f676cee4f3a50fa00a4173757c700437a48c0894ac13b4ab15d45e",
+  "attempts": [
+    {
+      "physicalId": "4d8bf6f3-eb1c-4808-9e3c-42608cf4341e",
+      "caseId": "N-F07-tutor",
+      "runId": "H-N-F07-tutor-r3",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "tutor-reply正确引用资料中观察天数等需一致的原则，用假设情景与手机例子解释单一因素归因需控变量，边界说明合理，无事实或归属缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "98463466492601085e31eabda2920d8153801ad49d3f58ed0283684b400c9ded"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      },
+      {
+        "dimension": "Q3",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "解释链接资料前提（变量需一致）与结论（不能单独归因），手机例子展示未控湿度致多变量问题并明确适用边界，关键逻辑清晰，符合解释充分性停止条件。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "98463466492601085e31eabda2920d8153801ad49d3f58ed0283684b400c9ded"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,212 @@
+{
+  "task": {
+    "caseId": "E027",
+    "runId": "H-E027-r2",
+    "replicate": 2,
+    "path": "benchmark/cases/E027.json",
+    "inputHash": "27e79ead871b1233fce22af4b7cd122a02e4e7a93fd14ff2f25e1b52c25d10ae",
+    "population": "controlled",
+    "sourceId": "F09"
+  },
+  "inputHash": "27e79ead871b1233fce22af4b7cd122a02e4e7a93fd14ff2f25e1b52c25d10ae",
+  "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "b2510ba6e38c5373e47f92883c677ffa924e2e576508dcb7308ac8e83681f1a8",
+    "stages": {
+      "blind-solution": {
+        "status": "resolved",
+        "solution": "总工作量1份。甲速1/8份/时，乙速1/4份/时。乙做1小时完成1/4，剩3/4。甲独做需(3/4)/(1/8)=6时。总时间1+6=7时。若自始合作，合速3/8份/时，需8/3时。比较：7时>8/3时，乙先做甲独做比合作多13/3时。题设满足独立相加条件，解确定。",
+        "refs": [
+          "/question/prompt"
+        ],
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "dcf5dd89a64f0379c2a16c155095996cbf9b1dfd98e7b21c0cebe9fb5974918a"
+          }
+        ]
+      },
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q4",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "题目给定甲8h乙4h及独立可加条件，乙先做1h甲独做剩余，求总时并比较合作。作者参考解正确，无提前泄露，需应用多步计算，符合working_fluency。",
+            "refs": [
+              "/question/prompt",
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "assessment": {
+              "key": "correct",
+              "validity": "valid",
+              "exposure": "none",
+              "discrimination": "adequate",
+              "demand": "application",
+              "demandReason": "学生须算速度、乙1h完成量、剩余量、甲独做时间、总时长及合作时间并比较，非抄写源中数字。",
+              "reason": "题干参数与源例不同且剩余为独做；作者解正确；priorExposure空；需应用分数乘除解新例。",
+              "refs": [
+                "/question/prompt",
+                "/artifacts/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/question/prompt",
+                  "valueHash": "dcf5dd89a64f0379c2a16c155095996cbf9b1dfd98e7b21c0cebe9fb5974918a"
+                },
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "298f97e041cf6e72c2f79141bae8631b1df17304ecdaea27c01e89ba266e840d"
+                }
+              ]
+            },
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "dcf5dd89a64f0379c2a16c155095996cbf9b1dfd98e7b21c0cebe9fb5974918a"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "298f97e041cf6e72c2f79141bae8631b1df17304ecdaea27c01e89ba266e840d"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q4",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "题目给定明确独立可加条件，要求分段计算乙先做甲独做总时间并与合作时间比较。作者参考解正确且未提前曝光。任务需多步计算应用速度模型，有效抽样目标技能，判别力充足。",
+            "refs": [
+              "/question/prompt",
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "assessment": {
+              "key": "correct",
+              "validity": "valid",
+              "exposure": "none",
+              "discrimination": "adequate",
+              "demand": "application",
+              "demandReason": "学生须根据单独用时算速度，分段算完成量与剩余时间，再算合作时间比较，属组织方案与多步计算而非抄写现成值。",
+              "reason": "题干条件清晰，参考解正确（7h vs 8/3h）未泄露。需应用分数除法与合速度模型，有意义引发working_fluency技能。",
+              "refs": [
+                "/question/prompt",
+                "/artifacts/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/question/prompt",
+                  "valueHash": "dcf5dd89a64f0379c2a16c155095996cbf9b1dfd98e7b21c0cebe9fb5974918a"
+                },
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "298f97e041cf6e72c2f79141bae8631b1df17304ecdaea27c01e89ba266e840d"
+                }
+              ]
+            },
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "dcf5dd89a64f0379c2a16c155095996cbf9b1dfd98e7b21c0cebe9fb5974918a"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "298f97e041cf6e72c2f79141bae8631b1df17304ecdaea27c01e89ba266e840d"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q4",
+          "level": 2,
+          "evidence": "sufficient",
+          "reason": "题目给定甲8h乙4h及独立可加条件，乙先做1h甲独做剩余，求总时并比较合作。作者参考解正确，无提前泄露，需应用多步计算，符合working_fluency。",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [],
+          "missing": [],
+          "assessment": {
+            "key": "correct",
+            "validity": "valid",
+            "exposure": "none",
+            "discrimination": "adequate",
+            "demand": "application",
+            "demandReason": "学生须算速度、乙1h完成量、剩余量、甲独做时间、总时长及合作时间并比较，非抄写源中数字。",
+            "reason": "题干参数与源例不同且剩余为独做；作者解正确；priorExposure空；需应用分数乘除解新例。",
+            "refs": [
+              "/question/prompt",
+              "/artifacts/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "dcf5dd89a64f0379c2a16c155095996cbf9b1dfd98e7b21c0cebe9fb5974918a"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "298f97e041cf6e72c2f79141bae8631b1df17304ecdaea27c01e89ba266e840d"
+              }
+            ]
+          },
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "dcf5dd89a64f0379c2a16c155095996cbf9b1dfd98e7b21c0cebe9fb5974918a"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "298f97e041cf6e72c2f79141bae8631b1df17304ecdaea27c01e89ba266e840d"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "ee8a6f9126da6dc88e4b28f73c06b6b1be08425d6ea6685b1052f082ac160052"
+  }
+}

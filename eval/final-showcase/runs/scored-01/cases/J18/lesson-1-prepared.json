@@ -1,0 +1,258 @@
+{
+  "status": "ready",
+  "message": "Lesson is ready.",
+  "course": {
+    "title": "Stable sorting by primary and secondary keys"
+  },
+  "session": {
+    "status": "active",
+    "version": 1
+  },
+  "agenda": {
+    "version": 1,
+    "itemState": "queued"
+  },
+  "lesson": {
+    "objective": {
+      "title": "显式比较规则、稳定排序语义与多遍排序顺序判定",
+      "whyNow": "当多条记录共享主键且次键方向未知时，如何逐步判定最终顺序仍不直观，需要先建立单遍显式规则的分步执行模型。",
+      "outcomes": [
+        {
+          "title": "应用显式比较规则对记录排序",
+          "description": "给定一组记录，明确陈述主键与次要键及各自方向（如主键升序、次键降序），仅当主键相等时比较次要键；尊重每个键自身的方向；完全平局时以输入顺序解决；并指出本课中键为普通有限数字且每条记录均包含，故无需缺失值或区域规则。在指定场景中执行该比较规则以得出有序序列。"
+        },
+        {
+          "title": "解释稳定排序对相等键记录的保序语义",
+          "description": "解释稳定排序如何保留在所有指定键上比较相等的记录的原始相对顺序，且仅在比较键平局的组内保持顺序；说明稳定性不阻止记录移动到不同键记录之前，且不虚构未声明的次要键作为打破平局依据（例如仅指定优先级时保持输入序而不发明持续时间）。"
+        }
+      ]
+    },
+    "prerequisites": [],
+    "segments": [
+      {
+        "index": 0,
+        "purpose": "orientation",
+        "explanation": "假设任务 X(优先级3,时长2), Y(优先级3,时长5), Z(优先级1,时长1)。规则为主键优先级升序、次键时长降序。先按优先级分组：Z单独一组在前，X与Y同组在后；组内次键降序要求时长大的在前，因此Y(5)先于X(2)。最终顺序为 Z, Y, X。这展示主键优先、次键仅在内生效且方向可独立于主键，本例无完全平局故输入顺序未触发。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 1,
+        "purpose": "worked_example",
+        "explanation": "下面用新案例演示单遍显式规则的分步执行，不直接给出最终序。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": {
+          "startingState": "输入序列 M(优先级2,时长3), N(优先级1,时长8), O(优先级2,时长1)，规则：主键优先级升序，次键时长升序，完全平局按输入顺序。",
+          "inputs": [
+            "M,N,O 记录及键值",
+            "升序优先级 then 升序时长规则"
+          ],
+          "ruleOrProcedure": "先比较主键优先级，相等再比较次键时长，均相等保留输入顺序",
+          "steps": [
+            {
+              "action": "按主键优先级分组并初步排列：优先级1的N在前，优先级2的M、O在后",
+              "reason": "主键升序要求小优先级整体先于大优先级，无论时长",
+              "resultingState": "已分组：前段[N]，后段[M, O]（内部未排）"
+            }
+          ],
+          "learnerDecision": null,
+          "result": null,
+          "whyResultFollows": null,
+          "origin": "hy3_synthesis",
+          "sources": [],
+          "interaction": {
+            "stage": "guided",
+            "modelledStepCount": 1,
+            "origin": "hy3_synthesis",
+            "sources": [],
+            "activity": {
+              "prompt": "给定上述新案例事实与待完成的组内步骤，最终排序结果是？",
+              "options": [
+                {
+                  "id": "A",
+                  "text": "N, O, M"
+                },
+                {
+                  "id": "B",
+                  "text": "N, M, O"
+                },
+                {
+                  "id": "C",
+                  "text": "O, M, N"
+                }
+              ],
+              "response": null,
+              "respondedAt": null,
+              "correct": null,
+              "feedback": null,
+              "debrief": null,
+              "credit": "none",
+              "misconception": null
+            },
+            "hint": null,
+            "scaffold": null,
+            "transfer": null
+          }
+        },
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 2,
+        "purpose": "comparison",
+        "explanation": "边界说明：显式单遍规则与多遍稳定排序的等价需要正确 pass 顺序。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": {
+          "text": "若先稳定排序次键时长再稳定排序主键优先级，最终顺序会以时长为主要键，违背本课主键优先要求；如任务集 {U(优先级1,时长5), V(优先级2,时长1)} 先时长得 V,U 再优先级得 U,V 才正确，但若颠倒 pass 顺序则得 V,U。正确等价做法是先次键后主键且每遍稳定。",
+          "origin": "hy3_synthesis",
+          "sources": []
+        },
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 3,
+        "purpose": "mechanism",
+        "explanation": "考虑任务 P(优先级3,时长4), Q(优先级3,时长4), R(优先级1,时长2)，显式规则为主键优先级升序，不声明次键。稳定排序先按优先级分组：优先级1的R在前，优先级3的P、Q在后；由于在指定键（仅优先级）上P与Q相等，稳定排序保留它们输入时的相对顺序，即P仍在Q前。因此最终序为 R, P, Q。这说明稳定性只在比较键完全平局的组内保序，且不因存在未声明的时长字段而重排。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [
+          {
+            "kind": "mechanism_effect",
+            "fromProposition": "显式规则仅指定主键优先级且排序稳定",
+            "toProposition": "同优先级记录保持输入相对顺序，不按时长重排",
+            "origin": "hy3_synthesis",
+            "sources": []
+          }
+        ],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 4,
+        "purpose": "guided_practice",
+        "explanation": "下面用新案例检验仅主键稳定排序的保序预测，不直接给出最终序。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": {
+          "kind": "choose",
+          "prompt": "输入序列为 N1(优先级1,时长5), N2(优先级1,时长2)，显式规则为仅主键优先级升序且稳定排序。最终顺序是？",
+          "guidance": null,
+          "options": [
+            {
+              "id": "A",
+              "text": "N1, N2"
+            },
+            {
+              "id": "B",
+              "text": "N2, N1"
+            }
+          ],
+          "presented": false,
+          "response": null,
+          "respondedAt": null,
+          "correct": null,
+          "feedback": null,
+          "credit": "none"
+        }
+      },
+      {
+        "index": 5,
+        "purpose": "comparison",
+        "explanation": "边界说明：稳定排序的保序承诺严格限于显式声明的键；未声明次键时绝不虚构时长等字段作为破平局依据，且稳定性不阻止记录跨不同主键移动。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": {
+          "text": "任务集 {G(优先级2,时长1), H(优先级1,时长9)} 仅按优先级升序稳定排序时结果为 H, G，尽管 G 时长更短。若误以为稳定排序会自动按时长破平局，会错误预测 G 前 H 后；实际上稳定性只在键相等时保序，跨键移动不受次键影响，且未声明次键时绝不虚构。正确多遍等价做法是先稳定排显式次键（若声明）再稳定排主键，而非颠倒 pass 顺序。",
+          "origin": "hy3_synthesis",
+          "sources": []
+        },
+        "possibleMisconception": null,
+        "informalCheck": null
+      }
+    ],
+    "sourceReferencesAvailable": true,
+    "visuals": [],
+    "summary": {
+      "available": true,
+      "text": "显式比较规则先按主键方向排序，主键相等才比较次键自身方向；完全平局由输入顺序解决。稳定排序保留比较键全相等的原序，但不阻止跨键移动。多遍稳定排序须次键先、主键后才等价。",
+      "nextConnection": null,
+      "formalOpportunities": []
+    },
+    "plannedTime": {
+      "agendaMinutes": 23,
+      "activeMinutesMin": 26,
+      "activeMinutesMax": 41,
+      "basis": "locally_evaluated_learning_actions"
+    }
+  },
+  "progress": {
+    "stateVersion": 2,
+    "stateId": "lesson_execution_133230dc-680f-43ab-9f54-fe75f376911b",
+    "currentSegmentIndex": 0,
+    "segmentCount": 6,
+    "presentedSegmentIndexes": [],
+    "presentationStatus": "not_started",
+    "presentationCompletedAt": null
+  },
+  "currentInformalCheck": null,
+  "practice": {
+    "status": "locked",
+    "currentItemIndex": 0,
+    "itemCount": 2,
+    "item": {
+      "index": 0,
+      "objectiveTitle": "应用显式比较规则对记录排序",
+      "construct": "apply",
+      "surface": "initial",
+      "supplementary": true,
+      "prompt": "观察某次排序后顺序为 D, C, B, A。下列哪种显式比较规则能产生此顺序？",
+      "options": [
+        {
+          "id": "teaching_brief_c619f261-09dc-491b-aa6c-65127505f500_practice_1_initial_A",
+          "text": "主键优先级降序、次键时长降序"
+        },
+        {
+          "id": "teaching_brief_c619f261-09dc-491b-aa6c-65127505f500_practice_1_initial_B",
+          "text": "主键优先级升序、次键时长升序"
+        },
+        {
+          "id": "teaching_brief_c619f261-09dc-491b-aa6c-65127505f500_practice_1_initial_C",
+          "text": "主键优先级升序、次键时长降序"
+        }
+      ]
+    },
+    "attempts": [],
+    "recovery": null,
+    "completedAt": null,
+    "credit": "none"
+  },
+  "allowedActions": [
+    "start_lesson"
+  ]
+}

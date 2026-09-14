@@ -1,0 +1,74 @@
+{
+  "inputIdentity": "405594105f3f4eb17bbbc51214a90f181c0a83e9b7a9616b8b438092c73b1e28",
+  "attempts": [
+    {
+      "physicalId": "8314c2b4-c8a1-403c-9549-992c54ba2268",
+      "caseId": "E920",
+      "runId": "H-E920-r3",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q6",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "support仅建议重读来源规则与练同主题新题，未点出学生误将自愿参与等同随机分组的具体推理缺口，也无具体下一题条件，属相关但泛化建议，符合Q6的1分标准。",
+        "refs": [
+          "/artifacts/1/text",
+          "/answer",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "Support未识别学生答案中'自愿参加等于随机分组'的错误前提，仅泛泛建议重读与练题",
+            "impact": "建议与主题相关但缺乏针对性，未提供具体可用下一步检查，不改变其作为学习支持的存在，但未达完整标准",
+            "refs": [
+              "/artifacts/1/text",
+              "/answer"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/1/text",
+                "valueHash": "4d9b4818aa1491288de36d3cf785ec2e7804231387da4c6670f21598747cfc02"
+              },
+              {
+                "pointer": "/answer",
+                "valueHash": "7d6191d92d628a82e207484c2c7eb0e40705d9d13f6606a2290baa951d899e6f"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/1/text",
+            "valueHash": "4d9b4818aa1491288de36d3cf785ec2e7804231387da4c6670f21598747cfc02"
+          },
+          {
+            "pointer": "/answer",
+            "valueHash": "7d6191d92d628a82e207484c2c7eb0e40705d9d13f6606a2290baa951d899e6f"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "944a460c4eccfdbd61d456dc9fc3969b0ed10c585ea05e87ccfe3e9b93549680"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

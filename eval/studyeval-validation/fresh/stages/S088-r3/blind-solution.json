@@ -1,0 +1,36 @@
+{
+  "inputIdentity": "69aa861ef1ceaae40500ff490fceae37a74e656af6efea2d7aed67ddd0e5dc5c",
+  "attempts": [
+    {
+      "physicalId": "a174d485-dd0d-42e0-9ba1-bd105b6eb843",
+      "caseId": "S088",
+      "runId": "S088-r3",
+      "stage": "blind-solution",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "status": "resolved",
+    "solution": "依/sources/0/text规则：L=[a,b,c,d,e,f]下标0起。L[1:6:2]中start=1,stop=6,step=2，从1始逐次加2得下标1,3,5（下一7≥6停），stop不包含。元素为b,d,f；实际下标1,3,5；终点6不包含。",
+    "refs": [
+      "/question/prompt",
+      "/sources/0/text"
+    ],
+    "witnesses": [
+      {
+        "pointer": "/question/prompt",
+        "valueHash": "487499c8abe81de340d4ca5e9aa13223872b130c6a2bcd56f65c13d57d6dc1bf"
+      },
+      {
+        "pointer": "/sources/0/text",
+        "valueHash": "7a10cc0071f3123316910bb75fd05269f043b078b4c61204a313a406d722851b"
+      }
+    ]
+  }
+}

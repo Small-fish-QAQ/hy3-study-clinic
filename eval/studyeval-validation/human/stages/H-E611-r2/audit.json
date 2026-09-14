@@ -1,0 +1,49 @@
+{
+  "inputIdentity": "962fd37d60794bda00bc6bcda6416ebcae6f84b3e86c8b12072bd9c635df79da",
+  "attempts": [
+    {
+      "physicalId": "c56bbe90-8ce5-4944-80fc-5a5901de6272",
+      "caseId": "E611",
+      "runId": "H-E611-r2",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q2",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "artifact对四项目标均给出准确规则或示例：区间公式与例、比较区间顺序、刻度细不等校准准、同向偏差不自动消失，达到working_fluency可用操作深度，无缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "c1ec4cc283b869ded4bd6704017dd84fadd61b71cdacc0ccea326fdeabd36eab"
+          },
+          {
+            "pointer": "/goals",
+            "valueHash": "8a4e42a310413343ffed86d2ae9a81c2cc492e69e9709e20cd9c1397db6e64bd"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

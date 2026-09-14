@@ -1,0 +1,103 @@
+{
+  "inputIdentity": "6c993e8d5eba86ffaeab4f3155cc77e30fe275480b8eccd86f768bde805d56da",
+  "attempts": [
+    {
+      "physicalId": "a9dbf85a-e8c1-4d1f-959b-83b60430c914",
+      "caseId": "S078",
+      "runId": "S078-r1",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q2",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "核心两目标均准确演示：用同方向边判A→C→B可行与B→A不可行，区分入度出度并算A、B值。次要目标'解释边标签用途'在课文中完全未提及，核心用途成立，故评1。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/0",
+          "/goals/1",
+          "/goals/2"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "次要目标'解释边标签的用途'在artifact中完全未提及，既无命名也无解释。",
+            "impact": "核心路线可行性检查与入出度计算演示准确可用，主要学习目的未受损。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/2"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "e1c8a829755e32077d2dc8bf44f0f2383fe25eb46dc4accb4e2a8ff2055aa8ea"
+              },
+              {
+                "pointer": "/goals/2",
+                "valueHash": "5971c156642542bafa467de656a783fad331d9b9629086ebfc96e501de760b60"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "e1c8a829755e32077d2dc8bf44f0f2383fe25eb46dc4accb4e2a8ff2055aa8ea"
+          },
+          {
+            "pointer": "/goals/0",
+            "valueHash": "a51f21939f83eed1ca93d3681f208fb694af3488648930ef9519d1d81a501862"
+          },
+          {
+            "pointer": "/goals/1",
+            "valueHash": "a63e5ea68b90b2ab60576d7e6f1c219c31f7b0a1e90a3e147a04d87b392c0399"
+          },
+          {
+            "pointer": "/goals/2",
+            "valueHash": "5971c156642542bafa467de656a783fad331d9b9629086ebfc96e501de760b60"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q2:1",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "A到C再到B可行，每一步都有同方向边；B到A不可行，B没有出边。入度数箭头指入，出度数箭头指外，A入度0出度2，B入度2出度0。",
+          "valueHash": "e1c8a829755e32077d2dc8bf44f0f2383fe25eb46dc4accb4e2a8ff2055aa8ea"
+        },
+        "reason": "artifact全文无'标签'字样，确实省略goals/2要求的边标签用途解释，但核心目标演示完整，属local缺陷。"
+      },
+      {
+        "id": "review2:Q2:1",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "A到C再到B可行，每一步都有同方向边；B到A不可行，B没有出边。入度数箭头指入，出度数箭头指外，A入度0出度2，B入度2出度0。",
+          "valueHash": "e1c8a829755e32077d2dc8bf44f0f2383fe25eb46dc4accb4e2a8ff2055aa8ea"
+        },
+        "reason": "同上，artifact未提及边标签，次要目标遗漏不影响核心用途，severity local。"
+      }
+    ]
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "inputIdentity": "299c43115c788b186e2837fd837f14a3d4bec146d848fbdbc78b4e0e9efffc28",
+  "attempts": [
+    {
+      "physicalId": "96e7ce45-edd2-4cca-bf23-49c055c20663",
+      "caseId": "S025",
+      "runId": "S025-r3",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q3",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "artifact将1写为a^0并应用指数相减规则展示a^(-n)=1/a^n，举例2^(-3)=1/8且说明a≠0限制，关键连接与前提充分，符合目标解释负指数为倒数而非负数，无缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "d28798d2489069ef50dbe1f24329f658424eccdc8cc7f9ba6cb5bba9bf4a2ec0"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "8f66df12d54e18d234589d8c047330d6ce2ae196b074b8083cf0629060128d07"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "inputIdentity": "5e52df90ee1d139f1b95d3e16399b08369c474826f56f739d6afc3fae75772a1",
+  "attempts": [
+    {
+      "physicalId": "ea98789c-cff4-491f-afed-0ca50343b1d5",
+      "caseId": "E047",
+      "runId": "H-E047-r2",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "lesson准确复述source关键数字（30人次、10卡8支持）、限制（不能当不同居民、不能外推全体）和决策状态（未决定），并正确指出摘要可省略分周六人次但保留试行与范围，与source教学要点一致，无事实或归属缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "2e571e3058700991121d7236da0f92ba22b0a611fa21687090c6e99237327e08"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

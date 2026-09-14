@@ -1,0 +1,93 @@
+{
+  "inputIdentity": "5bea7b3068c6d3d09a4069d6b5b31aa229dfe63c9f14ecddacab05bd2b44196f",
+  "attempts": [
+    {
+      "physicalId": "c95ffe6c-459e-4f75-aba2-8ef4b8cc5654",
+      "caseId": "S036",
+      "runId": "S036-r1",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "artifact声称所有能被4整除即闰年且可忽略100/400条件，错判1900年二月29天；source明确世纪年须被400整除且1900为平年例。该错误直接推翻核心规则解释与实例核对目标，属实质缺陷，故0分。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "artifact断言所有能被4整除年份都是闰年且100和400条件可忽略，并错误推导1900年二月有29天",
+            "impact": "违背source公历规则与1900平年实例，破坏核对闰年规则解释及实例的核心教学目标",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "853685eab47e41df7ddef7354c0225b71a669fb7d649723b4972c34088946314"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "5e982eb2843152ea1b81d9f7793dbfb2609636664c75b2a6bab9a349cc3bf60b"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "853685eab47e41df7ddef7354c0225b71a669fb7d649723b4972c34088946314"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "5e982eb2843152ea1b81d9f7793dbfb2609636664c75b2a6bab9a349cc3bf60b"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q1:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "所有能被4整除的年份都是闰年，因此1900年二月有29天；100和400条件可以忽略。",
+          "valueHash": "853685eab47e41df7ddef7354c0225b71a669fb7d649723b4972c34088946314"
+        },
+        "reason": "引文断言所有能被4整除均为闰年且忽略100/400条件，并错判1900年29天，与/sources/0/text中公历世纪年须被400整除及1900为例证平年矛盾，破坏核对规则核心目标，故material。"
+      },
+      {
+        "id": "review2:Q1:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/sources/0/text",
+          "quote": "能被100整除时须再能被400整除才是闰年。闰年二月29天，平年28天。例子依次为2000年、1900年。",
+          "valueHash": "5e982eb2843152ea1b81d9f7793dbfb2609636664c75b2a6bab9a349cc3bf60b"
+        },
+        "reason": "来源明确要求世纪年例外且1900为平年例，artifact忽略条件并误判1900为29天，实质错误破坏核心教学目标，指控成立。"
+      }
+    ]
+  }
+}

@@ -1,0 +1,107 @@
+{
+  "inputIdentity": "37465d6ae6eae72d2df551940cd32449c429e46be3096dcb1674796a17a1b4c8",
+  "attempts": [
+    {
+      "physicalId": "8bf8fdad-2538-4da9-8b9e-166d71891b09",
+      "caseId": "S026",
+      "runId": "S026-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q4",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "题目禁不确定强制定唯一，但源仅给60种组合无线索；作者答案政策强制123且拒其他，错误且无效，无法评测目标技能。",
+        "refs": [
+          "/question/prompt",
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "题干要求唯一确定密码且不允许不确定，与源欠定矛盾；artifact强制密码必为123并拒收其他答案，属无依据错误密钥且禁用正确欠定回答。",
+            "impact": "改变核心用途：原目标为评估是否可确定，此题强制错误断言，无法合法解答，测试无效。",
+            "refs": [
+              "/question/prompt",
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "39815d10f4ddb495b3e707c994ae16e233ed84581c64cdfe9bbd74910f5edf0f"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "5b38b50e13116812fc8b0eb404dc82735ce29b4083d85f5906ec943ab8d8e74d"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "61e32c85918a722e54332a389f76c5ef0721b03afb46040da613635927625724"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "assessment": {
+          "key": "incorrect",
+          "validity": "invalid",
+          "exposure": "none",
+          "discrimination": "weak",
+          "demand": "reasoning",
+          "demandReason": "学生需从给定信息推导唯一密码并解释为何只能如此，但源实际欠定，任务要求虚构推理而非合法评估。",
+          "reason": "题目(/question/prompt)禁不确定强制定唯一；作者答案(/artifacts/0/text)强制123拒其他，错误且禁用正确欠定；priorExposure空故曝光none；无效测试判别力weak；要求解释故demand=reasoning。",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "39815d10f4ddb495b3e707c994ae16e233ed84581c64cdfe9bbd74910f5edf0f"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "5b38b50e13116812fc8b0eb404dc82735ce29b4083d85f5906ec943ab8d8e74d"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "61e32c85918a722e54332a389f76c5ef0721b03afb46040da613635927625724"
+            }
+          ]
+        },
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "39815d10f4ddb495b3e707c994ae16e233ed84581c64cdfe9bbd74910f5edf0f"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "5b38b50e13116812fc8b0eb404dc82735ce29b4083d85f5906ec943ab8d8e74d"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "61e32c85918a722e54332a389f76c5ef0721b03afb46040da613635927625724"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

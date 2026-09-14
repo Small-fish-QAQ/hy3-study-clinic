@@ -1,0 +1,79 @@
+{
+  "inputIdentity": "353dfaf8d40a825dc11151d88eae4ca2eef9dcea6e9194e0ececb05981554619",
+  "attempts": [
+    {
+      "physicalId": "f5053b64-b855-4e62-a6c4-44e9fa5bbd6f",
+      "caseId": "S056",
+      "runId": "S056-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q6",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "交付的修复建议相关但泛泛，仅让复习守恒系数和多做相关题，未具体纠正改变下标的错误，也未给出具体下一步检查，符合Q6的1级标准。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/0",
+          "/answer"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "修复建议泛泛，未具体指出学生将H2O改为H2O2的改变下标错误，也未提供具体可使用的再检验题或条件。",
+            "impact": "核心用途（提供配平相关建议）成立，但缺失目标要求的具体纠正与独立再检验，属局部缺陷。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/0",
+              "/answer"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "4dcd617d62ddfa21f1a0db9a35d9f590eeccc9249699a024bbf3baa1d2f273f6"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "df44a9a5408590f40907a7130b4254b35360c4f93b8aab8f59a260950db8f121"
+              },
+              {
+                "pointer": "/answer",
+                "valueHash": "e16225b1eff8991166dababd8058cab1ec0cbe17d1ddd5faddba138462339473"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "4dcd617d62ddfa21f1a0db9a35d9f590eeccc9249699a024bbf3baa1d2f273f6"
+          },
+          {
+            "pointer": "/goals/0",
+            "valueHash": "df44a9a5408590f40907a7130b4254b35360c4f93b8aab8f59a260950db8f121"
+          },
+          {
+            "pointer": "/answer",
+            "valueHash": "e16225b1eff8991166dababd8058cab1ec0cbe17d1ddd5faddba138462339473"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

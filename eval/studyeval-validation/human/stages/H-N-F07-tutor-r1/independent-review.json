@@ -1,0 +1,76 @@
+{
+  "inputIdentity": "f4016f9ead2ddf3b8e06a7551d964b76ed44bc9466fca86ac2741c9e31630158",
+  "attempts": [
+    {
+      "physicalId": "a5de6d49-b13d-4b78-a520-2ed54ab2935f",
+      "caseId": "N-F07-tutor",
+      "runId": "H-N-F07-tutor-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "回复准确引资料中观察天数等需一致的要求，自构甲7天乙4天反例推导不能单归因水，逻辑正确；手机类比及边界说明无虚假归属，实质主张有源或显式假设支撑，无事实/归因缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "98463466492601085e31eabda2920d8153801ad49d3f58ed0283684b400c9ded"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      },
+      {
+        "dimension": "Q3",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "回复从资料前提展示控变量要求，用假设反例与手机类比解释单因素归因需其他变量受控，明确展示额外变量破坏归因的why，并交代类比适用边界，关键连接与限制充分，符合工作流畅度标准。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "98463466492601085e31eabda2920d8153801ad49d3f58ed0283684b400c9ded"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

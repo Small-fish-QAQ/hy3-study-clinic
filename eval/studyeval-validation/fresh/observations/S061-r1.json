@@ -1,0 +1,453 @@
+{
+  "task": {
+    "caseId": "S061",
+    "runId": "S061-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S061.json",
+    "inputHash": "3bef498c3e9bb9c2a4dfa25d2839391dddfdabc90d2d981ea0266440592e591b"
+  },
+  "inputHash": "3bef498c3e9bb9c2a4dfa25d2839391dddfdabc90d2d981ea0266440592e591b",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "15ca0188cc906cbedc2a00e615ca52c457c11617d5328b22b26a8ebff2abe38c",
+    "stages": {
+      "goal-mapping": {
+        "goals": [
+          {
+            "index": 0,
+            "importance": "essential",
+            "status": "contradicted",
+            "reason": "Artifact声称不用看箭头且B可走到A，违背了源中有向边必须顺方向且B无出边的规则，未提供正确按有向边检查路线的方法，核心结论被改变。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/0",
+              "/sources/0/text"
+            ],
+            "quote": "看到有边就可以走，不用看箭头，B也能直接走到A。",
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "2a576634b7ef91ab126053b3c6c052c3bd54a8ad49ce703b7d739d66b6fa23c7"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "a51f21939f83eed1ca93d3681f208fb694af3488648930ef9519d1d81a501862"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "4a1ff16d1619a7f4b64cc932d8257c0a3341f94daa68120cf944ecd4a83e3b93"
+              }
+            ]
+          },
+          {
+            "index": 1,
+            "importance": "essential",
+            "status": "contradicted",
+            "reason": "Artifact断言入度和出度是同一个数，未区分二者也未教计算，与源中出度/入度不同定义矛盾，核心学习目标被错误主张替代。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/1",
+              "/sources/0/text"
+            ],
+            "quote": "入度和出度是同一个数。",
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "2a576634b7ef91ab126053b3c6c052c3bd54a8ad49ce703b7d739d66b6fa23c7"
+              },
+              {
+                "pointer": "/goals/1",
+                "valueHash": "a63e5ea68b90b2ab60576d7e6f1c219c31f7b0a1e90a3e147a04d87b392c0399"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "4a1ff16d1619a7f4b64cc932d8257c0a3341f94daa68120cf944ecd4a83e3b93"
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "importance": "secondary",
+            "status": "usable",
+            "reason": "Artifact明确说明边标签让图更易读，实现了解释边标签用途的目标，虽未提不改变方向但目标仅要求解释用途。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/2"
+            ],
+            "quote": "边标签让图更易读。",
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "2a576634b7ef91ab126053b3c6c052c3bd54a8ad49ce703b7d739d66b6fa23c7"
+              },
+              {
+                "pointer": "/goals/2",
+                "valueHash": "5971c156642542bafa467de656a783fad331d9b9629086ebfc96e501de760b60"
+              }
+            ]
+          }
+        ]
+      },
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "两个核心目标均被artifact直接矛盾：它声称忽略箭头有边即可走且B可到A，并断言入度出度同数，违背有向边可行性与度计算的核心教学。实质缺陷导致学习目标失效。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "Artifact称'看到有边就可以走，不用看箭头，B也能直接走到A'，违背有向边方向与可行性核心目标",
+                "impact": "击败按有向边检查路线可行性的核心用途，教给错误方法",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "2a576634b7ef91ab126053b3c6c052c3bd54a8ad49ce703b7d739d66b6fa23c7"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "4a1ff16d1619a7f4b64cc932d8257c0a3341f94daa68120cf944ecd4a83e3b93"
+                  }
+                ]
+              },
+              {
+                "severity": "material",
+                "description": "Artifact称'入度和出度是同一个数'，违背source定义与区分计算核心目标",
+                "impact": "击败区分并计算入度出度的核心用途，给出错误等价",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "2a576634b7ef91ab126053b3c6c052c3bd54a8ad49ce703b7d739d66b6fa23c7"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "4a1ff16d1619a7f4b64cc932d8257c0a3341f94daa68120cf944ecd4a83e3b93"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "2a576634b7ef91ab126053b3c6c052c3bd54a8ad49ce703b7d739d66b6fa23c7"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "4a1ff16d1619a7f4b64cc932d8257c0a3341f94daa68120cf944ecd4a83e3b93"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "核心目标被直接矛盾：artifact称不用看箭头且B可到A，违背有向边规则；又称入度出度同数，违背区分计算目标。次要目标解释标签易读虽符合，但核心已毁。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text",
+              "/goals/0",
+              "/goals/1"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "artifact声称'看到有边就可以走，不用看箭头，B也能直接走到A'，直接矛盾源有向边方向规则和给定图结构，破坏核心目标'按有向边检查路线可行性'。",
+                "impact": "学习者获得反向规则，无法正确判断路径可行，核心用途失效。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "2a576634b7ef91ab126053b3c6c052c3bd54a8ad49ce703b7d739d66b6fa23c7"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "4a1ff16d1619a7f4b64cc932d8257c0a3341f94daa68120cf944ecd4a83e3b93"
+                  }
+                ]
+              },
+              {
+                "severity": "material",
+                "description": "artifact称'入度和出度是同一个数'，矛盾源中出度/入度定义及图中差异，破坏核心目标'区分并计算节点入度和出度'。",
+                "impact": "学习者无法区分及正确计算度，核心用途失效。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "2a576634b7ef91ab126053b3c6c052c3bd54a8ad49ce703b7d739d66b6fa23c7"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "4a1ff16d1619a7f4b64cc932d8257c0a3341f94daa68120cf944ecd4a83e3b93"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "2a576634b7ef91ab126053b3c6c052c3bd54a8ad49ce703b7d739d66b6fa23c7"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "4a1ff16d1619a7f4b64cc932d8257c0a3341f94daa68120cf944ecd4a83e3b93"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "a51f21939f83eed1ca93d3681f208fb694af3488648930ef9519d1d81a501862"
+              },
+              {
+                "pointer": "/goals/1",
+                "valueHash": "a63e5ea68b90b2ab60576d7e6f1c219c31f7b0a1e90a3e147a04d87b392c0399"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "Artifact直接矛盾两个核心目标：声称不用看箭头且B可到A，违背有向边方向规则；断言入度出度同数，违背定义与计算目标。次要目标标签用途解释可用，但核心用途被击败。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text",
+              "/goals/0",
+              "/goals/1"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "Artifact称'看到有边就可以走，不用看箭头，B也能直接走到A'，违背有向边方向规则和图结构，未提供正确按有向边检查路线方法",
+                "impact": "击败按有向边检查路线可行性的核心用途，教给错误反向规则",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "2a576634b7ef91ab126053b3c6c052c3bd54a8ad49ce703b7d739d66b6fa23c7"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "4a1ff16d1619a7f4b64cc932d8257c0a3341f94daa68120cf944ecd4a83e3b93"
+                  }
+                ]
+              },
+              {
+                "severity": "material",
+                "description": "Artifact称'入度和出度是同一个数'，违背source定义且未区分计算，矛盾核心目标",
+                "impact": "击败区分并计算节点入度和出度的核心用途，给出错误等价",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "2a576634b7ef91ab126053b3c6c052c3bd54a8ad49ce703b7d739d66b6fa23c7"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "4a1ff16d1619a7f4b64cc932d8257c0a3341f94daa68120cf944ecd4a83e3b93"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "2a576634b7ef91ab126053b3c6c052c3bd54a8ad49ce703b7d739d66b6fa23c7"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "4a1ff16d1619a7f4b64cc932d8257c0a3341f94daa68120cf944ecd4a83e3b93"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "a51f21939f83eed1ca93d3681f208fb694af3488648930ef9519d1d81a501862"
+              },
+              {
+                "pointer": "/goals/1",
+                "valueHash": "a63e5ea68b90b2ab60576d7e6f1c219c31f7b0a1e90a3e147a04d87b392c0399"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q2:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "看到有边就可以走，不用看箭头，B也能直接走到A。",
+              "valueHash": "2a576634b7ef91ab126053b3c6c052c3bd54a8ad49ce703b7d739d66b6fa23c7"
+            },
+            "reason": "Artifact明文忽略箭头并断言B可到A，而source规定顺方向且B无出边，直接矛盾核心目标0，摧毁可行路线检查用途。"
+          },
+          {
+            "id": "review1:Q2:2",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "入度和出度是同一个数。",
+              "valueHash": "2a576634b7ef91ab126053b3c6c052c3bd54a8ad49ce703b7d739d66b6fa23c7"
+            },
+            "reason": "Artifact断言度相等，source明确定义不同且图中节点度不等，矛盾核心目标1，使区分计算用途失效。"
+          },
+          {
+            "id": "review2:Q2:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "看到有边就可以走，不用看箭头，B也能直接走到A。",
+              "valueHash": "2a576634b7ef91ab126053b3c6c052c3bd54a8ad49ce703b7d739d66b6fa23c7"
+            },
+            "reason": "同review1:Q2:1，原文证据确凿，违背有向边方向核心规则，material缺陷。"
+          },
+          {
+            "id": "review2:Q2:2",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "入度和出度是同一个数。",
+              "valueHash": "2a576634b7ef91ab126053b3c6c052c3bd54a8ad49ce703b7d739d66b6fa23c7"
+            },
+            "reason": "同review1:Q2:2，原文证据确凿，矛盾入出度区分计算核心目标，material缺陷。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q2",
+          "level": 0,
+          "evidence": "sufficient",
+          "reason": "Artifact直接矛盾两个核心目标：声称不用看箭头且B可到A，违背有向边方向规则；断言入度出度同数，违背定义与计算目标。次要目标标签用途解释可用，但核心用途被击败。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text",
+            "/goals/0",
+            "/goals/1"
+          ],
+          "defects": [
+            {
+              "severity": "material",
+              "description": "Artifact称'看到有边就可以走，不用看箭头，B也能直接走到A'，违背有向边方向规则和图结构，未提供正确按有向边检查路线方法",
+              "impact": "击败按有向边检查路线可行性的核心用途，教给错误反向规则",
+              "refs": [
+                "/artifacts/0/text",
+                "/sources/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "2a576634b7ef91ab126053b3c6c052c3bd54a8ad49ce703b7d739d66b6fa23c7"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "4a1ff16d1619a7f4b64cc932d8257c0a3341f94daa68120cf944ecd4a83e3b93"
+                }
+              ]
+            },
+            {
+              "severity": "material",
+              "description": "Artifact称'入度和出度是同一个数'，违背source定义且未区分计算，矛盾核心目标",
+              "impact": "击败区分并计算节点入度和出度的核心用途，给出错误等价",
+              "refs": [
+                "/artifacts/0/text",
+                "/sources/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "2a576634b7ef91ab126053b3c6c052c3bd54a8ad49ce703b7d739d66b6fa23c7"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "4a1ff16d1619a7f4b64cc932d8257c0a3341f94daa68120cf944ecd4a83e3b93"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "2a576634b7ef91ab126053b3c6c052c3bd54a8ad49ce703b7d739d66b6fa23c7"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "4a1ff16d1619a7f4b64cc932d8257c0a3341f94daa68120cf944ecd4a83e3b93"
+            },
+            {
+              "pointer": "/goals/0",
+              "valueHash": "a51f21939f83eed1ca93d3681f208fb694af3488648930ef9519d1d81a501862"
+            },
+            {
+              "pointer": "/goals/1",
+              "valueHash": "a63e5ea68b90b2ab60576d7e6f1c219c31f7b0a1e90a3e147a04d87b392c0399"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "938979c903da0c3812cc1728b9b8a8ebd26b12455c90a8521d9be0ab14d800fb"
+  }
+}

@@ -1,0 +1,511 @@
+{
+  "task": {
+    "caseId": "S042",
+    "runId": "S042-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S042.json",
+    "inputHash": "8752af3ce212bf64a600eece8573d9c468362d90f8c3d7992a3f48d20d7d5eb8"
+  },
+  "inputHash": "8752af3ce212bf64a600eece8573d9c468362d90f8c3d7992a3f48d20d7d5eb8",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "b2bcdbe7d2a1070ffa21ea9b0ac66261ceea3fdac99a99e2f47c17fe91de1bab",
+    "stages": {
+      "blind-solution": {
+        "status": "resolved",
+        "solution": "依/sources/0/text：甲UTC+2、乙UTC-3，甲快5小时，甲→乙减5小时。甲周三02:00减5h为周二21:00，跨午夜日期退一天。换算方向：从甲到乙减5小时。限制：固定偏移、无夏令时。",
+        "refs": [
+          "/question/prompt",
+          "/sources/0/text"
+        ],
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "c6c88f5ed52ee4eac992880ab59070f724ae9eaf51ca6e9c4bbc4172762f0471"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "e91a476a4c04f45c11b19a5dfa48093184e1d00ce14e633b64bdd8a96f40a0dd"
+          }
+        ]
+      },
+      "blind-student": {
+        "criteria": [
+          {
+            "id": "c1",
+            "result": "met",
+            "reason": "学生答案'乙地是周二晚上九点'即周二21:00，满足乙地周二21:00",
+            "refs": [
+              "/answer",
+              "/rubric/0"
+            ],
+            "required": true,
+            "witnesses": [
+              {
+                "pointer": "/answer",
+                "valueHash": "89ca6d97fa4baf8d416204a00d7657425f1bcd562a92c2bab5ad336d10a0053d"
+              },
+              {
+                "pointer": "/rubric/0",
+                "valueHash": "04f832a6f433402126f73019928e65619c2b73270b9e40a1d1c1455b9aaf9762"
+              }
+            ]
+          },
+          {
+            "id": "c2",
+            "result": "met",
+            "reason": "学生答案'甲比乙快五小时，所以把周三凌晨两点往回拨五小时，跨回周二'表明由甲到乙减5小时并回到前一天",
+            "refs": [
+              "/answer",
+              "/rubric/1"
+            ],
+            "required": true,
+            "witnesses": [
+              {
+                "pointer": "/answer",
+                "valueHash": "89ca6d97fa4baf8d416204a00d7657425f1bcd562a92c2bab5ad336d10a0053d"
+              },
+              {
+                "pointer": "/rubric/1",
+                "valueHash": "9a4b846117363f96775f4de0256f3f77d03902a9507d0ec35e62f3817f0bf1be"
+              }
+            ]
+          },
+          {
+            "id": "c3",
+            "result": "not_met",
+            "reason": "学生答案为纯文本叙述，未列成两列表格，不满足该非必要标准",
+            "refs": [
+              "/answer",
+              "/rubric/2"
+            ],
+            "required": false,
+            "witnesses": [
+              {
+                "pointer": "/answer",
+                "valueHash": "89ca6d97fa4baf8d416204a00d7657425f1bcd562a92c2bab5ad336d10a0053d"
+              },
+              {
+                "pointer": "/rubric/2",
+                "valueHash": "c7dc0b88c588fc4f0e46e820834b1da7c4e8c69e5d2f4cf691ca19b9bdbeccc8"
+              }
+            ]
+          }
+        ],
+        "warrantedCredit": "granted"
+      },
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q5",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "独立解题得乙地周二21:00且甲到乙减5小时跨日。学生答案含周二晚九点及往回拨五小时跨回周二，满足c1,c2；未列表格c3 not_met正确。产品判met/met/not_met并授分，反馈准确，评分完全正确。",
+            "refs": [
+              "/answer",
+              "/rubric/0",
+              "/rubric/1",
+              "/rubric/2",
+              "/productJudgment/criteria/0",
+              "/productJudgment/criteria/1",
+              "/productJudgment/criteria/2",
+              "/productJudgment/consequence"
+            ],
+            "defects": [],
+            "missing": [],
+            "grading": {
+              "criteria": [
+                {
+                  "id": "c1",
+                  "result": "met",
+                  "reason": "学生答案'乙地是周二晚上九点'即周二21:00，满足乙地周二21:00的必要含义",
+                  "refs": [
+                    "/answer",
+                    "/rubric/0"
+                  ],
+                  "required": true,
+                  "witnesses": [
+                    {
+                      "pointer": "/answer",
+                      "valueHash": "89ca6d97fa4baf8d416204a00d7657425f1bcd562a92c2bab5ad336d10a0053d"
+                    },
+                    {
+                      "pointer": "/rubric/0",
+                      "valueHash": "04f832a6f433402126f73019928e65619c2b73270b9e40a1d1c1455b9aaf9762"
+                    }
+                  ]
+                },
+                {
+                  "id": "c2",
+                  "result": "met",
+                  "reason": "学生答案'把周三凌晨两点往回拨五小时，跨回周二'表明由甲到乙减5小时并回到前一天",
+                  "refs": [
+                    "/answer",
+                    "/rubric/1"
+                  ],
+                  "required": true,
+                  "witnesses": [
+                    {
+                      "pointer": "/answer",
+                      "valueHash": "89ca6d97fa4baf8d416204a00d7657425f1bcd562a92c2bab5ad336d10a0053d"
+                    },
+                    {
+                      "pointer": "/rubric/1",
+                      "valueHash": "9a4b846117363f96775f4de0256f3f77d03902a9507d0ec35e62f3817f0bf1be"
+                    }
+                  ]
+                },
+                {
+                  "id": "c3",
+                  "result": "not_met",
+                  "reason": "学生答案为纯文本叙述，未列成两列表格，非必要标准未满足判定正确",
+                  "refs": [
+                    "/answer",
+                    "/rubric/2"
+                  ],
+                  "required": false,
+                  "witnesses": [
+                    {
+                      "pointer": "/answer",
+                      "valueHash": "89ca6d97fa4baf8d416204a00d7657425f1bcd562a92c2bab5ad336d10a0053d"
+                    },
+                    {
+                      "pointer": "/rubric/2",
+                      "valueHash": "c7dc0b88c588fc4f0e46e820834b1da7c4e8c69e5d2f4cf691ca19b9bdbeccc8"
+                    }
+                  ]
+                }
+              ],
+              "warrantedCredit": "granted",
+              "actualCredit": "granted",
+              "actualCreditWitness": {
+                "pointer": "/productJudgment/consequence",
+                "valueHash": "dd515d1975b8e5a83bab3420bea5dacefe5451ac7cf617d23c4393cc79e4db99"
+              }
+            },
+            "witnesses": [
+              {
+                "pointer": "/answer",
+                "valueHash": "89ca6d97fa4baf8d416204a00d7657425f1bcd562a92c2bab5ad336d10a0053d"
+              },
+              {
+                "pointer": "/rubric/0",
+                "valueHash": "04f832a6f433402126f73019928e65619c2b73270b9e40a1d1c1455b9aaf9762"
+              },
+              {
+                "pointer": "/rubric/1",
+                "valueHash": "9a4b846117363f96775f4de0256f3f77d03902a9507d0ec35e62f3817f0bf1be"
+              },
+              {
+                "pointer": "/rubric/2",
+                "valueHash": "c7dc0b88c588fc4f0e46e820834b1da7c4e8c69e5d2f4cf691ca19b9bdbeccc8"
+              },
+              {
+                "pointer": "/productJudgment/criteria/0",
+                "valueHash": "f0889a8ca84b1ad53479a19f0e5a22afede0813daadd0b81641dfa3a2bb5e932"
+              },
+              {
+                "pointer": "/productJudgment/criteria/1",
+                "valueHash": "02e8c5829531b184471f66e350e5cf32a381ad8e83a35792a261b5649778b57b"
+              },
+              {
+                "pointer": "/productJudgment/criteria/2",
+                "valueHash": "03635d5bea0f2b3f2dd24e1a4cc46bf8203c501288725de8c49a6be969e72548"
+              },
+              {
+                "pointer": "/productJudgment/consequence",
+                "valueHash": "dd515d1975b8e5a83bab3420bea5dacefe5451ac7cf617d23c4393cc79e4db99"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q5",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "重解确认甲周三02:00减5h为周二21:00，学生答案含周二晚上九点及回拨五小时跨回周二，满足c1/c2；c3非必要未列表格not_met正确；反馈等价与授分granted均准确。",
+            "refs": [
+              "/answer",
+              "/rubric/0",
+              "/rubric/1",
+              "/rubric/2",
+              "/productJudgment/criteria/0",
+              "/productJudgment/criteria/1",
+              "/productJudgment/criteria/2",
+              "/productJudgment/feedback",
+              "/productJudgment/consequence",
+              "/sources/0/text",
+              "/question/prompt"
+            ],
+            "defects": [],
+            "missing": [],
+            "grading": {
+              "criteria": [
+                {
+                  "id": "c1",
+                  "result": "met",
+                  "reason": "学生答案'乙地是周二晚上九点'即周二21:00，满足乙地周二21:00",
+                  "refs": [
+                    "/answer",
+                    "/rubric/0"
+                  ],
+                  "required": true,
+                  "witnesses": [
+                    {
+                      "pointer": "/answer",
+                      "valueHash": "89ca6d97fa4baf8d416204a00d7657425f1bcd562a92c2bab5ad336d10a0053d"
+                    },
+                    {
+                      "pointer": "/rubric/0",
+                      "valueHash": "04f832a6f433402126f73019928e65619c2b73270b9e40a1d1c1455b9aaf9762"
+                    }
+                  ]
+                },
+                {
+                  "id": "c2",
+                  "result": "met",
+                  "reason": "学生答案'往回拨五小时，跨回周二'表明由甲到乙减5小时并回到前一天",
+                  "refs": [
+                    "/answer",
+                    "/rubric/1"
+                  ],
+                  "required": true,
+                  "witnesses": [
+                    {
+                      "pointer": "/answer",
+                      "valueHash": "89ca6d97fa4baf8d416204a00d7657425f1bcd562a92c2bab5ad336d10a0053d"
+                    },
+                    {
+                      "pointer": "/rubric/1",
+                      "valueHash": "9a4b846117363f96775f4de0256f3f77d03902a9507d0ec35e62f3817f0bf1be"
+                    }
+                  ]
+                },
+                {
+                  "id": "c3",
+                  "result": "not_met",
+                  "reason": "学生答案为纯文本叙述，未列两列表格，非必要标准正确判not_met",
+                  "refs": [
+                    "/answer",
+                    "/rubric/2"
+                  ],
+                  "required": false,
+                  "witnesses": [
+                    {
+                      "pointer": "/answer",
+                      "valueHash": "89ca6d97fa4baf8d416204a00d7657425f1bcd562a92c2bab5ad336d10a0053d"
+                    },
+                    {
+                      "pointer": "/rubric/2",
+                      "valueHash": "c7dc0b88c588fc4f0e46e820834b1da7c4e8c69e5d2f4cf691ca19b9bdbeccc8"
+                    }
+                  ]
+                }
+              ],
+              "warrantedCredit": "granted",
+              "actualCredit": "granted",
+              "actualCreditWitness": {
+                "pointer": "/productJudgment/consequence",
+                "valueHash": "dd515d1975b8e5a83bab3420bea5dacefe5451ac7cf617d23c4393cc79e4db99"
+              }
+            },
+            "witnesses": [
+              {
+                "pointer": "/answer",
+                "valueHash": "89ca6d97fa4baf8d416204a00d7657425f1bcd562a92c2bab5ad336d10a0053d"
+              },
+              {
+                "pointer": "/rubric/0",
+                "valueHash": "04f832a6f433402126f73019928e65619c2b73270b9e40a1d1c1455b9aaf9762"
+              },
+              {
+                "pointer": "/rubric/1",
+                "valueHash": "9a4b846117363f96775f4de0256f3f77d03902a9507d0ec35e62f3817f0bf1be"
+              },
+              {
+                "pointer": "/rubric/2",
+                "valueHash": "c7dc0b88c588fc4f0e46e820834b1da7c4e8c69e5d2f4cf691ca19b9bdbeccc8"
+              },
+              {
+                "pointer": "/productJudgment/criteria/0",
+                "valueHash": "f0889a8ca84b1ad53479a19f0e5a22afede0813daadd0b81641dfa3a2bb5e932"
+              },
+              {
+                "pointer": "/productJudgment/criteria/1",
+                "valueHash": "02e8c5829531b184471f66e350e5cf32a381ad8e83a35792a261b5649778b57b"
+              },
+              {
+                "pointer": "/productJudgment/criteria/2",
+                "valueHash": "03635d5bea0f2b3f2dd24e1a4cc46bf8203c501288725de8c49a6be969e72548"
+              },
+              {
+                "pointer": "/productJudgment/feedback",
+                "valueHash": "62a68ee09e58a0a3d8e4345f1ca2031219285bdd4b853adfb7f978d391d7579b"
+              },
+              {
+                "pointer": "/productJudgment/consequence",
+                "valueHash": "dd515d1975b8e5a83bab3420bea5dacefe5451ac7cf617d23c4393cc79e4db99"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "e91a476a4c04f45c11b19a5dfa48093184e1d00ce14e633b64bdd8a96f40a0dd"
+              },
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "c6c88f5ed52ee4eac992880ab59070f724ae9eaf51ca6e9c4bbc4172762f0471"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q5",
+          "level": 2,
+          "evidence": "sufficient",
+          "reason": "独立解题得乙地周二21:00且甲到乙减5小时跨日。学生答案含周二晚九点及往回拨五小时跨回周二，满足c1,c2；未列表格c3 not_met正确。产品判met/met/not_met并授分，反馈准确，评分完全正确。",
+          "refs": [
+            "/answer",
+            "/rubric/0",
+            "/rubric/1",
+            "/rubric/2",
+            "/productJudgment/criteria/0",
+            "/productJudgment/criteria/1",
+            "/productJudgment/criteria/2",
+            "/productJudgment/consequence"
+          ],
+          "defects": [],
+          "missing": [],
+          "grading": {
+            "criteria": [
+              {
+                "id": "c1",
+                "result": "met",
+                "reason": "学生答案'乙地是周二晚上九点'即周二21:00，满足乙地周二21:00的必要含义",
+                "refs": [
+                  "/answer",
+                  "/rubric/0"
+                ],
+                "required": true,
+                "witnesses": [
+                  {
+                    "pointer": "/answer",
+                    "valueHash": "89ca6d97fa4baf8d416204a00d7657425f1bcd562a92c2bab5ad336d10a0053d"
+                  },
+                  {
+                    "pointer": "/rubric/0",
+                    "valueHash": "04f832a6f433402126f73019928e65619c2b73270b9e40a1d1c1455b9aaf9762"
+                  }
+                ]
+              },
+              {
+                "id": "c2",
+                "result": "met",
+                "reason": "学生答案'把周三凌晨两点往回拨五小时，跨回周二'表明由甲到乙减5小时并回到前一天",
+                "refs": [
+                  "/answer",
+                  "/rubric/1"
+                ],
+                "required": true,
+                "witnesses": [
+                  {
+                    "pointer": "/answer",
+                    "valueHash": "89ca6d97fa4baf8d416204a00d7657425f1bcd562a92c2bab5ad336d10a0053d"
+                  },
+                  {
+                    "pointer": "/rubric/1",
+                    "valueHash": "9a4b846117363f96775f4de0256f3f77d03902a9507d0ec35e62f3817f0bf1be"
+                  }
+                ]
+              },
+              {
+                "id": "c3",
+                "result": "not_met",
+                "reason": "学生答案为纯文本叙述，未列成两列表格，非必要标准未满足判定正确",
+                "refs": [
+                  "/answer",
+                  "/rubric/2"
+                ],
+                "required": false,
+                "witnesses": [
+                  {
+                    "pointer": "/answer",
+                    "valueHash": "89ca6d97fa4baf8d416204a00d7657425f1bcd562a92c2bab5ad336d10a0053d"
+                  },
+                  {
+                    "pointer": "/rubric/2",
+                    "valueHash": "c7dc0b88c588fc4f0e46e820834b1da7c4e8c69e5d2f4cf691ca19b9bdbeccc8"
+                  }
+                ]
+              }
+            ],
+            "warrantedCredit": "granted",
+            "actualCredit": "granted",
+            "actualCreditWitness": {
+              "pointer": "/productJudgment/consequence",
+              "valueHash": "dd515d1975b8e5a83bab3420bea5dacefe5451ac7cf617d23c4393cc79e4db99"
+            }
+          },
+          "witnesses": [
+            {
+              "pointer": "/answer",
+              "valueHash": "89ca6d97fa4baf8d416204a00d7657425f1bcd562a92c2bab5ad336d10a0053d"
+            },
+            {
+              "pointer": "/rubric/0",
+              "valueHash": "04f832a6f433402126f73019928e65619c2b73270b9e40a1d1c1455b9aaf9762"
+            },
+            {
+              "pointer": "/rubric/1",
+              "valueHash": "9a4b846117363f96775f4de0256f3f77d03902a9507d0ec35e62f3817f0bf1be"
+            },
+            {
+              "pointer": "/rubric/2",
+              "valueHash": "c7dc0b88c588fc4f0e46e820834b1da7c4e8c69e5d2f4cf691ca19b9bdbeccc8"
+            },
+            {
+              "pointer": "/productJudgment/criteria/0",
+              "valueHash": "f0889a8ca84b1ad53479a19f0e5a22afede0813daadd0b81641dfa3a2bb5e932"
+            },
+            {
+              "pointer": "/productJudgment/criteria/1",
+              "valueHash": "02e8c5829531b184471f66e350e5cf32a381ad8e83a35792a261b5649778b57b"
+            },
+            {
+              "pointer": "/productJudgment/criteria/2",
+              "valueHash": "03635d5bea0f2b3f2dd24e1a4cc46bf8203c501288725de8c49a6be969e72548"
+            },
+            {
+              "pointer": "/productJudgment/consequence",
+              "valueHash": "dd515d1975b8e5a83bab3420bea5dacefe5451ac7cf617d23c4393cc79e4db99"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "845cc3556730b5313bfc4b0dbb96dd7c0f813de5bf7e607b35e71e0d42e157db"
+  }
+}

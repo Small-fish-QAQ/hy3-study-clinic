@@ -1,0 +1,124 @@
+{
+  "inputIdentity": "7b794ecfa259f598b8bcce6ad55e236289d5d033a97cfcbf40740c244daafc42",
+  "attempts": [
+    {
+      "physicalId": "187c2065-790a-46d5-af19-62e6b40bfbfa",
+      "caseId": "E846",
+      "runId": "H-E846-r3",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [
+        {
+          "location": "/dimensions/0/refs",
+          "changes": [
+            {
+              "proposed": "/view/artifacts/0/text",
+              "pointer": "/artifacts/0/text"
+            },
+            {
+              "proposed": "/view/goals",
+              "pointer": "/goals"
+            }
+          ]
+        },
+        {
+          "location": "/dimensions/0/defects/0/refs",
+          "changes": [
+            {
+              "proposed": "/view/artifacts/0/text",
+              "pointer": "/artifacts/0/text"
+            },
+            {
+              "proposed": "/view/goals",
+              "pointer": "/goals"
+            }
+          ]
+        }
+      ],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q2",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "产物声明只背平均数最公平，不学中位数与数据变化影响，所有问题用平均数，直接矛盾目标1-3要求的中位数计算、异常值影响解释及按问题选指标，核心目的被击败。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "artifact称只背平均数最公平，不学中位数与数据变化影响，所有问题用平均数",
+            "impact": "使目标1(算中位数)、2(异常值对两指标影响)、3(选指标避推断)实质缺失或被否定，核心用途失败",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "5ab8b13b56d12e4dab0dc1fbb5b4aae81bc75071a57fa42297dda367438c47db"
+              },
+              {
+                "pointer": "/goals",
+                "valueHash": "d3d0c9d862bfae034f0a1ba963a7205d6b0416240fc1ec3ae4f93d92d263f4e3"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "5ab8b13b56d12e4dab0dc1fbb5b4aae81bc75071a57fa42297dda367438c47db"
+          },
+          {
+            "pointer": "/goals",
+            "valueHash": "d3d0c9d862bfae034f0a1ba963a7205d6b0416240fc1ec3ae4f93d92d263f4e3"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "referenceRepairs": [
+      {
+        "location": "/dimensions/0/refs",
+        "changes": [
+          {
+            "proposed": "/view/artifacts/0/text",
+            "pointer": "/artifacts/0/text"
+          },
+          {
+            "proposed": "/view/goals",
+            "pointer": "/goals"
+          }
+        ]
+      },
+      {
+        "location": "/dimensions/0/defects/0/refs",
+        "changes": [
+          {
+            "proposed": "/view/artifacts/0/text",
+            "pointer": "/artifacts/0/text"
+          },
+          {
+            "proposed": "/view/goals",
+            "pointer": "/goals"
+          }
+        ]
+      }
+    ]
+  }
+}

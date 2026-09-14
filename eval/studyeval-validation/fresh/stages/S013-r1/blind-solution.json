@@ -1,0 +1,36 @@
+{
+  "inputIdentity": "70256588e065417740803989a36004f6cda33b1020c1858615205a6be8c1f7d2",
+  "attempts": [
+    {
+      "physicalId": "8c1b9d92-e61e-47d1-81f4-2f1ded335202",
+      "caseId": "S013",
+      "runId": "S013-r1",
+      "stage": "blind-solution",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "status": "contradictory",
+    "solution": "初始高度未知，净变化+7-4=+3米。最终高度=初始高度+3，无唯一绝对高度。题设禁止言不足却强制唯一答案，约束矛盾，不屈从。",
+    "refs": [
+      "/question/prompt",
+      "/sources/0/text"
+    ],
+    "witnesses": [
+      {
+        "pointer": "/question/prompt",
+        "valueHash": "678fa04269e5dd9e77c27b3e192985ba0156440a8c8ece76a99a362a20b654b1"
+      },
+      {
+        "pointer": "/sources/0/text",
+        "valueHash": "1df9950edf389e68cc4353ad1c364ae71b323e3e1d130830ce39d9c5e25fe7f3"
+      }
+    ]
+  }
+}

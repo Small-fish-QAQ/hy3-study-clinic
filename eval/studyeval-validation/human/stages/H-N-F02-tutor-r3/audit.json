@@ -1,0 +1,76 @@
+{
+  "inputIdentity": "95885415c3002446fd18c41018a7b9ed99956cdc86c87cd691fce4af2ed12f9a",
+  "attempts": [
+    {
+      "physicalId": "8cee43c0-17e2-48d7-9b9e-b37e9694eef4",
+      "caseId": "N-F02-tutor",
+      "runId": "H-N-F02-tutor-r3",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "导师回复准确引用资料连续百分比基数不同的论述，用果园非价格例正确算500箱减增20%得480箱，边界说明归因资料提醒，无事实或归属缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "954d89e64d4ec170f31ac4dfe06ad06321e1631999a560553b02e626afa69d41"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "eed51cb255d5d0e12ca505b4c60926d142df7cf81a0f73781aba0593d2870361"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      },
+      {
+        "dimension": "Q3",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "解释展示关键操作：第二次增产20%作用于新基数400箱得80箱，连接至不抵消结论，并说明无取整政策门槛等边界，符合充分停止条件。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "954d89e64d4ec170f31ac4dfe06ad06321e1631999a560553b02e626afa69d41"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "eed51cb255d5d0e12ca505b4c60926d142df7cf81a0f73781aba0593d2870361"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

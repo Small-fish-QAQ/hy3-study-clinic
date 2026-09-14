@@ -1,0 +1,113 @@
+{
+  "task": {
+    "caseId": "S024",
+    "runId": "S024-r2",
+    "replicate": 2,
+    "path": "dataset/studyeval/S024.json",
+    "inputHash": "7ba74f3eeb001ab1e37f3e24117aa77d2d715a1d1de9955170754623eae0a8b1"
+  },
+  "inputHash": "7ba74f3eeb001ab1e37f3e24117aa77d2d715a1d1de9955170754623eae0a8b1",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "fa33f64a14983ca9f1e831b5743e0a2f9013cf86ce04f77f297de1b38d1cd394",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "修复应用规则指出原唯一指代判断错误，给出改名改写示例固定含义，并提供新句子要求列歧义并改写，构成具体可迁移的下一检查。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "ec7647254d93213dd9b21e35be2e319148cdb778ea291fc0ec72f50427519fae"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "69fef873755638b051db652f07b0960110732e94a4812af3f6f8b85635905051"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "修复正确应用规则识别原句歧义，给出具体改写示例，并提议新句子作为同技能迁移检查，符合Q6完整标准。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "ec7647254d93213dd9b21e35be2e319148cdb778ea291fc0ec72f50427519fae"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "69fef873755638b051db652f07b0960110732e94a4812af3f6f8b85635905051"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q6",
+          "level": 2,
+          "evidence": "sufficient",
+          "reason": "修复应用规则指出原唯一指代判断错误，给出改名改写示例固定含义，并提供新句子要求列歧义并改写，构成具体可迁移的下一检查。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "ec7647254d93213dd9b21e35be2e319148cdb778ea291fc0ec72f50427519fae"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "69fef873755638b051db652f07b0960110732e94a4812af3f6f8b85635905051"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "be9044e4317205830764ad85b6772a75431c8b949151b71d24246e38cec7ed4b"
+  }
+}

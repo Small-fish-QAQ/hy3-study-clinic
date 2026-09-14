@@ -1,0 +1,76 @@
+{
+  "inputIdentity": "77b5dfad8d651cd84d693b491c6fdcc636a3d93213753cf9bd25607ee31ce468",
+  "attempts": [
+    {
+      "physicalId": "d99af782-6ce8-4bb1-b806-4f3263b94499",
+      "caseId": "N-F03-tutor",
+      "runId": "H-N-F03-tutor-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "引用资料准确，自构运动鞋例子明确为假想，混杂与边界解释符合来源，无事实或归属缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "f653eac8024e376cef6ce8bcbe3cb4d70ebdcd1f839018aaf4434efdb4a309e6"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "944a460c4eccfdbd61d456dc9fc3969b0ed10c585ea05e87ccfe3e9b93549680"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      },
+      {
+        "dimension": "Q3",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "用不同例子解释观察差异不自动因果，展示混杂连接与适用边界，并套用三层框架，关键联系与限制均已呈现。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "f653eac8024e376cef6ce8bcbe3cb4d70ebdcd1f839018aaf4434efdb4a309e6"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "944a460c4eccfdbd61d456dc9fc3969b0ed10c585ea05e87ccfe3e9b93549680"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

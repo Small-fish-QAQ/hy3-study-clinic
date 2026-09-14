@@ -1,0 +1,49 @@
+{
+  "inputIdentity": "09b05311250b70951934ee9045575834dad819e359485b84cc51d8eae8e09ebe",
+  "attempts": [
+    {
+      "physicalId": "56e60cdf-1a0d-4b3a-9911-e59986ce6d54",
+      "caseId": "S063",
+      "runId": "S063-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "Artifact correctly applies stated Gregorian rules to 2000 and 1900, verifying century condition. Aligns with source examples and goal; no defect in fact, scope or attribution.",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "b285d9407510e34c9675f2f5c991c1a1d50f9e9f13f1655e92fe9be836a512e3"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "5e982eb2843152ea1b81d9f7793dbfb2609636664c75b2a6bab9a349cc3bf60b"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

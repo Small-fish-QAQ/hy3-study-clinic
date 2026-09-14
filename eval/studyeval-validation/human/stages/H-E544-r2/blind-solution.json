@@ -1,0 +1,36 @@
+{
+  "inputIdentity": "166eb40a95efeda16c0ac9e8e2ccdb7877091996ebba3e8c6fe05ff0ef947041",
+  "attempts": [
+    {
+      "physicalId": "ae562bd0-2bd8-4153-9156-df0a70576c19",
+      "caseId": "E544",
+      "runId": "H-E544-r2",
+      "stage": "blind-solution",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "status": "resolved",
+    "solution": "原始：2,4,4,14总和24，平均数24/4=6分钟；排序后中间两数为4和4，中位数(4+4)/2=4分钟。改14为22后：总和32，平均数32/4=8分钟；排序2,4,4,22，中间仍4和4，中位数4分钟。变化不同因平均数受全部数值影响，最大等待增8使总和增8、均增2；中位数仅取有序中间位，改后中间两值及排序结构未变故不变。依/sources/0/text，单大数拉高平均数但未必改中位数。",
+    "refs": [
+      "/question/prompt",
+      "/sources/0/text"
+    ],
+    "witnesses": [
+      {
+        "pointer": "/question/prompt",
+        "valueHash": "c72bdf5aa33b5c9b2a61dcde88889cc9c7e6ebaf01687c706d6d8539580d34da"
+      },
+      {
+        "pointer": "/sources/0/text",
+        "valueHash": "a43f09ae51e1a19e3e4fe7ef6283f10eab5bf8c071e52a5d86e3c347cdbc2311"
+      }
+    ]
+  }
+}

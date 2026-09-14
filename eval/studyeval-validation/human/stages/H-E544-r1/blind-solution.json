@@ -1,0 +1,31 @@
+{
+  "inputIdentity": "166eb40a95efeda16c0ac9e8e2ccdb7877091996ebba3e8c6fe05ff0ef947041",
+  "attempts": [
+    {
+      "physicalId": "8c1fd051-71c6-4966-9389-04d69e3ad2c2",
+      "caseId": "E544",
+      "runId": "H-E544-r1",
+      "stage": "blind-solution",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "status": "resolved",
+    "solution": "原始：2+4+4+14=24，平均数24/4=6；排序后中间两数为4、4，中位数4。改22后：总和32，平均数8；中位数仍4。差异因平均数受全部数值包括极端值影响，14→22使总和增8、平均增2；中位数仅取决于中间位置的数值，本例中间两值未变故不变。",
+    "refs": [
+      "/question/prompt"
+    ],
+    "witnesses": [
+      {
+        "pointer": "/question/prompt",
+        "valueHash": "c72bdf5aa33b5c9b2a61dcde88889cc9c7e6ebaf01687c706d6d8539580d34da"
+      }
+    ]
+  }
+}

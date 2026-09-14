@@ -1,0 +1,196 @@
+{
+  "task": {
+    "caseId": "N-F07-tutor",
+    "runId": "H-N-F07-tutor-r2",
+    "replicate": 2,
+    "path": "runs/final/cases/N-F07-tutor.json",
+    "inputHash": "b37e7384d5f4ffa0c9382488ecc79d26019020396378d497e43a8577f960a101",
+    "population": "natural",
+    "sourceId": "F07"
+  },
+  "inputHash": "b37e7384d5f4ffa0c9382488ecc79d26019020396378d497e43a8577f960a101",
+  "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "15b097141fa9abec8b1493deb25b7a32c4868ad41c517af0d49753a84e76eefe",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "导师回复准确引用资料控制变量原则，以假设观察天数不同例和手机类比说明单一归因需控其他变量，边界清晰，无事实或归属缺陷。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "98463466492601085e31eabda2920d8153801ad49d3f58ed0283684b400c9ded"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          },
+          {
+            "dimension": "Q3",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "解释连接资料前提（其他条件一致）与结论（不能单归因），用手机类比展示why并给出适用边界，符合目标要求，无缺失连接。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "98463466492601085e31eabda2920d8153801ad49d3f58ed0283684b400c9ded"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "artifact正确引用资料条件一致要求，构造合理假设说明观察天数不同则无法单一归因，手机类比与边界均符合资料精神与goals，无事实或归属缺陷。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "98463466492601085e31eabda2920d8153801ad49d3f58ed0283684b400c9ded"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          },
+          {
+            "dimension": "Q3",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "从资料前提推出控制变量关键关系，手机例展示未控湿度则不可归因型号，并明确类比边界，解释连接充分，满足局部解释停止条件。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/0"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "98463466492601085e31eabda2920d8153801ad49d3f58ed0283684b400c9ded"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "8554fd2a6af26f8cda0d4670bec8b7daaade91997a1e3a766c77f315dc970152"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q1",
+          "level": 2,
+          "evidence": "sufficient",
+          "reason": "导师回复准确引用资料控制变量原则，以假设观察天数不同例和手机类比说明单一归因需控其他变量，边界清晰，无事实或归属缺陷。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "98463466492601085e31eabda2920d8153801ad49d3f58ed0283684b400c9ded"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        },
+        {
+          "dimension": "Q3",
+          "level": 2,
+          "evidence": "sufficient",
+          "reason": "解释连接资料前提（其他条件一致）与结论（不能单归因），用手机类比展示why并给出适用边界，符合目标要求，无缺失连接。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "98463466492601085e31eabda2920d8153801ad49d3f58ed0283684b400c9ded"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "f6286288127fd4e30ccc1a0ab8f55b224b1341dceb7a67a83d250ee1175f93e8"
+  }
+}

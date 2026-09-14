@@ -1,0 +1,69 @@
+{
+  "inputIdentity": "9b55b6f07afd64f88077dd213bf0a8543486e60703715b4d05d782f8c4203c90",
+  "attempts": [
+    {
+      "physicalId": "09ff656b-d55a-4cb7-890e-65ab1699b283",
+      "caseId": "E413",
+      "runId": "H-E413-r2",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q3",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "Artifact声称盖章仅须调墨3分钟完成即可开始且不必等裁纸，推出第5分钟盖完、第11分钟装袋，任何人员数同。但source明确盖章必须裁纸与调墨均完成后开始，且单人需15分。核心解释错误传授无效工序，违背题设依赖，破坏讲清步骤与边界的目标。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "Artifact错误断言盖章只要等调墨3分钟完成就能开始，不必等裁纸，并据此计算时间。",
+            "impact": "教导无效方法，违反source明确依赖条件，导致错误时刻与错误通用结论，实质破坏本地例子的推理展示与适用边界。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "76700318469aedf9e8629802845116e5adb78030a2aeda7f5e8f9b787211831a"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "76700318469aedf9e8629802845116e5adb78030a2aeda7f5e8f9b787211831a"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

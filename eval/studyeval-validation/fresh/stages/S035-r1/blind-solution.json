@@ -1,0 +1,36 @@
+{
+  "inputIdentity": "7777a624380fe29d33fa2962ef6ae15cc94098b47b3f79784472a72d9703e62a",
+  "attempts": [
+    {
+      "physicalId": "d024daab-a5bc-4b5f-b12c-8c901499b2b4",
+      "caseId": "S035",
+      "runId": "S035-r1",
+      "stage": "blind-solution",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "status": "resolved",
+    "solution": "依据/sources/0/text给定A={1,2}, B={2,3}及并集定义，直接得A∪B={1,2,3}。",
+    "refs": [
+      "/question/prompt",
+      "/sources/0/text"
+    ],
+    "witnesses": [
+      {
+        "pointer": "/question/prompt",
+        "valueHash": "d6444630e214e8c1957d29925ae3850ab17e4d454700814e3daa72f9286df7a3"
+      },
+      {
+        "pointer": "/sources/0/text",
+        "valueHash": "a5384e5168414c3fb7fdaf9d41facc61921578fe1399ba0c69cb62aa2103ce93"
+      }
+    ]
+  }
+}

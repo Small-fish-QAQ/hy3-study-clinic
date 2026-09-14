@@ -1,0 +1,154 @@
+{
+  "inputIdentity": "243ba155287d1c16d058c410e0411ad758f63f76dd488f39d0ad69d19a9e7c62",
+  "attempts": [
+    {
+      "physicalId": "1984a53b-1731-40a3-becc-4fb03dc5257e",
+      "caseId": "S019",
+      "runId": "S019-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q5",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "必需要素c1,c2学生答案均满足，产品授分granted正确；仅可选c3误判为met且反馈称用了项目符号，实为普通句，属局部缺陷不影响核心评分。",
+        "refs": [
+          "/answer",
+          "/productJudgment",
+          "/rubric/2",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "产品将可选标准c3（使用项目符号列表）误判为met，反馈声称使用了项目符号列表，但学生答案为普通句子。",
+            "impact": "不改变核心评分用途，因为required标准c1,c2正确且学分granted恰当。",
+            "refs": [
+              "/answer",
+              "/productJudgment/criteria/2",
+              "/productJudgment/feedback"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/answer",
+                "valueHash": "1f1899d77938970be2b4fb911104eb79b857f3b9b11357fb92a3f0e5f47e5119"
+              },
+              {
+                "pointer": "/productJudgment/criteria/2",
+                "valueHash": "35e7bfb27d54bc5b8ed1699cd41203fb25e5e569d9ae5579798d7e7e02830b58"
+              },
+              {
+                "pointer": "/productJudgment/feedback",
+                "valueHash": "f14275a78ecf462eaedc3b32f28cdc87afeccb73db688b4e1036c60782dec7d0"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "grading": {
+          "criteria": [
+            {
+              "id": "c1",
+              "result": "met",
+              "reason": "学生答案列出b,d,f及下标1,3,5，满足元素与下标要求",
+              "refs": [
+                "/answer",
+                "/rubric/0"
+              ],
+              "required": true,
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "1f1899d77938970be2b4fb911104eb79b857f3b9b11357fb92a3f0e5f47e5119"
+                },
+                {
+                  "pointer": "/rubric/0",
+                  "valueHash": "6399550a90530ee1616215b1675defac00c772a340c4350897216a3724886f2c"
+                }
+              ]
+            },
+            {
+              "id": "c2",
+              "result": "met",
+              "reason": "学生答案说明切片在6之前停止且6本身不取，满足终点不包含",
+              "refs": [
+                "/answer",
+                "/rubric/1"
+              ],
+              "required": true,
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "1f1899d77938970be2b4fb911104eb79b857f3b9b11357fb92a3f0e5f47e5119"
+                },
+                {
+                  "pointer": "/rubric/1",
+                  "valueHash": "b9daadef9f56c4be53ec987a58f6d1caeda944fe4c21953d9197e49732389c53"
+                }
+              ]
+            },
+            {
+              "id": "c3",
+              "result": "not_met",
+              "reason": "学生答案为普通句子，未使用项目符号列表，可选标准未满足",
+              "refs": [
+                "/answer",
+                "/rubric/2"
+              ],
+              "required": false,
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "1f1899d77938970be2b4fb911104eb79b857f3b9b11357fb92a3f0e5f47e5119"
+                },
+                {
+                  "pointer": "/rubric/2",
+                  "valueHash": "d52851780736c28eed16df31e029f6ea5cfaf7332d14aae7be2022370d4bc979"
+                }
+              ]
+            }
+          ],
+          "warrantedCredit": "granted",
+          "actualCredit": "granted",
+          "actualCreditWitness": {
+            "pointer": "/productJudgment/consequence",
+            "valueHash": "dd515d1975b8e5a83bab3420bea5dacefe5451ac7cf617d23c4393cc79e4db99"
+          }
+        },
+        "witnesses": [
+          {
+            "pointer": "/answer",
+            "valueHash": "1f1899d77938970be2b4fb911104eb79b857f3b9b11357fb92a3f0e5f47e5119"
+          },
+          {
+            "pointer": "/productJudgment",
+            "valueHash": "eca684b5ffba0af215b1b9c35140b0ac92e372aef93109730dcf389e0ea51226"
+          },
+          {
+            "pointer": "/rubric/2",
+            "valueHash": "d52851780736c28eed16df31e029f6ea5cfaf7332d14aae7be2022370d4bc979"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "7a10cc0071f3123316910bb75fd05269f043b078b4c61204a313a406d722851b"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

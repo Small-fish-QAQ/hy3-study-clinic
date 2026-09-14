@@ -1,0 +1,49 @@
+{
+  "inputIdentity": "0252331bc055c095768fe1536351c5673978b883c40524db5c4517de8a5e0bec",
+  "attempts": [
+    {
+      "physicalId": "9fbff231-d41d-4996-abbf-99de6b001a3d",
+      "caseId": "S082",
+      "runId": "S082-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q3",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "artifact用速度×时间算总路程，并基于同位置与往返路径说明除以2得墙距，连接前提与操作，正确交代限制，符合Q3完整标准。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "ac9fc467ca979b19de859556e08bdcb78514ce59e62499fb3b5250bd2b76088a"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "79185b54dfbddde1df8e87303862dd09dbc298fe4bf0af82dc4cd087114a46d8"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

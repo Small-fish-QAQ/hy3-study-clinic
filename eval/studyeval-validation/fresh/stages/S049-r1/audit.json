@@ -1,0 +1,74 @@
+{
+  "inputIdentity": "666e41deddf5710db84aa2795cb8e3ca6db377f079bb390af04a9b49eee75488",
+  "attempts": [
+    {
+      "physicalId": "f95aa360-6200-4f16-8ca7-1693258d4f5b",
+      "caseId": "S049",
+      "runId": "S049-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q6",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "交付的修复声称分子分母分别相加是规则并令背诵2/5答案证掌握，直接教错方法且将复述当掌握，违背源规则与目标，核心用途失效。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text",
+          "/answer"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "干预断言分子分母分别相加为分数加法规则，并要求学生背诵2/5答案以证明掌握",
+            "impact": "破坏提供正确修复与新检验的核心目标，巩固错误概念",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "2ec426213869722ad2cb36fe86a5d71a38493a181cfdf99da87fd0ece60563b3"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "c4d75b2db6f5aa30dcec740ff8a4b7e07282347099740e24a9f3e2fd0f4bef58"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "2ec426213869722ad2cb36fe86a5d71a38493a181cfdf99da87fd0ece60563b3"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "c4d75b2db6f5aa30dcec740ff8a4b7e07282347099740e24a9f3e2fd0f4bef58"
+          },
+          {
+            "pointer": "/answer",
+            "valueHash": "5fa9a6e988796acce4dd7a033670180448bc29a07a9fa5e48255977034751897"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

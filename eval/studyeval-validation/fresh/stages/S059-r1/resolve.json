@@ -1,0 +1,103 @@
+{
+  "inputIdentity": "7e1782f3a7a415de412a7ea27d9e5c11cd0f793101a219228213d47b1b67237a",
+  "attempts": [
+    {
+      "physicalId": "302d08ef-1463-46a7-b31a-b3c92712479d",
+      "caseId": "S059",
+      "runId": "S059-r1",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q2",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "核心目标（每份换算整袋含糖18克、区分每份与每100克基准）在artifact有准确表述；次要目标'说明日期标识的批次作用'在artifact完全缺失，但次要省略不影响核心用途，符合1级。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/0",
+          "/goals/1",
+          "/goals/2"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "次要目标'说明日期标识的批次作用'在lesson文本中未提及，完全省略",
+            "impact": "核心换算与基准区分目标仍可用，不影响核心学习用途",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/2"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "1203663cdffa26e4ff8eb30a6e130d86490441dfc7733cf059ebcff4d51c6db6"
+              },
+              {
+                "pointer": "/goals/2",
+                "valueHash": "51cacb911299eb1ad2e2b165a33d978c9e6438802b47aad3ac9a36ffe43e134d"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "1203663cdffa26e4ff8eb30a6e130d86490441dfc7733cf059ebcff4d51c6db6"
+          },
+          {
+            "pointer": "/goals/0",
+            "valueHash": "d00f6a0777096e29c941990ef83976c45d7a6297cb337b9439ad3b262e15fae5"
+          },
+          {
+            "pointer": "/goals/1",
+            "valueHash": "cc917d2aec98364dbd0e1578c297faf88ec801582389efb073c4f83537439e6b"
+          },
+          {
+            "pointer": "/goals/2",
+            "valueHash": "51cacb911299eb1ad2e2b165a33d978c9e6438802b47aad3ac9a36ffe43e134d"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q2:1",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "吃整袋90克相当于三份，含糖18克。每100克含糖20克；每份和每100克是不同食用量，要先统一基准再比较。",
+          "valueHash": "1203663cdffa26e4ff8eb30a6e130d86490441dfc7733cf059ebcff4d51c6db6"
+        },
+        "reason": "该artifact文本未出现日期标识或批次作用任何说明，而goals/2明确要求说明，故次要目标省略指控成立；因属次要目标，不影响核心用途，定为local。"
+      },
+      {
+        "id": "review2:Q2:1",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "吃整袋90克相当于三份，含糖18克。每100克含糖20克；每份和每100克是不同食用量，要先统一基准再比较。",
+          "valueHash": "1203663cdffa26e4ff8eb30a6e130d86490441dfc7733cf059ebcff4d51c6db6"
+        },
+        "reason": "同上，artifact文本无日期批次内容，goals/2要求说明，次要目标缺失成立；核心目标可用，影响为local。"
+      }
+    ]
+  }
+}

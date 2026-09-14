@@ -1,0 +1,134 @@
+{
+  "inputIdentity": "efdcf0e37fbe882898677e7cb3d63626a4ae93cb388c5cb41b39432a80947eda",
+  "attempts": [
+    {
+      "physicalId": "0bc28b62-aab3-48fd-9adf-fde176ea69ae",
+      "caseId": "S091",
+      "runId": "S091-r1",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q3",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "artifact称指数负号等于结果负号并算2^(-3)=-8，且称0有倒数，直接违背source负指数为倒数而非负数及a=0无定义的规定，目标要求解释负指数含义，中心解释教授错误方法，实质破坏核心用途。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "声称'指数前的负号等于结果前的负号，所以2^(-3)=-8'，将负指数错误等同于结果取负，违背source中a^(-n)=1/a^n及负指数非数前加负号的正确规则。",
+            "impact": "核心目标是解释负指数为倒数而非负数，此错误机制直接教学相反内容，使学习者建立错误概念，实质破坏局部解释用途。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "6aae95868d661b1ab8e48373b9ffb6b00e77e9766b05ea85f48ef6b7a99a2d16"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "8f66df12d54e18d234589d8c047330d6ce2ae196b074b8083cf0629060128d07"
+              }
+            ]
+          },
+          {
+            "severity": "material",
+            "description": "声称'0也有倒数'，违背source明确指出a=0时倒数式无定义的事实。",
+            "impact": "错误扩展负指数定义到0，歪曲适用边界，进一步破坏解释负指数正确含义的核心教学目的。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "6aae95868d661b1ab8e48373b9ffb6b00e77e9766b05ea85f48ef6b7a99a2d16"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "8f66df12d54e18d234589d8c047330d6ce2ae196b074b8083cf0629060128d07"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "6aae95868d661b1ab8e48373b9ffb6b00e77e9766b05ea85f48ef6b7a99a2d16"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "8f66df12d54e18d234589d8c047330d6ce2ae196b074b8083cf0629060128d07"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q3:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "指数前的负号等于结果前的负号，所以2^(-3)=-8",
+          "valueHash": "6aae95868d661b1ab8e48373b9ffb6b00e77e9766b05ea85f48ef6b7a99a2d16"
+        },
+        "reason": "引文将负指数错误等同于结果取负，算得-8，违背source中a^(-n)=1/a^n及负指数不表示数前加负号，直接教学无效方法，破坏目标。"
+      },
+      {
+        "id": "review1:Q3:2",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "0也有倒数",
+          "valueHash": "6aae95868d661b1ab8e48373b9ffb6b00e77e9766b05ea85f48ef6b7a99a2d16"
+        },
+        "reason": "引文声称0有倒数，违背source中'a=0时这个倒数式无定义'，错误边界强化实质教学错误。"
+      },
+      {
+        "id": "review2:Q3:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "指数前的负号等于结果前的负号，所以2^(-3)=-8",
+          "valueHash": "6aae95868d661b1ab8e48373b9ffb6b00e77e9766b05ea85f48ef6b7a99a2d16"
+        },
+        "reason": "artifact展示错误机制而非缺失推导，错误等同负指数与结果取负，material。"
+      },
+      {
+        "id": "review2:Q3:2",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "0也有倒数",
+          "valueHash": "6aae95868d661b1ab8e48373b9ffb6b00e77e9766b05ea85f48ef6b7a99a2d16"
+        },
+        "reason": "同review1:Q3:2，违背source无定义事实，material。"
+      }
+    ]
+  }
+}

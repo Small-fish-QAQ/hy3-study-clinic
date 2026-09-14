@@ -1,0 +1,49 @@
+{
+  "inputIdentity": "a8b5457db3dd765dec92888dd3596d3ffb5df451512cdfe8dd8038d9c80f1157",
+  "attempts": [
+    {
+      "physicalId": "21838503-80b0-4dfc-b51b-ec521d174224",
+      "caseId": "E873",
+      "runId": "H-E873-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q6",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "support准确诊断学生将自愿等同随机的推理缺口，用兴趣反例具体帮助，并给出抽签但额外练习的下一题检查同一归因技能，符合Q6的2标准。",
+        "refs": [
+          "/artifacts/1/text",
+          "/answer"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/1/text",
+            "valueHash": "92b176354da78b28cb5522dcba0ee9141d78651ee215f63b5167216fd3796daf"
+          },
+          {
+            "pointer": "/answer",
+            "valueHash": "7d6191d92d628a82e207484c2c7eb0e40705d9d13f6606a2290baa951d899e6f"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,260 @@
+{
+  "status": "ready",
+  "message": "Lesson is ready.",
+  "course": {
+    "title": "Joining related tables without losing unmatched rows"
+  },
+  "session": {
+    "status": "active",
+    "version": 1
+  },
+  "agenda": {
+    "version": 1,
+    "itemState": "queued"
+  },
+  "lesson": {
+    "objective": {
+      "title": "基于显式条件的连接匹配、结果推导与连接类型选择",
+      "whyNow": "若需从客户与订单表生成包含无订单客户的报表，应如何预测连接结果并选定连接类型？",
+      "outcomes": [
+        {
+          "title": "解释关系连接基于显式条件及左行多匹配",
+          "description": "解释关系连接根据如customer_id相等的显式条件组合两表行，并说明一个左表行可以匹配多个右表行。"
+        },
+        {
+          "title": "推导INNER JOIN与LEFT JOIN结果并处理多匹配与未匹配",
+          "description": "通过取每个左表行、在连接键上查找每个匹配右表行并发射每个对子来推导INNER JOIN和LEFT JOIN结果：INNER在无匹配时不发射，LEFT在无匹配时恰好发射一个带右表列NULL占位符的行；保留多个匹配为独立行，不汇总或去重。"
+        }
+      ]
+    },
+    "prerequisites": [],
+    "segments": [
+      {
+        "index": 0,
+        "purpose": "orientation",
+        "explanation": "关系连接将两张表按显式条件（如customer_id相等）组合行。左表每一行独立检查右表所有行，键相等则产生配对行。此机制不自动汇总，也不改变原表。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 1,
+        "purpose": "mechanism",
+        "explanation": "以示例数据为例：Customers中Ada(customer_id=1)与Orders中order_id=71,72两行键相等，连接后Ada出现两次。这展示一个左行匹配多个右行的机制效果；若条件不满足则无配对。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [
+          {
+            "kind": "mechanism_effect",
+            "fromProposition": "按customer_id相等条件扫描两表",
+            "toProposition": "左表Ada行与两订单行分别配对生成多结果行",
+            "origin": "hy3_synthesis",
+            "sources": []
+          }
+        ],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 2,
+        "purpose": "guided_practice",
+        "explanation": "应用上述机制预测LEFT JOIN结果：左表每行至少产生一行，无匹配时右列以null占位，且多匹配产生多行。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": {
+          "kind": "choose",
+          "prompt": "当前Customers含(1,Ada),(2,Ben),(3,Cleo)；Orders含(71,1,20),(72,1,35)。若执行LEFT JOIN on customer_id相等，结果包含哪些行？",
+          "guidance": null,
+          "options": [
+            {
+              "id": "A",
+              "text": "(Ada,71,20),(Ada,72,35),(Ben,null,null),(Cleo,null,null)"
+            },
+            {
+              "id": "B",
+              "text": "(Ada,71,20),(Ada,72,35),(Ben,null,null)"
+            }
+          ],
+          "presented": false,
+          "response": null,
+          "respondedAt": null,
+          "correct": null,
+          "feedback": null,
+          "credit": "none"
+        }
+      },
+      {
+        "index": 3,
+        "purpose": "comparison",
+        "explanation": "连接类型选择依赖是否保留无匹配左行。示例展示LEFT JOIN为Ben生成null占位；补充数据指出当所有客户有订单时两连接行数相同，但不代表语义等价。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": {
+          "text": "当所有左表行均有匹配时，INNER与LEFT JOIN输出行集合相同；然而若存在无匹配左行，LEFT JOIN仍输出该行（右列null），INNER JOIN则丢弃，因此不能以当前行数相等作为可互换的依据。",
+          "origin": "hy3_synthesis",
+          "sources": []
+        },
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 4,
+        "purpose": "worked_example",
+        "explanation": "连接结果由左表每行与右表匹配键的集合共同决定。先取左表一行，扫描右表找出所有键相等的行，为每个匹配发射一对组合行；若选中LEFT JOIN且未找到任何匹配，则恰好发射一行右列NULL占位。待处理的右表插入会改变某些左行的匹配集合，从而更新最终结果，但不会改变‘每行至少一条’的规则。注意：当某个左行从零匹配变为有匹配时，其占位行被具体匹配行替代，结果行数可能不变。多匹配始终保留为独立行。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": {
+          "startingState": "左表Projects含(10,'Alpha'),(20,'Beta')；右表Tasks含(101,10,5),(102,10,3)。连接条件为Projects.pid = Tasks.pid。尚未执行连接。随后将向Tasks插入一行(103,20,2)。",
+          "inputs": [
+            "左表Projects",
+            "右表Tasks",
+            "待插入(103,20,2)",
+            "LEFT JOIN规则"
+          ],
+          "ruleOrProcedure": "对左表每行，在右表中查找所有pid相等的行并发射每个配对；LEFT JOIN下无匹配则发射一行右列NULL占位；插入新行后重新评估匹配。",
+          "steps": [
+            {
+              "action": "先对当前Tasks计算LEFT JOIN中间态：取Projects每行查匹配",
+              "reason": "依据规则，Alpha的pid=10匹配Tasks前两行，Beta的pid=20无匹配",
+              "resultingState": "对Alpha得(Alpha,101,5),(Alpha,102,3)；对Beta得(Beta,null,null)"
+            }
+          ],
+          "learnerDecision": null,
+          "result": null,
+          "whyResultFollows": null,
+          "origin": "hy3_synthesis",
+          "sources": [],
+          "interaction": {
+            "stage": "guided",
+            "modelledStepCount": 1,
+            "origin": "hy3_synthesis",
+            "sources": [],
+            "activity": {
+              "prompt": "左表Projects含(10,'Alpha'),(20,'Beta')；右表Tasks含(101,10,5),(102,10,3)。计划执行LEFT JOIN on pid相等，并在之前向Tasks插入(103,20,2)。最终结果为？",
+              "options": [
+                {
+                  "id": "A",
+                  "text": "(Alpha,101,5),(Alpha,102,3),(Beta,103,2)"
+                },
+                {
+                  "id": "B",
+                  "text": "(Alpha,101,5),(Alpha,102,3),(Beta,null,null)"
+                },
+                {
+                  "id": "C",
+                  "text": "(Alpha,101,5),(Alpha,102,3),(Beta,103,2),(Beta,null,null)"
+                }
+              ],
+              "response": null,
+              "respondedAt": null,
+              "correct": null,
+              "feedback": null,
+              "debrief": null,
+              "credit": "none",
+              "misconception": null
+            },
+            "hint": null,
+            "scaffold": null,
+            "transfer": null
+          }
+        },
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 5,
+        "purpose": "comparison",
+        "explanation": "连接类型的边界在于是否保留零匹配左行，而非控制多匹配行数。明确该边界可避免误判结果。以下对比说明。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": {
+          "text": "当左表行有至少一匹配时，LEFT JOIN与INNER JOIN对该行产生相同配对行集合；仅当匹配数为零时LEFT JOIN额外产生右列NULL占位行，而INNER JOIN不产出任何行。因此，若结果中某左行出现多次，说明其有多匹配，不能推断连接类型；若某左行完全缺失，则必为INNER JOIN且零匹配。该边界不限制多匹配产生多行，也不意味着LEFT JOIN每行必含NULL。",
+          "origin": "hy3_synthesis",
+          "sources": []
+        },
+        "possibleMisconception": null,
+        "informalCheck": null
+      }
+    ],
+    "sourceReferencesAvailable": true,
+    "visuals": [],
+    "summary": {
+      "available": true,
+      "text": "连接按显式键相等配对，左行可多配；INNER仅留匹配对，LEFT保留全部左行并以null补未匹配。选择取决于是否要求保留无匹配左行。",
+      "nextConnection": null,
+      "formalOpportunities": []
+    },
+    "plannedTime": {
+      "agendaMinutes": 23,
+      "activeMinutesMin": 26,
+      "activeMinutesMax": 41,
+      "basis": "locally_evaluated_learning_actions"
+    }
+  },
+  "progress": {
+    "stateVersion": 2,
+    "stateId": "lesson_execution_47a590f6-2e0e-46d2-a1c4-03f5bc872f6e",
+    "currentSegmentIndex": 0,
+    "segmentCount": 6,
+    "presentedSegmentIndexes": [],
+    "presentationStatus": "not_started",
+    "presentationCompletedAt": null
+  },
+  "currentInformalCheck": null,
+  "practice": {
+    "status": "locked",
+    "currentItemIndex": 0,
+    "itemCount": 2,
+    "item": {
+      "index": 0,
+      "objectiveTitle": "解释关系连接基于显式条件及左行多匹配",
+      "construct": "explain",
+      "surface": "initial",
+      "supplementary": true,
+      "prompt": "现有Customers表：(4,Dan),(5,Eve),(6,Fay)；Orders表：(80,4,15),(81,4,25),(82,5,30)。已知Fay无订单，但执行某连接后结果仅为(Dan,80,15),(Dan,81,25),(Eve,82,30)，无任何null行。以下哪项最能解释该结果？",
+      "options": [
+        {
+          "id": "teaching_brief_c9e5cf6d-369f-40c1-a01e-830bc3a035fd_practice_1_initial_A",
+          "text": "INNER JOIN按customer_id相等生成上述三行，因Fay无匹配故不出现，也无null占位"
+        },
+        {
+          "id": "teaching_brief_c9e5cf6d-369f-40c1-a01e-830bc3a035fd_practice_1_initial_B",
+          "text": "LEFT JOIN按customer_id相等生成上述三行，且Fay的null行在结果展示时被省略"
+        },
+        {
+          "id": "teaching_brief_c9e5cf6d-369f-40c1-a01e-830bc3a035fd_practice_1_initial_C",
+          "text": "LEFT JOIN按customer_id相等生成上述三行，且Fay被过滤条件剔除"
+        }
+      ]
+    },
+    "attempts": [],
+    "recovery": null,
+    "completedAt": null,
+    "credit": "none"
+  },
+  "allowedActions": [
+    "start_lesson"
+  ]
+}

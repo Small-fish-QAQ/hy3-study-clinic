@@ -1,0 +1,65 @@
+{
+  "id": "assessment_version_671cab0d-1998-4637-a694-72133ada5c88",
+  "definitionId": "assessment_f8557133-af36-43ea-a333-e66a78e03bf9",
+  "version": 1,
+  "predecessorId": null,
+  "status": "accepted",
+  "items": [
+    {
+      "id": "assessment_item_4309c9af-8ff1-4837-a287-0fae22b31d62",
+      "sourceQuestionId": "que_7c3eb02f-6c4e-4215-acc6-44e2cb6134c5",
+      "index": 0,
+      "targetLearningUnitId": "cun_0f47f974-b971-4b50-bf55-e19d08494a94",
+      "targetObjectiveId": "obj_2593a51a-0648-45ca-9721-f0e2ece852e9",
+      "representation": "recall",
+      "questionType": "short_answer",
+      "prompt": "某物体质量 3 千克，在同一参考系中以 2 米每秒低速平动。请解释根据经典低速平动动能模型，如何表示其平动动能（写出公式并说明各量意义与单位），并指出该模型不自动涵盖哪些能量或运动。",
+      "rubric": [
+        {
+          "id": "criterion_4e460297-ad3c-4d8f-84cd-45ca3d0e7ad6",
+          "text": "正确写出公式 E=1/2 m v²，并说明 m 为质量、v 为速率（速度大小），质量用千克、速率用米每秒时结果为焦耳。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_f303fda2"
+          ]
+        },
+        {
+          "id": "criterion_a8276c78-d9ad-4890-a593-897e1636ed4b",
+          "text": "指出该模型不自动涵盖接近光速的运动，也不自动并入转动能量或其他储能。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_f303fda2"
+          ]
+        }
+      ],
+      "sourceBindings": [
+        {
+          "materialId": "mat_1704689b-236d-47c7-a6a0-afd926ad842c",
+          "materialRevisionId": "rev_e3df07d9-5db3-41c4-a60c-e540bacaddbc",
+          "sourceBlockId": "blk_0_f303fda2",
+          "quote": "在同一参考系中，普通低速运动物体的平动动能可用E=1/2×m×v²表示。m是质量，v是速率，即速度的大小；质量用千克、速率用米每秒时，动能用焦耳。该式属于经典低速模型，本课不讨论接近光速的运动，也不把物体的转动能量或其他储能自动并入这个平动动能式。",
+          "contentOrigin": "extracted_original",
+          "authoritative": true
+        }
+      ],
+      "formalEligible": true,
+      "policyReason": "FORMAL_ELIGIBLE"
+    }
+  ],
+  "sourceRevisionIds": [
+    "rev_e3df07d9-5db3-41c4-a60c-e540bacaddbc"
+  ],
+  "createdAt": "2026-09-14T11:37:45.222Z",
+  "acceptedAt": "2026-09-14T11:37:45.223Z",
+  "authorityMode": "formal",
+  "progressionContext": {
+    "quizId": "qz_555a256e-e116-431c-954b-a090000cb088",
+    "contractVersionId": "contract_b099f55d-a817-4633-b43e-bc3789fd1a9d",
+    "curriculumVersionId": "curriculum_2e76e52d-0f9b-4a0e-afca-02491688ba2d",
+    "studyPlanVersionId": "study_plan_a5cc1518-b5bc-4c3d-8aa4-86724e6bb8ac",
+    "agendaId": "agenda_ad8544b4-9ad0-4008-8bc7-e475c86556b3",
+    "agendaItemId": "agenda_item_2ebc9f19-62c7-4ba5-b34d-182df00f24ee",
+    "assessmentKind": "formal_checkpoint",
+    "executionSourceManifestFingerprint": "manifest_4ba57576"
+  }
+}

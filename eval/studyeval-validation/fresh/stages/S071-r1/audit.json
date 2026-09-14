@@ -1,0 +1,88 @@
+{
+  "inputIdentity": "b93293f2a6df77e4cc67d813f15351e8585be1748d0f76429955d004276b9bfe",
+  "attempts": [
+    {
+      "physicalId": "63eab48b-9b22-4822-ae6b-a2aa649dfb5d",
+      "caseId": "S071",
+      "runId": "S071-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q2",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "lesson明确矛盾两个核心目标：声称复制后删原文件（实应保留）、移动后原文件仍保留（实应消失），直接教错状态，defeating declared purpose；次要目标表述正确但无法补救核心错误。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "lesson称'复制完成后应删除原路径文件'，但source规则为复制保留原路径文件，错误陈述复制后状态。",
+            "impact": "直接矛盾核心目标'说明复制后源路径与目标路径的状态'，导致学习者建立错误模型，核心用途失败。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "fc8fca96c682c31ee0bfd6ce56aa9a31702bf79d5f6f1463e1eaf5a8592a5052"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "f077626b6cc0dcadf32134e02c41925aefa4067f55b8ae7509353fb99642dc40"
+              }
+            ]
+          },
+          {
+            "severity": "material",
+            "description": "lesson称'移动后原路径文件必须仍保留'，但source规则为移动后原路径不再有文件，错误陈述移动后状态。",
+            "impact": "直接矛盾核心目标'说明移动后两条路径的状态'，改变核心结论，学习用途实质缺陷。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "fc8fca96c682c31ee0bfd6ce56aa9a31702bf79d5f6f1463e1eaf5a8592a5052"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "f077626b6cc0dcadf32134e02c41925aefa4067f55b8ae7509353fb99642dc40"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "fc8fca96c682c31ee0bfd6ce56aa9a31702bf79d5f6f1463e1eaf5a8592a5052"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "f077626b6cc0dcadf32134e02c41925aefa4067f55b8ae7509353fb99642dc40"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

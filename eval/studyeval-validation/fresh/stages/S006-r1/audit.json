@@ -1,0 +1,82 @@
+{
+  "inputIdentity": "c58e6c7ac8327dc5b0a6baace30df5dfa421dd6e7faca7887dae3503084d37cc",
+  "attempts": [
+    {
+      "physicalId": "abb30c78-b9c7-4bac-885c-4c68b9075d13",
+      "caseId": "S006",
+      "runId": "S006-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q4",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "题目在给定规则下可答，要求逐步应用状态转换并说明依据，符合working_fluency；作者私有键正确未泄露，有效抽测目标技能。",
+        "refs": [
+          "/question/prompt",
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "assessment": {
+          "key": "correct",
+          "validity": "valid",
+          "exposure": "none",
+          "discrimination": "adequate",
+          "demand": "application",
+          "demandReason": "学生须依据规则推导每步状态变化并解释依据，非单纯抄写公式。",
+          "reason": "题干要求序列操作并说明依据；作者答案(未激活→有效→已使用；第三步不允许)正确且priorExposure空；任务需应用解释，判别力足。",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "5df22305082ed220c0e2918db98b043b6e7635d8494521996b06981567b53a53"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "28304bf086083ba25f5bb5967980735bb14b47a3eee96a43a719cc790ce2b2da"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "694fcf138ee515172ab2dd1c3a0a59baef8e0ee6b25086ed04ce3845111041ea"
+            }
+          ]
+        },
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "5df22305082ed220c0e2918db98b043b6e7635d8494521996b06981567b53a53"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "28304bf086083ba25f5bb5967980735bb14b47a3eee96a43a719cc790ce2b2da"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "694fcf138ee515172ab2dd1c3a0a59baef8e0ee6b25086ed04ce3845111041ea"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

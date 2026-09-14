@@ -1,0 +1,185 @@
+{
+  "status": "ready",
+  "message": "Lesson is ready.",
+  "course": {
+    "title": "杠杆平衡与力臂"
+  },
+  "session": {
+    "status": "active",
+    "version": 11
+  },
+  "agenda": {
+    "version": 2,
+    "itemState": "queued"
+  },
+  "lesson": {
+    "objective": {
+      "title": "轻杆模型中的力臂、力矩与平衡条件应用",
+      "whyNow": "若只知平衡结果而不核对力臂与长度限制，方案可能超出杆面无法挂载，需要先建立可计算的因果模型。",
+      "outcomes": [
+        {
+          "title": "按长度约束求解平衡未知量并核对",
+          "description": "按给定限制求平衡所需的力或位置：代入平衡式解未知量，核对两边力矩相等；将所得位置与杆可用长度等约束比较，若超出可行范围则不可实施需调整挂载或条件；解释方案时写出支点、各力转动方向、实际力臂、力矩和位置约束。"
+        }
+      ]
+    },
+    "prerequisites": [],
+    "segments": [
+      {
+        "index": 0,
+        "purpose": "orientation",
+        "explanation": "在水平轻杆、力竖直向下且忽略杆重时，支点左侧向下力产生逆时针力矩，右侧产生顺时针力矩。力矩大小为力乘水平力臂，平衡要求两侧力矩总和相等。求出未知力或位置后，还要将其与杆的可使用长度比较：若算得位置超出杆长上限，则原条件不能实施，需改挂载。该模型不涵盖斜力或显著杆重。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 1,
+        "purpose": "worked_example",
+        "explanation": "通过一个左侧双挂载、右侧单未知距离的例子演练：先合并同侧力矩，再解右侧力臂并核对长度上限，避免只取单个力计算。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": {
+          "startingState": "水平轻杆，支点O固定，忽略杆重，力竖直向下。左侧有5牛位于0.3米、3牛位于0.1米（均在支点左）；右侧有8牛挂载于支点右未知距离x，系统平衡。杆右侧可用最长0.5米。",
+          "inputs": [
+            "左侧两力大小与位置",
+            "右侧力8牛",
+            "平衡条件",
+            "右侧长度上限0.5米"
+          ],
+          "ruleOrProcedure": "顺时针力矩和=逆时针力矩和；力臂为水平距离；解得x后与可用长度比较。",
+          "steps": [
+            {
+              "action": "计算左侧总逆时针力矩：5×0.3+3×0.1",
+              "reason": "同侧力矩相加，单位牛顿米",
+              "resultingState": "左侧总力矩为1.8牛顿米"
+            }
+          ],
+          "learnerDecision": null,
+          "result": null,
+          "whyResultFollows": null,
+          "origin": "hy3_synthesis",
+          "sources": [],
+          "interaction": {
+            "stage": "guided",
+            "modelledStepCount": 1,
+            "origin": "hy3_synthesis",
+            "sources": [],
+            "activity": {
+              "prompt": "根据已得左侧总力矩1.8牛顿米及右侧8牛挂载，平衡时右侧距离x应为多少？",
+              "options": [
+                {
+                  "id": "A",
+                  "text": "0.225米"
+                },
+                {
+                  "id": "B",
+                  "text": "0.3米"
+                },
+                {
+                  "id": "C",
+                  "text": "0.45米"
+                }
+              ],
+              "response": null,
+              "respondedAt": null,
+              "correct": null,
+              "feedback": null,
+              "debrief": null,
+              "credit": "none",
+              "misconception": null
+            },
+            "hint": null,
+            "scaffold": null,
+            "transfer": null
+          }
+        },
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 2,
+        "purpose": "comparison",
+        "explanation": "上述结论仅在水平轻杆、力竖直、杆重可忽略时成立。若作用线倾斜或存在其他支承，垂直距离需重新作垂线，不能直接把沿杆距离当力臂。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": {
+          "text": "若力与杆成30°角，则力臂为沿杆距离乘以sin30°，不能直接套用水平距离公式。",
+          "origin": "hy3_synthesis",
+          "sources": []
+        },
+        "possibleMisconception": null,
+        "informalCheck": null
+      }
+    ],
+    "sourceReferencesAvailable": true,
+    "visuals": [],
+    "summary": {
+      "available": true,
+      "text": "轻杆平衡由两侧力矩和相等决定，力臂取支点至作用线垂直距离；解出未知后必须比对可用长度，超限则需调整挂载。",
+      "nextConnection": null,
+      "formalOpportunities": []
+    },
+    "plannedTime": {
+      "agendaMinutes": 11,
+      "activeMinutesMin": 14,
+      "activeMinutesMax": 22,
+      "basis": "locally_evaluated_learning_actions"
+    }
+  },
+  "progress": {
+    "stateVersion": 2,
+    "stateId": "lesson_execution_a070e848-c970-4b5f-8505-c35578b2ea7f",
+    "currentSegmentIndex": 0,
+    "segmentCount": 3,
+    "presentedSegmentIndexes": [],
+    "presentationStatus": "not_started",
+    "presentationCompletedAt": null
+  },
+  "currentInformalCheck": null,
+  "practice": {
+    "status": "locked",
+    "currentItemIndex": 0,
+    "itemCount": 1,
+    "item": {
+      "index": 0,
+      "objectiveTitle": "按长度约束求解平衡未知量并核对",
+      "construct": "apply",
+      "surface": "initial",
+      "supplementary": true,
+      "prompt": "轻杆支点固定，忽略自重，力均竖直向下。初始：左侧10牛位于支点左0.2米，右侧未知力R位于支点右0.5米，系统平衡。随后将左侧改为15牛且位置不变，并观察到右侧需在支点右0.5米处以6牛挂载才能恢复平衡。杆的右侧可用最长0.6米。由此推断初始右侧力R为多少？",
+      "options": [
+        {
+          "id": "teaching_brief_959a1eb5-4d3c-4b62-b1a1-982cc29d39c0_practice_1_initial_A",
+          "text": "4牛"
+        },
+        {
+          "id": "teaching_brief_959a1eb5-4d3c-4b62-b1a1-982cc29d39c0_practice_1_initial_B",
+          "text": "6牛"
+        },
+        {
+          "id": "teaching_brief_959a1eb5-4d3c-4b62-b1a1-982cc29d39c0_practice_1_initial_C",
+          "text": "3牛"
+        }
+      ]
+    },
+    "attempts": [],
+    "recovery": null,
+    "completedAt": null,
+    "credit": "none"
+  },
+  "allowedActions": [
+    "start_lesson"
+  ]
+}

@@ -1,0 +1,113 @@
+{
+  "task": {
+    "caseId": "S011",
+    "runId": "S011-r3",
+    "replicate": 3,
+    "path": "dataset/studyeval/S011.json",
+    "inputHash": "e4e73fdcc60bdaa79a10d6512f30928081a1983f0cce5d59eecb67ec87a5e139"
+  },
+  "inputHash": "e4e73fdcc60bdaa79a10d6512f30928081a1983f0cce5d59eecb67ec87a5e139",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "b65882d36e8853a22cb12c7c6c7222ec96c47e4aa8a0005ef4a0ffeadc581752",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "artifact陈述北极相斥、异名相吸及切断后仍具两极，与source所给理想磁铁模型规则完全一致，无事实或归属缺陷，范围契合核对磁极与切断解释的目标。",
+            "refs": [
+              "/sources/0/text",
+              "/artifacts/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "bd52c5a277bce71686f63dbe44ae0456d2b3036e28dc0d9ea741288fdb927b79"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "270770ae0140fc5bd6ca4a4e08629c550198ddae94a93e5de576ccfe8172f857"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "artifact准确复述source中条形磁铁的磁极作用与切断后仍有南北极的模型，无事实或范围缺陷，满足goals核对要求。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "270770ae0140fc5bd6ca4a4e08629c550198ddae94a93e5de576ccfe8172f857"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "bd52c5a277bce71686f63dbe44ae0456d2b3036e28dc0d9ea741288fdb927b79"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q1",
+          "level": 2,
+          "evidence": "sufficient",
+          "reason": "artifact陈述北极相斥、异名相吸及切断后仍具两极，与source所给理想磁铁模型规则完全一致，无事实或归属缺陷，范围契合核对磁极与切断解释的目标。",
+          "refs": [
+            "/sources/0/text",
+            "/artifacts/0/text"
+          ],
+          "defects": [],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "bd52c5a277bce71686f63dbe44ae0456d2b3036e28dc0d9ea741288fdb927b79"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "270770ae0140fc5bd6ca4a4e08629c550198ddae94a93e5de576ccfe8172f857"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "b77733a3c61b51ae1e3e6637d4b438e8a2dcb456e1a4f50ebe06ef123483519e"
+  }
+}

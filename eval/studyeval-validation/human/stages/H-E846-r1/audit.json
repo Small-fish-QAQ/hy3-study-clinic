@@ -1,0 +1,69 @@
+{
+  "inputIdentity": "7b794ecfa259f598b8bcce6ad55e236289d5d033a97cfcbf40740c244daafc42",
+  "attempts": [
+    {
+      "physicalId": "a823d132-1bfd-41cf-a9e0-7671a5a84eeb",
+      "caseId": "E846",
+      "runId": "H-E846-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q2",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "课程明确仅背诵“平均数最公平”，排除中位数、异常值影响与指标选择，直接矛盾目标1-3；次要目标4未给合并组算法，核心教学用途失败。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "课程声明只训练背诵平均数最公平，不必学习中位数或数据变化影响，直接矛盾目标1（计算中位数）、2（异常值影响）、3（根据问题选指标）。",
+            "impact": "改变核心学习用途，使既定教学目标无法成立",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "5ab8b13b56d12e4dab0dc1fbb5b4aae81bc75071a57fa42297dda367438c47db"
+              },
+              {
+                "pointer": "/goals",
+                "valueHash": "d3d0c9d862bfae034f0a1ba963a7205d6b0416240fc1ec3ae4f93d92d263f4e3"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "5ab8b13b56d12e4dab0dc1fbb5b4aae81bc75071a57fa42297dda367438c47db"
+          },
+          {
+            "pointer": "/goals",
+            "valueHash": "d3d0c9d862bfae034f0a1ba963a7205d6b0416240fc1ec3ae4f93d92d263f4e3"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

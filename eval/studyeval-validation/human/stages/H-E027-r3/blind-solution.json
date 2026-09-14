@@ -1,0 +1,31 @@
+{
+  "inputIdentity": "63f454ba30366d1e152cee0e0389c30f19b453dba9d453cf99cb7c78db275f29",
+  "attempts": [
+    {
+      "physicalId": "358d2ac6-4622-423d-920d-5514164a2045",
+      "caseId": "E027",
+      "runId": "H-E027-r3",
+      "stage": "blind-solution",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "status": "resolved",
+    "solution": "设总工作量1份。甲速1/8份/时，乙速1/4份/时。乙先做1小时完成1/4，剩3/4。甲独做剩时=(3/4)/(1/8)=6时，总时=1+6=7时。若从头合作：合速=1/8+1/4=3/8份/时，时间=1/(3/8)=8/3时≈2.67时。比较：7时>8/3时，乙先做再甲独做比合作慢4又2/3时。依赖题设可分开无重复恒速无开销。",
+    "refs": [
+      "/question/prompt"
+    ],
+    "witnesses": [
+      {
+        "pointer": "/question/prompt",
+        "valueHash": "dcf5dd89a64f0379c2a16c155095996cbf9b1dfd98e7b21c0cebe9fb5974918a"
+      }
+    ]
+  }
+}

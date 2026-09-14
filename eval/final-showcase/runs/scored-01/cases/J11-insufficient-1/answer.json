@@ -1,0 +1,71 @@
+{
+  "answerPolicy": "preregistered-insufficient",
+  "answers": {
+    "assessment_item_244de78d-0c20-411a-8ae4-bc8507400f0f": "我不知道这道题的答案，也没有完成所要求的推理或计算。"
+  },
+  "result": {
+    "assessmentVersionId": "assessment_version_3080dbb9-be89-45eb-9930-36e6128164aa",
+    "title": "独立检查：识别主动句与被动句中的施事、动作、受事并区分语法主语",
+    "attempt": {
+      "id": "assessment_attempt_970cf468-047b-40a4-bb47-45e0febeb4b1",
+      "assessmentVersionId": "assessment_version_3080dbb9-be89-45eb-9930-36e6128164aa",
+      "workspaceId": "ws_166d6de9-6ed3-4fad-a032-31a2af00ad78",
+      "ordinal": 1,
+      "status": "submitted",
+      "responses": {
+        "assessment_item_244de78d-0c20-411a-8ae4-bc8507400f0f": "我不知道这道题的答案，也没有完成所要求的推理或计算。"
+      },
+      "startedAt": "2026-09-14T11:51:20.952Z",
+      "submittedAt": "2026-09-14T11:51:21.051Z",
+      "cancelledAt": null
+    },
+    "items": [
+      {
+        "itemId": "assessment_item_244de78d-0c20-411a-8ae4-bc8507400f0f",
+        "prompt": "给定新句子（假设适用本课规则）：主动句 'The mechanic repairs the car.' 及其相应被动句 'The car is repaired by the mechanic.' 请识别：1) 主动句中动作的施事、动作、受事分别是什么；2) 被动句的语法主语是什么，它是施事还是受事，实际动作执行者是谁？",
+        "purpose": "检验你是否能在自己的表述中说明这个关键能力。",
+        "sourceReferences": [
+          {
+            "materialTitle": "英语主动句与被动句的对应",
+            "locationLabel": "第 1 段",
+            "excerpt": "英语主动句通常把动作的施事放在主语位置，如“The editor checks the report.”编辑是检查动作的执行者，报告是受到检查的对象。相应被动句为“The report is checked by the editor.”报告成为语法主语，但它仍是动作的受事，并没有变成检查别人的执行者。改变语态可以改变叙述重点，而不必改变所报告的事件。",
+            "advisory": false
+          }
+        ]
+      }
+    ],
+    "result": {
+      "gradeRecordId": "grade_dfee882a-c310-4b7c-b502-35464034642b",
+      "demonstrated": false,
+      "summary": "这次回答还没有回应题目要求的关键内容。",
+      "minorNotice": null,
+      "criteria": [
+        {
+          "criterionId": "criterion_892d415a-9859-4a1f-a78d-2528b74d051d",
+          "label": "正确指出主动句施事为the mechanic、动作为repairs、受事为the car",
+          "result": "not_met",
+          "message": "这一点还没有在回答中体现。"
+        },
+        {
+          "criterionId": "criterion_1102e1d9-208a-40c5-be42-171d2a7f57b8",
+          "label": "正确指出被动句语法主语为the car且为受事（非施事），实际执行者是the mechanic",
+          "result": "not_met",
+          "message": "这一点还没有在回答中体现。"
+        }
+      ],
+      "sourceReferences": [
+        {
+          "materialTitle": "英语主动句与被动句的对应",
+          "locationLabel": "第 1 段",
+          "excerpt": "英语主动句通常把动作的施事放在主语位置，如“The editor checks the report.”编辑是检查动作的执行者，报告是受到检查的对象。相应被动句为“The report is checked by the editor.”报告成为语法主语，但它仍是动作的受事，并没有变成检查别人的执行者。改变语态可以改变叙述重点，而不必改变所报告的事件。",
+          "advisory": false
+        }
+      ],
+      "evidenceStatus": "unavailable",
+      "repairEpisodeId": "repair_b6abc662-1996-4f6c-8bc4-a53d6a71055f",
+      "progressionPending": false,
+      "reviewSchedulingPending": false
+    },
+    "review": null
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "inputIdentity": "63f454ba30366d1e152cee0e0389c30f19b453dba9d453cf99cb7c78db275f29",
+  "attempts": [
+    {
+      "physicalId": "cd3718f6-7032-48f3-b59e-8e584705fda8",
+      "caseId": "E027",
+      "runId": "H-E027-r2",
+      "stage": "blind-solution",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "status": "resolved",
+    "solution": "总工作量1份。甲速1/8份/时，乙速1/4份/时。乙做1小时完成1/4，剩3/4。甲独做需(3/4)/(1/8)=6时。总时间1+6=7时。若自始合作，合速3/8份/时，需8/3时。比较：7时>8/3时，乙先做甲独做比合作多13/3时。题设满足独立相加条件，解确定。",
+    "refs": [
+      "/question/prompt"
+    ],
+    "witnesses": [
+      {
+        "pointer": "/question/prompt",
+        "valueHash": "dcf5dd89a64f0379c2a16c155095996cbf9b1dfd98e7b21c0cebe9fb5974918a"
+      }
+    ]
+  }
+}

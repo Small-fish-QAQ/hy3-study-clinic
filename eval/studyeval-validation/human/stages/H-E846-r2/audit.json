@@ -1,0 +1,69 @@
+{
+  "inputIdentity": "7b794ecfa259f598b8bcce6ad55e236289d5d033a97cfcbf40740c244daafc42",
+  "attempts": [
+    {
+      "physicalId": "1736eef5-a4af-4842-bc8a-8e03eb71f85c",
+      "caseId": "E846",
+      "runId": "H-E846-r2",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q2",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "交付物声明仅背诵“平均数最公平”，明确不学中位数与数据变化影响，直接矛盾目标中正确计算中位数、解释异常值对两指标不同影响及按问题选指标等核心要求，实质移除必备覆盖，构成material缺失。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "交付物明确只训练背诵“平均数最公平”，不学中位数与数据变化影响，与要求正确计算中位数、解释异常大值对两指标不同影响、依问题选指标等目标矛盾。",
+            "impact": "核心学习目标被移除，课程目的落空。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "5ab8b13b56d12e4dab0dc1fbb5b4aae81bc75071a57fa42297dda367438c47db"
+              },
+              {
+                "pointer": "/goals",
+                "valueHash": "d3d0c9d862bfae034f0a1ba963a7205d6b0416240fc1ec3ae4f93d92d263f4e3"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "5ab8b13b56d12e4dab0dc1fbb5b4aae81bc75071a57fa42297dda367438c47db"
+          },
+          {
+            "pointer": "/goals",
+            "valueHash": "d3d0c9d862bfae034f0a1ba963a7205d6b0416240fc1ec3ae4f93d92d263f4e3"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

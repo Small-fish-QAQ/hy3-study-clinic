@@ -1,0 +1,105 @@
+{
+  "sourceId": "J05",
+  "sourceSha256": "9ae22dd248d39cdc4603bb3ea6201f843b153cf2339d8c1ddabddd6fdc3576fe",
+  "events": [
+    {
+      "at": "2026-09-14T11:17:05.315Z",
+      "stage": "preparation-step",
+      "state": "preparing_concepts",
+      "machineAction": "prepare_concepts"
+    },
+    {
+      "at": "2026-09-14T11:17:05.329Z",
+      "stage": "curriculum-accepted",
+      "curriculumId": "curriculum_55035bb7-2cf6-458d-8158-05cb5e97a9f6"
+    },
+    {
+      "at": "2026-09-14T11:17:05.413Z",
+      "stage": "preparation-step",
+      "state": "validating_course_plan",
+      "machineAction": "prepare_course_plan"
+    },
+    {
+      "at": "2026-09-14T11:17:05.427Z",
+      "stage": "preparation-stop",
+      "state": "complete",
+      "blocker": null
+    },
+    {
+      "at": "2026-09-14T11:33:54.921Z",
+      "stage": "formal",
+      "status": "failed",
+      "error": {
+        "name": "AppError",
+        "code": "GROUNDING_FAILED",
+        "message": "生成的评估题均未通过本地校验(概念、题型或证据不合法),请重试。",
+        "details": {
+          "rejected": [
+            {
+              "stem": "水平轻杆，支点O固定，忽略杆重，所有挂载力均竖直向下。左侧有 9 N 向下力，距支点水平距离 0.2 m；右侧有 5 N 向下力，距支点水平距离 0.3 m。请回答杆会向哪个方向转动，并解释为什么不能仅通过比较两个力的大小来判断转动效果。需说明力臂的定义以及转动效果由什么决定。",
+              "reason": "独立评分审核未通过：结论限于题干所给轻杆模型（忽略杆重、支点固定、竖直向下力），依据blk_5不代替真实设备安全设计；未考虑杆重、摩擦、斜向力或空间约束等其他可能。；rubric_point:1 将“不是任意选取的杆长”作为必需定义的一部分，但题干仅要求“需说明力臂的定义”，未要求排除误解的否定句；该额外细节非题目明确要求或逻辑必要，构成隐藏必需要求，故requiredCriteriaAppropriate=false；替代答案在缺失否定细节情况下仍完整满足题干实质任务，证明将该否定细节设为必需评分点过强，属于题干未要求的隐藏必需，与requiredCriteriaAppropriate=false一致。"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "teaching": [
+    {
+      "agendaItemId": "agenda_item_968d3838-e1e4-48c7-8223-830d43dea74a",
+      "learningUnitId": "cun_f200197d-da90-4d40-858e-2383cc0ad3d7",
+      "status": "completed",
+      "sessionId": "study_session_a1cd2d0d-7952-42c7-9e15-2896352e7c3a",
+      "preparationAttempts": [
+        {
+          "attempt": 1,
+          "status": "ready"
+        }
+      ],
+      "practiceItems": 2
+    },
+    {
+      "agendaItemId": "agenda_item_6b787384-83a7-4c3d-9e38-2dc199bad403",
+      "learningUnitId": "cun_f200197d-da90-4d40-858e-2383cc0ad3d7",
+      "status": "completed",
+      "sessionId": "study_session_a1cd2d0d-7952-42c7-9e15-2896352e7c3a",
+      "preparationAttempts": [
+        {
+          "attempt": 1,
+          "status": "ready"
+        }
+      ],
+      "practiceItems": 1
+    }
+  ],
+  "formal": [
+    {
+      "agendaItemId": "agenda_item_4e8a6e75-10ca-4184-8840-1a4027c0ffce",
+      "objectiveIds": [],
+      "status": "failed",
+      "error": {
+        "name": "AppError",
+        "code": "GROUNDING_FAILED",
+        "message": "生成的评估题均未通过本地校验(概念、题型或证据不合法),请重试。",
+        "details": {
+          "rejected": [
+            {
+              "stem": "水平轻杆，支点O固定，忽略杆重，所有挂载力均竖直向下。左侧有 9 N 向下力，距支点水平距离 0.2 m；右侧有 5 N 向下力，距支点水平距离 0.3 m。请回答杆会向哪个方向转动，并解释为什么不能仅通过比较两个力的大小来判断转动效果。需说明力臂的定义以及转动效果由什么决定。",
+              "reason": "独立评分审核未通过：结论限于题干所给轻杆模型（忽略杆重、支点固定、竖直向下力），依据blk_5不代替真实设备安全设计；未考虑杆重、摩擦、斜向力或空间约束等其他可能。；rubric_point:1 将“不是任意选取的杆长”作为必需定义的一部分，但题干仅要求“需说明力臂的定义”，未要求排除误解的否定句；该额外细节非题目明确要求或逻辑必要，构成隐藏必需要求，故requiredCriteriaAppropriate=false；替代答案在缺失否定细节情况下仍完整满足题干实质任务，证明将该否定细节设为必需评分点过强，属于题干未要求的隐藏必需，与requiredCriteriaAppropriate=false一致。"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "tutor": [],
+  "workspaceId": "ws_7d50177b-5855-45d3-8abc-65a7d0959a4d",
+  "materialId": "mat_b7be7226-8cc6-4a01-95c8-25fee1253fc0",
+  "commandSequence": 26,
+  "contractId": "contract_7db2f90a-6369-4fd1-84e7-93aeaeee586b",
+  "status": "completed_with_observed_boundaries",
+  "counts": {
+    "physical": 34,
+    "logical": 31
+  }
+}

@@ -1,0 +1,180 @@
+{
+  "task": {
+    "caseId": "S095",
+    "runId": "S095-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S095.json",
+    "inputHash": "ab1b54b302b5c52b3fa64f54c281d4657bb08c2e9bc48ecb0f8f81ceae2a7e91"
+  },
+  "inputHash": "ab1b54b302b5c52b3fa64f54c281d4657bb08c2e9bc48ecb0f8f81ceae2a7e91",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "7b25f32fe4daf6f3721b918d625fdccd5a6f6e0b917f4e9d0245d37cfae08678",
+    "stages": {
+      "goal-mapping": {
+        "goals": [
+          {
+            "index": 0,
+            "importance": "essential",
+            "status": "usable",
+            "reason": "artifact通过具体路线A→C→B和B→A检验了有向边方向约束，实现了按有向边检查路线可行性的核心目标。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/0"
+            ],
+            "quote": "A到C再到B可行，每一步都有同方向边；B到A不可行，因为B没有出边。",
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "72e0453a9438790f8907f568fdfc97b6907db40d27181f87c52fb2d1048b0c9b"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "a51f21939f83eed1ca93d3681f208fb694af3488648930ef9519d1d81a501862"
+              }
+            ]
+          },
+          {
+            "index": 1,
+            "importance": "essential",
+            "status": "usable",
+            "reason": "artifact给出了A和B的入度出度数值并区分了入度（箭头指入）与出度（箭头指外），符合区分并计算节点入度和出度的核心目标。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/1"
+            ],
+            "quote": "A入度0出度2，B入度2出度0；入度数箭头指入，出度数箭头指外。",
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "72e0453a9438790f8907f568fdfc97b6907db40d27181f87c52fb2d1048b0c9b"
+              },
+              {
+                "pointer": "/goals/1",
+                "valueHash": "a63e5ea68b90b2ab60576d7e6f1c219c31f7b0a1e90a3e147a04d87b392c0399"
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "importance": "secondary",
+            "status": "usable",
+            "reason": "artifact解释了边标签用于帮助读者辨认边且不影响方向，实现了次要目标。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/2"
+            ],
+            "quote": "边标签帮助读者辨认边，但不改变通行方向。",
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "72e0453a9438790f8907f568fdfc97b6907db40d27181f87c52fb2d1048b0c9b"
+              },
+              {
+                "pointer": "/goals/2",
+                "valueHash": "5971c156642542bafa467de656a783fad331d9b9629086ebfc96e501de760b60"
+              }
+            ]
+          }
+        ]
+      },
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "Lesson演示了按有向边检查路线可行性（A→C→B可行，B→A不可行），计算A、B入度出度并区分概念，解释边标签用途。所有声明目标在working_fluency深度准确覆盖，无缺陷。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "72e0453a9438790f8907f568fdfc97b6907db40d27181f87c52fb2d1048b0c9b"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "4a1ff16d1619a7f4b64cc932d8257c0a3341f94daa68120cf944ecd4a83e3b93"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "产物对核心目标（按边检查路线、区分计算入度出度）以A/B实例准确演示，次要目标（边标签用途）正确解释，均达working_fluency代表深度，无缺陷。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "72e0453a9438790f8907f568fdfc97b6907db40d27181f87c52fb2d1048b0c9b"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "4a1ff16d1619a7f4b64cc932d8257c0a3341f94daa68120cf944ecd4a83e3b93"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q2",
+          "level": 2,
+          "evidence": "sufficient",
+          "reason": "Lesson演示了按有向边检查路线可行性（A→C→B可行，B→A不可行），计算A、B入度出度并区分概念，解释边标签用途。所有声明目标在working_fluency深度准确覆盖，无缺陷。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "72e0453a9438790f8907f568fdfc97b6907db40d27181f87c52fb2d1048b0c9b"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "4a1ff16d1619a7f4b64cc932d8257c0a3341f94daa68120cf944ecd4a83e3b93"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "e345ac8571a67f3183a2a6b55d0bf2768af0be745deb72d653c4469652cf6e92"
+  }
+}

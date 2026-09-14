@@ -1,0 +1,263 @@
+{
+  "status": "ready",
+  "message": "Lesson is ready.",
+  "course": {
+    "title": "植物体内的水分运输与蒸腾"
+  },
+  "session": {
+    "status": "active",
+    "version": 11
+  },
+  "agenda": {
+    "version": 2,
+    "itemState": "queued"
+  },
+  "lesson": {
+    "objective": {
+      "title": "植物水分吸收、蒸腾作用与收支平衡基础",
+      "whyNow": "看到两株失水相同但一株萎蔫一株正常，如何用收支差值与运输组织功能解释？",
+      "outcomes": [
+        {
+          "title": "应用水分收支解释植物状态并区分运输组织功能",
+          "description": "使用水量收支（根吸水量减失水量）解释植物体内水量变化、膨压降低或萎蔫可能，明确净变化为输入减输出而非仅看蒸腾大小，且能区分木质部运输水与无机盐、韧皮部运输有机物，不把土壤水等同于全部有机养料。"
+        },
+        {
+          "title": "解释气孔由保卫细胞调节及其双重角色",
+          "description": "解释气孔由保卫细胞调节开闭，开放利于二氧化碳进入和蒸腾失水，关闭减失水但限碳，植物需在获取碳与避免失水间平衡，不能只视气孔为无用漏水孔。"
+        }
+      ]
+    },
+    "prerequisites": [],
+    "segments": [
+      {
+        "index": 0,
+        "purpose": "orientation",
+        "explanation": "植物体内水量取决于根吸水量与叶等失水量的差值，不是单看蒸腾大小。根毛吸收水和无机盐，木质部向上运水和无机盐，韧皮部运叶制造的糖等有机物。土壤中的水不是植物全部有机养料。建立“土壤供水→根吸收→木质部运输→叶蒸发→气孔散失”链条后，再用收支差值判断膨压与萎蔫。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 1,
+        "purpose": "worked_example",
+        "explanation": "根据资料中的规则，一段时间水量变化=吸水−失水；若吸水持续小于失水，体内水量降、膨压低可能萎蔫。木质部运水与无机盐，韧皮部运有机物，二者功能不同。下面用一例演练。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": {
+          "startingState": "两株同种植物，土壤供水充足，温度、光照、气孔开度相同。丙时段吸水9克、失水7克；丁时段吸水5克、失水9克。忽略其他水量变化。",
+          "inputs": [
+            "丙吸水9克失水7克",
+            "丁吸水5克失水9克",
+            "水量变化=吸水-失水"
+          ],
+          "ruleOrProcedure": "水量变化=根吸水量-失水量；净负且持续则膨压降可能萎蔫。木质部运水无机盐、韧皮部运有机物功能不同。",
+          "steps": [
+            {
+              "action": "计算丙的净水量变化",
+              "reason": "代入吸水9失水7",
+              "resultingState": "丙净变化为+2克，体内水量增加"
+            }
+          ],
+          "learnerDecision": null,
+          "result": null,
+          "whyResultFollows": null,
+          "origin": "hy3_synthesis",
+          "sources": [],
+          "interaction": {
+            "stage": "guided",
+            "modelledStepCount": 1,
+            "origin": "hy3_synthesis",
+            "sources": [],
+            "activity": {
+              "prompt": "给定上述新案例事实与待算的丁，哪项正确描述两株结果？",
+              "options": [
+                {
+                  "id": "A",
+                  "text": "丁体内水量减4克可能膨压降，丙增2克正常"
+                },
+                {
+                  "id": "B",
+                  "text": "丙蒸腾更强因失水7克小于丁9克故丙萎蔫"
+                },
+                {
+                  "id": "C",
+                  "text": "丁萎蔫因韧皮部未运糖而非水量"
+                }
+              ],
+              "response": null,
+              "respondedAt": null,
+              "correct": null,
+              "feedback": null,
+              "debrief": null,
+              "credit": "none",
+              "misconception": null
+            },
+            "hint": null,
+            "scaffold": null,
+            "transfer": null
+          }
+        },
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 2,
+        "purpose": "comparison",
+        "explanation": "明确边界：土壤中的水只是无机来源，植物有机养料由韧皮部运糖等提供，不能把土壤水说成全部有机养料；也不能把气孔只当漏水孔。下表对比常见混淆。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": {
+          "text": "混淆：土壤供水少→植物缺所有有机养料。正解：土壤水经根毛吸收、木质部运水和无机盐；糖等有机物由叶光合经韧皮部运出。二者系统不同，土壤水不等于有机养料。",
+          "origin": "hy3_synthesis",
+          "sources": []
+        },
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 3,
+        "purpose": "mechanism",
+        "explanation": "保卫细胞通过膨压变化调节气孔开闭，这一状态同时影响两条路径：气孔开放时，外界二氧化碳可进入叶片用于光合，且叶内水蒸气有了散失通道产生蒸腾；气孔关闭时，该通道收窄，失水量下降但二氧化碳进入受限制。例如，假设同种植物戊保卫细胞吸水膨胀令气孔开放，己保卫细胞失水收缩令气孔关闭，在光照与供水相同下，戊同时具备获碳与失水可能，己则节水但限碳。因此不能把气孔视为单一漏水孔，它是碳与水收支的共同开关。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [
+          {
+            "kind": "mechanism_effect",
+            "fromProposition": "保卫细胞膨胀令气孔开放",
+            "toProposition": "二氧化碳可进入且蒸腾失水通道存在",
+            "origin": "hy3_synthesis",
+            "sources": []
+          }
+        ],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 4,
+        "purpose": "guided_practice",
+        "explanation": "下面用具体案例检验上述双重路径判断。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": {
+          "kind": "choose",
+          "prompt": "两株同叶龄植物，丙保卫细胞令气孔开放，丁保卫细胞令气孔关闭；温度、光照、供水、空气湿度相同。忽略其他差异，哪项正确描述此时两者状态？",
+          "guidance": null,
+          "options": [
+            {
+              "id": "A",
+              "text": "丙可获二氧化碳但失水通道开放，丁失水减少但二氧化碳难进入"
+            },
+            {
+              "id": "B",
+              "text": "丙失水少且二氧化碳低，丁失水多且二氧化碳高"
+            },
+            {
+              "id": "C",
+              "text": "两者失水量相同因为空气湿度一致"
+            }
+          ],
+          "presented": false,
+          "response": null,
+          "respondedAt": null,
+          "correct": null,
+          "feedback": null,
+          "credit": "none"
+        }
+      },
+      {
+        "index": 5,
+        "purpose": "comparison",
+        "explanation": "明确边界：气孔功能有双重性，不能极端化理解。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": {
+          "text": "混淆：气孔只是无用的漏水孔，永远开放最好。正解：气孔由保卫细胞调节，关闭可减少失水但限制碳获取；植物需在获碳与保水间平衡，不能只视其为漏水孔。",
+          "origin": "hy3_synthesis",
+          "sources": []
+        },
+        "possibleMisconception": null,
+        "informalCheck": null
+      }
+    ],
+    "sourceReferencesAvailable": true,
+    "visuals": [],
+    "summary": {
+      "available": true,
+      "text": "用吸水减失水得净水量变化判断膨压与萎蔫；木质部运水与无机盐，韧皮部运有机物，土壤水不是全部有机养料。",
+      "nextConnection": null,
+      "formalOpportunities": []
+    },
+    "plannedTime": {
+      "agendaMinutes": 23,
+      "activeMinutesMin": 26,
+      "activeMinutesMax": 41,
+      "basis": "locally_evaluated_learning_actions"
+    }
+  },
+  "progress": {
+    "stateVersion": 2,
+    "stateId": "lesson_execution_d34d5d91-98c3-452c-b4eb-08ad5adb73df",
+    "currentSegmentIndex": 0,
+    "segmentCount": 6,
+    "presentedSegmentIndexes": [],
+    "presentationStatus": "not_started",
+    "presentationCompletedAt": null
+  },
+  "currentInformalCheck": null,
+  "practice": {
+    "status": "locked",
+    "currentItemIndex": 0,
+    "itemCount": 2,
+    "item": {
+      "index": 0,
+      "objectiveTitle": "应用水分收支解释植物状态并区分运输组织功能",
+      "construct": "apply",
+      "surface": "initial",
+      "supplementary": true,
+      "prompt": "两株同品种植物，土壤供水充足，温度光照气孔开度相同。观测时段：甲吸收8克水、失水11克，乙吸收12克水、失水11克。甲出现萎蔫，乙状态正常。现对甲增加土壤保湿使吸收升至12克、失水不变，甲恢复挺立。根据干预结果，哪一选项准确说明甲原萎蔫原因？",
+      "options": [
+        {
+          "id": "teaching_brief_94742814-9a9b-4a6e-948f-cce1b1d5e039_practice_1_initial_A",
+          "text": "甲原净水量-3克（吸8失11）致膨压降；干预后净+1克恢复"
+        },
+        {
+          "id": "teaching_brief_94742814-9a9b-4a6e-948f-cce1b1d5e039_practice_1_initial_B",
+          "text": "乙也出现萎蔫，因乙与甲失水同为11克"
+        },
+        {
+          "id": "teaching_brief_94742814-9a9b-4a6e-948f-cce1b1d5e039_practice_1_initial_C",
+          "text": "甲原萎蔫因韧皮部缺糖等有机养料，与水量收支无关"
+        }
+      ]
+    },
+    "attempts": [],
+    "recovery": null,
+    "completedAt": null,
+    "credit": "none"
+  },
+  "allowedActions": [
+    "start_lesson"
+  ]
+}

@@ -1,0 +1,166 @@
+{
+  "status": "ready",
+  "message": "Lesson is ready.",
+  "course": {
+    "title": "Function arguments, local names, and returned values"
+  },
+  "session": {
+    "status": "active",
+    "version": 10
+  },
+  "agenda": {
+    "version": 2,
+    "itemState": "queued"
+  },
+  "lesson": {
+    "objective": {
+      "title": "函数参数区分、局部计算追踪与纯函数组合",
+      "whyNow": "当我们把两个纯函数嵌套调用时，内层返回的值如何传给外层？调用者的数值变量会不会因为函数内部的局部赋值而改变？需要先建立可追踪的局部计算模型。",
+      "outcomes": [
+        {
+          "title": "组合两个纯函数调用并解释调用者输入不变",
+          "description": "能够按顺序组合两个纯函数调用（如half(adjust(4))或adjust(half(4))），计算内层返回值传给外层的结果，并解释因为纯函数无副作用且局部名赋值不改变调用者数值变量，所以调用者输入保持不变。需说明组合顺序影响结果且外层接收的是返回值而非内层参数名。"
+        }
+      ]
+    },
+    "prerequisites": [],
+    "segments": [
+      {
+        "index": 0,
+        "purpose": "orientation",
+        "explanation": "设想调用者持有变量 c = -1，并执行 out = choose(adjust(c))。根据已给函数定义，adjust 是纯函数：进入调用时局部 x 得到 -1，先加 2 得 1，返回 1*3=3；choose 接收返回值 3，因 3 不小于 0 走否则分支返回 4。整个过程中 adjust 内部的 x 变化不影响 c，c 保持 -1。这说明组合两个纯函数时，外层函数拿到的是内层返回的数值，调用者的变量除非被显式赋值否则不变。局部参数名只在各自调用内部有效。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 1,
+        "purpose": "worked_example",
+        "explanation": "下面用另一个具体数字追踪 half 与 adjust 的组合，重点看内层返回值如何成为外层输入，以及调用者变量是否保持不变。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": {
+          "startingState": "调用者变量 t = 6，已定义纯函数 adjust(x): x=x+2; return x*3 与 half(y): return y/2。执行语句 res = half(adjust(t))。",
+          "inputs": [
+            "t = 6",
+            "函数定义 adjust 与 half"
+          ],
+          "ruleOrProcedure": "纯函数组合：先求内层调用返回值，再作为实参传给外层；局部参数赋值不影响调用者变量，除非调用者显式赋值。",
+          "steps": [
+            {
+              "action": "计算内层 adjust(t)：以 t 的值 6 作为参数，局部 x 初始化为 6，执行 x = x+2 得 8，返回 x*3 = 24。",
+              "reason": "adjust 定义要求先局部加 2 再乘 3 返回，调用者传入的 6 是参数值，局部更新不影响 t。",
+              "resultingState": "内层调用 adjust(6) 完成，返回数值 24；调用者变量 t 仍为 6。"
+            }
+          ],
+          "learnerDecision": null,
+          "result": null,
+          "whyResultFollows": null,
+          "origin": "hy3_synthesis",
+          "sources": [],
+          "interaction": {
+            "stage": "guided",
+            "modelledStepCount": 1,
+            "origin": "hy3_synthesis",
+            "sources": [],
+            "activity": {
+              "prompt": "给定上述 t=6 且已算出 adjust(t) 返回 24，执行 res = half(adjust(t)) 后，以下哪个具体结果正确？",
+              "options": [
+                {
+                  "id": "A",
+                  "text": "res = 12 且 t 保持 6"
+                },
+                {
+                  "id": "B",
+                  "text": "res = 24 且 t 变为 8"
+                },
+                {
+                  "id": "C",
+                  "text": "res = 12 且 t 变为 8"
+                }
+              ],
+              "response": null,
+              "respondedAt": null,
+              "correct": null,
+              "feedback": null,
+              "debrief": null,
+              "credit": "none",
+              "misconception": null
+            },
+            "hint": null,
+            "scaffold": null,
+            "transfer": null
+          }
+        },
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      }
+    ],
+    "sourceReferencesAvailable": true,
+    "visuals": [],
+    "summary": {
+      "available": true,
+      "text": "纯函数调用会创建局部参数名，内部赋值只改局部值；外层接收的是内层返回的值而非参数名；调用者变量仅当被显式赋值时才改变。组合顺序不同结果不同。",
+      "nextConnection": null,
+      "formalOpportunities": []
+    },
+    "plannedTime": {
+      "agendaMinutes": 9,
+      "activeMinutesMin": 12,
+      "activeMinutesMax": 18,
+      "basis": "locally_evaluated_learning_actions"
+    }
+  },
+  "progress": {
+    "stateVersion": 2,
+    "stateId": "lesson_execution_5ac3483f-25bc-4c3c-a787-7b2774d40052",
+    "currentSegmentIndex": 0,
+    "segmentCount": 2,
+    "presentedSegmentIndexes": [],
+    "presentationStatus": "not_started",
+    "presentationCompletedAt": null
+  },
+  "currentInformalCheck": null,
+  "practice": {
+    "status": "locked",
+    "currentItemIndex": 0,
+    "itemCount": 1,
+    "item": {
+      "index": 0,
+      "objectiveTitle": "组合两个纯函数调用并解释调用者输入不变",
+      "construct": "apply",
+      "surface": "initial",
+      "supplementary": true,
+      "prompt": "假设函数 adjust 与 half 的定义同前（纯函数，局部参数赋值不影响调用者数值变量）。调用者初始有变量 m = 4。执行某条语句后，观察到 m 仍为 4，且得到的结果变量 result 的值为 9。以下哪项最可能是被执行的语句？",
+      "options": [
+        {
+          "id": "teaching_brief_22f5a6e6-b4af-44b8-be28-2dd499b505a8_practice_1_initial_A",
+          "text": "result = half(adjust(m))"
+        },
+        {
+          "id": "teaching_brief_22f5a6e6-b4af-44b8-be28-2dd499b505a8_practice_1_initial_B",
+          "text": "m = adjust(half(m))"
+        },
+        {
+          "id": "teaching_brief_22f5a6e6-b4af-44b8-be28-2dd499b505a8_practice_1_initial_C",
+          "text": "result = adjust(half(m))"
+        }
+      ]
+    },
+    "attempts": [],
+    "recovery": null,
+    "completedAt": null,
+    "credit": "none"
+  },
+  "allowedActions": [
+    "start_lesson"
+  ]
+}

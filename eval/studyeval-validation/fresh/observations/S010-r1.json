@@ -1,0 +1,248 @@
+{
+  "task": {
+    "caseId": "S010",
+    "runId": "S010-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S010.json",
+    "inputHash": "21f058c02815fa2abe7c1d436db73d9d5c2d1242b974185328723e174986de9a"
+  },
+  "inputHash": "21f058c02815fa2abe7c1d436db73d9d5c2d1242b974185328723e174986de9a",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "ae45c637609a8f0ee6fb0141ba9ee28aa1cf0faee05eeb0c8ce14df9d63ce39e",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "核心主张2000闰、1900平及世纪年须被400整除规则正确且有source支持；但artifact称资料先用1900举例，与source例子顺序（先2000后1900）不符，属局部归属错误，修正后核心教学完好。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "artifact声称资料先用1900年说明规则，但source明确例子依次为2000年、1900年，顺序相反",
+                "impact": "不改变核心闰年规则解释与实例正确性，仅错误描述资料内部例子顺序",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "6c86986fbba588d887111c813c9868a03472bf5c2b3c738376566d9b9c3d96fe"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "5e982eb2843152ea1b81d9f7793dbfb2609636664c75b2a6bab9a349cc3bf60b"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "6c86986fbba588d887111c813c9868a03472bf5c2b3c738376566d9b9c3d96fe"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "5e982eb2843152ea1b81d9f7793dbfb2609636664c75b2a6bab9a349cc3bf60b"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "产物正确判断2000闰年、1900平年及世纪年规则原因，符合来源。但错误归属资料先用1900年举例，来源例子依次为2000、1900。属外围事实不准确，修正顺序不影响核心结论，评1。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "Artifact states source used 1900 first to illustrate rule, but source text lists examples in order 2000 then 1900.",
+                "impact": "Correcting example order leaves leap year rule, judgments for 2000/1900 and core teaching intact.",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "6c86986fbba588d887111c813c9868a03472bf5c2b3c738376566d9b9c3d96fe"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "5e982eb2843152ea1b81d9f7793dbfb2609636664c75b2a6bab9a349cc3bf60b"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "6c86986fbba588d887111c813c9868a03472bf5c2b3c738376566d9b9c3d96fe"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "5e982eb2843152ea1b81d9f7793dbfb2609636664c75b2a6bab9a349cc3bf60b"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "核心闰年判断与世纪年规则正确且有source支持；但artifact错误归属资料先用1900举例，实际source例子顺序为2000后1900，属局部归属不准确，修正后核心教学完好。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "artifact声称资料先用1900年说明规则，但source明确例子依次为2000年、1900年，顺序相反",
+                "impact": "不改变核心闰年规则解释与实例正确性，仅错误描述资料内部例子顺序",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "6c86986fbba588d887111c813c9868a03472bf5c2b3c738376566d9b9c3d96fe"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "5e982eb2843152ea1b81d9f7793dbfb2609636664c75b2a6bab9a349cc3bf60b"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "6c86986fbba588d887111c813c9868a03472bf5c2b3c738376566d9b9c3d96fe"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "5e982eb2843152ea1b81d9f7793dbfb2609636664c75b2a6bab9a349cc3bf60b"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q1:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "资料先用1900年说明这个规则。",
+              "valueHash": "6c86986fbba588d887111c813c9868a03472bf5c2b3c738376566d9b9c3d96fe"
+            },
+            "reason": "artifact明确声称资料先用1900，但source说例子依次为2000年、1900年，顺序相反，证实局部归属错误。"
+          },
+          {
+            "id": "review2:Q1:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/sources/0/text",
+              "quote": "例子依次为2000年、1900年。",
+              "valueHash": "5e982eb2843152ea1b81d9f7793dbfb2609636664c75b2a6bab9a349cc3bf60b"
+            },
+            "reason": "source例子顺序为2000然后1900，反驳了artifact先用1900的说法，但核心规则正确，故local。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q1",
+          "level": 1,
+          "evidence": "sufficient",
+          "reason": "核心闰年判断与世纪年规则正确且有source支持；但artifact错误归属资料先用1900举例，实际source例子顺序为2000后1900，属局部归属不准确，修正后核心教学完好。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [
+            {
+              "severity": "local",
+              "description": "artifact声称资料先用1900年说明规则，但source明确例子依次为2000年、1900年，顺序相反",
+              "impact": "不改变核心闰年规则解释与实例正确性，仅错误描述资料内部例子顺序",
+              "refs": [
+                "/artifacts/0/text",
+                "/sources/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "6c86986fbba588d887111c813c9868a03472bf5c2b3c738376566d9b9c3d96fe"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "5e982eb2843152ea1b81d9f7793dbfb2609636664c75b2a6bab9a349cc3bf60b"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "6c86986fbba588d887111c813c9868a03472bf5c2b3c738376566d9b9c3d96fe"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "5e982eb2843152ea1b81d9f7793dbfb2609636664c75b2a6bab9a349cc3bf60b"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "08d756835c651e7237c33c7009f71698551601abac249fcfc050d9daa6a93a96"
+  }
+}

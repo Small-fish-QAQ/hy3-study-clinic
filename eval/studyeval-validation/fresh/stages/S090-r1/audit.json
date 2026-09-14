@@ -1,0 +1,69 @@
+{
+  "inputIdentity": "ad459a561d431139d247d583a189dccb83032e9bd9bfc76b5bc87ea45c54e896",
+  "attempts": [
+    {
+      "physicalId": "f7fedb99-67ea-4cce-8c0a-c98c7fd46f64",
+      "caseId": "S090",
+      "runId": "S090-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "Artifact断言振幅翻倍使频率翻倍、音调升高，且频率是传播距离。Source明确频率为每秒次数、振幅不决定频率与音调。错误定义与因果直接破坏概念核对目标，属实质缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "Artifact声称振幅翻倍就使频率翻倍、音调一定升高，且频率表示声音每次传播的距离；source明确频率是每秒振动次数、振幅不决定频率、提高振幅不升高音调。",
+            "impact": "错误建立振幅-频率-音调机制并误定义频率，彻底破坏核对音调/频率/振幅概念区别的核心教学用途。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "762a9b1a698e3d5fdc466d1fc1e5272d1095b2f8972ab12bc45a83d78ffd96d2"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "7d4b5318383b8f1b4d45756898be01c9752196adf6665cc09ce68423b1d671b7"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "762a9b1a698e3d5fdc466d1fc1e5272d1095b2f8972ab12bc45a83d78ffd96d2"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "7d4b5318383b8f1b4d45756898be01c9752196adf6665cc09ce68423b1d671b7"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

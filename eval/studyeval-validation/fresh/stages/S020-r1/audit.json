@@ -1,0 +1,64 @@
+{
+  "inputIdentity": "ebbb7a8f4c93254639588c3b27059ed0b9a252bfb37c101a6c34703da3057e38",
+  "attempts": [
+    {
+      "physicalId": "a9744d07-c9b9-4853-8489-d54f674eca46",
+      "caseId": "S020",
+      "runId": "S020-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q3",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "产物给出正确公式2^(-3)=1/8及a≠0限制，但未展示从指数规则推导负指数为倒数的理由，仅令记忆，缺失解释性连接，属局部缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "未展示从前提规则到负指数公式的推导或理由，仅给出结论和记忆指令",
+            "impact": "核心结论正确但学习者未被教导为何负指数表示倒数而非负数，解释目标未充分达成",
+            "refs": [
+              "/artifacts/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "503612323f61641afcb92e50d949e6ee494cd24f0dd8e33adf41d74483f34a66"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "503612323f61641afcb92e50d949e6ee494cd24f0dd8e33adf41d74483f34a66"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "8f66df12d54e18d234589d8c047330d6ce2ae196b074b8083cf0629060128d07"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

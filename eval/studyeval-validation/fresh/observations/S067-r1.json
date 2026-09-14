@@ -1,0 +1,346 @@
+{
+  "task": {
+    "caseId": "S067",
+    "runId": "S067-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S067.json",
+    "inputHash": "0cefc649a3c8231fb2e3555f213aa803a59369c4aca5f9f997a3dc2379cc4d03"
+  },
+  "inputHash": "0cefc649a3c8231fb2e3555f213aa803a59369c4aca5f9f997a3dc2379cc4d03",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "eb05f7a760291347c40e955b36abd06404fa3498e8c1fcfa1e87f3741f6545e1",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q3",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "产物断言B齿多三倍故A转一圈B转三圈且同向转，但源资料证明外齿轮啮合齿数反比（B转1/3圈）且转向相反。解释核心错误并教了无效正比方法，完全违背目标解释齿数决定转数与方向的要求，属实质缺陷。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "声称'B齿多三倍，所以A转一圈时B转三圈'，实际齿数反比：A转一圈推12齿，B有36齿故B转1/3圈；教了正比无效方法。",
+                "impact": "错误转数结论与推导直接违背goals解释齿数决定转数的要求，破坏核心教学用途。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "f2ffbb0a81a36816805d82af8f8224a5604ec8e494677ec469aa6054103f5701"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+                  }
+                ]
+              },
+              {
+                "severity": "material",
+                "description": "声称'齿轮啮合会使两轮同方向转'，但源规则为理想外齿轮啮合转向相反。",
+                "impact": "错误转向结论违背goals解释方向的要求，核心用途不成立。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "f2ffbb0a81a36816805d82af8f8224a5604ec8e494677ec469aa6054103f5701"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "f2ffbb0a81a36816805d82af8f8224a5604ec8e494677ec469aa6054103f5701"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q3",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "产物声称A转一圈B转三圈且同方向转，但源规则表明B齿数三倍应转1/3圈且转向相反。错误转数与方向直接教授无效方法，实质破坏解释齿数决定转数和方向的核心目标。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "artifact断言A转一圈B转三圈，正确应为B转1/3圈（齿数多则转速慢），错误因果颠倒齿数-转数关系",
+                "impact": "核心教学结论错误，学习者获得相反转数依赖，无法实现goals解释齿数决定转数",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "f2ffbb0a81a36816805d82af8f8224a5604ec8e494677ec469aa6054103f5701"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+                  }
+                ]
+              },
+              {
+                "severity": "material",
+                "description": "artifact断言齿轮啮合使两轮同方向转，但source明确外齿轮啮合转向相反",
+                "impact": "错误转向规则破坏goals解释齿数决定方向的要求，改变核心用途",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "f2ffbb0a81a36816805d82af8f8224a5604ec8e494677ec469aa6054103f5701"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "f2ffbb0a81a36816805d82af8f8224a5604ec8e494677ec469aa6054103f5701"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q3",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "产物声称B齿多三倍故A转一圈B转三圈且同向转，但源资料证明外齿轮啮合齿数反比（B转1/3圈）且转向相反。错误转数与方向直接教授无效方法，实质破坏解释齿数决定转数和方向的核心目标。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "artifact断言'B齿多三倍，所以A转一圈时B转三圈'，错误正比推导，正确齿数反比B转1/3圈",
+                "impact": "错误转数结论违背goals解释齿数决定转数要求，教无效方法，破坏核心教学用途",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "f2ffbb0a81a36816805d82af8f8224a5604ec8e494677ec469aa6054103f5701"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+                  }
+                ]
+              },
+              {
+                "severity": "material",
+                "description": "artifact断言'齿轮啮合会使两轮同方向转'，但外齿轮啮合转向相反",
+                "impact": "错误转向规则违背goals解释方向要求，改变核心用途",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "f2ffbb0a81a36816805d82af8f8224a5604ec8e494677ec469aa6054103f5701"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "f2ffbb0a81a36816805d82af8f8224a5604ec8e494677ec469aa6054103f5701"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q3:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "B齿多三倍，所以A转一圈时B转三圈",
+              "valueHash": "f2ffbb0a81a36816805d82af8f8224a5604ec8e494677ec469aa6054103f5701"
+            },
+            "reason": "artifact主张正比转数，但source明确'A转一圈通过12齿，因此B转三分之一圈'，齿数决定转数关系颠倒，教无效方法。"
+          },
+          {
+            "id": "review1:Q3:2",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "齿轮啮合会使两轮同方向转",
+              "valueHash": "f2ffbb0a81a36816805d82af8f8224a5604ec8e494677ec469aa6054103f5701"
+            },
+            "reason": "source明确'转向相反'，artifact错误方向规则破坏goals解释方向要求。"
+          },
+          {
+            "id": "review2:Q3:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "B齿多三倍，所以A转一圈时B转三圈",
+              "valueHash": "f2ffbb0a81a36816805d82af8f8224a5604ec8e494677ec469aa6054103f5701"
+            },
+            "reason": "source证明B转1/3圈，错误因果颠倒齿数-转数关系，实质缺陷。"
+          },
+          {
+            "id": "review2:Q3:2",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "齿轮啮合会使两轮同方向转",
+              "valueHash": "f2ffbb0a81a36816805d82af8f8224a5604ec8e494677ec469aa6054103f5701"
+            },
+            "reason": "source转向相反，错误方向规则改变核心用途。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q3",
+          "level": 0,
+          "evidence": "sufficient",
+          "reason": "产物声称B齿多三倍故A转一圈B转三圈且同向转，但源资料证明外齿轮啮合齿数反比（B转1/3圈）且转向相反。错误转数与方向直接教授无效方法，实质破坏解释齿数决定转数和方向的核心目标。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [
+            {
+              "severity": "material",
+              "description": "artifact断言'B齿多三倍，所以A转一圈时B转三圈'，错误正比推导，正确齿数反比B转1/3圈",
+              "impact": "错误转数结论违背goals解释齿数决定转数要求，教无效方法，破坏核心教学用途",
+              "refs": [
+                "/artifacts/0/text",
+                "/sources/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "f2ffbb0a81a36816805d82af8f8224a5604ec8e494677ec469aa6054103f5701"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+                }
+              ]
+            },
+            {
+              "severity": "material",
+              "description": "artifact断言'齿轮啮合会使两轮同方向转'，但外齿轮啮合转向相反",
+              "impact": "错误转向规则违背goals解释方向要求，改变核心用途",
+              "refs": [
+                "/artifacts/0/text",
+                "/sources/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "f2ffbb0a81a36816805d82af8f8224a5604ec8e494677ec469aa6054103f5701"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "f2ffbb0a81a36816805d82af8f8224a5604ec8e494677ec469aa6054103f5701"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "51b272a205debaf8c18d0e7ef534d314ce7fb4aec286e066163b08585577de5a"
+  }
+}

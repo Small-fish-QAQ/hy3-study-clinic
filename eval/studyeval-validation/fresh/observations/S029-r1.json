@@ -1,0 +1,342 @@
+{
+  "task": {
+    "caseId": "S029",
+    "runId": "S029-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S029.json",
+    "inputHash": "0e538656fadd8e1d8b317871399f38ff0a36fae3d3ffdce5c663324901d46171"
+  },
+  "inputHash": "0e538656fadd8e1d8b317871399f38ff0a36fae3d3ffdce5c663324901d46171",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "6a2745a56f8ca63bfd77f2739bd1dca1e18f6cd5d2d8e606acdbba912ea80473",
+    "stages": {
+      "blind-solution": {
+        "status": "resolved",
+        "solution": "题设给定五张不同明信片选两张，不放回但允许同一张自配有效。异类无序对C(5,2)=10，自配5种，总数15。或允许重复组合C(5+2-1,2)=15。",
+        "refs": [
+          "/question/prompt"
+        ],
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "f58c1f0050bd20369aed62a2fd5d37814baa28f76c4456e31f662993449ef862"
+          }
+        ]
+      },
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q4",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "题设允许自配与source禁自配不同，学生需算C(5,2)+5=15，作者答案一致正确；无提前泄题；但题干仅要总数未要求解释，声明深度working_fluency需执行并解释，故仅测应用未测解释，区分度弱。",
+            "refs": [
+              "/question/prompt",
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "题干仅要求给出总数未要求解释方法，而desiredDepth为working_fluency要求执行并解释，未充分测试解释技能",
+                "impact": "核心计算用途成立，但区分度弱仅测应用未测解释",
+                "refs": [
+                  "/question/prompt",
+                  "/desiredDepth"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/question/prompt",
+                    "valueHash": "f58c1f0050bd20369aed62a2fd5d37814baa28f76c4456e31f662993449ef862"
+                  },
+                  {
+                    "pointer": "/desiredDepth",
+                    "valueHash": "ffc6fdfb6aedd605a4b7d1807dfd9cc571929860f9039a3db08c4bc8c2c7817b"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "assessment": {
+              "key": "correct",
+              "validity": "valid",
+              "exposure": "none",
+              "discrimination": "weak",
+              "demand": "application",
+              "demandReason": "学生需根据允许自配条件计算异类对加自配或重复组合总数，不能从source直接抄禁自配公式，需调整计算并得15。",
+              "reason": "题目给定五张明信片选两张允许自配求总数；作者私有答案15正确；priorExposure空无泄露；但仅要总数未解释，未达working_fluency深度。",
+              "refs": [
+                "/question/prompt",
+                "/artifacts/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/question/prompt",
+                  "valueHash": "f58c1f0050bd20369aed62a2fd5d37814baa28f76c4456e31f662993449ef862"
+                },
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "9b81cd45f795f310142b9b84d4185b7641ff21384eb7e699ae47d3c98b0f135c"
+                }
+              ]
+            },
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "f58c1f0050bd20369aed62a2fd5d37814baa28f76c4456e31f662993449ef862"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "9b81cd45f795f310142b9b84d4185b7641ff21384eb7e699ae47d3c98b0f135c"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "048d87f46cf5e71c40673f0c198589ef7169711c8e00773c1213c7b454b1dfde"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q4",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "题干条件明确可答，作者键15正确无泄露，需应用调整规则计算而非纯检索，判别力足",
+            "refs": [
+              "/question/prompt",
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "assessment": {
+              "key": "correct",
+              "validity": "valid",
+              "exposure": "none",
+              "discrimination": "adequate",
+              "demand": "application",
+              "demandReason": "学生须据允许自配条件算C(5,2)+5或重复组合，不能直抄来源禁自配公式",
+              "reason": "题干可答，作者解15正确，无提前曝光，需处理新约束应用计算，判别力足够",
+              "refs": [
+                "/question/prompt",
+                "/artifacts/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/question/prompt",
+                  "valueHash": "f58c1f0050bd20369aed62a2fd5d37814baa28f76c4456e31f662993449ef862"
+                },
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "9b81cd45f795f310142b9b84d4185b7641ff21384eb7e699ae47d3c98b0f135c"
+                }
+              ]
+            },
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "f58c1f0050bd20369aed62a2fd5d37814baa28f76c4456e31f662993449ef862"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "9b81cd45f795f310142b9b84d4185b7641ff21384eb7e699ae47d3c98b0f135c"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "048d87f46cf5e71c40673f0c198589ef7169711c8e00773c1213c7b454b1dfde"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q4",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "题干可答，作者私有键15正确无泄露；但题干仅求总数未要求解释，而desiredDepth为working_fluency需执行并解释，仅测应用未测解释致区分度弱，属局部缺陷。",
+            "refs": [
+              "/question/prompt",
+              "/artifacts/0/text",
+              "/desiredDepth"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "题干仅要求给出总数未要求解释方法，而desiredDepth为working_fluency要求执行并解释，未充分测试解释技能",
+                "impact": "核心计算用途成立，但区分度弱仅测应用未测解释",
+                "refs": [
+                  "/question/prompt",
+                  "/desiredDepth"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/question/prompt",
+                    "valueHash": "f58c1f0050bd20369aed62a2fd5d37814baa28f76c4456e31f662993449ef862"
+                  },
+                  {
+                    "pointer": "/desiredDepth",
+                    "valueHash": "ffc6fdfb6aedd605a4b7d1807dfd9cc571929860f9039a3db08c4bc8c2c7817b"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "assessment": {
+              "key": "correct",
+              "validity": "valid",
+              "exposure": "none",
+              "discrimination": "weak",
+              "demand": "application",
+              "demandReason": "学生须据允许自配条件算C(5,2)+5或重复组合，不能直抄来源禁自配公式",
+              "reason": "题目给定五张明信片选两张允许自配求总数；作者私有答案15正确；无提前曝光；但仅要总数未解释，未达working_fluency深度解释要求，判别力弱。",
+              "refs": [
+                "/question/prompt",
+                "/artifacts/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/question/prompt",
+                  "valueHash": "f58c1f0050bd20369aed62a2fd5d37814baa28f76c4456e31f662993449ef862"
+                },
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "9b81cd45f795f310142b9b84d4185b7641ff21384eb7e699ae47d3c98b0f135c"
+                }
+              ]
+            },
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "f58c1f0050bd20369aed62a2fd5d37814baa28f76c4456e31f662993449ef862"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "9b81cd45f795f310142b9b84d4185b7641ff21384eb7e699ae47d3c98b0f135c"
+              },
+              {
+                "pointer": "/desiredDepth",
+                "valueHash": "ffc6fdfb6aedd605a4b7d1807dfd9cc571929860f9039a3db08c4bc8c2c7817b"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q4:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/question/prompt",
+              "quote": "按不放回规则从五张不同明信片选两张，把同一张与自身配对也算有效，给出总数。",
+              "valueHash": "f58c1f0050bd20369aed62a2fd5d37814baa28f76c4456e31f662993449ef862"
+            },
+            "reason": "题干确仅要求给出总数未提解释；/desiredDepth为working_fluency要求执行并解释，故未测解释为局部缺陷，不推翻核心计算正确性。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q4",
+          "level": 1,
+          "evidence": "sufficient",
+          "reason": "题干可答，作者私有键15正确无泄露；但题干仅求总数未要求解释，而desiredDepth为working_fluency需执行并解释，仅测应用未测解释致区分度弱，属局部缺陷。",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text",
+            "/desiredDepth"
+          ],
+          "defects": [
+            {
+              "severity": "local",
+              "description": "题干仅要求给出总数未要求解释方法，而desiredDepth为working_fluency要求执行并解释，未充分测试解释技能",
+              "impact": "核心计算用途成立，但区分度弱仅测应用未测解释",
+              "refs": [
+                "/question/prompt",
+                "/desiredDepth"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/question/prompt",
+                  "valueHash": "f58c1f0050bd20369aed62a2fd5d37814baa28f76c4456e31f662993449ef862"
+                },
+                {
+                  "pointer": "/desiredDepth",
+                  "valueHash": "ffc6fdfb6aedd605a4b7d1807dfd9cc571929860f9039a3db08c4bc8c2c7817b"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "assessment": {
+            "key": "correct",
+            "validity": "valid",
+            "exposure": "none",
+            "discrimination": "weak",
+            "demand": "application",
+            "demandReason": "学生须据允许自配条件算C(5,2)+5或重复组合，不能直抄来源禁自配公式",
+            "reason": "题目给定五张明信片选两张允许自配求总数；作者私有答案15正确；无提前曝光；但仅要总数未解释，未达working_fluency深度解释要求，判别力弱。",
+            "refs": [
+              "/question/prompt",
+              "/artifacts/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "f58c1f0050bd20369aed62a2fd5d37814baa28f76c4456e31f662993449ef862"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "9b81cd45f795f310142b9b84d4185b7641ff21384eb7e699ae47d3c98b0f135c"
+              }
+            ]
+          },
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "f58c1f0050bd20369aed62a2fd5d37814baa28f76c4456e31f662993449ef862"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "9b81cd45f795f310142b9b84d4185b7641ff21384eb7e699ae47d3c98b0f135c"
+            },
+            {
+              "pointer": "/desiredDepth",
+              "valueHash": "ffc6fdfb6aedd605a4b7d1807dfd9cc571929860f9039a3db08c4bc8c2c7817b"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "f8d6b3f1852b2bfea623c1194306c1167ea26e728a0026b642e3c3e60092a6b3"
+  }
+}

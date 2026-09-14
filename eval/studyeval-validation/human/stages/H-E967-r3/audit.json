@@ -1,0 +1,93 @@
+{
+  "inputIdentity": "5bbc1f3d9539b148777f336f3c18eb2e695b958904e509426854e495ff84d6c7",
+  "attempts": [
+    {
+      "physicalId": "3a9600e8-e9c6-4a0c-b0e1-0ae561ece7a2",
+      "caseId": "E967",
+      "runId": "H-E967-r3",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q6",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "支持文本将错误归因为未背诵，发明学习者状态；并要求抄写参考答案原样重答来证明迁移掌握，实为复述披露答案即称掌握，教导错误方法。均未针对实际推理缺陷（误认自愿为随机、忽略混杂），核心修复用途不成立。",
+        "refs": [
+          "/artifacts/1/text",
+          "/answer",
+          "/artifacts/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "诊断断言出错因未认真背诵，发明学习者状态，未识别实际推理差距（误以为自愿等于随机分组、忽略混杂）。",
+            "impact": "改变核心用途：Q6要求基于证据诊断推理差距，错误归因使干预不提供相关帮助。",
+            "refs": [
+              "/artifacts/1/text",
+              "/answer"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/1/text",
+                "valueHash": "b48273621a19d2af23adcd0e37fd9f56bd0461da88677b76cc1375c7a736b7f0"
+              },
+              {
+                "pointer": "/answer",
+                "valueHash": "7d6191d92d628a82e207484c2c7eb0e40705d9d13f6606a2290baa951d899e6f"
+              }
+            ]
+          },
+          {
+            "severity": "material",
+            "description": "干预要求原样抄写参考答案三遍并原样答同一题，声称证明独立迁移掌握，教导错误方法且将复述披露答案等同掌握。",
+            "impact": "改变核心用途：Q6要求具体相关帮助与可用下一步推理检查，机械背诵替代推理修复，实质缺陷。",
+            "refs": [
+              "/artifacts/1/text",
+              "/artifacts/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/1/text",
+                "valueHash": "b48273621a19d2af23adcd0e37fd9f56bd0461da88677b76cc1375c7a736b7f0"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "3507020d3476abfa5c8fdea85454f77aac714d92f8e6633e78ffb3aa1b7fa96c"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/1/text",
+            "valueHash": "b48273621a19d2af23adcd0e37fd9f56bd0461da88677b76cc1375c7a736b7f0"
+          },
+          {
+            "pointer": "/answer",
+            "valueHash": "7d6191d92d628a82e207484c2c7eb0e40705d9d13f6606a2290baa951d899e6f"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "3507020d3476abfa5c8fdea85454f77aac714d92f8e6633e78ffb3aa1b7fa96c"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

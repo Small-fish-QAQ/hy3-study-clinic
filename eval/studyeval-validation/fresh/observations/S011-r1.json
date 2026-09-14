@@ -1,0 +1,113 @@
+{
+  "task": {
+    "caseId": "S011",
+    "runId": "S011-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S011.json",
+    "inputHash": "e4e73fdcc60bdaa79a10d6512f30928081a1983f0cce5d59eecb67ec87a5e139"
+  },
+  "inputHash": "e4e73fdcc60bdaa79a10d6512f30928081a1983f0cce5d59eecb67ec87a5e139",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "b65882d36e8853a22cb12c7c6c7222ec96c47e4aa8a0005ef4a0ffeadc581752",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "artifact准确复述source中同名相斥异名相吸及切断仍具两极的规则，与goals核对磁极作用和切断解释一致，无事实或归属缺陷。",
+            "refs": [
+              "/sources/0/text",
+              "/artifacts/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "bd52c5a277bce71686f63dbe44ae0456d2b3036e28dc0d9ea741288fdb927b79"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "270770ae0140fc5bd6ca4a4e08629c550198ddae94a93e5de576ccfe8172f857"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "artifact准确复述来源中同名相斥、异名相吸及切断后仍各有南北极的模型规则，与goals核对磁极作用和切断解释一致，无事实或归属缺陷。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "270770ae0140fc5bd6ca4a4e08629c550198ddae94a93e5de576ccfe8172f857"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "bd52c5a277bce71686f63dbe44ae0456d2b3036e28dc0d9ea741288fdb927b79"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q1",
+          "level": 2,
+          "evidence": "sufficient",
+          "reason": "artifact准确复述source中同名相斥异名相吸及切断仍具两极的规则，与goals核对磁极作用和切断解释一致，无事实或归属缺陷。",
+          "refs": [
+            "/sources/0/text",
+            "/artifacts/0/text"
+          ],
+          "defects": [],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "bd52c5a277bce71686f63dbe44ae0456d2b3036e28dc0d9ea741288fdb927b79"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "270770ae0140fc5bd6ca4a4e08629c550198ddae94a93e5de576ccfe8172f857"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "8e1fb7b57bc5903162ef8d541bef60272bb43aa7d54b89118eceb66f22d414a8"
+  }
+}

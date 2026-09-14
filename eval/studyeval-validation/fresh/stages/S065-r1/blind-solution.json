@@ -1,0 +1,36 @@
+{
+  "inputIdentity": "d8c7194ec8a9236edec44c63dc12fe7ee23634c6801af28aa87245bebc1c4667",
+  "attempts": [
+    {
+      "physicalId": "366483cc-7ff5-408d-b846-989af6a462db",
+      "caseId": "S065",
+      "runId": "S065-r1",
+      "stage": "blind-solution",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "status": "contradictory",
+    "solution": "据/sources/0/text，XOR两输入均1时输出0。故XOR(1,1)=0。题目强制解释输出必定是1，与明示课堂规则矛盾，记录约束冲突且不屈从该错误前提。",
+    "refs": [
+      "/question/prompt",
+      "/sources/0/text"
+    ],
+    "witnesses": [
+      {
+        "pointer": "/question/prompt",
+        "valueHash": "a4781f9fd5ee23b934cb075dbbdbc0be7c3e9d3f2c61c29fc7e5eca2d3a57b0b"
+      },
+      {
+        "pointer": "/sources/0/text",
+        "valueHash": "abe0ee3fc063cc9ca8e5695fcc7196cbc85922a703ddb540aee12d9b2456e392"
+      }
+    ]
+  }
+}

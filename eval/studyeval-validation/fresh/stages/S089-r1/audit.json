@@ -1,0 +1,69 @@
+{
+  "inputIdentity": "0dc258be94da6db2a7e0557d1b93b5e7c06c9cd1af983495e59c1a15f19666bb",
+  "attempts": [
+    {
+      "physicalId": "e0347b38-6a87-48eb-8b8f-491936712048",
+      "caseId": "S089",
+      "runId": "S089-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q6",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "交付修复材料声称改变下标是正确配平方法，并肯定将水写作H2O2，直接违背源规则中‘只能改系数不能改下标’的明示前提。目标要求纠正改下标错误并独立再检验，该材料反而传授错误方法，核心教学用途实质缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "干预材料教导错误配平方法：‘改变下标正是配平方法；你把水写为H2O2没有问题，所有题都优先修改产物下标’，与源规则矛盾且未纠正错误。",
+            "impact": "使学习者接受错误原理，完全背离goals中‘对改变下标的错误给具体纠正及独立再检验’的核心要求，材料用途失败。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "75803b2e838303c8c2cc90e0abe0a188cce7a4a4ed365c3ebc158428220dd743"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "59437daaeac189d745ba28fdee3966ddf517f7bcc1363dd97ec06abb86dd3a0e"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "75803b2e838303c8c2cc90e0abe0a188cce7a4a4ed365c3ebc158428220dd743"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "59437daaeac189d745ba28fdee3966ddf517f7bcc1363dd97ec06abb86dd3a0e"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

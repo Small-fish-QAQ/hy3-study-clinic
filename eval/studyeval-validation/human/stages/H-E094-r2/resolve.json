@@ -1,0 +1,93 @@
+{
+  "inputIdentity": "24fec32e541b47eb8558ae806ffaac7ee474f632b002b175370be143ace4b939",
+  "attempts": [
+    {
+      "physicalId": "c0202b66-9d0e-4253-b850-6093804e48d4",
+      "caseId": "E094",
+      "runId": "H-E094-r2",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "核心主张（总30人次、八份支持、未决定、可省略分别人次）均与源一致且正确；但附带回顾颠倒两周六各自人次（源为18+12，文写12+18），属局部事实错，修正后核心用途不变。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "附带回顾称第一个周六12人次、第二个周六18人次，与来源中第一个18、第二个12相反",
+            "impact": "总人次30仍正确，核心教学点不依赖各自人次顺序，修正后主要推理与用途完好",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "e61e77f7f6072f97b02e43405189e4c092cff9effaf4ccc15fc43ac79fdeb951"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "e61e77f7f6072f97b02e43405189e4c092cff9effaf4ccc15fc43ac79fdeb951"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q1:1",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "附带回顾：原周报第一个周六提前到馆十二人次，第二个周六十八人次。",
+          "valueHash": "e61e77f7f6072f97b02e43405189e4c092cff9effaf4ccc15fc43ac79fdeb951"
+        },
+        "reason": "引文显示artifact将第一周六写为12、第二周六写为18，而/sources/0/text明确第一周六18、第二周六12，缺陷属实但仅局部。"
+      },
+      {
+        "id": "review2:Q1:1",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/sources/0/text",
+          "quote": "第一个周六有十八人提前到馆，第二个周六有十二人提前到馆。",
+          "valueHash": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4"
+        },
+        "reason": "源文证明正确顺序为18+12，artifact颠倒，但总人次与核心教学不受影响，故为local。"
+      }
+    ]
+  }
+}

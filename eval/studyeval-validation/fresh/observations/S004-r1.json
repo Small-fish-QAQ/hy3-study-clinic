@@ -1,0 +1,276 @@
+{
+  "task": {
+    "caseId": "S004",
+    "runId": "S004-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S004.json",
+    "inputHash": "f87c2aab9604db99fccff230ebf6beb136c02461890f4d9adfcb3533e65dbb34"
+  },
+  "inputHash": "f87c2aab9604db99fccff230ebf6beb136c02461890f4d9adfcb3533e65dbb34",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "d8d565e063940297638af409779acf3d26f26194e803eb155e5793dad5c0b8c9",
+    "stages": {
+      "blind-solution": {
+        "status": "resolved",
+        "solution": "根据/sources/0/text，A={1,2}, B={2,3}，并集为属于任一集合的不同元素，去重合并得{1,2,3}。条件充足，求解明确。",
+        "refs": [
+          "/question/prompt",
+          "/sources/0/text"
+        ],
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "d6444630e214e8c1957d29925ae3850ab17e4d454700814e3daa72f9286df7a3"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "a5384e5168414c3fb7fdaf9d41facc61921578fe1399ba0c69cb62aa2103ce93"
+          }
+        ]
+      },
+      "blind-student": {
+        "criteria": [
+          {
+            "id": "required",
+            "result": "not_met",
+            "reason": "学生提交为空字符串，未写出并集{1,2,3}，不满足写出该集合的要求",
+            "refs": [
+              "/answer",
+              "/rubric/0"
+            ],
+            "required": true,
+            "witnesses": [
+              {
+                "pointer": "/answer",
+                "valueHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+              },
+              {
+                "pointer": "/rubric/0",
+                "valueHash": "41e3e9993ea73d3924609af1ca9150dfde326067be5fc53a6f4aec3ca0e10258"
+              }
+            ]
+          }
+        ],
+        "warrantedCredit": "withheld"
+      },
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q5",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "学生提交空字符串，评分器判定required未满足且拒绝学分，反馈准确。重解题目并集为{1,2,3}，空答明显不符，评分器质量高。",
+            "refs": [
+              "/answer",
+              "/rubric/0",
+              "/productJudgment/criteria/0",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "grading": {
+              "criteria": [
+                {
+                  "id": "required",
+                  "result": "not_met",
+                  "reason": "学生全答为空字符串，未写出{1,2,3}，不满足写出该集合的要求",
+                  "refs": [
+                    "/answer",
+                    "/rubric/0"
+                  ],
+                  "required": true,
+                  "witnesses": [
+                    {
+                      "pointer": "/answer",
+                      "valueHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                    },
+                    {
+                      "pointer": "/rubric/0",
+                      "valueHash": "41e3e9993ea73d3924609af1ca9150dfde326067be5fc53a6f4aec3ca0e10258"
+                    }
+                  ]
+                }
+              ],
+              "warrantedCredit": "withheld",
+              "actualCredit": "withheld",
+              "actualCreditWitness": {
+                "pointer": "/productJudgment/consequence",
+                "valueHash": "a3b3d76fdf1e33a8c7bde9a7152980d0de2656e3d541feafb198261dcc7cf51c"
+              }
+            },
+            "witnesses": [
+              {
+                "pointer": "/answer",
+                "valueHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+              },
+              {
+                "pointer": "/rubric/0",
+                "valueHash": "41e3e9993ea73d3924609af1ca9150dfde326067be5fc53a6f4aec3ca0e10258"
+              },
+              {
+                "pointer": "/productJudgment/criteria/0",
+                "valueHash": "c78f80dc96db58dc73686a225b449d9b6f0d6e0707837cb079df01fc367adeab"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "a5384e5168414c3fb7fdaf9d41facc61921578fe1399ba0c69cb62aa2103ce93"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q5",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "学生提交为空字符串，产品正确判定required未满足并拒绝授分，反馈准确描述空提交，与实际应得及行为一致。",
+            "refs": [
+              "/answer",
+              "/rubric/0",
+              "/productJudgment/criteria/0",
+              "/productJudgment/consequence"
+            ],
+            "defects": [],
+            "missing": [],
+            "grading": {
+              "criteria": [
+                {
+                  "id": "required",
+                  "result": "not_met",
+                  "reason": "学生答案空字符串未写出任何并集元素，不满足写出{1,2,3}的必要要求",
+                  "refs": [
+                    "/answer",
+                    "/rubric/0"
+                  ],
+                  "required": true,
+                  "witnesses": [
+                    {
+                      "pointer": "/answer",
+                      "valueHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                    },
+                    {
+                      "pointer": "/rubric/0",
+                      "valueHash": "41e3e9993ea73d3924609af1ca9150dfde326067be5fc53a6f4aec3ca0e10258"
+                    }
+                  ]
+                }
+              ],
+              "warrantedCredit": "withheld",
+              "actualCredit": "withheld",
+              "actualCreditWitness": {
+                "pointer": "/productJudgment/consequence",
+                "valueHash": "a3b3d76fdf1e33a8c7bde9a7152980d0de2656e3d541feafb198261dcc7cf51c"
+              }
+            },
+            "witnesses": [
+              {
+                "pointer": "/answer",
+                "valueHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+              },
+              {
+                "pointer": "/rubric/0",
+                "valueHash": "41e3e9993ea73d3924609af1ca9150dfde326067be5fc53a6f4aec3ca0e10258"
+              },
+              {
+                "pointer": "/productJudgment/criteria/0",
+                "valueHash": "c78f80dc96db58dc73686a225b449d9b6f0d6e0707837cb079df01fc367adeab"
+              },
+              {
+                "pointer": "/productJudgment/consequence",
+                "valueHash": "a3b3d76fdf1e33a8c7bde9a7152980d0de2656e3d541feafb198261dcc7cf51c"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q5",
+          "level": 2,
+          "evidence": "sufficient",
+          "reason": "学生提交空字符串，评分器判定required未满足且拒绝学分，反馈准确。重解题目并集为{1,2,3}，空答明显不符，评分器质量高。",
+          "refs": [
+            "/answer",
+            "/rubric/0",
+            "/productJudgment/criteria/0",
+            "/sources/0/text"
+          ],
+          "defects": [],
+          "missing": [],
+          "grading": {
+            "criteria": [
+              {
+                "id": "required",
+                "result": "not_met",
+                "reason": "学生全答为空字符串，未写出{1,2,3}，不满足写出该集合的要求",
+                "refs": [
+                  "/answer",
+                  "/rubric/0"
+                ],
+                "required": true,
+                "witnesses": [
+                  {
+                    "pointer": "/answer",
+                    "valueHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                  },
+                  {
+                    "pointer": "/rubric/0",
+                    "valueHash": "41e3e9993ea73d3924609af1ca9150dfde326067be5fc53a6f4aec3ca0e10258"
+                  }
+                ]
+              }
+            ],
+            "warrantedCredit": "withheld",
+            "actualCredit": "withheld",
+            "actualCreditWitness": {
+              "pointer": "/productJudgment/consequence",
+              "valueHash": "a3b3d76fdf1e33a8c7bde9a7152980d0de2656e3d541feafb198261dcc7cf51c"
+            }
+          },
+          "witnesses": [
+            {
+              "pointer": "/answer",
+              "valueHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            {
+              "pointer": "/rubric/0",
+              "valueHash": "41e3e9993ea73d3924609af1ca9150dfde326067be5fc53a6f4aec3ca0e10258"
+            },
+            {
+              "pointer": "/productJudgment/criteria/0",
+              "valueHash": "c78f80dc96db58dc73686a225b449d9b6f0d6e0707837cb079df01fc367adeab"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "a5384e5168414c3fb7fdaf9d41facc61921578fe1399ba0c69cb62aa2103ce93"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "75d1fc27351bb5515183527f55bf34f7cb837d1280806f51c541e509ebf3361c"
+  }
+}

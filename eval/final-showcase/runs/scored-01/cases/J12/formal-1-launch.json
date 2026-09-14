@@ -1,0 +1,44 @@
+{
+  "kind": "assessment",
+  "agendaItemId": "agenda_item_6e3b9ab3-9703-498c-8926-2c73352286e4",
+  "quiz": {
+    "id": "qz_4f767312-fd90-4a73-b5df-8f69ad2dbe8e",
+    "materialId": null,
+    "workspaceId": "ws_816bd2f4-e553-4b22-a30f-d592a0164282",
+    "kind": "adaptive",
+    "assessmentMode": "concept_practice",
+    "config": {
+      "difficulty": "medium",
+      "types": [
+        "short_answer"
+      ],
+      "countPerType": 1
+    },
+    "questions": [
+      {
+        "id": "que_21dff483-9019-4e2f-b53a-c8366210f733",
+        "index": 0,
+        "type": "short_answer",
+        "stem": "假设有三个石头：石头X重4千克，石头Y重7千克，石头Z重10千克。请完成以下任务：(1) 写一句英语比较句，比较X和Y的重量（两者）；(2) 写一句英语最高级句子，指出Z在三个石头中最重；(3) 简要说明比较级与最高级在对象数量和范围交代上的关键区别。",
+        "conceptId": "con_e8d8bdb8-26b1-43e6-acd7-3922944f5e51",
+        "conceptName": "比较级与最高级的定义及结构",
+        "grounding": {
+          "blockId": "blk_0_fc2cce75",
+          "quote": "英语比较级用来比较两个对象在某一方面的程度，常配合than；最高级表示某个对象在给定集合中达到最高程度，通常使用the并交代比较范围。例如“This box is lighter than that box.”比较这两个箱子的轻重；“This is the lightest box of the three.”把它放在指定的三个箱子中比较。最高级不是不受范围限制的“世界第一”。",
+          "startOffset": 0,
+          "endOffset": 190,
+          "occurrenceCount": 1,
+          "reanchored": false
+        },
+        "blueprintId": "bp_d18a1d4f-d07f-4f3c-8753-b033b525cc9f",
+        "points": 2
+      }
+    ],
+    "targetConceptIds": [
+      "con_e8d8bdb8-26b1-43e6-acd7-3922944f5e51"
+    ],
+    "createdAt": "2026-09-14T11:59:26.597Z"
+  },
+  "assessmentKind": "formal_checkpoint",
+  "formalAssessmentVersionId": "assessment_version_4ae8945d-abae-43cf-a77b-f30c0ea1f5f0"
+}

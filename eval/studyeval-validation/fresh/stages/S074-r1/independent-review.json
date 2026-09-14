@@ -1,0 +1,54 @@
+{
+  "inputIdentity": "c6fd7c14abb1b4d1a994ee6a3032b05d30bc2d715cc33373c1d8856b4939aeb8",
+  "attempts": [
+    {
+      "physicalId": "f9cfab1e-3978-4fc8-92ac-b996068492a8",
+      "caseId": "S074",
+      "runId": "S074-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q6",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "artifact依据source规则指出i<=3越界，解释应i<3且条件限制下标，并提供长度4的具体新检查（列下标与次数并解释不访问4），可测同一推理迁移，完整达成目标且无缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text",
+          "/goals/0"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "59494a351f56294401a0511f84ee11519e67f7aea59aa02aa9cfa17db9c08fee"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "6213ff9a055ace79d0f400ff726e7c543da909a26d1040539112300cd2428c3c"
+          },
+          {
+            "pointer": "/goals/0",
+            "valueHash": "6fb7babe6f9f343c4ddd6bbe66ce3122ef6c196c42b707ca0bd4afca18fa678a"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

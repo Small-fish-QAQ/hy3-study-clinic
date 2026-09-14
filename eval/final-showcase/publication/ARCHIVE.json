@@ -1,0 +1,8 @@
+{
+  "file": "final-showcase-audit.zip",
+  "sha256": "82d71f423cefe9fd982009321d0c2c9dc38dc956e7075e38be4e4694a5baf72f",
+  "bytes": 47123573,
+  "manifestFiles": 4438,
+  "download": "https://github.com/Small-fish-QAQ/hy3-study-clinic/releases/download/task1-final-2026-09-14/final-showcase-audit.zip",
+  "scope": "Original full campaign, SQLite databases, wire captures and exact Candidate 23 source/compiled runtime. Credentials, dependencies and owner databases excluded."
+}

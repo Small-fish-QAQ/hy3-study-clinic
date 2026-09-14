@@ -1,0 +1,102 @@
+{
+  "inputIdentity": "4b3d4c50bcd7f631fe2e52f793ae20817772591274e29e5853e439d6cd64e4d8",
+  "attempts": [
+    {
+      "physicalId": "02a02fac-9c17-4d2e-be48-3e25b49abda3",
+      "caseId": "S014",
+      "runId": "S014-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q4",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "题目问负高度含义，资料明说负值在海平面下，作者答案正确。但声明深度working_fluency要求执行解释，此题仅检索事实，判别力弱，局部缺陷。",
+        "refs": [
+          "/question/prompt",
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "仅测试回忆资料中明确陈述，未要求应用连续变化或解释方法",
+            "impact": "核心考察规则记忆成立，但未达working_fluency深度，不改变核心用途",
+            "refs": [
+              "/question/prompt",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "28b92e84fa93cd953d3165f1ec0b8a92a69100e2ac4b2b337c7b0959ca0f93c8"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "1df9950edf389e68cc4353ad1c364ae71b323e3e1d130830ce39d9c5e25fe7f3"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "assessment": {
+          "key": "correct",
+          "validity": "valid",
+          "exposure": "none",
+          "discrimination": "weak",
+          "demand": "retrieval",
+          "demandReason": "学生只需从资料中识别并复述‘负值在海平面下’的现成术语，无需计算或解释。",
+          "reason": "题干直接问资料中负高度表示，作者答案‘海平面下。’与资料一致正确。priorExposure空无泄题。但desiredDepth为working_fluency，题仅检索，判别弱。",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "28b92e84fa93cd953d3165f1ec0b8a92a69100e2ac4b2b337c7b0959ca0f93c8"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "c71699535a6fe580afa7ca2f7b05d27f8ad5a9b19b73ffd2b4cd76d6792dd334"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "1df9950edf389e68cc4353ad1c364ae71b323e3e1d130830ce39d9c5e25fe7f3"
+            }
+          ]
+        },
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "28b92e84fa93cd953d3165f1ec0b8a92a69100e2ac4b2b337c7b0959ca0f93c8"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "c71699535a6fe580afa7ca2f7b05d27f8ad5a9b19b73ffd2b4cd76d6792dd334"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "1df9950edf389e68cc4353ad1c364ae71b323e3e1d130830ce39d9c5e25fe7f3"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

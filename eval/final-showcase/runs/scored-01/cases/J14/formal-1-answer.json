@@ -1,0 +1,89 @@
+{
+  "answerPolicy": "independent-visible-study-response-v1; no-author-key-rubric-or-review",
+  "answers": {
+    "assessment_item_89af1e95-fef3-43f7-84f0-9d993a00c69a": "盐的质量 = 140克 × 0.25 = 35克；水的质量 = 140克 - 35克 = 105克。\n溶质质量分数的定义：溶质质量 ÷ 溶液总质量，常写成百分数。其分母是溶液总质量（溶质质量与溶剂质量之和）。\n不能用盐质量除以水质量（35÷105≈33.3%）当作溶液的质量分数。因为该结果只是盐与水的质量比，而质量分数要求的分母必须是溶液总质量（盐+水），不是单独的水；以溶剂为分母会得到错误的浓度，违背本课定义与边界。"
+  },
+  "result": {
+    "assessmentVersionId": "assessment_version_43c8dadd-50bf-4f34-873a-5e64a6f2e52e",
+    "title": "独立检查：区分溶质溶剂溶液质量并计算质量分数及恢复组分质量",
+    "attempt": {
+      "id": "assessment_attempt_e434665f-0b36-4b9d-9d1b-5f5a608497b4",
+      "assessmentVersionId": "assessment_version_43c8dadd-50bf-4f34-873a-5e64a6f2e52e",
+      "workspaceId": "ws_aa72a586-24eb-4155-8564-179b5ef34c4b",
+      "ordinal": 1,
+      "status": "submitted",
+      "responses": {
+        "assessment_item_89af1e95-fef3-43f7-84f0-9d993a00c69a": "盐的质量 = 140克 × 0.25 = 35克；水的质量 = 140克 - 35克 = 105克。\n溶质质量分数的定义：溶质质量 ÷ 溶液总质量，常写成百分数。其分母是溶液总质量（溶质质量与溶剂质量之和）。\n不能用盐质量除以水质量（35÷105≈33.3%）当作溶液的质量分数。因为该结果只是盐与水的质量比，而质量分数要求的分母必须是溶液总质量（盐+水），不是单独的水；以溶剂为分母会得到错误的浓度，违背本课定义与边界。"
+      },
+      "startedAt": "2026-09-14T12:03:44.931Z",
+      "submittedAt": "2026-09-14T12:04:25.111Z",
+      "cancelledAt": null
+    },
+    "items": [
+      {
+        "itemId": "assessment_item_89af1e95-fef3-43f7-84f0-9d993a00c69a",
+        "prompt": "有一份盐溶液，总质量140克，质量分数25%（即小数0.25）。本课假设盐完全溶解、无蒸发洒失，质量以克计。请计算该溶液中盐的质量和水的质量；写出溶质质量分数的定义并指出其分母；同时说明若用算出的盐质量除以水质量得到的比例能否当作溶液的质量分数，为什么。",
+        "purpose": "检验你是否能在自己的表述中说明这个关键能力。",
+        "sourceReferences": [
+          {
+            "materialTitle": "溶液质量分数与加水稀释",
+            "locationLabel": "第 1 段",
+            "excerpt": "溶液由溶质和溶剂组成。溶质质量分数定义为“溶质质量÷溶液总质量”，常写成百分数。溶液总质量是溶质与溶剂质量之和。例如把20克盐完全溶在80克水中，溶液质量为100克，盐的质量分数为20/100=20%。若用20除以80得到25%，那是盐与水的质量比，不能当作该溶液的质量分数。",
+            "advisory": false
+          },
+          {
+            "materialTitle": "溶液质量分数与加水稀释",
+            "locationLabel": "第 2 段",
+            "excerpt": "本课所有盐都能完全溶解，不发生化学反应，没有洒失或蒸发；讨论的质量均以克计，不从体积推质量。可以把百分数写成小数计算：20%就是0.20，所以200克、质量分数15%的盐溶液含盐200×0.15=30克，其余170克为水。给出总质量与质量分数，可以分别恢复溶质和溶剂质量。",
+            "advisory": false
+          }
+        ]
+      }
+    ],
+    "result": {
+      "gradeRecordId": "grade_84f5e175-99c2-4651-bf14-403663d3c0ab",
+      "demonstrated": true,
+      "summary": "你已经展示了这项关键能力。",
+      "minorNotice": null,
+      "criteria": [
+        {
+          "criterionId": "criterion_2d80cd92-d248-42ea-a907-d96dcb00b9e2",
+          "label": "正确计算盐质量=140×0.25=35克，水质量=140-35=105克（或等价表述）。",
+          "result": "met",
+          "message": "这一点已经在回答中体现。"
+        },
+        {
+          "criterionId": "criterion_12a5e2a5-b743-4383-ae8e-b46c558debf3",
+          "label": "正确陈述溶质质量分数定义为溶质质量÷溶液总质量，分母为溶液总质量（溶质与溶剂质量之和）。",
+          "result": "met",
+          "message": "这一点已经在回答中体现。"
+        },
+        {
+          "criterionId": "criterion_e8a2385b-f333-41b8-9c1a-bc0f2ff6cc24",
+          "label": "指出盐质量除以水质量得到的是盐与水的质量比，不能当作溶液质量分数。",
+          "result": "met",
+          "message": "这一点已经在回答中体现。"
+        }
+      ],
+      "sourceReferences": [
+        {
+          "materialTitle": "溶液质量分数与加水稀释",
+          "locationLabel": "第 1 段",
+          "excerpt": "溶液由溶质和溶剂组成。溶质质量分数定义为“溶质质量÷溶液总质量”，常写成百分数。溶液总质量是溶质与溶剂质量之和。例如把20克盐完全溶在80克水中，溶液质量为100克，盐的质量分数为20/100=20%。若用20除以80得到25%，那是盐与水的质量比，不能当作该溶液的质量分数。",
+          "advisory": false
+        },
+        {
+          "materialTitle": "溶液质量分数与加水稀释",
+          "locationLabel": "第 2 段",
+          "excerpt": "本课所有盐都能完全溶解，不发生化学反应，没有洒失或蒸发；讨论的质量均以克计，不从体积推质量。可以把百分数写成小数计算：20%就是0.20，所以200克、质量分数15%的盐溶液含盐200×0.15=30克，其余170克为水。给出总质量与质量分数，可以分别恢复溶质和溶剂质量。",
+          "advisory": false
+        }
+      ],
+      "evidenceStatus": "supported",
+      "repairEpisodeId": null,
+      "progressionPending": false,
+      "reviewSchedulingPending": false
+    },
+    "review": null
+  }
+}

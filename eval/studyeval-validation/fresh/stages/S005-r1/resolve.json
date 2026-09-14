@@ -1,0 +1,98 @@
+{
+  "inputIdentity": "15354e8f4a7aa3989e4bd18acd84685257fdfe26390351105393f534d0a47b7a",
+  "attempts": [
+    {
+      "physicalId": "71c89590-5e21-4ca4-ac5a-73e31021f623",
+      "caseId": "S005",
+      "runId": "S005-r1",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q2",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "artifact准确说明复制保留源并建目标、移动使源消失目标存，核心目标完整可用；但次要目标'改扩展名不证格式转换'在artifact中完全缺失，source有而未整合，属局部覆盖缺口不影响核心用途，评1。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/2",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "次要目标'说明改扩展名不证明格式转换'在lesson文本中未提及",
+            "impact": "核心复制/移动状态说明完整可用，省略次要目标不改变核心学习用途",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/2"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "40c4cc92e70defc3da0128c4041246cc57f4f23848ab1460eacc73b8fbb0adb2"
+              },
+              {
+                "pointer": "/goals/2",
+                "valueHash": "b524310b83946f4129f40f29a3aa35362a953ed7e94f6dd44c3c7a5466a7803b"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "40c4cc92e70defc3da0128c4041246cc57f4f23848ab1460eacc73b8fbb0adb2"
+          },
+          {
+            "pointer": "/goals/2",
+            "valueHash": "b524310b83946f4129f40f29a3aa35362a953ed7e94f6dd44c3c7a5466a7803b"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "f077626b6cc0dcadf32134e02c41925aefa4067f55b8ae7509353fb99642dc40"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q2:1",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "复制保留源文件并创建相同内容的目标；移动使源路径不再存在、目标路径保存文件。目标预先不存在，因此不涉及覆盖。",
+          "valueHash": "40c4cc92e70defc3da0128c4041246cc57f4f23848ab1460eacc73b8fbb0adb2"
+        },
+        "reason": "artifact文本未含扩展名或格式转换内容，而/goals/2声明该次要目标，遗漏成立；因非核心故local。"
+      },
+      {
+        "id": "review2:Q2:1",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "复制保留源文件并创建相同内容的目标；移动使源路径不再存在、目标路径保存文件。目标预先不存在，因此不涉及覆盖。",
+          "valueHash": "40c4cc92e70defc3da0128c4041246cc57f4f23848ab1460eacc73b8fbb0adb2"
+        },
+        "reason": "同上，artifact未整合次要目标，缺陷存在但仅局部影响覆盖。"
+      }
+    ]
+  }
+}

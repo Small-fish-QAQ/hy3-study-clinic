@@ -1,0 +1,156 @@
+{
+  "inputIdentity": "106e93cf68c0fd8f68017d6ea2277fc83f848fd8ec267ec94fd947fe5044b80b",
+  "attempts": [
+    {
+      "physicalId": "8a770ae3-0967-400b-9905-2f7426378431",
+      "caseId": "S026",
+      "runId": "S026-r1",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q4",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "题目禁止不确定强制唯一确定，与源欠定矛盾；作者答案政策强制123拒其他，错误键且禁用正确欠定回答，测试无效无法评估目标技能。",
+        "refs": [
+          "/question/prompt",
+          "/sources/0/text",
+          "/artifacts/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "题干要求否认不确定性强制唯一确定，与source前提矛盾，构成缺陷测试而非有效提问。",
+            "impact": "改变核心用途：正确指出欠定的学习者被拒，无法 eliciting 评估确定性的技能。",
+            "refs": [
+              "/question/prompt",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "39815d10f4ddb495b3e707c994ae16e233ed84581c64cdfe9bbd74910f5edf0f"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "61e32c85918a722e54332a389f76c5ef0721b03afb46040da613635927625724"
+              }
+            ]
+          },
+          {
+            "severity": "material",
+            "description": "作者答案政策(artifact)强制实际密码必为123且不接受其他，是从欠定前提推出的错误键且禁用正确欠定回答。",
+            "impact": "核心评分结论错误，若依此评判则奖励编造，实质缺陷。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "5b38b50e13116812fc8b0eb404dc82735ce29b4083d85f5906ec943ab8d8e74d"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "61e32c85918a722e54332a389f76c5ef0721b03afb46040da613635927625724"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "assessment": {
+          "key": "incorrect",
+          "validity": "invalid",
+          "exposure": "none",
+          "discrimination": "weak",
+          "demand": "reasoning",
+          "demandReason": "学生必须说明为何密码只能如此，超出抄写/复述，但前提欠定无合法基础。",
+          "reason": "题目(/question/prompt)禁不确定强制定唯一；作者答案(/artifacts/0/text)强制123拒其他，错误且禁用正确欠定；源(/sources/0/text)仅给60种组合无线索；priorExposure空故曝光none；无效测试判别力weak；要求解释故demand=reasoning。",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "39815d10f4ddb495b3e707c994ae16e233ed84581c64cdfe9bbd74910f5edf0f"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "5b38b50e13116812fc8b0eb404dc82735ce29b4083d85f5906ec943ab8d8e74d"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "61e32c85918a722e54332a389f76c5ef0721b03afb46040da613635927625724"
+            }
+          ]
+        },
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "39815d10f4ddb495b3e707c994ae16e233ed84581c64cdfe9bbd74910f5edf0f"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "61e32c85918a722e54332a389f76c5ef0721b03afb46040da613635927625724"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "5b38b50e13116812fc8b0eb404dc82735ce29b4083d85f5906ec943ab8d8e74d"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q4:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/question/prompt",
+          "quote": "不允许回答不确定。请唯一确定实际密码，并说明为什么只能如此。",
+          "valueHash": "39815d10f4ddb495b3e707c994ae16e233ed84581c64cdfe9bbd74910f5edf0f"
+        },
+        "reason": "题干明确禁止不确定并强制唯一确定，而/sources/0/text声明无额外线索，二者矛盾，构成缺陷测试。"
+      },
+      {
+        "id": "review1:Q4:2",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "实际密码必定123，不接受其他答案。",
+          "valueHash": "5b38b50e13116812fc8b0eb404dc82735ce29b4083d85f5906ec943ab8d8e74d"
+        },
+        "reason": "artifact强制123且拒其他，但/sources/0/text仅给欠定条件，该键错误且禁用正确欠定回答。"
+      },
+      {
+        "id": "review2:Q4:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/question/prompt",
+          "quote": "不允许回答不确定。请唯一确定实际密码，并说明为什么只能如此。",
+          "valueHash": "39815d10f4ddb495b3e707c994ae16e233ed84581c64cdfe9bbd74910f5edf0f"
+        },
+        "reason": "合并指控属实：题干禁不确定强制定唯一与源欠定矛盾，artifact强制123拒其他为错误密钥且禁用正确欠定，material。"
+      }
+    ]
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "id": "S023",
+  "dimensions": [
+    "Q2"
+  ],
+  "evidence": {
+    "sources": [
+      {
+        "id": "rule",
+        "text": "脚注以编号连接正文中的标记和页下注释；正文同号标记指向同一条注释。"
+      }
+    ],
+    "goals": [
+      "拟定一个保留脚注阅读目标的课程方案，不要求本次交付实际课文"
+    ],
+    "prerequisites": [],
+    "desiredDepth": "working_fluency",
+    "authorityBoundaries": [],
+    "artifacts": [
+      {
+        "id": "curriculum",
+        "text": "单元目标：按正文编号查到对应脚注，并解释注释补充哪项信息。活动：给含两个编号的短文，让学习者逐一配对并说明关联。以两次正确配对和解释作为本单元检查。"
+      }
+    ],
+    "exposure": []
+  }
+}

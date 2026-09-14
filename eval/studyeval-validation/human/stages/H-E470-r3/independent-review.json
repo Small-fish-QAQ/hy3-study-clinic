@@ -1,0 +1,49 @@
+{
+  "inputIdentity": "212f853ac948a380561f47aa4e85f7ce0572eb2838819f3a9e5d5d99ff2f0a69",
+  "attempts": [
+    {
+      "physicalId": "810668f6-2053-4e50-974c-90e9778154d9",
+      "caseId": "E470",
+      "runId": "H-E470-r3",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "lesson中件数比较、比例计算、合并比例116/140≈82.9%、不可直接平均、需难度信息论能力、纵轴截断不改原差值等主张均与source一致，无数字错误或越界推论，实质断言受资料支持。",
+        "refs": [
+          "/sources/0/text",
+          "/artifacts/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "d285228b9962482d5b8d81456178a4eb5cad39d02c75d3a204457e6093fff0ba"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "bbaae6498ec01e1f3a2726e79b3196337ade6c3c6fe50344b4bd0f3cba93b267"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

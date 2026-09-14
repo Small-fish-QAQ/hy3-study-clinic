@@ -1,0 +1,49 @@
+{
+  "inputIdentity": "644382f3172fe2a45e9dc679bff506f412fb6da486166c3b89b07c821d2ea6ec",
+  "attempts": [
+    {
+      "physicalId": "e4869177-6c77-4c45-938a-54e753a4cf7c",
+      "caseId": "S098",
+      "runId": "S098-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q2",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "lesson文本对整袋换算、每100克基准区分及日期批次作用均给出准确操作说明，覆盖全部核心与次要目标，深度满足working_fluency，无缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "f83a50b56f9534c12f527194fee68004b7f5536171b682e50023ee31374792e2"
+          },
+          {
+            "pointer": "/goals",
+            "valueHash": "71b13cc1a085f8ddbb92a4bbebdedb746993b27a666f3cfe783b754e5aab3c16"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

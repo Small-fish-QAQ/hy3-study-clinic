@@ -1,0 +1,49 @@
+{
+  "inputIdentity": "1b98dc7f0ecda33ee7d472b966452872b4ee21d8e85d484a36578291d206b565",
+  "attempts": [
+    {
+      "physicalId": "a6ac64e6-9f68-46ce-ac6b-3bb0a3f6ea36",
+      "caseId": "S094",
+      "runId": "S094-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q2",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "课程文本准确覆盖三目标：叙述者非作者、第一人称知感与限知规则、引用归属标记示例，提供可用操作规则，达working_fluency深度。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "f06c41473aa7af3af43adc2ee10638ca2d93bffca4f99b6be4f4a14c7bf8e60c"
+          },
+          {
+            "pointer": "/goals",
+            "valueHash": "8b78e8c669075a0ea86f5033dbbe2b4722fc4b29b6264d26b8764fba22ae73f4"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,123 @@
+{
+  "task": {
+    "caseId": "S024",
+    "runId": "S024-r3",
+    "replicate": 3,
+    "path": "dataset/studyeval/S024.json",
+    "inputHash": "7ba74f3eeb001ab1e37f3e24117aa77d2d715a1d1de9955170754623eae0a8b1"
+  },
+  "inputHash": "7ba74f3eeb001ab1e37f3e24117aa77d2d715a1d1de9955170754623eae0a8b1",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "fa33f64a14983ca9f1e831b5743e0a2f9013cf86ce04f77f297de1b38d1cd394",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "交付物正确识别原答案虚构唯一指代的缺陷，依规则指出两对象皆可能，给改写示例，并提供换语境的具体下一检查题以测迁移，符合完整标准。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text",
+              "/answer"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "ec7647254d93213dd9b21e35be2e319148cdb778ea291fc0ec72f50427519fae"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "69fef873755638b051db652f07b0960110732e94a4812af3f6f8b85635905051"
+              },
+              {
+                "pointer": "/answer",
+                "valueHash": "abf18d017b251abcfc4f8dd9fc651eac5dea3ae68e56d7624fa289ba5dec50f4"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "修复稿准确识别原答案“一定是小乔”违背歧义规则，指出两人皆可能指代；给出重复名字改写的具体示范；并提供新语境“安娜给贝拉”要求列解释并改写，检验迁移。符合Q6完整标准，无缺陷。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "ec7647254d93213dd9b21e35be2e319148cdb778ea291fc0ec72f50427519fae"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "69fef873755638b051db652f07b0960110732e94a4812af3f6f8b85635905051"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q6",
+          "level": 2,
+          "evidence": "sufficient",
+          "reason": "交付物正确识别原答案虚构唯一指代的缺陷，依规则指出两对象皆可能，给改写示例，并提供换语境的具体下一检查题以测迁移，符合完整标准。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text",
+            "/answer"
+          ],
+          "defects": [],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "ec7647254d93213dd9b21e35be2e319148cdb778ea291fc0ec72f50427519fae"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "69fef873755638b051db652f07b0960110732e94a4812af3f6f8b85635905051"
+            },
+            {
+              "pointer": "/answer",
+              "valueHash": "abf18d017b251abcfc4f8dd9fc651eac5dea3ae68e56d7624fa289ba5dec50f4"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "840bc0fe22bf8f47fe79606f91813ed15a3fbd2b672d967820df237d9019b0de"
+  }
+}

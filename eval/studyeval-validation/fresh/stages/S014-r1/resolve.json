@@ -1,0 +1,126 @@
+{
+  "inputIdentity": "c863ca487a1c3aa284d8a68de1c0f4796d83cdcb710c20c26590345acd3a3485",
+  "attempts": [
+    {
+      "physicalId": "80fa191a-5671-473e-8da9-9db928f2fa63",
+      "caseId": "S014",
+      "runId": "S014-r1",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q4",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "题目问负高度含义，资料明说负值在海平面下，作者键正确。但声明深度working_fluency要求执行解释，此题仅检索事实，判别力弱，局部缺陷。",
+        "refs": [
+          "/question/prompt",
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "仅测试回忆资料中明确陈述，未要求应用连续变化或解释方法",
+            "impact": "核心考察规则记忆成立，但未达working_fluency深度，不改变核心用途",
+            "refs": [
+              "/question/prompt",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "28b92e84fa93cd953d3165f1ec0b8a92a69100e2ac4b2b337c7b0959ca0f93c8"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "1df9950edf389e68cc4353ad1c364ae71b323e3e1d130830ce39d9c5e25fe7f3"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "assessment": {
+          "key": "correct",
+          "validity": "valid",
+          "exposure": "none",
+          "discrimination": "weak",
+          "demand": "retrieval",
+          "demandReason": "学生只需从资料中识别并复述‘负值在海平面下’的现成术语，无需计算或解释。",
+          "reason": "题干直接问资料中负高度表示，作者私有键‘海平面下。’与资料一致正确。priorExposure空无泄题。但desiredDepth为working_fluency，题仅检索，判别弱。",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "28b92e84fa93cd953d3165f1ec0b8a92a69100e2ac4b2b337c7b0959ca0f93c8"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "c71699535a6fe580afa7ca2f7b05d27f8ad5a9b19b73ffd2b4cd76d6792dd334"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "1df9950edf389e68cc4353ad1c364ae71b323e3e1d130830ce39d9c5e25fe7f3"
+            }
+          ]
+        },
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "28b92e84fa93cd953d3165f1ec0b8a92a69100e2ac4b2b337c7b0959ca0f93c8"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "c71699535a6fe580afa7ca2f7b05d27f8ad5a9b19b73ffd2b4cd76d6792dd334"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "1df9950edf389e68cc4353ad1c364ae71b323e3e1d130830ce39d9c5e25fe7f3"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q4:1",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/question/prompt",
+          "quote": "资料中负高度表示在海平面上还是下？",
+          "valueHash": "28b92e84fa93cd953d3165f1ec0b8a92a69100e2ac4b2b337c7b0959ca0f93c8"
+        },
+        "reason": "题干仅询问资料中现成术语含义，未要求应用规则计算或解释，与desiredDepth working_fluency不符，缺陷存在但局部。"
+      },
+      {
+        "id": "review2:Q4:1",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/sources/0/text",
+          "quote": "负值在海平面下",
+          "valueHash": "1df9950edf389e68cc4353ad1c364ae71b323e3e1d130830ce39d9c5e25fe7f3"
+        },
+        "reason": "资料明文给出负高度含义，题目仅检索该陈述，未测试连续变化应用，local缺陷成立。"
+      }
+    ]
+  }
+}

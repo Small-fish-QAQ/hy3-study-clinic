@@ -1,0 +1,78 @@
+{
+  "sourceId": "J07",
+  "sourceSha256": "ad0c497866c236455076a89e72b8fe9ebfd90774b831681909d5af280ef5aa7c",
+  "events": [
+    {
+      "at": "2026-09-14T11:27:09.619Z",
+      "stage": "preparation-step",
+      "state": "preparing_concepts",
+      "machineAction": "prepare_concepts"
+    },
+    {
+      "at": "2026-09-14T11:27:09.656Z",
+      "stage": "curriculum-accepted",
+      "curriculumId": "curriculum_40ec8752-2aef-4f87-9554-5fb42eaf09f5"
+    },
+    {
+      "at": "2026-09-14T11:27:09.819Z",
+      "stage": "preparation-step",
+      "state": "validating_course_plan",
+      "machineAction": "prepare_course_plan"
+    },
+    {
+      "at": "2026-09-14T11:27:09.861Z",
+      "stage": "preparation-stop",
+      "state": "complete",
+      "blocker": null
+    },
+    {
+      "at": "2026-09-14T11:34:30.148Z",
+      "stage": "lesson-user-retry",
+      "agendaItemId": "agenda_item_d5fdc01c-0643-4cd5-b021-62019e44c03f",
+      "initialStatus": "practice_retry_available",
+      "policy": "one-explicit-retry-when-offered"
+    },
+    {
+      "at": "2026-09-14T11:37:55.409Z",
+      "stage": "teaching",
+      "status": "failed",
+      "error": {
+        "name": "Error",
+        "message": "Lesson unavailable: practice_retry_available The accepted Lesson is preserved. Retry preparation to generate only its informal Practice."
+      }
+    }
+  ],
+  "teaching": [
+    {
+      "agendaItemId": "agenda_item_d5fdc01c-0643-4cd5-b021-62019e44c03f",
+      "learningUnitId": "cun_f4167883-5ad0-4c67-b78e-e3346bf9366e",
+      "status": "failed",
+      "sessionId": "study_session_eefbfa31-754b-4995-a832-46505ee2acce",
+      "preparationAttempts": [
+        {
+          "attempt": 1,
+          "status": "practice_retry_available"
+        },
+        {
+          "attempt": 2,
+          "status": "practice_retry_available"
+        }
+      ],
+      "error": {
+        "name": "Error",
+        "message": "Lesson unavailable: practice_retry_available The accepted Lesson is preserved. Retry preparation to generate only its informal Practice."
+      }
+    }
+  ],
+  "formal": [],
+  "tutor": [],
+  "workspaceId": "ws_ebf39ea6-6f3a-419a-8b5d-a1f86a25482f",
+  "materialId": "mat_fb6f5193-1535-4e82-bda5-fa6ed013e737",
+  "commandSequence": 10,
+  "contractId": "contract_1fa8af0a-35e2-489b-948c-e5b75f8debe5",
+  "status": "completed_with_observed_boundaries",
+  "counts": {
+    "physical": 18,
+    "logical": 15
+  }
+}

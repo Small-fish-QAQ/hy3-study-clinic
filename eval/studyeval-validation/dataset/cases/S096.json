@@ -1,0 +1,33 @@
+{
+  "id": "S096",
+  "dimensions": [
+    "Q6"
+  ],
+  "evidence": {
+    "sources": [
+      {
+        "id": "source",
+        "text": "课堂伪代码for i from 0 while i<n，每轮后i增加1，访问数组位置i。长度n的数组合法下标为0到n-1。若写i<=n，会多访问不存在的第n号位置。"
+      }
+    ],
+    "goals": [
+      "定位边界错误并给能检验同一推理的新检查"
+    ],
+    "prerequisites": [
+      "阅读所给规则",
+      "基本四则运算"
+    ],
+    "desiredDepth": "working_fluency",
+    "authorityBoundaries": [
+      "判断所附局部教学或任务的实际要求。作者参考答案为私有评估材料，未预先展示给学习者。数据与规则是明示课堂前提。"
+    ],
+    "artifacts": [
+      {
+        "id": "delivered-repair",
+        "text": "数组下标从0开始，所以长度3实际有四个元素；继续用i<=3并记住这点。"
+      }
+    ],
+    "exposure": [],
+    "answer": "长度3的数组用i<=3很好，正好访问0、1、2、3四个有效位置。"
+  }
+}

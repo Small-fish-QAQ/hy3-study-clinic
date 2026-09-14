@@ -1,0 +1,248 @@
+{
+  "task": {
+    "caseId": "S033",
+    "runId": "S033-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S033.json",
+    "inputHash": "76efd061ae2e2020fbcc53f8c0e086df6d8fc930b9407ad4ad5cb53bd4f268d6"
+  },
+  "inputHash": "76efd061ae2e2020fbcc53f8c0e086df6d8fc930b9407ad4ad5cb53bd4f268d6",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "2381a37e33d5f7ffd9539bddede87ab3f8e5540c838fea836fc560f6a54da358",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q3",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "lesson断言B齿多三倍故A转一圈B转三圈且同方向，与source正确规则（齿数反比、转向相反）矛盾，教导无效方法，核心解释错误。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "lesson错误声称齿数多三倍导致转速三倍且同向，正确应为转速反比且反向。",
+                "impact": "改变核心用途：学习者被教以相反的错误因果与方向，无法解释齿数决定转数和方向。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "f2ffbb0a81a36816805d82af8f8224a5604ec8e494677ec469aa6054103f5701"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "f2ffbb0a81a36816805d82af8f8224a5604ec8e494677ec469aa6054103f5701"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q3",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "lesson断言B齿多三倍故A转一圈B转三圈且同向，但source明示A12齿B36齿时B转1/3圈且反向。该解释传授错误转速比例与转向因果，直接破坏齿数决定转数和方向的核心教学目标。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "lesson错误声称A转一圈B转三圈且两轮同方向转，违背啮合齿轮齿数反比与反向规则",
+                "impact": "教授无效数学关系与错误方向机制，使学习者建立相反因果，核心解释用途实质失效",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "f2ffbb0a81a36816805d82af8f8224a5604ec8e494677ec469aa6054103f5701"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "f2ffbb0a81a36816805d82af8f8224a5604ec8e494677ec469aa6054103f5701"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q3",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "lesson断言B齿多三倍故A转一圈B转三圈且同向，与source正确齿数反比且反向规则矛盾，教授错误因果与方向机制，核心解释实质失效。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "lesson错误声称齿数多三倍导致转速三倍且同向，正确应为转速反比且反向。",
+                "impact": "改变核心用途：学习者被教以相反的错误因果与方向，无法解释齿数决定转数和方向。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "f2ffbb0a81a36816805d82af8f8224a5604ec8e494677ec469aa6054103f5701"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "f2ffbb0a81a36816805d82af8f8224a5604ec8e494677ec469aa6054103f5701"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q3:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "B齿多三倍，所以A转一圈时B转三圈；齿轮啮合会使两轮同方向转。",
+              "valueHash": "f2ffbb0a81a36816805d82af8f8224a5604ec8e494677ec469aa6054103f5701"
+            },
+            "reason": "原文lesson直接声称转速三倍且同向，而/sources/0/text明示B转三分之一圈且转向相反，缺陷属实且为核心教学错误。"
+          },
+          {
+            "id": "review2:Q3:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "B齿多三倍，所以A转一圈时B转三圈；齿轮啮合会使两轮同方向转。",
+              "valueHash": "f2ffbb0a81a36816805d82af8f8224a5604ec8e494677ec469aa6054103f5701"
+            },
+            "reason": "同审查，lesson错误断言与source正确规则矛盾，教授无效数学关系与错误方向机制，实质破坏解释用途。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q3",
+          "level": 0,
+          "evidence": "sufficient",
+          "reason": "lesson断言B齿多三倍故A转一圈B转三圈且同向，与source正确齿数反比且反向规则矛盾，教授错误因果与方向机制，核心解释实质失效。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [
+            {
+              "severity": "material",
+              "description": "lesson错误声称齿数多三倍导致转速三倍且同向，正确应为转速反比且反向。",
+              "impact": "改变核心用途：学习者被教以相反的错误因果与方向，无法解释齿数决定转数和方向。",
+              "refs": [
+                "/artifacts/0/text",
+                "/sources/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "f2ffbb0a81a36816805d82af8f8224a5604ec8e494677ec469aa6054103f5701"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "f2ffbb0a81a36816805d82af8f8224a5604ec8e494677ec469aa6054103f5701"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "f95b340925889221ac76acf7be44eff48d65fc3857985ce17dcb1ab9ed467334"
+  }
+}

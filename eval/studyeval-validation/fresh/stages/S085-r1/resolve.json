@@ -1,0 +1,180 @@
+{
+  "inputIdentity": "0711207abcbb357776fc35a5b31925e25e1eee1360f7957f6c793c15fa6d7631",
+  "attempts": [
+    {
+      "physicalId": "b72981e9-3e0d-40d9-9fc0-82b8a0a20c75",
+      "caseId": "S085",
+      "runId": "S085-r1",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q4",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "题干强制从初始未激活直接入场已有效并可成功，与source规则矛盾；作者私有答案错误声称未激活可直接入场，禁用正确否定，测试无效，核心评估用途落空。",
+        "refs": [
+          "/question/prompt",
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "题干/question/prompt要求说明从初始未激活直接入场已经有效并可成功，与/sources/0/text规则矛盾，构成不兼容响应要求。",
+            "impact": "改变核心用途：强制学生产出虚假结论，无法在真实规则下合法回答，测试实质缺陷。",
+            "refs": [
+              "/question/prompt",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "27d4aafb419668ab359eb1e1dd20bc53c0a4b11c543f54679805c57924642532"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "694fcf138ee515172ab2dd1c3a0a59baef8e0ee6b25086ed04ce3845111041ea"
+              }
+            ]
+          },
+          {
+            "severity": "material",
+            "description": "作者私有参考答案/artifacts/0/text声称'未激活可直接变为有效并入场'，违背/sources/0/text明示状态转换规则，为错误键。",
+            "impact": "改变核心用途：错误键支持矛盾前提，正确解（不可入场）被拒绝，评估目标落空。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "e75ea7bac5248792bf19eda5108404b84ef5a7446fb3ec136dbc30f089514279"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "694fcf138ee515172ab2dd1c3a0a59baef8e0ee6b25086ed04ce3845111041ea"
+              }
+            ]
+          },
+          {
+            "severity": "material",
+            "description": "题目与作者答案共同禁用正确否定，要求屈从虚假前提，无法合法评估状态转换技能。",
+            "impact": "改变核心用途：测试要求违背明示规则的错误断言，无法抽测目标技能。",
+            "refs": [
+              "/question/prompt",
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "27d4aafb419668ab359eb1e1dd20bc53c0a4b11c543f54679805c57924642532"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "e75ea7bac5248792bf19eda5108404b84ef5a7446fb3ec136dbc30f089514279"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "694fcf138ee515172ab2dd1c3a0a59baef8e0ee6b25086ed04ce3845111041ea"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "assessment": {
+          "key": "incorrect",
+          "validity": "invalid",
+          "exposure": "none",
+          "discrimination": "weak",
+          "demand": "reasoning",
+          "demandReason": "学生被要求基于错误前提解释为何未激活状态已有效并可入场；正确推理应指出矛盾，但题目要求屈从虚假前提，超出纯抄写但前提非法。",
+          "reason": "题目强制矛盾前提；作者答案/artifacts/0/text错误称未激活可直接入场；priorExposure空无泄露；题无效故判别弱；要求错误推理。",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "27d4aafb419668ab359eb1e1dd20bc53c0a4b11c543f54679805c57924642532"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "e75ea7bac5248792bf19eda5108404b84ef5a7446fb3ec136dbc30f089514279"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "694fcf138ee515172ab2dd1c3a0a59baef8e0ee6b25086ed04ce3845111041ea"
+            }
+          ]
+        },
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "27d4aafb419668ab359eb1e1dd20bc53c0a4b11c543f54679805c57924642532"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "e75ea7bac5248792bf19eda5108404b84ef5a7446fb3ec136dbc30f089514279"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "694fcf138ee515172ab2dd1c3a0a59baef8e0ee6b25086ed04ce3845111041ea"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q4:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/question/prompt",
+          "quote": "从初始状态执行入场，说明为何已经有效并可成功入场。",
+          "valueHash": "27d4aafb419668ab359eb1e1dd20bc53c0a4b11c543f54679805c57924642532"
+        },
+        "reason": "题干强制要求说明已有效并可成功，与/sources/0/text初始未激活及入场规则矛盾；作者答案支持该前提，禁用正确否定。"
+      },
+      {
+        "id": "review2:Q4:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "未激活可直接变为有效并入场。",
+          "valueHash": "e75ea7bac5248792bf19eda5108404b84ef5a7446fb3ec136dbc30f089514279"
+        },
+        "reason": "作者答案明确声称未激活可直接变有效并入场，违背/sources/0/text激活与入场分离规则，为错误键。"
+      },
+      {
+        "id": "review2:Q4:2",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/question/prompt",
+          "quote": "说明为何已经有效并可成功入场",
+          "valueHash": "27d4aafb419668ab359eb1e1dd20bc53c0a4b11c543f54679805c57924642532"
+        },
+        "reason": "题目从初始未激活直接入场违反/sources/0/text规则，构成不兼容响应要求，强制虚假结论。"
+      }
+    ]
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "inputIdentity": "0b8e38d5d0051a7aca4a5bd4d860e7a1f2a1d3cdb516deb1fa9aae1a6c073c11",
+  "attempts": [
+    {
+      "physicalId": "fa219171-bbc7-4a8e-b803-5d9ffa86aa08",
+      "caseId": "S017",
+      "runId": "S017-r1",
+      "stage": "blind-solution",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "status": "resolved",
+    "solution": "依/sources/0/text规则：初始-12米（海平面下）。上升7米加7：-12+7=-5米；下降4米减4：-5-4=-9米。最终高度-9米，负号表示位于海平面下方9米。条件明确，推导直接。",
+    "refs": [
+      "/question/prompt",
+      "/sources/0/text"
+    ],
+    "witnesses": [
+      {
+        "pointer": "/question/prompt",
+        "valueHash": "11aa36867e15609f53328e9af088ae92d75e3088959b7c2537ab6fe614b21e3f"
+      },
+      {
+        "pointer": "/sources/0/text",
+        "valueHash": "1df9950edf389e68cc4353ad1c364ae71b323e3e1d130830ce39d9c5e25fe7f3"
+      }
+    ]
+  }
+}

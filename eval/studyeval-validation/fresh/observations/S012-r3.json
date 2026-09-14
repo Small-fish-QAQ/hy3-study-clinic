@@ -1,0 +1,248 @@
+{
+  "task": {
+    "caseId": "S012",
+    "runId": "S012-r3",
+    "replicate": 3,
+    "path": "dataset/studyeval/S012.json",
+    "inputHash": "c1eb68e9f051ef917d2af2c6c0beeec0d9751490347b166389dfb8708c546ae9"
+  },
+  "inputHash": "c1eb68e9f051ef917d2af2c6c0beeec0d9751490347b166389dfb8708c546ae9",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "460d186d7cd51a9f56f74ec52143ed4bf73f44255de85f73bafc2d5c4906b51b",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q3",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "Artifact正确陈述B转1/3圈且反向，但仅称符合资料，未展示齿数到转数/方向的关键推导操作，缺失解释连接。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "Artifact仅陈述结论并说符合资料，未展示从A12齿B36齿、啮合通过齿数相等、外齿轮反向等前提推导结果的操作或理由。",
+                "impact": "结论正确但未建立解释，学习者需自行推断关键运算，未教错误机制，属局部解释缺失而非实质错误。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "dcb7d49988d0f9be3af2f95cecf3aa3153067a25e4dbd0227238970bc2bca47c"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "dcb7d49988d0f9be3af2f95cecf3aa3153067a25e4dbd0227238970bc2bca47c"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q3",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "artifact仅断言B转1/3圈且反向并称符合资料，未展示齿数12/36与啮合规则到结果的推理连接，解释缺失但结论正确，符Q3的1标准。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "缺失从给定齿数和啮合前提推导转数及转向的操作/原因展示",
+                "impact": "结论正确且资料支持，但学习者无法获知为何齿数决定结果，解释用途不充分但未教错误方法",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "dcb7d49988d0f9be3af2f95cecf3aa3153067a25e4dbd0227238970bc2bca47c"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "dcb7d49988d0f9be3af2f95cecf3aa3153067a25e4dbd0227238970bc2bca47c"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q3",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "Artifact正确陈述B转1/3圈且反向，但仅称符合资料，未展示齿数到转数/方向的关键推导操作，缺失解释连接，未教错误机制，属局部缺陷。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "缺失从给定齿数和啮合前提推导转数及转向的操作/原因展示",
+                "impact": "结论正确且资料支持，但学习者无法获知为何齿数决定结果，解释用途不充分但未教错误方法",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "dcb7d49988d0f9be3af2f95cecf3aa3153067a25e4dbd0227238970bc2bca47c"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "dcb7d49988d0f9be3af2f95cecf3aa3153067a25e4dbd0227238970bc2bca47c"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q3:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "A转一圈时，B准确转1/3圈且方向相反。这两个结果都符合资料。",
+              "valueHash": "dcb7d49988d0f9be3af2f95cecf3aa3153067a25e4dbd0227238970bc2bca47c"
+            },
+            "reason": "引文仅陈述结论并称符合资料，未展示从齿数等前提推导的操作或理由，证实缺失解释连接，但无错误机制，故local。"
+          },
+          {
+            "id": "review2:Q3:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "A转一圈时，B准确转1/3圈且方向相反。这两个结果都符合资料。",
+              "valueHash": "dcb7d49988d0f9be3af2f95cecf3aa3153067a25e4dbd0227238970bc2bca47c"
+            },
+            "reason": "artifact未展示推导操作/原因，仅断言符合资料，属局部解释缺失。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q3",
+          "level": 1,
+          "evidence": "sufficient",
+          "reason": "Artifact正确陈述B转1/3圈且反向，但仅称符合资料，未展示齿数到转数/方向的关键推导操作，缺失解释连接，未教错误机制，属局部缺陷。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [
+            {
+              "severity": "local",
+              "description": "缺失从给定齿数和啮合前提推导转数及转向的操作/原因展示",
+              "impact": "结论正确且资料支持，但学习者无法获知为何齿数决定结果，解释用途不充分但未教错误方法",
+              "refs": [
+                "/artifacts/0/text",
+                "/sources/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "dcb7d49988d0f9be3af2f95cecf3aa3153067a25e4dbd0227238970bc2bca47c"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "dcb7d49988d0f9be3af2f95cecf3aa3153067a25e4dbd0227238970bc2bca47c"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "ace89ad5ca02ffd389adaa93c89aa30f47a891be8f3686e0abb2fc9dee9067e7"
+  }
+}

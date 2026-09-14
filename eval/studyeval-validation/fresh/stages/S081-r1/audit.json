@@ -1,0 +1,83 @@
+{
+  "inputIdentity": "9072119a4a768cf9dfde5d5b111d509a876931aef8d6c77f7d8f2161308b42ac",
+  "attempts": [
+    {
+      "physicalId": "e05d46b5-5e00-4d64-a61a-175327b4257f",
+      "caseId": "S081",
+      "runId": "S081-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q6",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "交付物诊断学习者态度无证据，并教导错误规则“代词永远指向第一个出现的人”，违背所给歧义规则，核心修复用途被实质破坏，故0分。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "诊断发明学习者状态：指责学习者一向不认真且讨厌语言课，无原始证据支持。",
+            "impact": "改变核心用途：修复应针对推理缺口而非人身攻击，破坏学习目标。",
+            "refs": [
+              "/artifacts/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "126b4b2317299ae06be09a58650900641bcfa95612a290c4f6480e9672e1a9fc"
+              }
+            ]
+          },
+          {
+            "severity": "material",
+            "description": "干预教错误方法：声称代词永远指向第一个出现的人，违背source中需承认歧义、不能凭空推断的规则。",
+            "impact": "改变核心用途：强化未经支持的唯一指代判断，与修复目标相反。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "126b4b2317299ae06be09a58650900641bcfa95612a290c4f6480e9672e1a9fc"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "69fef873755638b051db652f07b0960110732e94a4812af3f6f8b85635905051"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "126b4b2317299ae06be09a58650900641bcfa95612a290c4f6480e9672e1a9fc"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "69fef873755638b051db652f07b0960110732e94a4812af3f6f8b85635905051"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

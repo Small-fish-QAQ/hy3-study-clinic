@@ -1,0 +1,54 @@
+{
+  "inputIdentity": "71a53b8e381677620fc4c2e965cf96d936e90bfe980d9136181f77f0c1c634f4",
+  "attempts": [
+    {
+      "physicalId": "53ba080a-4c05-438e-8bb9-c400edb369ac",
+      "caseId": "S072",
+      "runId": "S072-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q6",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "修复针对answer中改下标的错误，指出换物质并保留H2O改系数为2H2+O2→2H2O且计数；继而提出N2+H2→NH3填正整数系数并计数的新检查，具体可操作，满足目标对纠正与独立再检验的要求。",
+        "refs": [
+          "/artifacts/0/text",
+          "/answer",
+          "/goals/0"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "c984d217a8ba7622cabc5ae619c03efd1468b7270d5b64bc319da15715dff934"
+          },
+          {
+            "pointer": "/answer",
+            "valueHash": "e16225b1eff8991166dababd8058cab1ec0cbe17d1ddd5faddba138462339473"
+          },
+          {
+            "pointer": "/goals/0",
+            "valueHash": "df44a9a5408590f40907a7130b4254b35360c4f93b8aab8f59a260950db8f121"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

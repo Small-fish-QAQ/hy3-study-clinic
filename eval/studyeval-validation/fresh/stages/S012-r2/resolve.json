@@ -1,0 +1,93 @@
+{
+  "inputIdentity": "d6f531a8e2fe43c7aa8df91e1649d795c418aed1692a4447119df1990d7bf65c",
+  "attempts": [
+    {
+      "physicalId": "05f8d0ca-5eb7-4ac9-bf4f-f3d09592ee7f",
+      "caseId": "S012",
+      "runId": "S012-r2",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q3",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "产物仅断言B转1/3圈且反向符合资料，未展示齿数规则到结果的推理连接，缺失解释齿数决定机制的操作用途，但结论正确，属局部缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "未展示从给定齿数及啮合规则到转数及转向的操作/理由，仅断言结果符合资料",
+            "impact": "核心正确结论成立，但解释性连接缺失，学习者不知齿数为何决定结果",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "dcb7d49988d0f9be3af2f95cecf3aa3153067a25e4dbd0227238970bc2bca47c"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "dcb7d49988d0f9be3af2f95cecf3aa3153067a25e4dbd0227238970bc2bca47c"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q3:1",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "A转一圈时，B准确转1/3圈且方向相反。这两个结果都符合资料。",
+          "valueHash": "dcb7d49988d0f9be3af2f95cecf3aa3153067a25e4dbd0227238970bc2bca47c"
+        },
+        "reason": "引文仅断言结果符合资料，未展示从齿数到转数及转向的操作或理由，缺陷成立为局部。"
+      },
+      {
+        "id": "review2:Q3:1",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "A转一圈时，B准确转1/3圈且方向相反。这两个结果都符合资料。",
+          "valueHash": "dcb7d49988d0f9be3af2f95cecf3aa3153067a25e4dbd0227238970bc2bca47c"
+        },
+        "reason": "引文未展示齿轮啮合规则与齿数前提推导转数方向的关键连接，缺陷成立为局部，不影响结果正确。"
+      }
+    ]
+  }
+}

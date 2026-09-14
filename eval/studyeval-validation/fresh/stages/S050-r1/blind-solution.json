@@ -1,0 +1,36 @@
+{
+  "inputIdentity": "3fdf5078f0924be7c293a6482dff96d001ed01495fda449b5978241c7da90d9e",
+  "attempts": [
+    {
+      "physicalId": "5f98cd65-2910-49e1-a634-4160a93fcd45",
+      "caseId": "S050",
+      "runId": "S050-r1",
+      "stage": "blind-solution",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "status": "resolved",
+    "solution": "依/sources/0/text假定A={1,2},B={2,3}，并集为属于任一集合的不同元素，即{1,2,3}。必要条件：明确A、B元素；可接受解法：列举两集元素去重合并。",
+    "refs": [
+      "/question/prompt",
+      "/sources/0/text"
+    ],
+    "witnesses": [
+      {
+        "pointer": "/question/prompt",
+        "valueHash": "d6444630e214e8c1957d29925ae3850ab17e4d454700814e3daa72f9286df7a3"
+      },
+      {
+        "pointer": "/sources/0/text",
+        "valueHash": "a5384e5168414c3fb7fdaf9d41facc61921578fe1399ba0c69cb62aa2103ce93"
+      }
+    ]
+  }
+}

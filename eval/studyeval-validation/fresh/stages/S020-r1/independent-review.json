@@ -1,0 +1,64 @@
+{
+  "inputIdentity": "a61e3ed2e31b064086f638ec72585caa54a582cd047508ae61339484f18911c2",
+  "attempts": [
+    {
+      "physicalId": "55d9c686-63b1-43c3-8bc9-eb618c72e211",
+      "caseId": "S020",
+      "runId": "S020-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q3",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "产物给出2^(-3)=1/8及公式a^(-n)=1/a^n且a≠0，结论正确且限制无误。但仅要求记住公式，未从所给前提展示推导负指数为何表倒数，缺失解释连接，属局部缺陷，核心用途成立故评1。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "未展示从已知规则(如a^0=1、指数除法)到a^(-n)=1/a^n的推导，仅陈述公式与例子并要求记忆，未解释'为何'。",
+            "impact": "核心公式与反例正确，目标中'解释为何'未满足但不改变正确性，局部教学用途仍成立。",
+            "refs": [
+              "/artifacts/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "503612323f61641afcb92e50d949e6ee494cd24f0dd8e33adf41d74483f34a66"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "503612323f61641afcb92e50d949e6ee494cd24f0dd8e33adf41d74483f34a66"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "8f66df12d54e18d234589d8c047330d6ce2ae196b074b8083cf0629060128d07"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

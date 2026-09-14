@@ -1,0 +1,121 @@
+{
+  "inputIdentity": "56c6150aab09bf8eabb073710debd70bc139aa226d558d0885e4b0c09d6e0baa",
+  "attempts": [
+    {
+      "physicalId": "560f367d-0a83-444d-bb57-04ee814a3cab",
+      "caseId": "S070",
+      "runId": "S070-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q4",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "题目XOR(1,1)强制解释输出必为1，但来源规则明确两1出0，矛盾使题无效。作者私有答案同样错称出1。无提前曝光。测试强制错误结论，无法鉴别真理解，属实质缺陷。",
+        "refs": [
+          "/question/prompt",
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "题目强制要求解释XOR(1,1)输出必定是1，但明示规则规定两输入均1时输出0，要求与事实矛盾",
+            "impact": "改变核心用途：测试无法合法完成，奖励错误结论或迫使学生违背规则",
+            "refs": [
+              "/question/prompt",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "a4781f9fd5ee23b934cb075dbbdbc0be7c3e9d3f2c61c29fc7e5eca2d3a57b0b"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "abe0ee3fc063cc9ca8e5695fcc7196cbc85922a703ddb540aee12d9b2456e392"
+              }
+            ]
+          },
+          {
+            "severity": "material",
+            "description": "作者参考键声称两输入都有1因此输出1，违背所给异或规则",
+            "impact": "提供错误标准，使评分必然错误",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "90074a9dd86f13f48f8c9437a0d295c6f90dde37815ed2c400c505eace19aecf"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "abe0ee3fc063cc9ca8e5695fcc7196cbc85922a703ddb540aee12d9b2456e392"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "assessment": {
+          "key": "incorrect",
+          "validity": "invalid",
+          "exposure": "none",
+          "discrimination": "weak",
+          "demand": "reasoning",
+          "demandReason": "学生需根据给定规则计算XOR(1,1)并解释，但题目强制错误结论，实际要求证成错误输出",
+          "reason": "题目XOR(1,1)并解释必为1，与source规则矛盾；作者答案错称出1；无提前曝光；强制错误使判别力弱。",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "a4781f9fd5ee23b934cb075dbbdbc0be7c3e9d3f2c61c29fc7e5eca2d3a57b0b"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "90074a9dd86f13f48f8c9437a0d295c6f90dde37815ed2c400c505eace19aecf"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "abe0ee3fc063cc9ca8e5695fcc7196cbc85922a703ddb540aee12d9b2456e392"
+            }
+          ]
+        },
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "a4781f9fd5ee23b934cb075dbbdbc0be7c3e9d3f2c61c29fc7e5eca2d3a57b0b"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "90074a9dd86f13f48f8c9437a0d295c6f90dde37815ed2c400c505eace19aecf"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "abe0ee3fc063cc9ca8e5695fcc7196cbc85922a703ddb540aee12d9b2456e392"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

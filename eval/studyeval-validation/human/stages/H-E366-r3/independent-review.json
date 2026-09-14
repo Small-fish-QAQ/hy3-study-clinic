@@ -1,0 +1,64 @@
+{
+  "inputIdentity": "4af0e7113908122226a14b20a317b7d24caed7eb881d8bcdd28db0c8a3f03bf7",
+  "attempts": [
+    {
+      "physicalId": "7773db01-d0e7-454d-a1c7-029a93f05c53",
+      "caseId": "E366",
+      "runId": "H-E366-r3",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q3",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "产物给出两人12分、一人15分正确结论及条件，但未展示关键推理连接：并行时盖章开始需等裁纸与调墨较晚完成者(4分)，单人前两步串行7分再加8分。仅列时刻与泛化语，缺操作骨架，属局部解释缺失。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "缺失从并行前置条件到盖章开始时刻的关键连接（未说明需取max(4,3)=4），以及单人前两步耗时相加的推导展示。",
+            "impact": "结论正确且条件提及，但未展示必要推理步骤，使学习者需自行推断关键操作，不破坏核心答案但降低解释充分性。",
+            "refs": [
+              "/artifacts/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "c7ff6a9c213d042e991ce0cb292305417dc1e88aa2002451772e47e4e0b76944"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "c7ff6a9c213d042e991ce0cb292305417dc1e88aa2002451772e47e4e0b76944"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

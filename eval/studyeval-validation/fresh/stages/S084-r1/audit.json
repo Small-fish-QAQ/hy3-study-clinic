@@ -1,0 +1,69 @@
+{
+  "inputIdentity": "f93cf7cc3e6f781f51c33815580c44d6a4385ab6f9c3ffeb25d74737e0efe1e3",
+  "attempts": [
+    {
+      "physicalId": "99ad2013-8a37-4480-8556-eb758d38f4ed",
+      "caseId": "S084",
+      "runId": "S084-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "工件正确算得3072字节=3 KiB=3.072 kB并说明基数不同不改变文件内容，但错误归属资料第一条示例为图片，而来源明确第一条为文本文件。核心换算与结论正确，归属错属局部缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "工件称'资料第一条示例使用图片'，但来源指出第一条示例用文本文件、第二条才用图片。",
+            "impact": "单位换算核心答案与'表示不改变内容'结论仍正确；修正示例归属后主要推理与学习目标（核对换算及归属）即可成立，未改变核心机制。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "8f5b7afa0804efc7b740aed2a819f388dcd9bc9151fe081f4c6ef990d3efd750"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "9962889a586bcebaf05685b990e16a73f43aca209ab59334e74cf9c8606897a1"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "8f5b7afa0804efc7b740aed2a819f388dcd9bc9151fe081f4c6ef990d3efd750"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "9962889a586bcebaf05685b990e16a73f43aca209ab59334e74cf9c8606897a1"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,76 @@
+{
+  "inputIdentity": "b06f2fb619711456388c7d09316e33217d4fd674f9230832bd55b071d883d7a5",
+  "attempts": [
+    {
+      "physicalId": "575fb4a7-dba0-4e4a-bc9a-2e544a95dc6e",
+      "caseId": "N-F02-tutor",
+      "runId": "H-N-F02-tutor-r3",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "导师回复准确转述资料中连续百分比基数不同的关键关系，用非价格果园例正确计算500*0.8=400、400*0.2=80得480，边界说明与资料假设一致，无虚构或事实错误。",
+        "refs": [
+          "/sources/0/text",
+          "/artifacts/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "eed51cb255d5d0e12ca505b4c60926d142df7cf81a0f73781aba0593d2870361"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "954d89e64d4ec170f31ac4dfe06ad06321e1631999a560553b02e626afa69d41"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      },
+      {
+        "dimension": "Q3",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "解释以果园例展示连续增减：减产20%剩400，再增产20%明确基于新基数400算得80终480，连接不抵消结论，并交代无取整/门槛边界，操作骨架清晰，满足局部解释充分性。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "954d89e64d4ec170f31ac4dfe06ad06321e1631999a560553b02e626afa69d41"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "eed51cb255d5d0e12ca505b4c60926d142df7cf81a0f73781aba0593d2870361"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

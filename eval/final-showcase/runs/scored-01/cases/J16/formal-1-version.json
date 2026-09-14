@@ -1,0 +1,85 @@
+{
+  "id": "assessment_version_847ff769-16cf-40e9-a11b-5c235ac6a9c4",
+  "definitionId": "assessment_3b13715e-f58b-4f21-a50b-bd4ef7b2a4b7",
+  "version": 1,
+  "predecessorId": null,
+  "status": "accepted",
+  "items": [
+    {
+      "id": "assessment_item_e2606c6a-32c3-4a33-bd2d-8fc74d6b61c2",
+      "sourceQuestionId": "que_5a655c29-6e76-4a95-ab7a-5dac1367abfd",
+      "index": 0,
+      "targetLearningUnitId": "cun_f5a29706-f9a9-41df-aa02-021b294751f5",
+      "targetObjectiveId": "obj_317202ae-88d4-49c3-a97f-f5572ac94c66",
+      "representation": "recall",
+      "questionType": "short_answer",
+      "prompt": "某新设企业刚成立时资产、负债、所有者权益均为0。依次发生两笔交易：(1)所有者投入现金500元；(2)向银行借入300元现金。请完成以下任务：\n1. 写出简化企业的会计等式，并分别定义资产、负债和所有者权益。\n2. 说明此时企业银行存款（现金）总额为800元，解释为何这800元不能等同于企业赚了800元利润，并指明两笔交易对等式右侧项目的影响区别。",
+      "rubric": [
+        {
+          "id": "criterion_57df3633-91d7-4e1e-9040-a6e6aad2161c",
+          "text": "正确写出等式“资产=负债+所有者权益”，并定义资产为企业控制的经济资源、负债为向外部债权人承担的偿还义务、所有者权益为资产扣除负债后归属于所有者的剩余权益。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_d670ebbb",
+            "blk_1_7c7605da",
+            "blk_2_0c41f77b"
+          ]
+        },
+        {
+          "id": "criterion_bffc7477-1f95-48a9-8d22-6a78d9ee3c83",
+          "text": "解释800元现金由所有者投入500元（增加所有者权益）和银行借款300元（增加负债）构成，说明投入为权益来源非收入、借款产生还款义务而非利润，因此不能仅因现金增加视为利润，并指明投入增权益、借款增负债的右侧影响区别。",
+          "required": true,
+          "sourceBindingIds": [
+            "blk_0_d670ebbb",
+            "blk_1_7c7605da",
+            "blk_2_0c41f77b"
+          ]
+        }
+      ],
+      "sourceBindings": [
+        {
+          "materialId": "mat_995394ff-48eb-4c27-87f7-e31c1e839c11",
+          "materialRevisionId": "rev_64df4353-f51e-49b6-b4e2-463108273ac4",
+          "sourceBlockId": "blk_0_d670ebbb",
+          "quote": "一个简化企业的会计等式为“资产=负债+所有者权益”。资产是企业控制的经济资源，例如现金和设备；负债是向外部债权人承担的偿还义务；所有者权益是资产扣除负债后归属于所有者的剩余权益。等式不是说资产只能来自股东投入，也不是说企业银行存款一定等于利润。",
+          "contentOrigin": "extracted_original",
+          "authoritative": true
+        },
+        {
+          "materialId": "mat_995394ff-48eb-4c27-87f7-e31c1e839c11",
+          "materialRevisionId": "rev_64df4353-f51e-49b6-b4e2-463108273ac4",
+          "sourceBlockId": "blk_1_7c7605da",
+          "quote": "本课只记录明确给出的交易，没有税费、利息、折旧、收入或费用；设备按购入成本记录。企业刚设立时三个总额均为0。所有者投入现金1000元后，现金资产增加1000元，所有者权益增加1000元，负债仍为0。此时1000=0+1000。所有者投入属于权益来源，在本模型中不记作营业收入。",
+          "contentOrigin": "extracted_original",
+          "authoritative": true
+        },
+        {
+          "materialId": "mat_995394ff-48eb-4c27-87f7-e31c1e839c11",
+          "materialRevisionId": "rev_64df4353-f51e-49b6-b4e2-463108273ac4",
+          "sourceBlockId": "blk_2_0c41f77b",
+          "quote": "企业向银行借入600元现金后，现金从1000元增至1600元，负债增加到600元，所有者权益仍为1000元。等式为1600=600+1000。借款使企业手里有更多现金，同时产生还款义务，因此不能仅因现金增加600元就称为赚了600元利润。",
+          "contentOrigin": "extracted_original",
+          "authoritative": true
+        }
+      ],
+      "formalEligible": true,
+      "policyReason": "FORMAL_ELIGIBLE"
+    }
+  ],
+  "sourceRevisionIds": [
+    "rev_64df4353-f51e-49b6-b4e2-463108273ac4"
+  ],
+  "createdAt": "2026-09-14T12:16:10.172Z",
+  "acceptedAt": "2026-09-14T12:16:10.173Z",
+  "authorityMode": "formal",
+  "progressionContext": {
+    "quizId": "qz_83b22705-3dcc-4a7e-87a9-f6bd016b0e32",
+    "contractVersionId": "contract_faaa9a07-7960-4c56-bc41-24de2c9cd3e9",
+    "curriculumVersionId": "curriculum_27e61a1b-9d5c-4f7e-9958-7d9f446bc7fe",
+    "studyPlanVersionId": "study_plan_5360ffed-b4da-4649-a535-03126eef0a24",
+    "agendaId": "agenda_d50905f2-009e-48f9-8951-fe3531a441c4",
+    "agendaItemId": "agenda_item_c990c7be-a62d-45ef-870d-a1f8fcca7177",
+    "assessmentKind": "formal_checkpoint",
+    "executionSourceManifestFingerprint": "manifest_ada7613f"
+  }
+}

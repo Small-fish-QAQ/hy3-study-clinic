@@ -1,0 +1,76 @@
+{
+  "inputIdentity": "95885415c3002446fd18c41018a7b9ed99956cdc86c87cd691fce4af2ed12f9a",
+  "attempts": [
+    {
+      "physicalId": "2885380f-7c11-49dd-8d42-103a5894cfe1",
+      "caseId": "N-F02-tutor",
+      "runId": "H-N-F02-tutor-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "引用资料准确，非价格例子计算正确（500*0.8=400, 400*0.2=80, 480），边界描述与资料一致，无事实或归属缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "954d89e64d4ec170f31ac4dfe06ad06321e1631999a560553b02e626afa69d41"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "eed51cb255d5d0e12ca505b4c60926d142df7cf81a0f73781aba0593d2870361"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      },
+      {
+        "dimension": "Q3",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "例子展示关键操作：第二步以新基数400计算20%得80，连接不抵消结论，并说明适用边界，解释充分无缺失连接。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "954d89e64d4ec170f31ac4dfe06ad06321e1631999a560553b02e626afa69d41"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "eed51cb255d5d0e12ca505b4c60926d142df7cf81a0f73781aba0593d2870361"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

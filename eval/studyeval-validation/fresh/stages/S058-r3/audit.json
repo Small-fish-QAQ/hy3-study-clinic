@@ -1,0 +1,82 @@
+{
+  "inputIdentity": "01a4707bb86736d37058e07dc67f0244f961c132a4a5f77cf58d4003097da111",
+  "attempts": [
+    {
+      "physicalId": "225232b7-716e-4a7c-896e-e9d2edd7ea74",
+      "caseId": "S058",
+      "runId": "S058-r3",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q4",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "题目基于明示异或规则，要求计算XOR(1,1)及后续门并说明两步，有效抽取working_fluency层的应用与解释能力；作者答案正确且未预先披露，判别力充足，无缺陷。",
+        "refs": [
+          "/question/prompt",
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "assessment": {
+          "key": "correct",
+          "validity": "valid",
+          "exposure": "none",
+          "discrimination": "adequate",
+          "demand": "application",
+          "demandReason": "学生须根据规则计算XOR(1,1)=0，再将0与1送入门计算XOR(0,1)=1，并解释每步条件，非单纯抄写公式。",
+          "reason": "独立解题得最终1；作者键与盲解一致且正确。priorExposure空，无泄露。题目需多步计算与解释，判别力足，非纯检索。",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "5758ea989ce8c301f73b0ed45829a3609edbc221481bcd3270fc98a8791ac7a6"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "e2fbdaa35f160eedb1d82f24f5a2ed324cb0d811fcc88707f2aaa77fbe0d8576"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "abe0ee3fc063cc9ca8e5695fcc7196cbc85922a703ddb540aee12d9b2456e392"
+            }
+          ]
+        },
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "5758ea989ce8c301f73b0ed45829a3609edbc221481bcd3270fc98a8791ac7a6"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "e2fbdaa35f160eedb1d82f24f5a2ed324cb0d811fcc88707f2aaa77fbe0d8576"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "abe0ee3fc063cc9ca8e5695fcc7196cbc85922a703ddb540aee12d9b2456e392"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

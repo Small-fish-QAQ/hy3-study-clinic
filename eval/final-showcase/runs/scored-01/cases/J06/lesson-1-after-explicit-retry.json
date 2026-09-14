@@ -1,0 +1,258 @@
+{
+  "status": "ready",
+  "message": "Lesson is ready.",
+  "course": {
+    "title": "动能为什么随速率的平方变化"
+  },
+  "session": {
+    "status": "active",
+    "version": 1
+  },
+  "agenda": {
+    "version": 1,
+    "itemState": "queued"
+  },
+  "lesson": {
+    "objective": {
+      "title": "动能公式含义、单位统一计算与比例反求",
+      "whyNow": "实验中我们常测得动能却不知质量或速率如何变化，需要先用模型反推变量，并清楚公式何处失效。",
+      "outcomes": [
+        {
+          "title": "解释经典低速平动动能模型E=1/2mv²的要素与边界",
+          "description": "解释在同一参考系中普通低速物体的平动动能公式E=1/2×m×v²：说明m为质量、v为速率（速度大小），质量用千克、速率用米每秒时结果为焦耳；要求同一参考系；并指出该式属于经典低速模型，本课不讨论接近光速运动，也不自动并入转动能量或其他储能。"
+        },
+        {
+          "title": "应用动能公式进行单位统一与正确计算",
+          "description": "应用E=1/2×m×v²计算动能：计算前统一单位，若质量以克给出先换算为千克；先平方速率再乘质量与1/2，不漏掉平方也不将v²误写为v×2；使用同一参考系与单位得出焦耳结果。"
+        }
+      ]
+    },
+    "prerequisites": [],
+    "segments": [
+      {
+        "index": 0,
+        "purpose": "orientation",
+        "explanation": "在同一参考系中，普通低速物体的平动动能可用E=1/2×m×v²表示。m是质量，v是速率（速度大小）。当质量用千克、速率用米每秒时，结果单位为焦耳。该式只计平动，不自动包含转动或其他储能，也不用于接近光速的运动。这是后续计算与反求的基础。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 1,
+        "purpose": "mechanism",
+        "explanation": "计算前先统一单位。例如一个500克物体以4米每秒运动，先把500克换成0.5千克，再算E=1/2×0.5×4²=4焦耳。平方运算必须在速率上完成，不能漏掉平方或误把速率乘质量指数。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [
+          {
+            "kind": "mechanism_effect",
+            "fromProposition": "质量换算为千克且速率取米每秒代入E=1/2 m v²",
+            "toProposition": "得到以焦耳为单位的平动动能",
+            "origin": "hy3_synthesis",
+            "sources": []
+          }
+        ],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 2,
+        "purpose": "guided_practice",
+        "explanation": "质量不变时，动能随速率平方变化；两因素同变则分别比较再相乘。下面检验一个具体变化量计算。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": {
+          "kind": "choose",
+          "prompt": "一辆3千克小车在同一参考系中速率从1米每秒变为3米每秒，质量恒定。其平动动能变化量是多少？",
+          "guidance": null,
+          "options": [
+            {
+              "id": "A",
+              "text": "增加12焦耳（末13.5减初1.5）"
+            },
+            {
+              "id": "B",
+              "text": "增加6焦耳（按速率差平方乘质量半数计算）"
+            }
+          ],
+          "presented": false,
+          "response": null,
+          "respondedAt": null,
+          "correct": null,
+          "feedback": null,
+          "credit": "none"
+        }
+      },
+      {
+        "index": 3,
+        "purpose": "comparison",
+        "explanation": "本模型有明确边界：仅适用于同一参考系中的经典低速平动。若速率接近光速，或物体还有转动、其他储能，则不能自动用该式代表总能量。下列对比帮助识别边界。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": {
+          "text": "速度为10米每秒的自行车可用E=1/2 m v²算平动动能；速度为0.9倍光速的粒子不能沿用该经典式，且式子本身不并入转动能量。",
+          "origin": "hy3_synthesis",
+          "sources": []
+        },
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 4,
+        "purpose": "worked_example",
+        "explanation": "计算动能前必须先统一单位：质量克转千克，速率保持米每秒，再代入E=1/2 m v²，且先平方速率。下面用一个新案例演示步骤并留出最终结果让你推算。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": {
+          "startingState": "物体质量250克、速率6米每秒，同一参考系，单位未统一",
+          "inputs": [
+            "质量250克",
+            "速率6米每秒"
+          ],
+          "ruleOrProcedure": "E=1/2 m v²，m用千克、v用米每秒；先换算质量，再平方速率相乘",
+          "steps": [
+            {
+              "action": "将250克换算为千克",
+              "reason": "计算前统一单位，1000克=1千克，故250克=0.25千克",
+              "resultingState": "质量0.25千克、速率6米每秒"
+            }
+          ],
+          "learnerDecision": null,
+          "result": null,
+          "whyResultFollows": null,
+          "origin": "hy3_synthesis",
+          "sources": [],
+          "interaction": {
+            "stage": "guided",
+            "modelledStepCount": 1,
+            "origin": "hy3_synthesis",
+            "sources": [],
+            "activity": {
+              "prompt": "上述统一单位后，物体的平动动能是多少？",
+              "options": [
+                {
+                  "id": "A",
+                  "text": "4.5焦耳"
+                },
+                {
+                  "id": "B",
+                  "text": "9焦耳"
+                },
+                {
+                  "id": "C",
+                  "text": "1.5焦耳"
+                }
+              ],
+              "response": null,
+              "respondedAt": null,
+              "correct": null,
+              "feedback": null,
+              "debrief": null,
+              "credit": "none",
+              "misconception": null
+            },
+            "hint": null,
+            "scaffold": null,
+            "transfer": null
+          }
+        },
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 5,
+        "purpose": "comparison",
+        "explanation": "动能公式有明确适用边界：仅用于同一参考系中的经典低速平动，不自动包含转动或其他储能，也不适用于近光速运动。识别边界可避免错误外推。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": {
+          "text": "一个在地面上以5米每秒滚动的自行车车轮，其平动动能可用1/2 m v²算，但轮子转动能量不并入该式；而一个以0.9倍光速运动的粒子不能沿用此经典式。",
+          "origin": "hy3_synthesis",
+          "sources": []
+        },
+        "possibleMisconception": null,
+        "informalCheck": null
+      }
+    ],
+    "sourceReferencesAvailable": true,
+    "visuals": [],
+    "summary": {
+      "available": true,
+      "text": "平动动能E=1/2 m v²在同一参考系、经典低速下成立，质量千克速率米每秒得焦耳；单位须统一，多因素变化按比例相乘，已知动能可反求速率或质量，但近光速或含转动时不在本式范围。",
+      "nextConnection": null,
+      "formalOpportunities": []
+    },
+    "plannedTime": {
+      "agendaMinutes": 23,
+      "activeMinutesMin": 26,
+      "activeMinutesMax": 41,
+      "basis": "locally_evaluated_learning_actions"
+    }
+  },
+  "progress": {
+    "stateVersion": 4,
+    "stateId": "lesson_execution_03352adf-32e5-453c-beba-e3c091ffc6e8",
+    "currentSegmentIndex": 0,
+    "segmentCount": 6,
+    "presentedSegmentIndexes": [],
+    "presentationStatus": "not_started",
+    "presentationCompletedAt": null
+  },
+  "currentInformalCheck": null,
+  "practice": {
+    "status": "locked",
+    "currentItemIndex": 0,
+    "itemCount": 2,
+    "item": {
+      "index": 0,
+      "objectiveTitle": "解释经典低速平动动能模型E=1/2mv²的要素与边界",
+      "construct": "explain",
+      "surface": "initial",
+      "supplementary": true,
+      "prompt": "在同一参考系中，两辆质量均为2千克的小车P、Q初速均为3米每秒，平动动能均为9焦耳。某装置作用后，P仅改变速率（质量不变），Q仅改变质量（速率不变）。测得作用后P动能36焦耳、Q动能18焦耳。据此可推出什么结果？",
+      "options": [
+        {
+          "id": "teaching_brief_1b4e4877-8629-4655-afd2-df78664e889b_practice_1_initial_A",
+          "text": "P新速率为6米每秒，Q新质量为4千克"
+        },
+        {
+          "id": "teaching_brief_1b4e4877-8629-4655-afd2-df78664e889b_practice_1_initial_B",
+          "text": "P新速率为√18≈4.24米每秒，Q新质量为8千克"
+        },
+        {
+          "id": "teaching_brief_1b4e4877-8629-4655-afd2-df78664e889b_practice_1_initial_C",
+          "text": "P新速率为12米每秒，Q新质量为1千克"
+        }
+      ]
+    },
+    "attempts": [],
+    "recovery": null,
+    "completedAt": null,
+    "credit": "none"
+  },
+  "allowedActions": [
+    "start_lesson"
+  ]
+}

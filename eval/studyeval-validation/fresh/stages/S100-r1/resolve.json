@@ -1,0 +1,93 @@
+{
+  "inputIdentity": "2bdad480ef104c72cff6cdf6989cfbd1e9066559e2fd17778f41ab6d5bcd20f4",
+  "attempts": [
+    {
+      "physicalId": "7d785d42-7ab6-478c-9872-12aad5a6d5d7",
+      "caseId": "S100",
+      "runId": "S100-r1",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q3",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "产物仅循环声称23×10=230因为答案是230，未利用位值规则或任何操作连接前提与结论，中心解释循环无效，破坏解释23乘10为何为230的目标，符合Q3的0分标准。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text",
+          "/goals/0"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "循环论证：23×10=230因为答案是230，230正确因为它是答案，未展示任何前提至结论的推理连接",
+            "impact": "破坏核心解释用途，学习者无法得知乘10为何得230的真正原因",
+            "refs": [
+              "/artifacts/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "01930794f2bcf25d45922738eee4fb910521a7f24e00a72706970145af85a814"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "01930794f2bcf25d45922738eee4fb910521a7f24e00a72706970145af85a814"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "a5942766dca625dc9fdbcdb1a2ff0c61c8d65317777cec648fe36832bba69f03"
+          },
+          {
+            "pointer": "/goals/0",
+            "valueHash": "8767ff128bd23c72c7dff0652a550264160083c2c48e531b521887db157e67d7"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q3:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "因为答案就是230，而230正确的原因是它是答案",
+          "valueHash": "01930794f2bcf25d45922738eee4fb910521a7f24e00a72706970145af85a814"
+        },
+        "reason": "引文显示解释仅以答案为答案循环论证，未从给定前提推导结果，直接推翻解释目标，支持material缺陷。"
+      },
+      {
+        "id": "review2:Q3:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "23×10=230，因为答案就是230，而230正确的原因是它是答案",
+          "valueHash": "01930794f2bcf25d45922738eee4fb910521a7f24e00a72706970145af85a814"
+        },
+        "reason": "引文证明产物循环重复答案，未利用/sources/0/text中位值规则建立连接，核心解释失效，指控成立。"
+      }
+    ]
+  }
+}

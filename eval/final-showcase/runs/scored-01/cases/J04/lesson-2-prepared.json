@@ -1,0 +1,182 @@
+{
+  "status": "ready",
+  "message": "Lesson is ready.",
+  "course": {
+    "title": "四分位数与四分位距"
+  },
+  "session": {
+    "status": "active",
+    "version": 12
+  },
+  "agenda": {
+    "version": 2,
+    "itemState": "queued"
+  },
+  "lesson": {
+    "objective": {
+      "title": "四分位数与四分位距：约定、计算与标记",
+      "whyNow": "给出一组派送时长，如何计算四分位距并判断哪个值需要复核而不是误删？",
+      "outcomes": [
+        {
+          "title": "应用1.5×IQR核查标记规则并正确解释标记意义",
+          "description": "应用明确的核查标记规则：计算下界=Q1−1.5×IQR、上界=Q3+1.5×IQR；严格小于下界或严格大于上界的数据被标记，恰好在界限上不标记。任何标记不等于证明数据错误，更不意味着可以不经判断自动删除，仅作为返回记录来源确认的信号（如可能是真实较长等待或录入问题）。"
+        }
+      ]
+    },
+    "prerequisites": [],
+    "segments": [
+      {
+        "index": 0,
+        "purpose": "orientation",
+        "explanation": "先考虑一组奇数个排序数据：响应时长（分钟）为3、5、7、9、11。按约定去掉正中7，低半组3、5得Q1=4；高半组9、11得Q3=10；IQR=6。下界=4-9=-5，上界=10+9=19。此例无越界。重点：四分位数依赖明确的分半与组内中位数，不是首尾平均；IQR只是中间跨度，标记规则用1.5×IQR给出核查界限，越界仅示警。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 1,
+        "purpose": "worked_example",
+        "explanation": "下面用资料中的偶数例贯穿计算与标记预测。资料所示排序数据2、3、5、7、8、10、12、15，先算四分位与IQR，再观察替换最大值后的标记结果。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": {
+          "startingState": "排序数据：2,3,5,7,8,10,12,15（分钟）。整体中位数(7+8)/2=7.5；低半组2,3,5,7→Q1=(3+5)/2=4；高半组8,10,12,15→Q3=(10+12)/2=11；IQR=7。",
+          "inputs": [
+            "将最大值15替换为40"
+          ],
+          "ruleOrProcedure": "下界=Q1-1.5×IQR，上界=Q3+1.5×IQR；严格越界才标记；替换后Q1,Q3不变（因极端值不影响半组中位数）。",
+          "steps": [
+            {
+              "action": "计算初始Q1、Q3、IQR及界限",
+              "reason": "按资料约定分半取中位",
+              "resultingState": "Q1=4,Q3=11,IQR=7,下界=-6.5,上界=21.5"
+            }
+          ],
+          "learnerDecision": null,
+          "result": null,
+          "whyResultFollows": null,
+          "origin": "hy3_synthesis",
+          "sources": [],
+          "interaction": {
+            "stage": "guided",
+            "modelledStepCount": 1,
+            "origin": "hy3_synthesis",
+            "sources": [],
+            "activity": {
+              "prompt": "若将最大值15替换为40，且Q1、Q3保持4和11，下列哪些记录被标记？",
+              "options": [
+                {
+                  "id": "A",
+                  "text": "仅40被标记，其余2,3,5,7,8,10,12未标记"
+                },
+                {
+                  "id": "B",
+                  "text": "无记录被标记，因为上界21.5大于40"
+                },
+                {
+                  "id": "C",
+                  "text": "2被标记，因为下界-6.5"
+                }
+              ],
+              "response": null,
+              "respondedAt": null,
+              "correct": null,
+              "feedback": null,
+              "debrief": null,
+              "credit": "none",
+              "misconception": null
+            },
+            "hint": null,
+            "scaffold": null,
+            "transfer": null
+          }
+        },
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 2,
+        "purpose": "comparison",
+        "explanation": "标记只触发来源核查，不等于错误证明。资料指出替换最大值至40虽被标记，仍可能是真实长等待或录入问题。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": {
+          "text": "若把标记值40直接删除，则可能在真实长等待场景中丢失有效记录；正确做法是返回来源确认后再决定。",
+          "origin": "hy3_synthesis",
+          "sources": []
+        },
+        "possibleMisconception": null,
+        "informalCheck": null
+      }
+    ],
+    "sourceReferencesAvailable": true,
+    "visuals": [],
+    "summary": {
+      "available": true,
+      "text": "先按明确约定分半取Q1、Q3，算IQR与1.5×IQR界限；严格越界才标记，标记仅示警。",
+      "nextConnection": null,
+      "formalOpportunities": []
+    },
+    "plannedTime": {
+      "agendaMinutes": 11,
+      "activeMinutesMin": 14,
+      "activeMinutesMax": 22,
+      "basis": "locally_evaluated_learning_actions"
+    }
+  },
+  "progress": {
+    "stateVersion": 2,
+    "stateId": "lesson_execution_ebda3c9e-7c62-4eea-9b3e-cbbf7f29f6d2",
+    "currentSegmentIndex": 0,
+    "segmentCount": 3,
+    "presentedSegmentIndexes": [],
+    "presentationStatus": "not_started",
+    "presentationCompletedAt": null
+  },
+  "currentInformalCheck": null,
+  "practice": {
+    "status": "locked",
+    "currentItemIndex": 0,
+    "itemCount": 1,
+    "item": {
+      "index": 0,
+      "objectiveTitle": "应用1.5×IQR核查标记规则并正确解释标记意义",
+      "construct": "apply",
+      "surface": "initial",
+      "supplementary": true,
+      "prompt": "在上述初始数据上，仅将其中一个值替换为新值，替换后数据集的Q1仍为3.5、Q3仍为10，且排序后仅最小位置出现一个严格小于下界-6.25的标记值，其余均无标记。据此，下列哪种情况必然成立？",
+      "options": [
+        {
+          "id": "teaching_brief_bcd0eada-5211-4b59-bc3a-b33a4b8441b3_practice_1_initial_A",
+          "text": "被替换的原始值是1，新值小于-6.25（例如-10），且它是唯一标记。"
+        },
+        {
+          "id": "teaching_brief_bcd0eada-5211-4b59-bc3a-b33a4b8441b3_practice_1_initial_B",
+          "text": "被替换的原始值是13，新值小于-6.25。"
+        },
+        {
+          "id": "teaching_brief_bcd0eada-5211-4b59-bc3a-b33a4b8441b3_practice_1_initial_C",
+          "text": "被替换的原始值是7，新值大于19.75。"
+        }
+      ]
+    },
+    "attempts": [],
+    "recovery": null,
+    "completedAt": null,
+    "credit": "none"
+  },
+  "allowedActions": [
+    "start_lesson"
+  ]
+}

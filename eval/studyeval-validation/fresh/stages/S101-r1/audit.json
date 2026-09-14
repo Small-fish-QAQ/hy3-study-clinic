@@ -1,0 +1,82 @@
+{
+  "inputIdentity": "0a7b33cef426751da7e7bb9138e44aa00d74e52972cf8f9d8c9ef856177390dd",
+  "attempts": [
+    {
+      "physicalId": "0744ebc1-f72a-41dd-a4df-63ee29477d91",
+      "caseId": "S101",
+      "runId": "S101-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q4",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "题目有效要求展示欠定并举两组合，作者答案正确，无泄露，学生需依约束自构实例并说明，属应用，判别力足。",
+        "refs": [
+          "/question/prompt",
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "assessment": {
+          "key": "correct",
+          "validity": "valid",
+          "exposure": "none",
+          "discrimination": "adequate",
+          "demand": "application",
+          "demandReason": "学生须据总数8且两色≥1约束自选两红球数算蓝球并说明满足，非抄现成数据。",
+          "reason": "题干问能否唯一确定并给两组合说明；私钥与盲解均正确给否及红1蓝7、红3蓝5；priorExposure空无泄露；需自构非检索。",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "6e35222514b3678631b97b82b69f390399f2baee79053ec5cc0cb9980929c813"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "300bb8d47cf5a3d8750d362cf2c3cf371d263c743739d948dbfdd78ca7b6aea4"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "5aad739453ecf71bb67b8231d512e4501272c0e19922e6b7b60be43255633d24"
+            }
+          ]
+        },
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "6e35222514b3678631b97b82b69f390399f2baee79053ec5cc0cb9980929c813"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "300bb8d47cf5a3d8750d362cf2c3cf371d263c743739d948dbfdd78ca7b6aea4"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "5aad739453ecf71bb67b8231d512e4501272c0e19922e6b7b60be43255633d24"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

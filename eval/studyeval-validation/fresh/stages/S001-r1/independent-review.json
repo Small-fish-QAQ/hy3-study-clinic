@@ -1,0 +1,49 @@
+{
+  "inputIdentity": "96451f77d185753f7ec83f295e3abeab2b6a659c3072d8e5c87f4142d2ba021f",
+  "attempts": [
+    {
+      "physicalId": "46eae2dd-9889-4310-8949-78f9ba7215f8",
+      "caseId": "S001",
+      "runId": "S001-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q2",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "教学文本用具体实例准确演示了复制后双路径存在且同内容、移动后原路径消失、改名不证格式转换，覆盖全部核心与次要目标，深度足够。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "73f1127c4c7350fb2bd6bd1e59bb68d183be28b5bf45308cea179236756823d5"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "f077626b6cc0dcadf32134e02c41925aefa4067f55b8ae7509353fb99642dc40"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

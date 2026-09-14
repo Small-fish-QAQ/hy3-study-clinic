@@ -1,0 +1,72 @@
+{
+  "inputIdentity": "0463ef407dc30c7deaf56172c63e6fd33f30c523e0a4e48a20d8791e132ae18d",
+  "attempts": [
+    {
+      "physicalId": "23eaeb46-2483-4c7c-82c1-f9d6b811d6d9",
+      "caseId": "E027",
+      "runId": "H-E027-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q4",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "题目给定独立可加假设，要求计算分段与合作的时长并比较；作者解正确且未提前泄露；学生需对新参数执行多步分数运算与比较，属应用而非检索，有效抽样目标技能。",
+        "refs": [
+          "/question/prompt",
+          "/artifacts/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "assessment": {
+          "key": "correct",
+          "validity": "valid",
+          "exposure": "none",
+          "discrimination": "adequate",
+          "demand": "application",
+          "demandReason": "学生须由甲8h乙4h算速度1/8、1/4，乙1h成1/4剩3/4，甲独做(3/4)/(1/8)=6h总7h；合作合速3/8需8/3h并比较，处理新实例而非抄写。",
+          "reason": "题目明示假设，求总时间并比较；作者参考解数值正确且未展示；无泄露；需应用计算，判别力足。",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text"
+          ],
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "dcf5dd89a64f0379c2a16c155095996cbf9b1dfd98e7b21c0cebe9fb5974918a"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "298f97e041cf6e72c2f79141bae8631b1df17304ecdaea27c01e89ba266e840d"
+            }
+          ]
+        },
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "dcf5dd89a64f0379c2a16c155095996cbf9b1dfd98e7b21c0cebe9fb5974918a"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "298f97e041cf6e72c2f79141bae8631b1df17304ecdaea27c01e89ba266e840d"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

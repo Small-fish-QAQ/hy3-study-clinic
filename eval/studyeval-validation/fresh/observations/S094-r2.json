@@ -1,0 +1,200 @@
+{
+  "task": {
+    "caseId": "S094",
+    "runId": "S094-r2",
+    "replicate": 2,
+    "path": "dataset/studyeval/S094.json",
+    "inputHash": "0fff78f2dfe87053a0b10791591f2b2b31d840ccdb68375c1ee7888cca74f925"
+  },
+  "inputHash": "0fff78f2dfe87053a0b10791591f2b2b31d840ccdb68375c1ee7888cca74f925",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "35bd3c2ac9a7d718bc28b86657a555a42fc78bb8cf0c02cb33855d24518726c4",
+    "stages": {
+      "goal-mapping": {
+        "goals": [
+          {
+            "index": 0,
+            "importance": "essential",
+            "status": "usable",
+            "reason": "直接声明小说里的“我”是叙述者，不能直接当作作者本人，区分了叙述者与现实作者。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/0"
+            ],
+            "quote": "小说里的“我”是叙述者，不能直接当作作者本人。",
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "f06c41473aa7af3af43adc2ee10638ca2d93bffca4f99b6be4f4a14c7bf8e60c"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "2b41e2bf08ab98b4ef000c50cebd55a20f14a001d93a4acdd0bee2a73360a806"
+              }
+            ]
+          },
+          {
+            "index": 1,
+            "importance": "essential",
+            "status": "usable",
+            "reason": "解释了第一人称叙述能报告自己的感受，并限制于不能全知，断言他人隐秘想法需文本依据。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/1"
+            ],
+            "quote": "它能报告自己的感受；要断言另一人物隐秘想法需要文本依据，不能凭第一人称视角全知。",
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "f06c41473aa7af3af43adc2ee10638ca2d93bffca4f99b6be4f4a14c7bf8e60c"
+              },
+              {
+                "pointer": "/goals/1",
+                "valueHash": "22d8faa697faa2a740550cc0d1cafef65fe438b94828227c311203c1333a76d9"
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "importance": "secondary",
+            "status": "usable",
+            "reason": "通过示例说明引用他人话语时可用“朋友说……”标出归属，满足说明归属标记的目标。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/2"
+            ],
+            "quote": "引用朋友的话可写“朋友说……”来标出归属。",
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "f06c41473aa7af3af43adc2ee10638ca2d93bffca4f99b6be4f4a14c7bf8e60c"
+              },
+              {
+                "pointer": "/goals/2",
+                "valueHash": "e6a9fe5f3b015bae44d40471551088d7d08a745fa66ebc11c00ab452a5d7dff2"
+              }
+            ]
+          }
+        ]
+      },
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "lesson明确区分叙述者与作者，解释第一人称可报告自身感受但不可全知他人隐秘想法，并给出引用归属的可操作写法，准确覆盖全部核心与次要目标，达到working_fluency深度，无缺陷。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text",
+              "/goals"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "f06c41473aa7af3af43adc2ee10638ca2d93bffca4f99b6be4f4a14c7bf8e60c"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "bae368a359568cf22d196cf95dd79a50368bc21f0e49042a004744bc3b0af43c"
+              },
+              {
+                "pointer": "/goals",
+                "valueHash": "8b78e8c669075a0ea86f5033dbbe2b4722fc4b29b6264d26b8764fba22ae73f4"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "课程文本准确区分叙述者与非作者，解释第一人称可知感受及需文本依据的限制，并给出引用归属标记的可操作写法，覆盖所有核心与次要目标达可用深度。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/0",
+              "/goals/1",
+              "/goals/2"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "f06c41473aa7af3af43adc2ee10638ca2d93bffca4f99b6be4f4a14c7bf8e60c"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "2b41e2bf08ab98b4ef000c50cebd55a20f14a001d93a4acdd0bee2a73360a806"
+              },
+              {
+                "pointer": "/goals/1",
+                "valueHash": "22d8faa697faa2a740550cc0d1cafef65fe438b94828227c311203c1333a76d9"
+              },
+              {
+                "pointer": "/goals/2",
+                "valueHash": "e6a9fe5f3b015bae44d40471551088d7d08a745fa66ebc11c00ab452a5d7dff2"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q2",
+          "level": 2,
+          "evidence": "sufficient",
+          "reason": "lesson明确区分叙述者与作者，解释第一人称可报告自身感受但不可全知他人隐秘想法，并给出引用归属的可操作写法，准确覆盖全部核心与次要目标，达到working_fluency深度，无缺陷。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text",
+            "/goals"
+          ],
+          "defects": [],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "f06c41473aa7af3af43adc2ee10638ca2d93bffca4f99b6be4f4a14c7bf8e60c"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "bae368a359568cf22d196cf95dd79a50368bc21f0e49042a004744bc3b0af43c"
+            },
+            {
+              "pointer": "/goals",
+              "valueHash": "8b78e8c669075a0ea86f5033dbbe2b4722fc4b29b6264d26b8764fba22ae73f4"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "a34c6e67c1df6c95c04e81395d4074d6ef148a552e21416584385e2a3e3bf098"
+  }
+}

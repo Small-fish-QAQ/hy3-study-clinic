@@ -1,0 +1,250 @@
+{
+  "task": {
+    "caseId": "E366",
+    "runId": "H-E366-r2",
+    "replicate": 2,
+    "path": "benchmark/cases/E366.json",
+    "inputHash": "9ddec8a0080a675ad35184be3719fb2aa7c0dea1fa6ed89b489fda08842779ba",
+    "population": "controlled",
+    "sourceId": "F10"
+  },
+  "inputHash": "9ddec8a0080a675ad35184be3719fb2aa7c0dea1fa6ed89b489fda08842779ba",
+  "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "7437f80f29c24190483c1c620db81bbdc140e67298d29b42b072362b2a896bf1",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q3",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "产物给出两人12分与一人15分的正确结论及先查依赖原则，但未展示从给定时长与依赖推导时刻的关键操作（如汇合等待、累加），也未说明例子适用边界（如工具互不冲突、晾干不占人）。核心答案正确，解释连接缺失，属局部缺陷。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "缺少从前提（步骤时长、依赖）到结果（具体时刻与总时长）的推理步骤展示，且未交代当前例子的适用边界（如并行需等较晚路径、资源假设）。",
+                "impact": "不改变核心用途（结论正确且给出了一般原则），但学习者需自行发明关键操作与限制，不符合解释充分性。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "c7ff6a9c213d042e991ce0cb292305417dc1e88aa2002451772e47e4e0b76944"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "c7ff6a9c213d042e991ce0cb292305417dc1e88aa2002451772e47e4e0b76944"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q3",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "artifact正确复述两人12分、一人15分及资源条件，但未展示从给定时长与依赖推导总时间的操作连接（如并行取max(4,3)=4始盖章），缺推理步骤展示，符合Q3的1分：结论正确但解释连接缺失。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "仅陈述结果和条件，未展示从前提（裁纸4、调墨3、依赖等）到总时间的推导操作或理由，如未说明并行时盖章等待较晚完成者。",
+                "impact": "学习者需自行发明关键运算，未完全达成讲清推理步骤的目标，但答案与source一致，不影响核心结论正确性。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "c7ff6a9c213d042e991ce0cb292305417dc1e88aa2002451772e47e4e0b76944"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "c7ff6a9c213d042e991ce0cb292305417dc1e88aa2002451772e47e4e0b76944"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q3",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "产物给出两人12分与一人15分正确结论及资源条件，但仅列时刻结果未展示并行汇合需等较晚路径的关键推理连接。核心答案正确，缺失解释连接属局部缺陷，得1分。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "未展示从给定并行时长（裁纸4、调墨3）到盖章开始时刻（4）的关键操作理由，如未说明需等待较晚完成的裁纸路径。",
+                "impact": "结论正确且资源假设已交代，但学习者需自行发明汇合等待操作，不符合解释充分性停止条件中的关键连接展示。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "c7ff6a9c213d042e991ce0cb292305417dc1e88aa2002451772e47e4e0b76944"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "c7ff6a9c213d042e991ce0cb292305417dc1e88aa2002451772e47e4e0b76944"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q3:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "两人且工具互不冲突时",
+              "valueHash": "c7ff6a9c213d042e991ce0cb292305417dc1e88aa2002451772e47e4e0b76944"
+            },
+            "reason": "artifact明确给出资源假设边界，推翻指控中'未交代资源假设'部分；但缺失从前提推导时刻的关键操作（如等待较晚路径）属实，故整体缺陷认定为local推理缺失。"
+          },
+          {
+            "id": "review2:Q3:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "裁纸4分钟、调墨3分钟从0并行，盖章4到6",
+              "valueHash": "c7ff6a9c213d042e991ce0cb292305417dc1e88aa2002451772e47e4e0b76944"
+            },
+            "reason": "引文直接陈述结果时刻，未说明并行时盖章等待较晚完成者（裁纸4分）的操作理由，缺失解释连接，与指控一致，属local。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q3",
+          "level": 1,
+          "evidence": "sufficient",
+          "reason": "产物给出两人12分与一人15分正确结论及资源条件，但仅列时刻结果未展示并行汇合需等较晚路径的关键推理连接。核心答案正确，缺失解释连接属局部缺陷，得1分。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [
+            {
+              "severity": "local",
+              "description": "未展示从给定并行时长（裁纸4、调墨3）到盖章开始时刻（4）的关键操作理由，如未说明需等待较晚完成的裁纸路径。",
+              "impact": "结论正确且资源假设已交代，但学习者需自行发明汇合等待操作，不符合解释充分性停止条件中的关键连接展示。",
+              "refs": [
+                "/artifacts/0/text",
+                "/sources/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "c7ff6a9c213d042e991ce0cb292305417dc1e88aa2002451772e47e4e0b76944"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "c7ff6a9c213d042e991ce0cb292305417dc1e88aa2002451772e47e4e0b76944"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "49efea421439b3877f8b161f39364b52d497576553873752b6e099ec3bec4acb"
+  }
+}

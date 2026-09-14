@@ -1,0 +1,122 @@
+{
+  "inputIdentity": "ef18b0d1da2242735b2a8814d2ace0401d3afc1a4676a700c07edd4b4921ee02",
+  "attempts": [
+    {
+      "physicalId": "2037b5ec-7309-452e-99b4-e209951c6ab0",
+      "caseId": "S032",
+      "runId": "S032-r2",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q6",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "交付物指出分数加法有错并建议复习通分，方向相关；但仅泛泛要求细心、多做练习，未具体点明分子分母分别相加的错误推理缺口，也未提供具体可操作的下一检查题或条件，符合Q6的1级（相关但泛泛，缺具体内容）。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text",
+          "/answer"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "建议复习通分相关但泛泛，且仅推荐多做练习未提供具体下一检查内容或条件",
+            "impact": "核心用途（指出错误与正确方向）成立，但缺少可使用的下一检验，不满足Q6完整2标准",
+            "refs": [
+              "/artifacts/0/text",
+              "/answer"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "f5d18a6174622da51a7f1212abe36dd87793f3029c1de466aaddf7a16a7dda2b"
+              },
+              {
+                "pointer": "/answer",
+                "valueHash": "5fa9a6e988796acce4dd7a033670180448bc29a07a9fa5e48255977034751897"
+              }
+            ]
+          },
+          {
+            "severity": "local",
+            "description": "诊断仅泛泛说有错应复习通分，未具体指出学生错误为分子分母分别相加，且未提供具体可用下一步检验题",
+            "impact": "建议与错误相关但缺乏具体帮助和检验，不改变指出错误并建议复习的核心用途，但达不到Q6的2级具体修复与检验标准。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text",
+              "/answer"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "f5d18a6174622da51a7f1212abe36dd87793f3029c1de466aaddf7a16a7dda2b"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "c4d75b2db6f5aa30dcec740ff8a4b7e07282347099740e24a9f3e2fd0f4bef58"
+              },
+              {
+                "pointer": "/answer",
+                "valueHash": "5fa9a6e988796acce4dd7a033670180448bc29a07a9fa5e48255977034751897"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "f5d18a6174622da51a7f1212abe36dd87793f3029c1de466aaddf7a16a7dda2b"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "c4d75b2db6f5aa30dcec740ff8a4b7e07282347099740e24a9f3e2fd0f4bef58"
+          },
+          {
+            "pointer": "/answer",
+            "valueHash": "5fa9a6e988796acce4dd7a033670180448bc29a07a9fa5e48255977034751897"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q6:1",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "应复习通分，计算时细心一些，多做练习。",
+          "valueHash": "f5d18a6174622da51a7f1212abe36dd87793f3029c1de466aaddf7a16a7dda2b"
+        },
+        "reason": "引文显示交付物仅泛泛建议复习通分和多做练习，未提供具体下一检查内容或条件，支持指控。"
+      },
+      {
+        "id": "review2:Q6:1",
+        "decision": "upheld",
+        "severity": "local",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "这次分数加法有错，应复习通分",
+          "valueHash": "f5d18a6174622da51a7f1212abe36dd87793f3029c1de466aaddf7a16a7dda2b"
+        },
+        "reason": "引文证明诊断未具体指出学生错误为分子分母分别相加（source规则提及但artifact未用），且仅说多做练习无具体检验，指控成立。"
+      }
+    ]
+  }
+}

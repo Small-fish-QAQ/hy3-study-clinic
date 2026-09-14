@@ -1,0 +1,32 @@
+{
+  "assessmentVersionId": "assessment_version_cc580cfd-9c64-4c3f-a13e-3daefff5ec4e",
+  "title": "独立检查：解释根毛吸水、木质部运输与叶片蒸腾拉力的连贯机制",
+  "attempt": {
+    "id": "assessment_attempt_a4b1304d-028e-4bc5-a341-470ebba86ff2",
+    "assessmentVersionId": "assessment_version_cc580cfd-9c64-4c3f-a13e-3daefff5ec4e",
+    "workspaceId": "ws_3ea868be-3cd1-4ed9-9eb8-85cc7750c3aa",
+    "ordinal": 1,
+    "status": "started",
+    "responses": {},
+    "startedAt": "2026-09-14T11:53:37.131Z",
+    "submittedAt": null,
+    "cancelledAt": null
+  },
+  "items": [
+    {
+      "itemId": "assessment_item_efcc2fb3-0800-4231-ac1e-cbcd3b25ff31",
+      "prompt": "温室中一株番茄苗，根毛完好，木质部通畅，叶片气孔开放，土壤湿润。请沿“土壤供水、根吸收、木质部运输、叶蒸发、气孔散失”的链条，解释这株植物体内水分从土壤到叶片散失的连贯机制：根毛如何增加表面积从土壤吸水，木质部中的导管等结构如何提供向上通路，叶片水分蒸发经气孔散失形成蒸腾，其拉力如何成为水向上运输的重要动力而非叶片主动泵出液态水。",
+      "purpose": "检验你是否能在自己的表述中说明这个关键能力。",
+      "sourceReferences": [
+        {
+          "materialTitle": "植物体内的水分运输与蒸腾",
+          "locationLabel": "第 1 段",
+          "excerpt": "陆生植物需要把根部吸收的水送到茎和叶。根毛增加根与土壤接触的表面积，有利于从湿润土壤吸收水和溶于水的无机盐。木质部中的导管等结构提供水分向上运输的通路。叶片内的水分蒸发后，水蒸气主要经气孔散失到空气中，这个过程叫蒸腾。蒸腾形成的拉力是水在木质部向上运输的重要动力之一，不是叶片把整滴液态水主动泵到空气中。",
+          "advisory": false
+        }
+      ]
+    }
+  ],
+  "result": null,
+  "review": null
+}

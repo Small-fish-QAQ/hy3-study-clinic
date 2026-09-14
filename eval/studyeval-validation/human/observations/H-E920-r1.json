@@ -1,0 +1,323 @@
+{
+  "task": {
+    "caseId": "E920",
+    "runId": "H-E920-r1",
+    "replicate": 1,
+    "path": "benchmark/cases/E920.json",
+    "inputHash": "1cab0ebc541b0976c5c908c3d469d391c15ea2d9e8a5605ad9a520b45bb66302",
+    "population": "controlled",
+    "sourceId": "F03"
+  },
+  "inputHash": "1cab0ebc541b0976c5c908c3d469d391c15ea2d9e8a5605ad9a520b45bb66302",
+  "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "910af83f45a59de616ef666aca8c8ec137227c37eba54e2a0ae0be2c433ce1df",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "support建议重读规则、列条件并练类似题，相关但泛化，未指出具体推理错误且未提供具体下一题，属局部缺陷。",
+            "refs": [
+              "/artifacts/1/text",
+              "/answer",
+              "/question/prompt"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "support仅泛化建议重读来源、列条件、练题，未识别学生将自愿参加等同于随机分组的具体推理缺口，且无具体下一题内容。",
+                "impact": "核心用途（提供复习与练习方向）仍成立，但缺乏针对性修复，不能保证掌握该技能。",
+                "refs": [
+                  "/artifacts/1/text",
+                  "/answer"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/1/text",
+                    "valueHash": "4d9b4818aa1491288de36d3cf785ec2e7804231387da4c6670f21598747cfc02"
+                  },
+                  {
+                    "pointer": "/answer",
+                    "valueHash": "7d6191d92d628a82e207484c2c7eb0e40705d9d13f6606a2290baa951d899e6f"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/1/text",
+                "valueHash": "4d9b4818aa1491288de36d3cf785ec2e7804231387da4c6670f21598747cfc02"
+              },
+              {
+                "pointer": "/answer",
+                "valueHash": "7d6191d92d628a82e207484c2c7eb0e40705d9d13f6606a2290baa951d899e6f"
+              },
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "40515ddefe7144a8c80977cc79f59af6231fa3747b5a992a6434f6ea76b34d40"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "支持材料仅泛化建议重读规则与练新题，未点明学习者将自愿参与误作随机分组的具体错误，也未提供新题条件，属相关但通用的修复，核心用途成立但有局部缺陷。",
+            "refs": [
+              "/artifacts/1/text",
+              "/answer",
+              "/question/prompt"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "支持建议未识别具体推理缺口（误以为自愿等于随机分组、忽略未记录混杂），仅泛泛要求重读列条件。",
+                "impact": "不改变提供后续学习建议的核心用途，但修复缺乏针对性，学习者可能未获知错因。",
+                "refs": [
+                  "/artifacts/1/text",
+                  "/answer"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/1/text",
+                    "valueHash": "4d9b4818aa1491288de36d3cf785ec2e7804231387da4c6670f21598747cfc02"
+                  },
+                  {
+                    "pointer": "/answer",
+                    "valueHash": "7d6191d92d628a82e207484c2c7eb0e40705d9d13f6606a2290baa951d899e6f"
+                  }
+                ]
+              },
+              {
+                "severity": "local",
+                "description": "建议练同主题新题但无题目内容、条件或核对标准，仅推荐练习。",
+                "impact": "下一步检查不可直接使用，但核心建议方向相关，非实质缺陷。",
+                "refs": [
+                  "/artifacts/1/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/1/text",
+                    "valueHash": "4d9b4818aa1491288de36d3cf785ec2e7804231387da4c6670f21598747cfc02"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/1/text",
+                "valueHash": "4d9b4818aa1491288de36d3cf785ec2e7804231387da4c6670f21598747cfc02"
+              },
+              {
+                "pointer": "/answer",
+                "valueHash": "7d6191d92d628a82e207484c2c7eb0e40705d9d13f6606a2290baa951d899e6f"
+              },
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "40515ddefe7144a8c80977cc79f59af6231fa3747b5a992a6434f6ea76b34d40"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 1,
+            "evidence": "sufficient",
+            "reason": "support仅泛化建议重读来源规则、列条件、练同主题新题，未点明学生将自愿参与误作随机分组的具体错误，也未提供新题条件，属相关但通用修复，核心用途成立但有局部缺陷。",
+            "refs": [
+              "/artifacts/1/text",
+              "/answer",
+              "/question/prompt"
+            ],
+            "defects": [
+              {
+                "severity": "local",
+                "description": "support未识别学生答案中将自愿参加等同于随机分组、忽略未记录混杂的具体推理缺口，仅泛泛要求重读列条件。",
+                "impact": "不改变提供后续学习建议的核心用途，但修复缺乏针对性，学习者可能未获知错因。",
+                "refs": [
+                  "/artifacts/1/text",
+                  "/answer"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/1/text",
+                    "valueHash": "4d9b4818aa1491288de36d3cf785ec2e7804231387da4c6670f21598747cfc02"
+                  },
+                  {
+                    "pointer": "/answer",
+                    "valueHash": "7d6191d92d628a82e207484c2c7eb0e40705d9d13f6606a2290baa951d899e6f"
+                  }
+                ]
+              },
+              {
+                "severity": "local",
+                "description": "建议练同主题新题但无题目内容、条件或核对标准，仅推荐练习。",
+                "impact": "下一步检查不可直接使用，但核心建议方向相关，非实质缺陷。",
+                "refs": [
+                  "/artifacts/1/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/1/text",
+                    "valueHash": "4d9b4818aa1491288de36d3cf785ec2e7804231387da4c6670f21598747cfc02"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/1/text",
+                "valueHash": "4d9b4818aa1491288de36d3cf785ec2e7804231387da4c6670f21598747cfc02"
+              },
+              {
+                "pointer": "/answer",
+                "valueHash": "7d6191d92d628a82e207484c2c7eb0e40705d9d13f6606a2290baa951d899e6f"
+              },
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "40515ddefe7144a8c80977cc79f59af6231fa3747b5a992a6434f6ea76b34d40"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q6:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/artifacts/1/text",
+              "quote": "先重新阅读来源里与这道题相关的规则，把题目条件列清，再检查结论。建议练一道同主题的新题，完成后核对条件。",
+              "valueHash": "4d9b4818aa1491288de36d3cf785ec2e7804231387da4c6670f21598747cfc02"
+            },
+            "reason": "该support文本未提及学生答案中自愿等于随机分组的错误，仅泛化建议重读列条件，确属未识别具体推理缺口且无具体下一题，局部缺陷成立。"
+          },
+          {
+            "id": "review2:Q6:1",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/artifacts/1/text",
+              "quote": "先重新阅读来源里与这道题相关的规则，把题目条件列清，再检查结论。建议练一道同主题的新题，完成后核对条件。",
+              "valueHash": "4d9b4818aa1491288de36d3cf785ec2e7804231387da4c6670f21598747cfc02"
+            },
+            "reason": "同前，支持未识别具体推理缺口（误以为自愿等于随机分组），仅泛泛要求重读列条件，指控成立为局部。"
+          },
+          {
+            "id": "review2:Q6:2",
+            "decision": "upheld",
+            "severity": "local",
+            "evidence": {
+              "ref": "/artifacts/1/text",
+              "quote": "建议练一道同主题的新题，完成后核对条件。",
+              "valueHash": "4d9b4818aa1491288de36d3cf785ec2e7804231387da4c6670f21598747cfc02"
+            },
+            "reason": "支持仅推荐同主题新题而无题目内容条件，下一步检查不可直接使用，属局部缺陷，指控成立。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q6",
+          "level": 1,
+          "evidence": "sufficient",
+          "reason": "support仅泛化建议重读来源规则、列条件、练同主题新题，未点明学生将自愿参与误作随机分组的具体错误，也未提供新题条件，属相关但通用修复，核心用途成立但有局部缺陷。",
+          "refs": [
+            "/artifacts/1/text",
+            "/answer",
+            "/question/prompt"
+          ],
+          "defects": [
+            {
+              "severity": "local",
+              "description": "support未识别学生答案中将自愿参加等同于随机分组、忽略未记录混杂的具体推理缺口，仅泛泛要求重读列条件。",
+              "impact": "不改变提供后续学习建议的核心用途，但修复缺乏针对性，学习者可能未获知错因。",
+              "refs": [
+                "/artifacts/1/text",
+                "/answer"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/1/text",
+                  "valueHash": "4d9b4818aa1491288de36d3cf785ec2e7804231387da4c6670f21598747cfc02"
+                },
+                {
+                  "pointer": "/answer",
+                  "valueHash": "7d6191d92d628a82e207484c2c7eb0e40705d9d13f6606a2290baa951d899e6f"
+                }
+              ]
+            },
+            {
+              "severity": "local",
+              "description": "建议练同主题新题但无题目内容、条件或核对标准，仅推荐练习。",
+              "impact": "下一步检查不可直接使用，但核心建议方向相关，非实质缺陷。",
+              "refs": [
+                "/artifacts/1/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/1/text",
+                  "valueHash": "4d9b4818aa1491288de36d3cf785ec2e7804231387da4c6670f21598747cfc02"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/1/text",
+              "valueHash": "4d9b4818aa1491288de36d3cf785ec2e7804231387da4c6670f21598747cfc02"
+            },
+            {
+              "pointer": "/answer",
+              "valueHash": "7d6191d92d628a82e207484c2c7eb0e40705d9d13f6606a2290baa951d899e6f"
+            },
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "40515ddefe7144a8c80977cc79f59af6231fa3747b5a992a6434f6ea76b34d40"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "e0db8f67ebf0b05be216023e349da4f34c242851fc3766ada3fa29069ec8eeb1"
+  }
+}

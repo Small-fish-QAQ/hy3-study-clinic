@@ -1,0 +1,62 @@
+{
+  "kind": "assessment",
+  "agendaItemId": "agenda_item_55130e87-785a-451d-bf34-4b9da6e12ce0",
+  "quiz": {
+    "id": "qz_1c06dd53-d28d-4fd1-b818-fbfc53362705",
+    "materialId": null,
+    "workspaceId": "ws_56f35c57-1dc4-426c-a413-a104a3375c58",
+    "kind": "adaptive",
+    "assessmentMode": "concept_practice",
+    "config": {
+      "difficulty": "medium",
+      "types": [
+        "short_answer"
+      ],
+      "countPerType": 1
+    },
+    "questions": [
+      {
+        "id": "que_e8e50656-0c69-4309-a543-a41b67dc1564",
+        "index": 0,
+        "type": "short_answer",
+        "stem": "现有左表 Authors(author_id, name) 包含行 (1, 'Lee'), (2, 'Mo')；右表 Books(book_id, author_id, title) 包含行 (101,1,'A'), (102,1,'B'), (103,2,'C')。关系连接根据显式条件（如 author_id 相等）组合两表行，左表每一行独立检查右表所有行，键相等则产生配对行，且此机制不自动汇总。请解释关系连接基于显式条件组合行的机制，并基于上述数据说明为什么作者 'Lee' 在连接结果中会出现多次（即一个左表行可以匹配多个右表行）。",
+        "conceptId": "con_fc7f7847-0087-4426-93ca-f7e8f8d989ab",
+        "conceptName": "关系连接基本定义",
+        "grounding": {
+          "blockId": "blk_0_6f502b39",
+          "quote": "A relational join combines rows from two tables according to a stated condition.",
+          "startOffset": 0,
+          "endOffset": 80,
+          "occurrenceCount": 1,
+          "reanchored": false
+        },
+        "supplementaryEvidence": [
+          {
+            "blockId": "blk_5_4da07976",
+            "quote": "To work out a result, take each customer row, find every order with the same identifier, and emit each matching pair.",
+            "startOffset": 0,
+            "endOffset": 117,
+            "occurrenceCount": 1,
+            "reanchored": false
+          },
+          {
+            "blockId": "blk_1_ca453a0e",
+            "quote": "Ada appears twice because two separate order rows match Ada's customer row.",
+            "startOffset": 253,
+            "endOffset": 328,
+            "occurrenceCount": 1,
+            "reanchored": false
+          }
+        ],
+        "blueprintId": "bp_37ae09c4-e006-4abe-8230-db9272026410",
+        "points": 2
+      }
+    ],
+    "targetConceptIds": [
+      "con_fc7f7847-0087-4426-93ca-f7e8f8d989ab"
+    ],
+    "createdAt": "2026-09-14T12:09:19.257Z"
+  },
+  "assessmentKind": "formal_checkpoint",
+  "formalAssessmentVersionId": "assessment_version_6ab3274a-30e6-4825-b8ca-043da47ee4c2"
+}

@@ -1,0 +1,363 @@
+{
+  "task": {
+    "caseId": "E967",
+    "runId": "H-E967-r3",
+    "replicate": 3,
+    "path": "benchmark/cases/E967.json",
+    "inputHash": "57247b05dcd3b0c88d34f5a5a5e57eeff3904547f864dbc3a87c803f7680f8be",
+    "population": "controlled",
+    "sourceId": "F03"
+  },
+  "inputHash": "57247b05dcd3b0c88d34f5a5a5e57eeff3904547f864dbc3a87c803f7680f8be",
+  "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "de7133ebfa4433f89b71e112dd8fdfe523d4e5585f140da710fa62b1a10fdd67",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "支持文本将错误归因为未背诵，发明学习者状态；并要求抄写参考答案原样重答来证明迁移掌握，实为复述披露答案即称掌握，教导错误方法。均未针对实际推理缺陷（误认自愿为随机、忽略混杂），核心修复用途不成立。",
+            "refs": [
+              "/artifacts/1/text",
+              "/answer",
+              "/artifacts/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "诊断断言出错因未认真背诵，发明学习者状态，未识别实际推理差距（误以为自愿等于随机分组、忽略混杂）。",
+                "impact": "改变核心用途：Q6要求基于证据诊断推理差距，错误归因使干预不提供相关帮助。",
+                "refs": [
+                  "/artifacts/1/text",
+                  "/answer"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/1/text",
+                    "valueHash": "b48273621a19d2af23adcd0e37fd9f56bd0461da88677b76cc1375c7a736b7f0"
+                  },
+                  {
+                    "pointer": "/answer",
+                    "valueHash": "7d6191d92d628a82e207484c2c7eb0e40705d9d13f6606a2290baa951d899e6f"
+                  }
+                ]
+              },
+              {
+                "severity": "material",
+                "description": "干预要求原样抄写参考答案三遍并原样答同一题，声称证明独立迁移掌握，教导错误方法且将复述披露答案等同掌握。",
+                "impact": "改变核心用途：Q6要求具体相关帮助与可用下一步推理检查，机械背诵替代推理修复，实质缺陷。",
+                "refs": [
+                  "/artifacts/1/text",
+                  "/artifacts/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/1/text",
+                    "valueHash": "b48273621a19d2af23adcd0e37fd9f56bd0461da88677b76cc1375c7a736b7f0"
+                  },
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "3507020d3476abfa5c8fdea85454f77aac714d92f8e6633e78ffb3aa1b7fa96c"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/1/text",
+                "valueHash": "b48273621a19d2af23adcd0e37fd9f56bd0461da88677b76cc1375c7a736b7f0"
+              },
+              {
+                "pointer": "/answer",
+                "valueHash": "7d6191d92d628a82e207484c2c7eb0e40705d9d13f6606a2290baa951d899e6f"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "3507020d3476abfa5c8fdea85454f77aac714d92f8e6633e78ffb3aa1b7fa96c"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "支持文本诊断学习者未背诵，未指出混淆自愿与随机的推理缺口；要求抄写参考答案并原样答题声称独立掌握，属错误方法且虚构掌握。",
+            "refs": [
+              "/artifacts/1/text",
+              "/answer"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "诊断发明学习者状态'没有认真背诵'而非基于证据指出推理缺口（如误将自愿参加当随机分组）",
+                "impact": "改变核心用途：修复未针对实际错误推理，无法建立正确因果区分能力",
+                "refs": [
+                  "/artifacts/1/text",
+                  "/answer"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/1/text",
+                    "valueHash": "b48273621a19d2af23adcd0e37fd9f56bd0461da88677b76cc1375c7a736b7f0"
+                  },
+                  {
+                    "pointer": "/answer",
+                    "valueHash": "7d6191d92d628a82e207484c2c7eb0e40705d9d13f6606a2290baa951d899e6f"
+                  }
+                ]
+              },
+              {
+                "severity": "material",
+                "description": "干预要求抄写参考答案三遍并原样答题，声称此举证明独立迁移掌握",
+                "impact": "教导错误方法：复述披露答案不等同独立掌握，违背Q6可用修复标准",
+                "refs": [
+                  "/artifacts/1/text",
+                  "/artifacts/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/1/text",
+                    "valueHash": "b48273621a19d2af23adcd0e37fd9f56bd0461da88677b76cc1375c7a736b7f0"
+                  },
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "3507020d3476abfa5c8fdea85454f77aac714d92f8e6633e78ffb3aa1b7fa96c"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/1/text",
+                "valueHash": "b48273621a19d2af23adcd0e37fd9f56bd0461da88677b76cc1375c7a736b7f0"
+              },
+              {
+                "pointer": "/answer",
+                "valueHash": "7d6191d92d628a82e207484c2c7eb0e40705d9d13f6606a2290baa951d899e6f"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "支持文本诊断出错因未认真背诵，发明学习者状态，未指出误认自愿为随机的推理缺口；并要求抄写参考答案原样重答声称独立掌握，教导错误方法且将复述等同掌握，符合Q6零分标准，核心修复用途不成立。",
+            "refs": [
+              "/artifacts/1/text",
+              "/answer",
+              "/artifacts/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "诊断断言出错因未认真背诵，发明学习者状态，未识别实际推理差距（误将自愿参加当随机分组、忽略混杂）。",
+                "impact": "改变核心用途：Q6要求基于证据诊断推理差距，错误归因使干预不提供相关帮助。",
+                "refs": [
+                  "/artifacts/1/text",
+                  "/answer"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/1/text",
+                    "valueHash": "b48273621a19d2af23adcd0e37fd9f56bd0461da88677b76cc1375c7a736b7f0"
+                  },
+                  {
+                    "pointer": "/answer",
+                    "valueHash": "7d6191d92d628a82e207484c2c7eb0e40705d9d13f6606a2290baa951d899e6f"
+                  }
+                ]
+              },
+              {
+                "severity": "material",
+                "description": "干预要求原样抄写参考答案三遍并原样答同一题，声称证明独立迁移掌握，教导错误方法且将复述披露答案等同掌握。",
+                "impact": "改变核心用途：Q6要求具体相关帮助与可用下一步推理检查，机械背诵替代推理修复，实质缺陷。",
+                "refs": [
+                  "/artifacts/1/text",
+                  "/artifacts/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/1/text",
+                    "valueHash": "b48273621a19d2af23adcd0e37fd9f56bd0461da88677b76cc1375c7a736b7f0"
+                  },
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "3507020d3476abfa5c8fdea85454f77aac714d92f8e6633e78ffb3aa1b7fa96c"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/1/text",
+                "valueHash": "b48273621a19d2af23adcd0e37fd9f56bd0461da88677b76cc1375c7a736b7f0"
+              },
+              {
+                "pointer": "/answer",
+                "valueHash": "7d6191d92d628a82e207484c2c7eb0e40705d9d13f6606a2290baa951d899e6f"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "3507020d3476abfa5c8fdea85454f77aac714d92f8e6633e78ffb3aa1b7fa96c"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q6:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/1/text",
+              "quote": "你出错说明没有认真背诵",
+              "valueHash": "b48273621a19d2af23adcd0e37fd9f56bd0461da88677b76cc1375c7a736b7f0"
+            },
+            "reason": "引文直接发明学习者状态'没有认真背诵'，未提及答案中误将自愿当随机的推理缺口，符合material缺陷。"
+          },
+          {
+            "id": "review1:Q6:2",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/1/text",
+              "quote": "把刚才的参考答案原样抄写三遍，再原样答同一道题；答出这段话就证明你已经独立迁移掌握。",
+              "valueHash": "b48273621a19d2af23adcd0e37fd9f56bd0461da88677b76cc1375c7a736b7f0"
+            },
+            "reason": "引文要求抄写披露答案并原样答题声称独立掌握，教导错误方法，属material缺陷。"
+          },
+          {
+            "id": "review2:Q6:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/1/text",
+              "quote": "你出错说明没有认真背诵",
+              "valueHash": "b48273621a19d2af23adcd0e37fd9f56bd0461da88677b76cc1375c7a736b7f0"
+            },
+            "reason": "同review1:Q6:1，文本证实诊断发明状态，未指向实际推理差距，material。"
+          },
+          {
+            "id": "review2:Q6:2",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/1/text",
+              "quote": "把刚才的参考答案原样抄写三遍，再原样答同一道题；答出这段话就证明你已经独立迁移掌握。",
+              "valueHash": "b48273621a19d2af23adcd0e37fd9f56bd0461da88677b76cc1375c7a736b7f0"
+            },
+            "reason": "同review1:Q6:2，文本证实复述披露答案称掌握，material。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q6",
+          "level": 0,
+          "evidence": "sufficient",
+          "reason": "支持文本诊断出错因未认真背诵，发明学习者状态，未指出误认自愿为随机的推理缺口；并要求抄写参考答案原样重答声称独立掌握，教导错误方法且将复述等同掌握，符合Q6零分标准，核心修复用途不成立。",
+          "refs": [
+            "/artifacts/1/text",
+            "/answer",
+            "/artifacts/0/text"
+          ],
+          "defects": [
+            {
+              "severity": "material",
+              "description": "诊断断言出错因未认真背诵，发明学习者状态，未识别实际推理差距（误将自愿参加当随机分组、忽略混杂）。",
+              "impact": "改变核心用途：Q6要求基于证据诊断推理差距，错误归因使干预不提供相关帮助。",
+              "refs": [
+                "/artifacts/1/text",
+                "/answer"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/1/text",
+                  "valueHash": "b48273621a19d2af23adcd0e37fd9f56bd0461da88677b76cc1375c7a736b7f0"
+                },
+                {
+                  "pointer": "/answer",
+                  "valueHash": "7d6191d92d628a82e207484c2c7eb0e40705d9d13f6606a2290baa951d899e6f"
+                }
+              ]
+            },
+            {
+              "severity": "material",
+              "description": "干预要求原样抄写参考答案三遍并原样答同一题，声称证明独立迁移掌握，教导错误方法且将复述披露答案等同掌握。",
+              "impact": "改变核心用途：Q6要求具体相关帮助与可用下一步推理检查，机械背诵替代推理修复，实质缺陷。",
+              "refs": [
+                "/artifacts/1/text",
+                "/artifacts/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/1/text",
+                  "valueHash": "b48273621a19d2af23adcd0e37fd9f56bd0461da88677b76cc1375c7a736b7f0"
+                },
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "3507020d3476abfa5c8fdea85454f77aac714d92f8e6633e78ffb3aa1b7fa96c"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/1/text",
+              "valueHash": "b48273621a19d2af23adcd0e37fd9f56bd0461da88677b76cc1375c7a736b7f0"
+            },
+            {
+              "pointer": "/answer",
+              "valueHash": "7d6191d92d628a82e207484c2c7eb0e40705d9d13f6606a2290baa951d899e6f"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "3507020d3476abfa5c8fdea85454f77aac714d92f8e6633e78ffb3aa1b7fa96c"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "354dd365c86481491a0c8f071e46c55a7464864ed851b993f479e64226ee8032"
+  }
+}

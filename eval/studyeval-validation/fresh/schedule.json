@@ -1,0 +1,884 @@
+[
+  {
+    "caseId": "S001",
+    "runId": "S001-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S001.json",
+    "inputHash": "3bbf8c85a17dac21b46aa41b8ccf2add4c0d4e9d9bda5da9dd0c380b0955ee6a"
+  },
+  {
+    "caseId": "S002",
+    "runId": "S002-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S002.json",
+    "inputHash": "071957d84fac577acd3b81f0228824640592a072f43b86d8ea627d905a72a8db"
+  },
+  {
+    "caseId": "S003",
+    "runId": "S003-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S003.json",
+    "inputHash": "ffaff0fa72ff0c49394be6114831051a2b01dbe106d9f2c95a0f3870a17788e9"
+  },
+  {
+    "caseId": "S004",
+    "runId": "S004-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S004.json",
+    "inputHash": "f87c2aab9604db99fccff230ebf6beb136c02461890f4d9adfcb3533e65dbb34"
+  },
+  {
+    "caseId": "S005",
+    "runId": "S005-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S005.json",
+    "inputHash": "2bd6051e242f45131e6a8b5db02b5047edd861b331e2f55039ead5d1e26accd4"
+  },
+  {
+    "caseId": "S006",
+    "runId": "S006-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S006.json",
+    "inputHash": "1f4afcd7cf4f8a35c5d5ce0fff26c9bae115b4f23abd5d6325fbbc86385fec71"
+  },
+  {
+    "caseId": "S007",
+    "runId": "S007-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S007.json",
+    "inputHash": "eb1f57f0324ad5aa44ff6c39a697b72085c1b55178ead6026587885aaae83803"
+  },
+  {
+    "caseId": "S008",
+    "runId": "S008-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S008.json",
+    "inputHash": "a61d4752eb6a9e7275948561ea71c6465e01d181e2998e400ad08a86ee62e00f"
+  },
+  {
+    "caseId": "S009",
+    "runId": "S009-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S009.json",
+    "inputHash": "db38d1f1b7b44e5a3def6c15fe9cf92871b0f9962b2238d8093e4abe17a70c31"
+  },
+  {
+    "caseId": "S010",
+    "runId": "S010-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S010.json",
+    "inputHash": "21f058c02815fa2abe7c1d436db73d9d5c2d1242b974185328723e174986de9a"
+  },
+  {
+    "caseId": "S011",
+    "runId": "S011-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S011.json",
+    "inputHash": "e4e73fdcc60bdaa79a10d6512f30928081a1983f0cce5d59eecb67ec87a5e139"
+  },
+  {
+    "caseId": "S012",
+    "runId": "S012-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S012.json",
+    "inputHash": "c1eb68e9f051ef917d2af2c6c0beeec0d9751490347b166389dfb8708c546ae9"
+  },
+  {
+    "caseId": "S013",
+    "runId": "S013-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S013.json",
+    "inputHash": "74a30e156b2d4670f3bd13119229c10d7bc7bc4bc8a2851398b0295b9f731757"
+  },
+  {
+    "caseId": "S014",
+    "runId": "S014-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S014.json",
+    "inputHash": "e56a0ab39088de8a3a007839bf76d22b0b05f4824c35f1e5fc809542fb4471ef"
+  },
+  {
+    "caseId": "S015",
+    "runId": "S015-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S015.json",
+    "inputHash": "5c7300941c55355fcf1fba0fa675306b09ccfa2855c38343d4451744f00f903a"
+  },
+  {
+    "caseId": "S016",
+    "runId": "S016-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S016.json",
+    "inputHash": "1faaa181f082f750b461d8c3eaeca4f7c77317f23c419fff2bf1ee162658b136"
+  },
+  {
+    "caseId": "S017",
+    "runId": "S017-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S017.json",
+    "inputHash": "edaaa8a61f60cdc4591b26f5b0c2db02f7ce29644e54e375ed3f40fd5787f4c3"
+  },
+  {
+    "caseId": "S018",
+    "runId": "S018-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S018.json",
+    "inputHash": "691b3d83cd3b3b2148cd2413b59f46f3b1c25e4b3841b1cf4005d75f8d45d1d7"
+  },
+  {
+    "caseId": "S019",
+    "runId": "S019-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S019.json",
+    "inputHash": "e7b02587b7dfab66cb503645a55f6e4da7bb6a84ace28489184106b0d3834027"
+  },
+  {
+    "caseId": "S020",
+    "runId": "S020-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S020.json",
+    "inputHash": "25f54bb34f47a164cd564507804bd28672654f1d2b660bdabb62fe0000a9a1c3"
+  },
+  {
+    "caseId": "S021",
+    "runId": "S021-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S021.json",
+    "inputHash": "a1144ca224bbe39f7746def6dd77455aa433ddd61b84c3179727d42324359ad5"
+  },
+  {
+    "caseId": "S022",
+    "runId": "S022-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S022.json",
+    "inputHash": "025ef17ca5bf2c92685fefe5c48564471e721e5414c072e07215fef1c7ded91f"
+  },
+  {
+    "caseId": "S023",
+    "runId": "S023-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S023.json",
+    "inputHash": "bdee83b2172b4f2cfe7adf3e150c497ed63624b5ecd196f13f2b93d83fec106d"
+  },
+  {
+    "caseId": "S024",
+    "runId": "S024-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S024.json",
+    "inputHash": "7ba74f3eeb001ab1e37f3e24117aa77d2d715a1d1de9955170754623eae0a8b1"
+  },
+  {
+    "caseId": "S025",
+    "runId": "S025-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S025.json",
+    "inputHash": "3a99771b87e0f0d95d1f3b2fe1c15383dbb5286b6993b782a07311e861c03f36"
+  },
+  {
+    "caseId": "S026",
+    "runId": "S026-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S026.json",
+    "inputHash": "9109f9e7274d3e3590657fa1001af873886e7d739bbba5278f6c093cdaa6d777"
+  },
+  {
+    "caseId": "S027",
+    "runId": "S027-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S027.json",
+    "inputHash": "59d3d29d4e4e800194fa5af8d2cae5431ba5a21f16963895cc1ac93cf7bcd171"
+  },
+  {
+    "caseId": "S028",
+    "runId": "S028-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S028.json",
+    "inputHash": "766c9311b6881d83db4de13d7e2f6b5967d681fd6c111106719099e5f2da14e4"
+  },
+  {
+    "caseId": "S029",
+    "runId": "S029-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S029.json",
+    "inputHash": "0e538656fadd8e1d8b317871399f38ff0a36fae3d3ffdce5c663324901d46171"
+  },
+  {
+    "caseId": "S030",
+    "runId": "S030-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S030.json",
+    "inputHash": "c8dded0d55bca6826d7842c1b837fdd025ccec4fa52828ec0c76c8298b63c0ff"
+  },
+  {
+    "caseId": "S031",
+    "runId": "S031-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S031.json",
+    "inputHash": "c84ced4f6c0c9e84b4c840980158c0ffbddfd7531c87b037851231b24ceb944c"
+  },
+  {
+    "caseId": "S032",
+    "runId": "S032-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S032.json",
+    "inputHash": "8b9eff0da9c3907af22433e60ecaef06441e574dd29c086a1f60d4edc36fc7fc"
+  },
+  {
+    "caseId": "S033",
+    "runId": "S033-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S033.json",
+    "inputHash": "76efd061ae2e2020fbcc53f8c0e086df6d8fc930b9407ad4ad5cb53bd4f268d6"
+  },
+  {
+    "caseId": "S034",
+    "runId": "S034-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S034.json",
+    "inputHash": "a3217664d87fa752077f5aa02696e6b23ba0ea35646fcc8eb59deec75fd05ea0"
+  },
+  {
+    "caseId": "S035",
+    "runId": "S035-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S035.json",
+    "inputHash": "0aff53bd2965e8908f4016561ec06afab2638007e7e10ec8a9c087fbadc5721d"
+  },
+  {
+    "caseId": "S036",
+    "runId": "S036-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S036.json",
+    "inputHash": "783024be9af0474f6fa61dae79f6c86ddebc5a9513a0fc50cb017efee4b2b5d6"
+  },
+  {
+    "caseId": "S037",
+    "runId": "S037-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S037.json",
+    "inputHash": "926c49175d2ddad13d8010d50c621bbf575cda1f8aae0110306f6bd339cc53ba"
+  },
+  {
+    "caseId": "S038",
+    "runId": "S038-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S038.json",
+    "inputHash": "4f8bf2e279b00b6605cc4c25d49557806e6e5263926605a23efd22fe788bb46a"
+  },
+  {
+    "caseId": "S039",
+    "runId": "S039-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S039.json",
+    "inputHash": "7052392b7b2135a6406da6d13ce3ba3e3b6b693e70edad30cd2986b6730ba9b1"
+  },
+  {
+    "caseId": "S040",
+    "runId": "S040-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S040.json",
+    "inputHash": "2b830ed889259e32900dc8d677b25dce967d58c314fe6f9d1aff7a92285b843b"
+  },
+  {
+    "caseId": "S041",
+    "runId": "S041-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S041.json",
+    "inputHash": "39e556a797ad2f3bf2cb2dd028f428c949b9bb388f12cd24bf8a5736e336932b"
+  },
+  {
+    "caseId": "S042",
+    "runId": "S042-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S042.json",
+    "inputHash": "8752af3ce212bf64a600eece8573d9c468362d90f8c3d7992a3f48d20d7d5eb8"
+  },
+  {
+    "caseId": "S043",
+    "runId": "S043-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S043.json",
+    "inputHash": "80ede35b042683460f6a22381aed210616a55f4c80ecc902ccd291a2d0dfb50b"
+  },
+  {
+    "caseId": "S044",
+    "runId": "S044-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S044.json",
+    "inputHash": "fa9665076698b26104884a6329805904e9695ce04192ec9290b68d1a81c950d1"
+  },
+  {
+    "caseId": "S045",
+    "runId": "S045-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S045.json",
+    "inputHash": "a16375c7423e7f5da50ef3d9feaafbe35b153b3f2986ec16ffad8fd364be0ed2"
+  },
+  {
+    "caseId": "S046",
+    "runId": "S046-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S046.json",
+    "inputHash": "1e545cf9162dd5f1e0b9e08f3d0d6acd6c316a29f2ffd5e6f559f067bb7ae183"
+  },
+  {
+    "caseId": "S047",
+    "runId": "S047-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S047.json",
+    "inputHash": "43f0861e7c9a26a90f9806c7055b69b5e4df62f04b986010249fb426721a54c1"
+  },
+  {
+    "caseId": "S048",
+    "runId": "S048-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S048.json",
+    "inputHash": "30af79fad659d6a984580eeb7c2d39b4693fd0b9f4019978c25f5e323407a109"
+  },
+  {
+    "caseId": "S049",
+    "runId": "S049-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S049.json",
+    "inputHash": "433e422bee6c216f290495e0ec72046443540729addab7bdb04e058c524e00e5"
+  },
+  {
+    "caseId": "S050",
+    "runId": "S050-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S050.json",
+    "inputHash": "54d636409177a677fe99b629f4f2c513839b088d179166b57b7f11568d75af3a"
+  },
+  {
+    "caseId": "S051",
+    "runId": "S051-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S051.json",
+    "inputHash": "22c01608811e3f079a1dde5d8c3003ca0605e7881712a57620ed430076f33d79"
+  },
+  {
+    "caseId": "S052",
+    "runId": "S052-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S052.json",
+    "inputHash": "fb46738d1a087fb47ca2a668cb1eb07940dd29cd6bc5cdf4d14dcad476bb4bd6"
+  },
+  {
+    "caseId": "S053",
+    "runId": "S053-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S053.json",
+    "inputHash": "bc06dd7f4c906f4fa07e821856afcff8259caca5e21650bdbc02ce8ce965a110"
+  },
+  {
+    "caseId": "S054",
+    "runId": "S054-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S054.json",
+    "inputHash": "56aaa1decaa3a7aba7ea0b64ed46748eb795f555cab1bcf3d41d53b594a64982"
+  },
+  {
+    "caseId": "S055",
+    "runId": "S055-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S055.json",
+    "inputHash": "b0fffd3b978837067fd18d73806e619c520d0d3f427b670679a5b8dc519a21ab"
+  },
+  {
+    "caseId": "S056",
+    "runId": "S056-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S056.json",
+    "inputHash": "ad44ac8d69da6110908f00388a7bb96ca086ae0a68e4eea20e6bd2e9d619e85b"
+  },
+  {
+    "caseId": "S057",
+    "runId": "S057-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S057.json",
+    "inputHash": "17652f528eed4ebd4e2bb2ccfb6b26c5c85d6d81789c4d8ccdc560b6b80d931b"
+  },
+  {
+    "caseId": "S058",
+    "runId": "S058-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S058.json",
+    "inputHash": "6e5446b6ae72b258808a28d3602f2a82bbfa38582942f5170f978028872a7ab8"
+  },
+  {
+    "caseId": "S059",
+    "runId": "S059-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S059.json",
+    "inputHash": "88ea3781903ab31c180772f6adf6264f83e001bd4bf4c242dfbf846ebcd94f67"
+  },
+  {
+    "caseId": "S060",
+    "runId": "S060-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S060.json",
+    "inputHash": "ba24fa73cc61ae9dff6c052f384a2e0bd9068165ebf647ba8d1dc8c0d7834cd9"
+  },
+  {
+    "caseId": "S061",
+    "runId": "S061-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S061.json",
+    "inputHash": "3bef498c3e9bb9c2a4dfa25d2839391dddfdabc90d2d981ea0266440592e591b"
+  },
+  {
+    "caseId": "S062",
+    "runId": "S062-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S062.json",
+    "inputHash": "f8b3e43a96ef5b2c9e91eb970f17d76caece84aa8a3ba619b3692e18c042620f"
+  },
+  {
+    "caseId": "S063",
+    "runId": "S063-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S063.json",
+    "inputHash": "cbb9b50ed7ed2b2cff17589c5d60892929cfbcaa06c7e612ea470d1cdd82c97c"
+  },
+  {
+    "caseId": "S064",
+    "runId": "S064-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S064.json",
+    "inputHash": "f6249250842cc22f1b843008e2ddcd743c9aa5f373db0f19623ca15029e4c5f4"
+  },
+  {
+    "caseId": "S065",
+    "runId": "S065-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S065.json",
+    "inputHash": "1972866ef6eed866b59653b2fcde97c020941c33fc2c0fee62df31d69cd60dc9"
+  },
+  {
+    "caseId": "S066",
+    "runId": "S066-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S066.json",
+    "inputHash": "86648cafacdb867b83dfbaa2d819f7231b9688bf9681309dc99802cf0b9a79a2"
+  },
+  {
+    "caseId": "S067",
+    "runId": "S067-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S067.json",
+    "inputHash": "0cefc649a3c8231fb2e3555f213aa803a59369c4aca5f9f997a3dc2379cc4d03"
+  },
+  {
+    "caseId": "S068",
+    "runId": "S068-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S068.json",
+    "inputHash": "191c04c520221da72f63605288f849a786242801fa5e9efc6570120a623db0f2"
+  },
+  {
+    "caseId": "S069",
+    "runId": "S069-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S069.json",
+    "inputHash": "0fee3af022c357ccc102db9b556c3ad1b3a59ef2ce4466d131d6da729c015627"
+  },
+  {
+    "caseId": "S070",
+    "runId": "S070-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S070.json",
+    "inputHash": "71a22830a11df4b8314147e2553f4885cab3b2794a4ab082bd95278eb70fc930"
+  },
+  {
+    "caseId": "S071",
+    "runId": "S071-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S071.json",
+    "inputHash": "df0655800aecb41b80df448c207425aaf7dce36a676298e3f276db69e542dbc7"
+  },
+  {
+    "caseId": "S072",
+    "runId": "S072-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S072.json",
+    "inputHash": "b1ab3f5427b57ec5a40963ab398fb71692db192267ea6d9e0628ea3ab79ca520"
+  },
+  {
+    "caseId": "S073",
+    "runId": "S073-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S073.json",
+    "inputHash": "658e6b515f2d0f942a49b670189097e50771eed5453084f3a1821b0396dfee51"
+  },
+  {
+    "caseId": "S074",
+    "runId": "S074-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S074.json",
+    "inputHash": "07af1a797051c8455083f5676f83aaae1e80880e5f6fe1fbcebbff2728e538a7"
+  },
+  {
+    "caseId": "S075",
+    "runId": "S075-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S075.json",
+    "inputHash": "7bd957fa58258cc76887b5998a9477c9a3124dc6392f43a18801440b43adf446"
+  },
+  {
+    "caseId": "S076",
+    "runId": "S076-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S076.json",
+    "inputHash": "7260cfe0c6986292dbc24c6562829bf91834298c8a481d5b9803107415918e3f"
+  },
+  {
+    "caseId": "S077",
+    "runId": "S077-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S077.json",
+    "inputHash": "9f3ddcf87e67df067ef325410a3331d7d141bac0af1d2008a68e441b4f24375a"
+  },
+  {
+    "caseId": "S078",
+    "runId": "S078-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S078.json",
+    "inputHash": "35e2cebff6d8560d462945c74de6ad7f00f936eb55d88f69e2ec6d41e5a89a44"
+  },
+  {
+    "caseId": "S079",
+    "runId": "S079-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S079.json",
+    "inputHash": "d23d19fbbd4d16ccae4cf2d27875d504d826c54ccf802e90475b3c45dbf4e343"
+  },
+  {
+    "caseId": "S080",
+    "runId": "S080-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S080.json",
+    "inputHash": "b038c0de26d0d68438e4d35591e28753560188c99b69ee60c168576c5d58013a"
+  },
+  {
+    "caseId": "S081",
+    "runId": "S081-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S081.json",
+    "inputHash": "4c0bada8a90aa08843332a4c5401d4e0ed5c00aadf7168ff42d27f3594fd2ff3"
+  },
+  {
+    "caseId": "S082",
+    "runId": "S082-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S082.json",
+    "inputHash": "2a07dd5f47ab7f806ae3b2b40f4592a0f0f7fb25a3ee3756a2f0b54c6c254d42"
+  },
+  {
+    "caseId": "S083",
+    "runId": "S083-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S083.json",
+    "inputHash": "fdcb311d29050730c074651c45b9599a8a7dc04222e24a103a2d5bad8d536640"
+  },
+  {
+    "caseId": "S084",
+    "runId": "S084-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S084.json",
+    "inputHash": "b7b8afd9b8105cd16f41249dbedd61e4d6cc92a74d28b5d6ad5fd9764aa46221"
+  },
+  {
+    "caseId": "S085",
+    "runId": "S085-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S085.json",
+    "inputHash": "d9ee9ec5e64d6056663a3aca7a61d676906f924e5e97042acad303a3a73dde38"
+  },
+  {
+    "caseId": "S086",
+    "runId": "S086-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S086.json",
+    "inputHash": "289b0f6d9ee9b43a13ca5ad01a511011e5e92783b0d18462dedc9d94afcdd6b4"
+  },
+  {
+    "caseId": "S087",
+    "runId": "S087-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S087.json",
+    "inputHash": "87713e42d9e8b380a785cb103466727bdccbbf580d447fe1b085b2772474fb37"
+  },
+  {
+    "caseId": "S088",
+    "runId": "S088-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S088.json",
+    "inputHash": "856aff8a10098140596ec3860af8792226ba3d0c000943945a9a01f231e79c57"
+  },
+  {
+    "caseId": "S089",
+    "runId": "S089-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S089.json",
+    "inputHash": "a6607285121ae8ef366846a4157864217c61b414c2c1bc7aa3edd8ad335e03e7"
+  },
+  {
+    "caseId": "S090",
+    "runId": "S090-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S090.json",
+    "inputHash": "80c96456a3ffcc00c7862e97b9670c6f3b7868c303c0fe7509ca1cf5e930c233"
+  },
+  {
+    "caseId": "S091",
+    "runId": "S091-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S091.json",
+    "inputHash": "56d95bde6d4357f78e09765bc4fa5586cde9449a3403d01fd83fca0c8c8ccbf7"
+  },
+  {
+    "caseId": "S092",
+    "runId": "S092-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S092.json",
+    "inputHash": "3407530097aa1def2971821b56534889d20975e052eb54fad8fb75929cc71413"
+  },
+  {
+    "caseId": "S093",
+    "runId": "S093-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S093.json",
+    "inputHash": "131ea21a1a4842986c74b3a10c5c1d1f1253712c6e49ebb09fdc741c653c03d8"
+  },
+  {
+    "caseId": "S094",
+    "runId": "S094-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S094.json",
+    "inputHash": "0fff78f2dfe87053a0b10791591f2b2b31d840ccdb68375c1ee7888cca74f925"
+  },
+  {
+    "caseId": "S095",
+    "runId": "S095-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S095.json",
+    "inputHash": "ab1b54b302b5c52b3fa64f54c281d4657bb08c2e9bc48ecb0f8f81ceae2a7e91"
+  },
+  {
+    "caseId": "S096",
+    "runId": "S096-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S096.json",
+    "inputHash": "22a8c5a897d647a599af6f508b9bd3e12b1fb37aa7b9ac4c3f12ef21ee9fdd83"
+  },
+  {
+    "caseId": "S097",
+    "runId": "S097-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S097.json",
+    "inputHash": "9e1b8f2d56d9299b3011bf1253be125b625f1a64529c77cf07d2ea2af4b65e91"
+  },
+  {
+    "caseId": "S098",
+    "runId": "S098-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S098.json",
+    "inputHash": "908df6a1efdb79bce2ee12db07e7950d7dfa8a54a23b150110301db856424ca1"
+  },
+  {
+    "caseId": "S099",
+    "runId": "S099-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S099.json",
+    "inputHash": "a0850fddcef8c631a5983acc2c178b6cf64a1096734eee5600a1cd515fde998b"
+  },
+  {
+    "caseId": "S100",
+    "runId": "S100-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S100.json",
+    "inputHash": "10daad29283283d2fd8d14abbd5e78f5834fe8cda3f4b7da522f768f2d717c34"
+  },
+  {
+    "caseId": "S101",
+    "runId": "S101-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S101.json",
+    "inputHash": "839d22b84636d481cafdb0545aa7cc2bf7435665147cd4231446419db7e816ad"
+  },
+  {
+    "caseId": "S102",
+    "runId": "S102-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S102.json",
+    "inputHash": "b93db0ca7da6e7161c4b27b4bd61546225c201b8369420e7a4ea0151b1e0b6fb"
+  },
+  {
+    "caseId": "S078",
+    "runId": "S078-r2",
+    "replicate": 2,
+    "path": "dataset/studyeval/S078.json",
+    "inputHash": "35e2cebff6d8560d462945c74de6ad7f00f936eb55d88f69e2ec6d41e5a89a44"
+  },
+  {
+    "caseId": "S032",
+    "runId": "S032-r2",
+    "replicate": 2,
+    "path": "dataset/studyeval/S032.json",
+    "inputHash": "8b9eff0da9c3907af22433e60ecaef06441e574dd29c086a1f60d4edc36fc7fc"
+  },
+  {
+    "caseId": "S066",
+    "runId": "S066-r2",
+    "replicate": 2,
+    "path": "dataset/studyeval/S066.json",
+    "inputHash": "86648cafacdb867b83dfbaa2d819f7231b9688bf9681309dc99802cf0b9a79a2"
+  },
+  {
+    "caseId": "S012",
+    "runId": "S012-r2",
+    "replicate": 2,
+    "path": "dataset/studyeval/S012.json",
+    "inputHash": "c1eb68e9f051ef917d2af2c6c0beeec0d9751490347b166389dfb8708c546ae9"
+  },
+  {
+    "caseId": "S058",
+    "runId": "S058-r2",
+    "replicate": 2,
+    "path": "dataset/studyeval/S058.json",
+    "inputHash": "6e5446b6ae72b258808a28d3602f2a82bbfa38582942f5170f978028872a7ab8"
+  },
+  {
+    "caseId": "S068",
+    "runId": "S068-r2",
+    "replicate": 2,
+    "path": "dataset/studyeval/S068.json",
+    "inputHash": "191c04c520221da72f63605288f849a786242801fa5e9efc6570120a623db0f2"
+  },
+  {
+    "caseId": "S011",
+    "runId": "S011-r2",
+    "replicate": 2,
+    "path": "dataset/studyeval/S011.json",
+    "inputHash": "e4e73fdcc60bdaa79a10d6512f30928081a1983f0cce5d59eecb67ec87a5e139"
+  },
+  {
+    "caseId": "S084",
+    "runId": "S084-r2",
+    "replicate": 2,
+    "path": "dataset/studyeval/S084.json",
+    "inputHash": "b7b8afd9b8105cd16f41249dbedd61e4d6cc92a74d28b5d6ad5fd9764aa46221"
+  },
+  {
+    "caseId": "S024",
+    "runId": "S024-r2",
+    "replicate": 2,
+    "path": "dataset/studyeval/S024.json",
+    "inputHash": "7ba74f3eeb001ab1e37f3e24117aa77d2d715a1d1de9955170754623eae0a8b1"
+  },
+  {
+    "caseId": "S094",
+    "runId": "S094-r2",
+    "replicate": 2,
+    "path": "dataset/studyeval/S094.json",
+    "inputHash": "0fff78f2dfe87053a0b10791591f2b2b31d840ccdb68375c1ee7888cca74f925"
+  },
+  {
+    "caseId": "S025",
+    "runId": "S025-r2",
+    "replicate": 2,
+    "path": "dataset/studyeval/S025.json",
+    "inputHash": "3a99771b87e0f0d95d1f3b2fe1c15383dbb5286b6993b782a07311e861c03f36"
+  },
+  {
+    "caseId": "S088",
+    "runId": "S088-r2",
+    "replicate": 2,
+    "path": "dataset/studyeval/S088.json",
+    "inputHash": "856aff8a10098140596ec3860af8792226ba3d0c000943945a9a01f231e79c57"
+  },
+  {
+    "caseId": "S024",
+    "runId": "S024-r3",
+    "replicate": 3,
+    "path": "dataset/studyeval/S024.json",
+    "inputHash": "7ba74f3eeb001ab1e37f3e24117aa77d2d715a1d1de9955170754623eae0a8b1"
+  },
+  {
+    "caseId": "S011",
+    "runId": "S011-r3",
+    "replicate": 3,
+    "path": "dataset/studyeval/S011.json",
+    "inputHash": "e4e73fdcc60bdaa79a10d6512f30928081a1983f0cce5d59eecb67ec87a5e139"
+  },
+  {
+    "caseId": "S025",
+    "runId": "S025-r3",
+    "replicate": 3,
+    "path": "dataset/studyeval/S025.json",
+    "inputHash": "3a99771b87e0f0d95d1f3b2fe1c15383dbb5286b6993b782a07311e861c03f36"
+  },
+  {
+    "caseId": "S078",
+    "runId": "S078-r3",
+    "replicate": 3,
+    "path": "dataset/studyeval/S078.json",
+    "inputHash": "35e2cebff6d8560d462945c74de6ad7f00f936eb55d88f69e2ec6d41e5a89a44"
+  },
+  {
+    "caseId": "S066",
+    "runId": "S066-r3",
+    "replicate": 3,
+    "path": "dataset/studyeval/S066.json",
+    "inputHash": "86648cafacdb867b83dfbaa2d819f7231b9688bf9681309dc99802cf0b9a79a2"
+  },
+  {
+    "caseId": "S058",
+    "runId": "S058-r3",
+    "replicate": 3,
+    "path": "dataset/studyeval/S058.json",
+    "inputHash": "6e5446b6ae72b258808a28d3602f2a82bbfa38582942f5170f978028872a7ab8"
+  },
+  {
+    "caseId": "S088",
+    "runId": "S088-r3",
+    "replicate": 3,
+    "path": "dataset/studyeval/S088.json",
+    "inputHash": "856aff8a10098140596ec3860af8792226ba3d0c000943945a9a01f231e79c57"
+  },
+  {
+    "caseId": "S068",
+    "runId": "S068-r3",
+    "replicate": 3,
+    "path": "dataset/studyeval/S068.json",
+    "inputHash": "191c04c520221da72f63605288f849a786242801fa5e9efc6570120a623db0f2"
+  },
+  {
+    "caseId": "S084",
+    "runId": "S084-r3",
+    "replicate": 3,
+    "path": "dataset/studyeval/S084.json",
+    "inputHash": "b7b8afd9b8105cd16f41249dbedd61e4d6cc92a74d28b5d6ad5fd9764aa46221"
+  },
+  {
+    "caseId": "S032",
+    "runId": "S032-r3",
+    "replicate": 3,
+    "path": "dataset/studyeval/S032.json",
+    "inputHash": "8b9eff0da9c3907af22433e60ecaef06441e574dd29c086a1f60d4edc36fc7fc"
+  },
+  {
+    "caseId": "S012",
+    "runId": "S012-r3",
+    "replicate": 3,
+    "path": "dataset/studyeval/S012.json",
+    "inputHash": "c1eb68e9f051ef917d2af2c6c0beeec0d9751490347b166389dfb8708c546ae9"
+  },
+  {
+    "caseId": "S094",
+    "runId": "S094-r3",
+    "replicate": 3,
+    "path": "dataset/studyeval/S094.json",
+    "inputHash": "0fff78f2dfe87053a0b10791591f2b2b31d840ccdb68375c1ee7888cca74f925"
+  }
+]

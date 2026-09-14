@@ -1,0 +1,116 @@
+{
+  "inputIdentity": "03d1224d777e7e0ad7dd2077de6fa558c4a39c9344241280f06838252f328a54",
+  "attempts": [
+    {
+      "physicalId": "06e27179-18b5-4bfd-8889-f35633e050c8",
+      "caseId": "E121",
+      "runId": "H-E121-r3",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q4",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "作者参考解违背题设称乙离开后两人仍合作得3小时，正确为甲独做总7时；key=incorrect致level0。题目有效未泄露，但答案政策错误使核心评分基准受损。",
+        "refs": [
+          "/question/prompt",
+          "/artifacts/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "作者参考解错误称乙离开后两人仍合作余下2小时总3小时，违背题设乙离开甲独完",
+            "impact": "提供错误标准答案使评分基准错误，核心学习用途受损",
+            "refs": [
+              "/artifacts/0/text",
+              "/question/prompt"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "c813eecfe1ed8f2d322598191e2436097e00eeb26fd1eb5b5fe1aef361a5c4a6"
+              },
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "dcf5dd89a64f0379c2a16c155095996cbf9b1dfd98e7b21c0cebe9fb5974918a"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "assessment": {
+          "key": "incorrect",
+          "validity": "valid",
+          "exposure": "none",
+          "discrimination": "adequate",
+          "demand": "application",
+          "demandReason": "学生须根据给定用时算速度，分段算乙完成量、甲独做剩余时间，再算合作时间比较，多步运算应用。",
+          "reason": "题干有效未泄露，要求应用计算；但artifact作者参考解错误称乙离开后合作，key=incorrect致level0。",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text"
+          ],
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "dcf5dd89a64f0379c2a16c155095996cbf9b1dfd98e7b21c0cebe9fb5974918a"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "c813eecfe1ed8f2d322598191e2436097e00eeb26fd1eb5b5fe1aef361a5c4a6"
+            }
+          ]
+        },
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "dcf5dd89a64f0379c2a16c155095996cbf9b1dfd98e7b21c0cebe9fb5974918a"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "c813eecfe1ed8f2d322598191e2436097e00eeb26fd1eb5b5fe1aef361a5c4a6"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q4:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "乙先做1小时后，两人仍一直合作，所以余下用2小时，总3小时。",
+          "valueHash": "c813eecfe1ed8f2d322598191e2436097e00eeb26fd1eb5b5fe1aef361a5c4a6"
+        },
+        "reason": "题设/question/prompt明确乙先做1小时后离开甲独自完成，参考解称仍合作违背条件，错误答案。"
+      },
+      {
+        "id": "review2:Q4:1",
+        "decision": "upheld",
+        "severity": "material",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "乙先做1小时后，两人仍一直合作，所以余下用2小时，总3小时。",
+          "valueHash": "c813eecfe1ed8f2d322598191e2436097e00eeb26fd1eb5b5fe1aef361a5c4a6"
+        },
+        "reason": "同上，参考解与题设矛盾，提供错误标准答案，核心缺陷成立。"
+      }
+    ]
+  }
+}

@@ -1,0 +1,67 @@
+{
+  "sourceId": "J18",
+  "sourceSha256": "b4912e91fb17dfe1791bb4c9418f276d05470906f116779c2241c47deaf57ee9",
+  "events": [
+    {
+      "at": "2026-09-14T12:00:23.359Z",
+      "stage": "preparation-step",
+      "state": "preparing_concepts",
+      "machineAction": "prepare_concepts"
+    },
+    {
+      "at": "2026-09-14T12:00:23.411Z",
+      "stage": "curriculum-accepted",
+      "curriculumId": "curriculum_44f58dbe-f15a-460f-8404-a45b8bd06e98"
+    },
+    {
+      "at": "2026-09-14T12:00:23.599Z",
+      "stage": "preparation-step",
+      "state": "validating_course_plan",
+      "machineAction": "prepare_course_plan"
+    },
+    {
+      "at": "2026-09-14T12:00:23.632Z",
+      "stage": "preparation-stop",
+      "state": "complete",
+      "blocker": null
+    },
+    {
+      "at": "2026-09-14T12:05:59.634Z",
+      "stage": "teaching",
+      "status": "failed",
+      "error": {
+        "name": "Error",
+        "message": "Learner returned an unknown choice id"
+      }
+    }
+  ],
+  "teaching": [
+    {
+      "agendaItemId": "agenda_item_bebafe22-8959-4c98-9c84-bbe9efd9c0ce",
+      "learningUnitId": "cun_fe26db2c-0859-48fb-82ac-619d5d054854",
+      "status": "failed",
+      "sessionId": "study_session_71ee082b-05d2-4307-aff3-ccea07802776",
+      "preparationAttempts": [
+        {
+          "attempt": 1,
+          "status": "ready"
+        }
+      ],
+      "error": {
+        "name": "Error",
+        "message": "Learner returned an unknown choice id"
+      }
+    }
+  ],
+  "formal": [],
+  "tutor": [],
+  "workspaceId": "ws_29410276-a7cd-4f28-88e4-d22a74142915",
+  "materialId": "mat_cf456168-5663-4a5b-be09-6a7f8bf65d36",
+  "commandSequence": 16,
+  "contractId": "contract_f6dcef19-3233-4683-a825-01c160e21f86",
+  "status": "completed_with_observed_boundaries",
+  "counts": {
+    "physical": 17,
+    "logical": 16
+  }
+}

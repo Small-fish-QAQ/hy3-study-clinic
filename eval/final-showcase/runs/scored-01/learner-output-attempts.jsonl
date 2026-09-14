@@ -1,0 +1,3 @@
+{"at":"2026-09-14T12:03:54.135Z","caseId":"J15","logicalId":"fc5698ba-a8f9-42d3-a1c6-b907e979184c","attempt":1,"error":{"name":"Error","message":"Learner returned an unknown choice id"}}
+{"at":"2026-09-14T12:05:41.823Z","caseId":"J18","logicalId":"04613344-c554-4b7d-ba5f-6798271c7cd9","attempt":1,"error":{"name":"Error","message":"Learner returned an unknown choice id"}}
+{"at":"2026-09-14T12:05:59.633Z","caseId":"J18","logicalId":"04613344-c554-4b7d-ba5f-6798271c7cd9","attempt":2,"error":{"name":"Error","message":"Learner returned an unknown choice id"}}

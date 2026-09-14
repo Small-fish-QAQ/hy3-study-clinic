@@ -1,0 +1,32 @@
+{
+  "assessmentVersionId": "assessment_version_671cab0d-1998-4637-a694-72133ada5c88",
+  "title": "独立检查：解释经典低速平动动能模型E=1/2mv²的要素与边界",
+  "attempt": {
+    "id": "assessment_attempt_80f45fcd-9dea-458d-8c94-a0f36e4fdf19",
+    "assessmentVersionId": "assessment_version_671cab0d-1998-4637-a694-72133ada5c88",
+    "workspaceId": "ws_f37040d0-a7b6-403c-9c48-43a9814d4662",
+    "ordinal": 1,
+    "status": "started",
+    "responses": {},
+    "startedAt": "2026-09-14T11:37:45.225Z",
+    "submittedAt": null,
+    "cancelledAt": null
+  },
+  "items": [
+    {
+      "itemId": "assessment_item_4309c9af-8ff1-4837-a287-0fae22b31d62",
+      "prompt": "某物体质量 3 千克，在同一参考系中以 2 米每秒低速平动。请解释根据经典低速平动动能模型，如何表示其平动动能（写出公式并说明各量意义与单位），并指出该模型不自动涵盖哪些能量或运动。",
+      "purpose": "检验你是否能在自己的表述中说明这个关键能力。",
+      "sourceReferences": [
+        {
+          "materialTitle": "动能为什么随速率的平方变化",
+          "locationLabel": "第 1 段",
+          "excerpt": "在同一参考系中，普通低速运动物体的平动动能可用E=1/2×m×v²表示。m是质量，v是速率，即速度的大小；质量用千克、速率用米每秒时，动能用焦耳。该式属于经典低速模型，本课不讨论接近光速的运动，也不把物体的转动能量或其他储能自动并入这个平动动能式。",
+          "advisory": false
+        }
+      ]
+    }
+  ],
+  "result": null,
+  "review": null
+}

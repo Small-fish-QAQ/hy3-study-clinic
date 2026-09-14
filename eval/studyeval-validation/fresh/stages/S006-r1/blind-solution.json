@@ -1,0 +1,36 @@
+{
+  "inputIdentity": "9bec62da3ba4577805fb8591b40b6e2677a9bc2f45a42d3ef7e54cf7cfffadc3",
+  "attempts": [
+    {
+      "physicalId": "c12db82a-d7aa-4dd2-88e3-66c1357ee4a1",
+      "caseId": "S006",
+      "runId": "S006-r1",
+      "stage": "blind-solution",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "status": "resolved",
+    "solution": "初始未激活。①激活：据/sources/0/text激活规则，未激活→有效，允许。②入场：据入场规则，有效→已使用，允许。③再次入场：据已使用不能再次入场，不允许。必要限制：状态转换仅限给定三种规则，无其它路径。",
+    "refs": [
+      "/question/prompt",
+      "/sources/0/text"
+    ],
+    "witnesses": [
+      {
+        "pointer": "/question/prompt",
+        "valueHash": "5df22305082ed220c0e2918db98b043b6e7635d8494521996b06981567b53a53"
+      },
+      {
+        "pointer": "/sources/0/text",
+        "valueHash": "694fcf138ee515172ab2dd1c3a0a59baef8e0ee6b25086ed04ce3845111041ea"
+      }
+    ]
+  }
+}

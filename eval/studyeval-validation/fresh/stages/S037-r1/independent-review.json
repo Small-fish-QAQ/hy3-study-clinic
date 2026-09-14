@@ -1,0 +1,79 @@
+{
+  "inputIdentity": "c1b4c8f11972bfa5b26f70847bdbf0e4a244a5a99d14a0c6c6334a3df1fd6bd1",
+  "attempts": [
+    {
+      "physicalId": "83e87ecc-089b-43db-bc6d-ddc144e37063",
+      "caseId": "S037",
+      "runId": "S037-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q6",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "交付修复仅泛泛提醒注意代词与上下文、写清楚，未针对答案中因先出现断定指代的未经支持唯一判断指出推理缺口（如应承认歧义），也未提供具体下一步检查。属相关但通用建议，核心用途成立但有局部缺陷，符合Q6的1分。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text",
+          "/answer"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "修复建议泛泛而谈，未指出具体推理缺口（不能凭先出现推断指代，需考虑歧义），也未提供具体可使用的下一步检查。",
+            "impact": "核心修复目标仍成立（提醒注意代词歧义），但缺乏针对未经支持唯一判断的具体帮助与可操作检验，降低教学效果。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text",
+              "/answer"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "6b46f10376b784fb49b19173760a8a96c1740c38bd50358e50a15604d42bd78b"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "69fef873755638b051db652f07b0960110732e94a4812af3f6f8b85635905051"
+              },
+              {
+                "pointer": "/answer",
+                "valueHash": "abf18d017b251abcfc4f8dd9fc651eac5dea3ae68e56d7624fa289ba5dec50f4"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "6b46f10376b784fb49b19173760a8a96c1740c38bd50358e50a15604d42bd78b"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "69fef873755638b051db652f07b0960110732e94a4812af3f6f8b85635905051"
+          },
+          {
+            "pointer": "/answer",
+            "valueHash": "abf18d017b251abcfc4f8dd9fc651eac5dea3ae68e56d7624fa289ba5dec50f4"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

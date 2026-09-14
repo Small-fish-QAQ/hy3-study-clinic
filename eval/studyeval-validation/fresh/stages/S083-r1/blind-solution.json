@@ -1,0 +1,36 @@
+{
+  "inputIdentity": "ef8142dd8f718934650bd44eb1b4798b8951be6e7465442520c4ec6908a8f9b9",
+  "attempts": [
+    {
+      "physicalId": "e3656b45-8e1b-476f-9589-3bfa7d2c78fb",
+      "caseId": "S083",
+      "runId": "S083-r1",
+      "stage": "blind-solution",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "status": "resolved",
+    "solution": "从/sources/0/text抄出公式：n(n-1)/2。必要条件：n个不同对象、不放回、不计顺序、自配不允许（不可自选同一对象）。可接受解法：直接引用资料有序n(n-1)除以2的结论。",
+    "refs": [
+      "/question/prompt",
+      "/sources/0/text"
+    ],
+    "witnesses": [
+      {
+        "pointer": "/question/prompt",
+        "valueHash": "a340c6346e86141ac8612f8ed453374cc0de19f9528c286940bcfe310a75280f"
+      },
+      {
+        "pointer": "/sources/0/text",
+        "valueHash": "048d87f46cf5e71c40673f0c198589ef7169711c8e00773c1213c7b454b1dfde"
+      }
+    ]
+  }
+}

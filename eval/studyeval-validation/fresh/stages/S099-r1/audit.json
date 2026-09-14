@@ -1,0 +1,69 @@
+{
+  "inputIdentity": "3d580514faa3f5331498b2a738a1ca7f01e6f0ea8c30f0854ddf7a43826a82d4",
+  "attempts": [
+    {
+      "physicalId": "3a351df3-edc8-432e-b624-081d2304c698",
+      "caseId": "S099",
+      "runId": "S099-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q6",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "交付的修复材料宣称改变下标是正确配平方法，直接违背源规则只能改系数，并鼓励错误操作，属于教授错误方法，核心修复用途失效。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "修复干预教导改变下标为正确配平方法，称水写为H2O2无问题，违背源规则只能改系数。",
+            "impact": "教授错误方法，使学习者巩固错误，完全无法实现纠正下标错误的学习目标，核心用途毁坏。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "75803b2e838303c8c2cc90e0abe0a188cce7a4a4ed365c3ebc158428220dd743"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "59437daaeac189d745ba28fdee3966ddf517f7bcc1363dd97ec06abb86dd3a0e"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "75803b2e838303c8c2cc90e0abe0a188cce7a4a4ed365c3ebc158428220dd743"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "59437daaeac189d745ba28fdee3966ddf517f7bcc1363dd97ec06abb86dd3a0e"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

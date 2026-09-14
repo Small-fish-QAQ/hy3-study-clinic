@@ -1,0 +1,82 @@
+{
+  "inputIdentity": "683b11793d2855bbd74f5ec84f6984f522d83e93791c04826651306880198aec",
+  "attempts": [
+    {
+      "physicalId": "43223bd3-7d3d-4ed5-bb4b-29cb23d53cd1",
+      "caseId": "S040",
+      "runId": "S040-r1",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": "U",
+        "evidence": "missing",
+        "reason": "门禁日志未提供且声明不可访问，访客数主张无独立可验证证据；无实质缺陷确立，评估者无法决定真伪，保留U。",
+        "refs": [
+          "/artifacts/0/text",
+          "/authorityBoundaries/0",
+          "/sources"
+        ],
+        "defects": [],
+        "missing": [
+          "/sources 为空数组，缺少门禁日志原始记录",
+          "/authorityBoundaries/0 声明日志不能访问且无其他证据，无法判定317主张真伪"
+        ],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "50c0ea16a08d45a6a85680bf663e6c80eca47fb0cbea23486746b660b684b17a"
+          },
+          {
+            "pointer": "/authorityBoundaries/0",
+            "valueHash": "e35e20af307402fdc4dd752f8524dddc8eb5e3ab60a6f674a447d58e2f05f158"
+          },
+          {
+            "pointer": "/sources",
+            "valueHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review1:Q1:1",
+        "decision": "rejected",
+        "severity": "none",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "本馆上周二实际接待了317位访客，这是门禁日志记录的事实。",
+          "valueHash": "50c0ea16a08d45a6a85680bf663e6c80eca47fb0cbea23486746b660b684b17a"
+        },
+        "reason": "Artifact明确将访客数归属门禁日志作为来源，并非无任何来源归属；仅该日志不可访问，不构成established error或捏造，指控不成立。"
+      }
+    ],
+    "evidenceChecks": [
+      {
+        "id": "review2:Q1:missing",
+        "decision": "unavailable",
+        "evidence": {
+          "ref": "/sources",
+          "quote": null,
+          "valueHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "reason": "/sources为空数组，门禁日志原始记录未提供；/authorityBoundaries/0声明不能访问且无其他证据，决定性证据缺口使核实不可能，维度只能U。"
+      }
+    ]
+  }
+}

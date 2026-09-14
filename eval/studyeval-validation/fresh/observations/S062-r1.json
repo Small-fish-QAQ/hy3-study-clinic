@@ -1,0 +1,273 @@
+{
+  "task": {
+    "caseId": "S062",
+    "runId": "S062-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S062.json",
+    "inputHash": "f8b3e43a96ef5b2c9e91eb970f17d76caece84aa8a3ba619b3692e18c042620f"
+  },
+  "inputHash": "f8b3e43a96ef5b2c9e91eb970f17d76caece84aa8a3ba619b3692e18c042620f",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "11d846a45843d679de828d29d1e889f5f420707a62ae5ac6cdc0f0cbd5608578",
+    "stages": {
+      "goal-mapping": {
+        "goals": [
+          {
+            "index": 0,
+            "importance": "essential",
+            "status": "missing",
+            "reason": "artifact文本仅为'完整教学交付到此结束：欢迎大家学习英语。'，未包含任何关于词表中前缀un-意义的解释，也未在给定词上应用，确实缺少该核心目标的相关处理。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/0"
+            ],
+            "quote": "",
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "ba5701b92bc7d14664cf6ebd8922e14ba99d362eaf01013e5db858ae4c2ff76a"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "e0d0ebf754fe4c4754e9e6e545be939741595f92a9cceff9da4b3a6be4251759"
+              }
+            ]
+          }
+        ]
+      },
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "交付物仅含欢迎语，未解释un-意义也未在给定词应用，核心目标完全缺失。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/0"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "交付物未包含任何关于前缀un-意义解释或应用的内容，仅含欢迎语",
+                "impact": "核心目标完全未处理，学习用途失败",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/goals/0"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "ba5701b92bc7d14664cf6ebd8922e14ba99d362eaf01013e5db858ae4c2ff76a"
+                  },
+                  {
+                    "pointer": "/goals/0",
+                    "valueHash": "e0d0ebf754fe4c4754e9e6e545be939741595f92a9cceff9da4b3a6be4251759"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "ba5701b92bc7d14664cf6ebd8922e14ba99d362eaf01013e5db858ae4c2ff76a"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "e0d0ebf754fe4c4754e9e6e545be939741595f92a9cceff9da4b3a6be4251759"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "交付物仅含欢迎语，完全未解释un-前缀意义或应用，核心目标缺失导致学习用途失败。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/0"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "核心目标'解释词表中前缀un-的意义并在给定词上应用'在artifact中无任何处理，仅见结束欢迎语。",
+                "impact": "改变核心用途：学习者未获得前缀规则或应用演示，声明教学目的完全未达成。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/goals/0"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "ba5701b92bc7d14664cf6ebd8922e14ba99d362eaf01013e5db858ae4c2ff76a"
+                  },
+                  {
+                    "pointer": "/goals/0",
+                    "valueHash": "e0d0ebf754fe4c4754e9e6e545be939741595f92a9cceff9da4b3a6be4251759"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "ba5701b92bc7d14664cf6ebd8922e14ba99d362eaf01013e5db858ae4c2ff76a"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "e0d0ebf754fe4c4754e9e6e545be939741595f92a9cceff9da4b3a6be4251759"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q2",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "交付物仅含欢迎语，未解释un-意义也未在给定词应用，核心目标完全缺失，声明教学目的未达成。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/0"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "交付物未包含任何关于前缀un-意义解释或应用的内容，仅含欢迎语",
+                "impact": "核心目标完全未处理，学习用途失败",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/goals/0"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "ba5701b92bc7d14664cf6ebd8922e14ba99d362eaf01013e5db858ae4c2ff76a"
+                  },
+                  {
+                    "pointer": "/goals/0",
+                    "valueHash": "e0d0ebf754fe4c4754e9e6e545be939741595f92a9cceff9da4b3a6be4251759"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "ba5701b92bc7d14664cf6ebd8922e14ba99d362eaf01013e5db858ae4c2ff76a"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "e0d0ebf754fe4c4754e9e6e545be939741595f92a9cceff9da4b3a6be4251759"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q2:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "完整教学交付到此结束：欢迎大家学习英语。",
+              "valueHash": "ba5701b92bc7d14664cf6ebd8922e14ba99d362eaf01013e5db858ae4c2ff76a"
+            },
+            "reason": "artifact仅欢迎语，未含un-解释或应用，与目标对照确为缺失。"
+          },
+          {
+            "id": "review2:Q2:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "完整教学交付到此结束：欢迎大家学习英语。",
+              "valueHash": "ba5701b92bc7d14664cf6ebd8922e14ba99d362eaf01013e5db858ae4c2ff76a"
+            },
+            "reason": "目标要求解释应用，artifact无对应内容，核心目标缺失成立。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q2",
+          "level": 0,
+          "evidence": "sufficient",
+          "reason": "交付物仅含欢迎语，未解释un-意义也未在给定词应用，核心目标完全缺失，声明教学目的未达成。",
+          "refs": [
+            "/artifacts/0/text",
+            "/goals/0"
+          ],
+          "defects": [
+            {
+              "severity": "material",
+              "description": "交付物未包含任何关于前缀un-意义解释或应用的内容，仅含欢迎语",
+              "impact": "核心目标完全未处理，学习用途失败",
+              "refs": [
+                "/artifacts/0/text",
+                "/goals/0"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "ba5701b92bc7d14664cf6ebd8922e14ba99d362eaf01013e5db858ae4c2ff76a"
+                },
+                {
+                  "pointer": "/goals/0",
+                  "valueHash": "e0d0ebf754fe4c4754e9e6e545be939741595f92a9cceff9da4b3a6be4251759"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "ba5701b92bc7d14664cf6ebd8922e14ba99d362eaf01013e5db858ae4c2ff76a"
+            },
+            {
+              "pointer": "/goals/0",
+              "valueHash": "e0d0ebf754fe4c4754e9e6e545be939741595f92a9cceff9da4b3a6be4251759"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "ae376f7235be229862c3df3ab8fb470265512cf5c766fd4a1f96339b52406787"
+  }
+}

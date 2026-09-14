@@ -1,0 +1,49 @@
+{
+  "inputIdentity": "6daee6fecad359c4f236706351c52371bb653f4c8c7bde3f00fc0e164392d3c0",
+  "attempts": [
+    {
+      "physicalId": "bf3a2971-ee78-401f-a473-e60c0de9813b",
+      "caseId": "S095",
+      "runId": "S095-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q2",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "Lesson演示了按有向边检查路线可行性（A→C→B可行，B→A不可行），计算A、B入度出度并区分概念，解释边标签用途。所有声明目标在working_fluency深度准确覆盖，无缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "72e0453a9438790f8907f568fdfc97b6907db40d27181f87c52fb2d1048b0c9b"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "4a1ff16d1619a7f4b64cc932d8257c0a3341f94daa68120cf944ecd4a83e3b93"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

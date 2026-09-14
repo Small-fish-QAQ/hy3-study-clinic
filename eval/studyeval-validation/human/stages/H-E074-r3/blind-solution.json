@@ -1,0 +1,36 @@
+{
+  "inputIdentity": "a77063bdd28937c0dbec87984a91a66397a6048b8628b5f070c5fe47158fb254",
+  "attempts": [
+    {
+      "physicalId": "b4763e47-86c6-45e4-a5a9-bbc08a01d925",
+      "caseId": "E074",
+      "runId": "H-E074-r3",
+      "stage": "blind-solution",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "status": "resolved",
+    "solution": "据/sources/0/text明确表述：约定整项工作为一份，小岚单独需六小时且速度恒定，则每小时完成六分之一份（1/6份）。题目所给条件与来源一致，直接提取即可。",
+    "refs": [
+      "/question/prompt",
+      "/sources/0/text"
+    ],
+    "witnesses": [
+      {
+        "pointer": "/question/prompt",
+        "valueHash": "49e1da85f3fee2b4d52571aba4aaba877eb27ae39e2844eb59214cb1031b8e12"
+      },
+      {
+        "pointer": "/sources/0/text",
+        "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+      }
+    ]
+  }
+}

@@ -1,0 +1,185 @@
+{
+  "status": "ready",
+  "message": "Lesson is ready.",
+  "course": {
+    "title": "Joining related tables without losing unmatched rows"
+  },
+  "session": {
+    "status": "active",
+    "version": 11
+  },
+  "agenda": {
+    "version": 2,
+    "itemState": "queued"
+  },
+  "lesson": {
+    "objective": {
+      "title": "基于显式条件的连接匹配、结果推导与连接类型选择",
+      "whyNow": "我们已知两表数据与添加订单后的状态，但需要一套明确的心智模型来预测不同连接类型在具体行上的输出，而非记忆例子。",
+      "outcomes": [
+        {
+          "title": "选择连接类型并解释NULL占位与不等价性",
+          "description": "当仅请求匹配行时选择INNER JOIN，当需保留某表所有行时将该表置于左侧使用LEFT JOIN；解释NULL占位表示无匹配右表值而非零，并说明即便某案例行数相同，当存在未匹配行时两连接行为不同不可互换。"
+        }
+      ]
+    },
+    "prerequisites": [],
+    "segments": [
+      {
+        "index": 0,
+        "purpose": "orientation",
+        "explanation": "设想一个更小的情况：客户Cleo只有订单73，金额10。按匹配键customer_id=3，Cleo的一行与订单73结合，得到一行(Cleo,73,10)。若换成INNER JOIN，因为存在匹配，这一行同样出现；若换成LEFT JOIN且左表为Customers，也出现同样行，不会凭空生成额外行。相反，若左表有某行在右表找不到同键，INNER直接丢弃该行，LEFT则保留并填null。因此，连接类型决定未匹配左表行是否留存，而匹配多行时左表行会重复出现，不会自动合并。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 1,
+        "purpose": "worked_example",
+        "explanation": "下面用已包含订单74的表状态走一遍具体推导，展示LEFT JOIN如何逐行生成结果，把决策留给学习者。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": {
+          "startingState": "Customers表行：(1,Ada), (2,Ben), (3,Cleo)。Orders表行：(71,1,20), (72,1,35), (73,3,10), (74,2,8)。选用LEFT JOIN，左表为Customers，匹配条件Customers.customer_id = Orders.customer_id，输出列name, order_id, amount。尚未列出结果行。",
+          "inputs": [
+            "左表Customers全部行",
+            "右表Orders全部行",
+            "匹配键customer_id",
+            "输出列name, order_id, amount"
+          ],
+          "ruleOrProcedure": "对左表每一行，找出右表中customer_id相同的所有行，每对输出一行；若无匹配，输出左表行加右表列null。",
+          "steps": [
+            {
+              "action": "列出左表Customers所有行作为待处理对象",
+              "reason": "LEFT JOIN必须以左表每一行作为保留基准",
+              "resultingState": "待处理客户行：(1,Ada), (2,Ben), (3,Cleo)；右表订单如上未变动。"
+            }
+          ],
+          "learnerDecision": null,
+          "result": null,
+          "whyResultFollows": null,
+          "origin": "hy3_synthesis",
+          "sources": [],
+          "interaction": {
+            "stage": "guided",
+            "modelledStepCount": 1,
+            "origin": "hy3_synthesis",
+            "sources": [],
+            "activity": {
+              "prompt": "基于上述匹配，LEFT JOIN结果应包含哪些具体行？",
+              "options": [
+                {
+                  "id": "A",
+                  "text": "(Ada,71,20), (Ada,72,35), (Ben,74,8), (Cleo,73,10)"
+                },
+                {
+                  "id": "B",
+                  "text": "(Ada,71,20), (Ada,72,35), (Ben,null,null), (Cleo,73,10)"
+                },
+                {
+                  "id": "C",
+                  "text": "(Ada,71,20), (Ada,72,35), (Cleo,73,10)"
+                }
+              ],
+              "response": null,
+              "respondedAt": null,
+              "correct": null,
+              "feedback": null,
+              "debrief": null,
+              "credit": "none",
+              "misconception": null
+            },
+            "hint": null,
+            "scaffold": null,
+            "transfer": null
+          }
+        },
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 2,
+        "purpose": "comparison",
+        "explanation": "需要明确边界：NULL只是无匹配标记的占位，不是数值零；而且两连接在某数据上行数恰同，并不证明它们可互换。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": {
+          "text": "资料中指出(Ben,null,null)中的null表示无匹配订单值，并非Ben下了金额0的订单；添加订单74后两连接均四行，但强调这不等价于所有数据集下行为一致，只要存在无匹配客户二者便不同。",
+          "origin": "hy3_synthesis",
+          "sources": []
+        },
+        "possibleMisconception": null,
+        "informalCheck": null
+      }
+    ],
+    "sourceReferencesAvailable": true,
+    "visuals": [],
+    "summary": {
+      "available": true,
+      "text": "连接按键匹配：INNER只保留两边均匹配的对；LEFT保留左表每一行，无匹配时右表列补null而非零；行数相同不意味着行为等价。",
+      "nextConnection": null,
+      "formalOpportunities": []
+    },
+    "plannedTime": {
+      "agendaMinutes": 11,
+      "activeMinutesMin": 14,
+      "activeMinutesMax": 22,
+      "basis": "locally_evaluated_learning_actions"
+    }
+  },
+  "progress": {
+    "stateVersion": 2,
+    "stateId": "lesson_execution_5c4c63d8-b282-47d1-a111-89f20f2387ef",
+    "currentSegmentIndex": 0,
+    "segmentCount": 3,
+    "presentedSegmentIndexes": [],
+    "presentationStatus": "not_started",
+    "presentationCompletedAt": null
+  },
+  "currentInformalCheck": null,
+  "practice": {
+    "status": "locked",
+    "currentItemIndex": 0,
+    "itemCount": 1,
+    "item": {
+      "index": 0,
+      "objectiveTitle": "选择连接类型并解释NULL占位与不等价性",
+      "construct": "evaluate",
+      "surface": "initial",
+      "supplementary": true,
+      "prompt": "当前Orders表已包含订单(74,2,8)。某查询返回结果含 (Ada,71,20), (Ada,72,35), (Cleo,73,10), (Ben,null,null)。哪种解释符合已知事实？",
+      "options": [
+        {
+          "id": "teaching_brief_95a3959f-ef89-42fc-bb6b-31bb42f678ae_practice_1_initial_A",
+          "text": "查询使用了LEFT JOIN，但执行于添加订单74之前的表状态，因此Ben无匹配产生null占位行"
+        },
+        {
+          "id": "teaching_brief_95a3959f-ef89-42fc-bb6b-31bb42f678ae_practice_1_initial_B",
+          "text": "查询使用了基于当前表的INNER JOIN，未匹配行以null占位输出"
+        },
+        {
+          "id": "teaching_brief_95a3959f-ef89-42fc-bb6b-31bb42f678ae_practice_1_initial_C",
+          "text": "查询使用了基于当前表的LEFT JOIN，Ben无匹配订单故出现null占位行"
+        }
+      ]
+    },
+    "attempts": [],
+    "recovery": null,
+    "completedAt": null,
+    "credit": "none"
+  },
+  "allowedActions": [
+    "start_lesson"
+  ]
+}

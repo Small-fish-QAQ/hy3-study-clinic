@@ -1,0 +1,248 @@
+{
+  "task": {
+    "caseId": "S096",
+    "runId": "S096-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S096.json",
+    "inputHash": "22a8c5a897d647a599af6f508b9bd3e12b1fb37aa7b9ac4c3f12ef21ee9fdd83"
+  },
+  "inputHash": "22a8c5a897d647a599af6f508b9bd3e12b1fb37aa7b9ac4c3f12ef21ee9fdd83",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "4ff92cebae077d82bc36ad4b2797acc1e40c2a083ef786da85c051df7a89e4cf",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "交付的修复建议错误声称长度3数组有四个元素并建议继续用i<=3，直接教授了与课堂规则相悖的错误方法，未定位边界错误也未提供有效新检查，核心用途失败。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "修复文本称长度3实际有四个元素，并建议继续用i<=3，违背源材料长度n合法下标0到n-1、i<=n越界的明确规则，教授错误方法。",
+                "impact": "改变核心学习用途：本应纠正边界错误，却巩固错误推理，无法达成定位错误与检验同一推理的目标。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "2f10d4082e6028907976ecad0f8e73e261a95961125f871da540369ded146964"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "6213ff9a055ace79d0f400ff726e7c543da909a26d1040539112300cd2428c3c"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "2f10d4082e6028907976ecad0f8e73e261a95961125f871da540369ded146964"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "6213ff9a055ace79d0f400ff726e7c543da909a26d1040539112300cd2428c3c"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "交付修复断言长度3数组有四个元素并鼓励i<=3，直接传授与源规则矛盾的错误方法，未定位边界错误，核心用途被实质逆转。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "修复文本称长度3数组有四个元素且i<=3访问0-3有效，传授错误下标方法，违背源中合法下标0到n-1的规则。",
+                "impact": "干预本应诊断边界错误并给新检查，却教错方法，使学习者巩固越界访问，实质改变修复与检验的核心学习用途。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "2f10d4082e6028907976ecad0f8e73e261a95961125f871da540369ded146964"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "6213ff9a055ace79d0f400ff726e7c543da909a26d1040539112300cd2428c3c"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "2f10d4082e6028907976ecad0f8e73e261a95961125f871da540369ded146964"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "6213ff9a055ace79d0f400ff726e7c543da909a26d1040539112300cd2428c3c"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "交付修复断言长度3数组有四个元素并鼓励i<=3，直接传授与源规则矛盾的错误方法，未定位边界错误也未提供有效新检查，核心用途失败。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "修复文本称长度3实际有四个元素且建议继续用i<=3，传授错误下标方法，违背源中合法下标0到n-1及i<=n越界规则。",
+                "impact": "干预本应诊断边界错误并给新检查，却教错方法，使学习者巩固越界访问，实质改变修复与检验的核心学习用途。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "2f10d4082e6028907976ecad0f8e73e261a95961125f871da540369ded146964"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "6213ff9a055ace79d0f400ff726e7c543da909a26d1040539112300cd2428c3c"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "2f10d4082e6028907976ecad0f8e73e261a95961125f871da540369ded146964"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "6213ff9a055ace79d0f400ff726e7c543da909a26d1040539112300cd2428c3c"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q6:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "长度3实际有四个元素；继续用i<=3并记住这点。",
+              "valueHash": "2f10d4082e6028907976ecad0f8e73e261a95961125f871da540369ded146964"
+            },
+            "reason": "该引文声称长度3有四个元素并建议i<=3，违背/sources/0/text中长度n合法下标0到n-1、i<=n越界的规则，教授错误方法，改变核心用途。"
+          },
+          {
+            "id": "review2:Q6:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/sources/0/text",
+              "quote": "长度n的数组合法下标为0到n-1。若写i<=n，会多访问不存在的第n号位置。",
+              "valueHash": "6213ff9a055ace79d0f400ff726e7c543da909a26d1040539112300cd2428c3c"
+            },
+            "reason": "源规则明确长度n合法0..n-1且i<=n越界，而/artifacts/0/text称长度3四元素并i<=3，证实传授错误方法，实质缺陷成立。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q6",
+          "level": 0,
+          "evidence": "sufficient",
+          "reason": "交付修复断言长度3数组有四个元素并鼓励i<=3，直接传授与源规则矛盾的错误方法，未定位边界错误也未提供有效新检查，核心用途失败。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [
+            {
+              "severity": "material",
+              "description": "修复文本称长度3实际有四个元素且建议继续用i<=3，传授错误下标方法，违背源中合法下标0到n-1及i<=n越界规则。",
+              "impact": "干预本应诊断边界错误并给新检查，却教错方法，使学习者巩固越界访问，实质改变修复与检验的核心学习用途。",
+              "refs": [
+                "/artifacts/0/text",
+                "/sources/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "2f10d4082e6028907976ecad0f8e73e261a95961125f871da540369ded146964"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "6213ff9a055ace79d0f400ff726e7c543da909a26d1040539112300cd2428c3c"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "2f10d4082e6028907976ecad0f8e73e261a95961125f871da540369ded146964"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "6213ff9a055ace79d0f400ff726e7c543da909a26d1040539112300cd2428c3c"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "3ae938b7bc4c5b67f24a647aafeb36c9709afd6676e905f802ae744f5e8f6180"
+  }
+}

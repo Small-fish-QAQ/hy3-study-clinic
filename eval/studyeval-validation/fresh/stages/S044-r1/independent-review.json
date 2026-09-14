@@ -1,0 +1,89 @@
+{
+  "inputIdentity": "c5f93070b6db14a492d8f21bc892cefbb0f68a83aba8e8257638558a0973a999",
+  "attempts": [
+    {
+      "physicalId": "e0e0739b-ea09-4739-847e-85552a8344f5",
+      "caseId": "S044",
+      "runId": "S044-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q2",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "教学文本错误声称复制删源、移动留源，直接矛盾源规则与核心目标，导致教授正确状态的目的失败。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text",
+          "/goals/0",
+          "/goals/1"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "产物断言复制后应删原文件、移动后原路径必须保留，违背源规则及核心目标要求的正确状态。",
+            "impact": "核心目标被矛盾，学习者获错误文件系统模型，声明教学用途被击败。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text",
+              "/goals/0",
+              "/goals/1"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "fc8fca96c682c31ee0bfd6ce56aa9a31702bf79d5f6f1463e1eaf5a8592a5052"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "f077626b6cc0dcadf32134e02c41925aefa4067f55b8ae7509353fb99642dc40"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "7532220c38978923873dc40d4d1cf66fd14c0bb961b641a9a3505fb3ee3407ff"
+              },
+              {
+                "pointer": "/goals/1",
+                "valueHash": "2024f7c3f7abb8fd69338ad687ae12c5334ffdc39c71ed3651edf882ea55011f"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "fc8fca96c682c31ee0bfd6ce56aa9a31702bf79d5f6f1463e1eaf5a8592a5052"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "f077626b6cc0dcadf32134e02c41925aefa4067f55b8ae7509353fb99642dc40"
+          },
+          {
+            "pointer": "/goals/0",
+            "valueHash": "7532220c38978923873dc40d4d1cf66fd14c0bb961b641a9a3505fb3ee3407ff"
+          },
+          {
+            "pointer": "/goals/1",
+            "valueHash": "2024f7c3f7abb8fd69338ad687ae12c5334ffdc39c71ed3651edf882ea55011f"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

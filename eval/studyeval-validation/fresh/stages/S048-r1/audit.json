@@ -1,0 +1,49 @@
+{
+  "inputIdentity": "65a3759e7a38e1d4b472db643e3ee3a2669ed84dcb2cc69731d287d73fe4884c",
+  "attempts": [
+    {
+      "physicalId": "f4cd6db4-4060-40a5-8a27-34a46594b5b5",
+      "caseId": "S048",
+      "runId": "S048-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q3",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "artifact基于source规则清晰解释两句因修饰语位置不同导致范围差异：先筛选子集vs先进入再追加属性，连接前提与结论，无缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "7f4f09e5c6f8ba6132e34a355019db89161ae7f14ba2040fdab28306f3e2972e"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "9ef8039d157a3635d1da4128848b8da6aabf32e121261f1cd761712bb1417ab2"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "inputIdentity": "1f8175d6b50fc7ca5b3385cfd56f6db3b3cfc503a215ac9969628a725bcc4122",
+  "attempts": [
+    {
+      "physicalId": "14e6075e-f4dd-45d8-843e-e771934e663f",
+      "caseId": "E027",
+      "runId": "H-E027-r2",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q4",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "题目给定甲8h乙4h及独立可加条件，乙先做1h甲独做剩余，求总时并比较合作。作者参考解正确，无提前泄露，需应用多步计算，符合working_fluency。",
+        "refs": [
+          "/question/prompt",
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "assessment": {
+          "key": "correct",
+          "validity": "valid",
+          "exposure": "none",
+          "discrimination": "adequate",
+          "demand": "application",
+          "demandReason": "学生须算速度、乙1h完成量、剩余量、甲独做时间、总时长及合作时间并比较，非抄写源中数字。",
+          "reason": "题干参数与源例不同且剩余为独做；作者解正确；priorExposure空；需应用分数乘除解新例。",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text"
+          ],
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "dcf5dd89a64f0379c2a16c155095996cbf9b1dfd98e7b21c0cebe9fb5974918a"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "298f97e041cf6e72c2f79141bae8631b1df17304ecdaea27c01e89ba266e840d"
+            }
+          ]
+        },
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "dcf5dd89a64f0379c2a16c155095996cbf9b1dfd98e7b21c0cebe9fb5974918a"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "298f97e041cf6e72c2f79141bae8631b1df17304ecdaea27c01e89ba266e840d"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

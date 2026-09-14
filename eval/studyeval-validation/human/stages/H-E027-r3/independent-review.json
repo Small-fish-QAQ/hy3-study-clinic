@@ -1,0 +1,72 @@
+{
+  "inputIdentity": "0ae3886f59c71fc4e7abc5719c9f11c5dd8a52465548154644467948dc9f3c94",
+  "attempts": [
+    {
+      "physicalId": "9e270167-96c7-4316-99f0-d7520235397d",
+      "caseId": "E027",
+      "runId": "H-E027-r3",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q4",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "题目在明确假设下要求分段计算并比较合作时间，作者参考解正确，无提前曝光，需应用多步计算而非抄写，判别力充足。",
+        "refs": [
+          "/question/prompt",
+          "/artifacts/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "assessment": {
+          "key": "correct",
+          "validity": "valid",
+          "exposure": "none",
+          "discrimination": "adequate",
+          "demand": "application",
+          "demandReason": "学生需根据给定单独用时计算速度，分段求乙完成量与甲剩余时间，再算合作时间比较，非直接抄写来源中6和3的示例数值。",
+          "reason": "题干给甲8乙4及假设，求总时间并比较；作者参考解正确给出7小时与8/3小时及比较；priorExposure空，artifact未展示；需应用计算，判别力足。",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text"
+          ],
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "dcf5dd89a64f0379c2a16c155095996cbf9b1dfd98e7b21c0cebe9fb5974918a"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "298f97e041cf6e72c2f79141bae8631b1df17304ecdaea27c01e89ba266e840d"
+            }
+          ]
+        },
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "dcf5dd89a64f0379c2a16c155095996cbf9b1dfd98e7b21c0cebe9fb5974918a"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "298f97e041cf6e72c2f79141bae8631b1df17304ecdaea27c01e89ba266e840d"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

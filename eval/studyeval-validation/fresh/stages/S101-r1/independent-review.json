@@ -1,0 +1,82 @@
+{
+  "inputIdentity": "09e786e4ce5b44bfadd35dd3d5bf00b1fb2896b4b49c41ecbbaa5d07e3eccded",
+  "attempts": [
+    {
+      "physicalId": "6488e186-dd57-449a-abd8-dc229a8d3342",
+      "caseId": "S101",
+      "runId": "S101-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q4",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "题目问能否唯一确定并要求举两组合说明，盲解与artifact均正确，无提前曝光，促使学习者应用约束构造实例并解释，符合working_fluency深度，判别力足够。",
+        "refs": [
+          "/question/prompt",
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "assessment": {
+          "key": "correct",
+          "validity": "valid",
+          "exposure": "none",
+          "discrimination": "adequate",
+          "demand": "application",
+          "demandReason": "学生必须根据总数8和两色均≥1的约束，自行选取两个不同红球数计算蓝球并解释满足前提，资料未提供具体组合故非抄写。",
+          "reason": "题干有效询问欠定并需举例；作者答案与盲解均正确否定并给实例；priorExposure空无泄题；构造实例并解释满足约束属应用层级，能区分理解与否。",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "6e35222514b3678631b97b82b69f390399f2baee79053ec5cc0cb9980929c813"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "300bb8d47cf5a3d8750d362cf2c3cf371d263c743739d948dbfdd78ca7b6aea4"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "5aad739453ecf71bb67b8231d512e4501272c0e19922e6b7b60be43255633d24"
+            }
+          ]
+        },
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "6e35222514b3678631b97b82b69f390399f2baee79053ec5cc0cb9980929c813"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "300bb8d47cf5a3d8750d362cf2c3cf371d263c743739d948dbfdd78ca7b6aea4"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "5aad739453ecf71bb67b8231d512e4501272c0e19922e6b7b60be43255633d24"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

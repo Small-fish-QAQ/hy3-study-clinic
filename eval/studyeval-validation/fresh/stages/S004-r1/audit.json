@@ -1,0 +1,89 @@
+{
+  "inputIdentity": "0932783c4eaf7d8e3b77d9b10eb963be323b2d95428b30db90be91494e7f2f42",
+  "attempts": [
+    {
+      "physicalId": "3ab60f77-0099-4be9-8633-388ce2287432",
+      "caseId": "S004",
+      "runId": "S004-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q5",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "学生提交空字符串，评分器判定required未满足且拒绝学分，反馈准确。重解题目并集为{1,2,3}，空答明显不符，评分器质量高。",
+        "refs": [
+          "/answer",
+          "/rubric/0",
+          "/productJudgment/criteria/0",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "grading": {
+          "criteria": [
+            {
+              "id": "required",
+              "result": "not_met",
+              "reason": "学生全答为空字符串，未写出{1,2,3}，不满足写出该集合的要求",
+              "refs": [
+                "/answer",
+                "/rubric/0"
+              ],
+              "required": true,
+              "witnesses": [
+                {
+                  "pointer": "/answer",
+                  "valueHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                },
+                {
+                  "pointer": "/rubric/0",
+                  "valueHash": "41e3e9993ea73d3924609af1ca9150dfde326067be5fc53a6f4aec3ca0e10258"
+                }
+              ]
+            }
+          ],
+          "warrantedCredit": "withheld",
+          "actualCredit": "withheld",
+          "actualCreditWitness": {
+            "pointer": "/productJudgment/consequence",
+            "valueHash": "a3b3d76fdf1e33a8c7bde9a7152980d0de2656e3d541feafb198261dcc7cf51c"
+          }
+        },
+        "witnesses": [
+          {
+            "pointer": "/answer",
+            "valueHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "pointer": "/rubric/0",
+            "valueHash": "41e3e9993ea73d3924609af1ca9150dfde326067be5fc53a6f4aec3ca0e10258"
+          },
+          {
+            "pointer": "/productJudgment/criteria/0",
+            "valueHash": "c78f80dc96db58dc73686a225b449d9b6f0d6e0707837cb079df01fc367adeab"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "a5384e5168414c3fb7fdaf9d41facc61921578fe1399ba0c69cb62aa2103ce93"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

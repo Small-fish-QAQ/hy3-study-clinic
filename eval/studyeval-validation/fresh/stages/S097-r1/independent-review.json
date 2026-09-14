@@ -1,0 +1,69 @@
+{
+  "inputIdentity": "66df081c81a98c6da2184ebc83f569bf1402c42ebc27c6e692887b6db3ed83e6",
+  "attempts": [
+    {
+      "physicalId": "2bc8c77b-3bd6-40dc-a4fb-14ad1c58e275",
+      "caseId": "S097",
+      "runId": "S097-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q2",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "核心目标区分叙述者/作者及第一人称限制有准确解释，但次要目标'引用归属标记'在lesson中完全省略，属局部缺口，核心用途成立。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "次要目标'说明引用别人话语时的归属标记'在artifact(lesson)中未提及，完全省略",
+            "impact": "核心目标（区分叙述者与现实作者、第一人称知解限制）仍准确可用，不改变核心学习用途",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "2955c5a9173f69a8a98ac42c40be80a9884f2f9d92ab33f7700ef6f8ba35f4aa"
+              },
+              {
+                "pointer": "/goals",
+                "valueHash": "8b78e8c669075a0ea86f5033dbbe2b4722fc4b29b6264d26b8764fba22ae73f4"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "2955c5a9173f69a8a98ac42c40be80a9884f2f9d92ab33f7700ef6f8ba35f4aa"
+          },
+          {
+            "pointer": "/goals",
+            "valueHash": "8b78e8c669075a0ea86f5033dbbe2b4722fc4b29b6264d26b8764fba22ae73f4"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

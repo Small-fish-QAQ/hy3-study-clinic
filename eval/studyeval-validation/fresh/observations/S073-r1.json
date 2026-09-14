@@ -1,0 +1,113 @@
+{
+  "task": {
+    "caseId": "S073",
+    "runId": "S073-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S073.json",
+    "inputHash": "658e6b515f2d0f942a49b670189097e50771eed5453084f3a1821b0396dfee51"
+  },
+  "inputHash": "658e6b515f2d0f942a49b670189097e50771eed5453084f3a1821b0396dfee51",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "dfb61925e628b94ecd2f93a21a801ee1360be8037c253e1c87714c859f85de69",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "课时文本准确表述频率对应音调、振幅改声强不改音调，且指出无响度规则，与来源一致，无事实或归属缺陷。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "31eac705e6171e4728121bcd417b0a379387aff53ea6e9b7af9e280966acb55d"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "7d4b5318383b8f1b4d45756898be01c9752196adf6665cc09ce68423b1d671b7"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "课程片段准确陈述频率对应音调、振幅不改变频率与音调，并指出资料未给响度计算规则，与来源描述一致，无事实或归属缺陷。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "31eac705e6171e4728121bcd417b0a379387aff53ea6e9b7af9e280966acb55d"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "7d4b5318383b8f1b4d45756898be01c9752196adf6665cc09ce68423b1d671b7"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q1",
+          "level": 2,
+          "evidence": "sufficient",
+          "reason": "课时文本准确表述频率对应音调、振幅改声强不改音调，且指出无响度规则，与来源一致，无事实或归属缺陷。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "31eac705e6171e4728121bcd417b0a379387aff53ea6e9b7af9e280966acb55d"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "7d4b5318383b8f1b4d45756898be01c9752196adf6665cc09ce68423b1d671b7"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "7a95b945ffbf6acffe21e9adcba94cb304dbc502d6969ab05c96a3aec6278301"
+  }
+}

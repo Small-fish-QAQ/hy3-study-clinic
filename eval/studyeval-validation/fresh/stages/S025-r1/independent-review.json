@@ -1,0 +1,49 @@
+{
+  "inputIdentity": "299c43115c788b186e2837fd837f14a3d4bec146d848fbdbc78b4e0e9efffc28",
+  "attempts": [
+    {
+      "physicalId": "7388e657-a7f4-4113-ab35-729b3d05eaca",
+      "caseId": "S025",
+      "runId": "S025-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q3",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "artifact利用给定前提a^0=1与除法规则，展示1÷a^n=a^(0-n)=a^(-n)，明确连接操作与负指数为倒数的结论，以2^(-3)例证并补充a≠0限制，解释充分无缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "d28798d2489069ef50dbe1f24329f658424eccdc8cc7f9ba6cb5bba9bf4a2ec0"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "8f66df12d54e18d234589d8c047330d6ce2ae196b074b8083cf0629060128d07"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

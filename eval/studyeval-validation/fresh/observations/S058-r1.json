@@ -1,0 +1,225 @@
+{
+  "task": {
+    "caseId": "S058",
+    "runId": "S058-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S058.json",
+    "inputHash": "6e5446b6ae72b258808a28d3602f2a82bbfa38582942f5170f978028872a7ab8"
+  },
+  "inputHash": "6e5446b6ae72b258808a28d3602f2a82bbfa38582942f5170f978028872a7ab8",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "9936d89cbf1eb904cc46dd82d577b4234d911e93d5529b595ea7c26abd925cb3",
+    "stages": {
+      "blind-solution": {
+        "status": "resolved",
+        "solution": "依/sources/0/text：XOR恰一输入1时出1，两输入同(0,0或1,1)出0。步1：XOR(1,1)=0。步2：XOR(0,1)恰一为1，出1。最终输出1。",
+        "refs": [
+          "/question/prompt",
+          "/sources/0/text"
+        ],
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "5758ea989ce8c301f73b0ed45829a3609edbc221481bcd3270fc98a8791ac7a6"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "abe0ee3fc063cc9ca8e5695fcc7196cbc85922a703ddb540aee12d9b2456e392"
+          }
+        ]
+      },
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q4",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "题目给定两步异或计算并说明，来源提供规则，独立解题与私有作者答案均得最终输出1。任务有效引发working_fluency层应用与解释，无提前泄题，判别力充足，符合Q4完整标准。",
+            "refs": [
+              "/question/prompt",
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "assessment": {
+              "key": "correct",
+              "validity": "valid",
+              "exposure": "none",
+              "discrimination": "adequate",
+              "demand": "application",
+              "demandReason": "学生必须根据给定输入和异或规则执行两步XOR计算并解释每步原因，超出抄写/复述现有资料",
+              "reason": "题目明确要求先算XOR(1,1)再与1异或并说明两步；独立解题得最终1，作者私有答案一致正确；无提前曝光；需应用规则计算新实例并解释，判别力足够。",
+              "refs": [
+                "/question/prompt",
+                "/artifacts/0/text",
+                "/sources/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/question/prompt",
+                  "valueHash": "5758ea989ce8c301f73b0ed45829a3609edbc221481bcd3270fc98a8791ac7a6"
+                },
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "e2fbdaa35f160eedb1d82f24f5a2ed324cb0d811fcc88707f2aaa77fbe0d8576"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "abe0ee3fc063cc9ca8e5695fcc7196cbc85922a703ddb540aee12d9b2456e392"
+                }
+              ]
+            },
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "5758ea989ce8c301f73b0ed45829a3609edbc221481bcd3270fc98a8791ac7a6"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "e2fbdaa35f160eedb1d82f24f5a2ed324cb0d811fcc88707f2aaa77fbe0d8576"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "abe0ee3fc063cc9ca8e5695fcc7196cbc85922a703ddb540aee12d9b2456e392"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q4",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "题目要求学生应用异或规则组合两门并计算解释两步，作者答案正确且未泄露，任务有效引发working_fluency深度的应用与解释技能。",
+            "refs": [
+              "/question/prompt",
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "assessment": {
+              "key": "correct",
+              "validity": "valid",
+              "exposure": "none",
+              "discrimination": "adequate",
+              "demand": "application",
+              "demandReason": "学生须依据规则计算XOR(1,1)=0及XOR(0,1)=1，组织两步方案并解释每步满足条件，非抄写现成公式。",
+              "reason": "题干要求两步异或组合并说明；作者参考解正确给出两步及理由；priorExposure空，无泄露；需应用规则解释，判别力充足。",
+              "refs": [
+                "/question/prompt",
+                "/artifacts/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/question/prompt",
+                  "valueHash": "5758ea989ce8c301f73b0ed45829a3609edbc221481bcd3270fc98a8791ac7a6"
+                },
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "e2fbdaa35f160eedb1d82f24f5a2ed324cb0d811fcc88707f2aaa77fbe0d8576"
+                }
+              ]
+            },
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "5758ea989ce8c301f73b0ed45829a3609edbc221481bcd3270fc98a8791ac7a6"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "e2fbdaa35f160eedb1d82f24f5a2ed324cb0d811fcc88707f2aaa77fbe0d8576"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "abe0ee3fc063cc9ca8e5695fcc7196cbc85922a703ddb540aee12d9b2456e392"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q4",
+          "level": 2,
+          "evidence": "sufficient",
+          "reason": "题目给定两步异或计算并说明，来源提供规则，独立解题与私有作者答案均得最终输出1。任务有效引发working_fluency层应用与解释，无提前泄题，判别力充足，符合Q4完整标准。",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [],
+          "missing": [],
+          "assessment": {
+            "key": "correct",
+            "validity": "valid",
+            "exposure": "none",
+            "discrimination": "adequate",
+            "demand": "application",
+            "demandReason": "学生必须根据给定输入和异或规则执行两步XOR计算并解释每步原因，超出抄写/复述现有资料",
+            "reason": "题目明确要求先算XOR(1,1)再与1异或并说明两步；独立解题得最终1，作者私有答案一致正确；无提前曝光；需应用规则计算新实例并解释，判别力足够。",
+            "refs": [
+              "/question/prompt",
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "5758ea989ce8c301f73b0ed45829a3609edbc221481bcd3270fc98a8791ac7a6"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "e2fbdaa35f160eedb1d82f24f5a2ed324cb0d811fcc88707f2aaa77fbe0d8576"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "abe0ee3fc063cc9ca8e5695fcc7196cbc85922a703ddb540aee12d9b2456e392"
+              }
+            ]
+          },
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "5758ea989ce8c301f73b0ed45829a3609edbc221481bcd3270fc98a8791ac7a6"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "e2fbdaa35f160eedb1d82f24f5a2ed324cb0d811fcc88707f2aaa77fbe0d8576"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "abe0ee3fc063cc9ca8e5695fcc7196cbc85922a703ddb540aee12d9b2456e392"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "3eb0dcac3d18b8edd83391b74864676d3c8bf9d60df196ce12dd35fc2371382d"
+  }
+}

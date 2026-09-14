@@ -1,0 +1,44 @@
+{
+  "kind": "assessment",
+  "agendaItemId": "agenda_item_2ebc9f19-62c7-4ba5-b34d-182df00f24ee",
+  "quiz": {
+    "id": "qz_555a256e-e116-431c-954b-a090000cb088",
+    "materialId": null,
+    "workspaceId": "ws_f37040d0-a7b6-403c-9c48-43a9814d4662",
+    "kind": "adaptive",
+    "assessmentMode": "concept_practice",
+    "config": {
+      "difficulty": "medium",
+      "types": [
+        "short_answer"
+      ],
+      "countPerType": 1
+    },
+    "questions": [
+      {
+        "id": "que_7c3eb02f-6c4e-4215-acc6-44e2cb6134c5",
+        "index": 0,
+        "type": "short_answer",
+        "stem": "某物体质量 3 千克，在同一参考系中以 2 米每秒低速平动。请解释根据经典低速平动动能模型，如何表示其平动动能（写出公式并说明各量意义与单位），并指出该模型不自动涵盖哪些能量或运动。",
+        "conceptId": "con_ac5e1896-0214-4488-bad2-779518ddc5aa",
+        "conceptName": "经典低速平动动能公式",
+        "grounding": {
+          "blockId": "blk_0_f303fda2",
+          "quote": "在同一参考系中，普通低速运动物体的平动动能可用E=1/2×m×v²表示。m是质量，v是速率，即速度的大小；质量用千克、速率用米每秒时，动能用焦耳。该式属于经典低速模型，本课不讨论接近光速的运动，也不把物体的转动能量或其他储能自动并入这个平动动能式。",
+          "startOffset": 0,
+          "endOffset": 124,
+          "occurrenceCount": 1,
+          "reanchored": false
+        },
+        "blueprintId": "bp_ce2a79b8-5735-452d-8c72-4530f9e096d8",
+        "points": 2
+      }
+    ],
+    "targetConceptIds": [
+      "con_ac5e1896-0214-4488-bad2-779518ddc5aa"
+    ],
+    "createdAt": "2026-09-14T11:35:51.230Z"
+  },
+  "assessmentKind": "formal_checkpoint",
+  "formalAssessmentVersionId": "assessment_version_671cab0d-1998-4637-a694-72133ada5c88"
+}

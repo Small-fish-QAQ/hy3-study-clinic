@@ -1,0 +1,31 @@
+{
+  "inputIdentity": "166eb40a95efeda16c0ac9e8e2ccdb7877091996ebba3e8c6fe05ff0ef947041",
+  "attempts": [
+    {
+      "physicalId": "fdfc6b25-fba8-423a-ab35-81c181b52ff2",
+      "caseId": "E450",
+      "runId": "H-E450-r1",
+      "stage": "blind-solution",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "status": "resolved",
+    "solution": "原数据2,4,4,14：平均数=(2+4+4+14)/4=6分钟；中位数排序后中间两数为4,4，平均=4分钟。改14为22后：平均数=(2+4+4+22)/4=8分钟；中位数仍4分钟。变化不同因平均数用全部数值求和除以条数，最大数增8使总和增8、平均增2；中位数仅取中间位置的数值，中间两数未变故不变。资料亦说明单个极大数可拉高平均而不改中位，但中位可能因中间或排序变而变。",
+    "refs": [
+      "/question/prompt"
+    ],
+    "witnesses": [
+      {
+        "pointer": "/question/prompt",
+        "valueHash": "c72bdf5aa33b5c9b2a61dcde88889cc9c7e6ebaf01687c706d6d8539580d34da"
+      }
+    ]
+  }
+}

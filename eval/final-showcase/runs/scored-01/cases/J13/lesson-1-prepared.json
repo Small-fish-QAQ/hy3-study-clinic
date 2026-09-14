@@ -1,0 +1,258 @@
+{
+  "status": "ready",
+  "message": "Lesson is ready.",
+  "course": {
+    "title": "溶解度、饱和与冷却析出"
+  },
+  "session": {
+    "status": "active",
+    "version": 1
+  },
+  "agenda": {
+    "version": 1,
+    "itemState": "queued"
+  },
+  "lesson": {
+    "objective": {
+      "title": "溶解度定义解释、饱和判断与冷却析出计算",
+      "whyNow": "若把溶解度误写为每100克溶液中的克数，会错判饱和状态；我们需要先建立溶剂基准与数据边界。",
+      "outcomes": [
+        {
+          "title": "解释溶解度定义的溶剂基准与数据局限",
+          "description": "解释在指定温度下，固体溶解度表示达到饱和时每100克溶剂（水）中最多溶解的溶质克数，而非每100克溶液；并说明本课规则仅使用给定物质X的数据，不推广为所有固体随温度变化的共同数值规律。"
+        },
+        {
+          "title": "计算溶解上限并判断饱和状态与剩余固体",
+          "description": "根据水量和指定温度溶解度（仅使用20℃和50℃两温度不作插值），运用公式“水的质量×溶解度÷100”计算可溶上限；比较已溶质量与上限判断未饱和或饱和，确定剩余固体量；并理解饱和状态不要求容器底部必有剩余固体。"
+        }
+      ]
+    },
+    "prerequisites": [],
+    "segments": [
+      {
+        "index": 0,
+        "purpose": "orientation",
+        "explanation": "固体溶解度指在指定温度下，每100克溶剂（本课为水）最多溶解的溶质克数，不是每100克溶液。例如20°C时X溶解度30，表示100克水最多溶30克X，得到130克饱和溶液；若取20克水，最多溶20×30÷100=6克X，溶液总质量26克。分母始终是水质量，不是配好的溶液质量。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 1,
+        "purpose": "mechanism",
+        "explanation": "因为溶解度分母固定为水，计算某水量下的溶解上限就用“水的质量×溶解度÷100”。这一规则导致：溶液总质量虽包含溶质，但不改变上限计算中的分母。例如20°C下40克水最多溶40×30÷100=12克X，液相溶液质量变为52克，但判断饱和只看12克是否等于上限，与52克无关。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [
+          {
+            "kind": "mechanism_effect",
+            "fromProposition": "溶解度以100克水为基准定义",
+            "toProposition": "某水量下上限=水质量×溶解度÷100，与溶液总质量无关",
+            "origin": "hy3_synthesis",
+            "sources": []
+          }
+        ],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 2,
+        "purpose": "guided_practice",
+        "explanation": "利用上述基准，可判断给定水量和已溶质量是否达饱和。注意饱和不要求底部有固体，只要实际溶质量达到上限即饱和。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": {
+          "kind": "choose",
+          "prompt": "20°C下80克水加入24克X并完全溶解，容器底部无固体。此时溶液状态是？",
+          "guidance": null,
+          "options": [
+            {
+              "id": "A",
+              "text": "饱和，因80克水上限为80×30÷100=24克，已达上限。"
+            },
+            {
+              "id": "B",
+              "text": "未饱和，因容器底部无剩余固体。"
+            }
+          ],
+          "presented": false,
+          "response": null,
+          "respondedAt": null,
+          "correct": null,
+          "feedback": null,
+          "credit": "none"
+        }
+      },
+      {
+        "index": 3,
+        "purpose": "comparison",
+        "explanation": "明确边界：溶解度数值依赖“每100克水”的溶剂基准，且本课只提供X在20°C和50°C的数据，不把它当作所有固体随温度变化的共同规律。任何超出X或这两温度的外推都越界。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": {
+          "text": "正确基准：X在20°C溶解度30表示100克水溶30克X，溶液130克。错误基准：把30写成“每100克溶液30克”，那样100克溶液仅含约23.1克X，低估容量。同时，仅因X有两温度数据就认为所有固体冷却都按此比例析出，是越出数据边界的误推。",
+          "origin": "hy3_synthesis",
+          "sources": []
+        },
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 4,
+        "purpose": "worked_example",
+        "explanation": "当水量和温度连续变化时，溶解上限需逐步重算，已溶质量在无移除时延续。下面用一个新案例展示：先加水改变容量，再升温并加料，观察中间状态后由你判断最终结果。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": {
+          "startingState": "20℃下30克水中已溶解6克X，无固体。",
+          "inputs": [
+            "加入30克水，温度保持20℃",
+            "升温至50℃并加入40克X固体"
+          ],
+          "ruleOrProcedure": "上限=水质量×该温溶解度÷100；20℃溶30、50℃溶60；实际已溶量累加，超上限部分成固体。",
+          "steps": [
+            {
+              "action": "加入30克水，温度保持20℃",
+              "reason": "水量变60克，20℃上限=60×30÷100=18克；原溶6克小于18克，仍未饱和无固体。",
+              "resultingState": "20℃下60克水含6克溶解X，无固体。"
+            }
+          ],
+          "learnerDecision": null,
+          "result": null,
+          "whyResultFollows": null,
+          "origin": "hy3_synthesis",
+          "sources": [],
+          "interaction": {
+            "stage": "guided",
+            "modelledStepCount": 1,
+            "origin": "hy3_synthesis",
+            "sources": [],
+            "activity": {
+              "prompt": "经过加水和升温加料后，最终容器内的状态是？",
+              "options": [
+                {
+                  "id": "A",
+                  "text": "未饱和，无剩余固体（液相溶液质量96克）"
+                },
+                {
+                  "id": "B",
+                  "text": "饱和，底部有10克固体（液相溶36克，水60克）"
+                },
+                {
+                  "id": "C",
+                  "text": "饱和，底部有4克固体（误算上限为40克）"
+                }
+              ],
+              "response": null,
+              "respondedAt": null,
+              "correct": null,
+              "feedback": null,
+              "debrief": null,
+              "credit": "none",
+              "misconception": null
+            },
+            "hint": null,
+            "scaffold": null,
+            "transfer": null
+          }
+        },
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 5,
+        "purpose": "comparison",
+        "explanation": "明确本课计算边界：溶解度数值仅来自X在20℃和50℃的给定数据，不作中间温度插值，也不当作所有固体的通用规律。饱和状态本身不要求底部有固体。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": {
+          "text": "正确边界：仅用X在20℃溶解度30、50℃溶解度60，通过水质量×溶解度÷100算上限；冷却析出仅比较实际已溶与新上限。错误越界：在35℃用线性插值求溶解度，或见其他固体冷却就套用X的15克析出量。同时，误认为“底部无固体就不饱和”也违反饱和定义。",
+          "origin": "hy3_synthesis",
+          "sources": []
+        },
+        "possibleMisconception": null,
+        "informalCheck": null
+      }
+    ],
+    "sourceReferencesAvailable": true,
+    "visuals": [],
+    "summary": {
+      "available": true,
+      "text": "溶解度以100克水为溶剂基准计算上限，饱和看实际溶质量是否达上限而非有无底部固体；本课所有推算仅用给定X的两温度数据，不推广到其他固体或中间温度。",
+      "nextConnection": null,
+      "formalOpportunities": []
+    },
+    "plannedTime": {
+      "agendaMinutes": 23,
+      "activeMinutesMin": 26,
+      "activeMinutesMax": 41,
+      "basis": "locally_evaluated_learning_actions"
+    }
+  },
+  "progress": {
+    "stateVersion": 2,
+    "stateId": "lesson_execution_bb0bf3cb-b91f-46b6-9fa5-c7bae885d376",
+    "currentSegmentIndex": 0,
+    "segmentCount": 6,
+    "presentedSegmentIndexes": [],
+    "presentationStatus": "not_started",
+    "presentationCompletedAt": null
+  },
+  "currentInformalCheck": null,
+  "practice": {
+    "status": "locked",
+    "currentItemIndex": 0,
+    "itemCount": 2,
+    "item": {
+      "index": 0,
+      "objectiveTitle": "解释溶解度定义的溶剂基准与数据局限",
+      "construct": "explain",
+      "surface": "initial",
+      "supplementary": true,
+      "prompt": "教学固体X在20°C的溶解度数据只来自本课给定表。某笔记写道：“取100克饱和溶液，其中含X 23.1克，故X在20°C溶解度为23.1（每100克溶液）。”另一笔记写：“100克水最多溶30克X。”在仅使用给定X数据且溶剂为水的规则下，哪一解释正确描述了23.1这个数字的来源？",
+      "options": [
+        {
+          "id": "teaching_brief_182d1060-cd81-4b7b-8be1-d98b4b81688f_practice_1_initial_A",
+          "text": "23.1是将30克溶质对应130克饱和溶液折算为每100克溶液的含量，误把溶剂基准写成溶液基准。"
+        },
+        {
+          "id": "teaching_brief_182d1060-cd81-4b7b-8be1-d98b4b81688f_practice_1_initial_B",
+          "text": "23.1是50°C时X在100克水中的溶解度，与20°C无关。"
+        },
+        {
+          "id": "teaching_brief_182d1060-cd81-4b7b-8be1-d98b4b81688f_practice_1_initial_C",
+          "text": "23.1是考虑水蒸发后剩余溶液测得的值，原水量已不足100克。"
+        }
+      ]
+    },
+    "attempts": [],
+    "recovery": null,
+    "completedAt": null,
+    "credit": "none"
+  },
+  "allowedActions": [
+    "start_lesson"
+  ]
+}

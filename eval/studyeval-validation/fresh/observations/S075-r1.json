@@ -1,0 +1,381 @@
+{
+  "task": {
+    "caseId": "S075",
+    "runId": "S075-r1",
+    "replicate": 1,
+    "path": "dataset/studyeval/S075.json",
+    "inputHash": "7bd957fa58258cc76887b5998a9477c9a3124dc6392f43a18801440b43adf446"
+  },
+  "inputHash": "7bd957fa58258cc76887b5998a9477c9a3124dc6392f43a18801440b43adf446",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "97c76a209f73bddd58855d8b82568209b670725bcdacd33780e8fd1c9170ab4e",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "交付物肯定错误加法并教导分子分母分别相加为规则，与源规则矛盾；声称背诵2/5答案即证明掌握，属复述答案冒充独立掌握。完全未提供修复或新检验，实质违背目标。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text",
+              "/answer",
+              "/goals/0"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "干预教导错误方法：声称分子分母分别相加就是分数加法规则，违背source明示的正确规则。",
+                "impact": "巩固错误概念，直接破坏提供可用修复的核心目标。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "2ec426213869722ad2cb36fe86a5d71a38493a181cfdf99da87fd0ece60563b3"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "c4d75b2db6f5aa30dcec740ff8a4b7e07282347099740e24a9f3e2fd0f4bef58"
+                  }
+                ]
+              },
+              {
+                "severity": "material",
+                "description": "声称照2/5答案背诵即可证明掌握，将复述披露答案冒充独立掌握。",
+                "impact": "符合Q6零分标准，且未提供任何新检验，核心用途失效。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/answer"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "2ec426213869722ad2cb36fe86a5d71a38493a181cfdf99da87fd0ece60563b3"
+                  },
+                  {
+                    "pointer": "/answer",
+                    "valueHash": "5fa9a6e988796acce4dd7a033670180448bc29a07a9fa5e48255977034751897"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "2ec426213869722ad2cb36fe86a5d71a38493a181cfdf99da87fd0ece60563b3"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "c4d75b2db6f5aa30dcec740ff8a4b7e07282347099740e24a9f3e2fd0f4bef58"
+              },
+              {
+                "pointer": "/answer",
+                "valueHash": "5fa9a6e988796acce4dd7a033670180448bc29a07a9fa5e48255977034751897"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "02c64e5f947bc7c3768e8acc0b1785ee1c651e97af5dbda8e003987fa6928999"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "交付修复称分子分母分别相加是规则，教授错误方法；并令背诵已披露答案2/5以证掌握。这同时满足Q6零分中教错方法与声称背诵披露答案即掌握，实质缺陷使修复核心用途失效。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text",
+              "/answer"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "修复断言分子分母分别相加就是规则，教授错误分数加法方法",
+                "impact": "与source正确规则矛盾，巩固错误概念，核心修复目标失败",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "2ec426213869722ad2cb36fe86a5d71a38493a181cfdf99da87fd0ece60563b3"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "c4d75b2db6f5aa30dcec740ff8a4b7e07282347099740e24a9f3e2fd0f4bef58"
+                  }
+                ]
+              },
+              {
+                "severity": "material",
+                "description": "声称照2/5答案背诵即可证明掌握，将复述披露答案当作独立掌握",
+                "impact": "违背可用修复与新检验目标，未提供真正能力检验",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/answer"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "2ec426213869722ad2cb36fe86a5d71a38493a181cfdf99da87fd0ece60563b3"
+                  },
+                  {
+                    "pointer": "/answer",
+                    "valueHash": "5fa9a6e988796acce4dd7a033670180448bc29a07a9fa5e48255977034751897"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "2ec426213869722ad2cb36fe86a5d71a38493a181cfdf99da87fd0ece60563b3"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "c4d75b2db6f5aa30dcec740ff8a4b7e07282347099740e24a9f3e2fd0f4bef58"
+              },
+              {
+                "pointer": "/answer",
+                "valueHash": "5fa9a6e988796acce4dd7a033670180448bc29a07a9fa5e48255977034751897"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "dimensions": [
+          {
+            "dimension": "Q6",
+            "level": 0,
+            "evidence": "sufficient",
+            "reason": "交付物肯定错误加法并教导分子分母分别相加为规则，与源规则矛盾；声称背诵2/5答案即证明掌握，属复述答案冒充独立掌握。完全未提供修复或新检验，实质违背目标。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text",
+              "/answer",
+              "/goals/0"
+            ],
+            "defects": [
+              {
+                "severity": "material",
+                "description": "干预教导错误方法：声称分子分母分别相加就是分数加法规则，违背source明示的正确规则。",
+                "impact": "巩固错误概念，直接破坏提供可用修复的核心目标。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/sources/0/text"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "2ec426213869722ad2cb36fe86a5d71a38493a181cfdf99da87fd0ece60563b3"
+                  },
+                  {
+                    "pointer": "/sources/0/text",
+                    "valueHash": "c4d75b2db6f5aa30dcec740ff8a4b7e07282347099740e24a9f3e2fd0f4bef58"
+                  }
+                ]
+              },
+              {
+                "severity": "material",
+                "description": "声称照2/5答案背诵即可证明掌握，将复述披露答案冒充独立掌握。",
+                "impact": "符合Q6零分标准，且未提供任何新检验，核心用途失效。",
+                "refs": [
+                  "/artifacts/0/text",
+                  "/answer"
+                ],
+                "witnesses": [
+                  {
+                    "pointer": "/artifacts/0/text",
+                    "valueHash": "2ec426213869722ad2cb36fe86a5d71a38493a181cfdf99da87fd0ece60563b3"
+                  },
+                  {
+                    "pointer": "/answer",
+                    "valueHash": "5fa9a6e988796acce4dd7a033670180448bc29a07a9fa5e48255977034751897"
+                  }
+                ]
+              }
+            ],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "2ec426213869722ad2cb36fe86a5d71a38493a181cfdf99da87fd0ece60563b3"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "c4d75b2db6f5aa30dcec740ff8a4b7e07282347099740e24a9f3e2fd0f4bef58"
+              },
+              {
+                "pointer": "/answer",
+                "valueHash": "5fa9a6e988796acce4dd7a033670180448bc29a07a9fa5e48255977034751897"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "02c64e5f947bc7c3768e8acc0b1785ee1c651e97af5dbda8e003987fa6928999"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ],
+        "challenges": [
+          {
+            "id": "review1:Q6:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "分子分母分别相加就是规则",
+              "valueHash": "2ec426213869722ad2cb36fe86a5d71a38493a181cfdf99da87fd0ece60563b3"
+            },
+            "reason": "artifact明确声称分子分别相加是规则，直接违背source中'分子与分母分别相加不是分数加法规则'。"
+          },
+          {
+            "id": "review1:Q6:2",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "照2/5这个答案背诵即可证明掌握",
+              "valueHash": "2ec426213869722ad2cb36fe86a5d71a38493a181cfdf99da87fd0ece60563b3"
+            },
+            "reason": "artifact要求背诵答案2/5以证掌握，而/answer已披露2/5，属复述披露答案冒充独立掌握。"
+          },
+          {
+            "id": "review2:Q6:1",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "分子分母分别相加就是规则",
+              "valueHash": "2ec426213869722ad2cb36fe86a5d71a38493a181cfdf99da87fd0ece60563b3"
+            },
+            "reason": "同review1:Q6:1，artifact教授错误方法，与source矛盾。"
+          },
+          {
+            "id": "review2:Q6:2",
+            "decision": "upheld",
+            "severity": "material",
+            "evidence": {
+              "ref": "/artifacts/0/text",
+              "quote": "照2/5这个答案背诵即可证明掌握",
+              "valueHash": "2ec426213869722ad2cb36fe86a5d71a38493a181cfdf99da87fd0ece60563b3"
+            },
+            "reason": "同review1:Q6:2，声称背诵披露答案即掌握，无新检验。"
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q6",
+          "level": 0,
+          "evidence": "sufficient",
+          "reason": "交付物肯定错误加法并教导分子分母分别相加为规则，与源规则矛盾；声称背诵2/5答案即证明掌握，属复述答案冒充独立掌握。完全未提供修复或新检验，实质违背目标。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text",
+            "/answer",
+            "/goals/0"
+          ],
+          "defects": [
+            {
+              "severity": "material",
+              "description": "干预教导错误方法：声称分子分母分别相加就是分数加法规则，违背source明示的正确规则。",
+              "impact": "巩固错误概念，直接破坏提供可用修复的核心目标。",
+              "refs": [
+                "/artifacts/0/text",
+                "/sources/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "2ec426213869722ad2cb36fe86a5d71a38493a181cfdf99da87fd0ece60563b3"
+                },
+                {
+                  "pointer": "/sources/0/text",
+                  "valueHash": "c4d75b2db6f5aa30dcec740ff8a4b7e07282347099740e24a9f3e2fd0f4bef58"
+                }
+              ]
+            },
+            {
+              "severity": "material",
+              "description": "声称照2/5答案背诵即可证明掌握，将复述披露答案冒充独立掌握。",
+              "impact": "符合Q6零分标准，且未提供任何新检验，核心用途失效。",
+              "refs": [
+                "/artifacts/0/text",
+                "/answer"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "2ec426213869722ad2cb36fe86a5d71a38493a181cfdf99da87fd0ece60563b3"
+                },
+                {
+                  "pointer": "/answer",
+                  "valueHash": "5fa9a6e988796acce4dd7a033670180448bc29a07a9fa5e48255977034751897"
+                }
+              ]
+            }
+          ],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "2ec426213869722ad2cb36fe86a5d71a38493a181cfdf99da87fd0ece60563b3"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "c4d75b2db6f5aa30dcec740ff8a4b7e07282347099740e24a9f3e2fd0f4bef58"
+            },
+            {
+              "pointer": "/answer",
+              "valueHash": "5fa9a6e988796acce4dd7a033670180448bc29a07a9fa5e48255977034751897"
+            },
+            {
+              "pointer": "/goals/0",
+              "valueHash": "02c64e5f947bc7c3768e8acc0b1785ee1c651e97af5dbda8e003987fa6928999"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "8486ac5abb13f7a83002383f4432d0f53b8752304f0598cdd27798c1127052a0"
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "inputIdentity": "14faae6cecba4b063c108f078a9d7aa1292a9a7bd1f292347752b73631eb6b3d",
+  "attempts": [
+    {
+      "physicalId": "a315a4e5-081b-487f-baa4-6682d9a422a1",
+      "caseId": "E611",
+      "runId": "H-E611-r2",
+      "stage": "resolve",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q2",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "artifact对四项目标均给出准确规则或示例：区间公式与例、比较区间顺序、刻度细不等校准准、同向偏差不自动消失，达到可用操作深度，无缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "c1ec4cc283b869ded4bd6704017dd84fadd61b71cdacc0ccea326fdeabd36eab"
+          },
+          {
+            "pointer": "/goals",
+            "valueHash": "8a4e42a310413343ffed86d2ae9a81c2cc492e69e9709e20cd9c1397db6e64bd"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "challenges": [
+      {
+        "id": "review2:Q2:1",
+        "decision": "rejected",
+        "severity": "none",
+        "evidence": {
+          "ref": "/artifacts/0/text",
+          "quote": "同向偏差也不会仅靠重复平均自动消失",
+          "valueHash": "c1ec4cc283b869ded4bd6704017dd84fadd61b71cdacc0ccea326fdeabd36eab"
+        },
+        "reason": "目标3仅要求说明重复平均不能自动消除共同方向偏差；artifact已明确点出同向偏差与重复平均不自动消失的等价规则，未承诺需解释原因或举例，指控不成立。"
+      }
+    ]
+  }
+}

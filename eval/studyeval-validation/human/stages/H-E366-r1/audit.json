@@ -1,0 +1,69 @@
+{
+  "inputIdentity": "edcabb7787ea0a7f20d0941fcf31699e623c0befd22c0347f664c54db222dfc9",
+  "attempts": [
+    {
+      "physicalId": "4689cebe-4ac3-4fc7-af18-a191db72417e",
+      "caseId": "E366",
+      "runId": "H-E366-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q3",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "产物给出两人12分与一人15分正确结论，但仅列结果和泛化提醒，未展示从给定时长与依赖到具体时刻的关键推理操作，也未交代例子适用边界如汇合等晚者，属局部解释连接缺失，核心用途成立。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "缺失从前提（裁纸4调墨3盖章2晾干5装袋1及依赖）到时刻结果（12或15）的推理步骤展示，且仅泛述先查依赖，未针对例子说明汇合等待较晚等限制。",
+            "impact": "学习者获知正确结论但需自行推断运算，不改变核心答案正确性，但局部解释用途未充分达成。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "c7ff6a9c213d042e991ce0cb292305417dc1e88aa2002451772e47e4e0b76944"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "c7ff6a9c213d042e991ce0cb292305417dc1e88aa2002451772e47e4e0b76944"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

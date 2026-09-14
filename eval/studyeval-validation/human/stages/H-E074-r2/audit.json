@@ -1,0 +1,107 @@
+{
+  "inputIdentity": "30fdd69e134af73133e8d9e40343c2dc6da6023f032b272a8b7746d0d37675c9",
+  "attempts": [
+    {
+      "physicalId": "d2aa338e-6d68-4784-89b3-f6af36b732c2",
+      "caseId": "E074",
+      "runId": "H-E074-r2",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q4",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "题目问来源中小岚每小时完成几分之几，答案直接见于source；作者参考解六分之一份正确；无提前曝光；但仅测检索，未要求执行或解释，与working_fluency深度不符，判别力弱。",
+        "refs": [
+          "/question/prompt",
+          "/sources/0/text",
+          "/artifacts/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "任务仅要求从来源中检索直接给出的数值，未要求学生执行计算或解释方法，与声明的working_fluency深度不符",
+            "impact": "不改变核心用途（识别速度概念），但判别力弱，无法评估流利度",
+            "refs": [
+              "/question/prompt",
+              "/sources/0/text",
+              "/artifacts/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "49e1da85f3fee2b4d52571aba4aaba877eb27ae39e2844eb59214cb1031b8e12"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "46d1eb519d3c2ddc96b67b6df65edb237d990b0caa1ca0de2ad879b3b04d1248"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "assessment": {
+          "key": "correct",
+          "validity": "valid",
+          "exposure": "none",
+          "discrimination": "weak",
+          "demand": "retrieval",
+          "demandReason": "学生只需从来源文本中查找“每小时完成六分之一份”并复述，无需选择方法、处理新实例、解释或比较。",
+          "reason": "题目问来源给出的小岚每小时完成量，答案直接出现在source；作者参考解六分之一份正确；priorExposure空，artifact未展示，无泄露；但任务仅检索，未引working_fluency技能，判别弱。",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "49e1da85f3fee2b4d52571aba4aaba877eb27ae39e2844eb59214cb1031b8e12"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "46d1eb519d3c2ddc96b67b6df65edb237d990b0caa1ca0de2ad879b3b04d1248"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+            }
+          ]
+        },
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "49e1da85f3fee2b4d52571aba4aaba877eb27ae39e2844eb59214cb1031b8e12"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "46d1eb519d3c2ddc96b67b6df65edb237d990b0caa1ca0de2ad879b3b04d1248"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

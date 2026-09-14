@@ -1,0 +1,88 @@
+{
+  "inputIdentity": "97c6384c42bc73acb0b56531141e3dbf34c696cc0e6f447f278bd52e9c4dfab1",
+  "attempts": [
+    {
+      "physicalId": "952d769c-5cc0-4533-bc29-6ea02e5faafa",
+      "caseId": "S067",
+      "runId": "S067-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q3",
+        "level": 0,
+        "evidence": "sufficient",
+        "reason": "产物断言B齿多三倍故A转一圈B转三圈且同向转，但源资料证明外齿轮啮合齿数反比（B转1/3圈）且转向相反。解释核心错误并教了无效正比方法，完全违背目标解释齿数决定转数与方向的要求，属实质缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [
+          {
+            "severity": "material",
+            "description": "声称'B齿多三倍，所以A转一圈时B转三圈'，实际齿数反比：A转一圈推12齿，B有36齿故B转1/3圈；教了正比无效方法。",
+            "impact": "错误转数结论与推导直接违背goals解释齿数决定转数的要求，破坏核心教学用途。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "f2ffbb0a81a36816805d82af8f8224a5604ec8e494677ec469aa6054103f5701"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+              }
+            ]
+          },
+          {
+            "severity": "material",
+            "description": "声称'齿轮啮合会使两轮同方向转'，但源规则为理想外齿轮啮合转向相反。",
+            "impact": "错误转向结论违背goals解释方向的要求，核心用途不成立。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "f2ffbb0a81a36816805d82af8f8224a5604ec8e494677ec469aa6054103f5701"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "f2ffbb0a81a36816805d82af8f8224a5604ec8e494677ec469aa6054103f5701"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

@@ -1,5 +1,7 @@
 # Hy3 Study Clinic Evaluation
 
+Current submission evidence: [Candidate 23 product showcase](final-showcase/README.md), [StudyEval v2 fresh validation and reserved human alignment](studyeval-validation/README.md), and [results overview](../docs/FINAL_EVALUATION.md). The 20-course showcase was frozen before scoring and targets complete normal-use materials. The evaluator and product campaigns have separate populations and claims.
+
 The [final-evaluation release](final-evaluation/README.md) contains the completed
 2026-09-12 StudyEval machine results, the frozen method, public sample inputs and
 saved-evidence verification scripts. Independent blinded model reviews and genuine human

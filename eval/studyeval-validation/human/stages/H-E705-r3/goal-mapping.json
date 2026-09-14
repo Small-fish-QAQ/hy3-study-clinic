@@ -1,0 +1,106 @@
+{
+  "inputIdentity": "db3650d37c0df15a40fd73c12d3fac7e842d4bbf78def2d800a0ae2ab2046685",
+  "attempts": [
+    {
+      "physicalId": "840fce93-21b6-41bc-bd7f-2450970f1a37",
+      "caseId": "E705",
+      "runId": "H-E705-r3",
+      "stage": "goal-mapping",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "goals": [
+      {
+        "index": 0,
+        "importance": "essential",
+        "status": "contradicted",
+        "reason": "artifact明确主张'小数写得越多必定越准'，将读数分辨率与准确程度等同，直接否定了区分二者的目标，构成矛盾。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/0"
+        ],
+        "quote": "小数写得越多必定越准",
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "4799744cc7668cbd8697be5870cadab058dc7fec6efec2c6a1bd24e6b123973e"
+          },
+          {
+            "pointer": "/goals/0",
+            "valueHash": "974f091625a397eadb261006f5285e9c63c7ca6b839e6bdbb8c41f4bfff75e27"
+          }
+        ]
+      },
+      {
+        "index": 1,
+        "importance": "essential",
+        "status": "missing",
+        "reason": "artifact声明'误差界限与区间比较都不用学'，未提供任何使用给定误差界限形成区间的解释、规则或演示，目标完全缺失。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/1"
+        ],
+        "quote": "误差界限与区间比较都不用学",
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "4799744cc7668cbd8697be5870cadab058dc7fec6efec2c6a1bd24e6b123973e"
+          },
+          {
+            "pointer": "/goals/1",
+            "valueHash": "b948cbdb264205a71c39bbf43fca64b81f119fd6bce83afbff737e5a078063b3"
+          }
+        ]
+      },
+      {
+        "index": 2,
+        "importance": "essential",
+        "status": "missing",
+        "reason": "artifact声明'误差界限与区间比较都不用学'，未提供判断多个测量区间是否支持大小关系的任何方法，目标缺失。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/2"
+        ],
+        "quote": "误差界限与区间比较都不用学",
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "4799744cc7668cbd8697be5870cadab058dc7fec6efec2c6a1bd24e6b123973e"
+          },
+          {
+            "pointer": "/goals/2",
+            "valueHash": "a63a83b2364923d8e078ddf815b65a88e03ab9e5b2b372710e75e020c2056d1a"
+          }
+        ]
+      },
+      {
+        "index": 3,
+        "importance": "secondary",
+        "status": "missing",
+        "reason": "artifact仅涉及读尺子小数位，未提及重复测量、平均或共同方向偏差，无任何相关处理，次要延伸目标缺失。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/3"
+        ],
+        "quote": "",
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "4799744cc7668cbd8697be5870cadab058dc7fec6efec2c6a1bd24e6b123973e"
+          },
+          {
+            "pointer": "/goals/3",
+            "valueHash": "714460aff55596ab6a2b0d42615a21b9c5be82487f745a68d7ee18049f26f951"
+          }
+        ]
+      }
+    ]
+  }
+}

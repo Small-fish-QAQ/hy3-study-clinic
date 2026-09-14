@@ -1,0 +1,215 @@
+{
+  "task": {
+    "caseId": "S058",
+    "runId": "S058-r2",
+    "replicate": 2,
+    "path": "dataset/studyeval/S058.json",
+    "inputHash": "6e5446b6ae72b258808a28d3602f2a82bbfa38582942f5170f978028872a7ab8"
+  },
+  "inputHash": "6e5446b6ae72b258808a28d3602f2a82bbfa38582942f5170f978028872a7ab8",
+  "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "9936d89cbf1eb904cc46dd82d577b4234d911e93d5529b595ea7c26abd925cb3",
+    "stages": {
+      "blind-solution": {
+        "status": "resolved",
+        "solution": "依据/sources/0/text，XOR(1,1)两输入均为1，输出0；再将结果0与1送入XOR门，恰好一个输入为1，输出1。最终输出为1。两步均严格按给定异或定义，输入限定0/1，推导无歧义。",
+        "refs": [
+          "/question/prompt",
+          "/sources/0/text"
+        ],
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "5758ea989ce8c301f73b0ed45829a3609edbc221481bcd3270fc98a8791ac7a6"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "abe0ee3fc063cc9ca8e5695fcc7196cbc85922a703ddb540aee12d9b2456e392"
+          }
+        ]
+      },
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q4",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "任务要求两步异或计算并说明，作者私有答案正确未泄露，有效引发应用规则组合门输出的working_fluency技能，无缺陷。",
+            "refs": [
+              "/question/prompt",
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "assessment": {
+              "key": "correct",
+              "validity": "valid",
+              "exposure": "none",
+              "discrimination": "adequate",
+              "demand": "application",
+              "demandReason": "学生需根据给定异或定义计算XOR(1,1)=0并说明两输入均1，再将0与1异或得1并说明恰一输入1，执行多步计算并解释，非纯抄写。",
+              "reason": "题干要求先算XOR(1,1)再与1异或并说明两步；作者答案正确匹配；priorExposure空无泄露；需应用规则而非检索，判别力充足。",
+              "refs": [
+                "/question/prompt",
+                "/artifacts/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/question/prompt",
+                  "valueHash": "5758ea989ce8c301f73b0ed45829a3609edbc221481bcd3270fc98a8791ac7a6"
+                },
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "e2fbdaa35f160eedb1d82f24f5a2ed324cb0d811fcc88707f2aaa77fbe0d8576"
+                }
+              ]
+            },
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "5758ea989ce8c301f73b0ed45829a3609edbc221481bcd3270fc98a8791ac7a6"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "e2fbdaa35f160eedb1d82f24f5a2ed324cb0d811fcc88707f2aaa77fbe0d8576"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "abe0ee3fc063cc9ca8e5695fcc7196cbc85922a703ddb540aee12d9b2456e392"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q4",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "题目需在给定异或规则下计算两级门输出并说明两步，有效引出working_fluency的应用与解释；作者密钥正确，未泄露，判别力足，无缺陷。",
+            "refs": [
+              "/question/prompt",
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "assessment": {
+              "key": "correct",
+              "validity": "valid",
+              "exposure": "none",
+              "discrimination": "adequate",
+              "demand": "application",
+              "demandReason": "学生必须应用异或规则到(1,1)和(0,1)，执行两步计算并解释每步原因，非直接抄写现成符号。",
+              "reason": "题干要求计算两级XOR并说明两步；作者参考解正确匹配规则，未提前曝光；任务需应用与解释，判别力充足。",
+              "refs": [
+                "/question/prompt",
+                "/artifacts/0/text"
+              ],
+              "witnesses": [
+                {
+                  "pointer": "/question/prompt",
+                  "valueHash": "5758ea989ce8c301f73b0ed45829a3609edbc221481bcd3270fc98a8791ac7a6"
+                },
+                {
+                  "pointer": "/artifacts/0/text",
+                  "valueHash": "e2fbdaa35f160eedb1d82f24f5a2ed324cb0d811fcc88707f2aaa77fbe0d8576"
+                }
+              ]
+            },
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "5758ea989ce8c301f73b0ed45829a3609edbc221481bcd3270fc98a8791ac7a6"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "e2fbdaa35f160eedb1d82f24f5a2ed324cb0d811fcc88707f2aaa77fbe0d8576"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "abe0ee3fc063cc9ca8e5695fcc7196cbc85922a703ddb540aee12d9b2456e392"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q4",
+          "level": 2,
+          "evidence": "sufficient",
+          "reason": "任务要求两步异或计算并说明，作者私有答案正确未泄露，有效引发应用规则组合门输出的working_fluency技能，无缺陷。",
+          "refs": [
+            "/question/prompt",
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [],
+          "missing": [],
+          "assessment": {
+            "key": "correct",
+            "validity": "valid",
+            "exposure": "none",
+            "discrimination": "adequate",
+            "demand": "application",
+            "demandReason": "学生需根据给定异或定义计算XOR(1,1)=0并说明两输入均1，再将0与1异或得1并说明恰一输入1，执行多步计算并解释，非纯抄写。",
+            "reason": "题干要求先算XOR(1,1)再与1异或并说明两步；作者答案正确匹配；priorExposure空无泄露；需应用规则而非检索，判别力充足。",
+            "refs": [
+              "/question/prompt",
+              "/artifacts/0/text"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/question/prompt",
+                "valueHash": "5758ea989ce8c301f73b0ed45829a3609edbc221481bcd3270fc98a8791ac7a6"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "e2fbdaa35f160eedb1d82f24f5a2ed324cb0d811fcc88707f2aaa77fbe0d8576"
+              }
+            ]
+          },
+          "witnesses": [
+            {
+              "pointer": "/question/prompt",
+              "valueHash": "5758ea989ce8c301f73b0ed45829a3609edbc221481bcd3270fc98a8791ac7a6"
+            },
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "e2fbdaa35f160eedb1d82f24f5a2ed324cb0d811fcc88707f2aaa77fbe0d8576"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "abe0ee3fc063cc9ca8e5695fcc7196cbc85922a703ddb540aee12d9b2456e392"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "7d3a93a46f93d14cdb1a040081a141320abe3ae139ea5b764c5140c63dfc7f6e"
+  }
+}

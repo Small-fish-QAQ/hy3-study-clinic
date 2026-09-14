@@ -1,0 +1,206 @@
+{
+  "task": {
+    "caseId": "N-F03-tutor",
+    "runId": "H-N-F03-tutor-r3",
+    "replicate": 3,
+    "path": "runs/final/cases/N-F03-tutor.json",
+    "inputHash": "278275b2f9f3d606ff2afde4dad0d40a93eb9aca4c40947e15619b0fdc9b9c57",
+    "population": "natural",
+    "sourceId": "F03"
+  },
+  "inputHash": "278275b2f9f3d606ff2afde4dad0d40a93eb9aca4c40947e15619b0fdc9b9c57",
+  "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+  "evaluation": {
+    "version": "studyeval-v2.0",
+    "inputViewHash": "538b319b5ef211129be7fce19556bf25cf316ac7298e1475f217b59b8143f4b0",
+    "stages": {
+      "audit": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "导师回复准确引用资料关于观察性差异不证明因果的论断，自创鞋类例子与资料精神一致且标注非原文，适用边界正确，无事实或归属缺陷。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "f653eac8024e376cef6ce8bcbe3cb4d70ebdcd1f839018aaf4434efdb4a309e6"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "944a460c4eccfdbd61d456dc9fc3969b0ed10c585ea05e87ccfe3e9b93549680"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          },
+          {
+            "dimension": "Q3",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "以鞋类观察为例解释混杂导致因果未立，展示前提（自然观察差异）到结论（不自动因果）的推理，并明确适用边界与三层框架，解释连接充分。",
+            "refs": [
+              "/artifacts/0/text",
+              "/sources/0/text",
+              "/goals/0"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "f653eac8024e376cef6ce8bcbe3cb4d70ebdcd1f839018aaf4434efdb4a309e6"
+              },
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "944a460c4eccfdbd61d456dc9fc3969b0ed10c585ea05e87ccfe3e9b93549680"
+              },
+              {
+                "pointer": "/goals/0",
+                "valueHash": "8554fd2a6af26f8cda0d4670bec8b7daaade91997a1e3a766c77f315dc970152"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      },
+      "independent-review": {
+        "dimensions": [
+          {
+            "dimension": "Q1",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "tutor-reply准确引用资料关于观察差异不自动因果的论断，自编运动鞋例子与资料精神一致，边界说明自然观察与随机控制区别正确，无事实或归属缺陷。",
+            "refs": [
+              "/sources/0/text",
+              "/artifacts/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "944a460c4eccfdbd61d456dc9fc3969b0ed10c585ea05e87ccfe3e9b93549680"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "f653eac8024e376cef6ce8bcbe3cb4d70ebdcd1f839018aaf4434efdb4a309e6"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          },
+          {
+            "dimension": "Q3",
+            "level": 2,
+            "evidence": "sufficient",
+            "reason": "运动鞋例子从观察差异前提出发，指出混杂训练等因素故不能断因果，连接关键推理，并交代自然观察适用边界及随机控制下比较依据变化，解释充分。",
+            "refs": [
+              "/sources/0/text",
+              "/artifacts/0/text"
+            ],
+            "defects": [],
+            "missing": [],
+            "witnesses": [
+              {
+                "pointer": "/sources/0/text",
+                "valueHash": "944a460c4eccfdbd61d456dc9fc3969b0ed10c585ea05e87ccfe3e9b93549680"
+              },
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "f653eac8024e376cef6ce8bcbe3cb4d70ebdcd1f839018aaf4434efdb4a309e6"
+              }
+            ],
+            "certification": {
+              "kind": "structural_and_ordinal",
+              "valid": true,
+              "semanticTruthCertified": false
+            }
+          }
+        ]
+      }
+    },
+    "result": {
+      "status": "VALID",
+      "dimensions": [
+        {
+          "dimension": "Q1",
+          "level": 2,
+          "evidence": "sufficient",
+          "reason": "导师回复准确引用资料关于观察性差异不证明因果的论断，自创鞋类例子与资料精神一致且标注非原文，适用边界正确，无事实或归属缺陷。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text"
+          ],
+          "defects": [],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "f653eac8024e376cef6ce8bcbe3cb4d70ebdcd1f839018aaf4434efdb4a309e6"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "944a460c4eccfdbd61d456dc9fc3969b0ed10c585ea05e87ccfe3e9b93549680"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        },
+        {
+          "dimension": "Q3",
+          "level": 2,
+          "evidence": "sufficient",
+          "reason": "以鞋类观察为例解释混杂导致因果未立，展示前提（自然观察差异）到结论（不自动因果）的推理，并明确适用边界与三层框架，解释连接充分。",
+          "refs": [
+            "/artifacts/0/text",
+            "/sources/0/text",
+            "/goals/0"
+          ],
+          "defects": [],
+          "missing": [],
+          "witnesses": [
+            {
+              "pointer": "/artifacts/0/text",
+              "valueHash": "f653eac8024e376cef6ce8bcbe3cb4d70ebdcd1f839018aaf4434efdb4a309e6"
+            },
+            {
+              "pointer": "/sources/0/text",
+              "valueHash": "944a460c4eccfdbd61d456dc9fc3969b0ed10c585ea05e87ccfe3e9b93549680"
+            },
+            {
+              "pointer": "/goals/0",
+              "valueHash": "8554fd2a6af26f8cda0d4670bec8b7daaade91997a1e3a766c77f315dc970152"
+            }
+          ],
+          "certification": {
+            "kind": "structural_and_ordinal",
+            "valid": true,
+            "semanticTruthCertified": false
+          }
+        }
+      ],
+      "reviewRequired": []
+    },
+    "resultHash": "45e5d02b595ee892636b4285d69a1d7c9fdb62f7bde4aa8462a9b5c37cac8e34"
+  }
+}

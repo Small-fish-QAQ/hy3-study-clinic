@@ -1,0 +1,49 @@
+{
+  "inputIdentity": "1adca9c1dc24800f2d9abdd069e68cc223a5c3ed9cfcc5e15af41314b700d22c",
+  "attempts": [
+    {
+      "physicalId": "aed9d822-a123-434d-9fa8-29af54551a32",
+      "caseId": "S063",
+      "runId": "S063-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "产物对2000（闰）与1900（平）的判断严格依据源中公历规则，世纪年须验400的总结正确，未超范围讨论其他历法，无事实或归属缺陷。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "b285d9407510e34c9675f2f5c991c1a1d50f9e9f13f1655e92fe9be836a512e3"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "5e982eb2843152ea1b81d9f7793dbfb2609636664c75b2a6bab9a349cc3bf60b"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

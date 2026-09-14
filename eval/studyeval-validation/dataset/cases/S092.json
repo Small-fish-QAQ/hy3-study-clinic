@@ -1,0 +1,67 @@
+{
+  "id": "S092",
+  "dimensions": [
+    "Q5"
+  ],
+  "evidence": {
+    "sources": [
+      {
+        "id": "source",
+        "text": "本题限平面欧氏三角形，三个内角和为180度。两个已知内角为48度和67度，第三角应为180-48-67=65度。"
+      }
+    ],
+    "goals": [
+      "检查角度计算和评分的必要条件"
+    ],
+    "prerequisites": [
+      "阅读所给规则",
+      "基本四则运算"
+    ],
+    "desiredDepth": "working_fluency",
+    "authorityBoundaries": [
+      "判断所附局部教学或任务的实际要求。作者参考答案为私有评估材料，未预先展示给学习者。数据与规则是明示课堂前提。"
+    ],
+    "artifacts": [],
+    "exposure": [],
+    "question": {
+      "prompt": "求第三个内角并写出依据。",
+      "options": []
+    },
+    "rubric": [
+      {
+        "id": "c1",
+        "text": "第三角65度",
+        "required": true
+      },
+      {
+        "id": "c2",
+        "text": "利用三内角和180度扣除已知两角",
+        "required": true
+      },
+      {
+        "id": "c3",
+        "text": "使用一句单独的结论句",
+        "required": false
+      }
+    ],
+    "answer": "由内角总和180°，计算180°-(48°+67°)=65°。",
+    "productJudgment": {
+      "criteria": [
+        {
+          "id": "c1",
+          "result": "met"
+        },
+        {
+          "id": "c2",
+          "result": "met"
+        },
+        {
+          "id": "c3",
+          "result": "not_met"
+        }
+      ],
+      "feedback": "计算65度且依据正确，未另写独立结论句不影响信用。",
+      "consequence": "granted"
+    }
+  }
+}

@@ -1,0 +1,109 @@
+{
+  "inputIdentity": "fa9517980bc3eb5ac6b1275d562e1f77084e1a919e413d93bf547ab24b5be728",
+  "attempts": [
+    {
+      "physicalId": "f5156225-edb6-4f25-9a28-f55c0b7e31c2",
+      "caseId": "S050",
+      "runId": "S050-r1",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [
+        {
+          "location": "/dimensions/0/refs",
+          "changes": [
+            {
+              "proposed": "/answer",
+              "rejected": "Not an original evidence path."
+            }
+          ]
+        },
+        {
+          "location": "/dimensions/0/grading/criteria/0/refs",
+          "changes": [
+            {
+              "proposed": "/answer",
+              "rejected": "Not an original evidence path."
+            }
+          ]
+        }
+      ],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q5",
+        "level": "U",
+        "evidence": "missing",
+        "reason": "学生原始作答未在view.answer提供，authorityBoundaries确认完全未提供且不可恢复。缺学生证据无法核对评分器准确性，故无法决定此维度。",
+        "refs": [
+          "/question/prompt",
+          "/rubric/0",
+          "/productJudgment/consequence"
+        ],
+        "defects": [],
+        "missing": [
+          "/answer 学生原始作答缺失，无法验证产品授予信用是否对应正确解答"
+        ],
+        "grading": {
+          "criteria": [
+            {
+              "id": "required",
+              "result": "uncertain",
+              "reason": "学生全答不可见，无法判断是否满足写出{1,2,3}的要求",
+              "refs": [
+                "/rubric/0"
+              ]
+            }
+          ],
+          "actualCredit": "granted",
+          "warrantedCredit": "uncertain"
+        },
+        "witnesses": [
+          {
+            "pointer": "/question/prompt",
+            "valueHash": "d6444630e214e8c1957d29925ae3850ab17e4d454700814e3daa72f9286df7a3"
+          },
+          {
+            "pointer": "/rubric/0",
+            "valueHash": "41e3e9993ea73d3924609af1ca9150dfde326067be5fc53a6f4aec3ca0e10258"
+          },
+          {
+            "pointer": "/productJudgment/consequence",
+            "valueHash": "dd515d1975b8e5a83bab3420bea5dacefe5451ac7cf617d23c4393cc79e4db99"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ],
+    "referenceRepairs": [
+      {
+        "location": "/dimensions/0/refs",
+        "changes": [
+          {
+            "proposed": "/answer",
+            "rejected": "Not an original evidence path."
+          }
+        ]
+      },
+      {
+        "location": "/dimensions/0/grading/criteria/0/refs",
+        "changes": [
+          {
+            "proposed": "/answer",
+            "rejected": "Not an original evidence path."
+          }
+        ]
+      }
+    ]
+  }
+}

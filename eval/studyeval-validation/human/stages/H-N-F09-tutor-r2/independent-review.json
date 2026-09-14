@@ -1,0 +1,76 @@
+{
+  "inputIdentity": "1275125d7d38095fbc1dd3615cf549222aa43196294fba05252e826975873723",
+  "attempts": [
+    {
+      "physicalId": "3549c590-a74a-4c57-9eeb-43c0fbdfbd3a",
+      "caseId": "N-F09-tutor",
+      "runId": "H-N-F09-tutor-r2",
+      "stage": "independent-review",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "1abf79425039342340f9f039c47887276f5cbc9616892c9727056ac2adc0adcb",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q1",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "产物准确引用来源的量纲不可加、独立相加假设及分段计算；自举粉刷例计算正确（乙先0.5h完成1/12，合速2/3，余时11/8，总1.875h），边界与来源条件一致，无事实或归属缺陷。",
+        "refs": [
+          "/sources/0/text",
+          "/artifacts/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+          },
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "aff18385f24a6c262c334211a2f0b4cf24274b0ced6c491758a119a614223f39"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      },
+      {
+        "dimension": "Q3",
+        "level": 2,
+        "evidence": "sufficient",
+        "reason": "局部解释从总工作量1份、个人速度、分段完成量到合速与剩余时间除法，展示了关键操作连接；适用边界明确交代墙面可划分等及反例，符合停止条件，无需额外验算展开。",
+        "refs": [
+          "/artifacts/0/text",
+          "/sources/0/text"
+        ],
+        "defects": [],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "aff18385f24a6c262c334211a2f0b4cf24274b0ced6c491758a119a614223f39"
+          },
+          {
+            "pointer": "/sources/0/text",
+            "valueHash": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

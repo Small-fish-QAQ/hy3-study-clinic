@@ -1,0 +1,69 @@
+{
+  "inputIdentity": "5acb5f221691f7197bf52c15626b04e8553c8b333b27bd619e2c502c41a01134",
+  "attempts": [
+    {
+      "physicalId": "4b881c8f-d2fd-45cf-bbc4-0625eabc7fc6",
+      "caseId": "S097",
+      "runId": "S097-r1",
+      "stage": "audit",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "dimensions": [
+      {
+        "dimension": "Q2",
+        "level": 1,
+        "evidence": "sufficient",
+        "reason": "lesson准确说明叙述者非现实作者及第一人称只能知自身感受、不知他人未表心思，覆盖两核心目标且规则可用；但完全未提及次要目标'引用话语归属标记'，属局部省略，核心用途成立，评1级。",
+        "refs": [
+          "/artifacts/0/text",
+          "/goals/2"
+        ],
+        "defects": [
+          {
+            "severity": "local",
+            "description": "次要目标'说明引用别人话语时的归属标记'在lesson中无任何处理或提醒。",
+            "impact": "核心目标保持准确可用，省略次要目标不 defeat 声明目的，但使覆盖不完整，符合Q2的1级条件。",
+            "refs": [
+              "/artifacts/0/text",
+              "/goals/2"
+            ],
+            "witnesses": [
+              {
+                "pointer": "/artifacts/0/text",
+                "valueHash": "2955c5a9173f69a8a98ac42c40be80a9884f2f9d92ab33f7700ef6f8ba35f4aa"
+              },
+              {
+                "pointer": "/goals/2",
+                "valueHash": "e6a9fe5f3b015bae44d40471551088d7d08a745fa66ebc11c00ab452a5d7dff2"
+              }
+            ]
+          }
+        ],
+        "missing": [],
+        "witnesses": [
+          {
+            "pointer": "/artifacts/0/text",
+            "valueHash": "2955c5a9173f69a8a98ac42c40be80a9884f2f9d92ab33f7700ef6f8ba35f4aa"
+          },
+          {
+            "pointer": "/goals/2",
+            "valueHash": "e6a9fe5f3b015bae44d40471551088d7d08a745fa66ebc11c00ab452a5d7dff2"
+          }
+        ],
+        "certification": {
+          "kind": "structural_and_ordinal",
+          "valid": true,
+          "semanticTruthCertified": false
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,67 @@
+{
+  "id": "S064",
+  "dimensions": [
+    "Q5"
+  ],
+  "evidence": {
+    "sources": [
+      {
+        "id": "source",
+        "text": "本题只用DNA碱基互补规则A配T、T配A、C配G、G配C；按原序列从左到右逐位写互补字符，不反转顺序，不推断生物功能。"
+      }
+    ],
+    "goals": [
+      "核验评分是否准确接受满足任务的答案"
+    ],
+    "prerequisites": [
+      "阅读所给规则",
+      "基本四则运算"
+    ],
+    "desiredDepth": "working_fluency",
+    "authorityBoundaries": [
+      "判断所附局部教学或任务的实际要求。作者参考答案为私有评估材料，未预先展示给学习者。数据与规则是明示课堂前提。"
+    ],
+    "artifacts": [],
+    "exposure": [],
+    "question": {
+      "prompt": "按所给规则写出ATGC逐位互补序列，并说明A和G分别与什么配对。",
+      "options": []
+    },
+    "rubric": [
+      {
+        "id": "c1",
+        "text": "互补序列为TACG",
+        "required": true
+      },
+      {
+        "id": "c2",
+        "text": "明确A配T、G配C",
+        "required": true
+      },
+      {
+        "id": "c3",
+        "text": "分项使用小标题",
+        "required": false
+      }
+    ],
+    "answer": "对应的互补串是TACG，因为A对T，G对C（T对A、C对G）。",
+    "productJudgment": {
+      "criteria": [
+        {
+          "id": "c1",
+          "result": "not_met"
+        },
+        {
+          "id": "c2",
+          "result": "met"
+        },
+        {
+          "id": "c3",
+          "result": "not_met"
+        }
+      ],
+      "feedback": "TACG是错误互补序列，因此不给信用。",
+      "consequence": "withheld"
+    }
+  }
+}

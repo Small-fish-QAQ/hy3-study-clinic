@@ -1,0 +1,648 @@
+[
+  {
+    "id": "E01",
+    "title": "OpenStax：相同温度为什么触感不同",
+    "historicalPath": "final-evaluation-2026-09-12/benchmark/product-inputs/E01.json",
+    "textSha256": "11cd6c64a32a6f846c820d63c63183942e435279066c5e78e9e3e144bb854bbd",
+    "characters": 1608
+  },
+  {
+    "id": "F01",
+    "title": "读懂一份书屋周报",
+    "historicalPath": "final-evaluation-2026-09-12/benchmark/product-inputs/F01.json",
+    "textSha256": "c21cc4922a3065c1aa0919df5b3c2741fee3810af8bf43ae4c544e6fba879cf4",
+    "characters": 835
+  },
+  {
+    "id": "F05",
+    "title": "两种尺子与读数的可信范围",
+    "historicalPath": "final-evaluation-2026-09-12/benchmark/product-inputs/F05.json",
+    "textSha256": "04ede0e2b943c283408af13f15e429c4d3f550318ac34096022b20c8a80a02fc",
+    "characters": 798
+  },
+  {
+    "id": "F09",
+    "title": "轮流做家务的工作量",
+    "historicalPath": "final-evaluation-2026-09-12/benchmark/product-inputs/F09.json",
+    "textSha256": "89036694d155b7967bf5a3ab20470cfe8a7f2a485ad27eb89e1c523c37d4a051",
+    "characters": 803
+  },
+  {
+    "id": "E02",
+    "title": "OpenStax：生态系统中的能量来源",
+    "historicalPath": "final-evaluation-2026-09-12/benchmark/product-inputs/E02.json",
+    "textSha256": "6bfef5addb7581a7a5154aa3f44613f99aea8cec06cb8fcd5a7616deee504d45",
+    "characters": 1584
+  },
+  {
+    "id": "E03",
+    "title": "OpenStax：平均数、中位数与众数",
+    "historicalPath": "final-evaluation-2026-09-12/benchmark/product-inputs/E03.json",
+    "textSha256": "d472be8e4d1e92054873fa9ae01fc466643fca58c527774d10170357a96d3f79",
+    "characters": 1855
+  },
+  {
+    "id": "E04",
+    "title": "OpenStax：意义、图像与声音的记忆编码",
+    "historicalPath": "final-evaluation-2026-09-12/benchmark/product-inputs/E04.json",
+    "textSha256": "bf1b2eea6b7f20a856c4cfc2f378ff4216695c2cb1b009da66f5aca83f238b9f",
+    "characters": 2557
+  },
+  {
+    "id": "F02",
+    "title": "折扣前后，谁是比较基数",
+    "historicalPath": "final-evaluation-2026-09-12/benchmark/product-inputs/F02.json",
+    "textSha256": "eed51cb255d5d0e12ca505b4c60926d142df7cf81a0f73781aba0593d2870361",
+    "characters": 804
+  },
+  {
+    "id": "F03",
+    "title": "早餐调查能说明什么",
+    "historicalPath": "final-evaluation-2026-09-12/benchmark/product-inputs/F03.json",
+    "textSha256": "944a460c4eccfdbd61d456dc9fc3969b0ed10c585ea05e87ccfe3e9b93549680",
+    "characters": 878
+  },
+  {
+    "id": "F04",
+    "title": "看懂一张没有画出的柱形图",
+    "historicalPath": "final-evaluation-2026-09-12/benchmark/product-inputs/F04.json",
+    "textSha256": "d285228b9962482d5b8d81456178a4eb5cad39d02c75d3a204457e6093fff0ba",
+    "characters": 810
+  },
+  {
+    "id": "F06",
+    "title": "平均等待时间与典型体验",
+    "historicalPath": "final-evaluation-2026-09-12/benchmark/product-inputs/F06.json",
+    "textSha256": "a43f09ae51e1a19e3e4fe7ef6283f10eab5bf8c071e52a5d86e3c347cdbc2311",
+    "characters": 816
+  },
+  {
+    "id": "F07",
+    "title": "种子对照实验的条件",
+    "historicalPath": "final-evaluation-2026-09-12/benchmark/product-inputs/F07.json",
+    "textSha256": "320e44e3a03febda78d37ddaeaa58db6be5f2a9062579aadf3e2acb57713d648",
+    "characters": 796
+  },
+  {
+    "id": "F08",
+    "title": "印章卡片的逻辑",
+    "historicalPath": "final-evaluation-2026-09-12/benchmark/product-inputs/F08.json",
+    "textSha256": "132c532360b4bc6ac5b2aa8886b4b3bf89c500f85d4e1be08595f9a669823289",
+    "characters": 768
+  },
+  {
+    "id": "F10",
+    "title": "先晾干再装袋的工序",
+    "historicalPath": "final-evaluation-2026-09-12/benchmark/product-inputs/F10.json",
+    "textSha256": "6dd6edca085dcc5933a23f6deb982699b87dd50537c987ef10fe7f0081c14932",
+    "characters": 814
+  },
+  {
+    "id": "F11",
+    "title": "一条配比线与两条配比线",
+    "historicalPath": "final-evaluation-2026-09-12/benchmark/product-inputs/F11.json",
+    "textSha256": "3d467962cceddb9a766ded25aaa2f5d1c9767ee6b9307e50472157ea664b2422",
+    "characters": 761
+  },
+  {
+    "id": "F12",
+    "title": "一次检测，两种整体",
+    "historicalPath": "final-evaluation-2026-09-12/benchmark/product-inputs/F12.json",
+    "textSha256": "f2f400674bd7889c87f6b67501fb0945c56396dd3c9d5fccf9110cd78642a53e",
+    "characters": 797
+  },
+  {
+    "id": "B01",
+    "title": "缺失规格的冷藏箱",
+    "historicalPath": "final-evidence-2026-09-14/dataset/product/B01.json",
+    "textSha256": "a248ba34510ba087586e6c0a26f5e48c7ccbb5eed80a7920c1a855be78f7b4f3",
+    "characters": 256
+  },
+  {
+    "id": "B02",
+    "title": "材料中的越权指令",
+    "historicalPath": "final-evidence-2026-09-14/dataset/product/B02.json",
+    "textSha256": "e0e667343372f0f3baab86c3d7e9b1ff5d2a67ae0f3396791225bd59fa7191ac",
+    "characters": 321
+  },
+  {
+    "id": "B03",
+    "title": "不同版本的实验室预约规则",
+    "historicalPath": "final-evidence-2026-09-14/dataset/product/B03.json",
+    "textSha256": "c9cd8a42145a5d84bdbec6518ca98537fd7b61fc6ef85321f246cd83084311e7",
+    "characters": 339
+  },
+  {
+    "id": "B04",
+    "title": "只有相关记录的故障诊断",
+    "historicalPath": "final-evidence-2026-09-14/dataset/product/B04.json",
+    "textSha256": "873236badfd81e97cdfd726d3c4bebb24394534d132353a2c0d13d2e7d56b8a2",
+    "characters": 306
+  },
+  {
+    "id": "P01",
+    "title": "地图比例尺与图上路线",
+    "historicalPath": "final-evidence-2026-09-14/dataset/product/P01.json",
+    "textSha256": "d7b27394b3232e3eeb23ac91ad0565f20ff6df9403e438b1b464606fd8197300",
+    "characters": 503
+  },
+  {
+    "id": "P02",
+    "title": "同样长的围栏能围出多大菜地",
+    "historicalPath": "final-evidence-2026-09-14/dataset/product/P02.json",
+    "textSha256": "6fc6cae9e1207cd8a5b6e0ead1c60ce55a7817cb5d0e14d228be49b802777eda",
+    "characters": 447
+  },
+  {
+    "id": "P03",
+    "title": "复制电子表格公式时哪些引用会移动",
+    "historicalPath": "final-evidence-2026-09-14/dataset/product/P03.json",
+    "textSha256": "1255f89bf56a10c250e33d0480315f54188304e3ad0dcff151f75f26bbc5034b",
+    "characters": 494
+  },
+  {
+    "id": "P04",
+    "title": "有序目录中的二分查找",
+    "historicalPath": "final-evidence-2026-09-14/dataset/product/P04.json",
+    "textSha256": "4861a6d6db95e89f7694b40525795901812d7bf6286445e2886c225e649f429c",
+    "characters": 487
+  },
+  {
+    "id": "P05",
+    "title": "两种缓存淘汰规则",
+    "historicalPath": "final-evidence-2026-09-14/dataset/product/P05.json",
+    "textSha256": "2c3226360c24edbd4496138bb2f845a2dc0d77f40de48b14261106ac1b4d2fc7",
+    "characters": 487
+  },
+  {
+    "id": "P06",
+    "title": "预约区间的端点与冲突",
+    "historicalPath": "final-evidence-2026-09-14/dataset/product/P06.json",
+    "textSha256": "9e50dbf3dd1c0c3174cc6493c1302a9889f4513d10dfaa25a9308101527abb43",
+    "characters": 540
+  },
+  {
+    "id": "P07",
+    "title": "整箱包装为什么不能总是四舍五入",
+    "historicalPath": "final-evidence-2026-09-14/dataset/product/P07.json",
+    "textSha256": "961fe480dd9301089487aa5ef2d7b4f9c7556a671abbf662e1779c37ae2f932b",
+    "characters": 442
+  },
+  {
+    "id": "P08",
+    "title": "校验位能检查什么",
+    "historicalPath": "final-evidence-2026-09-14/dataset/product/P08.json",
+    "textSha256": "5ce2e636be55fc8fbe17674b4c6c844af8f85a2ce7075a771edb0a7c47b2afbc",
+    "characters": 478
+  },
+  {
+    "id": "P09",
+    "title": "从混合物里回收什么",
+    "historicalPath": "final-evidence-2026-09-14/dataset/product/P09.json",
+    "textSha256": "e674351a6125730463200346684e5bce4f1a39fb4243541d4ca9ab4dd6b5f690",
+    "characters": 446
+  },
+  {
+    "id": "P10",
+    "title": "质量、体积与密度的联合判断",
+    "historicalPath": "final-evidence-2026-09-14/dataset/product/P10.json",
+    "textSha256": "cc9fbfcf04eae2cbedbe4f107a3f57ea808d9f65091ffe77d15eb90299c127e2",
+    "characters": 468
+  },
+  {
+    "id": "P11",
+    "title": "冷杯外的水从哪里来",
+    "historicalPath": "final-evidence-2026-09-14/dataset/product/P11.json",
+    "textSha256": "266ec4bd5e03aa105225e6687df3a9cec65382bea9b07deffeac131e7a0ae1f8",
+    "characters": 434
+  },
+  {
+    "id": "P12",
+    "title": "颜色指示不能替代全部判断",
+    "historicalPath": "final-evidence-2026-09-14/dataset/product/P12.json",
+    "textSha256": "fd92c771cdb4ac7e182f109e950950bb9eb0e1533abc7debcba9037af9cff99f",
+    "characters": 458
+  },
+  {
+    "id": "P13",
+    "title": "屏幕上的加色混合",
+    "historicalPath": "final-evidence-2026-09-14/dataset/product/P13.json",
+    "textSha256": "f10d2330e35c8e80b838883b5f44cbb1eaab22e85427c643229220c0a122bc20",
+    "characters": 510
+  },
+  {
+    "id": "P14",
+    "title": "文件权限选择的是哪一组",
+    "historicalPath": "final-evidence-2026-09-14/dataset/product/P14.json",
+    "textSha256": "2dce6e0fd1e4c6d6704ebde1f73eaf89acdb51ade6b32fd830e325eca3a4a48a",
+    "characters": 502
+  },
+  {
+    "id": "P15",
+    "title": "地震规模和当地感受为何不是同一个量",
+    "historicalPath": "final-evidence-2026-09-14/dataset/product/P15.json",
+    "textSha256": "59df3b49a018b0aa31fca2ea89b6c35afb409df68ba9ca07eedd962b6b050148",
+    "characters": 452
+  },
+  {
+    "id": "P16",
+    "title": "传粉与种子传播在生命周期中的位置",
+    "historicalPath": "final-evidence-2026-09-14/dataset/product/P16.json",
+    "textSha256": "8f5428a599a1406cb503a6c27036c6d0047ff0c28fe4d8564f93f6629812300a",
+    "characters": 458
+  },
+  {
+    "id": "P17",
+    "title": "OpenStax：被动运输与动态平衡",
+    "historicalPath": "final-evidence-2026-09-14/dataset/product/P17.json",
+    "textSha256": "f9fddcdd4191c68647809bee10d15c5d092f451968985bce769f17c1bf3104c5",
+    "characters": 2087
+  },
+  {
+    "id": "P18",
+    "title": "OpenStax：强化与惩罚的两个分类轴",
+    "historicalPath": "final-evidence-2026-09-14/dataset/product/P18.json",
+    "textSha256": "938fac5e9b0787b31dc13e1d12978662dcb14041fa451539f8f51ddc3b89d57d",
+    "characters": 2301
+  },
+  {
+    "id": "P19",
+    "title": "OpenStax：惯性与合外力",
+    "historicalPath": "final-evidence-2026-09-14/dataset/product/P19.json",
+    "textSha256": "8d43abbaabd0a1b611543f62e973b9dba15cd09ad6977c4f30f9348c821b17c9",
+    "characters": 2788
+  },
+  {
+    "id": "P20",
+    "title": "OpenStax：有限预算中的机会成本",
+    "historicalPath": "final-evidence-2026-09-14/dataset/product/P20.json",
+    "textSha256": "87376044392b22fc113057f92baf31fb030581a1127e818559dd2bfd55c78973",
+    "characters": 2125
+  },
+  {
+    "id": "M01",
+    "title": "直角三角形中的距离与验证",
+    "historicalPath": "mainline-product-2026-09-14/dataset/courses/M01.json",
+    "textSha256": "5350b97cfedfd7ffcf452f9c00515db0bc7febb8474ca34adcacee3a46491ab9",
+    "characters": 805
+  },
+  {
+    "id": "M02",
+    "title": "等差增长中的第几项与总量",
+    "historicalPath": "mainline-product-2026-09-14/dataset/courses/M02.json",
+    "textSha256": "cd192ac1bd21d2994a2531d687472b375aea9532f93046202c090d603a6f1d73",
+    "characters": 764
+  },
+  {
+    "id": "M03",
+    "title": "在校准表两点之间做线性插值",
+    "historicalPath": "mainline-product-2026-09-14/dataset/courses/M03.json",
+    "textSha256": "71d5d9a0850b6030face3ab4258b59505846a4fb1ff6072412ddb81d627adcc4",
+    "characters": 800
+  },
+  {
+    "id": "M04",
+    "title": "二维位移的分量合成",
+    "historicalPath": "mainline-product-2026-09-14/dataset/courses/M04.json",
+    "textSha256": "b6940d5dcd7ea256195b5590145dd32f6a24eb32d7f04ad7a388290488d419f8",
+    "characters": 749
+  },
+  {
+    "id": "M05",
+    "title": "密闭气体的压强与体积",
+    "historicalPath": "mainline-product-2026-09-14/dataset/courses/M05.json",
+    "textSha256": "3a95658e07e268b486d45a7ab14f14d4754f2d50371a56b9f6d73cb3cf5a396b",
+    "characters": 754
+  },
+  {
+    "id": "M06",
+    "title": "串联与并联电阻的两种约束",
+    "historicalPath": "mainline-product-2026-09-14/dataset/courses/M06.json",
+    "textSha256": "0870f2229ed3d3e69e1f66e35220d5b406dd60f4fde539e52e5cc62144daf3c3",
+    "characters": 757
+  },
+  {
+    "id": "M07",
+    "title": "比热容与绝热混合的能量守恒",
+    "historicalPath": "mainline-product-2026-09-14/dataset/courses/M07.json",
+    "textSha256": "980e9018889331059634c8dd29226c86aaf0c9d7d37a0279a80ec2fed5112b3e",
+    "characters": 802
+  },
+  {
+    "id": "M08",
+    "title": "OpenStax：光的反射与平面镜成像",
+    "historicalPath": "mainline-product-2026-09-14/dataset/courses/M08.json",
+    "textSha256": "b98ac655db646d2af011de02c168a9b4a71354c313dec8486079d19534dd67f1",
+    "characters": 1718
+  },
+  {
+    "id": "M09",
+    "title": "栈如何处理后缀表达式",
+    "historicalPath": "mainline-product-2026-09-14/dataset/courses/M09.json",
+    "textSha256": "61b847e4aca2166bc241d3698a97bebd17b065ba7e088a361b6f534f26e64f45",
+    "characters": 778
+  },
+  {
+    "id": "M10",
+    "title": "定长无符号二进制的表示范围",
+    "historicalPath": "mainline-product-2026-09-14/dataset/courses/M10.json",
+    "textSha256": "ecd2c3668c7191f934e36bab65052d85efae17687194657964d3aed40745e8d2",
+    "characters": 753
+  },
+  {
+    "id": "M11",
+    "title": "PostgreSQL：事务、回滚与保存点",
+    "historicalPath": "mainline-product-2026-09-14/dataset/courses/M11.json",
+    "textSha256": "8bcd1f9e53a96d2994e21f5c6199b91e4af06a927b729d8d6890cb69ff091e1f",
+    "characters": 3253
+  },
+  {
+    "id": "M12",
+    "title": "Python：共享可变对象与实例状态",
+    "historicalPath": "mainline-product-2026-09-14/dataset/courses/M12.json",
+    "textSha256": "0d90bf995bfa94066e60d8a31e7339953bf5de1884d4ff13f12ca7c3d621b64a",
+    "characters": 2575
+  },
+  {
+    "id": "M13",
+    "title": "单基因杂交中的基因型与表现型",
+    "historicalPath": "mainline-product-2026-09-14/dataset/courses/M13.json",
+    "textSha256": "0a02112e5893f7a32f49954a78d1afaa63c7616fd0047bfee74bc199087277e5",
+    "characters": 772
+  },
+  {
+    "id": "M14",
+    "title": "OpenStax：酶的活性位点与环境影响",
+    "historicalPath": "mainline-product-2026-09-14/dataset/courses/M14.json",
+    "textSha256": "6e7c3e2c37ef979ab7a628c5337d7f738849db26f4629ef4f60e26e9500312a5",
+    "characters": 2440
+  },
+  {
+    "id": "M15",
+    "title": "岩石循环中的形成过程",
+    "historicalPath": "mainline-product-2026-09-14/dataset/courses/M15.json",
+    "textSha256": "78bc6b5edb87601bb167a8deb2c8395b1990d324732e17270be67748fd8c3a4a",
+    "characters": 756
+  },
+  {
+    "id": "M16",
+    "title": "抗性性状如何在种群中变化",
+    "historicalPath": "mainline-product-2026-09-14/dataset/courses/M16.json",
+    "textSha256": "d4276b8d1716df4e9a965b45320377a9cdef94a0a1a95b0c72c2bbfa9f6f7ae4",
+    "characters": 738
+  },
+  {
+    "id": "M17",
+    "title": "英语主谓一致中的主语核心",
+    "historicalPath": "mainline-product-2026-09-14/dataset/courses/M17.json",
+    "textSha256": "b3131f79cca4d5dcd004e7689dc1bd2f4ef0a47e7eba4cf6f03cc069f616800b",
+    "characters": 1089
+  },
+  {
+    "id": "M18",
+    "title": "论证中的主张、理由与连接前提",
+    "historicalPath": "mainline-product-2026-09-14/dataset/courses/M18.json",
+    "textSha256": "d81835aa6831c71c746a069d495af23a15e53b6d0a9a3a8a1715837adabaf62a",
+    "characters": 754
+  },
+  {
+    "id": "M19",
+    "title": "把资料查询步骤写成可执行说明",
+    "historicalPath": "mainline-product-2026-09-14/dataset/courses/M19.json",
+    "textSha256": "42476c6624899fcc20033bd3a8b58e0e04a7ad17c2cc0f6a13366462499c88e2",
+    "characters": 767
+  },
+  {
+    "id": "M20",
+    "title": "让步与转折如何组织一段论证",
+    "historicalPath": "mainline-product-2026-09-14/dataset/courses/M20.json",
+    "textSha256": "c76660b76d4f887689c76f2deb45c42245b21cf64423590b18659ff7d82590bf",
+    "characters": 744
+  },
+  {
+    "id": "M21",
+    "title": "提前期内的需求与补货点",
+    "historicalPath": "mainline-product-2026-09-14/dataset/courses/M21.json",
+    "textSha256": "1ddb2411caa890c1a0c7f3c56729dae02543fe899747a6ea4b677541c1e53c47",
+    "characters": 767
+  },
+  {
+    "id": "M22",
+    "title": "固定成本、单位贡献与盈亏平衡",
+    "historicalPath": "mainline-product-2026-09-14/dataset/courses/M22.json",
+    "textSha256": "2b3232411469b6c10cd8e0f242ba6fb0d9966a0e246bbfbca095af7132333084",
+    "characters": 785
+  },
+  {
+    "id": "M23",
+    "title": "直线折旧怎样分配资产成本",
+    "historicalPath": "mainline-product-2026-09-14/dataset/courses/M23.json",
+    "textSha256": "36d3128443cf32f7a40838cc21b29570f0ccb06f4168351b6031f68e44d032a0",
+    "characters": 763
+  },
+  {
+    "id": "M24",
+    "title": "在多个指标间辨认可支配的方案",
+    "historicalPath": "mainline-product-2026-09-14/dataset/courses/M24.json",
+    "textSha256": "e3f1db981ba40648bc89f7e9cc5dfa82ff9f40a28c3c0cf8f0baab36666c98e3",
+    "characters": 781
+  },
+  {
+    "id": "S071",
+    "historicalPath": "final-evidence-2026-09-14/dataset/studyeval/S071.json",
+    "textSha256": "f077626b6cc0dcadf32134e02c41925aefa4067f55b8ae7509353fb99642dc40",
+    "characters": 102
+  },
+  {
+    "id": "S018",
+    "historicalPath": "final-evidence-2026-09-14/dataset/studyeval/S018.json",
+    "textSha256": "bd52c5a277bce71686f63dbe44ae0456d2b3036e28dc0d9ea741288fdb927b79",
+    "characters": 106
+  },
+  {
+    "id": "S050",
+    "historicalPath": "final-evidence-2026-09-14/dataset/studyeval/S050.json",
+    "textSha256": "a5384e5168414c3fb7fdaf9d41facc61921578fe1399ba0c69cb62aa2103ce93",
+    "characters": 47
+  },
+  {
+    "id": "S085",
+    "historicalPath": "final-evidence-2026-09-14/dataset/studyeval/S085.json",
+    "textSha256": "694fcf138ee515172ab2dd1c3a0a59baef8e0ee6b25086ed04ce3845111041ea",
+    "characters": 70
+  },
+  {
+    "id": "S090",
+    "historicalPath": "final-evidence-2026-09-14/dataset/studyeval/S090.json",
+    "textSha256": "7d4b5318383b8f1b4d45756898be01c9752196adf6665cc09ce68423b1d671b7",
+    "characters": 105
+  },
+  {
+    "id": "S092",
+    "historicalPath": "final-evidence-2026-09-14/dataset/studyeval/S092.json",
+    "textSha256": "c67a1809ad98f0e7218f13885bd43e3048970015da2fa92bb6684a0b6474ff10",
+    "characters": 56
+  },
+  {
+    "id": "S066",
+    "historicalPath": "final-evidence-2026-09-14/dataset/studyeval/S066.json",
+    "textSha256": "a847dc2f4e2b8785ff7703505780dfeccac7b1219ac0350602cefadeadf033e1",
+    "characters": 59
+  },
+  {
+    "id": "S063",
+    "historicalPath": "final-evidence-2026-09-14/dataset/studyeval/S063.json",
+    "textSha256": "5e982eb2843152ea1b81d9f7793dbfb2609636664c75b2a6bab9a349cc3bf60b",
+    "characters": 85
+  },
+  {
+    "id": "S086",
+    "historicalPath": "final-evidence-2026-09-14/dataset/studyeval/S086.json",
+    "textSha256": "6ed9485d1f783d39dfd0c9e06aa8a58a9283253c3da1c1e976330c549377f167",
+    "characters": 68
+  },
+  {
+    "id": "S045",
+    "historicalPath": "final-evidence-2026-09-14/dataset/studyeval/S045.json",
+    "textSha256": "1df9950edf389e68cc4353ad1c364ae71b323e3e1d130830ce39d9c5e25fe7f3",
+    "characters": 55
+  },
+  {
+    "id": "S091",
+    "historicalPath": "final-evidence-2026-09-14/dataset/studyeval/S091.json",
+    "textSha256": "8f66df12d54e18d234589d8c047330d6ce2ae196b074b8083cf0629060128d07",
+    "characters": 79
+  },
+  {
+    "id": "S016",
+    "historicalPath": "final-evidence-2026-09-14/dataset/studyeval/S016.json",
+    "textSha256": "6ab9fc9b0dd1268c9f2a3fe52735c432087e1c882feb81af2722dc414e9adaf1",
+    "characters": 33
+  },
+  {
+    "id": "S088",
+    "historicalPath": "final-evidence-2026-09-14/dataset/studyeval/S088.json",
+    "textSha256": "7a10cc0071f3123316910bb75fd05269f043b078b4c61204a313a406d722851b",
+    "characters": 108
+  },
+  {
+    "id": "S084",
+    "historicalPath": "final-evidence-2026-09-14/dataset/studyeval/S084.json",
+    "textSha256": "9962889a586bcebaf05685b990e16a73f43aca209ab59334e74cf9c8606897a1",
+    "characters": 99
+  },
+  {
+    "id": "S023",
+    "historicalPath": "final-evidence-2026-09-14/dataset/studyeval/S023.json",
+    "textSha256": "b8573f66e26f7202d97e175a0f90326508f9e9b6ca0ec054eeda7a7f29d0bcd6",
+    "characters": 33
+  },
+  {
+    "id": "S081",
+    "historicalPath": "final-evidence-2026-09-14/dataset/studyeval/S081.json",
+    "textSha256": "69fef873755638b051db652f07b0960110732e94a4812af3f6f8b85635905051",
+    "characters": 70
+  },
+  {
+    "id": "S026",
+    "historicalPath": "final-evidence-2026-09-14/dataset/studyeval/S026.json",
+    "textSha256": "61e32c85918a722e54332a389f76c5ef0721b03afb46040da613635927625724",
+    "characters": 37
+  },
+  {
+    "id": "S097",
+    "historicalPath": "final-evidence-2026-09-14/dataset/studyeval/S097.json",
+    "textSha256": "bae368a359568cf22d196cf95dd79a50368bc21f0e49042a004744bc3b0af43c",
+    "characters": 101
+  },
+  {
+    "id": "S083",
+    "historicalPath": "final-evidence-2026-09-14/dataset/studyeval/S083.json",
+    "textSha256": "048d87f46cf5e71c40673f0c198589ef7169711c8e00773c1213c7b454b1dfde",
+    "characters": 54
+  },
+  {
+    "id": "S093",
+    "historicalPath": "final-evidence-2026-09-14/dataset/studyeval/S093.json",
+    "textSha256": "9ef8039d157a3635d1da4128848b8da6aabf32e121261f1cd761712bb1417ab2",
+    "characters": 98
+  },
+  {
+    "id": "S075",
+    "historicalPath": "final-evidence-2026-09-14/dataset/studyeval/S075.json",
+    "textSha256": "c4d75b2db6f5aa30dcec740ff8a4b7e07282347099740e24a9f3e2fd0f4bef58",
+    "characters": 58
+  },
+  {
+    "id": "S082",
+    "historicalPath": "final-evidence-2026-09-14/dataset/studyeval/S082.json",
+    "textSha256": "79185b54dfbddde1df8e87303862dd09dbc298fe4bf0af82dc4cd087114a46d8",
+    "characters": 76
+  },
+  {
+    "id": "S102",
+    "historicalPath": "final-evidence-2026-09-14/dataset/studyeval/S102.json",
+    "textSha256": "e91a476a4c04f45c11b19a5dfa48093184e1d00ce14e633b64bdd8a96f40a0dd",
+    "characters": 70
+  },
+  {
+    "id": "S098",
+    "historicalPath": "final-evidence-2026-09-14/dataset/studyeval/S098.json",
+    "textSha256": "68fdce4b60a730e16f15fa21fa915ae0a6300744628a556284f8e578fc6dc56c",
+    "characters": 91
+  },
+  {
+    "id": "S070",
+    "historicalPath": "final-evidence-2026-09-14/dataset/studyeval/S070.json",
+    "textSha256": "abe0ee3fc063cc9ca8e5695fcc7196cbc85922a703ddb540aee12d9b2456e392",
+    "characters": 49
+  },
+  {
+    "id": "S052",
+    "historicalPath": "final-evidence-2026-09-14/dataset/studyeval/S052.json",
+    "textSha256": "8e8aeb259dc1cfe4a1f03fa52d74d889ce63a71eb1e26a30d0128233ac115487",
+    "characters": 33
+  },
+  {
+    "id": "S053",
+    "historicalPath": "final-evidence-2026-09-14/dataset/studyeval/S053.json",
+    "textSha256": "2548172e88b868529837d1fdba69c19b301b4c25437b0d6dba8b3f817e24fd6b",
+    "characters": 26
+  },
+  {
+    "id": "S095",
+    "historicalPath": "final-evidence-2026-09-14/dataset/studyeval/S095.json",
+    "textSha256": "4a1ff16d1619a7f4b64cc932d8257c0a3341f94daa68120cf944ecd4a83e3b93",
+    "characters": 95
+  },
+  {
+    "id": "S099",
+    "historicalPath": "final-evidence-2026-09-14/dataset/studyeval/S099.json",
+    "textSha256": "59437daaeac189d745ba28fdee3966ddf517f7bcc1363dd97ec06abb86dd3a0e",
+    "characters": 89
+  },
+  {
+    "id": "S062",
+    "historicalPath": "final-evidence-2026-09-14/dataset/studyeval/S062.json",
+    "textSha256": "0a7d18d503f414db1a6b6c1cebca6303bd38c8be74cf21cbaed3adc90c1c22c4",
+    "characters": 47
+  },
+  {
+    "id": "S096",
+    "historicalPath": "final-evidence-2026-09-14/dataset/studyeval/S096.json",
+    "textSha256": "6213ff9a055ace79d0f400ff726e7c543da909a26d1040539112300cd2428c3c",
+    "characters": 82
+  },
+  {
+    "id": "S100",
+    "historicalPath": "final-evidence-2026-09-14/dataset/studyeval/S100.json",
+    "textSha256": "a5942766dca625dc9fdbcdb1a2ff0c61c8d65317777cec648fe36832bba69f03",
+    "characters": 35
+  },
+  {
+    "id": "S101",
+    "historicalPath": "final-evidence-2026-09-14/dataset/studyeval/S101.json",
+    "textSha256": "5aad739453ecf71bb67b8231d512e4501272c0e19922e6b7b60be43255633d24",
+    "characters": 36
+  }
+]

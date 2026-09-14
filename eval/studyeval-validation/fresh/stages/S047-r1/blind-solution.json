@@ -1,0 +1,36 @@
+{
+  "inputIdentity": "a1f465d84fe5b2cfaeb19e9573f7244af928f0fdaf400288b5d38838b322f71a",
+  "attempts": [
+    {
+      "physicalId": "ee695ada-5fb0-4ce8-962a-c540a460140a",
+      "caseId": "S047",
+      "runId": "S047-r1",
+      "stage": "blind-solution",
+      "outputAttempt": 1,
+      "transportAttempt": 1,
+      "identityHash": "a15887c352c0c90deb893d88469c0930f817dfe4ef87e86eb2373aa9083834ac",
+      "finishReason": "stop",
+      "failure": null,
+      "referenceRepairs": [],
+      "contractError": null
+    }
+  ],
+  "result": {
+    "status": "resolved",
+    "solution": "五张不同明信片互异，选两张无放回、不计顺序、禁自配。有序选法5×4=20，每对无序组合（如A,B与B,A）被计两次，除以2消除顺序重复，得10对。必要条件：对象互异、选二、无放回、无序、不自配。可接受解法：C(5,2)=5×4/2=10。",
+    "refs": [
+      "/question/prompt",
+      "/sources/0/text"
+    ],
+    "witnesses": [
+      {
+        "pointer": "/question/prompt",
+        "valueHash": "ca51509a5ba3fefd4066a98e0cf30777287d5a985b78f665c152c10043b1e561"
+      },
+      {
+        "pointer": "/sources/0/text",
+        "valueHash": "048d87f46cf5e71c40673f0c198589ef7169711c8e00773c1213c7b454b1dfde"
+      }
+    ]
+  }
+}

@@ -1,0 +1,184 @@
+{
+  "status": "ready",
+  "message": "Lesson is ready.",
+  "course": {
+    "title": "FIFO queues and service order"
+  },
+  "session": {
+    "status": "active",
+    "version": 11
+  },
+  "agenda": {
+    "version": 2,
+    "itemState": "queued"
+  },
+  "lesson": {
+    "objective": {
+      "title": "FIFO队列操作与单服务器调度模型",
+      "whyNow": "给定若干任务的到达时间与服务时长，如何在不逐步模拟队列的情况下算出每个任务的开始与完成时间，并证明更短的任务不会插队？",
+      "outcomes": [
+        {
+          "title": "在单服务器FIFO假设下计算服务时间线并说明不重排",
+          "description": "在显式单服务器FIFO假设下（一次服务一个任务、运行至完成不中断、空闲且有等待任务立即开始、到达加队尾、服务中不在等待队列、同时到达按输入序、时间单位相同），计算各任务开始时间=max(到达时间,上一任务完成时间)，完成时间=开始+服务时长，等待时间=开始-到达，系统内总时间=完成-到达，并分别说明；展示FIFO不因任务更短而提前于更早到达者。"
+        }
+      ]
+    },
+    "prerequisites": [],
+    "segments": [
+      {
+        "index": 0,
+        "purpose": "orientation",
+        "explanation": "先建立单服务器FIFO的量化模型：任务一次一个、运行至完成、到达加队尾、同时到达按输入序。设任务A到达0服务2，B到达1服务3，C到达3服务1。按规则，A开始=max(0,0)=0，完成2；B开始=max(1,2)=2，完成5；C开始=max(3,5)=5，完成6。可见C虽比B短，仍须等B完成才开始，说明FIFO不按服务时长重排。等待时间分别为0、1、2，系统内总时间为完成减到达。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 1,
+        "purpose": "worked_example",
+        "explanation": "通过一个含同时到达的案例演练计算步骤。规则同前：开始=max(到达,上一完成)，完成=开始+服务。下面给出具体任务与已算出的首步，其余由学习者推演。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": {
+          "startingState": "空队列，单服务器FIFO：一次一个、运行至完成、同时到达按输入序M然后N。M到达2服务4，N到达2服务2，O到达5服务1。",
+          "inputs": [
+            "M到达2服务4",
+            "N到达2服务2",
+            "O到达5服务1"
+          ],
+          "ruleOrProcedure": "开始时间=max(到达时间,上一任务完成时间)；完成时间=开始+服务时长；等待时间=开始-到达。",
+          "steps": [
+            {
+              "action": "计算M开始与完成",
+              "reason": "M最早到达2且服务器空闲，开始=max(2,0)=2，完成=2+4=6",
+              "resultingState": "M开始2完成6；N已在队列等待；O尚未到达"
+            }
+          ],
+          "learnerDecision": null,
+          "result": null,
+          "whyResultFollows": null,
+          "origin": "hy3_synthesis",
+          "sources": [],
+          "interaction": {
+            "stage": "guided",
+            "modelledStepCount": 1,
+            "origin": "hy3_synthesis",
+            "sources": [],
+            "activity": {
+              "prompt": "基于上述M的计算与规则，O的开始时间是？",
+              "options": [
+                {
+                  "id": "A",
+                  "text": "8"
+                },
+                {
+                  "id": "B",
+                  "text": "5"
+                },
+                {
+                  "id": "C",
+                  "text": "6"
+                }
+              ],
+              "response": null,
+              "respondedAt": null,
+              "correct": null,
+              "feedback": null,
+              "debrief": null,
+              "credit": "none",
+              "misconception": null
+            },
+            "hint": null,
+            "scaffold": null,
+            "transfer": null
+          }
+        },
+        "example": null,
+        "contrast": null,
+        "possibleMisconception": null,
+        "informalCheck": null
+      },
+      {
+        "index": 2,
+        "purpose": "comparison",
+        "explanation": "FIFO模型的一个关键边界是“同时到达按输入序”。若去掉该条件而采用其他排序，则不再是单服务器FIFO假设下所定义的调度。明确该边界可避免把任意排队规则都当作FIFO。",
+        "explanationOrigin": "hy3_synthesis",
+        "sources": [],
+        "semanticRelations": [],
+        "workedProcess": null,
+        "example": null,
+        "contrast": {
+          "text": "若放弃“同时到达按输入序”而改用最短服务优先，则更短任务可能排在更早到达者之前，这违背了FIFO不重排的假设；资料中的案例里C虽短仍落后于B正是该边界生效的结果。",
+          "origin": "hy3_synthesis",
+          "sources": []
+        },
+        "possibleMisconception": null,
+        "informalCheck": null
+      }
+    ],
+    "sourceReferencesAvailable": true,
+    "visuals": [],
+    "summary": {
+      "available": true,
+      "text": "单服务器FIFO下，开始时间=max(到达,上一完成)，完成=开始+服务，等待=开始-到达；服务顺序由到达时刻与同时到达的输入序固定，短任务不提前。",
+      "nextConnection": null,
+      "formalOpportunities": []
+    },
+    "plannedTime": {
+      "agendaMinutes": 11,
+      "activeMinutesMin": 14,
+      "activeMinutesMax": 22,
+      "basis": "locally_evaluated_learning_actions"
+    }
+  },
+  "progress": {
+    "stateVersion": 2,
+    "stateId": "lesson_execution_9e4bc10b-bd13-4e92-b197-afd5971ada1a",
+    "currentSegmentIndex": 0,
+    "segmentCount": 3,
+    "presentedSegmentIndexes": [],
+    "presentationStatus": "not_started",
+    "presentationCompletedAt": null
+  },
+  "currentInformalCheck": null,
+  "practice": {
+    "status": "locked",
+    "currentItemIndex": 0,
+    "itemCount": 1,
+    "item": {
+      "index": 0,
+      "objectiveTitle": "在单服务器FIFO假设下计算服务时间线并说明不重排",
+      "construct": "apply",
+      "surface": "initial",
+      "supplementary": true,
+      "prompt": "在单服务器FIFO下，观测到任务U、V、W的时序：U开始0完成6；V开始6完成10；W开始10完成13。已知U到达0服务6，V到达1服务4。问W的到达时间与服务时长组合中，哪一组能与FIFO模型一致？",
+      "options": [
+        {
+          "id": "teaching_brief_0fffb36f-80fe-44cd-b455-3b326b40c3f7_practice_1_initial_A",
+          "text": "W到达2服务3"
+        },
+        {
+          "id": "teaching_brief_0fffb36f-80fe-44cd-b455-3b326b40c3f7_practice_1_initial_B",
+          "text": "W到达11服务3"
+        },
+        {
+          "id": "teaching_brief_0fffb36f-80fe-44cd-b455-3b326b40c3f7_practice_1_initial_C",
+          "text": "W到达2服务5"
+        }
+      ]
+    },
+    "attempts": [],
+    "recovery": null,
+    "completedAt": null,
+    "credit": "none"
+  },
+  "allowedActions": [
+    "start_lesson"
+  ]
+}
