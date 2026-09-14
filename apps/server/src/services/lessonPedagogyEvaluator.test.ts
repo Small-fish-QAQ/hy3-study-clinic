@@ -1006,7 +1006,16 @@ describe('compositional Lesson and Practice evaluators', () => {
     expect(codes()).not.toContain('worked_process_missing_required_structure');
     worked.result = '{read}';
     expect(codes()).not.toContain('worked_process_missing_required_structure');
-    for (const result of ['v≈4.25 m/s', 'T = 273.15 K', 'r=√(9/4)', 'ρ≤1.2']) {
+    for (const result of [
+      'v≈4.25 m/s',
+      'T = 273.15 K',
+      'r=√(9/4)',
+      'ρ≤1.2',
+      '[3]',
+      '[-5, 2]',
+      '(−2, 7)',
+      '[]',
+    ]) {
       worked.result = result;
       expect(codes()).not.toContain('worked_process_missing_required_structure');
     }
@@ -1445,6 +1454,47 @@ describe('compositional Lesson and Practice evaluators', () => {
       { code: 'practice_novelty_uncertain', severity: 'warning' },
       { code: 'practice_option_set_replays_lesson', severity: 'warning' },
     ]);
+  });
+
+  it.each([
+    '缓存清空后，哪个页面需要重新渲染？',
+    'Which page should the browser evict from its cache?',
+    '根据这段检索过程，哪个位置应插入候选过滤操作？',
+  ])('does not mistake a domain object for a source locator: %s', (prompt) => {
+    const fixture = compositionalInputs('apply');
+    fixture.practice.items[0]!.initial.prompt = prompt;
+    expect(
+      evaluatePlannedPracticeQuality(fixture.practice, fixture.practiceInput, {
+        evaluatedAt,
+      }).findings.map((f) => f.code),
+    ).not.toContain('source_location_trivia');
+  });
+
+  it('accepts compact distinct numeric answers and leaves lexical retry similarity to semantic review', () => {
+    const fixture = compositionalInputs('apply');
+    const item = fixture.practice.items[0]!;
+    item.initial.prompt = '检索实验得到候选总数47，按给定规则计算下一步留下多少个候选？';
+    item.retry.prompt = '检索实验得到候选总数74，按给定规则计算下一步留下多少个候选？';
+    item.initial.options.forEach((o, index) => {
+      o.text = ['4', '-4', '4.7'][index]!;
+    });
+    const findings = evaluatePlannedPracticeQuality(fixture.practice, fixture.practiceInput, {
+      evaluatedAt,
+    }).findings;
+    for (const code of [
+      'invalid_or_duplicate_practice_options',
+      'practice_prompt_leaks_answer',
+      'retry_surface_not_meaningfully_changed',
+      'practice_surface_not_objective_aligned',
+    ]) {
+      expect(findings.filter((f) => f.severity === 'error').map((f) => f.code)).not.toContain(code);
+    }
+    item.retry.prompt = item.initial.prompt;
+    expect(
+      evaluatePlannedPracticeQuality(fixture.practice, fixture.practiceInput, {
+        evaluatedAt,
+      }).findings.map((f) => f.code),
+    ).toContain('retry_surface_not_meaningfully_changed');
   });
 
   it.each([

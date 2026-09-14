@@ -15,6 +15,7 @@ import {
   RecordGoalOutcomeRequestSchema,
   ReplanTriggerSchema,
   supportsFormalApplicationDemand,
+  PracticeRecoveryStateSchema,
   type CompletionPolicy,
   type CoverageRiskEntry,
   type Curriculum,
@@ -51,6 +52,7 @@ import {
 import { createHash } from 'node:crypto';
 import { projectTaughtExposure, type PresentedTeachingSurface } from '@hy3-clinic/shared';
 import { currentScoringReview, scoringFingerprint } from './formalScoringReview.js';
+import { lessonExecutionPresentedPrompts, recoveryExposurePrompts } from './formalAssessments.js';
 
 interface FormalProgressionDeps {
   repos: Repositories;
@@ -94,6 +96,8 @@ function unitFor(curriculum: Curriculum, id: string) {
 }
 
 export interface FormalAssessmentProposalCatalogue {
+  /** Novelty-only history. It never adds source or objective authority. */
+  priorExposure: string[];
   objectiveCatalogue: Array<{ objectiveRef: string; title: string; description: string }>;
   scoringAuthorityCatalogue: NonNullable<AssessmentProposalInput['scoringAuthorityCatalogue']>;
   teachingSurfaceCatalogue: Array<{
@@ -159,13 +163,13 @@ export function buildFormalAssessmentProposalCatalogue(input: {
   const teachingSurfaceCatalogue: FormalAssessmentProposalCatalogue['teachingSurfaceCatalogue'] =
     [];
   const surfaceRecords = new Map<string, PresentedTeachingSurface>();
+  const priorExposure = new Set<string>();
   let surfaceIndex = 1;
   for (const state of input.repos.lessonExecution.listForWorkspace(input.workspaceId)) {
     if (state.preparationStatus !== 'ready') continue;
     if (
       state.curriculumVersionId !== input.curriculum.id ||
       state.studyPlanVersionId !== input.plan.id ||
-      !candidateUnitIds.has(state.learningUnitId) ||
       state.executionSourceManifestFingerprint !== input.plan.executionSourceManifestFingerprint ||
       !state.teachingBriefId
     )
@@ -178,6 +182,40 @@ export function buildFormalAssessmentProposalCatalogue(input: {
     if (!brief || !checkpoint) continue;
     const projection = projectTaughtExposure({ brief, state, checkpoint });
     if (!projection) continue;
+    for (const surface of projection.surfaces) priorExposure.add(surface.text);
+    for (const prompt of lessonExecutionPresentedPrompts(brief, state)) priorExposure.add(prompt);
+    for (const interaction of state.practiceInteractions) {
+      const surface = brief.practice?.items[interaction.itemIndex]?.[interaction.surface];
+      if (surface)
+        priorExposure.add(
+          JSON.stringify({
+            prompt: surface.prompt,
+            options: surface.options.map(({ text }) => text),
+            feedback: interaction.feedback,
+            hint: interaction.hint,
+          }),
+        );
+    }
+    const rounds = state.practiceInteractions.flatMap((i) => i.recovery?.rounds ?? []);
+    for (const event of input.repos.lessonExecution.listEvents(state.id)) {
+      if (event.kind !== 'practice_repair_prepared' || !event.payload.archivedRound) continue;
+      const parsed = PracticeRecoveryStateSchema.shape.rounds.element.safeParse(
+        event.payload.archivedRound,
+      );
+      if (parsed.success) rounds.push(parsed.data);
+    }
+    for (const round of rounds) {
+      priorExposure.add(
+        JSON.stringify({
+          explanation: round.content.explanation,
+          workedExample: round.content.workedExample,
+          contrast: round.content.contrast,
+          retestPrompts: recoveryExposurePrompts(round).slice(1),
+          feedback: round.responses.map((r) => r.feedback),
+        }),
+      );
+    }
+    if (!candidateUnitIds.has(state.learningUnitId)) continue;
     for (const surface of projection.surfaces) {
       const objectiveRefs = surface.objectiveIds
         .map((objectiveId) => objectiveRefById.get(objectiveId))
@@ -190,6 +228,17 @@ export function buildFormalAssessmentProposalCatalogue(input: {
         text: surface.text,
       });
       surfaceRecords.set(`T${surfaceIndex - 1}`, surface);
+    }
+  }
+  for (const episode of input.repos.repair.listByWorkspace(input.workspaceId)) {
+    for (const packet of input.repos.repair.listPackets(episode.id)) {
+      priorExposure.add(
+        JSON.stringify({
+          explanation: packet.explanation,
+          practicePrompt: packet.practicePrompt,
+          hints: packet.hints,
+        }),
+      );
     }
   }
   const scoringAuthorityCatalogue = objectiveIds.map((id, index) => {
@@ -227,6 +276,7 @@ export function buildFormalAssessmentProposalCatalogue(input: {
     return { objectiveRef: `O${index + 1}`, claims: [...claims.values()] };
   });
   return {
+    priorExposure: [...priorExposure],
     objectiveCatalogue,
     scoringAuthorityCatalogue,
     teachingSurfaceCatalogue,

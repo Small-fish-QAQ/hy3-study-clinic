@@ -658,6 +658,8 @@ export interface AssessmentProposalInput {
   }>;
   /** Enable derived scoring only when a separate blind solve and review will run. */
   semanticScoringReview?: boolean;
+  /** Complete presented context for avoiding solved tasks; not authority. */
+  priorExposure?: string[];
   formalReviewFeedback?: FormalAssessmentReviewFeedback[];
   teachingSurfaceCatalogue?: Array<{
     teachingSurfaceRef: string;

@@ -21,12 +21,12 @@ import type {
 } from '../llm/provider.js';
 import { containsInternalTeachingAlias } from '../llm/preparationRecovery.js';
 import { ProviderError } from '../llm/errors.js';
+import { disclosesPracticeAnswer, literalTeachingText } from './teachingText.js';
 
 export const LESSON_PEDAGOGY_POLICY_VERSION = 'lesson-pedagogy-v2';
 export const PRACTICE_QUALITY_POLICY_VERSION = 'lesson-practice-v1';
 export const COMPOSITIONAL_LESSON_PEDAGOGY_POLICY_VERSION = 'lesson-pedagogy-v8-evidence-decisions';
-export const COMPOSITIONAL_PRACTICE_QUALITY_POLICY_VERSION =
-  'lesson-practice-v7-evidence-decisions';
+export const COMPOSITIONAL_PRACTICE_QUALITY_POLICY_VERSION = 'lesson-practice-v8-literal-identity';
 
 function normalized(value: string): string {
   return value
@@ -57,7 +57,7 @@ function overlapRatio(left: string, right: string): number {
 }
 
 const SOURCE_LOCATION_TRIVIA =
-  /(?:\b(?:which|what)\s+(?:page|slide|section|chapter|paragraph|line)(?:\s+number)?\b|\bwhere\b.{0,35}\b(?:appear|located|mentioned|document|source)\b|\bwhich\s+(?:source|document|block)\s+(?:states|mentions|contains)\b|第几(?:页|幻灯片|章节|段|行)|(?:哪一|哪个|何处(?!理)|哪里).{0,12}(?:页|幻灯片|章节|段落|位置)|(?:原文|资料|文档|来源).{0,12}(?:哪里|何处(?!理)|哪一页|第几页|哪个章节))/iu;
+  /(?:\b(?:which|what)\s+(?:page|slide|section|chapter|paragraph|line)\s+number\b|\b(?:which|what)\s+(?:page|slide|section|chapter|paragraph|line)\b.{0,80}\b(?:mentioned|written|described|appears?|located|contains|states)\b|\bwhere\b.{0,35}\b(?:appear|located|mentioned|document|source)\b|\bwhich\s+(?:source|document|block)\s+(?:states|mentions|contains)\b|第几(?:页|幻灯片|章节|段|行)|(?:原文|资料|文档|来源|书中|文章).{0,20}(?:哪里|何处(?!理)|哪一|哪个).{0,12}(?:页|幻灯片|章节|段落|位置)?)/iu;
 
 const EXPLANATION_REASONING =
   /(?:\b(?:because|therefore|so that|depends on|causes?|means that|works by|mechanism|why|how)\b|因为|因|所以|故|因此|从而|导致|前提|必要|取决于|意味着|机制|原理|如何|为什么|通过)/iu;
@@ -655,7 +655,7 @@ export function evaluatePracticeQuality(
         );
       }
       const optionRefs = surface.options.map((option) => option.optionRef);
-      const optionTexts = surface.options.map((option) => normalized(option.text));
+      const optionTexts = surface.options.map((option) => literalTeachingText(option.text));
       if (
         new Set(optionRefs).size !== optionRefs.length ||
         new Set(optionTexts).size !== optionTexts.length ||
@@ -674,7 +674,7 @@ export function evaluatePracticeQuality(
       const correctText = surface.options.find(
         (option) => option.optionRef === surface.correctOptionRef,
       )?.text;
-      if (correctText && normalized(surface.prompt).includes(normalized(correctText))) {
+      if (correctText && disclosesPracticeAnswer(surface.prompt, correctText)) {
         findings.push(
           practiceFinding(
             'item_validity',
@@ -686,10 +686,7 @@ export function evaluatePracticeQuality(
         );
       }
     }
-    if (
-      normalized(item.initial.prompt) === normalized(item.retry.prompt) ||
-      overlapRatio(item.initial.prompt, item.retry.prompt) >= 0.85
-    ) {
+    if (literalTeachingText(item.initial.prompt) === literalTeachingText(item.retry.prompt)) {
       findings.push(
         practiceFinding(
           'retry_validity',
@@ -1058,7 +1055,7 @@ function focusCoverageInsufficient(operations: Array<ReasoningOperation | undefi
 
 function definiteReplay(left: CognitiveAction, right: CognitiveAction): boolean {
   const same = (a: string | undefined, b: string | undefined) =>
-    Boolean(a?.trim() && b?.trim() && normalized(a) === normalized(b));
+    Boolean(a?.trim() && b?.trim() && literalTeachingText(a) === literalTeachingText(b));
   return (
     same(left.requiredInference, right.requiredInference) ||
     (left.reasoningOperation === right.reasoningOperation &&
@@ -1080,7 +1077,7 @@ function evidenceContrastFinding(
   const quote = compact(contrast.evidence).replace(/\)$/u, '');
   if (!facts.some((fact) => compact(fact).includes(quote))) return 'evidence_contrast_not_visible';
   if (
-    normalized(contrast.evidence) === normalized(contrast.replacement) ||
+    literalTeachingText(contrast.evidence) === literalTeachingText(contrast.replacement) ||
     contrast.alternativeOptionId === correctOptionId ||
     !optionIds.includes(contrast.alternativeOptionId)
   )
@@ -1767,7 +1764,9 @@ function workedProcessIssueCodes(
     /^(?:约|大约|approximately|about|≈|~)?\s*[+−-]?\d[\d.,%/÷×+−=≈<>≤≥()\s]*[\p{L}°℃℉%]*$/iu.test(
       value.normalize('NFKC').trim(),
     ) ||
-    /^\s*\{[\p{L}\p{N}_ ,.-]*\}\s*$/u.test(value) ||
+    /^\s*(?:\{[\p{L}\p{N}_ ,.+−-]*\}|\[[\p{L}\p{N}_ ,.+−-]*\]|\([\p{L}\p{N}_ ,.+−-]*\))\s*$/u.test(
+      value,
+    ) ||
     // A labelled quantity or equation is an observable state too. This checks
     // representation only; the independent teaching review checks correctness.
     /[\p{L}\p{N})\]%‰]\s*(?:≈|=|≤|≥|<|>)\s*(?:[√−-]?\s*[\p{L}\p{N}(])/u.test(value) ||
@@ -2454,7 +2453,7 @@ export function evaluatePlannedPracticeQuality(
       const surface = item[surfaceName];
       if (SOURCE_LOCATION_TRIVIA.test(surface.prompt)) codes.add('source_location_trivia');
       const optionRefs = surface.options.map((option) => option.optionRef);
-      const optionTexts = surface.options.map((option) => normalized(option.text));
+      const optionTexts = surface.options.map((option) => literalTeachingText(option.text));
       const correctText = correctOptionText(item, surfaceName);
       if (
         new Set(optionRefs).size !== optionRefs.length ||
@@ -2463,7 +2462,7 @@ export function evaluatePlannedPracticeQuality(
       ) {
         codes.add('invalid_or_duplicate_practice_options');
       }
-      if (correctText && normalized(surface.prompt).includes(normalized(correctText))) {
+      if (correctText && disclosesPracticeAnswer(surface.prompt, correctText)) {
         codes.add('practice_prompt_leaks_answer');
       }
       if (item.sourceRefs.length > 0 && hasLongVerbatimSpan(surface.prompt, citedSource)) {
@@ -2474,7 +2473,8 @@ export function evaluatePlannedPracticeQuality(
       }
       if (
         !isSubstantiveText(surface.prompt) ||
-        !isSubstantiveText(correctText) ||
+        !correctText.trim() ||
+        FIELD_LABEL_ONLY.test(literalTeachingText(correctText)) ||
         !isSubstantiveText(surface.explanation) ||
         (!surface.prompt.includes('?') &&
           !surface.prompt.includes('？') &&
@@ -2492,10 +2492,7 @@ export function evaluatePlannedPracticeQuality(
       }
     }
 
-    if (
-      normalized(item.initial.prompt) === normalized(item.retry.prompt) ||
-      overlapRatio(item.initial.prompt, item.retry.prompt) >= 0.85
-    ) {
+    if (literalTeachingText(item.initial.prompt) === literalTeachingText(item.retry.prompt)) {
       codes.add('retry_surface_not_meaningfully_changed');
     }
 

@@ -1563,6 +1563,38 @@ describe('formal progression service', () => {
       'expected_answer',
     ]);
   });
+
+  it('uses presented teaching from other objectives for novelty without expanding scoring authority', () => {
+    const state = repos.lessonExecution.listForWorkspace('ws_1')[0]!;
+    const brief = repos.teachingBriefs.get(state.teachingBriefId!)!;
+    const marker = 'Previously solved example from another objective: output is 42.';
+    updateTeachingBrief(brief.id, (value) => ({
+      ...value,
+      objective: {
+        ...value.objective,
+        objectives: [
+          ...value.objective.objectives,
+          { ...value.objective.objectives[0]!, id: 'objective_2' },
+        ],
+      },
+      segments: value.segments.map((segment) => ({
+        ...segment,
+        objectiveIds: ['objective_2'],
+        explanation: marker,
+      })),
+    }));
+    const catalogue = formalCatalogue();
+    expect(catalogue.priorExposure).toContain(marker);
+    expect(
+      catalogue.teachingSurfaceCatalogue.some((surface) => surface.text.includes(marker)),
+    ).toBe(false);
+    expect(JSON.stringify(catalogue.scoringAuthorityCatalogue)).not.toContain(marker);
+    const hidden = repos.lessonExecution.get(state.id)!;
+    vi.spyOn(repos.lessonExecution, 'listForWorkspace').mockReturnValue([
+      { ...hidden, presentedSegmentIndexes: [], informalInteractions: [] },
+    ]);
+    expect(formalCatalogue().priorExposure).not.toContain(marker);
+  });
   it('reconciles one exact due Review into Agenda and resumes one durable launch', async () => {
     const { targetId } = makeDueReview('launch');
     let agenda = repos.sessionAgendas.get('agenda_1')!;

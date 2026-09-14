@@ -942,6 +942,7 @@ export function deriveObjectiveAuthoritySemanticEvaluationDecision(
 export function validateObjectiveAuthoritySemanticEvaluationProposal(
   input: ObjectiveAuthoritySemanticEvaluationInput | ObjectiveAuthoritySemanticEvaluationBatch,
   proposal: ObjectiveAuthoritySemanticEvaluationProposal | unknown,
+  options: { requireConstructConsistentGroups?: boolean } = {},
 ): ProviderCandidateValidation {
   const diagnostics: string[] = [];
   const diagnosticCodes: string[] = [];
@@ -1038,6 +1039,18 @@ export function validateObjectiveAuthoritySemanticEvaluationProposal(
       addObjective(
         'semantic_support_type_construct_mismatch',
         `A support group for ${expected.objectiveRef} maps outside its fixed construct.`,
+      );
+    }
+    if (
+      options.requireConstructConsistentGroups &&
+      evaluation.supportGroups.length > 0 &&
+      !evaluation.supportGroups.some((group) =>
+        requiredCore(expected.construct).has(group.supportType),
+      )
+    ) {
+      addObjective(
+        'semantic_support_group_construct_inconsistent',
+        `${expected.objectiveRef}: each support group claims sufficiency for the actual ${expected.construct} capability, but none identifies its operational support. Inspect the whole cited group and classify what it actually establishes. Formulas, executable rules and their assumptions can be procedure/decision_rule/condition; mere names or background cannot. Return supportGroups=[] if the required capability lacks support. Do not relabel insufficient evidence to obtain admission.`,
       );
     }
     if ('fragments' in evaluation) {

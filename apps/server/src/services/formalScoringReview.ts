@@ -84,6 +84,22 @@ export function validateScoringReviewProposal(
       JSON.stringify(expected)
     )
       issues.push('Resolve every supplied challenge exactly once in its original C-alias order.');
+    if (input.semanticWitnesses) {
+      for (const [index, challenge] of input.challenges.challenges.entries()) {
+        const resolution = review.challengeResolutions?.[index];
+        if (challenge.kind !== 'alternative_answer') continue;
+        const check = resolution?.criterionCheck;
+        if (!check) {
+          issues.push(
+            `C${index + 1}: independently assess whether the alternative completes the task and semantically satisfies the disputed criterion.`,
+          );
+        } else if (resolution!.valid !== (check.taskSatisfied && !check.criterionSatisfied)) {
+          issues.push(
+            `C${index + 1}: an alternative proves an unnecessary criterion only when it completes the task but does not semantically satisfy that criterion. Different wording, inverse comparisons and an equivalent derivation already satisfy the same meaning.`,
+          );
+        }
+      }
+    }
   } else if (review.challengeResolutions?.length) {
     issues.push('Do not invent challenges that were not supplied.');
   }
@@ -95,13 +111,21 @@ export function validateScoringChallenges(
   input: FormalScoringReviewInput,
 ): string[] {
   const keys = new Set(requiredScoringKeys(input.question));
-  return challenges.challenges.flatMap((c) =>
-    keys.has(c.premiseKey)
+  return challenges.challenges.flatMap((c) => [
+    ...(keys.has(c.premiseKey)
       ? []
       : [
           `Unknown scoring premise for challenge: ${c.premiseKey}. Use the exact offered premiseKey.`,
-        ],
-  );
+        ]),
+    ...(input.semanticWitnesses && !c.kind
+      ? ['Each challenge needs kind=alternative_answer or counterexample.']
+      : []),
+    ...(c.kind === 'alternative_answer' && !c.premiseKey.startsWith('rubric_point:')
+      ? [
+          'An alternative_answer must target a rubric criterion; an incorrect expected-answer assertion needs a counterexample.',
+        ]
+      : []),
+  ]);
 }
 
 export function scoringReviewPassed(review: FormalScoringReviewProposal): boolean {
@@ -162,6 +186,7 @@ export function currentScoringReview(
     return null;
   if (
     validateScoringReviewProposal(receipt.review, {
+      semanticWitnesses: receipt.policyVersion === 'formal-scoring-independent-review-v3',
       question,
       objective,
       claims: receipt.claims,

@@ -102,6 +102,7 @@ describe('final learner task scoring review', () => {
               {
                 premiseKey: 'expected_answer',
                 objection: 'Check the draft calculation.',
+                kind: 'counterexample' as const,
                 counterexample: 'CONCRETE_AUDIT_WITNESS',
               },
             ],
@@ -270,6 +271,7 @@ describe('final learner task scoring review', () => {
             {
               premiseKey: 'expected_answer',
               objection: 'Could a prior solved example suffice?',
+              kind: 'counterexample' as const,
               counterexample: 'Repeat the already displayed grouping example.',
             },
           ],
@@ -323,7 +325,7 @@ describe('final learner task scoring review', () => {
       expect(challenged[0]!.question.stem).toBe(prompt);
       expect(challenged[0]).not.toHaveProperty('blindSolution');
       expect(question.formalScoringReview!.policyVersion).toBe(
-        'formal-scoring-independent-review-v2',
+        'formal-scoring-independent-review-v3',
       );
       expect(question.formalScoringReview!.challenges!.challenges).toHaveLength(1);
       expect(question.transferTask).toEqual(task);

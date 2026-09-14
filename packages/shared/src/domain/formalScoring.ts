@@ -17,6 +17,7 @@ export const FormalScoringChallengesSchema = z
         z
           .object({
             premiseKey: z.string().min(1).max(100),
+            kind: z.enum(['alternative_answer', 'counterexample']).optional(),
             objection: z.string().min(1).max(1200),
             counterexample: z.string().min(1).max(1800),
           })
@@ -54,6 +55,14 @@ export const FormalScoringReviewProposalSchema = z
           .object({
             challengeRef: z.string().regex(/^C[1-7]$/u),
             valid: z.boolean(),
+            criterionCheck: z
+              .object({
+                taskSatisfied: z.boolean(),
+                criterionSatisfied: z.boolean(),
+                rationale: z.string().min(1).max(1500),
+              })
+              .strict()
+              .optional(),
             rationale: z.string().min(1).max(1500),
           })
           .strict(),
@@ -70,6 +79,7 @@ export const FormalScoringReviewSchema = z
     policyVersion: z.enum([
       'formal-scoring-independent-review-v1',
       'formal-scoring-independent-review-v2',
+      'formal-scoring-independent-review-v3',
     ]),
     provider: z.string().min(1),
     questionFingerprint: z.string().length(64),
@@ -107,7 +117,7 @@ export const FormalScoringReviewSchema = z
   .strict()
   .superRefine((receipt, ctx) => {
     if (
-      receipt.policyVersion === 'formal-scoring-independent-review-v2' &&
+      receipt.policyVersion !== 'formal-scoring-independent-review-v1' &&
       (!receipt.challenges || !receipt.challengeFingerprint || !receipt.review.challengeResolutions)
     )
       ctx.addIssue({
@@ -118,6 +128,8 @@ export const FormalScoringReviewSchema = z
 export type FormalScoringReview = z.infer<typeof FormalScoringReviewSchema>;
 
 export interface FormalScoringReviewInput {
+  /** Require explicit semantic evaluation of alternative-answer witnesses. */
+  semanticWitnesses?: boolean;
   question: {
     type: string;
     stem: string;

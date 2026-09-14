@@ -340,7 +340,9 @@ export function createCourseActionLaunchService({
               },
               validateCandidate: (candidate) => {
                 assertRequestCurrent();
-                return validateObjectiveAuthoritySemanticEvaluationProposal(batch, candidate);
+                return validateObjectiveAuthoritySemanticEvaluationProposal(batch, candidate, {
+                  requireConstructConsistentGroups: true,
+                });
               },
             }),
         });
@@ -917,6 +919,7 @@ export function createCourseActionLaunchService({
               objectiveCatalogue: proposalCatalogue?.objectiveCatalogue,
               scoringAuthorityCatalogue: proposalCatalogue?.scoringAuthorityCatalogue,
               teachingSurfaceCatalogue: proposalCatalogue?.teachingSurfaceCatalogue,
+              priorExposure: proposalCatalogue.priorExposure,
               previousPrompts: unitTransfer ? undefined : previousPrompts,
               learnerGeneratedTransfer: unitTransfer,
               learnerTransfer,

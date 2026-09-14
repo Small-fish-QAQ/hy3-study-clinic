@@ -70,6 +70,43 @@ function fixture() {
 }
 
 describe('independently reviewed Formal scoring custody', () => {
+  it('requires an explicit semantic witness and rejects inconsistent alternative-answer conclusions', () => {
+    const { question, objective, receipt } = fixture();
+    const input: FormalScoringReviewInput = {
+      semanticWitnesses: true,
+      question,
+      objective,
+      claims: receipt.claims,
+      sources: [],
+      priorExposure: [],
+      challenges: {
+        challenges: [
+          {
+            kind: 'alternative_answer',
+            premiseKey: 'rubric_point:0',
+            objection: 'Uses repeated addition.',
+            counterexample: '7+7+7=21元。',
+          },
+        ],
+      },
+    };
+    receipt.review.challengeResolutions = [
+      { challengeRef: 'C1', valid: false, rationale: 'Same total price calculation.' },
+    ];
+    expect(validateScoringReviewProposal(receipt.review, input)).not.toEqual([]);
+    receipt.review.challengeResolutions[0]!.criterionCheck = {
+      taskSatisfied: true,
+      criterionSatisfied: true,
+      rationale: 'Repeated addition expresses the multiplication of three units.',
+    };
+    expect(validateScoringReviewProposal(receipt.review, input)).toEqual([]);
+    receipt.review.challengeResolutions[0]!.valid = true;
+    expect(validateScoringReviewProposal(receipt.review, input)).not.toEqual([]);
+    receipt.review.challengeResolutions[0]!.criterionCheck!.criterionSatisfied = false;
+    expect(validateScoringReviewProposal(receipt.review, input)).toEqual([]);
+    receipt.review.challengeResolutions[0]!.criterionCheck!.taskSatisfied = false;
+    expect(validateScoringReviewProposal(receipt.review, input)).not.toEqual([]);
+  });
   it('requires a complete resolved and unchanged version 2 challenge receipt', () => {
     const { block, objective, question, receipt } = fixture();
     receipt.policyVersion = 'formal-scoring-independent-review-v2';

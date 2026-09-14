@@ -1151,6 +1151,35 @@ describe('objective-authority semantic proposal validation', () => {
     );
   });
 
+  it('offers bounded correction of contradictory sufficiency classifications without admitting missing rules', () => {
+    const [batch] = batchesFor({
+      objectives: [objective({ formalAssessmentConstruct: 'design' })],
+    });
+    const background = singleEvaluation(batch!, { supportType: 'definition' });
+    const options = { requireConstructConsistentGroups: true };
+    expect(
+      validateObjectiveAuthoritySemanticEvaluationProposal(batch!, background, options)
+        .diagnosticCodes,
+    ).toContain('semantic_support_group_construct_inconsistent');
+    const unsupported = structuredClone(background);
+    unsupported.evaluations[0]!.supportGroups = [];
+    expect(
+      validateObjectiveAuthoritySemanticEvaluationProposal(batch!, unsupported, options).valid,
+    ).toBe(true);
+    expect(
+      materializeObjectiveAuthoritySemanticSupport(batch!, unsupported, {
+        evaluator: 'independent-objective-authority-evaluator',
+        provider: 'fake',
+        providerModel: null,
+        evaluatedAt: NOW,
+      }).get('objective_1')!.verdict,
+    ).toBe('fail');
+    const operational = singleEvaluation(batch!, { supportType: 'procedure' });
+    expect(
+      validateObjectiveAuthoritySemanticEvaluationProposal(batch!, operational, options).valid,
+    ).toBe(true);
+  });
+
   it('accepts a complete no-coverage observation and derives a local failure', () => {
     const mixedObjective = objective({
       title: 'Explain the positioning',

@@ -15,6 +15,7 @@ import {
   type Rubric,
   type VerifiedGrounding,
   FormalScoringReviewSchema,
+  FormalScoringChallengesSchema,
   type FormalScoringReviewInput,
   type TransferTask,
 } from '@hy3-clinic/shared';
@@ -57,6 +58,7 @@ export interface AssessmentCreation {
 }
 
 interface AssessmentGenerationPolicy {
+  priorExposure?: string[];
   formalReviewFeedback?: FormalAssessmentReviewFeedback[];
   learnerGeneratedTransfer?: boolean;
   learnerTransfer?: { prompt: string; task: TransferTask };
@@ -347,6 +349,7 @@ export function createAssessmentService({
       objectiveCatalogue: generationPolicy.objectiveCatalogue,
       scoringAuthorityCatalogue: generationPolicy.scoringAuthorityCatalogue,
       teachingSurfaceCatalogue: generationPolicy.teachingSurfaceCatalogue,
+      priorExposure: generationPolicy.priorExposure,
       previousPrompts: generationPolicy.previousPrompts,
       semanticScoringReview,
       formalReviewFeedback: generationPolicy.formalReviewFeedback,
@@ -596,6 +599,7 @@ export function createAssessmentService({
           continue;
         }
         const reviewInput: FormalScoringReviewInput = {
+          semanticWitnesses: true,
           question: {
             type: question.type,
             stem: question.stem,
@@ -611,6 +615,7 @@ export function createAssessmentService({
           })),
           claims,
           priorExposure: [
+            ...(generationPolicy.priorExposure ?? []),
             ...(generationPolicy.teachingSurfaceCatalogue ?? []).map((s) => s.text),
             ...(generationPolicy.previousPrompts ?? []),
           ],
@@ -637,7 +642,9 @@ export function createAssessmentService({
         if (blindResult.status === 'rejected') throw blindResult.reason;
         if (challengeResult.status === 'rejected') throw challengeResult.reason;
         const blindSolution = blindResult.value;
-        const challenges = challengeResult.value;
+        const challenges = challengeResult.value
+          ? FormalScoringChallengesSchema.parse(challengeResult.value)
+          : undefined;
         if (challenges) reviewInput.challenges = challenges;
         const review = await inferenceProvider.reviewFormalScoring!(
           { ...reviewInput, blindSolution },
@@ -666,7 +673,7 @@ export function createAssessmentService({
         }
         question.formalScoringReview = FormalScoringReviewSchema.parse({
           policyVersion: challenges
-            ? 'formal-scoring-independent-review-v2'
+            ? 'formal-scoring-independent-review-v3'
             : 'formal-scoring-independent-review-v1',
           provider: provider.name,
           questionFingerprint: scoringQuestionFingerprint(question),

@@ -85,11 +85,22 @@ export function formalScoringReviewMessages(
         '任一关键缺口、错误隐藏答案、隐藏必需要求、来源不支持、目标降级或泄题应如实标记 false 并在 issues 说明；不要替出题人改题或改评分，补救将另外生成并再次审核。',
         ...(input.challenges
           ? [
+              ...(input.semanticWitnesses
+                ? [
+                    'For each alternative_answer challenge, FIRST return criterionCheck:{taskSatisfied,criterionSatisfied,rationale}. Evaluate the complete alternative as the actual semantic grader would: explain which statement or derivation does or does not express the disputed requirement. Reversing a comparison (A worse than B versus B better than A), using a contrapositive, combining a chain of reasoning, or giving an equivalent mechanism satisfies the same criterion without copying its words. Parenthetical examples of valid reasoning do not impose a unique sentence pattern. Do not confuse a missing phrase with a missing proposition.',
+                    'Then set valid = taskSatisfied && !criterionSatisfied. If the alternative already expresses the criterion, valid=false, even if it uses a different proof or wording. If the rubric truly demands an independent extra fact, name that fact and show the complete alternative does not entail it. counterexample challenges instead test the actual truth/support of a claim under all stated conditions. Never dismiss a real wrong assertion as a wording variation.',
+                  ]
+                : []),
               '另一个独立检查提供了 scoringChallenges。它们不是权威结论，必须逐项核对具体反例或替代解答。为每个 C 别名返回一个同序 challengeResolutions:{challengeRef,valid,rationale}。valid=true 表示质疑成立，任何成立的质疑都必须使相关审核项为false并写入issues。先判断替代答案是否按语义已经满足被质疑评分点：若准确的改写、推导或整体解释表达了同一必要含义，质疑不成立，valid=false，说明两者实际等价的含义；无须虚构该正确答案违反了某项条件。其余反例若被明确条件排除，或替代解法没有实际完成题目，也应valid=false并指出具体缺口。只有完成任务而真正缺少一个独立评分要求的替代解，才证明该要求多余。不能以参考答案或原评分点要求如此来循环驳回替代解法；不能把一个可选背景性质改称隐含必需条件。不得悄悄改写或放宽当前rubric来声称质疑已解决。',
               '没有质疑时返回 challengeResolutions: []。有质疑时不得遗漏、合并、改号，不能因为你也倾向原答案就跳过具体反例。',
             ]
           : []),
         '只输出 JSON: {"answerable":true,"objectiveAligned":true,"unseenAssessment":true,"keyCorrect":true,"requiredCriteriaAppropriate":true,"premises":[{"premiseKey":"expected_answer","supported":true,"claimRefs":["P1"],"rationale":"来源规则与题设到该命题的推导"}],"issues":[]}。',
+        ...(input.semanticWitnesses
+          ? [
+              'When challenges are supplied, include challengeResolutions as actual JSON objects. For alternative_answer the required shape is {"challengeRef":"C1","criterionCheck":{"taskSatisfied":true,"criterionSatisfied":true,"rationale":"Identify the actual equivalent or missing meaning"},"valid":false,"rationale":"Witness conclusion"}. criterionCheck MUST be a nested JSON property, never text embedded in rationale. For counterexample omit criterionCheck. Keep all inventory entries even for rejected questions.',
+            ]
+          : []),
       ].join('\n'),
     },
     {
@@ -134,7 +145,17 @@ export function formalScoringChallengeMessages(input: FormalScoringReviewInput):
           : completeScoringInstructions),
         ...scopeInstructions,
         '每项质疑指向一个原样复制的 premiseKey：expected_answer 或 rubric_point:零起始原始索引。objection说明具体缺陷，counterexample写完整替代答案或具体反例及其与已知条件的相容性。最多7项；没有实质质疑时返回空数组。不要改写原题、补充权威记录或决定学习者信用。',
+        ...(input.semanticWitnesses
+          ? [
+              'Every challenge also requires kind: alternative_answer for a complete valid response alleged to miss an unnecessary rubric requirement; counterexample for a concrete case falsifying an incorrect/unsupported assertion. An alternative_answer must target rubric_point:index. Before proposing it, try grading its MEANING against that criterion. If it already entails the criterion through paraphrase, inverse relation or equivalent reasoning, there is no omission and no challenge. Distinguish an independent extra required fact from an illustrative proof of the same required fact.',
+            ]
+          : []),
         '只输出JSON: {"challenges":[{"premiseKey":"rubric_point:0","objection":"具体问题","counterexample":"可核对的完整替代解或反例"}]}。',
+        ...(input.semanticWitnesses
+          ? [
+              'Add "kind":"alternative_answer" or "kind":"counterexample" as an actual property of each challenge object.',
+            ]
+          : []),
       ].join('\n'),
     },
     {
