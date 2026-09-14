@@ -1,8 +1,8 @@
-# 2026-09-12 最终评估：机器实验、独立模型与人类核验
+# 历史评估 · 2026-09-12 · StudyEval v1.5
 
-本文保留2026-09-12历史 campaign 的原结果与分母。当前 Candidate 23 showcase 和冻结 StudyEval v2.0 的验证，请从[2026-09-14最终评估](FINAL_EVALUATION.md)进入；不能把本页 v1.5 数字当作当前产品或评估器成绩。
+本文保留2026-09-12历史 campaign 的原结果与分母。当前 Product Showcase、StudyEval v2.0 正式评估与补充可靠性审计，请从[2026-09-14最终评估](FINAL_EVALUATION.md)进入；不能把本页 v1.5 数字当作当前产品或评估器成绩。
 
-[返回首页](../README.md) · [六维方法](EVALUATION.md) · [人类逐题核验](HUMAN_VALIDATION.md) · [样本与复现](../eval/final-evaluation/README.md) · [最终发布审计](evidence/final-publication-audit.md)
+[返回首页](../README.md) · [六维方法](EVALUATION.md) · [人类逐题核验](HUMAN_VALIDATION.md) · [样本与复现](../eval/final-evaluation/README.md) · [当时的发布核验](evidence/final-publication-audit.md)
 
 **最终机器评估：完成。盲评独立模型审阅：完成。真实人类标注与比较分析：完成。**
 

@@ -1,4 +1,4 @@
-# 冻结证据的诊断分解
+# 历史证据诊断 · 2026-09-12
 
 [返回最终结果](EVALUATION_RESULTS.md) · [原始输入与复核入口](../eval/final-evaluation/README.md)
 

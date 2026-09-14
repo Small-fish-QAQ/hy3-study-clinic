@@ -1,32 +1,27 @@
-# 验证与公开证据
+# 验证与复现
 
-[返回首页](../README.md) · [运行指南](SETUP.md) · [评估协议](EVALUATION.md)
+[返回首页](../README.md) · [文档导航](README.md) · [运行指南](SETUP.md)
 
-## 证据对应哪个结论
+本页是 **Reproduction / Verification** 的统一入口。以下命令读取已保存证据，不重新运行模型实验。
 
-| 证据                                                   | 范围                                                                                          | 不支持的结论                             |
-| ------------------------------------------------------ | --------------------------------------------------------------------------------------------- | ---------------------------------------- |
-| [Candidate 23 产品showcase](FINAL_EVALUATION.md)         | 全部20课评分前冻结，正常完整材料的首个Formal检查点、实际作答、持久化与重放 | 任意资料成功率、完整课程毕业率或人类学习增益。 |
-| [StudyEval v2验证](../eval/studyeval-validation/README.md) | 102个新案例、207次新样本/人类观察、22/24严格三档与22/24人类共识 | 来源互斥的人类泛化或模型语义始终正确。 |
-| [2026-09-12 StudyEval 最终结果](EVALUATION_RESULTS.md) | 冻结运行 279/279 次观察、完整输入与结果、判别力/重复一致性/对抗性、产品可用性、模型和人类比较 | 普遍可靠性、严格盲评执行认证或学习增益。 |
-| 当前代码与自动化测试                                   | 课程准备、非正式学习、正式证据、恢复、来源与数据规则的实现                                    | 所有真实资料都能成功、模型始终正确。     |
-| `eval:fake`                                            | 在真实服务端与内存数据库中检查结构和状态边界                                                  | Hy3 教学质量、学习效果。                 |
-| [演示与截图](DEMO.md)                                  | 所展示界面和学习过程                                                                          | 新样本基准、人工一致性或学习增益。       |
+| 要核查的结论           | 权威材料                                                                                                            | 只读命令                                                     |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| 正式 Task 1 评估       | [StudyEval v2.0](../eval/studyeval-validation/README.md)：样本、判别力、人类对齐和一致性                            | `node eval/studyeval-validation/scripts/verify.mjs`          |
+| 产品展示选集的原始依据 | [Product Showcase](PRODUCT_SHOWCASE.md)与[原内容审计](../eval/final-showcase/analysis/scored-01/content-audit.json) | 下项验证器重算 12 条符合原审计条件的完整旅程；不是新语义审查 |
+| 补充端到端可靠性审计   | [Candidate 23 全部 20 课](../eval/final-showcase/README.md)：全部结果、负例、失败、重放与持久化                     | `node eval/final-showcase/publication/verify.mjs`            |
 
-## 当前证据的只读复核
-
-当前来源、完整结果、媒体与仓库核查见[2026-09-14发布审计](evidence/submission-audit-2026-09-14.md)。
-
-使用Node 24，从仓库根目录执行：
+使用 Node.js 24，在仓库根目录执行：
 
 ```bash
 node eval/studyeval-validation/scripts/verify.mjs
 node eval/final-showcase/publication/verify.mjs
 ```
 
-两项均不调用模型。前者核查207次已保存观察并重算v2指标；后者核查冻结来源、全部20课结果与证据后果。完整数据库与报文的原运行审计、公开范围及独立在线复现见各评估包README。
+前者核对 207 次观察及原文件哈希，重算 StudyEval 参考匹配、排序、人类共识与 kappa；后者从全部 20 课保存的状态和快照重算流程与证据结果。两者不调用 Hy3，也不把结构一致当作语义真值。
 
-Candidate 23冻结前通过2,878项产品测试、22项冻结StudyEval测试、build和lint；[CI 34834786860](https://github.com/Small-fish-QAQ/hy3-study-clinic/actions/runs/34834786860)的Ubuntu Node 20/24及Windows Node 24三项均通过。冻结后仅整理文档和证据；产品与评估器实现保持原字节。
+完整 Candidate 23 SQLite 数据库、报文和冻结运行库位于[当前 Task 1 release](https://github.com/Small-fish-QAQ/hy3-study-clinic/releases/tag/task1-final-2026-09-14-r2)的审计 ZIP；[归档哈希](../eval/final-showcase/publication/ARCHIVE.json)与[准备/重算步骤](../eval/final-showcase/README.md#freeze-and-reproduction)可直接核查。StudyEval 的[新在线复现步骤](../eval/studyeval-validation/README.md#reproduce-the-saved-results)只适用于另一次独立运行，不能替换已保存分数。
+
+产品保持 Candidate 23 `84b3c2fbce7e6523e43a8fa66df42bb6e37fa149`；评估器保持 StudyEval v2.0 `64fdbc4d5fdcfffc3e10132f5881dec334803b8f`。冻结前的 2,878 项产品测试、22 项评估器测试及[三平台 CI](https://github.com/Small-fish-QAQ/hy3-study-clinic/actions/runs/34834786860)是该版本的工程证据。当前提交的 CI 徽章与工作流记录反映文档发布检查，不意味着重新执行评分实验。
 
 ## 历史机器证据的只读复核
 
@@ -39,7 +34,7 @@ python eval/final-evaluation/scripts/verify-human.py
 
 两个脚本分别使用 Node.js 内置模块和 Python 标准库，无网络或第三方依赖，不导入评估器。前者核对全部文件/输入/观察身份，重算机器指标、长度基线、产品可用率与成本；后者从六份 DOCX 副本逐格解析 68 条人类评分及原理由，核对原模型 CSV 后重算所有人工比较和歧义重合。已完成的 279 次原始响应重放有独立冻结凭据；公开脚本不重跑该历史重放或模型推断。
 
-本次完整提交的覆盖、数字、链接、隐私、哈希与 Git 检查见[最终发布审计](evidence/final-publication-audit.md)。较早的[interim 审计](evidence/interim-final-publication-audit.md)保留为历史发布记录。
+早期机器、人类和发布核验记录集中在[历史证据索引](HISTORY.md)。这些带日期的原记录不描述当前提交的发布状态。
 
 ## 历史在线验证（2026-07-31）
 
@@ -116,4 +111,4 @@ npm run test -w @hy3-clinic/server -- src/eval/publishedEvidence.test.ts src/sou
 
 `npm run eval:evidence` 会更新跟踪的公开证据，属于发布操作，不是只读校验。本次文档检查保留既有证据文件。新结果应在来源、样本、版本和适用范围都可核对后单独发布。
 
-最终机器产品基准、两位盲评独立模型审阅和真实人工标注/一致性分析已完成。六份答卷缺少时间及外部帮助说明，原样保留此项限制。历史小型检查的失败结论保持不变，详见[当前评估状态](EVALUATION.md#当前状态)。机器或人类实验完成、模型一致、测试通过和演示成功均不能推导学习效果提升。
+2026-09-12 的历史机器实验、两位独立模型审阅和人类标注已完成并保留；当前正式评估是冻结后的 StudyEval v2.0 验证。六份答卷缺少时间及外部帮助说明，原样保留此项限制。历史小型检查的失败结论保持不变，详见[当前评估状态](EVALUATION.md#当前状态)。机器或人类实验完成、模型一致、测试通过和演示成功均不能推导学习效果提升。

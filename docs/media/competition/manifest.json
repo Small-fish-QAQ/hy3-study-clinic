@@ -1,0 +1,31 @@
+{
+  "purpose": "Post-score competition presentation; all measurements remain in their original sealed files.",
+  "formalEvaluation": "StudyEval v2.0",
+  "productCommit": "84b3c2fbce7e6523e43a8fa66df42bb6e37fa149",
+  "selectedJourneyIds": [
+    "J01",
+    "J04",
+    "J06",
+    "J08",
+    "J11",
+    "J13",
+    "J14",
+    "J15",
+    "J16",
+    "J17",
+    "J19",
+    "J20"
+  ],
+  "selectionRule": "completeJourney && credited && taskSound === true && answerSound === true; post-score task-assistant review",
+  "sources": {
+    "eval/studyeval-validation/analysis/fresh-metrics.json": "953eca43b2c28c63220e34940762332bb25b4aa326f26f7006d7d72ebc813214",
+    "eval/studyeval-validation/analysis/human-alignment.json": "02e46a6bab3ccefe5fce0ee79e159c0517218d8c1bcec0e9b49fc0360f8c248e",
+    "eval/final-showcase/analysis/scored-01/results.json": "882d73b2dc94705bef28dc68b92573e4249628a603b2ebe5ee79635c20a185cd",
+    "eval/final-showcase/analysis/scored-01/content-audit.json": "447feff71fec5ae9091fe0cd08ebdafbeb53b3ff95836d7cd59fc86045b03d5a"
+  },
+  "assets": {
+    "competition-overview.png": "cb63d993be974dd6bf4c625b41f271c81fb01925ec95c8e9076cd54e6aec8f75",
+    "competition-overview.svg": "e3737303acb3bf4fc4771f50177f1d056da1869c0a8c6109b6a078206af5b750"
+  },
+  "textBoundsAndOverlaps": "passed"
+}

@@ -54,21 +54,23 @@ Study Clinic 以课程作为持续保存的工作单元。资料决定学习范�
 
 实战任务的第二部分是设计可操作的开放式评判标准。StudyEval 协议分别评价事实与来源、目标范围、教学解释、题目、评分判定和诊断补救，保留无法判定与评估器失败。评估器自身还需要判别力、人工一致性、重复稳定性和对抗性验证。
 
-最终提交使用冻结的 **Candidate 23** 与 **StudyEval v2.0**。产品showcase先研究最稳定的历史材料和成功学习过程，再构造完整、自包含、例题与应用充分的20份新讲义；所有案例和指标评分前冻结，之后不调产品、不替换失败案例。它明确以正常使用条件下的产品展示质量为目标，不能外推任意上传资料或人类学习成功率。流程结果与内容复核见[2026-09-14最终评估](FINAL_EVALUATION.md)。
+**StudyEval v2.0 是正式 Task 1 评估。** 新样本参考一致率为 70/72（97.22%），保留人类共识一致率为 22/24（91.67%），二次加权 κ=0.948；全部个人评分为 53/68（77.94%）。完整方法、样本、判别力、边界、对抗与重复结果见[正式评估包](../eval/studyeval-validation/README.md)。人类案例与开发集共享来源文本，原分歧保留。
 
-StudyEval v2冻结后的新样本验证为70/72参考等级、22/24严格三档、70/72成对顺序、18/18对抗检出和12/12重复组一致。原三位人类的68条评分保留全部分歧；当前评估器匹配24个共识维度中的22个，全部评分53/68一致。人类案例在已知来源上保留，不能声称来源互斥。输入、207次观察和只读复核见[验证包](../eval/studyeval-validation/README.md)。2026-09-12的v1.5结果、原人类答卷和独立模型审阅继续保存在[历史报告](EVALUATION_RESULTS.md)与[历史证据](../eval/final-evaluation/README.md)，没有改写或并入新成绩。
+产品使用冻结的 **Candidate 23**。[Product Showcase](PRODUCT_SHOWCASE.md)展示 12 条后续内容审计未发现实质题目或作答缺陷的端到端旅程。它们是从单次运行中选出的产品例子，不是无偏基准或人类学习成功率。完整 20 课的流程、控制、失败和内容审计保留在[补充端到端可靠性审计](../eval/final-showcase/README.md)。材料有意选择完整正常分布，所有案例和指标在评分前冻结，之后未改产品或替换失败案例。
+
+两类评估各有分母，结论与典型分歧见[Task 1 评估分析](FINAL_EVALUATION.md)。[历史证据](HISTORY.md)保留 v1.5 结果、原人类答卷与独立模型审阅，不并入当前成绩。
 
 ## 交付物与边界
 
-| 交付物                                     | 当前入口                                                                              |
-| ------------------------------------------ | ------------------------------------------------------------------------------------- |
-| 可运行学习应用                             | [README](../README.md)、[运行指南](SETUP.md)                                          |
-| 产品演示与截图                             | [DEMO.md](DEMO.md)                                                                    |
-| 设计、架构与能力边界                       | 本文、[架构](ARCHITECTURE.md)、[限制](LIMITATIONS.md)                                 |
-| 公开评估协议                               | [EVALUATION.md](EVALUATION.md)                                                        |
-| 可运行结构检查与历史模型证据               | [VERIFICATION.md](VERIFICATION.md)、[eval](../eval/README.md)                         |
-| 最终产品结果、判别力、一致性与失败分析     | [最终评估](FINAL_EVALUATION.md)                                                       |
-| 样本、冻结方法、完整表格与重算脚本         | [产品showcase](../eval/final-showcase/README.md)、[StudyEval验证](../eval/studyeval-validation/README.md) |
-| 真实人类一致性与逐题分歧                   | [v2保留人类比较](../eval/studyeval-validation/analysis/HUMAN-AUDIT.md)、[原始人类答卷](HUMAN_VALIDATION.md) |
+| 交付物                             | 当前入口                                                                                                    |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| 可运行学习应用                     | [README](../README.md)、[运行指南](SETUP.md)                                                                |
+| 产品演示与截图                     | [DEMO.md](DEMO.md)                                                                                          |
+| 设计、架构与能力边界               | 本文、[架构](ARCHITECTURE.md)、[限制](LIMITATIONS.md)                                                       |
+| 公开评估协议                       | [EVALUATION.md](EVALUATION.md)                                                                              |
+| 可运行结构检查与历史模型证据       | [VERIFICATION.md](VERIFICATION.md)、[eval](../eval/README.md)                                               |
+| 正式评估、产品选集与补充审计       | [最终评估](FINAL_EVALUATION.md)                                                                             |
+| 样本、冻结方法、完整表格与重算脚本 | [产品showcase](../eval/final-showcase/README.md)、[StudyEval验证](../eval/studyeval-validation/README.md)   |
+| 真实人类一致性与逐题分歧           | [v2保留人类比较](../eval/studyeval-validation/analysis/HUMAN-AUDIT.md)、[原始人类答卷](HUMAN_VALIDATION.md) |
 
 本项目采用 Apache-2.0。扫描件 OCR、通用图表理解、所有计算或设计目标的正式判定、认知诊断校准和长期学习效果均在当前已验证范围之外。

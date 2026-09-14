@@ -14,3 +14,7 @@ The shipped brand and background artwork includes AI-generated raster assets. Th
 The environmental motif is used around course cards, home, materials, curriculum and progress. Study, settings and the Knowledge Map use the quieter reading background. Decorative images are disabled for print, forced colors and increased-contrast modes; solid colors remain as fallbacks.
 
 Exploration prompts, discarded candidates and local browser logs are not needed to use these assets. Git history retains the earlier design notes. Current product screenshots and their provenance are in [DEMO.md](DEMO.md).
+
+The current [competition overview](media/competition/competition-overview.svg) uses warm ivory, deep pine and sage. It prioritizes formal StudyEval validation, identifies the 12 product journeys as selected content-audited examples, and places the full 20-course reliability audit in a secondary block. [PNG](media/competition/competition-overview.png), [saved-source and asset hashes](media/competition/manifest.json), and [Matplotlib renderer](media/competition/render-overview.py) are available together. The renderer reads sealed result JSON; it does not score or alter evidence.
+
+To regenerate this presentation with Python 3.12 and Matplotlib 3.11.2, run `python docs/media/competition/render-overview.py` from the repository root. The figure generator checks text bounds and overlaps. The older unreferenced overview was removed; historical numerical evidence and source screenshots remain preserved.

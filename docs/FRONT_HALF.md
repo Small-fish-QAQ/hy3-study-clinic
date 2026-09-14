@@ -33,8 +33,7 @@ and evidence reconciliation remain independent and fail closed.
 ## Dependency recovery
 
 Execution remains sequential. Detail budgets depend on completed objective counts;
-later teaching portions receive earlier teaching as exposure. There is no new
-workflow engine, background generation queue or concurrency policy.
+later teaching portions receive earlier teaching as exposure. Operation ownership and cancellation remain with the existing services.
 
 `generationStages.ts` stores complete, validated results in the existing private
 semantic cache. Keys include the full immutable input, stage version,
@@ -76,8 +75,7 @@ state their necessary case facts because earlier questions can be replaced on
 screen. Teaching and exercises use different cases. Naming a formula or repeating
 an already supplied conclusion is insufficient when depth requires reasoning.
 
-One independent content review and at most one revision remain available for
-authored content. Reviewers do not receive author answers, expected signals,
+Authored content uses bounded independent review and revision; the current provider code defines the exact recovery budgets. Reviewers do not receive author answers, expected signals,
 debriefs or future worked results. They solve actions from visible facts. Answer
 disagreement, evidence insufficiency, grounding, answer leakage and other concrete
 defects can reject content. Difficulty opinions, including `shallow_task`, remain
@@ -113,14 +111,12 @@ support, assessment admission, grading and deterministic reconciliation retain t
 responsibilities.
 
 Immutable Briefs, response-aware taught exposure and non-credit Practice events
-provide bounded inputs for later Repair and Tutor work. This architecture does not
-implement those loops or reinterpret Practice mistakes as durable diagnoses.
+provide bounded inputs for later Repair and Tutor work. The [Practice recovery](PRACTICE_RECOVERY.md) and [Tutor](TUTOR.md) services own those loops; Practice mistakes are not durable diagnoses.
 
 ## Limits
 
 Generation and semantic review remain fallible. Structured output, rule execution
 and positive review are not universal teaching-quality proofs. Acceptance requires
 actual provider output and browser study on discriminating subjects/depths, with
-failures included in evidence. Token ceilings, timeouts, automatic retries and
-review rounds are not increased. Large-corpus behavior and learning effectiveness
+failures included in evidence. The current provider code defines token ceilings, timeouts and bounded recovery budgets. Large-corpus behavior and learning effectiveness
 beyond exercised cases require separate evidence.

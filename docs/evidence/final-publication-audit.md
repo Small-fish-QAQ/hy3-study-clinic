@@ -1,4 +1,6 @@
-# Final Task 1 publication audit · 2026-09-12
+# Historical Completed Publication Record · 2026-09-12
+
+> Historical record of the named publication. Current entry points: [documentation index](../README.md), [formal Task 1 evaluation](../../eval/studyeval-validation/README.md), [verification](../VERIFICATION.md). Original measurements and dated publication claims below are retained.
 
 **Final machine campaign complete; independent blinded model review complete; genuine human annotation and comparison complete.** This final release integrates the six returned human sheets after preserving their original bytes and releases the complete safe evaluation corpus. The machine authority remains `public-export-final-v6`; StudyEval and product behavior are unchanged.
 

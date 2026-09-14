@@ -1,8 +1,8 @@
 # 人类标注与分歧分析 · 2026-09-12
 
-本文保留原始人类答卷与历史 v1.5 比较。相同原人类评分的保留案例在 StudyEval v2.0 冻结后另行评估，得到共识22/24、全部评分53/68；见[当前验证包](../eval/studyeval-validation/README.md)。这是已知来源上的案例级保留集，不是来源互斥的人类泛化研究。
+本文保留原始人类答卷与历史 v1.5 比较。相同原人类评分的保留案例在 StudyEval v2.0 冻结后另行评估，得到共识22/24、全部评分53/68；见[正式 Task 1 评估包](../eval/studyeval-validation/README.md)。这是已知来源上的案例级保留集，不是来源互斥的人类泛化研究。
 
-[最终结果](EVALUATION_RESULTS.md) · [完整评测材料](../eval/final-evaluation/README.md) · [逐条评分](../eval/final-evaluation/human/answers.csv) · [逐题五方比较](../eval/final-evaluation/human/item-comparisons.json)
+[历史 v1.5 结果](EVALUATION_RESULTS.md) · [完整评测材料](../eval/final-evaluation/README.md) · [逐条评分](../eval/final-evaluation/human/answers.csv) · [逐题五方比较](../eval/final-evaluation/human/item-comparisons.json)
 
 六份真实返回答卷已冻结：三位标注者 A/B/C，共 68 条评分；27 个题目的 34 个请求维度各有两人填写。**人类之间 24/34 完全一致、9/34 相邻差异、1/34 严重 0↔2 分歧。** 二人相同判断的 24 个维度上，StudyEval 为 20 个一致、2 个相邻差异、2 个 U，没有严重反转。这个共识子集不代表全部 34 个维度，完整评分的比较同时公开。
 

@@ -1,6 +1,6 @@
 # 运行 Hy3 Study Clinic
 
-[返回首页](../README.md) · [验证命令](VERIFICATION.md)
+[返回首页](../README.md) · [统一验证与复现入口](VERIFICATION.md)
 
 ## 环境与安装
 
@@ -107,3 +107,7 @@ PROVIDER_CONFIG_PATH=./data/offline-preview-provider.json DATABASE_PATH=:memory:
 | `eval:fake` / `eval:hy3` 拒绝视觉配置 | 显式设置 `VISUAL_PROVIDER=disabled`；评估不包含可选视觉路径。                                                        |
 
 这是本地开发运行方式。`npm run build` 生成工作区构建产物；API 的生产启动命令是 `npm run start -w @hy3-clinic/server`，它不负责托管前端静态站点。公共部署所需的认证、TLS、访问控制与前端代理不在当前运行方案内。
+
+## 查看提交证据
+
+安装体验与正式评估分开：[Product Showcase](PRODUCT_SHOWCASE.md)展示保存的产品旅程；[StudyEval v2.0](../eval/studyeval-validation/README.md)是正式 Task 1 评估；[20 课可靠性审计](../eval/final-showcase/README.md)保留补充产品结果。只读复核从[验证与复现](VERIFICATION.md)进入，无需配置真实模型。

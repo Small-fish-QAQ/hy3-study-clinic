@@ -16,13 +16,13 @@ Candidate 23 (`84b3c2f`) retains these ownership boundaries. Its reliability cha
 
 ## Repository map
 
-| Directory                                     | Responsibility                                                                                       |
-| --------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| [apps/web/src](../apps/web/src)               | Course library, preparation, home, Study, Tutor, materials, curriculum, progress and Knowledge Map.  |
-| [apps/server/src](../apps/server/src)         | API routes, provider adapters, ingestion, grounding, learning services, repositories and migrations. |
-| [packages/shared/src](../packages/shared/src) | Zod schemas, domain contracts and pure validation/state rules.                                       |
-| [eval](../eval/README.md)                     | Small original fixtures, labels, structural checks and explicit real-provider adapter evaluation.    |
-| [docs](README.md)                             | Reviewer guides, protocol, implementation boundaries and public evidence.                            |
+| Directory                                     | Responsibility                                                                                                     |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| [apps/web/src](../apps/web/src)               | Course library, preparation, home, Study, Tutor, materials, curriculum, progress and Knowledge Map.                |
+| [apps/server/src](../apps/server/src)         | API routes, provider adapters, ingestion, grounding, learning services, repositories and migrations.               |
+| [packages/shared/src](../packages/shared/src) | Zod schemas, domain contracts and pure validation/state rules.                                                     |
+| [eval](../eval/README.md)                     | Formal StudyEval validation, supplementary product reliability evidence, historical results and structural checks. |
+| [docs](README.md)                             | Reviewer guides, protocol, implementation boundaries and public evidence.                                          |
 
 ## From materials to an accepted route
 
@@ -105,4 +105,4 @@ The workflow can be repeated offline without an API key. This does not promise b
 
 An optional visual-description adapter is retained in code. Its outputs are advisory and cannot enter Formal Evidence, grading or mastery. The submitted language workflow and evaluation configuration keep `VISUAL_PROVIDER=disabled`; it is not a second submitted model path.
 
-Runtime safeguards and the existing structural runners are implementation evidence. The separate [StudyEval protocol](EVALUATION.md) describes quality judgments and evaluator validation; the [current public results](FINAL_EVALUATION.md) distinguish Candidate 23 product journeys, StudyEval v2 validation and reserved human alignment. Neither successful tests nor a positive model review establishes measured learning effectiveness.
+Runtime safeguards and the existing structural runners are implementation evidence. The separate [StudyEval protocol](EVALUATION.md) describes quality judgments and evaluator validation; the [current public results](FINAL_EVALUATION.md) identify StudyEval v2.0 as the formal Task 1 evaluation, with a separate [Product Showcase](PRODUCT_SHOWCASE.md) and [supplementary 20-course reliability audit](../eval/final-showcase/README.md). Neither successful tests nor a positive model review establishes measured learning effectiveness.

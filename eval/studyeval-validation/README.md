@@ -1,23 +1,25 @@
-# StudyEval v2.0: Fresh Validation and Reserved Human Alignment
+# Formal Task 1 Evaluation · StudyEval v2.0
 
-This package preserves the completed post-freeze validation of [StudyEval v2.0](../studyeval/METHOD.md), frozen at `64fdbc4d5fdcfffc3e10132f5881dec334803b8f`. These observations were collected before Candidate 23. They validate the evaluator; the separate final showcase measures Candidate 23 product journeys.
+This package preserves the completed post-freeze validation of [StudyEval v2.0](../studyeval/METHOD.md), frozen at `64fdbc4d5fdcfffc3e10132f5881dec334803b8f`. These observations were collected before Candidate 23. This is the **primary formal Task 1 evaluation**. [Product Showcase](../../docs/PRODUCT_SHOWCASE.md) and the [supplementary 20-course reliability audit](../final-showcase/README.md) provide separate Candidate 23 product evidence.
 
-| Prespecified validation | Result | Population |
-| --- | --- | --- |
-| Controlled reference levels | 70/72 | 24 new semantic families, three constructed quality levels each |
-| Strict quality triplets | 22/24 | Entire family must satisfy 2 > 1 > 0 |
-| Ordered pairs | 70/72 | Two ties, no inversions |
-| Adversarial defect detection | 18/18 | Six variants each of padding, false authority and instruction injection |
-| Boundary expectations | 12/12 | Includes genuine unavailable evidence, blank answers and insufficient support |
-| Three-run exact repeat agreement | 12/12 | Twelve inputs selected before scoring, each evaluated three times |
-| Reserved two-person consensus | 22/24 | 24 of 34 dimension pairs reached exact human consensus |
-| All individual human ratings | 53/68 | All original ratings retained, including disagreement |
+| Prespecified validation              | Result             | Population                                                                    |
+| ------------------------------------ | ------------------ | ----------------------------------------------------------------------------- |
+| Controlled reference exact agreement | **70/72 = 97.22%** | 24 new semantic families, three constructed quality levels each               |
+| Strict quality triplets              | 22/24              | Entire family must satisfy 2 > 1 > 0                                          |
+| Ordered comparisons                  | **70/72**          | **0 ordering inversions**, 2 ties                                             |
+| Adversarial defect detection         | 18/18              | Six variants each of padding, false authority and instruction injection       |
+| Boundary expectations                | 12/12              | Includes genuine unavailable evidence, blank answers and insufficient support |
+| Three-run exact repeat agreement     | 12/12              | Twelve inputs selected before scoring, each evaluated three times             |
+| Reserved two-person consensus        | **22/24 = 91.67%** | 24 of 34 dimension pairs reached exact human consensus                        |
+| All individual human ratings         | 53/68              | All original ratings retained, including disagreement                         |
 
-Human quadratic weighted kappa is 0.948387. The human comparison covers 27 cases, 34 dimension pairs and 68 original ratings. It is a case-level holdout on previously known source texts, not a source-disjoint human-generalization study. The 24 consensus dimensions must not replace the full 68-rating comparison. These results do not measure learning gains.
+Human quadratic-weighted **κ = 0.948387** (displayed as **0.948**); mean absolute grade error is **0.083333**, with two adjacent and no 0↔2 consensus disagreements. The case-cluster bootstrap 95% interval for consensus agreement is 80.0%–100.0%. The human comparison covers 27 cases, 34 dimension pairs and 68 original ratings. It is a case-level holdout on previously known source texts, not a source-disjoint human-generalization study. The 24 consensus dimensions must not replace the full 68-rating comparison. These results do not measure learning gains.
 
-All 102 unique fresh inputs and 126 observations are included. The human evaluation contains 81 observations, three passes over all 27 cases. Primary figures use the first pass; repeated observations are not extra independent cases. Constructor reference levels are prespecified analytical hypotheses, not human labels. Authoring and automatic evaluation share the Hy3 model family.
+All **102 unique fresh inputs and 126 observations** are included, with **zero INVALID** outcomes and two appropriate U boundary outcomes. The human evaluation contains 81 observations, three passes over all 27 cases. All 81 human observations are valid, with no U or INVALID; exact three-pass stability is 32/34 dimension pairs. Primary figures use the first pass; repeated observations are not extra independent cases. Constructor reference levels are prespecified analytical hypotheses, not human labels. Authoring and automatic evaluation share the Hy3 model family. The 18 adversarial cases are dependent variants of controlled task families, not 18 independent families. Case-level human inputs and labels were excluded from v2.0 calibration; previously public aggregate human statistics were incidentally seen during development, so complete aggregate-statistic blinding is not claimed. Original answer sheets did not supply timing or external-help metadata.
 
-Two controlled discrepancies remain: S008/Q5 and S029/Q4. Two human-consensus discrepancies also remain. See the preserved [fresh discrepancy audit](analysis/fresh-discrepancy-audit.json), [human audit](analysis/HUMAN-AUDIT.md), and complete machine-readable results. No case, reference or inconvenient outcome was replaced.
+Two controlled discrepancies remain: S008/Q5 and S029/Q4. Two human-consensus discrepancies also remain. See the preserved [fresh validation audit](analysis/FRESH-STUDYEVAL-AUDIT.md), [fresh discrepancy details](analysis/fresh-discrepancy-audit.json), [human audit](analysis/HUMAN-AUDIT.md), and complete machine-readable results. No case, reference or inconvenient outcome was replaced.
+
+The [six-dimensional operational method](../../docs/EVALUATION.md) and [case analysis](../../docs/FINAL_EVALUATION.md#典型分歧说明了什么) explain the design and every primary discrepancy. [Verification](../../docs/VERIFICATION.md) is the shared reproduction entry.
 
 ## Evidence Index
 
@@ -27,7 +29,7 @@ Two controlled discrepancies remain: S008/Q5 and S029/Q4. Two human-consensus di
 - [Fresh metrics](analysis/fresh-metrics.json), [human metrics](analysis/human-alignment.json), and [original source reproduction](analysis/human-source-reproduction.json).
 - [Original protocol](origin/PROTOCOL.md), [original freeze](origin/FREEZE.json), and [byte-preserving publication lineage](ORIGIN.json).
 
-Original human answer sheets remain in the repository's [historical human evidence](../final-evaluation/human/). Preserved audit notes and JSON provenance retain original campaign paths. This publication places their active counterparts under `fresh/`, `human/`, and `dataset/cases/`; the portable verifier performs these explicit joins. Full wire bodies remain in the source archive; every input, final observation, internal judgment and receipt ledger is available here.
+Historical review copies preserving original human answer content remain in the repository's [historical human evidence](../final-evaluation/human/). Preserved audit notes and JSON provenance retain original campaign paths. The archived original protocol includes Candidate 22 product checks; those are historical and are not Candidate 23 results. This publication places their active counterparts under `fresh/`, `human/`, and `dataset/cases/`; the portable verifier performs these explicit joins. Historical comparator fields in the source-reproduction receipt do not replace the current v2.0 human metrics. Full wire bodies remain in the source archive; every input, final observation, internal judgment and receipt ledger is available here.
 
 ## Reproduce the Saved Results
 

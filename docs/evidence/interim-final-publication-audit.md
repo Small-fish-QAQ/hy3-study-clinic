@@ -1,4 +1,6 @@
-# Interim final evidence publication audit · 2026-09-12
+# Historical Interim Publication Record · 2026-09-12
+
+> Historical record of the named publication. Current entry points: [documentation index](../README.md), [formal Task 1 evaluation](../../eval/studyeval-validation/README.md), [verification](../VERIFICATION.md). Original measurements and dated publication claims below are retained.
 
 > Historical audit for interim commit `7d0e2f854b5d8153710722fb0e27b54b81c874e0`. Its pending-human status and embargo scope describe that publication only. See the [final audit](final-publication-audit.md) for the completed human integration and full input release.
 

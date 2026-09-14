@@ -1,4 +1,6 @@
-# Final Submission Audit: 2026-09-14
+# Historical Packaging Record · 2026-09-14
+
+> Historical record of the named publication. Current entry points: [documentation index](../README.md), [formal Task 1 evaluation](../../eval/studyeval-validation/README.md), [verification](../VERIFICATION.md). Original measurements and dated publication claims below are retained.
 
 Candidate 23 product commit: `84b3c2fbce7e6523e43a8fa66df42bb6e37fa149`. Frozen StudyEval v2 commit: `64fdbc4d5fdcfffc3e10132f5881dec334803b8f`. Packaging changes are documentation, evidence and their verification workflow; product and evaluator implementation bytes are unchanged.
 
