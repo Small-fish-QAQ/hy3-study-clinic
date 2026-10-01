@@ -1,6 +1,6 @@
 # Formal Task 1 Evaluation · StudyEval v2.0
 
-This package preserves the completed post-freeze validation of [StudyEval v2.0](../studyeval/METHOD.md), frozen at `64fdbc4d5fdcfffc3e10132f5881dec334803b8f`. These observations were collected before Candidate 23. This is the **primary formal Task 1 evaluation**. [Product Showcase](../../docs/PRODUCT_SHOWCASE.md) and the [supplementary 20-course reliability audit](../final-showcase/README.md) provide separate Candidate 23 product evidence.
+This package preserves the completed post-freeze validation of [StudyEval v2.0](../studyeval/METHOD.md), frozen at `64fdbc4d5fdcfffc3e10132f5881dec334803b8f`. These observations were collected before Candidate 23. This is the **primary formal Task 1 evaluation**. [Product Showcase](../../docs/DEMO.md#保存的学习案例) and the [supplementary 20-course reliability audit](../final-showcase/README.md) provide separate Candidate 23 product evidence.
 
 | Prespecified validation              | Result             | Population                                                                    |
 | ------------------------------------ | ------------------ | ----------------------------------------------------------------------------- |
@@ -19,17 +19,17 @@ All **102 unique fresh inputs and 126 observations** are included, with **zero I
 
 Two controlled discrepancies remain: S008/Q5 and S029/Q4. Two human-consensus discrepancies also remain. See the preserved [fresh validation audit](analysis/FRESH-STUDYEVAL-AUDIT.md), [fresh discrepancy details](analysis/fresh-discrepancy-audit.json), [human audit](analysis/HUMAN-AUDIT.md), and complete machine-readable results. No case, reference or inconvenient outcome was replaced.
 
-The [six-dimensional operational method](../../docs/EVALUATION.md) and [case analysis](../../docs/FINAL_EVALUATION.md#典型分歧说明了什么) explain the design and every primary discrepancy. [Verification](../../docs/VERIFICATION.md) is the shared reproduction entry.
+The [six-dimensional operational method](../../docs/REPORT.md#studyeval-的判定方法) and [case analysis](../../docs/REPORT.md#受控验证的结果与分歧) explain the design and every primary discrepancy. [Verification](../../docs/VERIFICATION.md) is the shared reproduction entry.
 
 ## Evidence Index
 
-- [Fresh cases](dataset/cases/) and [construction references](dataset/registry.json).
-- [Fresh complete rows](fresh/rows.json), [all observations and internal judgments](fresh/observations/), and [request accounting](fresh/physical.jsonl).
-- [Human complete rows](human/rows.json), [all human observations](human/observations/), [original normalized ratings](human-reference/normalized.json), and [packet mapping](human-reference/packet-map.json).
+- [Fresh cases](dataset/cases) and [construction references](dataset/registry.json).
+- [Fresh complete rows](fresh/rows.json), [all observations and internal judgments](fresh/observations), and [request accounting](fresh/physical.jsonl).
+- [Human complete rows](human/rows.json), [all human observations](human/observations), [original normalized ratings](human-reference/normalized.json), and [packet mapping](human-reference/packet-map.json).
 - [Fresh metrics](analysis/fresh-metrics.json), [human metrics](analysis/human-alignment.json), and [original source reproduction](analysis/human-source-reproduction.json).
 - [Original protocol](origin/PROTOCOL.md), [original freeze](origin/FREEZE.json), and [byte-preserving publication lineage](ORIGIN.json).
 
-Historical review copies preserving original human answer content remain in the repository's [historical human evidence](../final-evaluation/human/). Preserved audit notes and JSON provenance retain original campaign paths. The archived original protocol includes Candidate 22 product checks; those are historical and are not Candidate 23 results. This publication places their active counterparts under `fresh/`, `human/`, and `dataset/cases/`; the portable verifier performs these explicit joins. Historical comparator fields in the source-reproduction receipt do not replace the current v2.0 human metrics. Full wire bodies remain in the source archive; every input, final observation, internal judgment and receipt ledger is available here.
+Historical review copies preserving original human answer content remain in the repository's [historical human evidence](../final-evaluation/human). Preserved audit notes and JSON provenance retain original campaign paths. The archived original protocol includes Candidate 22 product checks; those are historical and are not Candidate 23 results. This publication places their active counterparts under `fresh/`, `human/`, and `dataset/cases/`; the portable verifier performs these explicit joins. Historical comparator fields in the source-reproduction receipt do not replace the current v2.0 human metrics. Full wire bodies remain in the source archive; every input, final observation, internal judgment and receipt ledger is available here.
 
 ## Reproduce the Saved Results
 

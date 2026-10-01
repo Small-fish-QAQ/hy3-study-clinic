@@ -1,29 +1,51 @@
-# Historical Evidence and Project Background
+# 历史结果与发布记录
 
-Current product behavior is documented in the [README](../README.md) and [architecture](ARCHITECTURE.md). This page is background, not current validation evidence.
+[当前设计与评估报告](REPORT.md) · [验证与复现](VERIFICATION.md)
 
-The early application combined material ingestion, grounded concepts, questions, grading and review. Its July 2026 checkpoint is preserved in Git, including the `issue-4-final` tag and the dated [Hy3 online record](evidence/hy3-online-verification.md).
+本页供追溯早期版本、原人类评分和发布过程。当前产品与评估结论集中在主报告，下面各记录保留自己的日期、样本和适用范围。
 
-Subsequent work connected those capabilities through accepted curricula, versioned plans, durable study sessions, explicit Formal Evidence, targeted Repair and review. The ordinary setup flow was simplified to materials, global depth, optional focus and one Course Skeleton acceptance. Teaching, Practice recovery and Tutor now share the current learning context.
+## 版本演进
 
-The September 11 documentation checkpoint foregrounded that workflow while final StudyEval evidence was pending. The September 12 interim publication added frozen machine results, independent blinded model comparison and a temporarily restricted dataset release. The [September 12 completed publication](EVALUATION_RESULTS.md) then integrated six genuine returned human sheets, disclosed agreement and disagreement severity, and released all 209 frozen inputs and 279 observations with their mappings. Private human document metadata remains excluded. The failed small fresh checkpoint remains historical and excluded from the final corpus. Earlier plans and acceptance statements should not be read as current results.
+早期应用连接资料导入、概念、出题、评分与复习。2026 年 7 月的小型真实 Hy3 操作记录保留在 Git 与 `issue-4-final` 发布中。
 
-## Current authoritative entries
+之后的实现以已确认课程、版本化计划和持续学习会话连接这些能力，增加正式证据、针对性补救与复习。普通建课收敛为资料、全局深度、可选重点与一次课程结构确认。
 
-[Product Showcase](PRODUCT_SHOWCASE.md) · [Formal Task 1 Evaluation: StudyEval v2.0](../eval/studyeval-validation/README.md) · [Supplementary Reliability Audit](../eval/final-showcase/README.md) · [Verification](VERIFICATION.md).
+2026-09-11 的演示记录了当时的学习流程。9 月 12 日的 v1.5 评估先发布机器结果和独立模型比较，随后纳入六份真实人类答卷，并公开 209 个冻结输入、279 次观察及其对应关系。曾暂时限制公开的数据已在该次完整发布中补齐；识别性人类文档元数据保持私有。
 
-The current narrative changes presentation roles, not the frozen experiments. The original Candidate 23 campaign retains `final-showcase` in its directory, sealed design and protocol. Those historical names are provenance, not a claim that the product run is the formal Task 1 evaluation. Candidate 22 checks inside the original evaluator campaign protocol remain Candidate 22 evidence.
+StudyEval v2.0 在冻结后完成新样本和保留人类案例验证，随后进行 9 月 14 日的 20 课产品运行。产品原目录名 `final-showcase` 和 Candidate 23 用于追溯这次运行；评估器原协议中的 Candidate 22 检查仍是另一版本的历史证据。
 
-## Preserved evidence
+## 保留材料
 
-| Historical material                                                                                                                                                 | Why retain it                                                                                              |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| [September 12 v1.5 results](EVALUATION_RESULTS.md) and [complete original package](../eval/final-evaluation/README.md)                                              | Original full samples, outcomes, failures and denominators.                                                |
-| [Original human validation](HUMAN_VALIDATION.md)                                                                                                                    | Original ratings, metadata limitations and the older v1.5 comparison; distinct from the current v2.0 join. |
-| [Frozen-evidence diagnostics](EVIDENCE_DIAGNOSTICS.md)                                                                                                              | Post-score failure analysis without changing the original result.                                          |
-| [Interim publication record](evidence/interim-final-publication-audit.md)                                                                                           | The dated embargo and pending-human state at that point in the study.                                      |
-| [September 12 completed publication record](evidence/final-publication-audit.md)                                                                                    | The completed human integration and corpus release.                                                        |
-| [September 14 original packaging record](evidence/submission-audit-2026-09-14.md)                                                                                   | Original Candidate 23 archive, screenshots, runtime and evaluation publication checks.                     |
-| [July Hy3 online record](evidence/hy3-online-verification.md) and [Issue #4 release](https://github.com/Small-fish-QAQ/hy3-study-clinic/releases/tag/issue-4-final) | Separate earlier project milestone; tag and release remain intact.                                         |
+| 材料                                                                                                                                               | 保留用途                                             |
+| -------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| [v1.5 评估结果](history/EVALUATION_RESULTS.md)、[原始证据包](../eval/final-evaluation/README.md)                                                   | 旧方法的全部样本、失败、基线与成本                   |
+| [原人类标注分析](history/HUMAN_VALIDATION.md)                                                                                                      | 原评分、分歧和元数据缺失；与当前 v2.0 的重新比较区分 |
+| [事后证据诊断](history/EVIDENCE_DIAGNOSTICS.md)                                                                                                    | 对旧结果的失败分解，不修改原分数                     |
+| [中期发布记录](history/interim-final-publication-audit.md)                                                                                         | 当时的暂缓公开与人类评分待完成状态                   |
+| [9 月 12 日完整发布记录](history/final-publication-audit.md)                                                                                       | 人类评分整合和完整公开                               |
+| [9 月 14 日交付记录](history/submission-audit-2026-09-14.md)                                                                                       | 原归档、截图、运行时与发布检查                       |
+| [7 月真实调用记录](evidence/hy3-online-verification.md)、[对应发布](https://github.com/Small-fish-QAQ/hy3-study-clinic/releases/tag/issue-4-final) | 较早版本的六项小样本操作                             |
 
-These pages retain dated language and results. They are not alternate current submission guides. Sealed method/protocol files, raw evaluation data, verifier inputs, media provenance and meaningful historical artifacts are preserved.
+7 月记录固定在 `46d34f2bdacb9dc0b1671bbb9e12cb33249161da`，早于当前课程准备与教学层。它不代表当前完整课程可用率，也不进入后续正式评估的分母。早期失败的小型新样本检查仍保持原结论。
+
+## 早期文档与媒体检查
+
+以下为 2026-09-12（Asia/Shanghai）的历史检查记录，文档与媒体提交是 `c3939c4b35f92b9bb735b0b82abf6af6d3ee3706`，产品代码为 `325dfa1051c6efa8e5f5617955b34683d516c144`，环境为 Windows 与 Node.js 24.14.1。
+
+| 当时的检查                               | 记录结果                                     |
+| ---------------------------------------- | -------------------------------------------- |
+| 构建                                     | 通过，保留已有大体积前端 chunk 提示          |
+| lint                                     | 通过，保留已有一项 React Hook 依赖警告       |
+| 公开证据、源码卫生、配置和 Provider 测试 | 4 个文件、35 项通过                          |
+| Fake 结构评估                            | 50/50 项通过，没有真实模型请求               |
+| 隔离配置启动                             | 5173 页面、8787 API 与前端代理响应正常       |
+| 文档与媒体                               | 链接、锚点、格式、媒体哈希与敏感路径检查通过 |
+| 浏览器预览                               | 检查过桌面与手机宽度，图集、图片和 MP4 可用  |
+
+原始视频当时完成了解码与哈希核对。这些记录描述那个提交的工程与展示检查，不是当前改动的测试结果，也不是学习效果证据。
+
+## 归档约定
+
+历史报告保留原数字、分歧和结论。目录迁移只调整阅读链接，不能把不同版本的结果合并；人类评分原件、公开副本、冻结协议、模型输出和媒体来源继续保留在各自证据包中。
+
+重新核对旧实验使用[历史复核命令](VERIFICATION.md#历史结果的复核)。阅读当前设计从[主报告](REPORT.md)开始。

@@ -1,6 +1,6 @@
 # Supplementary End-to-End Reliability Audit · Candidate 23
 
-This completed **20-course run is supplementary product evidence**. [StudyEval v2.0](../studyeval-validation/README.md) is the primary formal Task 1 evaluation. The [Product Showcase](../../docs/PRODUCT_SHOWCASE.md) presents 12 content-audited journeys selected after reviewing this run; it is not a separate or unbiased benchmark.
+This completed **20-course run is supplementary product evidence**. [StudyEval v2.0](../studyeval-validation/README.md) is the primary formal Task 1 evaluation. The [Product Showcase](../../docs/DEMO.md#保存的学习案例) presents 12 content-audited journeys selected after reviewing this run; it is not a separate or unbiased benchmark.
 
 The complete audit retains **17/20 teaching completions, 15/20 first Formal checkpoint journeys and 12/20 materially clean complete journeys in the task/answer review**. All 20 frozen cases and every failure remain in the denominator. A first checkpoint is not full-course completion or a measured human learning gain. The original campaign name and directory `final-showcase` are preserved for provenance; the publication role is now supplementary reliability evidence.
 
@@ -27,7 +27,7 @@ Teaching activities: 33/36 completed. The protocol stops after the first Formal 
 
 The task assistant reviewed every credited primary answer, private key and required rubric. **12/20** mechanically complete journeys had no identified material task/answer defect in that review. There are 3 credited task caveats and 2 credited answer caveats; these may concern the same courses and must not be added as independent cases. This is not independent human validation, and delivered Lesson content was spot-checked rather than fully certified.
 
-Every course and reason is in [the complete table](analysis/scored-01/RESULTS.md), [CSV](analysis/scored-01/complete-results.csv), [mechanical results](analysis/scored-01/results.json) and [content audit](analysis/scored-01/content-audit.json). No outcome was replaced, the product was not tuned, and no favorable rerun was selected. [Product Showcase](../../docs/PRODUCT_SHOWCASE.md) is the single page for all 12 selected journeys and the full source/task/answer links; it does not replace the complete audit denominator.
+Every course and reason is in [the complete table](analysis/scored-01/RESULTS.md), [CSV](analysis/scored-01/complete-results.csv), [mechanical results](analysis/scored-01/results.json) and [content audit](analysis/scored-01/content-audit.json). No outcome was replaced, the product was not tuned, and no favorable rerun was selected. [Product Showcase](../../docs/DEMO.md#保存的学习案例) is the single page for all 12 selected journeys and the full source/task/answer links; it does not replace the complete audit denominator.
 
 ## Evidence Integrity
 

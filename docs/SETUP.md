@@ -20,6 +20,8 @@ npm run dev
 
 创建课程后，在“课程资料”添加资料，选择全局深度与可选重点，审阅并确认课程结构，然后从课程主页开始学习。当前学习界面和生成契约使用 `zh-CN`。
 
+第一次体验可跟随[固定样例操作](VERIFICATION.md#固定样例操作)，其中给出了现成资料、点击顺序和每一步应看到的结果。
+
 ## 接入真实 Hy3
 
 先复制示例配置。已有 `.env` 时直接编辑它，避免覆盖现有配置。
@@ -102,12 +104,12 @@ PROVIDER_CONFIG_PATH=./data/offline-preview-provider.json DATABASE_PATH=:memory:
 | 原生依赖安装失败                      | 确认使用受支持的 Node.js、系统架构和完整依赖安装；SQLite 与图像库使用原生模块。先用推荐的 Node.js 24 重试 `npm ci`。 |
 | 页面打开但 API 请求失败               | 确认服务端成功启动，8787 未被其他程序占用，开发代理地址与 API 一致。                                                 |
 | 配置了 Hy3 仍显示 Fake，或反过来      | 在设置页查看生效配置，检查 `PROVIDER_CONFIG_PATH` 指向的保存设置与进程环境。                                         |
-| 课程准备中断或失败                    | 按页面错误检查来源、可执行目标和 Provider 状态，再显式重试。不要通过删除历史或降低目标来伪造成功。                   |
-| 资料导入后内容不完整                  | PDF 需文本层；复杂图表、公式、扫描件与动态网页见[限制说明](LIMITATIONS.md)。                                         |
+| 课程准备中断或失败                    | 按页面错误检查资料、可执行目标与 Provider 状态，再显式重试；资料或目标改变后需重新确认课程结构。                     |
+| 资料导入后内容不完整                  | PDF 需文本层；复杂图表、公式、扫描件与动态网页见[限制说明](REPORT.md#当前能力边界)。                                 |
 | `eval:fake` / `eval:hy3` 拒绝视觉配置 | 显式设置 `VISUAL_PROVIDER=disabled`；评估不包含可选视觉路径。                                                        |
 
 这是本地开发运行方式。`npm run build` 生成工作区构建产物；API 的生产启动命令是 `npm run start -w @hy3-clinic/server`，它不负责托管前端静态站点。公共部署所需的认证、TLS、访问控制与前端代理不在当前运行方案内。
 
-## 查看提交证据
+## 查看评估结果
 
-安装体验与正式评估分开：[Product Showcase](PRODUCT_SHOWCASE.md)展示保存的产品旅程；[StudyEval v2.0](../eval/studyeval-validation/README.md)是正式 Task 1 评估；[20 课可靠性审计](../eval/final-showcase/README.md)保留补充产品结果。只读复核从[验证与复现](VERIFICATION.md)进入，无需配置真实模型。
+想了解结果含义，阅读[设计与评估报告](REPORT.md)；想查看实际题目和作答，阅读[学习案例](DEMO.md#保存的学习案例)。已有结果可按[验证与复现](VERIFICATION.md)无密钥核对，无需配置真实模型。
