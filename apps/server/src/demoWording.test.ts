@@ -38,9 +38,11 @@ describe('offline demo wording', () => {
   it('README and architecture docs distinguish workflow repeatability from output identity', () => {
     const readme = read('README.md');
     expect(readme).not.toContain('结果可复现');
-    expect(readme).toContain('may vary between runs');
+    expect(readme).toMatch(/离线[^。\n]*重复运行/u);
+    expect(readme).toMatch(/(?:内容|排序)[^。\n]*可能(?:变化|不同)/u);
     const architecture = read('docs/ARCHITECTURE.md');
-    expect(architecture).toContain('workflow can be repeated offline');
-    expect(architecture).toContain('does not promise byte-identical output');
+    expect(architecture).toMatch(/离线[^。\n]*重复运行/u);
+    expect(architecture).toMatch(/(?:标识|排序)[^。\n]*可能(?:变化|不同)/u);
+    expect(architecture).toMatch(/不能承诺[^。\n]*相同的输出/u);
   });
 });

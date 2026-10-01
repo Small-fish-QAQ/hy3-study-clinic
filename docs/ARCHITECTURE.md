@@ -133,7 +133,7 @@ SQLite 仓储与编号迁移管理持久记录。已接受版本和测评历史�
 
 ## 模型与评估边界
 
-[Hy3Provider](../apps/server/src/llm/hy3Provider.ts)通过兼容 HTTP 接口调用模型。[FakeProvider](../apps/server/src/llm/fakeProvider.ts)用于本地体验和回归检查；完整流程仍可能产生不同标识、排序或后续输入，不能承诺逐字相同的输出。
+[Hy3Provider](../apps/server/src/llm/hy3Provider.ts)通过兼容 HTTP 接口调用模型。[FakeProvider](../apps/server/src/llm/fakeProvider.ts)用于本地体验和回归检查。安装依赖后，使用本地资料的流程可以离线重复运行；标识、排序和后续输入可能变化，不能承诺逐字相同的输出。
 
 可选视觉描述适配器保留在代码中，其输出仅作辅助说明，不能进入正式证据、评分或掌握。活动提交与评估均保持 `VISUAL_PROVIDER=disabled`。
 
