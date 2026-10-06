@@ -25,7 +25,8 @@ import { disclosesPracticeAnswer, literalTeachingText } from './teachingText.js'
 
 export const LESSON_PEDAGOGY_POLICY_VERSION = 'lesson-pedagogy-v2';
 export const PRACTICE_QUALITY_POLICY_VERSION = 'lesson-practice-v1';
-export const COMPOSITIONAL_LESSON_PEDAGOGY_POLICY_VERSION = 'lesson-pedagogy-v8-evidence-decisions';
+export const COMPOSITIONAL_LESSON_PEDAGOGY_POLICY_VERSION =
+  'lesson-pedagogy-v9-scientific-notation';
 export const COMPOSITIONAL_PRACTICE_QUALITY_POLICY_VERSION = 'lesson-practice-v8-literal-identity';
 
 function normalized(value: string): string {
@@ -1764,6 +1765,8 @@ function workedProcessIssueCodes(
     /^(?:约|大约|approximately|about|≈|~)?\s*[+−-]?\d[\d.,%/÷×+−=≈<>≤≥()\s]*[\p{L}°℃℉%]*$/iu.test(
       value.normalize('NFKC').trim(),
     ) ||
+    // Recognize a complete numeric representation; independent review still owns correctness.
+    /^[+−-]?\d+(?:\.\d+)?\s*×\s*10\s*\^\s*[+−-]?\d+$/u.test(value.normalize('NFKC').trim()) ||
     /^\s*(?:\{[\p{L}\p{N}_ ,.+−-]*\}|\[[\p{L}\p{N}_ ,.+−-]*\]|\([\p{L}\p{N}_ ,.+−-]*\))\s*$/u.test(
       value,
     ) ||

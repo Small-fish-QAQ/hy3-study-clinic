@@ -1027,6 +1027,43 @@ describe('compositional Lesson and Practice evaluators', () => {
     worked.steps[1]!.resultingState = '隐藏';
     expect(codes()).toContain('worked_process_missing_required_structure');
   });
+  it.each(['5.2×10^0', '2.4×10^1', '2.4×10^-1', '-2.4 × 10 ^ +1', '2.4×10^−1', '２.４×１０^－１'])(
+    'accepts a complete scientific notation worked result: %s',
+    (result) => {
+      const fixture = compositionalInputs('apply');
+      fixture.lesson.slots.find((slot) => slot.workedProcess)!.workedProcess!.result = result;
+      const evaluation = evaluateLessonSlotPedagogy(fixture.lesson, fixture.lessonInput, {
+        evaluatedAt,
+      });
+      expect(evaluation.findings.map((finding) => finding.code)).not.toContain(
+        'worked_process_missing_required_structure',
+      );
+    },
+  );
+  it.each([
+    '×10^1',
+    '5.2×^1',
+    '5.2×10^',
+    '5.2×10^-',
+    '10^^2',
+    '5.2×10^^1',
+    '5..2×10^1',
+    '5.2×10^1.5',
+    '5.2×10^--1',
+    '5.2×10^1+1',
+  ])('rejects a malformed scientific notation worked result: %s', (result) => {
+    const fixture = compositionalInputs('apply');
+    fixture.lesson.slots.find((slot) => slot.workedProcess)!.workedProcess!.result = result;
+    const evaluation = evaluateLessonSlotPedagogy(fixture.lesson, fixture.lessonInput, {
+      evaluatedAt,
+    });
+    expect(evaluation.findings).toContainEqual(
+      expect.objectContaining({
+        code: 'worked_process_missing_required_structure',
+        severity: 'error',
+      }),
+    );
+  });
   it('accepts concise mathematical premises while still refusing empty relation labels', () => {
     const fixture = compositionalInputs('explain');
     const relation = fixture.lesson.slots.find((slot) => slot.semanticRelations.length)!

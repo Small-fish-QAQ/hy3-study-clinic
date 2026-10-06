@@ -5,6 +5,7 @@ import {
   fnv1a32,
   MixedInitiativeCommandRequestSchema,
   type LearningContractDraftFields,
+  type LessonSlotContentProposalPayload,
   type LessonExecutionCommandRequest,
 } from '@hy3-clinic/shared';
 import { openDatabase, type SqliteDb } from '../db/database.js';
@@ -35,6 +36,7 @@ import {
 import { fixedClock } from '../util/ids.js';
 import { createServices, type Services } from './index.js';
 import { deriveTeachUnitDurations, resolveStudyPlanPlannability } from './studyPlanValidation.js';
+import { validateLessonSlotContentCandidate } from './teachingBriefContract.js';
 import { TEACHING_SKELETON_PLANNER_VERSION } from './teachingSkeletonPlanner.js';
 import {
   fingerprintObjectiveAuthorityBinding,
@@ -1367,6 +1369,88 @@ describe('Teaching Brief preparation', () => {
     expect(checkpoint.lessonEvaluation.contentReview).toHaveLength(1);
     expect(result.brief.practice?.qualityEvaluation.contentReview).toHaveLength(1);
   });
+
+  it.each([true, false])(
+    'keeps scientific notation subject to independent correctness review (correct=%s)',
+    async (correct) => {
+      const harness = await createHarness(0, 'pass', 'apply', 'pass_oriented');
+      Object.defineProperty(harness.provider, 'name', { value: 'hy3' });
+      const result = correct ? '5.2×10^0' : '2.4×10^1';
+      const claim = `补充计算：0.052×10^2 = ${result}。`;
+      let candidateChecks = 0;
+      let lessonReviews = 0;
+      const generate = harness.provider.generateLessonSlotContent.bind(harness.provider);
+      harness.provider.generateLessonSlotContent = (input, opts) =>
+        generate(input, {
+          ...opts,
+          validateCandidate: (raw) => {
+            const candidate = raw as LessonSlotContentProposalPayload;
+            const slot = candidate.slots.find((content) => content.workedProcess)!;
+            slot.workedProcess!.result = result;
+            slot.explanation += ` ${claim}`;
+            const validation = validateLessonSlotContentCandidate(candidate, input);
+            expect(validation.valid, validation.diagnostics.join('\n')).toBe(true);
+            candidateChecks += 1;
+            return opts?.validateCandidate?.(candidate) ?? validation;
+          },
+        });
+      const review = harness.provider.reviewTeachingContent.bind(harness.provider);
+      harness.provider.reviewTeachingContent = async (input, opts) => {
+        const reviewed = await review(input, opts);
+        if (input.stage === 'lesson') {
+          lessonReviews += 1;
+          const slot = (input.candidate as LessonSlotContentProposalPayload).slots.find((content) =>
+            content.explanation.includes(claim),
+          )!;
+          expect(slot).toBeDefined();
+          if (!correct)
+            reviewed.findings = [
+              {
+                itemId: slot.slotId,
+                code: 'accuracy',
+                problem: '0.052×10^2 equals 5.2, but 2.4×10^1 equals 24.',
+                repairInstruction: 'Correct the calculation and its worked result to 5.2×10^0.',
+              },
+            ] as typeof reviewed.findings;
+        }
+        return reviewed;
+      };
+      const route = startTeachingRoute(harness);
+      const preparation = harness.services.teachingBriefPreparation.prepare(
+        preparationRequest(harness, route, `scientific-notation-correct-${correct}`),
+      );
+      if (correct) {
+        const prepared = await preparation;
+        expect(prepared.status).toBe('prepared');
+        const checkpoint = harness.repos.acceptedLessonCheckpoints.get(
+          prepared.brief.composition!.acceptedLessonCheckpointId,
+        )!;
+        expect(
+          checkpoint.lessonContent.find((slot) => slot.workedProcess)!.workedProcess!.result,
+        ).toBe(result);
+        expect(checkpoint.lessonEvaluation.contentReview).toHaveLength(1);
+        expect(prepared.brief.practice?.qualityEvaluation.contentReview).toHaveLength(1);
+        expect(lessonReviews).toBe(1);
+        expect(candidateChecks).toBe(2);
+      } else {
+        await expect(preparation).rejects.toBeDefined();
+        expect(lessonReviews).toBe(2);
+        expect(candidateChecks).toBe(3);
+        expect(harness.provider.practiceContentCalls).toBe(0);
+        expect(harness.repos.teachingBriefs.listForUnit('ws_1', harness.learningUnitId)).toEqual(
+          [],
+        );
+        expect(
+          harness.db.prepare('SELECT COUNT(*) AS count FROM accepted_lesson_checkpoints').get(),
+        ).toEqual({ count: 0 });
+        const failures = harness.db
+          .prepare("SELECT payload FROM agent_operation_results WHERE status='failed'")
+          .all();
+        expect(JSON.stringify(failures)).toContain('accuracy');
+        expect(JSON.stringify(failures)).not.toContain('worked_process_missing_required_structure');
+      }
+    },
+  );
 
   it('never checkpoints an unreviewed REAL draft when the editorial pass fails', async () => {
     const harness = await createHarness();

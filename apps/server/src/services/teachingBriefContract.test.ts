@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { TeachingBriefProposalPayloadSchema, type TeachingBriefSegment } from '@hy3-clinic/shared';
+import {
+  TeachingBriefProposalPayloadSchema,
+  type TeachingBriefSegment,
+  type TeachingLessonSlotContent,
+} from '@hy3-clinic/shared';
 import type {
   LessonSlotContentGenerationInput,
   PracticeContentGenerationInput,
@@ -279,7 +283,9 @@ describe('Teaching Brief quality profile', () => {
   });
 });
 
-function compositionalContractInput(): LessonSlotContentGenerationInput {
+function compositionalContractInput(
+  construct: 'explain' | 'apply' = 'explain',
+): LessonSlotContentGenerationInput {
   const skeleton = planTeachingSkeleton({
     learningUnitTitle: 'Bounded retrieval',
     targetMinutes: 18,
@@ -291,7 +297,7 @@ function compositionalContractInput(): LessonSlotContentGenerationInput {
         description:
           'Explain how a retrieval condition controls candidate eligibility and the returned result.',
         priority: 'required',
-        construct: 'explain',
+        construct,
         authorityMode: 'exact_source',
         allowedSourceRefs: ['S1', 'S2'],
         allowedVisualRefs: [],
@@ -592,6 +598,113 @@ describe('compositional provider candidate validation', () => {
       diagnosticCodes: [],
     });
   });
+
+  it.each(['5.2×10^0', '2.4×10^1', '2.4×10^-1'])(
+    'accepts complete scientific notation through the Lesson candidate contract: %s',
+    async (result) => {
+      const input = compositionalContractInput('apply');
+      const candidate = await new FakeProvider().generateLessonSlotContent(input);
+      candidate.slots.find((slot) => slot.workedProcess)!.workedProcess!.result = result;
+      expect(validateLessonSlotContentCandidate(candidate, input)).toEqual({
+        valid: true,
+        diagnostics: [],
+        diagnosticCodes: [],
+      });
+    },
+  );
+
+  it.each(['5.2×10^', '10^^2', '×10^1'])(
+    'rejects malformed scientific notation through the Lesson candidate contract: %s',
+    async (result) => {
+      const input = compositionalContractInput('apply');
+      const candidate = await new FakeProvider().generateLessonSlotContent(input);
+      const slot = candidate.slots.find((slot) => slot.workedProcess)!;
+      slot.workedProcess!.result = result;
+      const validation = validateLessonSlotContentCandidate(candidate, input);
+      expect(validation.valid).toBe(false);
+      expect(validation.diagnosticCodes).toContain('worked_process_missing_required_structure');
+      expect(validation.targetedRepair).toEqual({ invalidItemIds: [slot.slotId] });
+    },
+  );
+
+  it.each([
+    [
+      'placeholder state',
+      'worked_process_missing_required_structure',
+      (slot: TeachingLessonSlotContent) => {
+        slot.workedProcess!.startingState = 'placeholder';
+      },
+    ],
+    [
+      'hidden step state',
+      'worked_process_missing_required_structure',
+      (slot: TeachingLessonSlotContent) => {
+        slot.workedProcess!.steps[1]!.resultingState = '隐藏';
+      },
+    ],
+    [
+      'empty rule',
+      'invalid_lesson_slot_content_shape',
+      (slot: TeachingLessonSlotContent) => {
+        slot.workedProcess!.ruleOrProcedure = '';
+      },
+    ],
+    [
+      'missing rule',
+      'invalid_lesson_slot_content_shape',
+      (slot: TeachingLessonSlotContent) => {
+        Reflect.deleteProperty(slot.workedProcess!, 'ruleOrProcedure');
+      },
+    ],
+    [
+      'unchanged step state',
+      'worked_process_has_no_real_transition',
+      (slot: TeachingLessonSlotContent) => {
+        slot.workedProcess!.steps[0]!.resultingState = slot.workedProcess!.startingState;
+      },
+    ],
+    [
+      'foreign source alias',
+      'lesson_source_alias_outside_slot_authority',
+      (slot: TeachingLessonSlotContent) => {
+        slot.workedProcess!.sourceRefs = ['S9'];
+      },
+    ],
+    [
+      'unoffered answer key',
+      'invalid_lesson_slot_content_shape',
+      (slot: TeachingLessonSlotContent) => {
+        slot.workedProcess!.interaction!.activity.correctOptionId = 'D';
+      },
+    ],
+    [
+      'duplicate option id',
+      'invalid_lesson_slot_content_shape',
+      (slot: TeachingLessonSlotContent) => {
+        const options = slot.workedProcess!.interaction!.activity.options;
+        options[1]!.id = options[0]!.id;
+      },
+    ],
+  ] as const)(
+    'keeps rejecting %s with a complete scientific notation result',
+    async (_name, code, mutate) => {
+      const input = compositionalContractInput('apply');
+      const candidate = await new FakeProvider().generateLessonSlotContent(input);
+      const slot = candidate.slots.find((slot) => slot.workedProcess)!;
+      slot.workedProcess!.result = '5.2×10^0';
+      expect(validateLessonSlotContentCandidate(candidate, input).valid).toBe(true);
+      mutate(slot);
+      const validation = validateLessonSlotContentCandidate(candidate, input);
+      expect(validation.valid).toBe(false);
+      expect(validation.diagnosticCodes).toContain(code);
+      expect(validation.targetedRepair).toEqual({ invalidItemIds: [slot.slotId] });
+      expect(validation.failureArtifact?.context).toMatchObject({
+        frozenValidItemIds: input.skeleton.lessonSlots
+          .map((planned) => planned.slotId)
+          .filter((id) => id !== slot.slotId),
+      });
+    },
+  );
 
   it('reports one invalid Lesson slot and freezes every unaffected stable slot', async () => {
     const input = compositionalContractInput();
