@@ -4,18 +4,34 @@
 
 ## 目录分工
 
-| 位置                                                   | 内容与用途                                                |
-| ------------------------------------------------------ | --------------------------------------------------------- |
-| [studyeval](studyeval/METHOD.md)                       | 冻结的 StudyEval v2.0 方法、rubric、提示词和运行实现      |
-| [studyeval-validation](studyeval-validation/README.md) | 冻结后验证的样本、构造参考、人类对齐、全部观察和校验器    |
-| [final-showcase](final-showcase/README.md)             | 20 课产品运行的完整结果、控制回答、失败和归档             |
-| [final-evaluation](final-evaluation/README.md)         | 2026-09-12 的 v1.5 历史方法、数据、独立模型比较与人类答卷 |
-| [fixtures](fixtures)与[labels](labels)                 | 小型接口和结构检查的资料、对齐、评分与概念参考            |
-| `reports/`                                             | 本地生成的报告，被 Git 忽略                               |
+| 位置                                                   | 内容与用途                                             |
+| ------------------------------------------------------ | ------------------------------------------------------ |
+| [studyeval](studyeval/METHOD.md)                       | 冻结的 StudyEval v2.0 方法、rubric、提示词和运行实现   |
+| [studyeval-validation](studyeval-validation/README.md) | 冻结后验证的样本、构造参考、人类对齐、全部观察和校验器 |
+| [final-showcase](final-showcase/README.md)             | 20 课产品运行的完整结果、控制回答、失败和归档          |
+| [fixtures](fixtures)与[labels](labels)                 | 小型接口和结构检查的资料、对齐、评分与概念参考         |
+| `reports/`                                             | 本地生成的报告，被 Git 忽略                            |
 
 目录中的 `final` 是原实验命名。当前 StudyEval 验证与 20 课产品运行回答不同问题；历史 v1.5 不并入当前成绩。保存的产品例子集中在[演示与案例](../docs/DEMO.md#保存的学习案例)。
 
-冻结协议、数据、运行时与原始分析保持原字节。首页、主报告及未纳入冻结清单的目录 README 可以更新导航与解释。历史 `final-evaluation/README.md` 自身受哈希保护，保留原文；不能通过改写冻结文件修正实验结果。
+冻结协议、数据、运行时与原始分析保持原字节。首页、主报告及未纳入冻结清单的目录 README 可以更新导航与解释。2026-09-12 的 v1.5 包不在最新 main 中；完整原文与原始数据保留在[历史 tag](https://github.com/Small-fish-QAQ/hy3-study-clinic/tree/task1-final-2026-09-14-r2/eval/final-evaluation)，按[历史索引](../docs/HISTORY.md#进入历史版本)进入对应版本复核。
+
+## 数据保留与归档
+
+目录名和文件数量不能决定是否删除。main 承载当前正式评测、复现工具与必需 fixture；仅服务旧版本的完整实验包从固定快照访问。
+
+| 分类       | 范围                                                                                                            | 处理与依据                                                                                                                                                                                     |
+| ---------- | --------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CURRENT    | `studyeval/` 的方法、冻结清单与运行实现；`studyeval-validation/`；`final-showcase/`；本目录导航及三个根目录脚本 | 保留。主报告、演示、正式 verifier、CI 或复现操作仍使用；两个正式证据包分别有 1,805 和 394 个原文件受 `ORIGIN.json` 保护，评估器的六个运行模块另由 `FREEZE.json` 保护。                         |
+| HISTORICAL | 2026-09-12 的 `final-evaluation/` v1.5 全包                                                                     | 已退出 main，完整保存在 `task1-final-2026-09-14-r2`（`df7bbd0`）。当前产品、测试、CI 与正式 verifier 不读取它；当前人类对齐使用 `studyeval-validation/human-reference/` 中的规范化评分及映射。 |
+| FIXTURE    | `fixtures/` 五份资料、`labels/` 三份手写参考、`studyeval/test/` 两个测试文件                                    | 保留。结构评估脚本、Fake 操作验收、HTTP 烟测或评估器回归检查仍使用。参考标签不是通用人类金标准。                                                                                               |
+| DISPOSABLE | 被忽略的 `reports/eval-fake.json`、`reports/eval-fake.md`，以及 Python 字节码缓存                               | 可按需再生成，不作为发布证据；Fake 验证会更新这两个本地报告。已跟踪的证据中，本次未发现可证明无独有价值的 disposable 文件。                                                                    |
+
+`reports/eval-hy3.*` 属于本地真实调用记录，按 HISTORICAL 暂留；被 Git 忽略不代表可以删除。清理前应证明已有发布或归档完整保留其独有内容，不通过重新调用模型替代原记录。
+
+未来新实验先在独立、被忽略的输出目录运行。需要成为当前正式证据时，再发布输入、失败、结果、身份与核验入口，并明确替代关系。旧实验退出 main 前，必须证明当前产品、测试、CI、报告和正式 verifier 不再依赖它，核对完整历史快照并更新所有导航；从 [docs/HISTORY.md](../docs/HISTORY.md) 引导到固定 tag / commit / Release。旧结果在对应历史版本复现，不要求其命令持续兼容最新 main。
+
+当前冻结包仍保留原协议、研究路径与当时状态作为来源记录，包括 StudyEval 方法说明中的旧 v1.5 路径。这些原文不改写；它们的历史材料在对应快照或原研究归档中定位，当前正式核验依赖的文件仍完整保留在本目录。
 
 ## 只读复核
 
@@ -26,14 +42,7 @@ node eval/final-showcase/publication/verify.mjs
 
 这些命令检查保存结果，不请求模型。需要重新执行原 SQLite 审计或在线推断时，使用对应证据包 README 的准备步骤，输出写入新的目录。
 
-历史机器结果与人类原答卷另用：
-
-```bash
-node eval/final-evaluation/scripts/verify-publication.mjs
-python eval/final-evaluation/scripts/verify-human.py
-```
-
-历史包公开全部 209 个冻结输入、279 次观察、匿名对应关系、模型 CSV 和六份人类答卷副本。公开副本保留答案 XML 内容，排除识别性文档元数据；原始供应商与数据库归档有另外的公开边界，详见该包说明。
+历史机器结果与人类原答卷按[历史检出步骤](../docs/HISTORY.md#进入历史版本)进入对应版本，再遵循其 README、协议与校验器。该包公开全部 209 个冻结输入、279 次观察、匿名对应关系、模型 CSV 和六份人类答卷副本；原公开边界和分歧保持不变。
 
 ## Fake 结构评估
 

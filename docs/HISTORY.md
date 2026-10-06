@@ -2,50 +2,58 @@
 
 [当前设计与评估报告](REPORT.md) · [验证与复现](VERIFICATION.md)
 
-本页供追溯早期版本、原人类评分和发布过程。当前产品与评估结论集中在主报告，下面各记录保留自己的日期、样本和适用范围。
+本页定位过去版本、原人类评分和发布过程。当前结论集中在主报告；历史实验在对应 tag / commit 下阅读与复现，main 不复制完整旧实验包或旧报告。
 
-## 版本演进
+## 长期维护与历史快照
 
-早期应用连接资料导入、概念、出题、评分与复习。2026 年 7 月的小型真实 Hy3 操作记录保留在 Git 与 `issue-4-final` 发布中。
+`main` 是唯一长期开发主线。后续活动继续在同一仓库演进；短期分支合并后，确认没有独有提交、重要检查点已由固定快照保留，再移除分支。已完成的比赛版本通过 Git tag 与 GitHub Release 固定，不依靠长期分支。
 
-之后的实现以已确认课程、版本化计划和持续学习会话连接这些能力，增加正式证据、针对性补救与复习。普通建课收敛为资料、全局深度、可选重点与一次课程结构确认。
+| Tag                                                                                                                    | 固定提交  | 用途                                                           |
+| ---------------------------------------------------------------------------------------------------------------------- | --------- | -------------------------------------------------------------- |
+| [issue-4-final](https://github.com/Small-fish-QAQ/hy3-study-clinic/releases/tag/issue-4-final)                         | `c67ac6d` | 2026-07-31 实战交付，已发布 Release                            |
+| `pre-dogfood-complete`                                                                                                 | `e906937` | 早期功能与体验检查点，本地 tag                                 |
+| `post-red-team-correctness`                                                                                            | `9a78904` | 正确性修复检查点，本地 tag                                     |
+| `pre-dogfood-correctness`                                                                                              | `0407bb8` | 后续体验前的正确性检查点，本地 tag                             |
+| `pre-v2-upgrade`                                                                                                       | `e096066` | v2 升级前检查点，本地 tag                                      |
+| `pre-v2-implementation`                                                                                                | `b828ec1` | v2 实现前检查点，本地 tag                                      |
+| [task1-final-2026-09-14-r2](https://github.com/Small-fish-QAQ/hy3-study-clinic/releases/tag/task1-final-2026-09-14-r2) | `df7bbd0` | 2026-09-14 最终 Task 1 交付，已发布 Release 与完整产品审计归档 |
 
-2026-09-11 的演示记录了当时的学习流程。9 月 12 日的 v1.5 评估先发布机器结果和独立模型比较，随后纳入六份真实人类答卷，并公开 209 个冻结输入、279 次观察及其对应关系。曾暂时限制公开的数据已在该次完整发布中补齐；识别性人类文档元数据保持私有。
+五个本地检查点 tag 尚未发布到远端。当前两个正式证据包仍在 main；最终 Task 1 tag 同时固定了当时的完整产品、v1.5 历史材料、StudyEval v2.0 验证与 Candidate 23 运行。归档以 Git 快照中的实际文件为准；Release 附件中的产品审计 ZIP 不代替 v1.5 包。
 
-StudyEval v2.0 在冻结后完成新样本和保留人类案例验证，随后进行 9 月 14 日的 20 课产品运行。产品原目录名 `final-showcase` 和 Candidate 23 用于追溯这次运行；评估器原协议中的 Candidate 22 检查仍是另一版本的历史证据。
+## 历史实验与材料
 
-## 保留材料
+下表的原路径均位于 `task1-final-2026-09-14-r2`，固定提交为 `df7bbd04ee03fcbadaf3e790351a2f23c55fdc52`，发布入口为[最终 Task 1 Release](https://github.com/Small-fish-QAQ/hy3-study-clinic/releases/tag/task1-final-2026-09-14-r2)。它们不再作为当前结果的证据分母。
 
-| 材料                                                                                                                                               | 保留用途                                             |
-| -------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| [v1.5 评估结果](history/EVALUATION_RESULTS.md)、[原始证据包](../eval/final-evaluation/README.md)                                                   | 旧方法的全部样本、失败、基线与成本                   |
-| [原人类标注分析](history/HUMAN_VALIDATION.md)                                                                                                      | 原评分、分歧和元数据缺失；与当前 v2.0 的重新比较区分 |
-| [事后证据诊断](history/EVIDENCE_DIAGNOSTICS.md)                                                                                                    | 对旧结果的失败分解，不修改原分数                     |
-| [中期发布记录](history/interim-final-publication-audit.md)                                                                                         | 当时的暂缓公开与人类评分待完成状态                   |
-| [9 月 12 日完整发布记录](history/final-publication-audit.md)                                                                                       | 人类评分整合和完整公开                               |
-| [9 月 14 日交付记录](history/submission-audit-2026-09-14.md)                                                                                       | 原归档、截图、运行时与发布检查                       |
-| [7 月真实调用记录](evidence/hy3-online-verification.md)、[对应发布](https://github.com/Small-fish-QAQ/hy3-study-clinic/releases/tag/issue-4-final) | 较早版本的六项小样本操作                             |
+| 日期 / 版本                 | 历史材料                                                                                                                                                                                                                                                        | 当时的用途                                                           |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| 2026-09-12 / StudyEval v1.5 | [完整证据包](https://github.com/Small-fish-QAQ/hy3-study-clinic/tree/task1-final-2026-09-14-r2/eval/final-evaluation)、[评估报告](https://github.com/Small-fish-QAQ/hy3-study-clinic/blob/task1-final-2026-09-14-r2/docs/EVALUATION_RESULTS.md)                 | 209 个冻结输入、279 次观察、旧 evaluator、模型比较、失败、基线与成本 |
+| 2026-09-12 / 原人类评分     | [标注分析](https://github.com/Small-fish-QAQ/hy3-study-clinic/blob/task1-final-2026-09-14-r2/docs/HUMAN_VALIDATION.md)、[六份公开答卷及对应关系](https://github.com/Small-fish-QAQ/hy3-study-clinic/tree/task1-final-2026-09-14-r2/eval/final-evaluation/human) | 保留 68 条原评分、理由与分歧；与当前 v2.0 的重新比较区分             |
+| 2026-09-12 / 事后诊断       | [证据诊断](https://github.com/Small-fish-QAQ/hy3-study-clinic/blob/task1-final-2026-09-14-r2/docs/EVIDENCE_DIAGNOSTICS.md)                                                                                                                                      | 分解旧结果的失败，不修改原分数                                       |
+| 2026-09-12 / 中期发布       | [中期发布审计](https://github.com/Small-fish-QAQ/hy3-study-clinic/blob/task1-final-2026-09-14-r2/docs/evidence/interim-final-publication-audit.md)                                                                                                              | 当时的人类评分待完成、部分数据暂缓公开状态                           |
+| 2026-09-12 / 完整发布       | [最终发布审计](https://github.com/Small-fish-QAQ/hy3-study-clinic/blob/task1-final-2026-09-14-r2/docs/evidence/final-publication-audit.md)                                                                                                                      | 原人类评分整合、完整输入公开与隐私边界                               |
+| 2026-09-14 / Task 1 交付    | [交付审计](https://github.com/Small-fish-QAQ/hy3-study-clinic/blob/task1-final-2026-09-14-r2/docs/evidence/submission-audit-2026-09-14.md)                                                                                                                      | 当时的归档、截图、运行环境与发布检查                                 |
 
-7 月记录固定在 `46d34f2bdacb9dc0b1671bbb9e12cb33249161da`，早于当前课程准备与教学层。它不代表当前完整课程可用率，也不进入后续正式评估的分母。早期失败的小型新样本检查仍保持原结论。
+六份报告后来迁入 `docs/history/` 的版本，保留在已发布提交 [`98f01d7164b5b4efdcb5daeae4719328889e33c6`](https://github.com/Small-fish-QAQ/hy3-study-clinic/tree/98f01d7164b5b4efdcb5daeae4719328889e33c6/docs/history)。查原实验使用上表的 tag 与原路径；查文档迁移状态使用该 commit。
 
-## 早期文档与媒体检查
+[7 月真实调用摘要](evidence/hy3-online-verification.md)与 JSON 仍由当前公开证据测试共同核验，故留在 main。其运行固定于 `46d34f2bdacb9dc0b1671bbb9e12cb33249161da`，归属 [issue-4-final Release](https://github.com/Small-fish-QAQ/hy3-study-clinic/releases/tag/issue-4-final)，不代表当前完整课程可用率。
 
-以下为 2026-09-12（Asia/Shanghai）的历史检查记录，文档与媒体提交是 `c3939c4b35f92b9bb735b0b82abf6af6d3ee3706`，产品代码为 `325dfa1051c6efa8e5f5617955b34683d516c144`，环境为 Windows 与 Node.js 24.14.1。
+## 进入历史版本
 
-| 当时的检查                               | 记录结果                                     |
-| ---------------------------------------- | -------------------------------------------- |
-| 构建                                     | 通过，保留已有大体积前端 chunk 提示          |
-| lint                                     | 通过，保留已有一项 React Hook 依赖警告       |
-| 公开证据、源码卫生、配置和 Provider 测试 | 4 个文件、35 项通过                          |
-| Fake 结构评估                            | 50/50 项通过，没有真实模型请求               |
-| 隔离配置启动                             | 5173 页面、8787 API 与前端代理响应正常       |
-| 文档与媒体                               | 链接、锚点、格式、媒体哈希与敏感路径检查通过 |
-| 浏览器预览                               | 检查过桌面与手机宽度，图集、图片和 MP4 可用  |
+在仓库根目录为旧实验建立独立的工作树，避免覆盖当前未提交改动：
 
-原始视频当时完成了解码与哈希核对。这些记录描述那个提交的工程与展示检查，不是当前改动的测试结果，也不是学习效果证据。
+```bash
+git worktree add --detach ../hy3-study-clinic-task1-history task1-final-2026-09-14-r2
+cd ../hy3-study-clinic-task1-history
+```
 
-## 归档约定
+选择一个尚不存在的目录。若新克隆中没有该 tag，先运行 `git fetch origin tag task1-final-2026-09-14-r2`，再核对 `git rev-parse HEAD` 等于 `df7bbd04ee03fcbadaf3e790351a2f23c55fdc52`。随后遵循该版本自带的 [README](https://github.com/Small-fish-QAQ/hy3-study-clinic/blob/task1-final-2026-09-14-r2/eval/final-evaluation/README.md)、协议与 verifier；旧实验的命令和依赖不属于最新 main 的核验契约。
 
-历史报告保留原数字、分歧和结论。目录迁移只调整阅读链接，不能把不同版本的结果合并；人类评分原件、公开副本、冻结协议、模型输出和媒体来源继续保留在各自证据包中。
+历史报告、冻结协议、输入、输出与公开答卷保持原内容。当前 v2.0 已保留自己使用的人类评分规范化副本与映射；从原 DOCX 重新提取旧评分时使用上述历史工作树。冻结说明中的原研究路径和当时状态仅记录来源，不能据此把旧实验混入当前结果或重新评分。
 
-重新核对旧实验使用[历史复核命令](VERIFICATION.md#历史结果的复核)。阅读当前设计从[主报告](REPORT.md)开始。
+## 维护审计与暂缓事项
+
+2026-10-06 第一轮审计移除了已完全进入 main、且被最终 Task 1 tag 覆盖的 15 个本地分支（10 个 `claude/*`、3 个 `codex/*`、2 个 `feat/*`）。两个远端 `feat/*` 也被 `issue-4-final` 覆盖，没有 PR、未完成 CI 或保护规则，已移除。第二轮核对旧包全部 594 个文件与最终 tag 逐字节一致后，移除了 main 中的 v1.5 副本及六份旧报告，历史入口集中于本页。
+
+`backup/ui-proof-identity` 保留，独有提交 `da38455` 尚未被 tag 覆盖。它主要是旧视觉主题、品牌图片与 Manrope 字体；其中 Escape 菜单修复已在 main 的 `b6cd73e` 独立移植并扩大测试。建议不整包合并；若希望长期保留设计实验，可经人工决定另建 archive tag 后处理分支。本次不创建 tag 或删除该分支。
+
+已有 detached worktree、仓库外研究材料和被忽略的 `eval/reports/eval-hy3.*` 暂缓清理，尚未证明其独有内容已有可靠归档。本次未改动 tag、Release 或提交历史。

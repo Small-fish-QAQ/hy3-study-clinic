@@ -2,13 +2,13 @@ name: CI
 
 on:
   push:
-    branches: [main, 'feat/**']
+    branches: [main]
   pull_request:
     branches: [main]
 
 jobs:
   verify:
-    name: verify (${{ matrix.os }}, node ${{ matrix.node }})
+    name: Software quality (${{ matrix.os }}, Node ${{ matrix.node }})
     strategy:
       fail-fast: false
       matrix:
@@ -34,8 +34,18 @@ jobs:
         run: npm run lint
       - name: Test
         run: npm test
-      - name: Verify frozen evaluation evidence
-        run: |
-          node eval/studyeval-validation/scripts/verify.mjs
-          node eval/final-showcase/publication/verify.mjs
-          node --test eval/studyeval/test/*.test.mjs
+      - name: Test StudyEval evaluator
+        run: node --test eval/studyeval/test/*.test.mjs
+
+  evidence-verification:
+    name: Evidence verification
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Verify StudyEval v2.0 evidence
+        run: node eval/studyeval-validation/scripts/verify.mjs
+      - name: Verify Candidate 23 product evidence
+        run: node eval/final-showcase/publication/verify.mjs

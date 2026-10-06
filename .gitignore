@@ -153,6 +153,11 @@ data/
 # Generated evaluation reports (regenerate with npm run eval:fake / eval:hy3)
 eval/reports/
 
+# Python caches from evidence verification and figure tooling
+__pycache__/
+*.pyc
+*.pyo
+
 # Local AI-agent instructions
 AGENTS.md
 CLAUDE.md

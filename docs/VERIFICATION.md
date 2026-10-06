@@ -62,6 +62,7 @@ npm run build
 npm run lint
 npm test
 npm run eval:fake
+git status --short --branch
 git diff --check
 ```
 
@@ -70,6 +71,18 @@ git diff --check
 `eval:fake` 要求 `VISUAL_PROVIDER` 未设置或为 `disabled`。如需覆盖终端变量，PowerShell 使用 `$env:VISUAL_PROVIDER = 'disabled'`，macOS / Linux 使用 `VISUAL_PROVIDER=disabled npm run eval:fake`。
 
 [CI](../.github/workflows/ci.yml)覆盖 Linux Node 20/24 与 Windows Node 24，并校验冻结证据。首页徽章显示远端状态，尚未推送的改动以本地检查为准。历史检查通过记录见[历史索引](HISTORY.md)，不代表当前检出已自动重新通过全部测试。
+
+如果本地完整测试出现 Vitest worker 的 `Timeout calling "onTaskUpdate"`，先核对是否还有断言失败。可在 PowerShell 中限制 worker 并发，再运行完整 `npm test`；测试范围和断言保持原样：
+
+```powershell
+$env:VITEST_MAX_FORKS = '4'
+$env:VITEST_MIN_FORKS = '1'
+$env:VITEST_MAX_THREADS = '4'
+$env:VITEST_MIN_THREADS = '1'
+npm test
+```
+
+这些变量只对当前终端及其子进程生效。记录复测结果时同时说明首次失败与并发设置，不能把带 worker 错误的运行计为通过。
 
 ## 按模块检查实现
 
@@ -105,18 +118,17 @@ git diff --check
 
 冻结证据和媒体清单不做批量格式化。`docs/evidence/hy3-online-verification.md` 由 JSON 与生成器精确对应，保留原格式；展示媒体的来源与哈希保留在相应 manifest 中。
 
+维护清理前，按[数据分类](../eval/README.md#数据保留与归档)检查文档、源码、测试、CI、verifier 导入和哈希清单中的引用。当前正式核验依赖的文件继续原位保留；只属于历史版本的数据，在证明完整快照可恢复并更新导航后，可以退出 main。`docs/evidence/` 中的 7 月 JSON 与 Markdown 仍受当前公开证据测试约束，不能作为普通旧文档搬走。
+
+整理后运行全部标准检查、两个当前 verifier、CI 中的 `node --test eval/studyeval/test/*.test.mjs`、Fake 评估与离线烟测。核对相对路径、Markdown 锚点、媒体哈希、报告数字与 Git 跟踪文件，确认没有意外删除；历史 tag 的对象和提交指向、Release 正文与附件都应保持不变。若迁移当前证据，另需比较迁移前后的 verifier 输出和文件完整性。
+
 ## 历史结果的复核
 
-2026-09-12 的 v1.5 原始数据使用另一组校验器：
+2026-09-12 的 v1.5 包与旧发布审计已退出当前 main，完整材料保留在 `task1-final-2026-09-14-r2`（`df7bbd0`）和[对应 Release](https://github.com/Small-fish-QAQ/hy3-study-clinic/releases/tag/task1-final-2026-09-14-r2)。
 
-```bash
-node eval/final-evaluation/scripts/verify-publication.mjs
-python eval/final-evaluation/scripts/verify-human.py
-```
+按[历史检出步骤](HISTORY.md#进入历史版本)进入独立的历史工作树，再遵循该版本自带的 [README](https://github.com/Small-fish-QAQ/hy3-study-clinic/blob/task1-final-2026-09-14-r2/eval/final-evaluation/README.md)与执行协议使用其校验器。该版本公开全部 209 个冻结输入、279 次观察和六份匿名人类答卷，保留原分数、分歧与公开边界。
 
-前者重算原始输入与观察关联、机器指标、长度基线、产品可用率和成本。后者从六份 DOCX 公开副本读取 68 条人类评分及理由，重建配对和模型比较；二者使用标准库，不发起模型请求。公开副本保留答案内容，排除了识别性文档元数据。
-
-这些命令核验旧实验，不替代当前 v2.0 的结果。历史说明与发布记录从[历史索引](HISTORY.md)进入。
+最新 main 的核验职责是当前 StudyEval v2.0、Candidate 23、产品测试和固定 Fake 流程。旧实验的命令与依赖属于对应历史版本，不要求它们持续在最新 main 下运行；历史路径和发布材料从[历史索引](HISTORY.md)进入。
 
 ## 新的模型实验与发布
 
