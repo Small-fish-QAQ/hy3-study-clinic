@@ -1104,9 +1104,10 @@ export function createStudySessionService({
       now.toISOString(),
     );
     if (!claim)
-      throw operationFailure(
+      throw new AppError(
+        ApiErrorCode.VersionConflict,
         'This StudySession command is already in progress.',
-        created.operation.id,
+        { operationId: created.operation.id, operationPending: true },
       );
 
     try {
@@ -1412,6 +1413,27 @@ export function createStudySessionService({
                 ApiErrorCode.ValidationError,
                 'Completed StudyPlan work cannot be deferred.',
               );
+            }
+            if (
+              target.state === 'deferred' &&
+              (!target.linkedPlanItemId || linkedProgress?.state === 'deferred')
+            ) {
+              const response = MixedInitiativeCommandResponseSchema.parse({
+                session: current,
+                agenda: currentAgenda,
+                effect: {
+                  kind: parsed.kind,
+                  affectedAgendaItemId: current.currentAgendaItemId,
+                  planChangeRequest: null,
+                },
+              });
+              const finalized = repos.operations.finalize(
+                { operationId: claim.id, status: 'completed', payload: response, createdAt: at },
+                owner,
+                claim.fencingToken,
+              );
+              if (!finalized) throw new Error('StudySession command lost its operation lease.');
+              return response;
             }
             const deferredItems = currentAgenda.items.map((item) =>
               item.id === target.id ? { ...item, state: 'deferred' as const } : item,

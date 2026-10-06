@@ -2,6 +2,8 @@ import { createHash } from 'node:crypto';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   ApiErrorCode,
+  fnv1a32,
+  MixedInitiativeCommandRequestSchema,
   type LearningContractDraftFields,
   type LessonExecutionCommandRequest,
 } from '@hy3-clinic/shared';
@@ -4509,7 +4511,360 @@ async function failedPracticeHarness() {
   return { harness, route, brief, get, act };
 }
 
+function recoveryAuthorityDigest(db: SqliteDb) {
+  const tables = [
+    'formal_evidence_records',
+    'assessment_evidence_records',
+    'assessment_grade_records',
+    'assessment_progression_reconciliations',
+    'progression_decisions',
+    'progression_reconciliations',
+    'learning_unit_progress',
+    'mastery_states',
+    'goal_outcomes',
+    'grading_results',
+    'submissions',
+    'mistakes',
+    'repair_episodes',
+    'repair_packets',
+    'repair_practice_events',
+    'repair_status_events',
+    'review_items',
+    'review_targets',
+    'review_executions',
+  ];
+  return Object.fromEntries(
+    tables.map((table) => [
+      table,
+      db
+        .prepare(`SELECT * FROM ${table}`)
+        .all()
+        .map((row) => JSON.stringify(row))
+        .sort(),
+    ]),
+  );
+}
+
 describe('Post-Practice recovery', () => {
+  it('persists a fast Repair failure, rejects the stale version, and permits an explicit latest-version retry without Formal consequences', async () => {
+    const { harness, route, get, act, brief } = await failedPracticeHarness();
+    const before = get();
+    const authorityBefore = recoveryAuthorityDigest(harness.db);
+    const author = harness.provider.generatePracticeRepair.bind(harness.provider);
+    let calls = 0;
+    harness.provider.generatePracticeRepair = async () => {
+      calls++;
+      throw ProviderError.network();
+    };
+    await expect(
+      act({ kind: 'prepare_practice_repair', learnerNote: 'My accepted reasoning.' }),
+    ).rejects.toMatchObject({ code: 'PROVIDER_ERROR' });
+    const failed = get();
+    expect(failed.progress!.stateVersion).toBeGreaterThan(before.progress!.stateVersion);
+    expect(failed.practice?.recovery).toMatchObject({
+      phase: 'diagnosis',
+      learnerNote: 'My accepted reasoning.',
+    });
+    expect(failed.allowedActions).toContain('prepare_practice_repair');
+    expect(failed.practice?.completedAt).toBeNull();
+    expect(failed.lesson).toEqual(before.lesson);
+    expect(harness.repos.teachingBriefs.get(brief.id)).toEqual(brief);
+    expect(
+      harness.repos.sessionAgendas
+        .get(route.agenda.id)!
+        .items.find((item) => item.id === route.agendaItem.id)!.state,
+    ).not.toBe('completed');
+    await expect(
+      harness.services.lessonExecution.command('ws_1', route.session.id, {
+        command: command('stale-failed-repair'),
+        expectedSessionVersion: failed.session.version,
+        expectedAgendaVersion: failed.agenda!.version,
+        expectedAgendaItemId: route.agendaItem.id,
+        expectedLessonStateVersion: before.progress!.stateVersion,
+        action: { kind: 'prepare_practice_repair', learnerNote: 'My accepted reasoning.' },
+      }),
+    ).rejects.toMatchObject({ code: 'VERSION_CONFLICT' });
+    expect(calls).toBe(1);
+    expect(recoveryAuthorityDigest(harness.db)).toEqual(authorityBefore);
+    harness.provider.generatePracticeRepair = author;
+    await act({ kind: 'prepare_practice_repair', learnerNote: 'My accepted reasoning.' });
+    expect(get().practice?.recovery?.phase).toBe('repair');
+    expect(get().practice?.completedAt).toBeNull();
+    expect(get().lesson).toEqual(before.lesson);
+    expect(recoveryAuthorityDigest(harness.db)).toEqual(authorityBefore);
+  });
+
+  it('reports a held defer command lease as unresolved without mutating its learning route', async () => {
+    const { harness, route, get } = await failedPracticeHarness();
+    const before = harness.services.studySessions.detail('ws_1', route.session.id);
+    const progress = harness.repos.studyPlans.listProgress(harness.planId);
+    const risks = harness.repos.coverageRisks.list('ws_1', route.session.contractVersionId);
+    const input = MixedInitiativeCommandRequestSchema.parse({
+      commandId: 'leased-defer-command',
+      expectedSessionVersion: get().session.version,
+      kind: 'defer',
+      targetAgendaItemId: route.agendaItem.id,
+      reason: 'Postpone this unfinished teaching item.',
+    });
+    const identity = `study-command:${route.session.id}:${input.commandId}`;
+    const at = clock.now();
+    const { operation } = harness.repos.operations.createOrGet({
+      id: 'leased-defer-operation',
+      workspaceId: 'ws_1',
+      commandId: identity,
+      idempotencyKey: identity,
+      logicalOperationId: identity,
+      operationType: 'study_session_command',
+      studySessionId: route.session.id,
+      expectedFingerprint: fnv1a32(JSON.stringify({ sessionId: route.session.id, ...input }))
+        .toString(16)
+        .padStart(8, '0'),
+      createdAt: at.toISOString(),
+      updatedAt: at.toISOString(),
+    });
+    expect(
+      harness.repos.operations.claim(
+        operation.id,
+        'original-defer-worker',
+        new Date(at.getTime() + 60_000).toISOString(),
+        at.toISOString(),
+      ),
+    ).toBeTruthy();
+    expect(() => harness.services.studySessions.command('ws_1', route.session.id, input)).toThrow(
+      expect.objectContaining({
+        code: 'VERSION_CONFLICT',
+        details: { operationId: operation.id, operationPending: true },
+      }),
+    );
+    expect(harness.repos.operations.getResult(operation.id)).toBeUndefined();
+    expect(harness.services.studySessions.detail('ws_1', route.session.id)).toEqual(before);
+    expect(harness.repos.studyPlans.listProgress(harness.planId)).toEqual(progress);
+    expect(harness.repos.coverageRisks.list('ws_1', route.session.contractVersionId)).toEqual(
+      risks,
+    );
+  });
+
+  it('explicitly defers the failed current teaching item and its linked Plan item, replays idempotently, and retains content and the incomplete unit', async () => {
+    const { harness, route, get, act, brief } = await failedPracticeHarness();
+    const authorityBefore = recoveryAuthorityDigest(harness.db);
+    const acceptedPlan = harness.repos.studyPlans.get(harness.planId);
+    const progressBefore = harness.repos.studyPlans.listProgress(harness.planId);
+    const risksBefore = harness.repos.coverageRisks.list('ws_1', route.session.contractVersionId);
+    harness.provider.generatePracticeRepair = async () => {
+      throw ProviderError.network();
+    };
+    await expect(
+      act({ kind: 'prepare_practice_repair', learnerNote: 'Keep my reasoning.' }),
+    ).rejects.toMatchObject({ code: 'PROVIDER_ERROR' });
+    const stateBeforeDefer = harness.repos.lessonExecution.getForSession(
+      route.session.id,
+      route.agendaItem.id,
+    )!;
+    const input = {
+      commandId: 'explicit-failed-practice-defer',
+      expectedSessionVersion: get().session.version,
+      kind: 'defer',
+      targetAgendaItemId: route.agendaItem.id,
+      reason: '延期本节内容，保留缺口',
+    };
+    const result = harness.services.studySessions.command('ws_1', route.session.id, input);
+    expect(result.agenda.items.find((item) => item.id === route.agendaItem.id)!.state).toBe(
+      'deferred',
+    );
+    const authoritative = harness.services.studySessions.detail('ws_1', route.session.id);
+    expect(authoritative.session).toEqual(result.session);
+    expect(authoritative.agenda).toEqual(result.agenda);
+    expect(result.session.currentAgendaItemId).not.toBe(route.agendaItem.id);
+    const planProgress = harness.repos.studyPlans.listProgress(harness.planId);
+    expect(
+      planProgress.find((item) => item.planItemId === route.agendaItem.linkedPlanItemId)!.state,
+    ).toBe('deferred');
+    expect(
+      planProgress.filter((item) => item.planItemId !== route.agendaItem.linkedPlanItemId),
+    ).toEqual(
+      progressBefore.filter((item) => item.planItemId !== route.agendaItem.linkedPlanItemId),
+    );
+    const risks = harness.repos.coverageRisks.list('ws_1', route.session.contractVersionId);
+    expect(risks).toHaveLength(risksBefore.length + 1);
+    expect(risks.find((risk) => risk.learnerDecisionId === input.commandId)).toMatchObject({
+      status: 'deferred',
+      facets: ['intentionally_deferred'],
+      referencedCurriculumNodeIds: [route.agendaItem.learningUnitId],
+      referencedEvidenceIds: [],
+    });
+    const events = harness.db
+      .prepare(
+        "SELECT payload FROM session_agenda_events WHERE agenda_id = ? AND event_type = 'agenda_item_deferred'",
+      )
+      .all(route.agenda.id) as Array<{ payload: string }>;
+    expect(events).toHaveLength(1);
+    expect(JSON.parse(events[0]!.payload)).toMatchObject({
+      agendaItemId: route.agendaItem.id,
+      planItemId: route.agendaItem.linkedPlanItemId,
+    });
+    expect(harness.services.studySessions.command('ws_1', route.session.id, input)).toEqual(result);
+    expect(
+      harness.services.studySessions.command('ws_1', route.session.id, {
+        ...input,
+        commandId: 'repeat-failed-practice-defer',
+        expectedSessionVersion: result.session.version,
+      }),
+    ).toEqual(result);
+    expect(harness.repos.studySessions.get(route.session.id)).toEqual(result.session);
+    expect(harness.repos.sessionAgendas.get(route.agenda.id)).toEqual(result.agenda);
+    expect(harness.repos.coverageRisks.list('ws_1', route.session.contractVersionId)).toEqual(
+      risks,
+    );
+    expect(
+      harness.db
+        .prepare(
+          "SELECT count(*) AS n FROM session_agenda_events WHERE agenda_id = ? AND event_type = 'agenda_item_deferred'",
+        )
+        .get(route.agenda.id),
+    ).toEqual({ n: 1 });
+    expect(
+      harness.db
+        .prepare(
+          "SELECT count(*) AS n FROM coverage_risk_events WHERE risk_id = ? AND event_type = 'learner_deferred'",
+        )
+        .get(risks.find((risk) => risk.learnerDecisionId === input.commandId)!.id),
+    ).toEqual({ n: 1 });
+    expect(harness.repos.studyPlans.listProgress(harness.planId)).toEqual(planProgress);
+    expect(harness.repos.lessonExecution.get(stateBeforeDefer.id)).toEqual(stateBeforeDefer);
+    expect(stateBeforeDefer.practiceCompletedAt).toBeNull();
+    expect(harness.repos.teachingBriefs.get(brief.id)).toEqual(brief);
+    expect(harness.repos.studyPlans.get(harness.planId)).toEqual(acceptedPlan);
+    const unit = harness.services.courseLearningProgress
+      .get('ws_1')
+      .units.find((item) => item.id === route.agendaItem.learningUnitId)!;
+    expect(unit.teachingCompleted).toBe(0);
+    expect(unit.formalState).not.toBe('complete');
+    expect(recoveryAuthorityDigest(harness.db)).toEqual(authorityBefore);
+    expect(
+      harness.services.courseOverview
+        .get('ws_1')
+        .riskSummary.highlights.some((issue) => issue.category === 'intentional_deferral'),
+    ).toBe(true);
+  });
+
+  it('replays a historical defer receipt after the live route advances without repeating domain writes', async () => {
+    const { harness, route, get, brief } = await failedPracticeHarness();
+    const authorityBefore = recoveryAuthorityDigest(harness.db);
+    const lessonBefore = harness.repos.lessonExecution.getForSession(
+      route.session.id,
+      route.agendaItem.id,
+    )!;
+    const input = {
+      commandId: 'historical-defer-replay',
+      expectedSessionVersion: get().session.version,
+      kind: 'defer',
+      targetAgendaItemId: route.agendaItem.id,
+      reason: 'Keep the original defer input unchanged.',
+    };
+    const receipt = harness.services.studySessions.command('ws_1', route.session.id, input);
+    const nextTarget = receipt.agenda.items.find(
+      (item) =>
+        item.id !== route.agendaItem.id &&
+        !['completed', 'deferred', 'cancelled'].includes(item.state),
+    );
+    expect(nextTarget).toBeDefined();
+    harness.services.studySessions.command('ws_1', route.session.id, {
+      commandId: 'another-intended-defer',
+      expectedSessionVersion: receipt.session.version,
+      kind: 'defer',
+      targetAgendaItemId: nextTarget!.id,
+      reason: 'A separate learner action advances the live route.',
+    });
+    const live = harness.services.studySessions.detail('ws_1', route.session.id);
+    expect(live.session.version).toBeGreaterThan(receipt.session.version);
+    expect(live.agenda.version).toBeGreaterThan(receipt.agenda.version);
+    const risks = harness.repos.coverageRisks.list('ws_1', route.session.contractVersionId);
+    const progress = harness.repos.studyPlans.listProgress(harness.planId);
+    const events = harness.db
+      .prepare(
+        "SELECT * FROM session_agenda_events WHERE agenda_id = ? AND event_type = 'agenda_item_deferred'",
+      )
+      .all(route.agenda.id);
+    const riskEvents = harness.db
+      .prepare("SELECT * FROM coverage_risk_events WHERE event_type = 'learner_deferred'")
+      .all();
+    expect(events).toHaveLength(2);
+    expect(riskEvents).toHaveLength(2);
+    expect(risks.filter((risk) => risk.learnerDecisionId === input.commandId)).toHaveLength(1);
+    expect(harness.services.studySessions.command('ws_1', route.session.id, input)).toEqual(
+      receipt,
+    );
+    expect(harness.services.studySessions.detail('ws_1', route.session.id)).toEqual(live);
+    expect(harness.repos.studyPlans.listProgress(harness.planId)).toEqual(progress);
+    expect(harness.repos.coverageRisks.list('ws_1', route.session.contractVersionId)).toEqual(
+      risks,
+    );
+    expect(
+      harness.db
+        .prepare(
+          "SELECT * FROM session_agenda_events WHERE agenda_id = ? AND event_type = 'agenda_item_deferred'",
+        )
+        .all(route.agenda.id),
+    ).toEqual(events);
+    expect(
+      harness.db
+        .prepare("SELECT * FROM coverage_risk_events WHERE event_type = 'learner_deferred'")
+        .all(),
+    ).toEqual(riskEvents);
+    expect(
+      harness.db
+        .prepare(
+          'SELECT count(*) AS n FROM agent_operations WHERE workspace_id = ? AND command_id = ?',
+        )
+        .get('ws_1', `study-command:${route.session.id}:${input.commandId}`),
+    ).toEqual({ n: 1 });
+    expect(harness.repos.lessonExecution.get(lessonBefore.id)).toEqual(lessonBefore);
+    expect(harness.repos.teachingBriefs.get(brief.id)).toEqual(brief);
+    expect(recoveryAuthorityDigest(harness.db)).toEqual(authorityBefore);
+  });
+
+  it('permits explicit defer while a Repair result is unknown and rejects the running worker when it returns late', async () => {
+    const { harness, route, get, act, brief } = await failedPracticeHarness();
+    const started = deferred<void>();
+    const gate = deferred<void>();
+    const author = harness.provider.generatePracticeRepair.bind(harness.provider);
+    let calls = 0;
+    harness.provider.generatePracticeRepair = async (...args) => {
+      calls++;
+      started.resolve(undefined);
+      await gate.promise;
+      return author(...args);
+    };
+    const authorityBefore = recoveryAuthorityDigest(harness.db);
+    const pending = act({
+      kind: 'prepare_practice_repair',
+      learnerNote: 'The network result is unknown.',
+    });
+    await started.promise;
+    expect(get().practice?.recovery?.phase).toBe('preparing');
+    const preparingState = harness.repos.lessonExecution.getForSession(
+      route.session.id,
+      route.agendaItem.id,
+    )!;
+    const result = harness.services.studySessions.command('ws_1', route.session.id, {
+      commandId: 'defer-running-practice-repair',
+      expectedSessionVersion: get().session.version,
+      kind: 'defer',
+      targetAgendaItemId: route.agendaItem.id,
+      reason: 'Explicitly postpone while preserving the gap.',
+    });
+    expect(result.agenda.items.find((item) => item.id === route.agendaItem.id)!.state).toBe(
+      'deferred',
+    );
+    gate.resolve(undefined);
+    await expect(pending).rejects.toMatchObject({ code: 'VERSION_CONFLICT' });
+    expect(calls).toBe(1);
+    expect(harness.repos.lessonExecution.get(preparingState.id)).toEqual(preparingState);
+    expect(preparingState.practiceCompletedAt).toBeNull();
+    expect(harness.repos.teachingBriefs.get(brief.id)).toEqual(brief);
+    expect(recoveryAuthorityDigest(harness.db)).toEqual(authorityBefore);
+  });
+
   it('corrects one independently rejected repair within the same preparation without granting credit', async () => {
     const { harness, get, act } = await failedPracticeHarness();
     const author = harness.provider.generatePracticeRepair.bind(harness.provider);

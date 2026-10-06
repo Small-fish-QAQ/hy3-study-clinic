@@ -13,7 +13,8 @@ import {
   type TutorTurnMetadata,
   type TutorStudyAnchor,
 } from '@hy3-clinic/shared';
-import { api } from '../api.js';
+import { api, ApiClientError } from '../api.js';
+import { formatAppHash } from '../appRoutes.js';
 import { Banner, Loading } from '../components/ui.js';
 import { useAsyncAction } from '../components/useAsyncAction.js';
 import { LessonExecutionPanel } from '../components/LessonExecutionPanel.js';
@@ -21,6 +22,12 @@ import { StudyTutorSurface } from '../components/StudyTutorSurface.js';
 import { StudyInspector, type StudyInspectorTab } from './StudyInspector.js';
 
 const INSPECTOR_MODAL_QUERY = '(max-width: 1279px)';
+
+interface PendingDeferRequest {
+  readonly workspaceId: string;
+  readonly sessionId: string;
+  readonly input: Readonly<MixedInitiativeCommandRequest>;
+}
 
 /** A compact toolbar disclosure; session actions retain their existing owners. */
 function StudySessionTools({
@@ -197,6 +204,8 @@ export function StudySessionView({
   const [formalAssessmentVersionId, setFormalAssessmentVersionId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [deferNeedsReconciliation, setDeferNeedsReconciliation] = useState(false);
+  const pendingDefer = useRef<PendingDeferRequest | null>(null);
   const [composer, setComposer] = useState('');
   const [tutorOpen, setTutorOpen] = useState(false);
   const [studyAnchor, setStudyAnchor] = useState<TutorStudyAnchor | null>(null);
@@ -232,17 +241,21 @@ export function StudySessionView({
   const inspectorOpenRef = useRef(inspectorOpen);
   inspectorOpenRef.current = inspectorOpen;
   const action = useAsyncAction();
+  const cancelSessionAction = action.cancel;
+  const clearSessionError = action.clearError;
   const routeContractVersionId = route?.contractVersionId;
   const routeCurriculumVersionId = route?.curriculumVersionId;
   const routeStudyPlanVersionId = route?.studyPlanVersionId;
   const routeSessionAgendaId = route?.sessionAgendaId;
   const routeExecutionVersion = route?.executionVersion;
   const currentSessionId = detail?.session.id;
+  const currentAgendaItemId = detail?.session.currentAgendaItemId;
   const restoringTutor =
     !tutorLoading &&
     Boolean(detail?.turns.some((turn) => turn.status === 'running' || turn.status === 'queued'));
   const busy =
     action.loading ||
+    deferNeedsReconciliation ||
     tutorLoading ||
     tutorReconciling ||
     restoringTutor ||
@@ -357,10 +370,15 @@ export function StudySessionView({
   }
 
   const loadSession = useCallback(
-    async (targetWorkspaceId: string, sessionId: string, signal: AbortSignal) => {
+    async (
+      targetWorkspaceId: string,
+      sessionId: string,
+      signal: AbortSignal,
+    ): Promise<StudySessionDetailResponse | null> => {
       const requestEpoch = ++epoch.current;
       setLoading(true);
       setLoadError(null);
+      let authoritative: StudySessionDetailResponse | null = null;
       try {
         let next = await api.getStudySession(targetWorkspaceId, sessionId, signal);
         const loadedSessionVersion = next.session.version;
@@ -387,7 +405,7 @@ export function StudySessionView({
             },
             signal,
           );
-          if (signal.aborted || requestEpoch !== epoch.current) return;
+          if (signal.aborted || requestEpoch !== epoch.current) return null;
           next = await api.getStudySession(targetWorkspaceId, sessionId, signal);
           if (
             !signal.aborted &&
@@ -400,6 +418,7 @@ export function StudySessionView({
         }
         if (!signal.aborted && requestEpoch === epoch.current) {
           setDetail(next);
+          authoritative = next;
           setFormalAssessmentVersionId(null);
           const currentItem = next.agenda.items.find(
             (item) => item.id === next.session.currentAgendaItemId,
@@ -420,6 +439,7 @@ export function StudySessionView({
             if (!signal.aborted && requestEpoch === epoch.current)
               setFormalAssessmentVersionId(version?.id ?? null);
           }
+          if (!signal.aborted && requestEpoch === epoch.current) return next;
         }
       } catch (error) {
         if (!signal.aborted && requestEpoch === epoch.current) {
@@ -428,6 +448,7 @@ export function StudySessionView({
       } finally {
         if (!signal.aborted && requestEpoch === epoch.current) setLoading(false);
       }
+      return !signal.aborted && requestEpoch === epoch.current ? authoritative : null;
     },
     [
       routeContractVersionId,
@@ -441,6 +462,9 @@ export function StudySessionView({
   useEffect(() => {
     const controller = new AbortController();
     const requestEpoch = ++epoch.current;
+    cancelSessionAction();
+    pendingDefer.current = null;
+    setDeferNeedsReconciliation(false);
     const inspectorWasOpen = inspectorOpenRef.current;
     setFormalAssessmentVersionId(null);
     tutorEpoch.current += 1;
@@ -497,12 +521,14 @@ export function StudySessionView({
       });
     return () => {
       controller.abort();
+      pendingDefer.current = null;
       epoch.current += 1;
       tutorEpoch.current += 1;
       tutorController.current?.abort();
       tutorController.current = null;
     };
   }, [
+    cancelSessionAction,
     loadSession,
     routeContractVersionId,
     routeCurriculumVersionId,
@@ -572,12 +598,39 @@ export function StudySessionView({
     onSessionChanged?.();
   }
 
-  const refreshCurrentSession = useCallback(() => {
-    if (!workspaceId || !currentSessionId) return;
-    void loadSession(workspaceId, currentSessionId, new AbortController().signal).then(() => {
+  const confirmDefer = useCallback(
+    (
+      next: Pick<StudySessionDetailResponse, 'session' | 'agenda'>,
+      request = pendingDefer.current,
+    ) => {
+      if (
+        !request ||
+        pendingDefer.current !== request ||
+        next.session.id !== request.sessionId ||
+        next.session.workspaceId !== request.workspaceId ||
+        next.agenda.items.find((item) => item.id === request.input.targetAgendaItemId)?.state !==
+          'deferred'
+      )
+        return false;
+      pendingDefer.current = null;
+      setDeferNeedsReconciliation(false);
+      setLessonProjection(null);
+      clearSessionError();
+      return true;
+    },
+    [clearSessionError],
+  );
+
+  const refreshCurrentSession = useCallback(async () => {
+    if (!workspaceId || !currentSessionId) return null;
+    const next = await loadSession(workspaceId, currentSessionId, new AbortController().signal);
+    if (next) {
+      if (next.session.currentAgendaItemId !== currentAgendaItemId) setLessonProjection(null);
+      confirmDefer(next);
       sessionChangedRef.current?.();
-    });
-  }, [currentSessionId, loadSession, workspaceId]);
+    }
+    return next;
+  }, [confirmDefer, currentAgendaItemId, currentSessionId, loadSession, workspaceId]);
 
   const updateLessonProjection = useCallback((projection: LessonExecutionProjection) => {
     setLessonProjection(projection);
@@ -856,6 +909,10 @@ export function StudySessionView({
     kind: MixedInitiativeCommandRequest['kind'],
     targetAgendaItemId = detail?.session.currentAgendaItemId ?? null,
   ): Promise<void> {
+    if (kind === 'defer') {
+      await deferAgendaItem(targetAgendaItemId);
+      return;
+    }
     if (!workspaceId || !detail || detail.session.status !== 'active') return;
     const reason = window.prompt(commandPrompt(kind))?.trim();
     if (!reason) return;
@@ -865,6 +922,7 @@ export function StudySessionView({
     const currentLearningUnitId = detail.agenda.items.find(
       (item) => item.id === targetAgendaItemId,
     )?.learningUnitId;
+    const requestEpoch = epoch.current;
     const response = await action.run((signal) =>
       api.studySessionCommand(
         workspaceId,
@@ -882,7 +940,7 @@ export function StudySessionView({
         signal,
       ),
     );
-    if (!response) return;
+    if (!response || requestEpoch !== epoch.current) return;
     replaceSession(response.session, response.agenda);
     if (kind !== 'direct_checkpoint' || !targetAgendaItemId) return;
     const launchCommandId = commandId('launch_direct_checkpoint');
@@ -915,6 +973,98 @@ export function StudySessionView({
         setFormalAssessmentVersionId(launched.formalAssessmentVersionId);
       else onLaunchQuiz?.(launched.quiz);
     }
+  }
+
+  async function deferAgendaItem(targetAgendaItemId: string | null): Promise<void> {
+    if (!workspaceId || !detail || detail.session.status !== 'active' || action.loading) return;
+    let request = pendingDefer.current;
+    const retrying = request !== null;
+    if (request) {
+      if (
+        request.workspaceId !== workspaceId ||
+        request.sessionId !== detail.session.id ||
+        request.input.targetAgendaItemId !== targetAgendaItemId
+      )
+        return;
+    } else {
+      const reason = window.prompt(commandPrompt('defer'))?.trim();
+      if (!reason || !targetAgendaItemId) return;
+      request = {
+        workspaceId,
+        sessionId: detail.session.id,
+        input: {
+          commandId: commandId('session_defer'),
+          expectedSessionVersion: detail.session.version,
+          kind: 'defer',
+          targetAgendaItemId,
+          targetLearningUnitId: null,
+          reason,
+        },
+      };
+      pendingDefer.current = request;
+    }
+    const retained = request;
+    const requestEpoch = epoch.current;
+    const response = await action.run(async (signal) => {
+      try {
+        const next = await api.studySessionCommand(
+          retained.workspaceId,
+          retained.sessionId,
+          retained.input,
+          signal,
+        );
+        if (signal.aborted || pendingDefer.current !== retained) return null;
+        // A retry may replay a receipt for an older route. Only a live Session
+        // read can supply the binding after an uncertain defer.
+        if (!retrying && requestEpoch === epoch.current) return next;
+      } catch (cause) {
+        if (signal.aborted || pendingDefer.current !== retained) return null;
+        const indeterminate =
+          !(cause instanceof ApiClientError) ||
+          ['NETWORK_ERROR', 'ABORTED', 'INTERNAL'].includes(cause.code) ||
+          (cause.code === 'VERSION_CONFLICT' &&
+            typeof cause.details === 'object' &&
+            cause.details !== null &&
+            'operationPending' in cause.details &&
+            cause.details.operationPending === true);
+        if (!indeterminate) {
+          if (cause.code === 'VERSION_CONFLICT') {
+            const next = await loadSession(retained.workspaceId, retained.sessionId, signal);
+            if (
+              next?.agenda.items.find((item) => item.id === retained.input.targetAgendaItemId)
+                ?.state === 'deferred'
+            )
+              return next;
+          }
+          if (signal.aborted || pendingDefer.current !== retained) return null;
+          pendingDefer.current = null;
+          setDeferNeedsReconciliation(false);
+          throw cause;
+        }
+      }
+      setDeferNeedsReconciliation(true);
+      const next = await loadSession(retained.workspaceId, retained.sessionId, signal);
+      if (signal.aborted || pendingDefer.current !== retained) return null;
+      if (
+        next?.agenda.items.find((item) => item.id === retained.input.targetAgendaItemId)?.state ===
+        'deferred'
+      )
+        return next;
+      throw new Error('延期结果尚未确认。本节仍未完成，请重新读取延期状态或重试同一请求。');
+    });
+    if (!response || pendingDefer.current !== retained) return;
+    replaceSession(response.session, response.agenda);
+    if ('effect' in response) setFormalAssessmentVersionId(null);
+    confirmDefer(response, retained);
+  }
+
+  async function rereadDefer(): Promise<void> {
+    const request = pendingDefer.current;
+    if (!request || action.loading) return;
+    const next = await action.run((signal) =>
+      loadSession(request.workspaceId, request.sessionId, signal),
+    );
+    if (next && confirmDefer(next, request)) sessionChangedRef.current?.();
   }
 
   async function lifecycle(actionKind: 'pause' | 'resume' | 'stop'): Promise<void> {
@@ -1043,6 +1193,11 @@ export function StudySessionView({
   const resolvedAgendaItems = orderedAgenda.filter(
     (item) => item.state === 'completed' || item.state === 'deferred' || item.state === 'cancelled',
   ).length;
+  const deferredAgendaItems = orderedAgenda.filter((item) => item.state === 'deferred');
+  const remainingAgendaItems = orderedAgenda.filter(
+    (item) => item.state !== 'completed' && item.state !== 'cancelled',
+  );
+  const courseHref = formatAppHash({ workspaceId, destination: 'home' });
   const tutorContextTitle =
     lessonProjection?.lesson?.objective.title ?? currentLearningUnit?.title ?? '当前学习内容';
   const tutorContextPurpose = lessonProjection?.progress
@@ -1074,6 +1229,23 @@ export function StudySessionView({
           <div className="study-session-alerts" aria-label="学习状态">
             {loadError ? <Banner kind="error">{loadError}</Banner> : null}
             {action.error ? <Banner kind="error">{action.error}</Banner> : null}
+          </div>
+        ) : null}
+        {deferNeedsReconciliation ? (
+          <div className="lesson-inline-error" role="status" aria-label="延期结果待确认">
+            <p>延期结果尚未确认。本节仍未完成，已接受的讲解与回答保留。</p>
+            <button type="button" disabled={action.loading} onClick={() => void rereadDefer()}>
+              重新读取延期状态
+            </button>
+            <button
+              type="button"
+              disabled={action.loading}
+              onClick={() =>
+                void deferAgendaItem(pendingDefer.current?.input.targetAgendaItemId ?? null)
+              }
+            >
+              重试同一延期请求
+            </button>
           </div>
         ) : null}
         <header className="study-session-header">
@@ -1189,11 +1361,27 @@ export function StudySessionView({
 
         <div className="study-session-layout">
           <div className="study-session-learning-stack">
+            {currentAgendaItem && deferredAgendaItems.length > 0 ? (
+              <section className="lesson-inline-error" role="status" aria-label="保留的学习缺口">
+                <p>{deferredAgendaItems.length} 项内容已延期，仍未完成。已接受的讲解与回答保留。</p>
+                <ul>
+                  {deferredAgendaItems.map((item) => (
+                    <li key={item.id}>
+                      {curriculumUnits.find((unit) => unit.id === item.learningUnitId)?.title ??
+                        item.reason}
+                      {' · 已延期，保留缺口'}
+                    </li>
+                  ))}
+                </ul>
+                <a href={courseHref}>返回课程查看待完成工作</a>
+              </section>
+            ) : null}
             {currentAgendaItem ? (
               <LessonExecutionPanel
                 workspaceId={workspaceId}
                 sessionId={session.id}
                 sessionVersion={session.version}
+                agendaVersion={detail.agenda.version}
                 agendaItemId={currentAgendaItem?.id ?? session.currentAgendaItemId ?? ''}
                 active={active}
                 busy={busy}
@@ -1207,13 +1395,40 @@ export function StudySessionView({
                 }
                 onSessionVersionChange={updateLessonProjection}
                 onRefreshSession={refreshCurrentSession}
+                onDeferAgendaItem={
+                  currentAgendaItem.kind === 'learning_unit_teaching' &&
+                  !['completed', 'deferred', 'cancelled'].includes(currentAgendaItem.state)
+                    ? (itemId) => void mixedCommand('defer', itemId)
+                    : undefined
+                }
               />
             ) : (
               <section className="lesson-execution-panel" aria-label="当前学习安排">
-                <h3>本轮学习安排已结束</h3>
+                <h3>
+                  {remainingAgendaItems.length > 0
+                    ? '本轮暂无可继续的学习内容'
+                    : '本轮学习安排已结束'}
+                </h3>
                 <p>
-                  已完成的讲解与练习已保存。正式掌握仍需独立证据；你可以从课程主页查看后续安排与课程状态。
+                  已接受的讲解与回答已保存。正式掌握仍需独立证据；你可以从课程主页查看后续安排与课程状态。
                 </p>
+                {remainingAgendaItems.length > 0 ? (
+                  <div role="status">
+                    <p>
+                      仍有 {remainingAgendaItems.length} 项安排未完成；延期保留缺口，不记为通过。
+                    </p>
+                    <ul>
+                      {remainingAgendaItems.map((item) => (
+                        <li key={item.id}>
+                          {curriculumUnits.find((unit) => unit.id === item.learningUnitId)?.title ??
+                            item.reason}
+                          {item.state === 'deferred' ? ' · 已延期，保留缺口' : ' · 等待后续安排'}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+                <a href={courseHref}>返回课程查看待完成工作</a>
               </section>
             )}
           </div>

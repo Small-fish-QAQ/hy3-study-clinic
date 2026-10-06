@@ -15,6 +15,33 @@ const recovery: LearnerPracticeRecovery = {
   learnerNote: 'I intersected the roles.',
 };
 describe('Practice recovery controls', () => {
+  it('offers defer independently of a needs_support retry and only invokes it on explicit action', async () => {
+    const onAction = vi.fn();
+    const onDefer = vi.fn();
+    const onRefresh = vi.fn();
+    render(
+      <PracticeRecoveryPanel
+        recovery={{ ...recovery, phase: 'needs_support', learnerNote: '' }}
+        disabled={false}
+        canPrepareRepair={false}
+        onAction={onAction}
+        onDefer={onDefer}
+        onRefresh={onRefresh}
+        courseHref="#/course/ws_1/home"
+      />,
+    );
+    expect(screen.getByRole('button', { name: '根据新思路继续修补' })).toBeDisabled();
+    expect(onDefer).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole('button', { name: '重新读取修补状态' }));
+    expect(onRefresh).toHaveBeenCalledOnce();
+    await userEvent.click(screen.getByRole('button', { name: '延期本节内容，保留缺口' }));
+    expect(onDefer).toHaveBeenCalledOnce();
+    expect(onAction).not.toHaveBeenCalled();
+    expect(screen.getByRole('link', { name: '返回课程' })).toHaveAttribute(
+      'href',
+      '#/course/ws_1/home',
+    );
+  });
   it('restores learner reasoning and requests targeted teaching without a retest shortcut', async () => {
     const onAction = vi.fn();
     render(<PracticeRecoveryPanel recovery={recovery} disabled={false} onAction={onAction} />);

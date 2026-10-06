@@ -1,9 +1,19 @@
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { LessonExecutionProjection } from '@hy3-clinic/shared';
 import { api, ApiClientError } from '../api.js';
-import { LessonExecutionPanel, LessonSourceReference } from './LessonExecutionPanel.js';
+import {
+  LessonExecutionPanel as ActualLessonExecutionPanel,
+  LessonSourceReference,
+  type LessonExecutionPanelProps,
+} from './LessonExecutionPanel.js';
+
+// These standalone fixtures are bound to Session v2 / Agenda v3. Tests that
+// model another authoritative route can override either version explicitly.
+function LessonExecutionPanel(props: LessonExecutionPanelProps) {
+  return <ActualLessonExecutionPanel sessionVersion={2} agendaVersion={3} {...props} />;
+}
 
 const source = {
   referenceKey: 'S1',
@@ -80,7 +90,7 @@ function readyLesson(
         formalOpportunities: [],
       },
     },
-    progress,
+    progress: { stateId: 'lesson_state_1', ...progress },
     currentInformalCheck: null,
     allowedActions:
       progress.presentationStatus === 'not_started' ? ['start_lesson'] : ['move_to_next_segment'],
@@ -119,6 +129,65 @@ function lessonTitled(title: string): LessonExecutionProjection {
   return lesson;
 }
 
+function practiceRepairLesson(
+  phase: 'diagnosis' | 'needs_support' | 'preparing' | 'repair' = 'diagnosis',
+  stateVersion = 4,
+): LessonExecutionProjection {
+  const projection = readyLesson({
+    stateVersion,
+    currentSegmentIndex: 1,
+    segmentCount: 2,
+    presentedSegmentIndexes: [0, 1],
+    presentationStatus: 'presentation_completed',
+    presentationCompletedAt: '2026-08-19T01:00:00.000Z',
+  });
+  projection.allowedActions =
+    phase === 'preparing'
+      ? ['review_lesson']
+      : phase === 'repair'
+        ? ['start_practice_retest']
+        : ['prepare_practice_repair'];
+  projection.practice = {
+    status: 'in_progress',
+    currentItemIndex: 0,
+    itemCount: 1,
+    item: null,
+    attempts: [
+      {
+        itemIndex: 0,
+        attemptNumber: 1,
+        surface: 'initial',
+        selectedOptionId: 'B',
+        correct: false,
+        feedback: '需要检查条件集合。',
+        hint: null,
+        respondedAt: '2026-08-19T01:01:00.000Z',
+        credit: 'none',
+      },
+    ],
+    recovery: {
+      phase,
+      round: 1,
+      selectedAnswer: '忽略条件',
+      feedback: '需要检查条件集合。',
+      diagnosis: null,
+      teaching: null,
+      retest: null,
+      learnerNote: '保留的学习思路',
+    },
+    completedAt: null,
+    credit: 'none',
+  };
+  return projection;
+}
+
+const repairProps = {
+  workspaceId: 'ws_1',
+  sessionId: 'session_1',
+  agendaItemId: 'item_1',
+  active: true,
+};
+
 const needed: LessonExecutionProjection = {
   status: 'preparation_needed',
   message: 'Prepare this lesson to begin.',
@@ -146,6 +215,379 @@ afterEach(() => {
 });
 
 describe('LessonExecutionPanel', () => {
+  it.each([false, true])(
+    'refreshes Repair failure with latest versions (polled=%s) and preserves viewed content and reasoning',
+    async (polled) => {
+      vi.useFakeTimers();
+      const pending = deferred<LessonExecutionProjection>();
+      const initial = practiceRepairLesson();
+      const running = practiceRepairLesson('preparing', 5);
+      const failed = practiceRepairLesson('diagnosis', 5);
+      const repaired = practiceRepairLesson('repair', 6);
+      repaired.session = failed.session;
+      repaired.agenda = failed.agenda;
+      const get = vi.spyOn(api, 'getLessonExecution').mockResolvedValueOnce(initial);
+      if (polled) get.mockResolvedValueOnce(running);
+      get.mockResolvedValue(failed);
+      const command = vi
+        .spyOn(api, 'lessonExecutionCommand')
+        .mockReturnValueOnce(pending.promise)
+        .mockResolvedValue(repaired);
+      const defer = vi.fn();
+      const onProjection = vi.fn();
+      render(
+        <LessonExecutionPanel
+          {...repairProps}
+          onDeferAgendaItem={defer}
+          onSessionVersionChange={onProjection}
+        />,
+      );
+      await act(async () => {});
+      fireEvent.change(screen.getByRole('textbox'), { target: { value: '我现在会检查条件' } });
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: '学习针对性讲解' }));
+      });
+      if (polled) {
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(1500);
+        });
+        expect(screen.getByText('正在根据你的回答准备讲解和新情境…')).toBeInTheDocument();
+      }
+      await act(async () => {
+        pending.reject(new ApiClientError('PROVIDER_ERROR', 'offline failure'));
+      });
+      expect(get).toHaveBeenCalledTimes(polled ? 3 : 2);
+      expect(onProjection).toHaveBeenLastCalledWith(failed);
+      expect(screen.getByRole('alert')).toHaveTextContent('本节练习仍未完成');
+      expect(screen.getByRole('textbox')).toHaveValue('我现在会检查条件');
+      expect(screen.getByText(initial.lesson!.segments[1]!.explanation)).toBeInTheDocument();
+      expect(screen.queryByRole('heading', { name: '本节学习已完成' })).not.toBeInTheDocument();
+      expect(defer).not.toHaveBeenCalled();
+      expect(screen.getByRole('link', { name: '返回课程' })).toHaveAttribute(
+        'href',
+        '#/course/ws_1/home',
+      );
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: '学习针对性讲解' }));
+      });
+      expect(command).toHaveBeenLastCalledWith(
+        'ws_1',
+        'session_1',
+        expect.objectContaining({
+          expectedSessionVersion: 2,
+          expectedAgendaVersion: 3,
+          expectedAgendaItemId: 'item_1',
+          expectedLessonStateVersion: 5,
+          action: { kind: 'prepare_practice_repair', learnerNote: '我现在会检查条件' },
+        }),
+        expect.any(AbortSignal),
+      );
+      expect(command).toHaveBeenCalledTimes(2);
+      expect(screen.getByRole('button', { name: '用新情境检验' })).toBeEnabled();
+    },
+  );
+
+  it.each([false, true])(
+    'clears uncertainty when an authoritative read confirms Repair success (initially running=%s)',
+    async (initiallyRunning) => {
+      vi.useFakeTimers();
+      const repaired = practiceRepairLesson('repair', 6);
+      let authoritative = initiallyRunning ? practiceRepairLesson('preparing', 5) : repaired;
+      const get = vi
+        .spyOn(api, 'getLessonExecution')
+        .mockResolvedValueOnce(practiceRepairLesson())
+        .mockImplementation(async () => authoritative);
+      const command = vi
+        .spyOn(api, 'lessonExecutionCommand')
+        .mockRejectedValue(new ApiClientError('NETWORK_ERROR', 'lost response'));
+      render(<LessonExecutionPanel {...repairProps} />);
+      await act(async () => {});
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: '学习针对性讲解' }));
+      });
+      expect(get).toHaveBeenCalledTimes(2);
+      if (initiallyRunning) {
+        expect(screen.getByRole('alert')).toHaveTextContent('结果尚未确认');
+        authoritative = repaired;
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(1500);
+        });
+      }
+      expect(screen.getByRole('button', { name: '用新情境检验' })).toBeEnabled();
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+      expect(screen.queryByText(/结果尚未确认/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/本节练习仍未完成/)).not.toBeInTheDocument();
+      expect(command).toHaveBeenCalledOnce();
+    },
+  );
+
+  it('reads an unknown network result while the server is running without repeating generation', async () => {
+    vi.useFakeTimers();
+    let authoritative = practiceRepairLesson('preparing', 5);
+    const get = vi
+      .spyOn(api, 'getLessonExecution')
+      .mockResolvedValueOnce(practiceRepairLesson())
+      .mockImplementation(async () => authoritative);
+    const command = vi
+      .spyOn(api, 'lessonExecutionCommand')
+      .mockRejectedValue(new ApiClientError('NETWORK_ERROR', 'lost response'));
+    const defer = vi.fn();
+    render(<LessonExecutionPanel {...repairProps} onDeferAgendaItem={defer} />);
+    await act(async () => {});
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: '学习针对性讲解' }));
+    });
+    expect(get).toHaveBeenCalledTimes(2);
+    expect(screen.getByRole('alert')).toHaveTextContent('结果尚未确认');
+    expect(screen.queryByRole('button', { name: '学习针对性讲解' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '重新读取修补状态' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: '延期本节内容，保留缺口' })).toBeEnabled();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(4500);
+    });
+    expect(get).toHaveBeenCalledTimes(5);
+    expect(command).toHaveBeenCalledOnce();
+    expect(defer).not.toHaveBeenCalled();
+    authoritative = practiceRepairLesson('diagnosis', 6);
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: '重新读取修补状态' }));
+    });
+    expect(screen.getByRole('button', { name: '学习针对性讲解' })).toBeEnabled();
+    expect(command).toHaveBeenCalledOnce();
+  });
+
+  it('fences Repair generation when failure reconciliation also fails, until an authoritative read succeeds', async () => {
+    const user = userEvent.setup();
+    const get = vi
+      .spyOn(api, 'getLessonExecution')
+      .mockResolvedValueOnce(practiceRepairLesson())
+      .mockRejectedValueOnce(new ApiClientError('NETWORK_ERROR', 'read failed'))
+      .mockResolvedValue(practiceRepairLesson('diagnosis', 5));
+    const command = vi
+      .spyOn(api, 'lessonExecutionCommand')
+      .mockRejectedValue(new ApiClientError('NETWORK_ERROR', 'lost result'));
+    const defer = vi.fn();
+    render(<LessonExecutionPanel {...repairProps} onDeferAgendaItem={defer} />);
+    await user.click(await screen.findByRole('button', { name: '学习针对性讲解' }));
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('暂时无法同步'));
+    expect(screen.getByRole('button', { name: '学习针对性讲解' })).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: '学习针对性讲解' }));
+    expect(command).toHaveBeenCalledOnce();
+    expect(screen.getByRole('textbox')).toHaveValue('保留的学习思路');
+    expect(screen.getByRole('button', { name: '延期本节内容，保留缺口' })).toBeEnabled();
+    await user.click(screen.getByRole('button', { name: '重新读取修补状态' }));
+    expect(screen.getByRole('button', { name: '学习针对性讲解' })).toBeEnabled();
+    expect(get).toHaveBeenCalledTimes(3);
+    expect(command).toHaveBeenCalledOnce();
+  });
+
+  it('reconciles a stale Repair version without automatically retrying it', async () => {
+    const user = userEvent.setup();
+    vi.spyOn(api, 'getLessonExecution')
+      .mockResolvedValueOnce(practiceRepairLesson())
+      .mockResolvedValue(practiceRepairLesson('diagnosis', 8));
+    const command = vi
+      .spyOn(api, 'lessonExecutionCommand')
+      .mockRejectedValueOnce(new ApiClientError('VERSION_CONFLICT', 'stale Lesson state'))
+      .mockResolvedValue(practiceRepairLesson('repair', 9));
+    const refreshSession = vi.fn();
+    render(<LessonExecutionPanel {...repairProps} onRefreshSession={refreshSession} />);
+    await user.click(await screen.findByRole('button', { name: '学习针对性讲解' }));
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: '学习针对性讲解' })).toBeEnabled(),
+    );
+    expect(refreshSession).toHaveBeenCalledOnce();
+    expect(command).toHaveBeenCalledOnce();
+    await user.click(screen.getByRole('button', { name: '学习针对性讲解' }));
+    expect(command.mock.calls[1]![2].expectedLessonStateVersion).toBe(8);
+  });
+
+  it.each(['diagnosis', 'needs_support', 'preparing'] as const)(
+    'restores %s recovery on reload without auto-generation and exposes explicit defer',
+    async (phase) => {
+      vi.useFakeTimers();
+      vi.spyOn(api, 'getLessonExecution').mockResolvedValue(practiceRepairLesson(phase));
+      const command = vi.spyOn(api, 'lessonExecutionCommand');
+      const defer = vi.fn();
+      render(<LessonExecutionPanel {...repairProps} onDeferAgendaItem={defer} />);
+      await act(async () => {});
+      expect(screen.getByText('再通过一个简单例子观察分母为何来自已知条件。')).toBeInTheDocument();
+      if (phase !== 'preparing') expect(screen.getByRole('textbox')).toHaveValue('保留的学习思路');
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(3000);
+      });
+      expect(command).not.toHaveBeenCalled();
+      expect(defer).not.toHaveBeenCalled();
+      fireEvent.click(screen.getByRole('button', { name: '延期本节内容，保留缺口' }));
+      expect(defer).toHaveBeenCalledExactlyOnceWith('item_1');
+    },
+  );
+
+  it('ignores a failure reconciliation read after switching to a newer Agenda item', async () => {
+    const user = userEvent.setup();
+    const lateRead = deferred<LessonExecutionProjection>();
+    let readSignal: AbortSignal | undefined;
+    const get = vi
+      .spyOn(api, 'getLessonExecution')
+      .mockResolvedValueOnce(practiceRepairLesson())
+      .mockImplementationOnce((_workspace, _session, signal) => {
+        readSignal = signal;
+        return lateRead.promise;
+      })
+      .mockResolvedValue(lessonTitled('切换后的新安排'));
+    vi.spyOn(api, 'lessonExecutionCommand').mockRejectedValue(
+      new ApiClientError('PROVIDER_ERROR', 'failure'),
+    );
+    const view = render(<LessonExecutionPanel {...repairProps} />);
+    await user.click(await screen.findByRole('button', { name: '学习针对性讲解' }));
+    await waitFor(() => expect(readSignal).toBeDefined());
+    view.rerender(<LessonExecutionPanel {...repairProps} agendaItemId="item_2" />);
+    expect(await screen.findByRole('heading', { name: '切换后的新安排' })).toBeInTheDocument();
+    expect(readSignal!.aborted).toBe(true);
+    await act(async () => {
+      lateRead.resolve(practiceRepairLesson('diagnosis', 8));
+    });
+    expect(screen.getByRole('heading', { name: '切换后的新安排' })).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(get).toHaveBeenCalledTimes(3);
+  });
+
+  it.each(['success', 'failure'] as const)(
+    'ignores a late Repair %s after a route switch',
+    async (outcome) => {
+      const user = userEvent.setup();
+      const pending = deferred<LessonExecutionProjection>();
+      let signal: AbortSignal | undefined;
+      const get = vi
+        .spyOn(api, 'getLessonExecution')
+        .mockResolvedValueOnce(practiceRepairLesson())
+        .mockResolvedValue(lessonTitled('新的教学项'));
+      vi.spyOn(api, 'lessonExecutionCommand').mockImplementation(
+        (_workspace, _session, _input, value) => {
+          signal = value;
+          return pending.promise;
+        },
+      );
+      const view = render(<LessonExecutionPanel {...repairProps} />);
+      await user.click(await screen.findByRole('button', { name: '学习针对性讲解' }));
+      view.rerender(<LessonExecutionPanel {...repairProps} agendaItemId="item_2" />);
+      expect(await screen.findByRole('heading', { name: '新的教学项' })).toBeInTheDocument();
+      expect(signal!.aborted).toBe(true);
+      await act(async () => {
+        if (outcome === 'success') pending.resolve(practiceRepairLesson('repair', 6));
+        else pending.reject(new ApiClientError('PROVIDER_ERROR', 'late failure'));
+      });
+      expect(screen.getByRole('heading', { name: '新的教学项' })).toBeInTheDocument();
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+      expect(get).toHaveBeenCalledTimes(2);
+    },
+  );
+
+  it('fences an old in-flight poll when the Repair command returns a newer result', async () => {
+    vi.useFakeTimers();
+    const pending = deferred<LessonExecutionProjection>();
+    const oldPoll = deferred<LessonExecutionProjection>();
+    let pollSignal: AbortSignal | undefined;
+    vi.spyOn(api, 'getLessonExecution')
+      .mockResolvedValueOnce(practiceRepairLesson())
+      .mockImplementationOnce((_workspace, _session, signal) => {
+        pollSignal = signal;
+        return oldPoll.promise;
+      });
+    vi.spyOn(api, 'lessonExecutionCommand').mockReturnValue(pending.promise);
+    render(<LessonExecutionPanel {...repairProps} />);
+    await act(async () => {});
+    fireEvent.click(screen.getByRole('button', { name: '学习针对性讲解' }));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1500);
+    });
+    await act(async () => {
+      pending.resolve(practiceRepairLesson('repair', 6));
+    });
+    expect(pollSignal!.aborted).toBe(true);
+    await act(async () => {
+      oldPoll.resolve(practiceRepairLesson('preparing', 5));
+    });
+    expect(screen.getByRole('button', { name: '用新情境检验' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: '重新读取修补状态' })).toBeEnabled();
+  });
+
+  it('keeps a newer polled Lesson version when an older command result arrives late', async () => {
+    vi.useFakeTimers();
+    const pending = deferred<LessonExecutionProjection>();
+    const newer = practiceRepairLesson('repair', 7);
+    newer.lesson!.objective.title = '最新的修补位置';
+    const older = practiceRepairLesson('repair', 6);
+    older.lesson!.objective.title = '过期的修补位置';
+    vi.spyOn(api, 'getLessonExecution')
+      .mockResolvedValueOnce(practiceRepairLesson())
+      .mockResolvedValue(newer);
+    vi.spyOn(api, 'lessonExecutionCommand').mockReturnValue(pending.promise);
+    const onProjection = vi.fn();
+    render(<LessonExecutionPanel {...repairProps} onSessionVersionChange={onProjection} />);
+    await act(async () => {});
+    fireEvent.click(screen.getByRole('button', { name: '学习针对性讲解' }));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1500);
+    });
+    await act(async () => {
+      pending.resolve(older);
+    });
+    expect(screen.getByRole('heading', { name: '最新的修补位置' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: '过期的修补位置' })).not.toBeInTheDocument();
+    expect(onProjection).toHaveBeenLastCalledWith(newer);
+  });
+
+  it('stops waiting without assuming server cancellation and keeps the running Repair fenced', async () => {
+    const user = userEvent.setup();
+    const pending = deferred<LessonExecutionProjection>();
+    let signal: AbortSignal | undefined;
+    vi.spyOn(api, 'getLessonExecution')
+      .mockResolvedValueOnce(practiceRepairLesson())
+      .mockResolvedValue(practiceRepairLesson('preparing', 5));
+    const command = vi
+      .spyOn(api, 'lessonExecutionCommand')
+      .mockImplementation((_workspace, _session, _input, value) => {
+        signal = value;
+        return pending.promise;
+      });
+    const defer = vi.fn();
+    render(<LessonExecutionPanel {...repairProps} onDeferAgendaItem={defer} />);
+    await user.click(await screen.findByRole('button', { name: '学习针对性讲解' }));
+    await user.click(screen.getByRole('button', { name: '停止等待并同步状态' }));
+    expect(signal!.aborted).toBe(true);
+    expect(screen.getByRole('alert')).toHaveTextContent('修补尚在准备，结果尚未确认');
+    expect(screen.getByText('正在根据你的回答准备讲解和新情境…')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '学习针对性讲解' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '延期本节内容，保留缺口' })).toBeEnabled();
+    await act(async () => {
+      pending.resolve(practiceRepairLesson('repair', 6));
+    });
+    expect(screen.queryByRole('button', { name: '用新情境检验' })).not.toBeInTheDocument();
+    expect(command).toHaveBeenCalledOnce();
+    expect(defer).not.toHaveBeenCalled();
+  });
+
+  it('stops Repair polling on a route conflict while the parent refreshes', async () => {
+    vi.useFakeTimers();
+    const get = vi
+      .spyOn(api, 'getLessonExecution')
+      .mockResolvedValueOnce(practiceRepairLesson('preparing', 5))
+      .mockRejectedValue(new ApiClientError('VERSION_CONFLICT', 'route changed', 409));
+    const refreshSession = vi.fn();
+    render(<LessonExecutionPanel {...repairProps} onRefreshSession={refreshSession} />);
+    await act(async () => {});
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1500);
+    });
+    expect(refreshSession).toHaveBeenCalledOnce();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(6000);
+    });
+    expect(get).toHaveBeenCalledTimes(2);
+    expect(refreshSession).toHaveBeenCalledOnce();
+  });
+
   it('uses the same Session version advanced by Tutor while preserving the Lesson and Agenda fences', async () => {
     vi.spyOn(api, 'getLessonExecution').mockResolvedValue(prepared);
     const command = vi.spyOn(api, 'lessonExecutionCommand').mockResolvedValue(prepared);
@@ -764,16 +1206,22 @@ describe('LessonExecutionPanel', () => {
     expect(get).toHaveBeenCalledTimes(2);
     expect(command).not.toHaveBeenCalled();
 
-    await act(async () => retry.resolve(prepared));
+    const readyAfterRetry = structuredClone(prepared);
+    readyAfterRetry.session.version = authoritativeRecovery.session.version;
+    readyAfterRetry.agenda!.version = authoritativeRecovery.agenda!.version;
+    readyAfterRetry.progress!.stateVersion = authoritativeRecovery.progress!.stateVersion + 1;
+    await act(async () => retry.resolve(readyAfterRetry));
     expect(await screen.findByRole('button', { name: '开始本节讲解' })).toBeInTheDocument();
   });
 
   it('adopts an authoritative ready result instead of starting duplicate retry work', async () => {
     const user = userEvent.setup();
+    const latestReady = structuredClone(prepared);
+    latestReady.progress!.stateVersion = practiceRetryLesson().progress!.stateVersion + 1;
     const get = vi
       .spyOn(api, 'getLessonExecution')
       .mockResolvedValueOnce(practiceRetryLesson())
-      .mockResolvedValueOnce(prepared);
+      .mockResolvedValueOnce(latestReady);
     const prepare = vi.spyOn(api, 'prepareLessonExecution');
 
     render(

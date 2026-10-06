@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
@@ -9,9 +9,11 @@ import type {
   StudySessionDetailResponse,
 } from '@hy3-clinic/shared';
 import { StudySessionView } from './StudySessionView.js';
-import { api } from '../api.js';
+import { api, ApiClientError } from '../api.js';
 
-vi.mock('../api.js', () => ({
+vi.mock('../api.js', async (importOriginal) => ({
+  ApiClientError: (await importOriginal<{ ApiClientError: typeof ApiClientError }>())
+    .ApiClientError,
   api: {
     listStudySessions: vi.fn(),
     startStudySession: vi.fn(),
@@ -159,6 +161,7 @@ const lessonReady: LessonExecutionProjection = {
     },
   },
   progress: {
+    stateId: 'lesson_state_1',
     stateVersion: 1,
     currentSegmentIndex: 0,
     segmentCount: 1,
@@ -169,6 +172,112 @@ const lessonReady: LessonExecutionProjection = {
   currentInformalCheck: null,
   allowedActions: ['move_to_next_segment'],
 };
+
+function needsSupportLesson(): LessonExecutionProjection {
+  const lesson = structuredClone(lessonReady);
+  lesson.session.version = 7;
+  lesson.agenda!.version = 3;
+  lesson.progress!.stateVersion = 11;
+  lesson.progress!.presentationStatus = 'presentation_completed';
+  lesson.progress!.presentationCompletedAt = session.updatedAt;
+  lesson.allowedActions = ['prepare_practice_repair'];
+  lesson.practice = {
+    status: 'in_progress',
+    currentItemIndex: 0,
+    itemCount: 1,
+    item: null,
+    attempts: [],
+    completedAt: null,
+    credit: 'none',
+    recovery: {
+      phase: 'needs_support',
+      round: 3,
+      selectedAnswer: '忽略条件',
+      feedback: '还需要检查条件。',
+      learnerNote: '',
+      diagnosis: null,
+      teaching: null,
+      retest: null,
+    },
+  };
+  return lesson;
+}
+
+function deferResponse(withSuccessor = false) {
+  const agenda = structuredClone(detail.agenda);
+  agenda.version = 4;
+  agenda.items = [
+    { ...agenda.items[0]!, state: 'completed' },
+    {
+      ...agenda.items[0]!,
+      id: 'agenda_item_2',
+      index: 1,
+      learningUnitId: 'unit_2',
+      linkedPlanItemId: 'plan_item_2',
+      state: 'deferred',
+    },
+    ...(withSuccessor
+      ? [
+          {
+            ...agenda.items[0]!,
+            id: 'agenda_item_3',
+            index: 2,
+            learningUnitId: 'unit_3',
+            linkedPlanItemId: 'plan_item_3',
+          },
+        ]
+      : []),
+  ];
+  agenda.currentItemId = withSuccessor ? 'agenda_item_3' : null;
+  return {
+    session: { ...session, version: 8, currentAgendaItemId: agenda.currentItemId },
+    agenda,
+    effect: {
+      kind: 'defer' as const,
+      affectedAgendaItemId: agenda.currentItemId,
+      planChangeRequest: null,
+    },
+  };
+}
+
+function activeDeferDetail(withSuccessor = false): StudySessionDetailResponse {
+  const response = deferResponse(withSuccessor);
+  return {
+    ...detail,
+    session: { ...response.session, version: 7, currentAgendaItemId: 'agenda_item_2' },
+    agenda: {
+      ...response.agenda,
+      version: 3,
+      currentItemId: 'agenda_item_2',
+      items: response.agenda.items.map((item) =>
+        item.id === 'agenda_item_2'
+          ? { ...item, state: 'active' }
+          : item.id === 'agenda_item_3'
+            ? { ...item, state: 'queued' }
+            : item,
+      ),
+    },
+  };
+}
+
+function advancedDeferDetail(): StudySessionDetailResponse {
+  const receipt = deferResponse(true);
+  const next = structuredClone({ ...detail, session: receipt.session, agenda: receipt.agenda });
+  next.session.version = 9;
+  next.session.currentAgendaItemId = 'agenda_item_4';
+  next.agenda.version = 5;
+  next.agenda.currentItemId = 'agenda_item_4';
+  next.agenda.items[2]!.state = 'deferred';
+  next.agenda.items.push({
+    ...next.agenda.items[2]!,
+    id: 'agenda_item_4',
+    index: 3,
+    learningUnitId: 'unit_4',
+    linkedPlanItemId: 'plan_item_4',
+    state: 'active',
+  });
+  return next;
+}
 
 const currentRoute = {
   contractVersionId: session.contractVersionId,
@@ -282,6 +391,697 @@ async function openInspector(
 }
 
 describe('StudySessionView', () => {
+  it.each([false, true])(
+    'defers the exact current teaching item using the refreshed Session version and shows remaining work (successor=%s)',
+    async (withSuccessor) => {
+      const user = userEvent.setup();
+      const initial = structuredClone(detail);
+      const response = deferResponse(withSuccessor);
+      initial.session.currentAgendaItemId = 'agenda_item_2';
+      initial.agenda.currentItemId = 'agenda_item_2';
+      initial.agenda.items = response.agenda.items.map((item) =>
+        item.id === 'agenda_item_2' ? { ...item, state: 'active' } : item,
+      );
+      vi.mocked(api.listStudySessions).mockResolvedValue({ sessions: [initial.session] });
+      vi.mocked(api.getStudySession)
+        .mockResolvedValueOnce(initial)
+        .mockResolvedValue({
+          ...initial,
+          session: { ...initial.session, version: 7 },
+          agenda: { ...initial.agenda, version: 3 },
+        });
+      const successor = structuredClone(lessonReady);
+      successor.session.version = 8;
+      successor.agenda!.version = 4;
+      successor.lesson!.objective.title = '后续合法学习内容';
+      vi.mocked(api.getLessonExecution)
+        .mockResolvedValueOnce(needsSupportLesson())
+        .mockResolvedValue(successor);
+      vi.mocked(api.studySessionCommand).mockResolvedValue(response);
+      vi.spyOn(window, 'prompt').mockReturnValue('这次延期，稍后补上');
+      const changed = vi.fn();
+      render(
+        <StudySessionView
+          workspaceId="ws_1"
+          route={currentRoute}
+          onSessionChanged={changed}
+          curriculumUnits={[
+            { id: 'unit_2', title: '当前未完成单元' },
+            { id: 'unit_3', title: '后续单元' },
+          ]}
+        />,
+      );
+      const defer = await screen.findByRole('button', { name: '延期本节内容，保留缺口' });
+      expect(api.studySessionCommand).not.toHaveBeenCalled();
+      expect(screen.getByRole('button', { name: '根据新思路继续修补' })).toBeDisabled();
+      expect(screen.queryByRole('button', { name: '关闭学习上下文' })).not.toBeInTheDocument();
+      await user.click(defer);
+      expect(api.studySessionCommand).toHaveBeenCalledExactlyOnceWith(
+        'ws_1',
+        'session_1',
+        expect.objectContaining({
+          expectedSessionVersion: 7,
+          kind: 'defer',
+          targetAgendaItemId: 'agenda_item_2',
+          targetLearningUnitId: null,
+          reason: '这次延期，稍后补上',
+        }),
+        expect.any(AbortSignal),
+      );
+      if (withSuccessor) {
+        expect(
+          await screen.findByRole('heading', { name: '后续合法学习内容' }),
+        ).toBeInTheDocument();
+        expect(screen.getByRole('status', { name: '保留的学习缺口' })).toHaveTextContent(
+          '1 项内容已延期，仍未完成',
+        );
+      } else {
+        expect(
+          await screen.findByRole('heading', { name: '本轮暂无可继续的学习内容' }),
+        ).toBeInTheDocument();
+        expect(
+          screen.getByText('仍有 1 项安排未完成；延期保留缺口，不记为通过。'),
+        ).toBeInTheDocument();
+        expect(api.getLessonExecution).toHaveBeenCalledOnce();
+      }
+      expect(screen.getByText('当前未完成单元 · 已延期，保留缺口')).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: '返回课程查看待完成工作' })).toHaveAttribute(
+        'href',
+        '#/course/ws_1/home',
+      );
+      expect(screen.queryByRole('heading', { name: '本节学习已完成' })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: '延期本节内容，保留缺口' }),
+      ).not.toBeInTheDocument();
+      expect(api.lessonExecutionCommand).not.toHaveBeenCalled();
+      expect(api.launchAgendaItem).not.toHaveBeenCalled();
+      expect(api.startFormalExecution).not.toHaveBeenCalled();
+      expect(api.startLearnerRepair).not.toHaveBeenCalled();
+      expect(changed).toHaveBeenCalledTimes(2);
+    },
+  );
+
+  it.each([false, true])(
+    'reconciles a committed defer after its response is lost without sending another command (successor=%s)',
+    async (withSuccessor) => {
+      const user = userEvent.setup();
+      const initial = activeDeferDetail(withSuccessor);
+      const response = deferResponse(withSuccessor);
+      let committed = false;
+      vi.mocked(api.listStudySessions).mockResolvedValue({ sessions: [initial.session] });
+      vi.mocked(api.getStudySession).mockImplementation(async () =>
+        committed ? { ...detail, session: response.session, agenda: response.agenda } : initial,
+      );
+      const successor = structuredClone(lessonReady);
+      successor.progress!.stateId = 'lesson_state_successor';
+      successor.lesson!.objective.title = '延期后当前讲解';
+      successor.session.version = 8;
+      successor.agenda!.version = 4;
+      vi.mocked(api.getLessonExecution).mockImplementation(async () =>
+        committed ? successor : needsSupportLesson(),
+      );
+      vi.mocked(api.studySessionCommand).mockImplementation(async () => {
+        committed = true;
+        throw new ApiClientError('NETWORK_ERROR', 'response lost after commit');
+      });
+      vi.spyOn(window, 'prompt').mockReturnValue('稍后补上');
+      const changed = vi.fn();
+      render(
+        <StudySessionView workspaceId="ws_1" route={currentRoute} onSessionChanged={changed} />,
+      );
+      await user.click(await screen.findByRole('button', { name: '延期本节内容，保留缺口' }));
+      expect(
+        await screen.findByRole('heading', {
+          name: withSuccessor ? '延期后当前讲解' : '本轮暂无可继续的学习内容',
+        }),
+      ).toBeInTheDocument();
+      expect(api.getStudySession).toHaveBeenCalledTimes(2);
+      expect(api.studySessionCommand).toHaveBeenCalledOnce();
+      expect(api.studySessionCommand).toHaveBeenCalledWith(
+        'ws_1',
+        'session_1',
+        expect.objectContaining({ targetAgendaItemId: 'agenda_item_2', expectedSessionVersion: 7 }),
+        expect.any(AbortSignal),
+      );
+      expect(screen.queryByRole('status', { name: '延期结果待确认' })).not.toBeInTheDocument();
+      expect(screen.queryByText('response lost after commit')).not.toBeInTheDocument();
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+      expect(changed).toHaveBeenCalledOnce();
+      expect(api.lessonExecutionCommand).not.toHaveBeenCalled();
+      expect(api.startFormalExecution).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(['active', 'unavailable', 'pending_lease'] as const)(
+    'keeps an unresolved defer visible and reuses its immutable command on retry (reread=%s)',
+    async (reread) => {
+      const user = userEvent.setup();
+      const initial = activeDeferDetail();
+      vi.mocked(api.listStudySessions).mockResolvedValue({ sessions: [initial.session] });
+      const get = vi.mocked(api.getStudySession).mockResolvedValueOnce(initial);
+      if (reread === 'unavailable')
+        get.mockRejectedValue(new ApiClientError('NETWORK_ERROR', 'reread unavailable'));
+      else get.mockResolvedValue(initial);
+      vi.mocked(api.getLessonExecution).mockResolvedValue(needsSupportLesson());
+      const command = vi
+        .mocked(api.studySessionCommand)
+        .mockRejectedValueOnce(new ApiClientError('NETWORK_ERROR', 'unknown defer response'));
+      if (reread === 'pending_lease')
+        command.mockRejectedValueOnce(
+          new ApiClientError('VERSION_CONFLICT', 'command is already in progress', 409, {
+            operationId: 'pending-defer-operation',
+            operationPending: true,
+          }),
+        );
+      command.mockImplementation(async () => {
+        const response = deferResponse();
+        get.mockResolvedValue({ ...detail, session: response.session, agenda: response.agenda });
+        return response;
+      });
+      const prompt = vi.spyOn(window, 'prompt').mockReturnValue('保留原来的延期原因');
+      render(<StudySessionView workspaceId="ws_1" route={currentRoute} />);
+      await user.click(await screen.findByRole('button', { name: '延期本节内容，保留缺口' }));
+      expect(await screen.findByRole('status', { name: '延期结果待确认' })).toHaveTextContent(
+        '延期结果尚未确认',
+      );
+      await waitFor(() =>
+        expect(screen.getByRole('button', { name: '重试同一延期请求' })).toBeEnabled(),
+      );
+      expect(screen.getByRole('heading', { name: '理解条件概率' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '延期本节内容，保留缺口' })).toBeDisabled();
+      expect(screen.queryByRole('status', { name: '保留的学习缺口' })).not.toBeInTheDocument();
+      expect(command).toHaveBeenCalledOnce();
+      const originalInput = command.mock.calls[0]![2];
+      await user.click(screen.getByRole('button', { name: '重试同一延期请求' }));
+      if (reread === 'pending_lease') {
+        await waitFor(() =>
+          expect(screen.getByRole('button', { name: '重试同一延期请求' })).toBeEnabled(),
+        );
+        expect(screen.getByRole('status', { name: '延期结果待确认' })).toBeInTheDocument();
+        expect(command.mock.calls[1]![2]).toBe(originalInput);
+        await user.click(screen.getByRole('button', { name: '重试同一延期请求' }));
+        expect(command.mock.calls[2]![2]).toBe(originalInput);
+      }
+      expect(
+        await screen.findByRole('heading', { name: '本轮暂无可继续的学习内容' }),
+      ).toBeInTheDocument();
+      expect(command).toHaveBeenCalledTimes(reread === 'pending_lease' ? 3 : 2);
+      expect(command.mock.calls[1]![2]).toBe(originalInput);
+      expect(prompt).toHaveBeenCalledOnce();
+      expect(screen.queryByRole('status', { name: '延期结果待确认' })).not.toBeInTheDocument();
+    },
+  );
+
+  it('reconciles an unresolved defer through an explicit authoritative reread without retrying', async () => {
+    const user = userEvent.setup();
+    const initial = activeDeferDetail();
+    const response = deferResponse();
+    vi.mocked(api.listStudySessions).mockResolvedValue({ sessions: [initial.session] });
+    vi.mocked(api.getStudySession)
+      .mockResolvedValueOnce(initial)
+      .mockResolvedValueOnce(initial)
+      .mockResolvedValue({ ...detail, session: response.session, agenda: response.agenda });
+    vi.mocked(api.getLessonExecution).mockResolvedValue(needsSupportLesson());
+    vi.mocked(api.studySessionCommand).mockRejectedValue(
+      new ApiClientError('NETWORK_ERROR', 'lost'),
+    );
+    vi.spyOn(window, 'prompt').mockReturnValue('稍后补上');
+    render(<StudySessionView workspaceId="ws_1" route={currentRoute} />);
+    await user.click(await screen.findByRole('button', { name: '延期本节内容，保留缺口' }));
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: '重新读取延期状态' })).toBeEnabled(),
+    );
+    await user.click(screen.getByRole('button', { name: '重新读取延期状态' }));
+    expect(
+      await screen.findByRole('heading', { name: '本轮暂无可继续的学习内容' }),
+    ).toBeInTheDocument();
+    expect(api.studySessionCommand).toHaveBeenCalledOnce();
+    expect(api.getStudySession).toHaveBeenCalledTimes(3);
+    expect(screen.queryByRole('status', { name: '延期结果待确认' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it.each([1, 12])(
+    'rereads the live route after a historical defer replay before adopting Lesson B v%s after A v11',
+    async (successorVersion) => {
+      const user = userEvent.setup();
+      const initial = activeDeferDetail(true);
+      const receipt = deferResponse(true);
+      const live = advancedDeferDetail();
+      let resolveLive!: (value: StudySessionDetailResponse) => void;
+      const liveRead = new Promise<StudySessionDetailResponse>((resolve) => {
+        resolveLive = resolve;
+      });
+      const get = vi
+        .mocked(api.getStudySession)
+        .mockResolvedValueOnce(initial)
+        .mockRejectedValueOnce(new ApiClientError('NETWORK_ERROR', 'immediate reread lost'))
+        .mockReturnValueOnce(liveRead)
+        .mockResolvedValue(live);
+      vi.mocked(api.listStudySessions).mockResolvedValue({ sessions: [initial.session] });
+      const oldLesson = needsSupportLesson();
+      oldLesson.progress!.stateId = 'lesson_state_A';
+      const successor = needsSupportLesson();
+      successor.progress!.stateId = 'lesson_state_B';
+      successor.progress!.stateVersion = successorVersion;
+      successor.session.version = 9;
+      successor.agenda!.version = 5;
+      successor.lesson!.objective.title = '当前 item 4 的讲解';
+      const lessons = vi
+        .mocked(api.getLessonExecution)
+        .mockResolvedValueOnce(oldLesson)
+        .mockResolvedValue(successor);
+      const final = structuredClone(live);
+      final.session.version = 10;
+      final.session.currentAgendaItemId = null;
+      final.agenda.version = 6;
+      final.agenda.currentItemId = null;
+      final.agenda.items[3]!.state = 'deferred';
+      const command = vi
+        .mocked(api.studySessionCommand)
+        .mockRejectedValueOnce(new ApiClientError('NETWORK_ERROR', 'committed response lost'))
+        .mockResolvedValueOnce(receipt)
+        .mockResolvedValue({
+          session: final.session,
+          agenda: final.agenda,
+          effect: { ...receipt.effect, affectedAgendaItemId: null },
+        });
+      const prompt = vi.spyOn(window, 'prompt').mockReturnValue('保留当前教学缺口');
+      render(<StudySessionView workspaceId="ws_1" route={currentRoute} />);
+      await user.click(await screen.findByRole('button', { name: '延期本节内容，保留缺口' }));
+      await waitFor(() =>
+        expect(screen.getByRole('button', { name: '重试同一延期请求' })).toBeEnabled(),
+      );
+      const original = command.mock.calls[0]![2];
+      await user.click(screen.getByRole('button', { name: '重试同一延期请求' }));
+      await waitFor(() => expect(get).toHaveBeenCalledTimes(3));
+      expect(command).toHaveBeenCalledTimes(2);
+      expect(command.mock.calls[1]![2]).toBe(original);
+      expect(prompt).toHaveBeenCalledOnce();
+      expect(screen.getByRole('heading', { name: '理解条件概率' })).toBeInTheDocument();
+      expect(screen.queryByRole('heading', { name: '当前 item 4 的讲解' })).not.toBeInTheDocument();
+      expect(screen.getByRole('status', { name: '延期结果待确认' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '延期本节内容，保留缺口' })).toBeDisabled();
+      await act(async () => resolveLive(live));
+      expect(
+        await screen.findByRole('heading', { name: '当前 item 4 的讲解' }),
+      ).toBeInTheDocument();
+      expect(screen.getByRole('status', { name: '保留的学习缺口' })).toHaveTextContent(
+        '2 项内容已延期，仍未完成',
+      );
+      expect(screen.queryByRole('status', { name: '延期结果待确认' })).not.toBeInTheDocument();
+      await act(async () => {});
+      expect(get).toHaveBeenCalledTimes(3);
+      expect(lessons).toHaveBeenCalledTimes(2);
+      await user.click(screen.getByRole('button', { name: '延期本节内容，保留缺口' }));
+      expect(command.mock.calls[2]![2]).toMatchObject({
+        targetAgendaItemId: 'agenda_item_4',
+        expectedSessionVersion: 9,
+      });
+      expect(api.lessonExecutionCommand).not.toHaveBeenCalled();
+      expect(api.startFormalExecution).not.toHaveBeenCalled();
+      expect(api.startLearnerRepair).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([1, 12])(
+    'validates the first Lesson B v%s after route reset against the live Session binding',
+    async (successorVersion) => {
+      const user = userEvent.setup();
+      const initial = activeDeferDetail(true);
+      const receipt = deferResponse(true);
+      const live = advancedDeferDetail();
+      let resolveBinding!: (value: StudySessionDetailResponse) => void;
+      const binding = new Promise<StudySessionDetailResponse>((resolve) => {
+        resolveBinding = resolve;
+      });
+      vi.mocked(api.listStudySessions).mockResolvedValue({ sessions: [initial.session] });
+      const get = vi
+        .mocked(api.getStudySession)
+        .mockResolvedValueOnce(initial)
+        .mockReturnValueOnce(binding)
+        .mockResolvedValue(live);
+      const oldLesson = needsSupportLesson();
+      oldLesson.progress!.stateId = 'lesson_state_A';
+      const successor = needsSupportLesson();
+      successor.progress!.stateId = 'lesson_state_B';
+      successor.progress!.stateVersion = successorVersion;
+      successor.session.version = 9;
+      successor.agenda!.version = 5;
+      successor.lesson!.objective.title = '经过绑定确认的 item 4';
+      const lessons = vi
+        .mocked(api.getLessonExecution)
+        .mockResolvedValueOnce(oldLesson)
+        .mockResolvedValue(successor);
+      const final = structuredClone(live);
+      final.session.version = 10;
+      final.session.currentAgendaItemId = null;
+      final.agenda.version = 6;
+      final.agenda.currentItemId = null;
+      final.agenda.items[3]!.state = 'deferred';
+      const command = vi
+        .mocked(api.studySessionCommand)
+        .mockResolvedValueOnce(receipt)
+        .mockResolvedValue({
+          session: final.session,
+          agenda: final.agenda,
+          effect: { ...receipt.effect, affectedAgendaItemId: null },
+        });
+      vi.spyOn(window, 'prompt').mockReturnValue('延期当前安排');
+      render(<StudySessionView workspaceId="ws_1" route={currentRoute} />);
+      await user.click(await screen.findByRole('button', { name: '延期本节内容，保留缺口' }));
+      await waitFor(() => expect(get).toHaveBeenCalledTimes(2));
+      expect(
+        screen.queryByRole('heading', { name: '经过绑定确认的 item 4' }),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: '延期本节内容，保留缺口' }),
+      ).not.toBeInTheDocument();
+      await act(async () => resolveBinding(live));
+      expect(
+        await screen.findByRole('heading', { name: '经过绑定确认的 item 4' }),
+      ).toBeInTheDocument();
+      await act(async () => {});
+      expect(get).toHaveBeenCalledTimes(2);
+      expect(lessons).toHaveBeenCalledTimes(3);
+      expect(screen.getByRole('status', { name: '保留的学习缺口' })).toHaveTextContent(
+        '2 项内容已延期，仍未完成',
+      );
+      await user.click(screen.getByRole('button', { name: '延期本节内容，保留缺口' }));
+      expect(command.mock.calls[1]![2]).toMatchObject({
+        targetAgendaItemId: 'agenda_item_4',
+        expectedSessionVersion: 9,
+      });
+    },
+  );
+
+  it('keeps the original defer unresolved when its replay succeeds but the live reread is unavailable', async () => {
+    const user = userEvent.setup();
+    const initial = activeDeferDetail(true);
+    const receipt = deferResponse(true);
+    const live = advancedDeferDetail();
+    vi.mocked(api.listStudySessions).mockResolvedValue({ sessions: [initial.session] });
+    const get = vi
+      .mocked(api.getStudySession)
+      .mockResolvedValueOnce(initial)
+      .mockRejectedValue(new ApiClientError('NETWORK_ERROR', 'live route unavailable'));
+    const successor = needsSupportLesson();
+    successor.progress!.stateId = 'lesson_state_B';
+    successor.progress!.stateVersion = 1;
+    successor.session.version = 9;
+    successor.agenda!.version = 5;
+    successor.lesson!.objective.title = '读取成功后的 item 4';
+    const lessons = vi
+      .mocked(api.getLessonExecution)
+      .mockResolvedValueOnce(needsSupportLesson())
+      .mockResolvedValue(successor);
+    const command = vi
+      .mocked(api.studySessionCommand)
+      .mockRejectedValueOnce(new ApiClientError('NETWORK_ERROR', 'committed response lost'))
+      .mockResolvedValue(receipt);
+    const prompt = vi.spyOn(window, 'prompt').mockReturnValue('保留原请求');
+    render(<StudySessionView workspaceId="ws_1" route={currentRoute} />);
+    await user.click(await screen.findByRole('button', { name: '延期本节内容，保留缺口' }));
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: '重试同一延期请求' })).toBeEnabled(),
+    );
+    await user.click(screen.getByRole('button', { name: '重试同一延期请求' }));
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: '重新读取延期状态' })).toBeEnabled(),
+    );
+    expect(get).toHaveBeenCalledTimes(3);
+    expect(command.mock.calls[1]![2]).toBe(command.mock.calls[0]![2]);
+    expect(prompt).toHaveBeenCalledOnce();
+    expect(screen.getByRole('status', { name: '延期结果待确认' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '理解条件概率' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '延期本节内容，保留缺口' })).toBeDisabled();
+    expect(screen.queryByRole('status', { name: '保留的学习缺口' })).not.toBeInTheDocument();
+    expect(lessons).toHaveBeenCalledOnce();
+    get.mockResolvedValue(live);
+    await user.click(screen.getByRole('button', { name: '重新读取延期状态' }));
+    expect(await screen.findByRole('heading', { name: '读取成功后的 item 4' })).toBeInTheDocument();
+    expect(screen.queryByRole('status', { name: '延期结果待确认' })).not.toBeInTheDocument();
+    expect(command).toHaveBeenCalledTimes(2);
+    expect(get).toHaveBeenCalledTimes(4);
+    expect(lessons).toHaveBeenCalledTimes(2);
+  });
+
+  it('reconciles an unprepared successor before its version counters can change the parent binding', async () => {
+    const user = userEvent.setup();
+    const initial = activeDeferDetail(true);
+    const live = advancedDeferDetail();
+    let resolveBinding!: (value: StudySessionDetailResponse) => void;
+    const binding = new Promise<StudySessionDetailResponse>((resolve) => {
+      resolveBinding = resolve;
+    });
+    vi.mocked(api.listStudySessions).mockResolvedValue({ sessions: [initial.session] });
+    const get = vi
+      .mocked(api.getStudySession)
+      .mockResolvedValueOnce(initial)
+      .mockReturnValueOnce(binding)
+      .mockResolvedValue(live);
+    const oldLesson = needsSupportLesson();
+    oldLesson.progress!.stateId = 'lesson_state_A';
+    const unprepared: LessonExecutionProjection = {
+      ...lessonReady,
+      status: 'preparation_needed',
+      session: { status: 'active', version: 9 },
+      agenda: { version: 5, itemState: 'active' },
+      lesson: null,
+      progress: null,
+      allowedActions: ['prepare_lesson'],
+    };
+    const successor = needsSupportLesson();
+    successor.progress!.stateId = 'lesson_state_B';
+    successor.progress!.stateVersion = 1;
+    successor.session.version = 9;
+    successor.agenda!.version = 5;
+    successor.lesson!.objective.title = '从当前 item 4 读取的讲解';
+    const lessons = vi
+      .mocked(api.getLessonExecution)
+      .mockResolvedValueOnce(oldLesson)
+      .mockResolvedValueOnce(unprepared)
+      .mockResolvedValue(successor);
+    render(<StudySessionView workspaceId="ws_1" route={currentRoute} />);
+    await user.click(await screen.findByRole('button', { name: '重新读取修补状态' }));
+    await waitFor(() => expect(get).toHaveBeenCalledTimes(2));
+    expect(screen.getByRole('heading', { name: '理解条件概率' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '准备本节讲解' })).not.toBeInTheDocument();
+    await act(async () => resolveBinding(live));
+    expect(
+      await screen.findByRole('heading', { name: '从当前 item 4 读取的讲解' }),
+    ).toBeInTheDocument();
+    await act(async () => {});
+    expect(get).toHaveBeenCalledTimes(2);
+    expect(lessons).toHaveBeenCalledTimes(3);
+    expect(api.studySessionCommand).not.toHaveBeenCalled();
+    expect(api.lessonExecutionCommand).not.toHaveBeenCalled();
+  });
+
+  it('discards a late uncertain-defer reread after the accepted route changes', async () => {
+    const initial = activeDeferDetail();
+    let resolveReread!: (value: StudySessionDetailResponse) => void;
+    const reread = new Promise<StudySessionDetailResponse>((resolve) => {
+      resolveReread = resolve;
+    });
+    vi.mocked(api.listStudySessions).mockResolvedValue({ sessions: [initial.session] });
+    vi.mocked(api.getStudySession).mockResolvedValueOnce(initial).mockReturnValueOnce(reread);
+    vi.mocked(api.getLessonExecution).mockResolvedValue(needsSupportLesson());
+    vi.mocked(api.studySessionCommand).mockRejectedValue(
+      new ApiClientError('NETWORK_ERROR', 'lost'),
+    );
+    vi.spyOn(window, 'prompt').mockReturnValue('稍后补上');
+    const changed = vi.fn();
+    const view = render(
+      <StudySessionView workspaceId="ws_1" route={currentRoute} onSessionChanged={changed} />,
+    );
+    await userEvent.click(await screen.findByRole('button', { name: '延期本节内容，保留缺口' }));
+    await waitFor(() => expect(api.getStudySession).toHaveBeenCalledTimes(2));
+    const next = structuredClone(detail);
+    next.session = {
+      ...session,
+      id: 'session_2',
+      sessionAgendaId: 'agenda_2',
+      studyPlanVersionId: 'plan_2',
+    };
+    next.agenda.id = 'agenda_2';
+    next.agenda.studyPlanVersionId = 'plan_2';
+    const nextLesson = structuredClone(lessonReady);
+    nextLesson.progress!.stateId = 'lesson_state_next_route';
+    nextLesson.lesson!.objective.title = '新路线当前讲解';
+    vi.mocked(api.listStudySessions).mockResolvedValue({ sessions: [next.session] });
+    vi.mocked(api.getStudySession).mockResolvedValue(next);
+    vi.mocked(api.getLessonExecution).mockResolvedValue(nextLesson);
+    view.rerender(
+      <StudySessionView
+        workspaceId="ws_1"
+        route={{
+          ...currentRoute,
+          sessionAgendaId: 'agenda_2',
+          studyPlanVersionId: 'plan_2',
+          executionVersion: 5,
+        }}
+        onSessionChanged={changed}
+      />,
+    );
+    expect(await screen.findByRole('heading', { name: '新路线当前讲解' })).toBeInTheDocument();
+    const response = deferResponse();
+    await act(async () => {
+      resolveReread({ ...detail, session: response.session, agenda: response.agenda });
+    });
+    expect(screen.getByRole('heading', { name: '新路线当前讲解' })).toBeInTheDocument();
+    expect(screen.queryByRole('status', { name: '延期结果待确认' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: '本轮暂无可继续的学习内容' }),
+    ).not.toBeInTheDocument();
+    expect(api.studySessionCommand).toHaveBeenCalledOnce();
+    expect(changed).not.toHaveBeenCalled();
+  });
+
+  it.each([1, 12])(
+    'reconciles the Session binding before displaying successor Lesson B v%s after Lesson A v11',
+    async (successorVersion) => {
+      const user = userEvent.setup();
+      const initial = activeDeferDetail(true);
+      const response = deferResponse(true);
+      let resolveBinding!: (value: StudySessionDetailResponse) => void;
+      const binding = new Promise<StudySessionDetailResponse>((resolve) => {
+        resolveBinding = resolve;
+      });
+      vi.mocked(api.listStudySessions).mockResolvedValue({ sessions: [initial.session] });
+      vi.mocked(api.getStudySession).mockResolvedValueOnce(initial).mockReturnValue(binding);
+      const oldLesson = needsSupportLesson();
+      oldLesson.progress!.stateId = 'lesson_state_A';
+      const successor = needsSupportLesson();
+      successor.progress!.stateId = 'lesson_state_B';
+      successor.progress!.stateVersion = successorVersion;
+      successor.lesson!.objective.title = '当前路线的后续讲解';
+      successor.session.version = 8;
+      successor.agenda!.version = 4;
+      vi.mocked(api.getLessonExecution)
+        .mockResolvedValueOnce(oldLesson)
+        .mockResolvedValue(successor);
+      const finalAgenda = structuredClone(response.agenda);
+      finalAgenda.version = 5;
+      finalAgenda.currentItemId = null;
+      finalAgenda.items[2]!.state = 'deferred';
+      vi.mocked(api.studySessionCommand).mockResolvedValue({
+        ...response,
+        session: { ...response.session, version: 9, currentAgendaItemId: null },
+        agenda: finalAgenda,
+      });
+      vi.spyOn(window, 'prompt').mockReturnValue('延期当前后续单元');
+      render(<StudySessionView workspaceId="ws_1" route={currentRoute} />);
+      await user.click(await screen.findByRole('button', { name: '重新读取修补状态' }));
+      await waitFor(() => expect(api.getStudySession).toHaveBeenCalledTimes(2));
+      expect(screen.getByRole('heading', { name: '理解条件概率' })).toBeInTheDocument();
+      expect(screen.queryByRole('heading', { name: '当前路线的后续讲解' })).not.toBeInTheDocument();
+      await act(async () => {
+        resolveBinding({ ...detail, session: response.session, agenda: response.agenda });
+      });
+      expect(
+        await screen.findByRole('heading', { name: '当前路线的后续讲解' }),
+      ).toBeInTheDocument();
+      expect(screen.queryByRole('heading', { name: '理解条件概率' })).not.toBeInTheDocument();
+      await user.click(screen.getByRole('button', { name: '延期本节内容，保留缺口' }));
+      expect(api.studySessionCommand).toHaveBeenCalledExactlyOnceWith(
+        'ws_1',
+        'session_1',
+        expect.objectContaining({ targetAgendaItemId: 'agenda_item_3', expectedSessionVersion: 8 }),
+        expect.any(AbortSignal),
+      );
+    },
+  );
+
+  it('restores a deferred incomplete unit after reload without requesting a nonexistent Lesson', async () => {
+    const response = deferResponse();
+    vi.mocked(api.listStudySessions).mockResolvedValue({ sessions: [response.session] });
+    vi.mocked(api.getStudySession).mockResolvedValue({
+      ...detail,
+      session: response.session,
+      agenda: response.agenda,
+    });
+    render(<StudySessionView workspaceId="ws_1" route={currentRoute} />);
+    expect(
+      await screen.findByRole('heading', { name: '本轮暂无可继续的学习内容' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('仍有 1 项安排未完成；延期保留缺口，不记为通过。')).toBeInTheDocument();
+    expect(api.getLessonExecution).not.toHaveBeenCalled();
+    expect(api.studySessionCommand).not.toHaveBeenCalled();
+  });
+
+  it('does not defer when the learner dismisses the reason prompt', async () => {
+    const initial = activeDeferDetail();
+    vi.mocked(api.listStudySessions).mockResolvedValue({ sessions: [initial.session] });
+    vi.mocked(api.getStudySession).mockResolvedValue(initial);
+    vi.mocked(api.getLessonExecution).mockResolvedValue(needsSupportLesson());
+    vi.spyOn(window, 'prompt').mockReturnValue(null);
+    render(<StudySessionView workspaceId="ws_1" route={currentRoute} />);
+    await userEvent.click(await screen.findByRole('button', { name: '延期本节内容，保留缺口' }));
+    expect(api.studySessionCommand).not.toHaveBeenCalled();
+    expect(screen.getByRole('heading', { name: '理解条件概率' })).toBeInTheDocument();
+  });
+
+  it.each(['success', 'failure'] as const)(
+    'discards a late defer %s after the accepted route changes',
+    async (outcome) => {
+      let resolve!: (value: ReturnType<typeof deferResponse>) => void;
+      let reject!: (error: Error) => void;
+      const pending = new Promise<ReturnType<typeof deferResponse>>((done, fail) => {
+        resolve = done;
+        reject = fail;
+      });
+      const initial = activeDeferDetail();
+      vi.mocked(api.listStudySessions).mockResolvedValue({ sessions: [initial.session] });
+      vi.mocked(api.getStudySession).mockResolvedValue(initial);
+      vi.mocked(api.getLessonExecution).mockResolvedValue(needsSupportLesson());
+      vi.mocked(api.studySessionCommand).mockReturnValue(pending);
+      vi.spyOn(window, 'prompt').mockReturnValue('稍后补上');
+      const changed = vi.fn();
+      const view = render(
+        <StudySessionView workspaceId="ws_1" route={currentRoute} onSessionChanged={changed} />,
+      );
+      await userEvent.click(await screen.findByRole('button', { name: '延期本节内容，保留缺口' }));
+      const next = structuredClone(detail);
+      next.session = {
+        ...session,
+        id: 'session_2',
+        sessionAgendaId: 'agenda_2',
+        studyPlanVersionId: 'plan_2',
+      };
+      next.agenda.id = 'agenda_2';
+      next.agenda.studyPlanVersionId = 'plan_2';
+      const nextLesson = structuredClone(lessonReady);
+      nextLesson.lesson!.objective.title = '切换后的课程讲解';
+      vi.mocked(api.listStudySessions).mockResolvedValue({ sessions: [next.session] });
+      vi.mocked(api.getStudySession).mockResolvedValue(next);
+      vi.mocked(api.getLessonExecution).mockResolvedValue(nextLesson);
+      view.rerender(
+        <StudySessionView
+          workspaceId="ws_1"
+          route={{
+            ...currentRoute,
+            sessionAgendaId: 'agenda_2',
+            studyPlanVersionId: 'plan_2',
+            executionVersion: 5,
+          }}
+          onSessionChanged={changed}
+        />,
+      );
+      expect(await screen.findByRole('heading', { name: '切换后的课程讲解' })).toBeInTheDocument();
+      await act(async () => {
+        if (outcome === 'success') resolve(deferResponse());
+        else reject(new ApiClientError('NETWORK_ERROR', '过期的延期错误'));
+      });
+      expect(screen.getByRole('heading', { name: '切换后的课程讲解' })).toBeInTheDocument();
+      expect(
+        screen.queryByText('仍有 1 项安排未完成；延期保留缺口，不记为通过。'),
+      ).not.toBeInTheDocument();
+      expect(changed).not.toHaveBeenCalled();
+      expect(screen.queryByText('过期的延期错误')).not.toBeInTheDocument();
+    },
+  );
+
   it('synchronizes a running turn after reload before permitting a new question', async () => {
     vi.mocked(api.listStudySessions).mockResolvedValue({ sessions: [session] });
     vi.mocked(api.getStudySession)

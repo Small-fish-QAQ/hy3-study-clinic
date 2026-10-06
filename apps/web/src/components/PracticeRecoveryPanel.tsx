@@ -4,11 +4,23 @@ import type { LearnerPracticeRecovery, LessonExecutionCommandRequest } from '@hy
 export function PracticeRecoveryPanel({
   recovery,
   disabled,
+  canPrepareRepair = true,
+  preparing = false,
+  refreshing = false,
   onAction,
+  onRefresh,
+  onDefer,
+  courseHref,
 }: {
   recovery: LearnerPracticeRecovery;
   disabled: boolean;
+  canPrepareRepair?: boolean;
+  preparing?: boolean;
+  refreshing?: boolean;
   onAction: (action: LessonExecutionCommandRequest['action']) => void;
+  onRefresh?: () => void;
+  onDefer?: () => void;
+  courseHref?: string;
 }) {
   const [note, setNote] = useState(recovery.learnerNote ?? '');
   return (
@@ -69,10 +81,12 @@ export function PracticeRecoveryPanel({
           <button
             type="button"
             className="primary"
-            disabled={disabled || (recovery.phase === 'needs_support' && !note.trim())}
+            disabled={
+              disabled || !canPrepareRepair || (recovery.phase === 'needs_support' && !note.trim())
+            }
             onClick={() => onAction({ kind: 'prepare_practice_repair', learnerNote: note })}
           >
-            {disabled
+            {preparing
               ? '正在准备修补…'
               : recovery.phase === 'needs_support'
                 ? '根据新思路继续修补'
@@ -138,6 +152,24 @@ export function PracticeRecoveryPanel({
       {recovery.phase === 'needs_support' ? (
         <p role="status">
           这项能力仍需更多支持，本节练习尚未通过。先回看讲解或向老师追问，再写下你现在的思路。
+        </p>
+      ) : null}
+      <div className="lesson-segment-actions">
+        {onRefresh ? (
+          <button type="button" disabled={refreshing} onClick={onRefresh}>
+            {refreshing ? '正在读取修补状态…' : '重新读取修补状态'}
+          </button>
+        ) : null}
+        {onDefer ? (
+          <button type="button" disabled={disabled} onClick={onDefer}>
+            延期本节内容，保留缺口
+          </button>
+        ) : null}
+        {courseHref ? <a href={courseHref}>返回课程</a> : null}
+      </div>
+      {onDefer ? (
+        <p className="small muted">
+          延期整项本节教学安排，保留已接受的讲解与回答。本节仍未完成，不会记为通过或授予掌握状态。
         </p>
       ) : null}
     </section>

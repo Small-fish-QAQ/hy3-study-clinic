@@ -6,14 +6,18 @@ import type {
   LessonSegmentProjection,
   LessonSourceProjection,
   EnsureLessonExecutionRequest,
+  StudySessionDetailResponse,
 } from '@hy3-clinic/shared';
 import { api, ApiClientError } from '../api.js';
+import { formatAppHash } from '../appRoutes.js';
 import { Loading } from './ui.js';
 import { FormalAssessmentPanel } from './FormalAssessmentPanel.js';
 import { PracticeRecoveryPanel } from './PracticeRecoveryPanel.js';
 
 let lessonCommandSequence = 0;
 const LESSON_PREPARATION_POLL_MS = 1500;
+const PRACTICE_REPAIR_FAILED_MESSAGE =
+  '这次针对性修补没有准备好。已接受的讲解与回答保留，本节练习仍未完成。';
 type LessonRefreshResult =
   LessonExecutionProjection['status'] | 'request_failed' | 'request_aborted' | 'route_changed';
 
@@ -25,6 +29,8 @@ function nextCommandId(prefix: string): string {
 export interface LessonExecutionPanelProps {
   /** Current version of the same Session, including completed Tutor turns. */
   sessionVersion?: number;
+  /** Authoritative Agenda version bound to agendaItemId in that Session. */
+  agendaVersion?: number;
   workspaceId: string;
   sessionId: string;
   agendaItemId: string;
@@ -37,7 +43,8 @@ export interface LessonExecutionPanelProps {
   onResumeStudySession?: () => void;
   onStartFormalAssessment?: () => void;
   onSessionVersionChange?: (projection: LessonExecutionProjection) => void;
-  onRefreshSession?: () => void;
+  onRefreshSession?: () => void | Promise<StudySessionDetailResponse | null>;
+  onDeferAgendaItem?: (agendaItemId: string) => void;
 }
 
 function learnerMessage(error: unknown): string {
@@ -57,6 +64,18 @@ function learnerMessage(error: unknown): string {
     }
   }
   return '讲解暂时不可用，请稍后再试。';
+}
+
+function practiceRepairFailureMessage(error: unknown): string {
+  if (error instanceof ApiClientError && error.code === 'VERSION_CONFLICT')
+    return '学习状态刚刚发生变化，请核对重新读取的修补位置。本节练习仍未完成。';
+  if (
+    !(error instanceof ApiClientError) ||
+    error.code === 'NETWORK_ERROR' ||
+    error.code === 'ABORTED'
+  )
+    return '修补请求的结果尚未确认，请先重新读取状态。已接受的讲解与回答保留，本节练习仍未完成。';
+  return PRACTICE_REPAIR_FAILED_MESSAGE;
 }
 
 function presentationStateLabel(state: LessonExecutionProjection['progress']): string {
@@ -561,6 +580,11 @@ function ReadyLesson({
   commandLoading,
   onAction,
   onResponseChange,
+  canPrepareRepair = true,
+  refreshing = false,
+  onRefreshRecovery,
+  onDefer,
+  courseHref,
 }: {
   projection: LessonExecutionProjection;
   active: boolean;
@@ -570,6 +594,11 @@ function ReadyLesson({
   commandLoading: boolean;
   onAction: (action: LessonExecutionCommandRequest['action']) => void;
   onResponseChange: (value: string) => void;
+  canPrepareRepair?: boolean;
+  refreshing?: boolean;
+  onRefreshRecovery?: () => void;
+  onDefer?: () => void;
+  courseHref?: string;
 }) {
   const lesson = projection.lesson!;
   const progress = projection.progress!;
@@ -831,10 +860,18 @@ function ReadyLesson({
           ) : null}
           {projection.practice.recovery ? (
             <PracticeRecoveryPanel
-              key={`${projection.practice.currentItemIndex}:${projection.practice.recovery.round}:${projection.practice.recovery.phase === 'needs_support'}`}
+              key={`${projection.practice.currentItemIndex}:${projection.practice.recovery.round}`}
               recovery={projection.practice.recovery}
               disabled={!active || busy || commandLoading}
+              canPrepareRepair={
+                canPrepareRepair && projection.allowedActions.includes('prepare_practice_repair')
+              }
+              preparing={commandLoading}
+              refreshing={refreshing}
               onAction={onAction}
+              onRefresh={onRefreshRecovery}
+              onDefer={onDefer}
+              courseHref={courseHref}
             />
           ) : null}
           {projection.practice.item ? (
@@ -874,6 +911,7 @@ function ReadyLesson({
 
 export function LessonExecutionPanel({
   sessionVersion,
+  agendaVersion,
   workspaceId,
   sessionId,
   agendaItemId,
@@ -887,6 +925,7 @@ export function LessonExecutionPanel({
   onStartFormalAssessment,
   onSessionVersionChange,
   onRefreshSession,
+  onDeferAgendaItem,
 }: LessonExecutionPanelProps) {
   const routeIdentity = JSON.stringify([workspaceId, sessionId, agendaItemId]);
   const [projectionState, setProjectionState] = useState<{
@@ -900,6 +939,7 @@ export function LessonExecutionPanel({
   const [loading, setLoading] = useState(true);
   const [preparing, setPreparing] = useState(false);
   const [commandLoading, setCommandLoading] = useState(false);
+  const [repairNeedsRefresh, setRepairNeedsRefresh] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [responseDraft, setResponseDraft] = useState('');
   const routeEpoch = useRef(0);
@@ -908,54 +948,133 @@ export function LessonExecutionPanel({
   const prepareKey = useRef<string | null>(null);
   const prepareController = useRef<AbortController | null>(null);
   const commandController = useRef<AbortController | null>(null);
+  const latestProjection = useRef<typeof projectionState>(null);
+  const bindingVersions = useRef({ sessionVersion, agendaVersion });
+  bindingVersions.current = { sessionVersion, agendaVersion };
 
   const applyProjection = useCallback(
-    (next: LessonExecutionProjection) => {
+    async (next: LessonExecutionProjection, signal?: AbortSignal) => {
+      let current = latestProjection.current;
+      const epoch = routeEpoch.current;
+      const bindingUnknown =
+        current?.routeIdentity !== routeIdentity || !current.value.progress || !next.progress;
+      const lessonChanged =
+        current?.routeIdentity === routeIdentity &&
+        current.value.progress &&
+        next.progress &&
+        next.progress.stateId !== current.value.progress.stateId;
+      if (
+        (next.progress || (current?.routeIdentity === routeIdentity && next.agenda)) &&
+        (lessonChanged ||
+          (bindingUnknown &&
+            (next.session.version !== bindingVersions.current.sessionVersion ||
+              next.agenda?.version !== bindingVersions.current.agendaVersion)))
+      ) {
+        // Lesson GET follows the live Session pointer, which may have moved
+        // even when route reset has cleared the previous Lesson. Matching
+        // authoritative Session/Agenda versions establish its route binding.
+        const authoritative = onRefreshSession
+          ? await onRefreshSession()
+          : await api.getStudySession(workspaceId, sessionId, signal);
+        if (signal?.aborted || epoch !== routeEpoch.current) return false;
+        if (
+          !authoritative ||
+          authoritative.session.id !== sessionId ||
+          authoritative.session.workspaceId !== workspaceId ||
+          authoritative.session.currentAgendaItemId !== agendaItemId ||
+          authoritative.agenda.currentItemId !== agendaItemId ||
+          next.session.version !== authoritative.session.version ||
+          next.agenda?.version !== authoritative.agenda.version
+        ) {
+          setError('本节讲解的位置尚未确认，请重新读取当前学习安排。');
+          return false;
+        }
+        current = latestProjection.current;
+      }
+      // A poll can finish before the command response for the same route.
+      if (
+        current?.routeIdentity === routeIdentity &&
+        (next.session.version < current.value.session.version ||
+          (next.agenda &&
+            current.value.agenda &&
+            next.agenda.version < current.value.agenda.version) ||
+          (next.progress &&
+            current.value.progress &&
+            next.progress.stateId === current.value.progress.stateId &&
+            next.progress.stateVersion < current.value.progress.stateVersion))
+      )
+        return false;
+      latestProjection.current = { routeIdentity, value: next };
       setProjectionState({ routeIdentity, value: next });
+      setRepairNeedsRefresh(false);
       setError(null);
       onSessionVersionChange?.(next);
+      return true;
     },
-    [onSessionVersionChange, routeIdentity],
+    [agendaItemId, onRefreshSession, onSessionVersionChange, routeIdentity, sessionId, workspaceId],
   );
 
-  const refresh = useCallback(async (): Promise<LessonRefreshResult> => {
-    refreshController.current?.abort();
-    const controller = new AbortController();
-    refreshController.current = controller;
-    const epoch = routeEpoch.current;
-    const refreshEpoch = ++requestEpoch.current;
-    setLoading(true);
-    setError(null);
-    try {
-      const next = await api.getLessonExecution(workspaceId, sessionId, controller.signal);
-      if (
-        !controller.signal.aborted &&
-        epoch === routeEpoch.current &&
-        refreshEpoch === requestEpoch.current
-      ) {
-        applyProjection(next);
-        return next.status;
-      }
-      return 'request_aborted';
-    } catch (cause) {
-      if (
-        !controller.signal.aborted &&
-        epoch === routeEpoch.current &&
-        refreshEpoch === requestEpoch.current
-      ) {
-        const message = learnerMessage(cause);
-        if (message) setError(message);
-        if (cause instanceof ApiClientError && cause.code === 'VERSION_CONFLICT') {
-          onRefreshSession?.();
-          return 'route_changed';
+  const refresh = useCallback(
+    async (recoveryMessage?: string): Promise<LessonRefreshResult> => {
+      refreshController.current?.abort();
+      const controller = new AbortController();
+      refreshController.current = controller;
+      const epoch = routeEpoch.current;
+      const refreshEpoch = ++requestEpoch.current;
+      setLoading(true);
+      setError(recoveryMessage ?? null);
+      try {
+        const next = await api.getLessonExecution(workspaceId, sessionId, controller.signal);
+        if (
+          !controller.signal.aborted &&
+          epoch === routeEpoch.current &&
+          refreshEpoch === requestEpoch.current
+        ) {
+          if (
+            !(await applyProjection(next, controller.signal)) ||
+            controller.signal.aborted ||
+            epoch !== routeEpoch.current ||
+            refreshEpoch !== requestEpoch.current
+          )
+            return 'request_aborted';
+          if (recoveryMessage) {
+            const phase = next.practice?.recovery?.phase;
+            setError(
+              phase === 'preparing'
+                ? '修补尚在准备，结果尚未确认。已接受的讲解与回答保留，本节练习仍未完成。'
+                : phase === 'diagnosis' || phase === 'needs_support'
+                  ? PRACTICE_REPAIR_FAILED_MESSAGE
+                  : null,
+            );
+          }
+          return next.status;
         }
+        return 'request_aborted';
+      } catch (cause) {
+        if (
+          !controller.signal.aborted &&
+          epoch === routeEpoch.current &&
+          refreshEpoch === requestEpoch.current
+        ) {
+          const message = learnerMessage(cause);
+          if (message)
+            setError(
+              recoveryMessage ? `${recoveryMessage} 暂时无法同步，请重新读取修补状态。` : message,
+            );
+          if (cause instanceof ApiClientError && cause.code === 'VERSION_CONFLICT') {
+            onRefreshSession?.();
+            return 'route_changed';
+          }
+        }
+        return controller.signal.aborted ? 'request_aborted' : 'request_failed';
+      } finally {
+        if (refreshController.current === controller) refreshController.current = null;
+        if (epoch === routeEpoch.current && refreshEpoch === requestEpoch.current)
+          setLoading(false);
       }
-      return controller.signal.aborted ? 'request_aborted' : 'request_failed';
-    } finally {
-      if (refreshController.current === controller) refreshController.current = null;
-      if (epoch === routeEpoch.current && refreshEpoch === requestEpoch.current) setLoading(false);
-    }
-  }, [applyProjection, onRefreshSession, sessionId, workspaceId]);
+    },
+    [applyProjection, onRefreshSession, sessionId, workspaceId],
+  );
 
   useEffect(() => {
     routeEpoch.current += 1;
@@ -967,10 +1086,12 @@ export function LessonExecutionPanel({
     prepareController.current = null;
     commandController.current = null;
     prepareKey.current = null;
+    latestProjection.current = null;
     setProjectionState(null);
     setLoading(true);
     setPreparing(false);
     setCommandLoading(false);
+    setRepairNeedsRefresh(false);
     setError(null);
     setResponseDraft('');
 
@@ -994,7 +1115,8 @@ export function LessonExecutionPanel({
     if (
       projection?.status !== 'preparing' &&
       projection?.practice?.recovery?.phase !== 'preparing' &&
-      !(commandLoading && projection?.practice?.recovery)
+      !(commandLoading && projection?.practice?.recovery) &&
+      !repairNeedsRefresh
     )
       return;
     let cancelled = false;
@@ -1003,10 +1125,12 @@ export function LessonExecutionPanel({
       timer = window.setTimeout(() => {
         void refresh().then((result) => {
           if (cancelled) return;
+          if (result === 'route_changed' || result === 'request_aborted') return;
           if (
             result === 'preparing' ||
             result === 'request_failed' ||
-            projection?.practice?.recovery
+            projection?.practice?.recovery ||
+            repairNeedsRefresh
           )
             schedule();
         });
@@ -1017,7 +1141,13 @@ export function LessonExecutionPanel({
       cancelled = true;
       if (timer !== null) window.clearTimeout(timer);
     };
-  }, [projection?.status, projection?.practice?.recovery, commandLoading, refresh]);
+  }, [
+    projection?.status,
+    projection?.practice?.recovery,
+    commandLoading,
+    repairNeedsRefresh,
+    refresh,
+  ]);
 
   const prepare = useCallback(
     async (retry = false) => {
@@ -1032,7 +1162,7 @@ export function LessonExecutionPanel({
         if (retry) {
           authoritative = await api.getLessonExecution(workspaceId, sessionId, controller.signal);
           if (controller.signal.aborted || epoch !== routeEpoch.current) return;
-          applyProjection(authoritative);
+          if (!(await applyProjection(authoritative, controller.signal))) return;
           if (!authoritative.allowedActions.includes('retry_preparation')) return;
         }
         const key = `${workspaceId}:${sessionId}:${agendaItemId}:${authoritative.session.version}:${authoritative.agenda?.version ?? 0}`;
@@ -1051,7 +1181,8 @@ export function LessonExecutionPanel({
           input,
           controller.signal,
         );
-        if (!controller.signal.aborted && epoch === routeEpoch.current) applyProjection(next);
+        if (!controller.signal.aborted && epoch === routeEpoch.current)
+          await applyProjection(next, controller.signal);
       } catch (cause) {
         if (!controller.signal.aborted && epoch === routeEpoch.current) {
           const message = learnerMessage(cause);
@@ -1086,6 +1217,11 @@ export function LessonExecutionPanel({
     async (action: LessonExecutionCommandRequest['action']) => {
       if (!projection?.progress || commandLoading || commandController.current) return;
       if (!active || projection.status !== 'ready') return;
+      if (
+        action.kind === 'prepare_practice_repair' &&
+        (repairNeedsRefresh || !projection.allowedActions.includes('prepare_practice_repair'))
+      )
+        return;
       const commandId = nextCommandId('lesson_command');
       const input: LessonExecutionCommandRequest = {
         command: { commandId, idempotencyKey: commandId, workspaceId, actor: 'learner' },
@@ -1098,6 +1234,9 @@ export function LessonExecutionPanel({
       const controller = new AbortController();
       commandController.current = controller;
       const epoch = routeEpoch.current;
+      requestEpoch.current += 1;
+      refreshController.current?.abort();
+      setLoading(false);
       setCommandLoading(true);
       setError(null);
       try {
@@ -1108,17 +1247,27 @@ export function LessonExecutionPanel({
           controller.signal,
         );
         if (!controller.signal.aborted && epoch === routeEpoch.current) {
+          requestEpoch.current += 1;
+          refreshController.current?.abort();
+          setLoading(false);
           setResponseDraft('');
-          applyProjection(next);
+          await applyProjection(next, controller.signal);
         }
       } catch (cause) {
         if (!controller.signal.aborted && epoch === routeEpoch.current) {
-          const message = learnerMessage(cause);
+          const repairFailed = action.kind === 'prepare_practice_repair';
+          const message = repairFailed
+            ? practiceRepairFailureMessage(cause)
+            : learnerMessage(cause);
           if (message) setError(message);
+          // Transport failure does not prove that the server operation stopped.
+          if (repairFailed) setRepairNeedsRefresh(true);
           if (cause instanceof ApiClientError && cause.code === 'VERSION_CONFLICT') {
             onRefreshSession?.();
-            void refresh();
           }
+          if (repairFailed) await refresh(message);
+          else if (cause instanceof ApiClientError && cause.code === 'VERSION_CONFLICT')
+            void refresh();
         }
       } finally {
         if (commandController.current === controller) commandController.current = null;
@@ -1132,6 +1281,7 @@ export function LessonExecutionPanel({
       commandLoading,
       onRefreshSession,
       projection,
+      repairNeedsRefresh,
       refresh,
       sessionId,
       sessionVersion,
@@ -1323,6 +1473,18 @@ export function LessonExecutionPanel({
         commandLoading={commandLoading}
         onAction={(action) => void command(action)}
         onResponseChange={setResponseDraft}
+        canPrepareRepair={!repairNeedsRefresh}
+        refreshing={loading}
+        onRefreshRecovery={() => void refresh()}
+        onDefer={
+          onDeferAgendaItem &&
+          !completed &&
+          projection.agenda &&
+          !['completed', 'deferred', 'cancelled'].includes(projection.agenda.itemState)
+            ? () => onDeferAgendaItem(agendaItemId)
+            : undefined
+        }
+        courseHref={formatAppHash({ workspaceId, destination: 'home' })}
       />
       {commandLoading && projection.practice?.recovery ? (
         <button
@@ -1330,10 +1492,11 @@ export function LessonExecutionPanel({
           onClick={() => {
             commandController.current?.abort();
             setCommandLoading(false);
-            void refresh();
+            setRepairNeedsRefresh(true);
+            void refresh('已停止等待响应，修补结果仍需确认。本节练习仍未完成。');
           }}
         >
-          取消准备
+          停止等待并同步状态
         </button>
       ) : null}
       {formalAssessmentVersionId && completed ? (
