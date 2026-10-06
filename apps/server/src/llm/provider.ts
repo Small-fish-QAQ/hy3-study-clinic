@@ -80,6 +80,8 @@ import type {
   UnitFocus,
   PracticeRepairContent,
   LessonPracticeItem,
+  LearnerPracticeSolvingSurface,
+  PracticePriorTeaching,
 } from '@hy3-clinic/shared';
 import type { TeachingStrategies } from './teachingStrategy.js';
 
@@ -848,7 +850,8 @@ export interface LessonTeachingSkeleton {
 export const LEARNER_CONTENT_LOCALE = 'zh-CN' as const;
 export type LearnerContentLocale = typeof LEARNER_CONTENT_LOCALE;
 
-export interface TeachingContentReviewInput {
+export interface AuthoredTeachingContentReviewInput {
+  purpose?: 'practice_grounding';
   computedItemIds?: string[];
   computedOutcomes?: boolean;
   stage: 'lesson' | 'practice';
@@ -859,6 +862,18 @@ export interface TeachingContentReviewInput {
   acceptedLesson?: unknown;
   actionIds: string[];
 }
+
+/** One isolated unanswered Practice action, with only prior public teaching. */
+export interface PracticeAnswerabilityReviewInput {
+  purpose: 'practice_answerability';
+  stage: 'practice';
+  candidate: LearnerPracticeSolvingSurface & { actionId: string };
+  priorTeaching: PracticePriorTeaching;
+  actionIds: string[];
+}
+
+export type TeachingContentReviewInput =
+  AuthoredTeachingContentReviewInput | PracticeAnswerabilityReviewInput;
 
 export interface LessonSlotContentGenerationInput {
   computedCases?: boolean;

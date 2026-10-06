@@ -3,6 +3,7 @@ import {
   LessonSlotContentProposalPayloadSchema,
   PracticeContentProposalPayloadSchema,
   TeachingSkeletonSchema,
+  projectPracticePriorTeaching,
 } from '@hy3-clinic/shared';
 import { FakeProvider } from './fakeProvider.js';
 import { Hy3Provider } from './hy3Provider.js';
@@ -15,6 +16,7 @@ import type {
   ProviderCandidateValidation,
 } from './provider.js';
 import { MAX_COMPOSITIONAL_OUTPUT_ATTEMPTS_PER_LOGICAL_CALL } from './provider.js';
+import { preparePracticeAnswerabilityReview } from '../services/teachingContentReview.js';
 
 function skeleton() {
   return TeachingSkeletonSchema.parse({
@@ -318,6 +320,98 @@ function practiceValidation(candidate: unknown): ProviderCandidateValidation {
 }
 
 describe('compositional Teaching providers', () => {
+  it('sends isolated public Practice solves and separate rich grounding requests', async () => {
+    const priorTeaching = projectPracticePriorTeaching({
+      objective: { title: 'Public rule', whyNow: 'Use the rule.', objectives: [] },
+      prerequisites: [],
+      segments: [],
+      summary: 'Only the taught rule may support this case.',
+      nextConnection: null,
+      sourceReferences: [],
+      visualReferences: [],
+    });
+    const authored = {
+      prompt: 'Public value is 4. Which offered answer is twice that value?',
+      options: [
+        { id: 'A', text: '8', feedbackIfSelected: 'PRIVATE_FEEDBACK' },
+        { id: 'B', text: '4', feedbackIfSelected: 'PRIVATE_WRONG_FEEDBACK' },
+        { id: 'C', text: '2', feedbackIfSelected: 'PRIVATE_OTHER_FEEDBACK' },
+      ],
+      correctOptionId: 'PRIVATE_KEY',
+      application: {
+        startingState: 'PRIVATE_APPLICATION',
+        expectedAction: 'PRIVATE_EXPECTED_ACTION',
+      },
+      explanation: 'PRIVATE_EXPLANATION',
+      hint: 'PRIVATE_HINT',
+      pedagogicalReason: 'PRIVATE_PEDAGOGY',
+      retry: { prompt: 'PRIVATE_FUTURE_RETRY' },
+      acceptedLesson: { authored: 'PRIVATE_AUTHORED_LESSON' },
+    };
+    const prepared = preparePracticeAnswerabilityReview(
+      authored,
+      priorTeaching,
+      'PR1.initial',
+      'PR1',
+    );
+    const transport = vi
+      .fn()
+      .mockResolvedValueOnce(
+        response(
+          JSON.stringify({
+            decisions: [
+              {
+                actionId: 'PR1.initial',
+                answerId: 'A',
+                requiresCaseInference: true,
+                evidenceUsed: 'Visible value 4 doubled is 8.',
+              },
+            ],
+            findings: [],
+          }),
+        ),
+      )
+      .mockResolvedValueOnce(
+        response(
+          JSON.stringify({
+            decisions: [],
+            findings: [
+              {
+                itemId: 'PR1',
+                code: 'grounding',
+                problem: 'A cited rule is unsupported.',
+                repairInstruction: 'Correct the source attribution.',
+              },
+            ],
+          }),
+        ),
+      ) as unknown as typeof fetch;
+    const provider = hy3(transport);
+    await provider.reviewTeachingContent(prepared.input, { validateCandidate: prepared.validate });
+    const grounding = await provider.reviewTeachingContent({
+      purpose: 'practice_grounding',
+      stage: 'practice',
+      desiredDepth: 'working_fluency',
+      objectives: [],
+      sources: [{ sourceRef: 'S1', text: 'PRIVATE_FULL_SOURCE_FOR_GROUNDING' }],
+      candidate: authored,
+      acceptedLesson: authored.acceptedLesson,
+      actionIds: [],
+    });
+    const calls = (transport as unknown as ReturnType<typeof vi.fn>).mock.calls;
+    const solveBody = JSON.parse(String(calls[0]![1]!.body));
+    const groundingBody = JSON.parse(String(calls[1]![1]!.body));
+    expect(JSON.stringify(solveBody.messages)).not.toMatch(/PRIVATE_[A-Z_]+/u);
+    expect(JSON.stringify(solveBody.messages)).toContain(authored.prompt);
+    expect(solveBody.max_tokens).toBe(8000);
+    expect(JSON.stringify(groundingBody.messages)).toContain('PRIVATE_FULL_SOURCE_FOR_GROUNDING');
+    expect(groundingBody.messages[0].content).toContain(
+      'must never be used to establish learner-visible answerability',
+    );
+    expect(groundingBody.max_tokens).toBe(8000);
+    expect(grounding.findings[0]?.code).toBe('grounding');
+    expect(calls).toHaveLength(2);
+  });
   it('uses a separate bounded content review with independently solved decisions', async () => {
     const result = {
       decisions: [

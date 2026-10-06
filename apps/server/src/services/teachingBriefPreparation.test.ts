@@ -1,9 +1,11 @@
 import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   ApiErrorCode,
   fnv1a32,
   MixedInitiativeCommandRequestSchema,
+  PracticeContentProposalPayloadSchema,
   type LearningContractDraftFields,
   type LessonSlotContentProposalPayload,
   type LessonExecutionCommandRequest,
@@ -38,6 +40,7 @@ import { createServices, type Services } from './index.js';
 import { deriveTeachUnitDurations, resolveStudyPlanPlannability } from './studyPlanValidation.js';
 import { validateLessonSlotContentCandidate } from './teachingBriefContract.js';
 import { TEACHING_SKELETON_PLANNER_VERSION } from './teachingSkeletonPlanner.js';
+import { hasCurrentPracticeAnswerabilityReview } from './teachingContentReview.js';
 import {
   fingerprintObjectiveAuthorityBinding,
   fingerprintObjectiveAuthorityProposition,
@@ -60,6 +63,23 @@ const databases: SqliteDb[] = [];
 const LESSON_INPUT_MUTATION_SENTINEL = 'LESSON_PROVIDER_INPUT_MUTATION_SENTINEL';
 const PRACTICE_INPUT_MUTATION_SENTINEL = 'PRACTICE_PROVIDER_INPUT_MUTATION_SENTINEL';
 
+function historicalJ18Item() {
+  const captured = JSON.parse(
+    readFileSync(
+      new URL(
+        '../../../../eval/final-showcase/runs/scored-01/cases/J18/final.snapshot.json',
+        import.meta.url,
+      ),
+      'utf8',
+    ),
+  ) as { rows: { accepted_lesson_checkpoints: Array<{ lesson_evaluation_payload: string }> } };
+  const evaluation = JSON.parse(
+    captured.rows.accepted_lesson_checkpoints[0]!.lesson_evaluation_payload,
+  ) as { jointAuthoring: { practiceCandidate: unknown } };
+  return PracticeContentProposalPayloadSchema.parse(evaluation.jointAuthoring.practiceCandidate)
+    .items[0]!;
+}
+
 function operationStudySessionId(db: SqliteDb, operationId: string): string | null | undefined {
   return (
     db
@@ -69,8 +89,14 @@ function operationStudySessionId(db: SqliteDb, operationId: string): string | nu
 }
 
 class CountingProvider extends FakeProvider {
-  async reviewTeachingContent(input: TeachingContentReviewInput, opts?: ProviderCallOptions) {
+  override async reviewTeachingContent(
+    input: TeachingContentReviewInput,
+    opts?: ProviderCallOptions,
+  ) {
     opts?.onRequestSent?.();
+    if (input.purpose === 'practice_answerability') this.practiceAnswerabilityCalls += 1;
+    if (input.purpose === 'practice_answerability' || input.purpose === 'practice_grounding')
+      return super.reviewTeachingContent(input, opts);
     return {
       decisions: input.actionIds.map((actionId) => ({
         actionId,
@@ -83,6 +109,7 @@ class CountingProvider extends FakeProvider {
   }
   lessonContentCalls = 0;
   practiceContentCalls = 0;
+  practiceAnswerabilityCalls = 0;
   failLessonContent = false;
   failLessonContentWithSchemaDetails = false;
   failLessonIndependentEvaluationOnce = false;
@@ -1177,6 +1204,256 @@ afterEach(() => {
 });
 
 describe('Teaching Brief preparation', () => {
+  it.each([
+    { complete: false, key: 'A', accepted: false },
+    { complete: true, key: 'A', accepted: true },
+    { complete: true, key: 'B', accepted: false },
+  ])(
+    'gates final J18 persistence with visible givens=$complete and saved key=$key',
+    async ({ complete, key, accepted }) => {
+      const j18 = historicalJ18Item();
+      const givens =
+        '记录集：A(优先级1,时长5), B(优先级1,时长9), C(优先级2,时长2), D(优先级2,时长4)。';
+      const harness = await createHarness(0, 'pass', 'apply', 'pass_oriented');
+      Object.defineProperty(harness.provider, 'name', { value: 'hy3' });
+      const generate = harness.provider.generatePracticeContent.bind(harness.provider);
+      harness.provider.generatePracticeContent = async (input, opts) => {
+        const candidate = await generate(input, opts);
+        const item = candidate.items[0]!;
+        item.sourceRefs = [];
+        item.visualRefs = [];
+        item.application = structuredClone(j18.application);
+        item.initial = structuredClone(j18.initial);
+        item.initial.correctOptionRef = key;
+        if (key === 'B') item.initial.evidenceContrast!.alternativeOptionId = 'A';
+        if (complete) item.initial.prompt = givens + item.initial.prompt;
+        return candidate;
+      };
+      const requests: TeachingContentReviewInput[] = [];
+      const review = harness.provider.reviewTeachingContent.bind(harness.provider);
+      harness.provider.reviewTeachingContent = async (input, opts) => {
+        requests.push(structuredClone(input));
+        const result = await review(input, opts);
+        if (input.purpose === 'practice_grounding') {
+          expect(JSON.stringify(input.candidate)).toContain(j18.application!.startingState);
+          expect(result.findings).toEqual([]);
+        }
+        return result;
+      };
+      const route = startTeachingRoute(harness);
+      const pending = harness.services.teachingBriefPreparation.prepare(
+        preparationRequest(harness, route, `j18-${complete}-${key}`),
+      );
+      if (accepted) {
+        const result = await pending;
+        expect(result.status).toBe('prepared');
+        expect(hasCurrentPracticeAnswerabilityReview(result.brief)).toBe(true);
+        expect(result.brief.practice!.items[0]!.initial.correctOptionId).toMatch(/_A$/u);
+      } else {
+        await expect(pending).rejects.toMatchObject({
+          details: { candidateFailure: { kind: 'teaching_content_review_failed' } },
+        });
+        expect(harness.repos.teachingBriefs.listForUnit('ws_1', harness.learningUnitId)).toEqual(
+          [],
+        );
+      }
+      expect(
+        harness.db.prepare('SELECT COUNT(*) AS count FROM accepted_lesson_checkpoints').get(),
+      ).toEqual({ count: 1 });
+      expect(requests.some((input) => input.purpose === 'practice_answerability')).toBe(true);
+      for (const input of requests.filter(
+        (request) =>
+          request.purpose === 'practice_answerability' && request.actionIds[0] === 'PR1.initial',
+      )) {
+        expect(JSON.stringify(input)).not.toContain('A(1,5)');
+        expect(JSON.stringify(input)).not.toContain('"application"');
+        expect(JSON.stringify(input)).not.toContain('"correctOptionRef"');
+      }
+    },
+  );
+
+  it('revalidates cached authored J18 with real Fake even when the prior artifact claims execution verification', async () => {
+    const harness = await createHarness(0, 'pass', 'apply', 'pass_oriented');
+    const route = startTeachingRoute(harness);
+    const prepared = await harness.services.teachingBriefPreparation.prepare(
+      preparationRequest(harness, route, 'cached-practice-before-fake-fix'),
+    );
+    const checkpointId = prepared.brief.composition!.acceptedLessonCheckpointId;
+    const checkpoint = harness.repos.acceptedLessonCheckpoints.get(checkpointId)!;
+    const checkpointBytes = JSON.stringify(checkpoint);
+    const provider = new FakeProvider();
+    const cachedCandidate = await provider.generatePracticeContent(
+      harness.provider.lastPracticeContentInput!,
+    );
+    const j18 = historicalJ18Item();
+    cachedCandidate.items[0]!.sourceRefs = [];
+    cachedCandidate.items[0]!.visualRefs = [];
+    cachedCandidate.items[0]!.application = j18.application;
+    cachedCandidate.items[0]!.initial = j18.initial;
+    // Model the old private authored checkpoint returned by the cache. No
+    // review method is overridden; the resumed service uses a real FakeProvider.
+    const cachedCheckpoint = structuredClone(checkpoint);
+    cachedCheckpoint.lessonEvaluation.jointAuthoring = {
+      logicalCallIds: [checkpoint.lessonLogicalCallId!],
+      practiceCandidate: cachedCandidate,
+      executionVerified: true,
+      practiceExecutionVerified: true,
+    };
+    harness.repos.acceptedLessonCheckpoints.findReusable = () => cachedCheckpoint;
+    const oldBrief = structuredClone(prepared.brief);
+    oldBrief.practice!.qualityEvaluation.answerabilityReview!.policyVersion =
+      'practice-answerability-v1-learner-visible';
+    harness.db
+      .prepare('UPDATE teaching_briefs SET payload=? WHERE id=?')
+      .run(JSON.stringify(oldBrief), oldBrief.id);
+    const services = createServices({ repos: harness.repos, provider, clock });
+    const request = preparationRequest(harness, route, 'cached-j18-after-fake-fix');
+    await expect(services.teachingBriefPreparation.prepare(request)).rejects.toMatchObject({
+      details: { candidateFailure: { kind: 'computed_practice_review_failed' } },
+    });
+    const operation = harness.repos.operations.getByIdempotencyKey(
+      'ws_1',
+      `teaching-brief:${harness.learningUnitId}:${request.commandId}`,
+    )!;
+    expect(
+      harness.db
+        .prepare(
+          "SELECT COUNT(*) AS count FROM model_logical_calls WHERE operation_id=? AND schema_fingerprint='practice-answerability-review-v1'",
+        )
+        .get(operation.id),
+    ).toEqual({ count: 2 * cachedCandidate.items.length });
+    expect(harness.repos.teachingBriefs.listForUnit('ws_1', harness.learningUnitId)).toHaveLength(
+      1,
+    );
+    expect(JSON.stringify(harness.repos.acceptedLessonCheckpoints.get(checkpointId))).toBe(
+      checkpointBytes,
+    );
+  });
+
+  it('rejects cached old Practice proof and revalidates only Practice under the same accepted Lesson', async () => {
+    const harness = await createHarness();
+    const route = startTeachingRoute(harness);
+    const request = preparationRequest(harness, route, 'practice-proof-before-policy-change');
+    const prepared = await harness.services.teachingBriefPreparation.prepare(request);
+    const checkpointId = prepared.brief.composition!.acceptedLessonCheckpointId;
+    const checkpointBytes = JSON.stringify(
+      harness.repos.acceptedLessonCheckpoints.get(checkpointId),
+    );
+    const old = structuredClone(prepared);
+    old.brief.practice!.qualityEvaluation.answerabilityReview!.policyVersion =
+      'practice-answerability-v1-learner-visible';
+    harness.db
+      .prepare('UPDATE teaching_briefs SET payload=? WHERE id=?')
+      .run(JSON.stringify(old.brief), old.brief.id);
+    const operation = harness.repos.operations.getByIdempotencyKey(
+      'ws_1',
+      `teaching-brief:${harness.learningUnitId}:${request.commandId}`,
+    )!;
+    harness.db
+      .prepare('UPDATE agent_operation_results SET payload=? WHERE operation_id=?')
+      .run(JSON.stringify(old), operation.id);
+    const lessonCalls = harness.provider.lessonContentCalls;
+    const practiceCalls = harness.provider.practiceContentCalls;
+    const answerabilityCalls = harness.provider.practiceAnswerabilityCalls;
+    await expect(harness.services.teachingBriefPreparation.prepare(request)).rejects.toMatchObject({
+      code: ApiErrorCode.VersionConflict,
+    });
+    expect(harness.services.teachingBriefPreparation.getCurrent(request)).toBeNull();
+    const current = await harness.services.teachingBriefPreparation.prepare(
+      preparationRequest(harness, route, 'practice-proof-current-policy'),
+    );
+    expect(current.status).toBe('prepared');
+    expect(current.brief.id).not.toBe(old.brief.id);
+    expect(hasCurrentPracticeAnswerabilityReview(current.brief)).toBe(true);
+    expect(harness.provider.lessonContentCalls).toBe(lessonCalls);
+    expect(harness.provider.practiceContentCalls).toBeGreaterThan(practiceCalls);
+    expect(harness.provider.practiceAnswerabilityCalls - answerabilityCalls).toBe(
+      2 * current.brief.practice!.items.length,
+    );
+    expect(current.brief.composition!.acceptedLessonCheckpointId).toBe(checkpointId);
+    expect(JSON.stringify(harness.repos.acceptedLessonCheckpoints.get(checkpointId))).toBe(
+      checkpointBytes,
+    );
+  });
+
+  it('fences an already-bound old Practice and its cached ready projection before a new answer', async () => {
+    const harness = await createHarness();
+    const route = startTeachingRoute(harness);
+    const ensureRequest = {
+      command: command('bound-practice-before-policy-change'),
+      expectedSessionVersion: route.session.version,
+      expectedAgendaVersion: route.agenda.version,
+      expectedAgendaItemId: route.session.currentAgendaItemId!,
+    };
+    await harness.services.lessonExecution.ensure('ws_1', route.session.id, ensureRequest);
+    const state = harness.repos.lessonExecution.getForSession(
+      route.session.id,
+      route.session.currentAgendaItemId!,
+    )!;
+    const brief = harness.repos.teachingBriefs.get(state.teachingBriefId!)!;
+    const checkpointId = brief.composition!.acceptedLessonCheckpointId;
+    const checkpointBytes = JSON.stringify(
+      harness.repos.acceptedLessonCheckpoints.get(checkpointId),
+    );
+    // This persisted state represents a learner who already completed the
+    // Lesson before the Practice policy update, without answering Practice.
+    const readyState = harness.repos.lessonExecution.update(
+      {
+        ...state,
+        presentedSegmentIndexes: brief.segments.map((segment) => segment.index),
+        presentationCompletedAt: clock.now().toISOString(),
+        version: state.version + 1,
+        updatedAt: clock.now().toISOString(),
+      },
+      state.version,
+    );
+    expect(harness.services.lessonExecution.get('ws_1', route.session.id).practice?.status).toBe(
+      'available',
+    );
+    brief.practice!.qualityEvaluation.answerabilityReview!.policyVersion =
+      'practice-answerability-obsolete';
+    harness.db
+      .prepare('UPDATE teaching_briefs SET payload=? WHERE id=?')
+      .run(JSON.stringify(brief), brief.id);
+    const calls = harness.provider.practiceContentCalls;
+    const lessonCalls = harness.provider.lessonContentCalls;
+    const fenced = harness.services.lessonExecution.get('ws_1', route.session.id);
+    expect(fenced.status).toBe('preparation_needed');
+    expect(fenced.practice).toBeUndefined();
+    expect(fenced.allowedActions).not.toContain('submit_practice_response');
+    await expect(
+      harness.services.lessonExecution.command('ws_1', route.session.id, {
+        command: command('old-practice-answer'),
+        expectedSessionVersion: route.session.version,
+        expectedAgendaVersion: route.agenda.version,
+        expectedAgendaItemId: route.session.currentAgendaItemId!,
+        expectedLessonStateVersion: readyState.version,
+        action: {
+          kind: 'submit_practice_response',
+          itemIndex: 0,
+          optionId: brief.practice!.items[0]!.initial.correctOptionId,
+        },
+      }),
+    ).rejects.toMatchObject({ code: ApiErrorCode.ValidationError });
+    const replay = await harness.services.lessonExecution.ensure(
+      'ws_1',
+      route.session.id,
+      ensureRequest,
+    );
+    expect(replay.status).toBe('preparation_needed');
+    expect(harness.provider.practiceContentCalls).toBe(calls);
+    const fresh = await harness.services.lessonExecution.ensure('ws_1', route.session.id, {
+      ...ensureRequest,
+      command: command('bound-practice-current-policy'),
+    });
+    expect(fresh.status).toBe('ready');
+    expect(fresh.practice?.status).toBe('available');
+    expect(harness.provider.practiceContentCalls).toBeGreaterThan(calls);
+    expect(harness.provider.lessonContentCalls).toBe(lessonCalls);
+    expect(JSON.stringify(harness.repos.acceptedLessonCheckpoints.get(checkpointId))).toBe(
+      checkpointBytes,
+    );
+  });
   it('prepares a complete Lesson and Practice from exact unit sources without Concept bindings', async () => {
     const harness = await createHarness();
     const curriculum = harness.repos.curricula.get(harness.curriculumId)!;
@@ -1361,7 +1638,7 @@ describe('Teaching Brief preparation', () => {
       harness.db
         .prepare('SELECT COUNT(*) AS count FROM model_logical_calls WHERE study_session_id=?')
         .get(route.session.id),
-    ).toEqual({ count: 6 });
+    ).toEqual({ count: 6 + 2 * result.brief.practice!.items.length });
     const checkpoint = harness.repos.acceptedLessonCheckpoints.get(
       result.brief.composition!.acceptedLessonCheckpointId,
     )!;

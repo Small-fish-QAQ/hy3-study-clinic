@@ -7,6 +7,7 @@ import {
   TeachingContentReviewSchema,
   PracticeRepairContentSchema,
   groupLessonSegmentsForLearner,
+  projectLearnerPracticeSurface,
   isExecutableTeachingAgendaItem,
   type LessonExecutionProjection,
   type LessonExecutionState,
@@ -31,6 +32,7 @@ import {
   invalidateGenerationDependency,
 } from './generationStages.js';
 import { createTelemetryProvider } from './providerTelemetry.js';
+import { hasCurrentPracticeAnswerabilityReview } from './teachingContentReview.js';
 import {
   failedPracticeAttempt,
   practiceItemPassed,
@@ -285,6 +287,13 @@ export function createLessonExecutionService({
       brief.learningUnitId !== context.item.learningUnitId ||
       brief.executionSourceManifestFingerprint !==
         context.session.executionSourceManifestFingerprint
+    ) {
+      return null;
+    }
+    if (
+      brief.practice &&
+      !state.practiceCompletedAt &&
+      !hasCurrentPracticeAnswerabilityReview(brief)
     ) {
       return null;
     }
@@ -808,8 +817,7 @@ export function createLessonExecutionService({
               construct: item.construct,
               surface: surfaceName,
               supplementary: item.authority === 'ai_teaching_synthesis',
-              prompt: surface.prompt,
-              options: surface.options.map(({ id, text }) => ({ id, text })),
+              ...projectLearnerPracticeSurface(surface),
             },
       attempts: state.practiceInteractions.map(({ recovery, ...attempt }) => ({
         ...attempt,
@@ -1056,7 +1064,11 @@ export function createLessonExecutionService({
         studySessionId: sessionId,
       },
     );
-    if (claim.replayPayload) return LessonExecutionProjectionSchema.parse(claim.replayPayload);
+    if (claim.replayPayload) {
+      const replay = LessonExecutionProjectionSchema.parse(claim.replayPayload);
+      if (replay.status === 'ready' && !currentBrief(initial)) return get(workspaceId, sessionId);
+      return replay;
+    }
     let claimedState: LessonExecutionState;
     try {
       claimedState = repos.transaction(() => {

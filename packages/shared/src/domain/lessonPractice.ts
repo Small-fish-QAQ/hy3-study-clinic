@@ -102,6 +102,42 @@ const TeachingContentReviewReceiptSchema = z
   })
   .strict();
 
+/** Independent of Lesson generation, composition identity and pedagogy severity. */
+// V1 could contain Fake suffix guesses; none of those proofs may certify current Practice.
+export const PRACTICE_ANSWERABILITY_POLICY_VERSION = 'practice-answerability-v2-fail-closed-fake';
+
+export const PracticeAnswerabilityReviewSchema = z
+  .object({
+    policyVersion: z.string().min(1).max(80),
+    rounds: z
+      .array(
+        z
+          .object({
+            candidateHash: z.string().regex(/^sha256:[a-f0-9]{64}$/u),
+            solves: z
+              .array(
+                z
+                  .object({
+                    logicalCallId: z.string().min(1),
+                    actionId: z.string().min(1).max(40),
+                    itemIndex: z.number().int().min(0).max(7),
+                    surface: z.enum(['initial', 'retry']),
+                    inputHash: z.string().regex(/^sha256:[a-f0-9]{64}$/u),
+                    result: TeachingContentReviewSchema,
+                  })
+                  .strict(),
+              )
+              .min(2)
+              .max(16),
+          })
+          .strict(),
+      )
+      .min(1)
+      .max(MAX_TEACHING_CONTENT_REVIEWS),
+  })
+  .strict();
+export type PracticeAnswerabilityReview = z.infer<typeof PracticeAnswerabilityReviewSchema>;
+
 export const LessonPedagogyEvaluationSchema = z
   .object({
     schemaVersion: z.literal(1),
@@ -161,6 +197,8 @@ export const PracticeQualityEvaluationSchema = z
       .min(1)
       .max(MAX_TEACHING_CONTENT_REVIEWS)
       .optional(),
+    /** Absent on historical Practice; required by the current preparation/reuse gate. */
+    answerabilityReview: PracticeAnswerabilityReviewSchema.optional(),
   })
   .strict();
 export type PracticeQualityEvaluation = z.infer<typeof PracticeQualityEvaluationSchema>;

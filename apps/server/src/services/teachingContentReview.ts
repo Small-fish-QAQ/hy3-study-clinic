@@ -2,6 +2,13 @@ import { createHash } from 'node:crypto';
 import {
   TeachingContentReviewSchema,
   MAX_TEACHING_CONTENT_REVIEWS,
+  PRACTICE_ANSWERABILITY_POLICY_VERSION,
+  projectLearnerPracticeSurface,
+  projectPracticePriorTeaching,
+  type LearnerPracticeSolvingSurface,
+  type PracticePriorTeaching,
+  type PracticeAnswerabilityReview,
+  type TeachingBrief,
   type LessonSlotContentProposalPayload,
   type PracticeContentProposalPayload,
   type TeachingContentReview,
@@ -9,6 +16,8 @@ import {
 import type {
   LessonSlotContentGenerationInput,
   PracticeContentGenerationInput,
+  AuthoredTeachingContentReviewInput,
+  PracticeAnswerabilityReviewInput,
   TeachingContentReviewInput,
 } from '../llm/provider.js';
 import { ProviderError } from '../llm/errors.js';
@@ -191,7 +200,7 @@ export function prepareTeachingReview(
         });
       }
   }
-  const input: TeachingContentReviewInput = {
+  const input: AuthoredTeachingContentReviewInput = {
     stage: 'slots' in candidate ? 'lesson' : 'practice',
     computedOutcomes: context.computedCases,
     ...(computedItemIds.size ? { computedItemIds: [...computedItemIds] } : {}),
@@ -271,4 +280,229 @@ export function prepareTeachingReview(
     findings,
     candidateHash: `sha256:${createHash('sha256').update(JSON.stringify(candidate)).digest('hex')}`,
   };
+}
+
+const reviewHash = (value: unknown) =>
+  `sha256:${createHash('sha256').update(JSON.stringify(value)).digest('hex')}`;
+
+export function preparePracticeAnswerabilityReview(
+  surface: LearnerPracticeSolvingSurface,
+  priorTeaching: PracticePriorTeaching,
+  actionId: string,
+  itemId: string,
+) {
+  const input: PracticeAnswerabilityReviewInput = {
+    purpose: 'practice_answerability',
+    stage: 'practice',
+    candidate: { actionId, ...projectLearnerPracticeSurface(surface) },
+    priorTeaching: structuredClone(priorTeaching),
+    actionIds: [actionId],
+  };
+  const inputHash = reviewHash(input);
+  const validate = (raw: unknown) => {
+    const parsed = TeachingContentReviewSchema.safeParse(raw);
+    const valid =
+      parsed.success &&
+      parsed.data.decisions.length === 1 &&
+      parsed.data.decisions[0]!.actionId === actionId &&
+      parsed.data.findings.every((finding) => [actionId, itemId].includes(finding.itemId));
+    return {
+      valid,
+      diagnostics: valid
+        ? []
+        : ['practice_solve_inventory: cover the sole offered action exactly once.'],
+      diagnosticCodes: valid ? [] : ['practice_solve_inventory'],
+    };
+  };
+  return { input, inputHash, validate };
+}
+
+type PracticeReviewRequest = {
+  input: TeachingContentReviewInput;
+  validate: ReturnType<typeof preparePracticeAnswerabilityReview>['validate'];
+};
+
+/** Practice-only gate. Rich grounding results never supply independent answers. */
+export async function verifyPreparedPractice(
+  context: PracticeContentGenerationInput,
+  candidate: PracticeContentProposalPayload,
+  priorTeaching: PracticePriorTeaching,
+  review: (
+    prepared: PracticeReviewRequest,
+    round: number,
+  ) => Promise<{ result: TeachingContentReview; logicalCallId: string }>,
+  revise: (
+    draft: PracticeContentProposalPayload,
+    findings: TeachingContentReview['findings'],
+  ) => Promise<PracticeContentProposalPayload>,
+) {
+  const receipts = [];
+  const answerabilityReview: PracticeAnswerabilityReview = {
+    policyVersion: PRACTICE_ANSWERABILITY_POLICY_VERSION,
+    rounds: [],
+  };
+  let previousFindings: TeachingContentReview['findings'] | undefined;
+  for (let round = 0; round < MAX_TEACHING_CONTENT_REVIEWS; round += 1) {
+    const prepared = prepareTeachingReview(context, candidate);
+    const allowedIds = new Set([
+      ...candidate.items.map((item) => item.practiceSlotId),
+      ...prepared.input.actionIds,
+    ]);
+    const groundingInput: AuthoredTeachingContentReviewInput = {
+      ...prepared.input,
+      purpose: 'practice_grounding',
+      actionIds: [],
+    };
+    const validateGrounding = (raw: unknown) => {
+      const parsed = TeachingContentReviewSchema.safeParse(raw);
+      const valid =
+        parsed.success &&
+        parsed.data.decisions.length === 0 &&
+        parsed.data.findings.every((finding) => allowedIds.has(finding.itemId));
+      return {
+        valid,
+        diagnostics: valid
+          ? []
+          : ['practice_grounding_inventory: return findings only for offered items.'],
+        diagnosticCodes: valid ? [] : ['practice_grounding_inventory'],
+      };
+    };
+    const grounded = await review({ input: groundingInput, validate: validateGrounding }, round);
+    if (!validateGrounding(grounded.result).valid)
+      throw ProviderError.invalidOutput(
+        'Practice grounding review must return only findings for its exact inventory.',
+        'candidate',
+        'SEMANTIC_VALIDATION_FAILURE',
+        false,
+      );
+    receipts.push({ ...grounded, candidateHash: prepared.candidateHash });
+    const findings = prepared.findings(grounded.result);
+    const solves: PracticeAnswerabilityReview['rounds'][number]['solves'] = [];
+    for (const [itemIndex, item] of candidate.items.entries()) {
+      for (const surface of ['initial', 'retry'] as const) {
+        const authored = item[surface];
+        const visible = projectLearnerPracticeSurface({
+          prompt: authored.prompt,
+          options: authored.options.map(({ optionRef, text }) => ({ id: optionRef, text })),
+        });
+        const actionId = `${item.practiceSlotId}.${surface}`;
+        const solve = preparePracticeAnswerabilityReview(
+          visible,
+          priorTeaching,
+          actionId,
+          item.practiceSlotId,
+        );
+        const solved = await review(solve, round);
+        if (!solve.validate(solved.result).valid)
+          throw ProviderError.invalidOutput(
+            'Practice independent solve did not cover its sole action inventory.',
+            'candidate',
+            'SEMANTIC_VALIDATION_FAILURE',
+            false,
+          );
+        solves.push({
+          ...solved,
+          actionId,
+          itemIndex,
+          surface,
+          inputHash: solve.inputHash,
+        });
+        findings.push(
+          ...solved.result.findings
+            .filter((finding) => finding.code !== 'shallow_task')
+            .map((finding) => ({ ...finding, itemId: item.practiceSlotId })),
+        );
+        const decision = solved.result.decisions[0]!;
+        if (
+          !visible.options.some((option) => option.id === decision.answerId) ||
+          decision.answerId !== authored.correctOptionRef
+        )
+          findings.push({
+            itemId: item.practiceSlotId,
+            code: 'insufficient_evidence',
+            problem: `${actionId}: learner-visible independent reading selects ${decision.answerId ?? 'no unique answer'}, not the offered authored key. ${decision.evidenceUsed}`,
+            repairInstruction:
+              'Make this unanswered surface and its prior public teaching sufficient for one offered answer; correct the saved key and feedback if necessary. Do not rely on private application data or future questions.',
+          });
+      }
+    }
+    answerabilityReview.rounds.push({ candidateHash: prepared.candidateHash, solves });
+    if (!findings.length) return { candidate, receipts, answerabilityReview };
+    const findingKey = (finding: TeachingContentReview['findings'][number]) =>
+      `${finding.itemId}\u0000${finding.code}`;
+    const resolvedPriorDefect = previousFindings?.some(
+      (prior) => !findings.some((current) => findingKey(current) === findingKey(prior)),
+    );
+    const changedDraft = round > 0 && receipts[round - 1]!.candidateHash !== prepared.candidateHash;
+    if (
+      round === MAX_TEACHING_CONTENT_REVIEWS - 1 ||
+      (round === 1 && (!changedDraft || !resolvedPriorDefect))
+    )
+      throw ProviderError.invalidOutput(
+        'Practice content still has material defects after its bounded revision.',
+        'candidate',
+        'SEMANTIC_VALIDATION_FAILURE',
+        true,
+        {
+          kind: 'teaching_content_review_failed',
+          diagnostics: findings.map(({ code, problem }) => ({ code, message: problem })),
+        },
+      );
+    previousFindings = findings;
+    candidate = await revise(candidate, findings);
+  }
+  throw new Error('Unreachable Practice review state.');
+}
+
+/** Bind the current gate to the saved visible surfaces, keys and prior teaching. */
+export function hasCurrentPracticeAnswerabilityReview(brief: TeachingBrief): boolean {
+  const practice = brief.practice;
+  const proof = practice?.qualityEvaluation.answerabilityReview;
+  const grounding = practice?.qualityEvaluation.contentReview;
+  if (
+    !practice ||
+    !proof ||
+    proof.policyVersion !== PRACTICE_ANSWERABILITY_POLICY_VERSION ||
+    !grounding?.length ||
+    proof.rounds.length !== grounding.length ||
+    proof.rounds.some((round, index) => round.candidateHash !== grounding[index]!.candidateHash)
+  )
+    return false;
+  const latest = proof.rounds.at(-1)!;
+  const lastGrounding = grounding.at(-1)!.result;
+  if (
+    lastGrounding.decisions.length ||
+    lastGrounding.findings.some((finding) => finding.code !== 'shallow_task') ||
+    latest.solves.length !== practice.items.length * 2 ||
+    new Set(latest.solves.map((solve) => `${solve.itemIndex}.${solve.surface}`)).size !==
+      latest.solves.length
+  )
+    return false;
+  const priorTeaching = projectPracticePriorTeaching(brief);
+  return latest.solves.every((solve) => {
+    const item = practice.items[solve.itemIndex];
+    if (!item || !solve.actionId.endsWith(`.${solve.surface}`)) return false;
+    const surface = item[solve.surface];
+    const options = surface.options.map(({ id, text }) => ({
+      id: id.slice(id.lastIndexOf('_') + 1),
+      text,
+    }));
+    const input = preparePracticeAnswerabilityReview(
+      { prompt: surface.prompt, options },
+      priorTeaching,
+      solve.actionId,
+      solve.actionId.slice(0, solve.actionId.lastIndexOf('.')),
+    );
+    const decision = solve.result.decisions[0];
+    const selected = surface.options.find(
+      (_option, index) => options[index]!.id === decision?.answerId,
+    );
+    return (
+      input.inputHash === solve.inputHash &&
+      input.validate(solve.result).valid &&
+      !solve.result.findings.some((finding) => finding.code !== 'shallow_task') &&
+      selected !== undefined &&
+      selected.id === surface.correctOptionId
+    );
+  });
 }

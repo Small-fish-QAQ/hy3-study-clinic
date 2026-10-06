@@ -9,11 +9,17 @@ import {
   buildTeachingCases,
   type TeachingKernel,
 } from './teachingKernel.js';
-import { TeachingCapsulePayloadSchema } from '@hy3-clinic/shared';
+import {
+  TeachingCapsulePayloadSchema,
+  projectAcceptedLessonSegments,
+  projectPracticePriorTeaching,
+  type TeachingContentReview,
+} from '@hy3-clinic/shared';
 import { planTeachingSkeleton } from '../services/teachingSkeletonPlanner.js';
 import { compileTeachingKernel } from '../services/compileTeachingKernel.js';
 import { validateTeachingCapsule } from './teachingCapsule.js';
 import { deriveTeachingKernel } from './teachingBlueprint.js';
+import { verifyPreparedPractice } from '../services/teachingContentReview.js';
 
 export function kernelFixture(): TeachingKernel {
   const base = { role: ['read'], second: ['write'], read: 'read', write: 'write' };
@@ -137,7 +143,7 @@ describe('executable teaching cases', () => {
     expect(derived.retry.useTransferRules).toBe(true);
     expect(derived.diagnosis.probes.every((p) => p.observe?.length)).toBe(true);
   });
-  it('compiles sufficient visible cases, feedback and counterfactuals into the existing teaching contract', () => {
+  it('compiles sufficient visible cases and passes the isolated Practice answerability gate', async () => {
     const skeleton = planTeachingSkeleton({
       learningUnitTitle: '角色权限',
       targetMinutes: 22,
@@ -204,6 +210,67 @@ describe('executable teaching cases', () => {
       worked.steps[1]!.resultingState,
     );
     expect(worked.interaction!.scaffold.prompt).toContain('先只做一小步');
+    const priorTeaching = projectPracticePriorTeaching({
+      objective: { title: '角色权限', whyNow: capsule.lesson.narrative!.whyNow, objectives: [] },
+      prerequisites: [],
+      segments: projectAcceptedLessonSegments({ skeleton, lessonContent: capsule.lesson.slots }, [
+        'objective_1',
+      ]),
+      sourceReferences: [],
+      visualReferences: [],
+      summary: capsule.lesson.narrative!.summary,
+      nextConnection: capsule.lesson.narrative!.forwardBridge,
+    });
+    const purposes: string[] = [];
+    const verified = await verifyPreparedPractice(
+      {
+        ...input.lesson,
+        skeleton,
+        computedCases: true,
+        acceptedLesson: capsule.lesson.slots,
+      },
+      capsule.practice,
+      priorTeaching,
+      async (prepared, round) => {
+        const result: TeachingContentReview = { decisions: [], findings: [] };
+        purposes.push(prepared.input.purpose!);
+        if (prepared.input.purpose === 'practice_answerability') {
+          const visible = prepared.input;
+          expect(JSON.stringify(visible.priorTeaching)).toContain(
+            '合并权限 = 角色甲权限 ∪ 角色乙权限',
+          );
+          expect(JSON.stringify(visible)).not.toContain('correctOption');
+          expect(JSON.stringify(visible)).not.toContain('feedbackIfSelected');
+          expect(visible.candidate.options).toHaveLength(3);
+          const initial = visible.actionIds[0]!.endsWith('.initial');
+          expect(visible.candidate.prompt).toContain(initial ? '实验记录' : '目标要求');
+          // Fixed finite-case answers: both observations identify the third
+          // hypothesis; retaining read and removing write requires the first
+          // intervention. The stub never reads private application or keys.
+          result.decisions.push({
+            actionId: visible.actionIds[0]!,
+            answerId: initial ? 'C' : 'A',
+            requiresCaseInference: true,
+            evidenceUsed:
+              'The public permission-union rule and observations determine this option.',
+          });
+        }
+        return { result, logicalCallId: `computed-public:${round}:${purposes.length}` };
+      },
+      async () => {
+        throw new Error('A complete computed case must not require revision.');
+      },
+    );
+    expect(purposes).toEqual([
+      'practice_grounding',
+      'practice_answerability',
+      'practice_answerability',
+    ]);
+    expect(
+      verified.answerabilityReview.rounds[0]!.solves.map(
+        (solve) => solve.result.decisions[0]!.answerId,
+      ),
+    ).toEqual(['C', 'A']);
   });
   it('selects partial observations whose combination is necessary for the actual diagnosis', () => {
     const proposed = kernelFixture();

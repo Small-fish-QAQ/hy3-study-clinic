@@ -1192,7 +1192,12 @@ export class Hy3Provider implements LlmProvider {
       'Return the complete review. Cover each offered actionId exactly once and use only offered item identities. Keep decisions and concrete findings within the requested schema.',
       {
         maxTokens: 8000,
-        schemaName: 'teaching-content-review-v1',
+        schemaName:
+          input.purpose === 'practice_answerability'
+            ? 'practice-answerability-review-v1'
+            : input.purpose === 'practice_grounding'
+              ? 'practice-grounding-review-v1'
+              : 'teaching-content-review-v1',
         immutableItemIds: [],
         allowIndependentRepair: false,
       },

@@ -32,6 +32,7 @@ import {
   TeachingBriefProposalPayloadSchema,
   VisualDescriptionPayloadSchema,
   type TeachingBriefProposalPayload,
+  type TeachingContentReview,
   LessonSlotContentProposalPayloadSchema,
   PracticeContentProposalPayloadSchema,
   ObjectiveAuthoritySemanticEvaluationProposalSchema,
@@ -50,6 +51,7 @@ import {
   type ObjectiveAuthoritySupportType,
 } from '@hy3-clinic/shared';
 import { ProviderError } from './errors.js';
+import { fakePracticeFixtures, solveFakePracticeFixture } from './fakePracticeFixtures.js';
 import type { PracticeRepairInput, TeachingContentReviewInput } from './provider.js';
 import { alignPointToStem, charCoverageRatio } from '../grading/rubricAlignment.js';
 import type {
@@ -867,6 +869,33 @@ export class FakeProvider implements LlmProvider {
         hint: 'Check the necessary condition.',
         explanation: 'Evaluate the current facts against every required condition.',
       })),
+    };
+  }
+
+  /** Unknown public cases remain unresolved; grounding cannot supply their answers. */
+  async reviewTeachingContent(
+    input: TeachingContentReviewInput,
+    opts?: ProviderCallOptions,
+  ): Promise<TeachingContentReview> {
+    if (input.purpose !== 'practice_answerability' && input.purpose !== 'practice_grounding')
+      return this.reviewPracticeRepair(input, opts);
+    await this.gate(opts);
+    if (input.purpose !== 'practice_answerability') return { decisions: [], findings: [] };
+    const answerId =
+      input.actionIds.length === 1 && input.actionIds[0] === input.candidate.actionId
+        ? solveFakePracticeFixture(input.candidate)
+        : null;
+    return {
+      decisions: input.actionIds.map((actionId) => ({
+        actionId,
+        answerId,
+        requiresCaseInference: answerId !== null,
+        evidenceUsed:
+          answerId === null
+            ? 'Unknown or incomplete public fixture: no uniquely justified offered answer.'
+            : 'The exact known public fixture states the rule and case facts that distinguish this offered answer.',
+      })),
+      findings: [],
     };
   }
 
@@ -2152,16 +2181,6 @@ export class FakeProvider implements LlmProvider {
     const sourceByRef = new Map(
       input.sourceContext.offers.map((offer) => [offer.sourceRef, offer]),
     );
-    const scenarioDemand = {
-      pass_oriented: '在一个简单的新案例中',
-      working_fluency: '在一个重要条件已经改变的新案例中',
-      high_performance: '在一个存在相互竞争约束的真实失败案例中',
-      deep_transfer: '在一个组合了两项相互作用约束的陌生迁移案例中',
-    }[input.courseDesign?.desiredDepth ?? 'working_fluency'];
-    const focusDetail =
-      input.courseDesign?.unitFocus === 'focused'
-        ? ' 请同时考虑会让那个看似诱人的选项失效的边界条件。'
-        : '';
     const payload = PracticeContentProposalPayloadSchema.parse({
       items: input.skeleton.practicePlan.slots.map((slot) => {
         const sourceRef = slot.allowedSourceRefs[0];
@@ -2178,9 +2197,11 @@ export class FakeProvider implements LlmProvider {
                 expectedAction: '检查完成事件是否归还配额，再按当前条件执行允许的下一步。',
               }
             : null;
-        const initialPrompt = `${scenarioDemand}，${application?.startingState ?? ''}完成日志确认旧任务已结束，但占用计数没有减少，新任务一直无法通过条件检查。应先诊断哪个环节？${focusDetail}`;
-        const retryPrompt =
-          '另一次检查中，占用计数已正确归零，新任务仍不能进入执行阶段。此时继续沿用“完成事件未归还资源”的诊断是否合理，下一步应检查什么？';
+        const fixtures = fakePracticeFixtures(
+          input.courseDesign?.desiredDepth,
+          input.courseDesign?.unitFocus === 'focused',
+          application !== null,
+        );
         return {
           practiceSlotId: slot.practiceSlotId,
           capabilityTested: slot.capabilityToObserve,
@@ -2197,25 +2218,22 @@ export class FakeProvider implements LlmProvider {
               alternativeOptionId: 'C',
             },
             requiredInference: '完成事件没有更新配额状态，应先检查归还动作。',
-            prompt: initialPrompt,
+            prompt: fixtures.initial.prompt,
             options: [
               {
                 optionRef: 'A',
-                text:
-                  slot.construct === 'apply'
-                    ? application!.expectedAction
-                    : '完成处理没有归还配额，应检查完成事件到计数更新的链路。',
+                text: fixtures.initial.optionTexts[0]!,
                 feedbackIfSelected: '正确：这项回答确实利用给定边界完成了所需推理。',
               },
               {
                 optionRef: 'B',
-                text: '新任务的优先级太低，只需提高优先级即可恢复配额。',
+                text: fixtures.initial.optionTexts[1]!,
                 feedbackIfSelected:
                   '优先级改变检查顺序，却不会减少占用计数；旧任务结束后的状态才是诊断线索。',
               },
               {
                 optionRef: 'C',
-                text: '旧任务仍在运行，所以当前占用计数完全正常。',
+                text: fixtures.initial.optionTexts[2]!,
                 feedbackIfSelected: '完成日志已经确认结束，因此需要解释为什么状态没有随事件更新。',
               },
             ],
@@ -2233,24 +2251,21 @@ export class FakeProvider implements LlmProvider {
               alternativeOptionId: 'A',
             },
             requiredInference: '计数已恢复使原诊断失去依据，应检查后续调度条件。',
-            prompt: retryPrompt,
+            prompt: fixtures.retry.prompt,
             options: [
               {
                 optionRef: 'A',
-                text: '任务仍在等待，所以必然还是资源未归还。',
+                text: fixtures.retry.optionTexts[0]!,
                 feedbackIfSelected: '案例事实的变化会影响判断；仅凭标签无法证明原回答仍然成立。',
               },
               {
                 optionRef: 'B',
-                text:
-                  slot.construct === 'apply'
-                    ? '先排除资源未归还，再检查后续调度条件允许的动作。'
-                    : '计数恢复使原诊断失去依据，应转查后续调度条件。',
+                text: fixtures.retry.optionTexts[1]!,
                 feedbackIfSelected: '正确：这个新情境仍然检验同一种能力，并保留相同的依据边界。',
               },
               {
                 optionRef: 'C',
-                text: '关闭所有条件检查，任何等待任务都直接启动。',
+                text: fixtures.retry.optionTexts[2]!,
                 feedbackIfSelected: '无关的经验法则不能展示这里要检验的能力。',
               },
             ],
