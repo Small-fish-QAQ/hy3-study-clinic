@@ -6,6 +6,8 @@ import {
   fnv1a32,
   MixedInitiativeCommandRequestSchema,
   PracticeContentProposalPayloadSchema,
+  PRACTICE_ACCEPTANCE_POLICY_VERSION,
+  type DesiredDepth,
   type LearningContractDraftFields,
   type LessonSlotContentProposalPayload,
   type LessonExecutionCommandRequest,
@@ -39,6 +41,11 @@ import { fixedClock } from '../util/ids.js';
 import { createServices, type Services } from './index.js';
 import { deriveTeachUnitDurations, resolveStudyPlanPlannability } from './studyPlanValidation.js';
 import { validateLessonSlotContentCandidate } from './teachingBriefContract.js';
+import {
+  evaluatePlannedPracticeQuality,
+  hasCurrentPracticeAcceptancePolicy,
+  practiceAggregateQualityFindings,
+} from './lessonPedagogyEvaluator.js';
 import { TEACHING_SKELETON_PLANNER_VERSION } from './teachingSkeletonPlanner.js';
 import { hasCurrentPracticeAnswerabilityReview } from './teachingContentReview.js';
 import {
@@ -376,7 +383,7 @@ async function createHarness(
   providerDelayMs = 0,
   semanticVerdict: 'pass' | 'fail' = 'pass',
   targetConstruct: 'explain' | 'apply' = 'explain',
-  desiredDepth: 'working_fluency' | 'pass_oriented' = 'working_fluency',
+  desiredDepth: DesiredDepth = 'working_fluency',
 ): Promise<Harness> {
   const db = openDatabase(':memory:');
   databases.push(db);
@@ -1139,6 +1146,202 @@ function preparationRequest(
   };
 }
 
+const qualityDecisionPrompt =
+  '案例规则：旧任务结束后应归还占用配额，调整优先级不会改变占用计数。完成日志确认旧任务已结束，但计数仍满，新任务等待。检查状态更新链路花费1分钟，调整优先级花费5分钟；只能先选一项，希望尽快定位不符合规则的状态。应优先采用哪个方案，为什么？';
+const qualityDecisionAnswer = '先检查完成事件到计数更新的链路，以较低成本定位未归还状态。';
+
+async function aggregateQualityHarness(
+  rewrite:
+    | 'no_op'
+    | 'ineffective'
+    | 'improved'
+    | 'wrong_key'
+    | 'source_alias'
+    | 'schema'
+    | 'missing_givens'
+    | 'grounding'
+    | 'invalid_output'
+    | 'network'
+    | 'review_failure'
+    | 'malformed_review'
+    | 'leak' = 'no_op',
+  initialDefect?: 'missing_givens' | 'wrong_key' | 'authority' | 'grounding',
+) {
+  const harness = await createHarness(0, 'pass', 'explain', 'deep_transfer');
+  const curriculum = harness.repos.curricula.get(harness.curriculumId)!;
+  const unit = curriculum.nodes.find((node) => node.id === harness.learningUnitId)!.learningUnit!;
+  unit.focus = 'focused';
+  for (const objective of unit.objectives) objective.priority = 'required';
+  harness.db
+    .prepare('UPDATE curriculum_versions SET payload=? WHERE id=?')
+    .run(JSON.stringify(curriculum), curriculum.id);
+
+  const lesson = harness.provider.generateLessonSlotContent.bind(harness.provider);
+  harness.provider.generateLessonSlotContent = async (input, opts) => {
+    const candidate = await lesson(input, opts);
+    for (const slot of candidate.slots) {
+      if (slot.workedProcess?.interaction) {
+        const transfer = slot.workedProcess.interaction.transfer;
+        transfer.reasoningOperation = 'diagnose_cause';
+        transfer.changedCondition =
+          '补充案例：备用处理器容量3，乙需要3；没有运行任务，但备用处理器的空闲记录仍是0，乙因配额不足被拒绝。';
+        transfer.requiredInference = '备用处理器的空闲记录未按实际容量初始化。';
+        transfer.prompt = '应先诊断哪个环节，才能解释没有运行任务却没有空闲配额？';
+        transfer.evidenceContrast = {
+          evidence: '没有运行任务，但备用处理器的空闲记录仍是0',
+          replacement: '备用处理器已有运行任务占用全部3个配额',
+          alternativeOptionId: 'A',
+        };
+        transfer.options[0]!.text = '运行任务占用了备用处理器的全部配额。';
+        transfer.options[0]!.feedbackIfSelected = '可见记录明确排除了正在运行的任务。';
+        transfer.options[1]!.text = transfer.requiredInference;
+        transfer.options[1]!.feedbackIfSelected = '实际容量与空闲记录不一致，且没有占用事件。';
+        transfer.options[2]!.text = '乙需要的配额超过备用处理器的实际容量。';
+        transfer.options[2]!.feedbackIfSelected = '乙的需求3等于备用处理器容量3。';
+        transfer.debrief = '没有运行任务排除了占用原因，需求未超出容量；应追踪初始空闲状态。';
+      }
+      if (slot.informalCheck) slot.informalCheck.reasoningOperation = 'identify_missing';
+    }
+    return candidate;
+  };
+
+  const qualityRequests: PracticeContentGenerationInput[] = [];
+  const practice = harness.provider.generatePracticeContent.bind(harness.provider);
+  harness.provider.generatePracticeContent = async (input, opts) => {
+    const generated = await practice(input, opts);
+    const improving = input.editorialFindings?.some((finding) =>
+      /focused_unit_angle_coverage_insufficient|reasoning_demand_below_depth/u.test(
+        finding.problem,
+      ),
+    );
+    const candidate = improving ? structuredClone(input.draftForReview!) : generated;
+    // The fixture states its synthetic rule explicitly and claims no source citation.
+    for (const item of candidate.items) {
+      item.sourceRefs = [];
+      item.visualRefs = [];
+    }
+    if (improving) {
+      qualityRequests.push(structuredClone(input));
+      if (rewrite === 'invalid_output')
+        throw ProviderError.invalidOutput(
+          'Invalid optional rewrite.',
+          'schema',
+          'SCHEMA_VALIDATION_FAILURE',
+          true,
+        );
+      if (rewrite === 'network') throw ProviderError.network();
+      if (rewrite === 'ineffective') candidate.items[0]!.pedagogicalReason += ' 保留相同覆盖缺口。';
+      if (rewrite === 'improved')
+        for (const item of candidate.items) {
+          item.initial.prompt = qualityDecisionPrompt;
+          item.initial.reasoningOperation = 'judge_tradeoff';
+          item.initial.requiredInference = qualityDecisionAnswer;
+          item.initial.decisiveCondition = '状态更新检查成本较低且计数未随完成事件归还。';
+          item.initial.evidenceContrast = {
+            evidence: '检查状态更新链路花费1分钟，调整优先级花费5分钟',
+            replacement: '检查链路花费10分钟，已有证据定位到优先级配置且调整只需1分钟',
+            alternativeOptionId: 'B',
+          };
+          item.initial.options[0]!.text = qualityDecisionAnswer;
+          item.initial.options[1]!.text = '先调整优先级配置，再检查后续允许启动的条件。';
+          item.initial.options[2]!.text = '直接停用占用计数检查，让所有等待任务开始。';
+          item.initial.explanation =
+            '完成日志与满计数不一致，而调整优先级不能归还配额；先检查更新链路也消耗更少时间。';
+        }
+      if (rewrite === 'wrong_key') {
+        candidate.items[0]!.initial.correctOptionRef = 'B';
+        candidate.items[0]!.initial.evidenceContrast!.alternativeOptionId = 'C';
+      }
+      if (rewrite === 'source_alias') candidate.items[0]!.sourceRefs = ['S99'];
+      if (rewrite === 'schema') candidate.items[0]!.initial.options[1]!.optionRef = 'A';
+      if (rewrite === 'missing_givens')
+        candidate.items[0]!.initial.prompt =
+          '完成日志确认旧任务已结束，新任务仍等待。应先诊断哪个环节？';
+      if (rewrite === 'grounding') {
+        candidate.items[0]!.sourceRefs = ['S1'];
+        candidate.items[0]!.capabilityTested += ' 材料保证提高优先级就会自动归还配额。';
+      }
+      if (rewrite === 'leak')
+        candidate.items[0]!.initial.prompt += ` 正确答案是${candidate.items[0]!.initial.options[0]!.text}`;
+    } else if (initialDefect === 'missing_givens') {
+      candidate.items[0]!.initial.prompt =
+        '完成日志确认旧任务已结束，新任务仍等待。应先诊断哪个环节？';
+    } else if (initialDefect === 'wrong_key') {
+      candidate.items[0]!.initial.correctOptionRef = 'B';
+      candidate.items[0]!.initial.evidenceContrast!.alternativeOptionId = 'C';
+    } else if (initialDefect === 'authority') {
+      candidate.items[0]!.sourceRefs = ['S99'];
+    } else if (initialDefect === 'grounding') {
+      candidate.items[0]!.sourceRefs = ['S1'];
+      candidate.items[0]!.capabilityTested += ' 材料保证提高优先级就会自动归还配额。';
+    }
+    expect(
+      practiceAggregateQualityFindings(
+        evaluatePlannedPracticeQuality(candidate, input, {
+          evaluatedAt: clock.now().toISOString(),
+        }),
+      ).length > 0,
+    ).toBe(!(improving && rewrite === 'improved'));
+    return candidate;
+  };
+
+  const requests: TeachingContentReviewInput[] = [];
+  const review = harness.provider.reviewTeachingContent.bind(harness.provider);
+  harness.provider.reviewTeachingContent = async (input, opts) => {
+    requests.push(structuredClone(input));
+    if (input.purpose === 'practice_grounding' && qualityRequests.length > 0) {
+      if (rewrite === 'review_failure') throw ProviderError.timeout(1);
+      if (rewrite === 'malformed_review')
+        return {
+          decisions: [
+            {
+              actionId: 'unoffered',
+              answerId: null,
+              requiresCaseInference: false,
+              evidenceUsed: 'Invalid review inventory.',
+            },
+          ],
+          findings: [],
+        };
+    }
+    if (
+      input.purpose === 'practice_grounding' &&
+      (initialDefect === 'grounding' || (rewrite === 'grounding' && qualityRequests.length > 0))
+    )
+      return {
+        decisions: [],
+        findings: [
+          {
+            itemId: 'PR1',
+            code: 'grounding',
+            problem: 'The cited source does not entail automatic quota release by priority.',
+            repairInstruction: 'Remove the unsupported claim or supply authorized support.',
+          },
+        ],
+      };
+    if (
+      input.purpose === 'practice_answerability' &&
+      input.candidate.prompt === qualityDecisionPrompt
+    )
+      return {
+        decisions: [
+          {
+            actionId: input.actionIds[0]!,
+            answerId: input.candidate.options.find(
+              (option) => option.text === qualityDecisionAnswer,
+            )!.id,
+            requiresCaseInference: true,
+            evidenceUsed:
+              'The visible rule excludes priority as a quota update; the cheaper update check explains the observed inconsistency.',
+          },
+        ],
+        findings: [],
+      };
+    return review(input, opts);
+  };
+  return { harness, qualityRequests, requests };
+}
+
 function staleCurrentCurriculumSemanticSupport(harness: Harness, reason: string): void {
   const curriculum = structuredClone(harness.repos.curricula.get(harness.curriculumId)!);
   const planItem = harness.repos.studyPlans
@@ -1204,6 +1407,244 @@ afterEach(() => {
 });
 
 describe('Teaching Brief preparation', () => {
+  it.each(['no_op', 'ineffective'] as const)(
+    'accepts residual Practice aggregate warnings after exactly one %s quality improvement',
+    async (rewrite) => {
+      const { harness, qualityRequests } = await aggregateQualityHarness(rewrite);
+      const route = startTeachingRoute(harness);
+      const result = await harness.services.teachingBriefPreparation.prepare(
+        preparationRequest(harness, route, `aggregate-quality-${rewrite}`),
+      );
+      const evaluation = result.brief.practice!.qualityEvaluation;
+      expect(qualityRequests).toHaveLength(1);
+      expect(harness.provider.practiceContentCalls).toBe(2);
+      expect(evaluation).toMatchObject({
+        acceptancePolicyVersion: PRACTICE_ACCEPTANCE_POLICY_VERSION,
+        status: 'pass',
+        qualityImprovement: { attempts: 1, outcome: 'exhausted' },
+      });
+      const quality = practiceAggregateQualityFindings(evaluation);
+      expect(quality.map((finding) => finding.code)).toEqual(
+        expect.arrayContaining([
+          'focused_unit_angle_coverage_insufficient',
+          'reasoning_demand_below_depth',
+        ]),
+      );
+      expect(quality).toEqual(evaluation.qualityImprovement!.findingsBefore);
+      expect(
+        quality.every(
+          (finding) =>
+            finding.severity === 'warning' &&
+            finding.itemIndexes.length > 0 &&
+            finding.objectiveRefs.length > 0 &&
+            finding.message.length > 0,
+        ),
+      ).toBe(true);
+      expect(hasCurrentPracticeAnswerabilityReview(result.brief)).toBe(true);
+      expect(hasCurrentPracticeAcceptancePolicy(result.brief)).toBe(true);
+      expect(evaluation.contentReview).toHaveLength(2);
+      const hashes = evaluation.contentReview!.map((receipt) => receipt.candidateHash);
+      expect(new Set(hashes).size).toBe(rewrite === 'no_op' ? 1 : 2);
+      expect(evaluation.answerabilityReview!.rounds.map((round) => round.candidateHash)).toEqual(
+        hashes,
+      );
+      expect(result.brief.composition!.practiceLogicalCallId).toContain(
+        ':practice-quality-improvement',
+      );
+    },
+  );
+
+  it('accepts a successful quality rewrite only with fresh independent proofs', async () => {
+    const { harness, qualityRequests } = await aggregateQualityHarness('improved');
+    const route = startTeachingRoute(harness);
+    const result = await harness.services.teachingBriefPreparation.prepare(
+      preparationRequest(harness, route, 'aggregate-quality-improved'),
+    );
+    const evaluation = result.brief.practice!.qualityEvaluation;
+    expect(qualityRequests).toHaveLength(1);
+    expect(harness.provider.practiceContentCalls).toBe(2);
+    expect(evaluation.qualityImprovement).toMatchObject({ attempts: 1, outcome: 'improved' });
+    expect(practiceAggregateQualityFindings(evaluation)).toEqual([]);
+    expect(evaluation.contentReview).toHaveLength(2);
+    expect(evaluation.contentReview![0]!.candidateHash).not.toBe(
+      evaluation.contentReview![1]!.candidateHash,
+    );
+    expect(hasCurrentPracticeAnswerabilityReview(result.brief)).toBe(true);
+    expect(
+      result.brief.practice!.items.every((item) => item.initial.prompt === qualityDecisionPrompt),
+    ).toBe(true);
+  });
+
+  it.each(['missing_givens', 'wrong_key', 'authority', 'grounding'] as const)(
+    'keeps an initial %s defect hard despite aggregate quality allowance',
+    async (defect) => {
+      const { harness, qualityRequests } = await aggregateQualityHarness('no_op', defect);
+      const route = startTeachingRoute(harness);
+      await expect(
+        harness.services.teachingBriefPreparation.prepare(
+          preparationRequest(harness, route, `aggregate-hard-${defect}`),
+        ),
+      ).rejects.toBeDefined();
+      expect(qualityRequests).toEqual([]);
+      expect(harness.repos.teachingBriefs.listForUnit('ws_1', harness.learningUnitId)).toEqual([]);
+      expect(
+        harness.db.prepare('SELECT COUNT(*) AS count FROM accepted_lesson_checkpoints').get(),
+      ).toEqual({ count: 1 });
+    },
+  );
+
+  it.each(['wrong_key', 'source_alias', 'schema', 'missing_givens', 'grounding', 'leak'] as const)(
+    'discards a quality rewrite introducing %s and accepts only its current proven original',
+    async (rewrite) => {
+      const { harness, qualityRequests, requests } = await aggregateQualityHarness(rewrite);
+      const route = startTeachingRoute(harness);
+      const result = await harness.services.teachingBriefPreparation.prepare(
+        preparationRequest(harness, route, `aggregate-rewrite-hard-${rewrite}`),
+      );
+      expect(qualityRequests).toHaveLength(1);
+      expect(harness.provider.practiceContentCalls).toBe(2);
+      const original = qualityRequests[0]!.draftForReview!;
+      const originalHash = `sha256:${createHash('sha256').update(JSON.stringify(original)).digest('hex')}`;
+      const evaluation = result.brief.practice!.qualityEvaluation;
+      expect(evaluation.qualityImprovement).toMatchObject({
+        attempts: 1,
+        outcome: 'rejected',
+        failureCode: expect.any(String),
+        logicalCallId: expect.stringContaining(':practice-quality-improvement'),
+      });
+      expect(practiceAggregateQualityFindings(evaluation)).toEqual(
+        evaluation.qualityImprovement!.findingsBefore,
+      );
+      expect(practiceAggregateQualityFindings(evaluation).map((f) => f.code)).toEqual(
+        expect.arrayContaining([
+          'reasoning_demand_below_depth',
+          'focused_unit_angle_coverage_insufficient',
+        ]),
+      );
+      expect(evaluation.contentReview!.map((receipt) => receipt.candidateHash)).toEqual([
+        originalHash,
+      ]);
+      expect(evaluation.answerabilityReview!.rounds.map((round) => round.candidateHash)).toEqual([
+        originalHash,
+      ]);
+      expect(result.brief.practice!.items.map((item) => item.initial.prompt)).toEqual(
+        original.items.map((item) => item.initial.prompt),
+      );
+      expect(result.brief.practice!.items.map((item) => item.capabilityTested)).toEqual(
+        original.items.map((item) => item.capabilityTested),
+      );
+      expect(
+        result.brief.practice!.items.every((item) => item.initial.correctOptionId.endsWith('_A')),
+      ).toBe(true);
+      expect(result.brief.composition!.practiceLogicalCallId).not.toContain(
+        ':practice-quality-improvement',
+      );
+      expect(hasCurrentPracticeAnswerabilityReview(result.brief)).toBe(true);
+      expect(hasCurrentPracticeAcceptancePolicy(result.brief)).toBe(true);
+      expect(harness.repos.teachingBriefs.listForUnit('ws_1', harness.learningUnitId)).toHaveLength(
+        1,
+      );
+      const originalSolves = requests.filter((input) => input.purpose === 'practice_answerability');
+      expect(originalSolves.length).toBeGreaterThan(0);
+      if (['wrong_key', 'missing_givens', 'grounding'].includes(rewrite)) {
+        expect(originalSolves).toHaveLength(
+          4 * qualityRequests[0]!.skeleton.practicePlan.slots.length,
+        );
+        const groundingReviews = requests.filter((input) => input.purpose === 'practice_grounding');
+        expect(groundingReviews).toHaveLength(2);
+        // Grounding deliberately hides the saved key. A changed key still owes
+        // a new grounding call and blind solves, even with the same projection.
+        if (rewrite !== 'wrong_key')
+          expect(groundingReviews[1]!.candidate).not.toEqual(groundingReviews[0]!.candidate);
+      }
+    },
+  );
+
+  it.each([
+    ['invalid_output', 'rejected'],
+    ['network', 'failed'],
+    ['review_failure', 'failed'],
+    ['malformed_review', 'rejected'],
+  ] as const)(
+    'accepts the proven original after optional %s failure without another quality attempt',
+    async (rewrite, outcome) => {
+      const { harness, qualityRequests } = await aggregateQualityHarness(rewrite);
+      const route = startTeachingRoute(harness);
+      const result = await harness.services.teachingBriefPreparation.prepare(
+        preparationRequest(harness, route, `aggregate-quality-failure-${rewrite}`),
+      );
+      const evaluation = result.brief.practice!.qualityEvaluation;
+      expect(qualityRequests).toHaveLength(1);
+      expect(harness.provider.practiceContentCalls).toBe(2);
+      expect(evaluation.qualityImprovement).toMatchObject({
+        attempts: 1,
+        outcome,
+        failureCode: expect.any(String),
+      });
+      expect(evaluation.contentReview).toHaveLength(1);
+      expect(evaluation.answerabilityReview!.rounds).toHaveLength(1);
+      expect(practiceAggregateQualityFindings(evaluation)).toEqual(
+        evaluation.qualityImprovement!.findingsBefore,
+      );
+      expect(hasCurrentPracticeAnswerabilityReview(result.brief)).toBe(true);
+      expect(hasCurrentPracticeAcceptancePolicy(result.brief)).toBe(true);
+      expect(result.brief.composition!.practiceLogicalCallId).not.toContain(
+        ':practice-quality-improvement',
+      );
+    },
+  );
+
+  it.each(['source', 'route', 'lease'] as const)(
+    'refuses original fallback when its current %s fence fails',
+    async (fence) => {
+      const { harness, qualityRequests, requests } = await aggregateQualityHarness('source_alias');
+      const route = startTeachingRoute(harness);
+      const commandId = `aggregate-fallback-stale-${fence}`;
+      let leaseFenceApplied = false;
+      const generate = harness.provider.generatePracticeContent.bind(harness.provider);
+      harness.provider.generatePracticeContent = async (input, opts) => {
+        const candidate = await generate(input, opts);
+        if (qualityRequests.length) {
+          if (fence === 'source')
+            staleCurrentCurriculumSemanticSupport(
+              harness,
+              'Changed during optional quality improvement.',
+            );
+          if (fence === 'route') switchToSuccessorTeachingRoute(harness, route);
+          if (fence === 'lease') {
+            const operation = harness.repos.operations.getByIdempotencyKey(
+              'ws_1',
+              `teaching-brief:${harness.learningUnitId}:${commandId}`,
+            )!;
+            leaseFenceApplied =
+              harness.db
+                .prepare('UPDATE agent_operations SET fencing_token=fencing_token+1 WHERE id=?')
+                .run(operation.id).changes === 1;
+          }
+        }
+        return candidate;
+      };
+      await expect(
+        harness.services.teachingBriefPreparation.prepare(
+          preparationRequest(harness, route, commandId),
+        ),
+      ).rejects.toMatchObject({
+        code: fence === 'source' ? ApiErrorCode.ValidationError : ApiErrorCode.VersionConflict,
+      });
+      expect(leaseFenceApplied).toBe(fence === 'lease');
+      expect(qualityRequests).toHaveLength(1);
+      expect(harness.provider.practiceContentCalls).toBe(2);
+      expect(requests.filter((input) => input.purpose === 'practice_grounding')).toHaveLength(1);
+      expect(requests.filter((input) => input.purpose === 'practice_answerability')).toHaveLength(
+        2 * qualityRequests[0]!.draftForReview!.items.length,
+      );
+      expect(harness.repos.teachingBriefs.listForUnit('ws_1', harness.learningUnitId)).toEqual([]);
+      expect(
+        harness.db.prepare('SELECT COUNT(*) AS count FROM accepted_lesson_checkpoints').get(),
+      ).toEqual({ count: 1 });
+    },
+  );
+
   it.each([
     { complete: false, key: 'A', accepted: false },
     { complete: true, key: 'A', accepted: true },
@@ -1330,130 +1771,150 @@ describe('Teaching Brief preparation', () => {
     );
   });
 
-  it('rejects cached old Practice proof and revalidates only Practice under the same accepted Lesson', async () => {
-    const harness = await createHarness();
-    const route = startTeachingRoute(harness);
-    const request = preparationRequest(harness, route, 'practice-proof-before-policy-change');
-    const prepared = await harness.services.teachingBriefPreparation.prepare(request);
-    const checkpointId = prepared.brief.composition!.acceptedLessonCheckpointId;
-    const checkpointBytes = JSON.stringify(
-      harness.repos.acceptedLessonCheckpoints.get(checkpointId),
-    );
-    const old = structuredClone(prepared);
-    old.brief.practice!.qualityEvaluation.answerabilityReview!.policyVersion =
-      'practice-answerability-v1-learner-visible';
-    harness.db
-      .prepare('UPDATE teaching_briefs SET payload=? WHERE id=?')
-      .run(JSON.stringify(old.brief), old.brief.id);
-    const operation = harness.repos.operations.getByIdempotencyKey(
-      'ws_1',
-      `teaching-brief:${harness.learningUnitId}:${request.commandId}`,
-    )!;
-    harness.db
-      .prepare('UPDATE agent_operation_results SET payload=? WHERE operation_id=?')
-      .run(JSON.stringify(old), operation.id);
-    const lessonCalls = harness.provider.lessonContentCalls;
-    const practiceCalls = harness.provider.practiceContentCalls;
-    const answerabilityCalls = harness.provider.practiceAnswerabilityCalls;
-    await expect(harness.services.teachingBriefPreparation.prepare(request)).rejects.toMatchObject({
-      code: ApiErrorCode.VersionConflict,
-    });
-    expect(harness.services.teachingBriefPreparation.getCurrent(request)).toBeNull();
-    const current = await harness.services.teachingBriefPreparation.prepare(
-      preparationRequest(harness, route, 'practice-proof-current-policy'),
-    );
-    expect(current.status).toBe('prepared');
-    expect(current.brief.id).not.toBe(old.brief.id);
-    expect(hasCurrentPracticeAnswerabilityReview(current.brief)).toBe(true);
-    expect(harness.provider.lessonContentCalls).toBe(lessonCalls);
-    expect(harness.provider.practiceContentCalls).toBeGreaterThan(practiceCalls);
-    expect(harness.provider.practiceAnswerabilityCalls - answerabilityCalls).toBe(
-      2 * current.brief.practice!.items.length,
-    );
-    expect(current.brief.composition!.acceptedLessonCheckpointId).toBe(checkpointId);
-    expect(JSON.stringify(harness.repos.acceptedLessonCheckpoints.get(checkpointId))).toBe(
-      checkpointBytes,
-    );
-  });
+  it.each(['answerability', 'acceptance'] as const)(
+    'rejects cached old Practice %s policy and revalidates only Practice under the same accepted Lesson',
+    async (policy) => {
+      const harness = await createHarness();
+      const route = startTeachingRoute(harness);
+      const request = preparationRequest(harness, route, 'practice-proof-before-policy-change');
+      const prepared = await harness.services.teachingBriefPreparation.prepare(request);
+      const checkpointId = prepared.brief.composition!.acceptedLessonCheckpointId;
+      const checkpointBytes = JSON.stringify(
+        harness.repos.acceptedLessonCheckpoints.get(checkpointId),
+      );
+      const old = structuredClone(prepared);
+      if (policy === 'answerability')
+        old.brief.practice!.qualityEvaluation.answerabilityReview!.policyVersion =
+          'practice-answerability-v1-learner-visible';
+      else {
+        delete old.brief.practice!.qualityEvaluation.acceptancePolicyVersion;
+        delete old.brief.practice!.qualityEvaluation.qualityImprovement;
+        expect(hasCurrentPracticeAnswerabilityReview(old.brief)).toBe(true);
+      }
+      harness.db
+        .prepare('UPDATE teaching_briefs SET payload=? WHERE id=?')
+        .run(JSON.stringify(old.brief), old.brief.id);
+      const operation = harness.repos.operations.getByIdempotencyKey(
+        'ws_1',
+        `teaching-brief:${harness.learningUnitId}:${request.commandId}`,
+      )!;
+      harness.db
+        .prepare('UPDATE agent_operation_results SET payload=? WHERE operation_id=?')
+        .run(JSON.stringify(old), operation.id);
+      const lessonCalls = harness.provider.lessonContentCalls;
+      const practiceCalls = harness.provider.practiceContentCalls;
+      const answerabilityCalls = harness.provider.practiceAnswerabilityCalls;
+      await expect(
+        harness.services.teachingBriefPreparation.prepare(request),
+      ).rejects.toMatchObject({
+        code: ApiErrorCode.VersionConflict,
+      });
+      expect(harness.services.teachingBriefPreparation.getCurrent(request)).toBeNull();
+      const current = await harness.services.teachingBriefPreparation.prepare(
+        preparationRequest(harness, route, 'practice-proof-current-policy'),
+      );
+      expect(current.status).toBe('prepared');
+      expect(current.brief.id).not.toBe(old.brief.id);
+      expect(hasCurrentPracticeAnswerabilityReview(current.brief)).toBe(true);
+      expect(hasCurrentPracticeAcceptancePolicy(current.brief)).toBe(true);
+      expect(harness.provider.lessonContentCalls).toBe(lessonCalls);
+      expect(harness.provider.practiceContentCalls).toBeGreaterThan(practiceCalls);
+      expect(harness.provider.practiceAnswerabilityCalls - answerabilityCalls).toBe(
+        2 * current.brief.practice!.items.length,
+      );
+      expect(current.brief.composition!.acceptedLessonCheckpointId).toBe(checkpointId);
+      expect(JSON.stringify(harness.repos.acceptedLessonCheckpoints.get(checkpointId))).toBe(
+        checkpointBytes,
+      );
+    },
+  );
 
-  it('fences an already-bound old Practice and its cached ready projection before a new answer', async () => {
-    const harness = await createHarness();
-    const route = startTeachingRoute(harness);
-    const ensureRequest = {
-      command: command('bound-practice-before-policy-change'),
-      expectedSessionVersion: route.session.version,
-      expectedAgendaVersion: route.agenda.version,
-      expectedAgendaItemId: route.session.currentAgendaItemId!,
-    };
-    await harness.services.lessonExecution.ensure('ws_1', route.session.id, ensureRequest);
-    const state = harness.repos.lessonExecution.getForSession(
-      route.session.id,
-      route.session.currentAgendaItemId!,
-    )!;
-    const brief = harness.repos.teachingBriefs.get(state.teachingBriefId!)!;
-    const checkpointId = brief.composition!.acceptedLessonCheckpointId;
-    const checkpointBytes = JSON.stringify(
-      harness.repos.acceptedLessonCheckpoints.get(checkpointId),
-    );
-    // This persisted state represents a learner who already completed the
-    // Lesson before the Practice policy update, without answering Practice.
-    const readyState = harness.repos.lessonExecution.update(
-      {
-        ...state,
-        presentedSegmentIndexes: brief.segments.map((segment) => segment.index),
-        presentationCompletedAt: clock.now().toISOString(),
-        version: state.version + 1,
-        updatedAt: clock.now().toISOString(),
-      },
-      state.version,
-    );
-    expect(harness.services.lessonExecution.get('ws_1', route.session.id).practice?.status).toBe(
-      'available',
-    );
-    brief.practice!.qualityEvaluation.answerabilityReview!.policyVersion =
-      'practice-answerability-obsolete';
-    harness.db
-      .prepare('UPDATE teaching_briefs SET payload=? WHERE id=?')
-      .run(JSON.stringify(brief), brief.id);
-    const calls = harness.provider.practiceContentCalls;
-    const lessonCalls = harness.provider.lessonContentCalls;
-    const fenced = harness.services.lessonExecution.get('ws_1', route.session.id);
-    expect(fenced.status).toBe('preparation_needed');
-    expect(fenced.practice).toBeUndefined();
-    expect(fenced.allowedActions).not.toContain('submit_practice_response');
-    await expect(
-      harness.services.lessonExecution.command('ws_1', route.session.id, {
-        command: command('old-practice-answer'),
+  it.each(['answerability', 'acceptance'] as const)(
+    'fences an already-bound old Practice %s policy and its cached ready projection before a new answer',
+    async (policy) => {
+      const harness = await createHarness();
+      const route = startTeachingRoute(harness);
+      const ensureRequest = {
+        command: command('bound-practice-before-policy-change'),
         expectedSessionVersion: route.session.version,
         expectedAgendaVersion: route.agenda.version,
         expectedAgendaItemId: route.session.currentAgendaItemId!,
-        expectedLessonStateVersion: readyState.version,
-        action: {
-          kind: 'submit_practice_response',
-          itemIndex: 0,
-          optionId: brief.practice!.items[0]!.initial.correctOptionId,
+      };
+      await harness.services.lessonExecution.ensure('ws_1', route.session.id, ensureRequest);
+      const state = harness.repos.lessonExecution.getForSession(
+        route.session.id,
+        route.session.currentAgendaItemId!,
+      )!;
+      const brief = harness.repos.teachingBriefs.get(state.teachingBriefId!)!;
+      const checkpointId = brief.composition!.acceptedLessonCheckpointId;
+      const checkpointBytes = JSON.stringify(
+        harness.repos.acceptedLessonCheckpoints.get(checkpointId),
+      );
+      // This persisted state represents a learner who already completed the
+      // Lesson before the Practice policy update, without answering Practice.
+      const readyState = harness.repos.lessonExecution.update(
+        {
+          ...state,
+          presentedSegmentIndexes: brief.segments.map((segment) => segment.index),
+          presentationCompletedAt: clock.now().toISOString(),
+          version: state.version + 1,
+          updatedAt: clock.now().toISOString(),
         },
-      }),
-    ).rejects.toMatchObject({ code: ApiErrorCode.ValidationError });
-    const replay = await harness.services.lessonExecution.ensure(
-      'ws_1',
-      route.session.id,
-      ensureRequest,
-    );
-    expect(replay.status).toBe('preparation_needed');
-    expect(harness.provider.practiceContentCalls).toBe(calls);
-    const fresh = await harness.services.lessonExecution.ensure('ws_1', route.session.id, {
-      ...ensureRequest,
-      command: command('bound-practice-current-policy'),
-    });
-    expect(fresh.status).toBe('ready');
-    expect(fresh.practice?.status).toBe('available');
-    expect(harness.provider.practiceContentCalls).toBeGreaterThan(calls);
-    expect(harness.provider.lessonContentCalls).toBe(lessonCalls);
-    expect(JSON.stringify(harness.repos.acceptedLessonCheckpoints.get(checkpointId))).toBe(
-      checkpointBytes,
-    );
-  });
+        state.version,
+      );
+      expect(harness.services.lessonExecution.get('ws_1', route.session.id).practice?.status).toBe(
+        'available',
+      );
+      if (policy === 'answerability')
+        brief.practice!.qualityEvaluation.answerabilityReview!.policyVersion =
+          'practice-answerability-obsolete';
+      else {
+        delete brief.practice!.qualityEvaluation.acceptancePolicyVersion;
+        expect(hasCurrentPracticeAnswerabilityReview(brief)).toBe(true);
+      }
+      harness.db
+        .prepare('UPDATE teaching_briefs SET payload=? WHERE id=?')
+        .run(JSON.stringify(brief), brief.id);
+      const calls = harness.provider.practiceContentCalls;
+      const lessonCalls = harness.provider.lessonContentCalls;
+      const fenced = harness.services.lessonExecution.get('ws_1', route.session.id);
+      expect(fenced.status).toBe('preparation_needed');
+      expect(fenced.practice).toBeUndefined();
+      expect(fenced.allowedActions).not.toContain('submit_practice_response');
+      await expect(
+        harness.services.lessonExecution.command('ws_1', route.session.id, {
+          command: command('old-practice-answer'),
+          expectedSessionVersion: route.session.version,
+          expectedAgendaVersion: route.agenda.version,
+          expectedAgendaItemId: route.session.currentAgendaItemId!,
+          expectedLessonStateVersion: readyState.version,
+          action: {
+            kind: 'submit_practice_response',
+            itemIndex: 0,
+            optionId: brief.practice!.items[0]!.initial.correctOptionId,
+          },
+        }),
+      ).rejects.toMatchObject({ code: ApiErrorCode.ValidationError });
+      const replay = await harness.services.lessonExecution.ensure(
+        'ws_1',
+        route.session.id,
+        ensureRequest,
+      );
+      expect(replay.status).toBe('preparation_needed');
+      expect(harness.provider.practiceContentCalls).toBe(calls);
+      const fresh = await harness.services.lessonExecution.ensure('ws_1', route.session.id, {
+        ...ensureRequest,
+        command: command('bound-practice-current-policy'),
+      });
+      expect(fresh.status).toBe('ready');
+      expect(fresh.practice?.status).toBe('available');
+      expect(harness.provider.practiceContentCalls).toBeGreaterThan(calls);
+      expect(harness.provider.lessonContentCalls).toBe(lessonCalls);
+      expect(JSON.stringify(harness.repos.acceptedLessonCheckpoints.get(checkpointId))).toBe(
+        checkpointBytes,
+      );
+    },
+  );
   it('prepares a complete Lesson and Practice from exact unit sources without Concept bindings', async () => {
     const harness = await createHarness();
     const curriculum = harness.repos.curricula.get(harness.curriculumId)!;

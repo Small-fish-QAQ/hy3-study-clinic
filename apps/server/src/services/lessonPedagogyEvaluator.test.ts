@@ -979,18 +979,51 @@ describe('compositional Lesson and Practice evaluators', () => {
     expect(validateTeachingCapsule(candidate, final).diagnosticCodes).not.toContain(
       'reasoning_demand_below_depth',
     );
-    // Losing the old bindings recreates the bug; losing the old reasoning is a
-    // real deficiency and must still be rejected before checkpoint acceptance.
-    expect(
-      validateTeachingCapsule(candidate, {
-        ...final,
-        practiceLessonSlots: final.lesson.skeleton.lessonSlots,
-      }).diagnosticCodes,
-    ).toContain('reasoning_demand_below_depth');
+    const quality = () =>
+      evaluatePlannedPracticeQuality(
+        candidate.practice,
+        {
+          ...fixture.practiceInput,
+          courseDesign: final.lesson.courseDesign,
+          skeleton: {
+            ...final.lesson.skeleton,
+            lessonSlots: final.practiceLessonSlots!,
+            practicePlan: {
+              ...fixture.practiceInput.skeleton.practicePlan,
+              slots: final.practiceSlots,
+            },
+          },
+          acceptedLesson: [...final.priorLesson, ...candidate.lesson.slots],
+        },
+        { evaluatedAt },
+      );
+    expect(quality().findings.some((f) => f.code === 'reasoning_demand_below_depth')).toBe(false);
+    // Earlier bindings/reasoning still determine the aggregate quality signal;
+    // a coverage deficiency alone no longer rejects a Practice candidate.
+    const originalBindings = final.practiceLessonSlots;
+    final.practiceLessonSlots = final.lesson.skeleton.lessonSlots;
+    expect(quality().findings).toContainEqual(
+      expect.objectContaining({
+        code: 'reasoning_demand_below_depth',
+        severity: 'warning',
+        objectiveRefs: ['O1'],
+      }),
+    );
+    expect(validateTeachingCapsule(candidate, final).diagnosticCodes).not.toContain(
+      'reasoning_demand_below_depth',
+    );
+    final.practiceLessonSlots = originalBindings;
     for (const slot of final.priorLesson)
       if (slot.workedProcess?.interaction)
         slot.workedProcess.interaction.activity.reasoningOperation = 'predict_outcome';
-    expect(validateTeachingCapsule(candidate, final).diagnosticCodes).toContain(
+    expect(quality().findings).toContainEqual(
+      expect.objectContaining({
+        code: 'reasoning_demand_below_depth',
+        severity: 'warning',
+        objectiveRefs: ['O1'],
+      }),
+    );
+    expect(validateTeachingCapsule(candidate, final).diagnosticCodes).not.toContain(
       'reasoning_demand_below_depth',
     );
   });

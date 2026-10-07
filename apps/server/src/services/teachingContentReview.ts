@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import {
+  ApiErrorCode,
   TeachingContentReviewSchema,
   MAX_TEACHING_CONTENT_REVIEWS,
   PRACTICE_ANSWERABILITY_POLICY_VERSION,
@@ -11,6 +12,9 @@ import {
   type TeachingBrief,
   type LessonSlotContentProposalPayload,
   type PracticeContentProposalPayload,
+  type PracticeQualityFinding,
+  type PracticeQualityImprovement,
+  type PracticeQualityEvaluation,
   type TeachingContentReview,
 } from '@hy3-clinic/shared';
 import type {
@@ -21,6 +25,11 @@ import type {
   TeachingContentReviewInput,
 } from '../llm/provider.js';
 import { ProviderError } from '../llm/errors.js';
+import { validatePracticeContentCandidate } from './teachingBriefContract.js';
+import {
+  evaluatePlannedPracticeQuality,
+  practiceAggregateQualityFindings,
+} from './lessonPedagogyEvaluator.js';
 
 const AUTHOR_KEYS = new Set([
   'relevanceToObjective',
@@ -335,121 +344,245 @@ export async function verifyPreparedPractice(
     draft: PracticeContentProposalPayload,
     findings: TeachingContentReview['findings'],
   ) => Promise<PracticeContentProposalPayload>,
+  improveQuality?: (
+    draft: PracticeContentProposalPayload,
+    findings: PracticeQualityFinding[],
+  ) => Promise<PracticeContentProposalPayload>,
+  assertOriginalCurrent?: () => void | Promise<void>,
 ) {
-  const receipts = [];
+  const receipts: NonNullable<PracticeQualityEvaluation['contentReview']> = [];
   const answerabilityReview: PracticeAnswerabilityReview = {
     policyVersion: PRACTICE_ANSWERABILITY_POLICY_VERSION,
     rounds: [],
   };
   let previousFindings: TeachingContentReview['findings'] | undefined;
-  for (let round = 0; round < MAX_TEACHING_CONTENT_REVIEWS; round += 1) {
-    const prepared = prepareTeachingReview(context, candidate);
-    const allowedIds = new Set([
-      ...candidate.items.map((item) => item.practiceSlotId),
-      ...prepared.input.actionIds,
-    ]);
-    const groundingInput: AuthoredTeachingContentReviewInput = {
-      ...prepared.input,
-      purpose: 'practice_grounding',
-      actionIds: [],
-    };
-    const validateGrounding = (raw: unknown) => {
-      const parsed = TeachingContentReviewSchema.safeParse(raw);
-      const valid =
-        parsed.success &&
-        parsed.data.decisions.length === 0 &&
-        parsed.data.findings.every((finding) => allowedIds.has(finding.itemId));
-      return {
-        valid,
-        diagnostics: valid
-          ? []
-          : ['practice_grounding_inventory: return findings only for offered items.'],
-        diagnosticCodes: valid ? [] : ['practice_grounding_inventory'],
-      };
-    };
-    const grounded = await review({ input: groundingInput, validate: validateGrounding }, round);
-    if (!validateGrounding(grounded.result).valid)
+  const qualityImprovement: PracticeQualityImprovement = {
+    attempts: 0,
+    outcome: 'not_needed',
+    findingsBefore: [],
+  };
+  let original:
+    | {
+        candidate: PracticeContentProposalPayload;
+        candidateHash: string;
+        contextHash: string;
+        priorTeachingHash: string;
+        computedCases: boolean | undefined;
+        receipts: typeof receipts;
+        answerabilityReview: PracticeAnswerabilityReview;
+      }
+    | undefined;
+  const acceptOriginal = async (error: unknown) => {
+    if (!original) throw error;
+    // Only this unchanged computed candidate may recover its own execution proof.
+    context.computedCases = original.computedCases;
+    await assertOriginalCurrent?.();
+    if (
+      reviewHash(original.candidate) !== original.candidateHash ||
+      reviewHash(context) !== original.contextHash ||
+      reviewHash(priorTeaching) !== original.priorTeachingHash ||
+      original.answerabilityReview.policyVersion !== PRACTICE_ANSWERABILITY_POLICY_VERSION ||
+      original.answerabilityReview.rounds.at(-1)?.candidateHash !== original.candidateHash ||
+      original.receipts.at(-1)?.candidateHash !== original.candidateHash
+    )
       throw ProviderError.invalidOutput(
-        'Practice grounding review must return only findings for its exact inventory.',
+        'The original Practice proof no longer matches its current acceptance context.',
         'candidate',
         'SEMANTIC_VALIDATION_FAILURE',
         false,
+        {
+          kind: 'practice_quality_fallback_rejection',
+          diagnostics: [
+            {
+              code: 'practice_original_proof_stale',
+              message: 'Original candidate, sources, plan or prior teaching changed after review.',
+            },
+          ],
+        },
       );
-    receipts.push({ ...grounded, candidateHash: prepared.candidateHash });
-    const findings = prepared.findings(grounded.result);
-    const solves: PracticeAnswerabilityReview['rounds'][number]['solves'] = [];
-    for (const [itemIndex, item] of candidate.items.entries()) {
-      for (const surface of ['initial', 'retry'] as const) {
-        const authored = item[surface];
-        const visible = projectLearnerPracticeSurface({
-          prompt: authored.prompt,
-          options: authored.options.map(({ optionRef, text }) => ({ id: optionRef, text })),
-        });
-        const actionId = `${item.practiceSlotId}.${surface}`;
-        const solve = preparePracticeAnswerabilityReview(
-          visible,
-          priorTeaching,
-          actionId,
-          item.practiceSlotId,
-        );
-        const solved = await review(solve, round);
-        if (!solve.validate(solved.result).valid)
+    const validation = validatePracticeContentCandidate(original.candidate, context);
+    if (!validation.valid)
+      throw ProviderError.invalidOutput(
+        validation.diagnostics.join('; '),
+        'candidate',
+        'SEMANTIC_VALIDATION_FAILURE',
+        false,
+        validation.failureArtifact,
+      );
+    qualityImprovement.outcome =
+      error instanceof ProviderError && error.code === ApiErrorCode.ProviderInvalidOutput
+        ? 'rejected'
+        : 'failed';
+    qualityImprovement.failureCode =
+      error instanceof ProviderError
+        ? (error.technicalFailureCode ?? error.code)
+        : 'QUALITY_IMPROVEMENT_FAILED';
+    // Failed/partial reviews of the rewrite never certify the selected original.
+    return {
+      candidate: original.candidate,
+      receipts: original.receipts,
+      answerabilityReview: original.answerabilityReview,
+      qualityImprovement,
+    };
+  };
+  for (let round = 0; round < MAX_TEACHING_CONTENT_REVIEWS; round += 1) {
+    try {
+      // Providers may ignore callbacks. Each original/revised candidate still
+      // owes the complete current structural, authority and integrity contract.
+      if (improveQuality) {
+        const validation = validatePracticeContentCandidate(candidate, context);
+        if (!validation.valid)
           throw ProviderError.invalidOutput(
-            'Practice independent solve did not cover its sole action inventory.',
+            validation.diagnostics.join('; '),
             'candidate',
             'SEMANTIC_VALIDATION_FAILURE',
             false,
+            validation.failureArtifact,
           );
-        solves.push({
-          ...solved,
-          actionId,
-          itemIndex,
-          surface,
-          inputHash: solve.inputHash,
-        });
-        findings.push(
-          ...solved.result.findings
-            .filter((finding) => finding.code !== 'shallow_task')
-            .map((finding) => ({ ...finding, itemId: item.practiceSlotId })),
-        );
-        const decision = solved.result.decisions[0]!;
-        if (
-          !visible.options.some((option) => option.id === decision.answerId) ||
-          decision.answerId !== authored.correctOptionRef
-        )
-          findings.push({
-            itemId: item.practiceSlotId,
-            code: 'insufficient_evidence',
-            problem: `${actionId}: learner-visible independent reading selects ${decision.answerId ?? 'no unique answer'}, not the offered authored key. ${decision.evidenceUsed}`,
-            repairInstruction:
-              'Make this unanswered surface and its prior public teaching sufficient for one offered answer; correct the saved key and feedback if necessary. Do not rely on private application data or future questions.',
-          });
       }
-    }
-    answerabilityReview.rounds.push({ candidateHash: prepared.candidateHash, solves });
-    if (!findings.length) return { candidate, receipts, answerabilityReview };
-    const findingKey = (finding: TeachingContentReview['findings'][number]) =>
-      `${finding.itemId}\u0000${finding.code}`;
-    const resolvedPriorDefect = previousFindings?.some(
-      (prior) => !findings.some((current) => findingKey(current) === findingKey(prior)),
-    );
-    const changedDraft = round > 0 && receipts[round - 1]!.candidateHash !== prepared.candidateHash;
-    if (
-      round === MAX_TEACHING_CONTENT_REVIEWS - 1 ||
-      (round === 1 && (!changedDraft || !resolvedPriorDefect))
-    )
-      throw ProviderError.invalidOutput(
-        'Practice content still has material defects after its bounded revision.',
-        'candidate',
-        'SEMANTIC_VALIDATION_FAILURE',
-        true,
-        {
-          kind: 'teaching_content_review_failed',
-          diagnostics: findings.map(({ code, problem }) => ({ code, message: problem })),
-        },
+      const prepared = prepareTeachingReview(context, candidate);
+      const allowedIds = new Set([
+        ...candidate.items.map((item) => item.practiceSlotId),
+        ...prepared.input.actionIds,
+      ]);
+      const groundingInput: AuthoredTeachingContentReviewInput = {
+        ...prepared.input,
+        purpose: 'practice_grounding',
+        actionIds: [],
+      };
+      const validateGrounding = (raw: unknown) => {
+        const parsed = TeachingContentReviewSchema.safeParse(raw);
+        const valid =
+          parsed.success &&
+          parsed.data.decisions.length === 0 &&
+          parsed.data.findings.every((finding) => allowedIds.has(finding.itemId));
+        return {
+          valid,
+          diagnostics: valid
+            ? []
+            : ['practice_grounding_inventory: return findings only for offered items.'],
+          diagnosticCodes: valid ? [] : ['practice_grounding_inventory'],
+        };
+      };
+      const grounded = await review({ input: groundingInput, validate: validateGrounding }, round);
+      if (!validateGrounding(grounded.result).valid)
+        throw ProviderError.invalidOutput(
+          'Practice grounding review must return only findings for its exact inventory.',
+          'candidate',
+          'SEMANTIC_VALIDATION_FAILURE',
+          false,
+        );
+      receipts.push({ ...grounded, candidateHash: prepared.candidateHash });
+      const findings = prepared.findings(grounded.result);
+      const solves: PracticeAnswerabilityReview['rounds'][number]['solves'] = [];
+      for (const [itemIndex, item] of candidate.items.entries()) {
+        for (const surface of ['initial', 'retry'] as const) {
+          const authored = item[surface];
+          const visible = projectLearnerPracticeSurface({
+            prompt: authored.prompt,
+            options: authored.options.map(({ optionRef, text }) => ({ id: optionRef, text })),
+          });
+          const actionId = `${item.practiceSlotId}.${surface}`;
+          const solve = preparePracticeAnswerabilityReview(
+            visible,
+            priorTeaching,
+            actionId,
+            item.practiceSlotId,
+          );
+          const solved = await review(solve, round);
+          if (!solve.validate(solved.result).valid)
+            throw ProviderError.invalidOutput(
+              'Practice independent solve did not cover its sole action inventory.',
+              'candidate',
+              'SEMANTIC_VALIDATION_FAILURE',
+              false,
+            );
+          solves.push({
+            ...solved,
+            actionId,
+            itemIndex,
+            surface,
+            inputHash: solve.inputHash,
+          });
+          findings.push(
+            ...solved.result.findings
+              .filter((finding) => finding.code !== 'shallow_task')
+              .map((finding) => ({ ...finding, itemId: item.practiceSlotId })),
+          );
+          const decision = solved.result.decisions[0]!;
+          if (
+            !visible.options.some((option) => option.id === decision.answerId) ||
+            decision.answerId !== authored.correctOptionRef
+          )
+            findings.push({
+              itemId: item.practiceSlotId,
+              code: 'insufficient_evidence',
+              problem: `${actionId}: learner-visible independent reading selects ${decision.answerId ?? 'no unique answer'}, not the offered authored key. ${decision.evidenceUsed}`,
+              repairInstruction:
+                'Make this unanswered surface and its prior public teaching sufficient for one offered answer; correct the saved key and feedback if necessary. Do not rely on private application data or future questions.',
+            });
+        }
+      }
+      answerabilityReview.rounds.push({ candidateHash: prepared.candidateHash, solves });
+      if (!findings.length) {
+        const qualityFindings = practiceAggregateQualityFindings(
+          evaluatePlannedPracticeQuality(candidate, context, {
+            evaluatedAt: '1970-01-01T00:00:00.000Z',
+          }),
+        );
+        if (improveQuality && qualityFindings.length && qualityImprovement.attempts === 0) {
+          qualityImprovement.findingsBefore = structuredClone(qualityFindings);
+          if (round < MAX_TEACHING_CONTENT_REVIEWS - 1) {
+            qualityImprovement.attempts = 1;
+            original = {
+              candidate: structuredClone(candidate),
+              candidateHash: prepared.candidateHash,
+              contextHash: reviewHash(context),
+              priorTeachingHash: reviewHash(priorTeaching),
+              computedCases: context.computedCases,
+              receipts: structuredClone(receipts),
+              answerabilityReview: structuredClone(answerabilityReview),
+            };
+            // Spend an existing review round, never add an outer retry budget.
+            // The following round obtains fresh grounding and visible solves.
+            candidate = await improveQuality(structuredClone(candidate), qualityFindings);
+            continue;
+          }
+          qualityImprovement.outcome = 'review_budget_exhausted';
+        } else if (qualityImprovement.attempts === 1) {
+          qualityImprovement.outcome = qualityFindings.length ? 'exhausted' : 'improved';
+        }
+        return { candidate, receipts, answerabilityReview, qualityImprovement };
+      }
+      const findingKey = (finding: TeachingContentReview['findings'][number]) =>
+        `${finding.itemId}\u0000${finding.code}`;
+      const resolvedPriorDefect = previousFindings?.some(
+        (prior) => !findings.some((current) => findingKey(current) === findingKey(prior)),
       );
-    previousFindings = findings;
-    candidate = await revise(candidate, findings);
+      const changedDraft =
+        round > 0 && receipts[round - 1]!.candidateHash !== prepared.candidateHash;
+      if (
+        round === MAX_TEACHING_CONTENT_REVIEWS - 1 ||
+        (round === 1 && (!changedDraft || !resolvedPriorDefect))
+      )
+        throw ProviderError.invalidOutput(
+          'Practice content still has material defects after its bounded revision.',
+          'candidate',
+          'SEMANTIC_VALIDATION_FAILURE',
+          true,
+          {
+            kind: 'teaching_content_review_failed',
+            diagnostics: findings.map(({ code, problem }) => ({ code, message: problem })),
+          },
+        );
+      previousFindings = findings;
+      candidate = await revise(candidate, findings);
+    } catch (error) {
+      if (error instanceof ProviderError && error.code === ApiErrorCode.RequestCancelled)
+        throw error;
+      if (!original) throw error;
+      return acceptOriginal(error);
+    }
   }
   throw new Error('Unreachable Practice review state.');
 }

@@ -69,6 +69,7 @@ import {
   assertCurrentCognitiveContract,
   evaluateLessonSlotPedagogy,
   evaluatePlannedPracticeQuality,
+  hasCurrentPracticeAcceptancePolicy,
 } from './lessonPedagogyEvaluator.js';
 import { visualManifestMatchesCurrentDerivations } from './advisoryVisuals.js';
 import { deriveTeachingConstruct } from './teachingConstruct.js';
@@ -222,7 +223,8 @@ export function isCurrentCompositionalBrief(
     candidate.pedagogyEvaluation?.policyVersion === COMPOSITIONAL_LESSON_PEDAGOGY_POLICY_VERSION &&
     candidate.practice?.qualityEvaluation.policyVersion ===
       COMPOSITIONAL_PRACTICE_QUALITY_POLICY_VERSION &&
-    hasCurrentPracticeAnswerabilityReview(candidate)
+    hasCurrentPracticeAnswerabilityReview(candidate) &&
+    hasCurrentPracticeAcceptancePolicy(candidate)
   );
 }
 
@@ -1048,7 +1050,10 @@ export function createTeachingBriefPreparationService({
       promptVersion: TEACHING_BRIEF_PROMPT_VERSION,
       createdAt: clock.now().toISOString(),
     });
-    if (!hasCurrentPracticeAnswerabilityReview(brief)) {
+    if (
+      !hasCurrentPracticeAnswerabilityReview(brief) ||
+      !hasCurrentPracticeAcceptancePolicy(brief)
+    ) {
       throw ProviderError.invalidOutput(
         'Saved Practice lacks an exact current learner-visible answerability proof.',
         'candidate',
@@ -1213,10 +1218,13 @@ export function createTeachingBriefPreparationService({
     const priorResult = repos.operations.getResult(operation.id);
     if (priorResult?.status === 'completed') {
       const response = TeachingBriefPreparationResponseSchema.parse(priorResult.payload);
-      if (!hasCurrentPracticeAnswerabilityReview(response.brief)) {
+      if (
+        !hasCurrentPracticeAnswerabilityReview(response.brief) ||
+        !hasCurrentPracticeAcceptancePolicy(response.brief)
+      ) {
         throw new AppError(
           ApiErrorCode.VersionConflict,
-          'The stored Practice predates the current answerability gate. Prepare it with a new command; its accepted Lesson is preserved.',
+          'The stored Practice predates the current acceptance or answerability gate. Prepare it with a new command; its accepted Lesson is preserved.',
         );
       }
       return response;
@@ -1917,8 +1925,10 @@ export function createTeachingBriefPreparationService({
       }
       let contentReview: PracticeQualityEvaluation['contentReview'];
       let answerabilityReview: PracticeQualityEvaluation['answerabilityReview'];
+      let qualityImprovement: PracticeQualityEvaluation['qualityImprovement'];
       if (inferenceProvider.reviewTeachingContent) {
         let contentRevision = 0;
+        let originalPracticeLogicalCallId: string | undefined;
         const priorTeaching = projectPracticePriorTeaching({
           ...localLessonMetadata(route, generationInput, checkpoint),
           segments: assembleSegments(route, checkpoint),
@@ -1979,10 +1989,54 @@ export function createTeachingBriefPreparationService({
                 ),
             );
           },
+          async (draft, findings) => {
+            // An authored quality rewrite no longer owns the computed draft's
+            // execution proof. Both new independent reviews remain mandatory.
+            originalPracticeLogicalCallId = practiceLogicalCallId;
+            compositionalPracticeInput.computedCases = false;
+            practiceRepairAttempted = true;
+            practiceLogicalCallId = `${operationKey}:practice-quality-improvement`;
+            return trackedReviewCall(
+              practiceLogicalCallId,
+              'practice-content-proposal-v1',
+              (opts) =>
+                inferenceProvider.generatePracticeContent(
+                  {
+                    ...structuredClone(compositionalPracticeInput),
+                    draftForReview: draft,
+                    editorialFindings: findings.flatMap((finding) =>
+                      finding.itemIndexes.map((index) => ({
+                        itemId:
+                          compositionalPracticeInput.skeleton.practicePlan.slots[index]!
+                            .practiceSlotId,
+                        code: 'shallow_task' as const,
+                        problem: `${finding.code}: ${finding.message}`,
+                        repairInstruction:
+                          'Improve the missing aggregate reasoning coverage within the same immutable Practice plan and source authority. Preserve a uniquely answerable visible case and correct key; never fix coverage with a dishonest operation label.',
+                      })),
+                    ),
+                  },
+                  {
+                    ...opts,
+                    validateCandidate: (candidate) =>
+                      validatePracticeContentCandidate(candidate, compositionalPracticeInput),
+                  },
+                ),
+            );
+          },
+          () => {
+            if (options?.signal?.aborted) throw ProviderError.cancelled();
+            routeStillCurrent(input, context.fingerprint);
+            renewPreparationLease(claim.id, owner, claim.fencingToken);
+            practiceLogicalCallId = originalPracticeLogicalCallId!;
+          },
         );
         practicePayload = verified.candidate;
         contentReview = verified.receipts;
         answerabilityReview = verified.answerabilityReview;
+        qualityImprovement = verified.qualityImprovement;
+        if (qualityImprovement.attempts)
+          qualityImprovement.logicalCallId = `${operationKey}:practice-quality-improvement`;
       }
       if (provider.name === 'hy3') {
         practicePayload = confineTeachingCitations(
@@ -1990,6 +2044,18 @@ export function createTeachingBriefPreparationService({
           { lesson: compositionalPracticeInput },
         ).practice;
       }
+      const finalValidation = validatePracticeContentCandidate(
+        practicePayload,
+        compositionalPracticeInput,
+      );
+      if (!finalValidation.valid)
+        throw ProviderError.invalidOutput(
+          finalValidation.diagnostics.join('; '),
+          'candidate',
+          'SEMANTIC_VALIDATION_FAILURE',
+          false,
+          finalValidation.failureArtifact,
+        );
       const practiceEvaluation = evaluatePlannedPracticeQuality(
         practicePayload,
         compositionalPracticeInput,
@@ -2000,6 +2066,7 @@ export function createTeachingBriefPreparationService({
       );
       if (contentReview) practiceEvaluation.contentReview = contentReview;
       if (answerabilityReview) practiceEvaluation.answerabilityReview = answerabilityReview;
+      if (qualityImprovement) practiceEvaluation.qualityImprovement = qualityImprovement;
       assertCurrentCognitiveContract(practiceEvaluation);
       preparationBoundary = 'assembly';
       const brief = materialize(

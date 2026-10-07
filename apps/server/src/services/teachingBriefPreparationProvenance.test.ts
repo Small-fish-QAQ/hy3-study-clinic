@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   PRACTICE_ANSWERABILITY_POLICY_VERSION,
+  PRACTICE_ACCEPTANCE_POLICY_VERSION,
   projectPracticePriorTeaching,
   type AcceptedLessonCheckpoint,
   type TeachingBrief,
@@ -59,6 +60,7 @@ function compositionalBrief(
     lessonPolicyVersion?: string;
     practicePolicyVersion?: string;
     answerabilityPolicyVersion?: string;
+    acceptancePolicyVersion?: string;
   } = {},
 ): TeachingBrief {
   const brief = {
@@ -106,6 +108,9 @@ function compositionalBrief(
         policyVersion:
           overrides.practicePolicyVersion ?? COMPOSITIONAL_PRACTICE_QUALITY_POLICY_VERSION,
         status: 'pass',
+        findings: [],
+        acceptancePolicyVersion:
+          overrides.acceptancePolicyVersion ?? PRACTICE_ACCEPTANCE_POLICY_VERSION,
         contentReview: [
           {
             candidateHash: SKELETON_FINGERPRINT,
@@ -270,6 +275,25 @@ describe('Teaching Brief preparation provenance selection', () => {
     });
     const missing = compositionalBrief();
     delete missing.practice!.qualityEvaluation.answerabilityReview;
+    expect(isCurrentCompositionalBrief(current, skeleton)).toBe(true);
+    expect(isCurrentCompositionalBrief(obsolete, skeleton)).toBe(false);
+    expect(isCurrentCompositionalBrief(missing, skeleton)).toBe(false);
+    expect(current.composition).toEqual(obsolete.composition);
+    expect(compositionFingerprint('source-context-1', skeleton)).toBe(identity);
+    expect(selectCurrentAcceptedLessonCheckpoint(checkpoint)).toBe(checkpoint);
+    expect(JSON.stringify(checkpoint)).toBe(checkpointBytes);
+  });
+
+  it('fences old Practice acceptance without changing the Lesson checkpoint or composition fingerprint', () => {
+    const skeleton = { fingerprint: SKELETON_FINGERPRINT };
+    const checkpoint = acceptedCheckpoint();
+    const checkpointBytes = JSON.stringify(checkpoint);
+    const identity = compositionFingerprint('source-context-1', skeleton);
+    const current = compositionalBrief();
+    const obsolete = compositionalBrief({ acceptancePolicyVersion: 'practice-acceptance-old' });
+    const missing = compositionalBrief();
+    delete missing.practice!.qualityEvaluation.acceptancePolicyVersion;
+
     expect(isCurrentCompositionalBrief(current, skeleton)).toBe(true);
     expect(isCurrentCompositionalBrief(obsolete, skeleton)).toBe(false);
     expect(isCurrentCompositionalBrief(missing, skeleton)).toBe(false);

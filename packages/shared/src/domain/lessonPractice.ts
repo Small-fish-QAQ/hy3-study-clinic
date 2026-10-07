@@ -106,6 +106,9 @@ const TeachingContentReviewReceiptSchema = z
 // V1 could contain Fake suffix guesses; none of those proofs may certify current Practice.
 export const PRACTICE_ANSWERABILITY_POLICY_VERSION = 'practice-answerability-v2-fail-closed-fake';
 
+/** Practice acceptance changes must not invalidate accepted Lesson identity. */
+export const PRACTICE_ACCEPTANCE_POLICY_VERSION = 'practice-acceptance-v1-aggregate-quality';
+
 export const PracticeAnswerabilityReviewSchema = z
   .object({
     policyVersion: z.string().min(1).max(80),
@@ -182,6 +185,24 @@ export const LessonPedagogyEvaluationSchema = z
   .strict();
 export type LessonPedagogyEvaluation = z.infer<typeof LessonPedagogyEvaluationSchema>;
 
+export const PracticeQualityImprovementSchema = z
+  .object({
+    attempts: z.number().int().min(0).max(1),
+    outcome: z.enum([
+      'not_needed',
+      'improved',
+      'exhausted',
+      'review_budget_exhausted',
+      'rejected',
+      'failed',
+    ]),
+    findingsBefore: z.array(PracticeQualityFindingSchema).max(100),
+    failureCode: z.string().min(1).max(100).optional(),
+    logicalCallId: z.string().min(1).optional(),
+  })
+  .strict();
+export type PracticeQualityImprovement = z.infer<typeof PracticeQualityImprovementSchema>;
+
 export const PracticeQualityEvaluationSchema = z
   .object({
     schemaVersion: z.literal(1),
@@ -199,6 +220,9 @@ export const PracticeQualityEvaluationSchema = z
       .optional(),
     /** Absent on historical Practice; required by the current preparation/reuse gate. */
     answerabilityReview: PracticeAnswerabilityReviewSchema.optional(),
+    /** Independent from the evaluator versions used in Lesson checkpoint identity. */
+    acceptancePolicyVersion: z.string().min(1).max(80).optional(),
+    qualityImprovement: PracticeQualityImprovementSchema.optional(),
   })
   .strict();
 export type PracticeQualityEvaluation = z.infer<typeof PracticeQualityEvaluationSchema>;

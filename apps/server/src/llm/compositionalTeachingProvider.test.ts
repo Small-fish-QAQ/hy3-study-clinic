@@ -8,7 +8,11 @@ import {
 import { FakeProvider } from './fakeProvider.js';
 import { Hy3Provider } from './hy3Provider.js';
 import { lessonSlotContentMessages, practiceContentMessages } from './prompts.js';
-import { evaluateLessonSlotPedagogy } from '../services/lessonPedagogyEvaluator.js';
+import {
+  evaluateLessonSlotPedagogy,
+  evaluatePlannedPracticeQuality,
+  practiceAggregateQualityFindings,
+} from '../services/lessonPedagogyEvaluator.js';
 import { validatePracticeContentCandidate } from '../services/teachingBriefContract.js';
 import type {
   LessonSlotContentGenerationInput,
@@ -320,6 +324,34 @@ function practiceValidation(candidate: unknown): ProviderCandidateValidation {
 }
 
 describe('compositional Teaching providers', () => {
+  it('does not spend provider candidate repairs on Practice aggregate quality-only findings', async () => {
+    const input: PracticeContentGenerationInput = {
+      ...practiceInput(),
+      courseDesign: { desiredDepth: 'deep_transfer', unitFocus: 'focused' },
+    };
+    const candidate = await new FakeProvider().generatePracticeContent(input);
+    const quality = practiceAggregateQualityFindings(
+      evaluatePlannedPracticeQuality(candidate, input, {
+        evaluatedAt: '2026-10-07T00:00:00.000Z',
+      }),
+    );
+    expect(quality.map((finding) => finding.code)).toEqual(
+      expect.arrayContaining([
+        'focused_unit_angle_coverage_insufficient',
+        'reasoning_demand_below_depth',
+      ]),
+    );
+    const transport = vi.fn().mockResolvedValue(response(JSON.stringify(candidate)));
+    const onRepairAttempt = vi.fn();
+    const accepted = await hy3(transport as typeof fetch).generatePracticeContent(input, {
+      onRepairAttempt,
+      validateCandidate: (raw) => validatePracticeContentCandidate(raw, input),
+    });
+    expect(accepted).toEqual(candidate);
+    expect(transport).toHaveBeenCalledTimes(1);
+    expect(onRepairAttempt).not.toHaveBeenCalled();
+  });
+
   it('sends isolated public Practice solves and separate rich grounding requests', async () => {
     const priorTeaching = projectPracticePriorTeaching({
       objective: { title: 'Public rule', whyNow: 'Use the rule.', objectives: [] },

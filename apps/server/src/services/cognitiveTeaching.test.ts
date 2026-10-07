@@ -1,10 +1,12 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   LessonSlotContentProposalPayloadSchema,
   PracticeContentProposalPayloadSchema,
   LessonPedagogyEvaluationSchema,
   PracticeQualityEvaluationSchema,
+  PRACTICE_ACCEPTANCE_POLICY_VERSION,
   projectAcceptedLessonSegments,
+  projectPracticePriorTeaching,
   type DesiredDepth,
 } from '@hy3-clinic/shared';
 import { FakeProvider } from '../llm/fakeProvider.js';
@@ -17,16 +19,25 @@ import {
 import type {
   LessonSlotContentGenerationInput,
   PracticeContentGenerationInput,
+  TeachingContentReviewInput,
 } from '../llm/provider.js';
 import {
   assertCurrentCognitiveContract,
+  applyPracticeAggregateAcceptancePolicy,
   evaluateLessonSlotPedagogy,
   evaluatePlannedPracticeQuality,
   lessonReasoningExposure,
 } from './lessonPedagogyEvaluator.js';
-import { validateLessonSlotContentCandidate } from './teachingBriefContract.js';
+import {
+  validateLessonSlotContentCandidate,
+  validatePracticeContentCandidate,
+} from './teachingBriefContract.js';
 import { planTeachingSkeleton } from './teachingSkeletonPlanner.js';
-import { prepareTeachingReview, verifyPreparedTeaching } from './teachingContentReview.js';
+import {
+  prepareTeachingReview,
+  verifyPreparedTeaching,
+  verifyPreparedPractice,
+} from './teachingContentReview.js';
 
 const at = { evaluatedAt: '2026-09-05T00:00:00.000Z' };
 
@@ -715,7 +726,7 @@ describe('calibrated cognitive teaching contract', () => {
     ).toBe(false);
   });
 
-  it('defers focused coverage to Practice and names repairable Practice indexes on final insufficiency', async () => {
+  it('preserves focused aggregate quality diagnostics without rejecting valid Practice', async () => {
     const f = await fixture();
     f.interaction.transfer.reasoningOperation = 'locate_boundary';
     for (const slot of f.lesson.slots)
@@ -734,22 +745,34 @@ describe('calibrated cognitive teaching contract', () => {
     expect(f.practiceEvaluation().findings).toContainEqual(
       expect.objectContaining({
         code: 'focused_unit_angle_coverage_insufficient',
-        severity: 'error',
+        severity: 'warning',
         itemIndexes: [0, 1],
       }),
     );
+    expect(f.practiceEvaluation().status).toBe('pass');
+    expect(f.practiceEvaluation().acceptancePolicyVersion).toBe(PRACTICE_ACCEPTANCE_POLICY_VERSION);
+    expect(validatePracticeContentCandidate(f.practice, f.practiceInput).valid).toBe(true);
+    expect(() => assertCurrentCognitiveContract(f.practiceEvaluation())).not.toThrow();
     f.practice.items[0]!.initial.reasoningOperation = 'identify_missing';
     f.practice.items[1]!.initial.reasoningOperation = 'judge_tradeoff';
     expect(f.practiceEvaluation().status).toBe('pass');
   });
 
-  it('requires high-performance diagnosis and deep-transfer design per objective', async () => {
+  it('keeps high-performance and deep-transfer aggregate targets advisory per objective', async () => {
     const f = await fixture();
     f.practiceInput.courseDesign = { desiredDepth: 'deep_transfer', unitFocus: 'normal' };
     f.interaction.transfer.reasoningOperation = 'locate_boundary';
     expect(f.practiceEvaluation().findings).toContainEqual(
-      expect.objectContaining({ code: 'reasoning_demand_below_depth', objectiveRefs: ['O1'] }),
+      expect.objectContaining({
+        code: 'reasoning_demand_below_depth',
+        objectiveRefs: ['O1'],
+        itemIndexes: [0],
+        severity: 'warning',
+      }),
     );
+    expect(f.practiceEvaluation().status).toBe('pass');
+    expect(validatePracticeContentCandidate(f.practice, f.practiceInput).valid).toBe(true);
+    expect(() => assertCurrentCognitiveContract(f.practiceEvaluation())).not.toThrow();
     f.practiceInput.courseDesign.desiredDepth = 'high_performance';
     expect(
       f
@@ -757,6 +780,162 @@ describe('calibrated cognitive teaching contract', () => {
         .findings.some((finding) => finding.code === 'reasoning_demand_below_depth'),
     ).toBe(false);
   });
+
+  it('does not relax Lesson reasoning demand or unrelated Practice cognitive errors', async () => {
+    const f = await fixture();
+    f.interaction.activity.reasoningOperation = 'recognize';
+    const lessonEvaluation = f.lessonEvaluation();
+    expect(lessonEvaluation.findings).toContainEqual(
+      expect.objectContaining({ code: 'reasoning_demand_below_depth', severity: 'error' }),
+    );
+    expect(validateLessonSlotContentCandidate(f.lesson, f.lessonInput).valid).toBe(false);
+    expect(() => assertCurrentCognitiveContract(lessonEvaluation)).toThrow();
+    for (const code of ['missing_reasoning_declaration', 'practice_initial_recognition_at_depth']) {
+      const practice = f.practiceEvaluation();
+      practice.findings.push({
+        code,
+        severity: 'error',
+        criterion: 'meaningful_action',
+        message: 'An unchanged hard cognitive contract.',
+        itemIndexes: [0],
+        objectiveRefs: ['O1'],
+      });
+      expect(applyPracticeAggregateAcceptancePolicy(practice).status).toBe('fail');
+      expect(() => assertCurrentCognitiveContract(practice)).toThrow();
+    }
+  });
+
+  it.each([1, 2])(
+    'keeps quality fallback within the review ceiling after %i hard corrections',
+    async (hardCorrections) => {
+      const f = await fixture('deep_transfer');
+      f.interaction.transfer.reasoningOperation = 'locate_boundary';
+      const provider = new FakeProvider();
+      const improve = vi.fn(async (draft: typeof f.practice) => {
+        draft.items[0]!.initial.correctOptionRef = 'B';
+        draft.items[0]!.initial.evidenceContrast!.alternativeOptionId = 'C';
+        return draft;
+      });
+      let corrections = 0;
+      const verified = await verifyPreparedPractice(
+        f.practiceInput,
+        f.practice,
+        projectPracticePriorTeaching({
+          objective: {
+            title: 'Bounded conditions',
+            whyNow: 'Use the public case rule.',
+            objectives: [],
+          },
+          prerequisites: [],
+          segments: [],
+          summary: 'Check the changed state.',
+          nextConnection: null,
+          sourceReferences: [],
+          visualReferences: [],
+        }),
+        async (prepared, round) => {
+          const result = await provider.reviewTeachingContent(prepared.input);
+          if (prepared.input.purpose === 'practice_grounding' && round < hardCorrections)
+            result.findings.push({
+              itemId: f.practice.items[0]!.practiceSlotId,
+              code: round === 0 ? 'accuracy' : 'grounding',
+              problem: `Concrete review defect ${round}.`,
+              repairInstruction: 'Correct the named draft.',
+            });
+          return {
+            result,
+            logicalCallId: `review-${round}:${prepared.input.actionIds[0] ?? 'grounding'}`,
+          };
+        },
+        async (draft) => {
+          const revised = structuredClone(draft);
+          revised.items[0]!.pedagogicalReason += ` 独立修订${++corrections}。`;
+          return revised;
+        },
+        improve,
+      );
+      expect(corrections).toBe(hardCorrections);
+      expect(improve).toHaveBeenCalledTimes(hardCorrections === 1 ? 1 : 0);
+      expect(verified.receipts).toHaveLength(hardCorrections + 1);
+      expect(verified.answerabilityReview.rounds).toHaveLength(hardCorrections + 1);
+      expect(verified.qualityImprovement).toMatchObject({
+        attempts: hardCorrections === 1 ? 1 : 0,
+        outcome: hardCorrections === 1 ? 'rejected' : 'review_budget_exhausted',
+      });
+      expect(verified.qualityImprovement.findingsBefore.length).toBeGreaterThan(0);
+      expect(f.practiceEvaluation().status).toBe('pass');
+    },
+  );
+
+  it.each(['sources', 'prior_teaching', 'computed_original'] as const)(
+    'binds quality fallback to the original proof identity (%s)',
+    async (change) => {
+      const f = await fixture('deep_transfer');
+      f.interaction.transfer.reasoningOperation = 'locate_boundary';
+      if (change === 'computed_original') f.practiceInput.computedCases = true;
+      const provider = new FakeProvider();
+      const priorTeaching = projectPracticePriorTeaching({
+        objective: {
+          title: 'Bounded conditions',
+          whyNow: 'Use the public case rule.',
+          objectives: [],
+        },
+        prerequisites: [],
+        segments: [],
+        summary: 'Check the changed state.',
+        nextConnection: null,
+        sourceReferences: [],
+        visualReferences: [],
+      });
+      const originalHash = prepareTeachingReview(f.practiceInput, f.practice).candidateHash;
+      const improve = vi.fn(async (draft: typeof f.practice) => {
+        if (change === 'sources')
+          f.practiceInput.sourceContext.offers[0]!.text += ' Changed source.';
+        if (change === 'prior_teaching') priorTeaching.summary += ' Changed prior teaching.';
+        f.practiceInput.computedCases = false;
+        draft.items[0]!.initial.correctOptionRef = 'B';
+        draft.items[0]!.initial.evidenceContrast!.alternativeOptionId = 'C';
+        return draft;
+      });
+      const review = vi.fn(
+        async (prepared: { input: TeachingContentReviewInput }, round: number) => ({
+          result: await provider.reviewTeachingContent(prepared.input),
+          logicalCallId: `review-${round}:${prepared.input.actionIds[0] ?? 'grounding'}`,
+        }),
+      );
+      const verified = verifyPreparedPractice(
+        f.practiceInput,
+        f.practice,
+        priorTeaching,
+        review,
+        async () => {
+          throw new Error('Quality failure must not start a hard or quality retry.');
+        },
+        improve,
+      );
+      if (change === 'computed_original') {
+        const result = await verified;
+        expect(f.practiceInput.computedCases).toBe(true);
+        expect(result.candidate).toEqual(f.practice);
+        expect(result.qualityImprovement).toMatchObject({ attempts: 1, outcome: 'rejected' });
+        expect(result.receipts.map((receipt) => receipt.candidateHash)).toEqual([originalHash]);
+        expect(result.answerabilityReview.rounds.map((round) => round.candidateHash)).toEqual([
+          originalHash,
+        ]);
+      } else {
+        await expect(verified).rejects.toMatchObject({
+          details: {
+            candidateFailure: {
+              kind: 'practice_quality_fallback_rejection',
+              diagnostics: [expect.objectContaining({ code: 'practice_original_proof_stale' })],
+            },
+          },
+        });
+      }
+      expect(improve).toHaveBeenCalledTimes(1);
+      expect(review.mock.calls.length).toBeLessThanOrEqual(2 * (1 + 2 * f.practice.items.length));
+    },
+  );
 
   it('keeps ambiguous transfer and discourse signals visible without consuming a repair', async () => {
     const f = await fixture();

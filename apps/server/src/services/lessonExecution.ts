@@ -33,6 +33,7 @@ import {
 } from './generationStages.js';
 import { createTelemetryProvider } from './providerTelemetry.js';
 import { hasCurrentPracticeAnswerabilityReview } from './teachingContentReview.js';
+import { hasCurrentPracticeAcceptancePolicy } from './lessonPedagogyEvaluator.js';
 import {
   failedPracticeAttempt,
   practiceItemPassed,
@@ -293,7 +294,7 @@ export function createLessonExecutionService({
     if (
       brief.practice &&
       !state.practiceCompletedAt &&
-      !hasCurrentPracticeAnswerabilityReview(brief)
+      (!hasCurrentPracticeAnswerabilityReview(brief) || !hasCurrentPracticeAcceptancePolicy(brief))
     ) {
       return null;
     }

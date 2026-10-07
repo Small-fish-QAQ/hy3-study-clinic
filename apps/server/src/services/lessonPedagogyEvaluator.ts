@@ -1,6 +1,7 @@
 import {
   LessonPedagogyEvaluationSchema,
   PracticeQualityEvaluationSchema,
+  PRACTICE_ACCEPTANCE_POLICY_VERSION,
   isReasoningOperation,
   type LessonPedagogyEvaluation,
   type LessonPedagogyFinding,
@@ -13,6 +14,7 @@ import {
   type TeachingBriefProposalPayload,
   type TeachingLessonSlotContent,
   type TeachingSkeletonSlot,
+  type TeachingBrief,
 } from '@hy3-clinic/shared';
 import type {
   LessonSlotContentGenerationInput,
@@ -28,6 +30,49 @@ export const PRACTICE_QUALITY_POLICY_VERSION = 'lesson-practice-v1';
 export const COMPOSITIONAL_LESSON_PEDAGOGY_POLICY_VERSION =
   'lesson-pedagogy-v9-scientific-notation';
 export const COMPOSITIONAL_PRACTICE_QUALITY_POLICY_VERSION = 'lesson-practice-v8-literal-identity';
+
+const PRACTICE_AGGREGATE_QUALITY_CODES = new Set([
+  'focused_unit_angle_coverage_insufficient',
+  'reasoning_demand_below_depth',
+]);
+
+/** Only the current Practice aggregate evaluator may relinquish these hard gates. */
+export function applyPracticeAggregateAcceptancePolicy(
+  evaluation: PracticeQualityEvaluation,
+): PracticeQualityEvaluation {
+  if (evaluation.policyVersion !== COMPOSITIONAL_PRACTICE_QUALITY_POLICY_VERSION) return evaluation;
+  const findings = evaluation.findings.map((finding) =>
+    PRACTICE_AGGREGATE_QUALITY_CODES.has(finding.code)
+      ? { ...finding, severity: 'warning' as const }
+      : finding,
+  );
+  return {
+    ...evaluation,
+    acceptancePolicyVersion: PRACTICE_ACCEPTANCE_POLICY_VERSION,
+    status: findings.some((finding) => finding.severity === 'error') ? 'fail' : 'pass',
+    findings,
+  };
+}
+
+export function practiceAggregateQualityFindings(
+  evaluation: PracticeQualityEvaluation,
+): PracticeQualityFinding[] {
+  if (evaluation.policyVersion !== COMPOSITIONAL_PRACTICE_QUALITY_POLICY_VERSION) return [];
+  return applyPracticeAggregateAcceptancePolicy(evaluation).findings.filter((finding) =>
+    PRACTICE_AGGREGATE_QUALITY_CODES.has(finding.code),
+  );
+}
+
+/** A historical Practice cannot acquire this marker merely by being read. */
+export function hasCurrentPracticeAcceptancePolicy(brief: TeachingBrief): boolean {
+  const evaluation = brief.practice?.qualityEvaluation;
+  return Boolean(
+    evaluation?.policyVersion === COMPOSITIONAL_PRACTICE_QUALITY_POLICY_VERSION &&
+    evaluation.acceptancePolicyVersion === PRACTICE_ACCEPTANCE_POLICY_VERSION &&
+    evaluation.status === 'pass' &&
+    evaluation.findings.every((finding) => finding.severity !== 'error'),
+  );
+}
 
 function normalized(value: string): string {
   return value
@@ -1105,7 +1150,11 @@ function overclaimsProbabilisticControl(text: string): boolean {
 export function assertCurrentCognitiveContract(
   evaluation: LessonPedagogyEvaluation | PracticeQualityEvaluation,
 ): void {
-  const errors = evaluation.findings.filter(
+  const acceptedEvaluation =
+    evaluation.evaluator === 'independent-deterministic-practice-evaluator'
+      ? applyPracticeAggregateAcceptancePolicy(evaluation)
+      : evaluation;
+  const errors = acceptedEvaluation.findings.filter(
     (finding) => finding.severity === 'error' && Object.hasOwn(COGNITIVE_MESSAGES, finding.code),
   );
   if (errors.length)
@@ -2539,16 +2588,18 @@ export function evaluatePlannedPracticeQuality(
     }
   }
 
-  return PracticeQualityEvaluationSchema.parse({
-    schemaVersion: 1,
-    policyVersion: COMPOSITIONAL_PRACTICE_QUALITY_POLICY_VERSION,
-    evaluator: 'independent-deterministic-practice-evaluator',
-    independent: true,
-    status: findings.some((finding) => finding.severity === 'error') ? 'fail' : 'pass',
-    boundedRepairAttempted: options.boundedRepairAttempted ?? false,
-    findings,
-    evaluatedAt: options.evaluatedAt,
-  });
+  return applyPracticeAggregateAcceptancePolicy(
+    PracticeQualityEvaluationSchema.parse({
+      schemaVersion: 1,
+      policyVersion: COMPOSITIONAL_PRACTICE_QUALITY_POLICY_VERSION,
+      evaluator: 'independent-deterministic-practice-evaluator',
+      independent: true,
+      status: findings.some((finding) => finding.severity === 'error') ? 'fail' : 'pass',
+      boundedRepairAttempted: options.boundedRepairAttempted ?? false,
+      findings,
+      evaluatedAt: options.evaluatedAt,
+    }),
+  );
 }
 
 /** Map compositional Lesson findings back to stable immutable slot identities. */
@@ -2570,8 +2621,8 @@ export function practiceEvaluationInvalidSlotIds(
   evaluation: PracticeQualityEvaluation,
   input: PracticeContentGenerationInput,
 ): string[] {
-  const ids = evaluation.findings
-    .filter((finding) => finding.severity === 'error')
+  const ids = applyPracticeAggregateAcceptancePolicy(evaluation)
+    .findings.filter((finding) => finding.severity === 'error')
     .flatMap((finding) =>
       finding.itemIndexes.map((index) => input.skeleton.practicePlan.slots[index]?.practiceSlotId),
     )
