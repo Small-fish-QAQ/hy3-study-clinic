@@ -4,6 +4,7 @@ import {
   TeachingContentReviewSchema,
   MAX_TEACHING_CONTENT_REVIEWS,
   PRACTICE_ANSWERABILITY_POLICY_VERSION,
+  PRACTICE_ACCEPTANCE_POLICY_VERSION,
   projectLearnerPracticeSurface,
   projectPracticePriorTeaching,
   type LearnerPracticeSolvingSurface,
@@ -26,9 +27,10 @@ import type {
 } from '../llm/provider.js';
 import { ProviderError } from '../llm/errors.js';
 import { validatePracticeContentCandidate } from './teachingBriefContract.js';
+import { compareLearnerPracticeTasks } from './practiceTaskCanonicalization.js';
 import {
   evaluatePlannedPracticeQuality,
-  practiceAggregateQualityFindings,
+  practiceQualityImprovementFindings,
 } from './lessonPedagogyEvaluator.js';
 
 const AUTHOR_KEYS = new Set([
@@ -294,6 +296,13 @@ export function prepareTeachingReview(
 const reviewHash = (value: unknown) =>
   `sha256:${createHash('sha256').update(JSON.stringify(value)).digest('hex')}`;
 
+const initialPracticeSurface = (
+  initial: PracticeContentProposalPayload['items'][number]['initial'],
+) => ({
+  prompt: initial.prompt,
+  options: initial.options.map(({ optionRef, text }) => ({ id: optionRef, text })),
+});
+
 export function preparePracticeAnswerabilityReview(
   surface: LearnerPracticeSolvingSurface,
   priorTeaching: PracticePriorTeaching,
@@ -307,7 +316,12 @@ export function preparePracticeAnswerabilityReview(
     priorTeaching: structuredClone(priorTeaching),
     actionIds: [actionId],
   };
-  const inputHash = reviewHash(input);
+  // Bind the independent judgment to both the exact public surface and the
+  // Practice-only policy that defines when it may clear a shallow-task warning.
+  const inputHash = reviewHash({
+    acceptancePolicyVersion: PRACTICE_ACCEPTANCE_POLICY_VERSION,
+    input,
+  });
   const validate = (raw: unknown) => {
     const parsed = TeachingContentReviewSchema.safeParse(raw);
     const valid =
@@ -525,7 +539,47 @@ export async function verifyPreparedPractice(
       }
       answerabilityReview.rounds.push({ candidateHash: prepared.candidateHash, solves });
       if (!findings.length) {
-        const qualityFindings = practiceAggregateQualityFindings(
+        // Only a rewrite resolving this contextual warning owes a changed public
+        // task and independent confirmation of case inference. Aggregate policy
+        // and originals remain untouched; a rejected rewrite recovers its original.
+        if (original) {
+          for (const finding of qualityImprovement.findingsBefore) {
+            if (finding.code !== 'practice_initial_recognition_at_depth') continue;
+            for (const index of finding.itemIndexes) {
+              const before = original.candidate.items[index]!;
+              const itemIndex = candidate.items.findIndex(
+                (item) => item.practiceSlotId === before.practiceSlotId,
+              );
+              const after = candidate.items[itemIndex]!;
+              const solved = solves.find(
+                (solve) => solve.itemIndex === itemIndex && solve.surface === 'initial',
+              )!;
+              if (
+                compareLearnerPracticeTasks(
+                  initialPracticeSurface(before.initial),
+                  initialPracticeSurface(after.initial),
+                ) !== 'different' ||
+                !solved.result.decisions[0]!.requiresCaseInference
+              )
+                throw ProviderError.invalidOutput(
+                  'A shallow Practice rewrite must change the visible task beyond cosmetics and independently require case inference, not merely change its operation label.',
+                  'candidate',
+                  'SEMANTIC_VALIDATION_FAILURE',
+                  false,
+                  {
+                    kind: 'practice_quality_improvement_rejection',
+                    diagnostics: [
+                      {
+                        code: 'practice_shallow_reasoning_relabel',
+                        message: `${before.practiceSlotId}.initial did not establish a deeper public reasoning task.`,
+                      },
+                    ],
+                  },
+                );
+            }
+          }
+        }
+        const qualityFindings = practiceQualityImprovementFindings(
           evaluatePlannedPracticeQuality(candidate, context, {
             evaluatedAt: '1970-01-01T00:00:00.000Z',
           }),

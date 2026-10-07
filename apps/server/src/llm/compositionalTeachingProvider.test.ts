@@ -481,6 +481,72 @@ describe('compositional Teaching providers', () => {
       'Direct user permissions alone are not attribute-based',
     );
   });
+  it.each([
+    {
+      prompt: 'The public log explicitly labels this event as completion. Which category is it?',
+      requiresCaseInference: false,
+      evidenceUsed: 'The log directly gives the completion label; this is recognition.',
+    },
+    {
+      prompt: 'The public value is 4. Which offered value is twice that value?',
+      requiresCaseInference: true,
+      evidenceUsed: 'Applying multiplication to the given value derives 8.',
+    },
+  ])(
+    'independently reports case inference=$requiresCaseInference without a positive default',
+    async ({ prompt, requiresCaseInference, evidenceUsed }) => {
+      const priorTeaching = projectPracticePriorTeaching({
+        objective: { title: 'Public rules', whyNow: 'Use public facts.', objectives: [] },
+        prerequisites: [],
+        segments: [],
+        summary: 'Doubling multiplies a value by two.',
+        nextConnection: null,
+        sourceReferences: [],
+        visualReferences: [],
+      });
+      const prepared = preparePracticeAnswerabilityReview(
+        {
+          prompt,
+          options: [
+            { id: 'A', text: 'Completion / 8' },
+            { id: 'B', text: 'Update / 4' },
+            { id: 'C', text: 'Priority / 2' },
+          ],
+        },
+        priorTeaching,
+        'PR1.initial',
+        'PR1',
+      );
+      const result = {
+        decisions: [
+          { actionId: 'PR1.initial', answerId: 'A', requiresCaseInference, evidenceUsed },
+        ],
+        findings: [],
+      };
+      const transport = vi
+        .fn()
+        .mockResolvedValue(response(JSON.stringify(result))) as unknown as typeof fetch;
+      const reviewed = await hy3(transport).reviewTeachingContent(prepared.input, {
+        validateCandidate: prepared.validate,
+      });
+      expect(reviewed).toEqual(result);
+      const body = JSON.parse(
+        String((transport as unknown as ReturnType<typeof vi.fn>).mock.calls[0]![1]!.body),
+      );
+      const systemPrompt = body.messages[0].content as string;
+      expect(systemPrompt).toContain(
+        'Return true only when answering requires applying, combining, comparing, diagnosing, deriving',
+      );
+      expect(systemPrompt).toContain(
+        'Return false for direct recognition, direct lookup, simple label matching, verbatim retrieval',
+      );
+      expect(systemPrompt).toContain('merely restating an explicitly given conclusion');
+      expect(systemPrompt).toContain('never a fixed/default value');
+      expect(systemPrompt).not.toContain('"requiresCaseInference":true');
+      expect(JSON.stringify(prepared.input)).not.toContain('reasoningOperation');
+      expect(JSON.stringify(prepared.input)).not.toContain('correctOption');
+    },
+  );
   it.each(['lesson', 'practice'] as const)(
     'reserves reasoning time for %s without overriding caller cancellation budgets',
     async (stage) => {

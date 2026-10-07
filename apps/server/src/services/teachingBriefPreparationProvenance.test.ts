@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import {
   PRACTICE_ANSWERABILITY_POLICY_VERSION,
@@ -284,13 +285,18 @@ describe('Teaching Brief preparation provenance selection', () => {
     expect(JSON.stringify(checkpoint)).toBe(checkpointBytes);
   });
 
-  it('fences old Practice acceptance without changing the Lesson checkpoint or composition fingerprint', () => {
+  it.each([
+    'practice-acceptance-v1-aggregate-quality',
+    'practice-acceptance-v2-explicit-recognition-quality',
+  ])('fences %s without changing the Lesson checkpoint or composition fingerprint', (oldPolicy) => {
     const skeleton = { fingerprint: SKELETON_FINGERPRINT };
     const checkpoint = acceptedCheckpoint();
     const checkpointBytes = JSON.stringify(checkpoint);
     const identity = compositionFingerprint('source-context-1', skeleton);
     const current = compositionalBrief();
-    const obsolete = compositionalBrief({ acceptancePolicyVersion: 'practice-acceptance-old' });
+    const obsolete = compositionalBrief({
+      acceptancePolicyVersion: oldPolicy,
+    });
     const missing = compositionalBrief();
     delete missing.practice!.qualityEvaluation.acceptancePolicyVersion;
 
@@ -302,4 +308,48 @@ describe('Teaching Brief preparation provenance selection', () => {
     expect(selectCurrentAcceptedLessonCheckpoint(checkpoint)).toBe(checkpoint);
     expect(JSON.stringify(checkpoint)).toBe(checkpointBytes);
   });
+
+  it.each(['unversioned', 'previous_policy'] as const)(
+    'does not let a current acceptance marker certify an %s inference proof',
+    (oldProof) => {
+      const brief = compositionalBrief();
+      const checkpoint = acceptedCheckpoint();
+      const checkpointBytes = JSON.stringify(checkpoint);
+      const identity = compositionFingerprint('source-context-1', {
+        fingerprint: SKELETON_FINGERPRINT,
+      });
+      const priorTeaching = projectPracticePriorTeaching(brief);
+      for (const solve of brief.practice!.qualityEvaluation.answerabilityReview!.rounds[0]!
+        .solves) {
+        const surface = brief.practice!.items[solve.itemIndex]![solve.surface];
+        const prepared = preparePracticeAnswerabilityReview(
+          {
+            prompt: surface.prompt,
+            options: surface.options.map(({ id, text }) => ({ id: id.slice(-1), text })),
+          },
+          priorTeaching,
+          solve.actionId,
+          'PR1',
+        );
+        solve.inputHash = `sha256:${createHash('sha256')
+          .update(
+            JSON.stringify(
+              oldProof === 'unversioned'
+                ? prepared.input
+                : {
+                    acceptancePolicyVersion: 'practice-acceptance-v2-explicit-recognition-quality',
+                    input: prepared.input,
+                  },
+            ),
+          )
+          .digest('hex')}`;
+      }
+      expect(isCurrentCompositionalBrief(brief, { fingerprint: SKELETON_FINGERPRINT })).toBe(false);
+      expect(selectCurrentAcceptedLessonCheckpoint(checkpoint)).toBe(checkpoint);
+      expect(JSON.stringify(checkpoint)).toBe(checkpointBytes);
+      expect(
+        compositionFingerprint('source-context-1', { fingerprint: SKELETON_FINGERPRINT }),
+      ).toBe(identity);
+    },
+  );
 });

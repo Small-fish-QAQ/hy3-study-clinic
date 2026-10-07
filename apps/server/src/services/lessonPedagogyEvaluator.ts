@@ -63,6 +63,20 @@ export function practiceAggregateQualityFindings(
   );
 }
 
+/** Contextual shallow-task warnings share the existing optional improvement budget. */
+export function practiceQualityImprovementFindings(
+  evaluation: PracticeQualityEvaluation,
+): PracticeQualityFinding[] {
+  if (evaluation.policyVersion !== COMPOSITIONAL_PRACTICE_QUALITY_POLICY_VERSION) return [];
+  return [
+    ...practiceAggregateQualityFindings(evaluation),
+    ...evaluation.findings.filter(
+      (finding) =>
+        finding.code === 'practice_initial_recognition_at_depth' && finding.severity === 'warning',
+    ),
+  ];
+}
+
 /** A historical Practice cannot acquire this marker merely by being read. */
 export function hasCurrentPracticeAcceptancePolicy(brief: TeachingBrief): boolean {
   const evaluation = brief.practice?.qualityEvaluation;
@@ -1471,8 +1485,8 @@ function cognitivePracticeFindings(
     const actions =
       exposure.find((entry) => entry.objectiveRef === slot.objectiveRef)?.actions ?? [];
     const context = `${practiceObjectiveTarget(slot, input)} ${sourceTextForRefs(input.sourceContext, slot.allowedSourceRefs)}`;
-    if ([item.initial, item.retry].some(missingDeclaration))
-      add('missing_reasoning_declaration', [index], [slot.objectiveRef]);
+    const declarationsMissing = [item.initial, item.retry].some(missingDeclaration);
+    if (declarationsMissing) add('missing_reasoning_declaration', [index], [slot.objectiveRef]);
     for (const surface of [item.initial, item.retry]) {
       const code = evidenceContrastFinding(
         surface,
@@ -1492,8 +1506,17 @@ function cognitivePracticeFindings(
       depth &&
       depth !== 'pass_oriented' &&
       !isReasoningOperation(item.initial.reasoningOperation)
-    )
-      add('practice_initial_recognition_at_depth', [index], [slot.objectiveRef]);
+    ) {
+      const explicitShallowOperation =
+        item.initial.reasoningOperation === 'recognize' ||
+        item.initial.reasoningOperation === 'classify';
+      add(
+        'practice_initial_recognition_at_depth',
+        [index],
+        [slot.objectiveRef],
+        explicitShallowOperation && !declarationsMissing ? 'warning' : 'error',
+      );
+    }
     if (actions.some((action) => definiteReplay(item.initial, action)))
       add('practice_semantic_replay', [index], [slot.objectiveRef]);
     else if (

@@ -6,6 +6,7 @@ import {
   PracticeQualityEvaluationSchema,
   PRACTICE_ACCEPTANCE_POLICY_VERSION,
   projectAcceptedLessonSegments,
+  projectLearnerPracticeSurface,
   projectPracticePriorTeaching,
   type DesiredDepth,
 } from '@hy3-clinic/shared';
@@ -27,6 +28,8 @@ import {
   evaluateLessonSlotPedagogy,
   evaluatePlannedPracticeQuality,
   lessonReasoningExposure,
+  practiceEvaluationInvalidSlotIds,
+  practiceQualityImprovementFindings,
 } from './lessonPedagogyEvaluator.js';
 import {
   validateLessonSlotContentCandidate,
@@ -35,9 +38,11 @@ import {
 import { planTeachingSkeleton } from './teachingSkeletonPlanner.js';
 import {
   prepareTeachingReview,
+  preparePracticeAnswerabilityReview,
   verifyPreparedTeaching,
   verifyPreparedPractice,
 } from './teachingContentReview.js';
+import { compareLearnerPracticeTasks } from './practiceTaskCanonicalization.js';
 
 const at = { evaluatedAt: '2026-09-05T00:00:00.000Z' };
 
@@ -112,6 +117,146 @@ async function fixture(depth: DesiredDepth = 'working_fluency') {
     lessonEvaluation,
     practiceEvaluation,
   };
+}
+
+const shallowPrompt =
+  '检索系统把候选过滤、结果排序和状态更新分为三类。当前日志直接把操作标为“结果排序”。这个操作属于哪一类检索步骤？';
+const reasoningPrompt =
+  '检索规则：先保留匹配度至少60的候选，再按匹配度排序。候选甲匹配度80，候选乙匹配度40。过滤后返回哪些候选，为什么？';
+
+async function shallowFixture(
+  depth: DesiredDepth = 'working_fluency',
+  operation: 'recognize' | 'classify' = 'recognize',
+) {
+  const f = await fixture(depth);
+  f.practiceInput.courseDesign!.unitFocus = 'normal';
+  // A real deadline/energy tradeoff completes O1 coverage, isolating this rule.
+  const transfer = f.interaction.transfer;
+  transfer.reasoningOperation = 'judge_tradeoff';
+  transfer.changedCondition += '备用方案额外耗电；原处理器等待方案省电但无法满足截止要求。';
+  transfer.prompt = '本次必须满足截止要求。如何在额外耗电与等待超期之间作出权衡？';
+  transfer.requiredInference = '接受备用方案的额外耗电，以满足截止要求和独立配额限制。';
+  transfer.options[0]!.text = '在原处理器等待甲完成，优先节省电量，即使错过截止要求。';
+  transfer.options[1]!.text = '让备用处理器接收乙，在独立容量内启动，并接受额外耗电。';
+  const item = f.practice.items[0]!;
+  item.sourceRefs = [];
+  item.initial = {
+    reasoningOperation: operation,
+    requiredInference: '从日志声明中识别这个步骤所属的检索类别。',
+    decisiveCondition: '日志直接把操作标为结果排序。',
+    evidenceContrast: {
+      evidence: '当前日志直接把操作标为“结果排序”',
+      replacement: '当前日志直接把操作标为“候选过滤”',
+      alternativeOptionId: 'B',
+    },
+    prompt: shallowPrompt,
+    options: [
+      {
+        optionRef: 'A',
+        text: '属于结果排序，排列已经保留的候选。',
+        feedbackIfSelected: '日志明确标出了排序类别。',
+      },
+      {
+        optionRef: 'B',
+        text: '属于候选过滤，排除不满足条件的候选。',
+        feedbackIfSelected: '过滤是另一个类别，日志没有这样标注。',
+      },
+      {
+        optionRef: 'C',
+        text: '属于状态更新，修改任务的资源记录。',
+        feedbackIfSelected: '状态更新与排列候选不是同一类操作。',
+      },
+    ],
+    correctOptionRef: 'A',
+    hint: '先读日志已经给出的类别名称。',
+    explanation: '这是根据系统直接给出的类别名称识别步骤，无须推导额外结果。',
+  };
+  return f;
+}
+
+function deepenInitial(draft: Awaited<ReturnType<typeof shallowFixture>>['practice']) {
+  const initial = draft.items[0]!.initial;
+  initial.prompt = reasoningPrompt;
+  initial.reasoningOperation = 'predict_outcome';
+  initial.requiredInference = '比较两个匹配度与阈值，推导过滤后仅保留候选甲。';
+  initial.decisiveCondition = '阈值60介于甲的80和乙的40之间。';
+  initial.evidenceContrast = {
+    evidence: '候选甲匹配度80，候选乙匹配度40',
+    replacement: '候选甲匹配度40，候选乙匹配度80',
+    alternativeOptionId: 'B',
+  };
+  initial.options[0]!.text = '只返回候选甲，因为只有甲满足最低匹配度。';
+  initial.options[1]!.text = '只返回候选乙，因为只有乙满足最低匹配度。';
+  initial.options[2]!.text = '同时返回甲乙，因为排序会保留全部候选。';
+  initial.explanation =
+    '先把80和40分别与60比较，过滤去掉不满足阈值的候选；排序不能恢复已过滤的候选。';
+  return draft;
+}
+
+function verifyShallow(
+  f: Awaited<ReturnType<typeof shallowFixture>>,
+  improve: NonNullable<Parameters<typeof verifyPreparedPractice>[5]>,
+  requiresCaseInference = true,
+  groundingDefect = false,
+) {
+  const provider = new FakeProvider();
+  const review = vi.fn<Parameters<typeof verifyPreparedPractice>[3]>(async (prepared, round) => {
+    const input = prepared.input;
+    if (groundingDefect && round > 0 && input.purpose === 'practice_grounding')
+      return {
+        result: {
+          decisions: [],
+          findings: [
+            {
+              itemId: f.practice.items[0]!.practiceSlotId,
+              code: 'grounding',
+              problem: 'The rewritten rule contradicts the authorized source.',
+              repairInstruction: 'Restore the supported rule.',
+            },
+          ],
+        },
+        logicalCallId: `review-${round}:grounding`,
+      };
+    const result =
+      input.purpose === 'practice_answerability' &&
+      input.candidate.actionId === `${f.practice.items[0]!.practiceSlotId}.initial`
+        ? {
+            decisions: [
+              {
+                actionId: input.actionIds[0]!,
+                answerId: 'A',
+                requiresCaseInference:
+                  (round > 0 || input.candidate.prompt !== shallowPrompt) && requiresCaseInference,
+                evidenceUsed:
+                  input.candidate.prompt === reasoningPrompt
+                    ? 'Comparing the two values with the threshold derives that only candidate A remains.'
+                    : 'The public log directly states the category; no new outcome is derived.',
+              },
+            ],
+            findings: [],
+          }
+        : await provider.reviewTeachingContent(input);
+    return { result, logicalCallId: `review-${round}:${input.actionIds[0] ?? 'grounding'}` };
+  });
+  const verified = verifyPreparedPractice(
+    f.practiceInput,
+    f.practice,
+    projectPracticePriorTeaching({
+      objective: { title: '检索条件', whyNow: '区分类别并使用阈值。', objectives: [] },
+      prerequisites: [],
+      segments: [],
+      summary: '先过滤，再排序。',
+      nextConnection: null,
+      sourceReferences: [],
+      visualReferences: [],
+    }),
+    review,
+    async () => {
+      throw new Error('An optional rewrite cannot start another hard revision.');
+    },
+    improve,
+  );
+  return { verified, review };
 }
 
 describe('calibrated cognitive teaching contract', () => {
@@ -702,7 +847,7 @@ describe('calibrated cognitive teaching contract', () => {
     );
   });
 
-  it('rejects unchanged retry and recognition at depth without penalizing reasoning vocabulary as assertion promotion', async () => {
+  it('rejects unchanged retry while retaining recognition-at-depth diagnostics without penalizing reasoning vocabulary as assertion promotion', async () => {
     const f = await fixture();
     const item = f.practice.items[0]!;
     item.retry.reasoningOperation = item.initial.reasoningOperation;
@@ -725,6 +870,593 @@ describe('calibrated cognitive teaching contract', () => {
         .findings.some((finding) => finding.code === 'practice_promotes_construct'),
     ).toBe(false);
   });
+
+  it.each([
+    ['working_fluency', 'recognize'],
+    ['working_fluency', 'classify'],
+    ['high_performance', 'recognize'],
+    ['high_performance', 'classify'],
+    ['deep_transfer', 'recognize'],
+    ['deep_transfer', 'classify'],
+  ] as const)(
+    'keeps explicit %s/%s shallow tasks quality-only with complete declarations',
+    async (depth, operation) => {
+      const f = await shallowFixture(depth, operation);
+      const evaluation = f.practiceEvaluation();
+      expect(evaluation.status).toBe('pass');
+      expect(practiceQualityImprovementFindings(evaluation)).toEqual([
+        expect.objectContaining({
+          code: 'practice_initial_recognition_at_depth',
+          severity: 'warning',
+          itemIndexes: [0],
+          objectiveRefs: ['O1'],
+        }),
+      ]);
+      expect(validatePracticeContentCandidate(f.practice, f.practiceInput).valid).toBe(true);
+      expect(validateLessonSlotContentCandidate(f.lesson, f.lessonInput).valid).toBe(true);
+      expect(practiceEvaluationInvalidSlotIds(evaluation, f.practiceInput)).toEqual([]);
+      expect(() => assertCurrentCognitiveContract(evaluation)).not.toThrow();
+      const prompt = practiceContentMessages(f.practiceInput)
+        .map(({ content }) => content)
+        .join('\n');
+      expect(prompt).toContain('Initial must be reasoning-class at working_fluency and above');
+      expect(prompt).toContain(`"desiredDepth":"${depth}"`);
+      if (depth === 'deep_transfer')
+        expect(
+          f.practiceInput.skeleton.lessonSlots.some(
+            (slot) => slot.qualityContract === 'boundary_work',
+          ),
+        ).toBe(true);
+    },
+  );
+
+  it.each(['pass_oriented', undefined] as const)(
+    'does not add a shallow-depth finding for depth %s',
+    async (depth) => {
+      const f = await shallowFixture();
+      f.practiceInput.courseDesign = depth
+        ? { desiredDepth: depth, unitFocus: 'normal' }
+        : undefined;
+      expect(
+        f
+          .practiceEvaluation()
+          .findings.some(({ code }) => code === 'practice_initial_recognition_at_depth'),
+      ).toBe(false);
+    },
+  );
+
+  it.each(['initial', 'retry'] as const)(
+    'keeps every missing %s declaration hard and outside quality fallback',
+    async (surface) => {
+      for (const field of [
+        'reasoningOperation',
+        'requiredInference',
+        'decisiveCondition',
+      ] as const) {
+        const f = await shallowFixture();
+        delete f.practice.items[0]![surface][field];
+        const evaluation = f.practiceEvaluation();
+        expect(evaluation.findings).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({ code: 'missing_reasoning_declaration', severity: 'error' }),
+            expect.objectContaining({
+              code: 'practice_initial_recognition_at_depth',
+              severity: 'error',
+            }),
+          ]),
+        );
+        expect(practiceQualityImprovementFindings(evaluation)).toEqual([]);
+        expect(validatePracticeContentCandidate(f.practice, f.practiceInput).valid).toBe(false);
+        expect(() => assertCurrentCognitiveContract(evaluation)).toThrow();
+        const improve = vi.fn(async (draft) => draft);
+        const { verified, review } = verifyShallow(f, improve);
+        await expect(verified).rejects.toBeDefined();
+        expect(improve).not.toHaveBeenCalled();
+        expect(review).not.toHaveBeenCalled();
+      }
+    },
+  );
+
+  it.each(['no_op', 'still_shallow'] as const)(
+    'accepts residual shallow warnings after one %s quality attempt',
+    async (rewrite) => {
+      const f = await shallowFixture();
+      const improve = vi.fn(async (draft: typeof f.practice) => {
+        if (rewrite === 'still_shallow') draft.items[0]!.initial.reasoningOperation = 'classify';
+        return draft;
+      });
+      const { verified, review } = verifyShallow(f, improve);
+      const result = await verified;
+      expect(improve).toHaveBeenCalledTimes(1);
+      expect(result.qualityImprovement).toMatchObject({ attempts: 1, outcome: 'rejected' });
+      expect(result.candidate).toEqual(f.practice);
+      expect(
+        practiceQualityImprovementFindings(
+          evaluatePlannedPracticeQuality(result.candidate, f.practiceInput, at),
+        ),
+      ).toEqual(result.qualityImprovement.findingsBefore);
+      expect(result.receipts).toHaveLength(1);
+      expect(result.answerabilityReview.rounds).toHaveLength(1);
+      expect(review).toHaveBeenCalledTimes(2 * (1 + 2 * f.practice.items.length));
+    },
+  );
+
+  it.each(['plain', 'markdown', 'unicode_quotation'] as const)(
+    'accepts %s deeper public reasoning only after hard validation and fresh blind inference proofs',
+    async (formatting) => {
+      const f = await shallowFixture('deep_transfer');
+      const improve = vi.fn(async (draft: typeof f.practice) => {
+        deepenInitial(draft);
+        if (formatting === 'markdown') {
+          draft.items[0]!.initial.prompt = `**${draft.items[0]!.initial.prompt}**`;
+          for (const option of draft.items[0]!.initial.options) option.text = `_${option.text}_`;
+        }
+        if (formatting === 'unicode_quotation') {
+          draft.items[0]!.initial.prompt += ' Read "résumé review".'.normalize('NFD');
+          for (const option of draft.items[0]!.initial.options)
+            option.text += ' "café report".'.normalize('NFD');
+        }
+        return draft;
+      });
+      const { verified, review } = verifyShallow(f, improve);
+      const result = await verified;
+      expect(result.qualityImprovement).toMatchObject({ attempts: 1, outcome: 'improved' });
+      expect(
+        practiceQualityImprovementFindings(
+          evaluatePlannedPracticeQuality(result.candidate, f.practiceInput, at),
+        ),
+      ).toEqual([]);
+      expect(validatePracticeContentCandidate(result.candidate, f.practiceInput).valid).toBe(true);
+      expect(
+        result.answerabilityReview.rounds.at(-1)!.solves[0]!.result.decisions[0]!
+          .requiresCaseInference,
+      ).toBe(true);
+      expect(result.receipts[0]!.candidateHash).not.toBe(result.receipts[1]!.candidateHash);
+      for (const [prepared] of review.mock.calls) {
+        expect(JSON.stringify(prepared.input.candidate)).not.toContain('reasoningOperation');
+        expect(JSON.stringify(prepared.input.candidate)).not.toContain('evidenceContrast');
+      }
+    },
+  );
+
+  it.each(
+    [
+      ['plain', '', ''],
+      ['double', '"', '"'],
+      ['single', "'", "'"],
+      ['curly', '“', '”'],
+      ['corner', '「', '」'],
+      ['double_corner', '『', '』'],
+    ].flatMap(([quotation, open, close]) =>
+      (['NFC', 'NFD'] as const).map((unicode) => ({ quotation, open, close, unicode })),
+    ),
+  )(
+    'rejects Unicode equivalence across public prose classes with optimistic inference: $quotation/$unicode',
+    async ({ open, close, unicode }) => {
+      const f = await shallowFixture();
+      const phrase =
+        'café report résumé review Ångström measure naïve façade Ελληνική λέξη 보고서 검토';
+      const quotation = `${open}${phrase}${close}`;
+      const before = f.practice.items[0]!.initial;
+      before.prompt = `${before.prompt} Read ${quotation}.`.normalize(unicode);
+      for (const option of before.options)
+        option.text = `${option.text} ${quotation}.`.normalize(unicode);
+      const visible = (initial: typeof before) =>
+        projectLearnerPracticeSurface({
+          prompt: initial.prompt,
+          options: initial.options.map(({ optionRef, text }) => ({ id: optionRef, text })),
+        });
+      expect(validatePracticeContentCandidate(f.practice, f.practiceInput).valid).toBe(true);
+      for (const presentation of [false, true]) {
+        let rewritten!: typeof f.practice;
+        const improve = vi.fn(async (draft: typeof f.practice) => {
+          const initial = draft.items[0]!.initial;
+          initial.reasoningOperation = 'diagnose_cause';
+          const transform = (text: string) => {
+            const value = text.normalize(unicode === 'NFC' ? 'NFD' : 'NFC');
+            return presentation ? ` \t**_${value.replace(/ /gu, '\r\n\t')}_**\r\n` : value;
+          };
+          initial.prompt = transform(initial.prompt);
+          for (const option of initial.options) option.text = transform(option.text);
+          if (presentation) initial.options.reverse();
+          rewritten = draft;
+          return draft;
+        });
+        const { verified, review } = verifyShallow(f, improve, true);
+        const result = await verified;
+        expect(
+          compareLearnerPracticeTasks(visible(before), visible(rewritten.items[0]!.initial)),
+        ).toBe('equal');
+        const solveIndex = review.mock.calls.findIndex(
+          ([prepared, round]) =>
+            round > 0 &&
+            prepared.input.purpose === 'practice_answerability' &&
+            prepared.input.candidate.actionId === `${f.practice.items[0]!.practiceSlotId}.initial`,
+        );
+        expect(
+          (await review.mock.results[solveIndex]!.value).result.decisions[0]!.requiresCaseInference,
+        ).toBe(true);
+        expect(improve).toHaveBeenCalledTimes(1);
+        expect(result.qualityImprovement).toMatchObject({ attempts: 1, outcome: 'rejected' });
+        expect(result.candidate).toEqual(f.practice);
+        expect(result.receipts).toHaveLength(1);
+        expect(result.answerabilityReview.rounds).toHaveLength(1);
+        expect(
+          evaluatePlannedPracticeQuality(result.candidate, f.practiceInput, at).findings,
+        ).toContainEqual(
+          expect.objectContaining({
+            code: 'practice_initial_recognition_at_depth',
+            severity: 'warning',
+          }),
+        );
+        expect(review).toHaveBeenCalledTimes(2 * (1 + 2 * f.practice.items.length));
+      }
+    },
+  );
+
+  it.each(
+    ['*', '**', '_', '__', '**_', '***__', '__**', '_**'].flatMap((opening) =>
+      (['NFC', 'NFD'] as const).flatMap((unicode) =>
+        [false, true].flatMap((reflow) =>
+          [false, true].map((reorder) => ({ opening, unicode, reflow, reorder })),
+        ),
+      ),
+    ),
+  )(
+    'rejects composed presentation changes with optimistic inference: $opening/$unicode/reflow=$reflow/reorder=$reorder',
+    async ({ opening, unicode, reflow, reorder }) => {
+      const f = await shallowFixture();
+      f.practice.items[0]!.initial.prompt += ' café 标签。';
+      const closing = [...opening].reverse().join('');
+      const transform = (text: string) => {
+        const value = text.normalize(unicode);
+        const displayed = reflow ? value.replace(/[。？]/gu, '$&\r\n\t') : value;
+        return ` \t${opening}${displayed.trim()}${closing}\r\n`;
+      };
+      let rewritten!: typeof f.practice;
+      const improve = vi.fn(async (draft: typeof f.practice) => {
+        const initial = draft.items[0]!.initial;
+        initial.reasoningOperation = 'diagnose_cause';
+        initial.prompt = transform(initial.prompt);
+        for (const option of initial.options) option.text = transform(option.text);
+        if (reorder) initial.options.reverse();
+        rewritten = draft;
+        return draft;
+      });
+      const { verified, review } = verifyShallow(f, improve, true);
+      const result = await verified;
+      const visible = (initial: (typeof f.practice.items)[number]['initial']) =>
+        projectLearnerPracticeSurface({
+          prompt: initial.prompt,
+          options: initial.options.map(({ optionRef, text }) => ({ id: optionRef, text })),
+        });
+      expect(
+        compareLearnerPracticeTasks(
+          visible(f.practice.items[0]!.initial),
+          visible(rewritten.items[0]!.initial),
+        ),
+      ).toBe('equal');
+      const solveIndex = review.mock.calls.findIndex(
+        ([prepared, round]) =>
+          round > 0 &&
+          prepared.input.purpose === 'practice_answerability' &&
+          prepared.input.candidate.actionId === `${f.practice.items[0]!.practiceSlotId}.initial`,
+      );
+      expect(
+        (await review.mock.results[solveIndex]!.value).result.decisions[0]!.requiresCaseInference,
+      ).toBe(true);
+      expect(improve).toHaveBeenCalledTimes(1);
+      expect(result.candidate).toEqual(f.practice);
+      expect(result.qualityImprovement).toMatchObject({ attempts: 1, outcome: 'rejected' });
+      expect(result.receipts).toHaveLength(1);
+      expect(result.answerabilityReview.rounds).toHaveLength(1);
+      expect(
+        evaluatePlannedPracticeQuality(result.candidate, f.practiceInput, at).findings,
+      ).toContainEqual(
+        expect.objectContaining({
+          code: 'practice_initial_recognition_at_depth',
+          severity: 'warning',
+        }),
+      );
+      expect(review).toHaveBeenCalledTimes(2 * (1 + 2 * f.practice.items.length));
+    },
+  );
+
+  it.each([
+    'code',
+    'html',
+    'block',
+    'prose_punctuation',
+    'original_uncertain',
+    'unicode_exact',
+  ] as const)(
+    'rejects %s non-comparable change with optimistic inference after one attempt',
+    async (formatting) => {
+      const f = await shallowFixture();
+      if (formatting === 'original_uncertain')
+        f.practice.items[0]!.initial.prompt = `\`${shallowPrompt}\``;
+      if (formatting === 'unicode_exact')
+        f.practice.items[0]!.initial.prompt += ' Read "café_count".';
+      const improve = vi.fn(async (draft: typeof f.practice) => {
+        const initial = draft.items[0]!.initial;
+        initial.reasoningOperation = 'diagnose_cause';
+        if (formatting === 'code') initial.prompt = `\`${initial.prompt}\``;
+        if (formatting === 'html') initial.prompt = `<strong>${initial.prompt}</strong>`;
+        if (formatting === 'block') initial.prompt = `# ${initial.prompt}`;
+        if (formatting === 'prose_punctuation')
+          for (const option of initial.options) option.text = option.text.replace(/。$/u, '！');
+        if (formatting === 'original_uncertain') deepenInitial(draft);
+        if (formatting === 'unicode_exact') initial.prompt = initial.prompt.normalize('NFD');
+        return draft;
+      });
+      const { verified, review } = verifyShallow(f, improve, true);
+      const result = await verified;
+      const solveIndex = review.mock.calls.findIndex(
+        ([prepared, round]) =>
+          round > 0 &&
+          prepared.input.purpose === 'practice_answerability' &&
+          prepared.input.candidate.actionId === `${f.practice.items[0]!.practiceSlotId}.initial`,
+      );
+      expect(
+        (await review.mock.results[solveIndex]!.value).result.decisions[0]!.requiresCaseInference,
+      ).toBe(true);
+      expect(improve).toHaveBeenCalledTimes(1);
+      expect(result.candidate).toEqual(f.practice);
+      expect(result.qualityImprovement).toMatchObject({ attempts: 1, outcome: 'rejected' });
+      expect(result.receipts).toHaveLength(1);
+      expect(result.answerabilityReview.rounds).toHaveLength(1);
+      expect(f.practiceEvaluation().findings).toContainEqual(
+        expect.objectContaining({
+          code: 'practice_initial_recognition_at_depth',
+          severity: 'warning',
+        }),
+      );
+    },
+  );
+
+  it.each(['presentation', 'unicode_prose', 'unicode_quotation'] as const)(
+    'keeps exact solve and grounding hashes distinct for canonically equal %s surfaces',
+    async (mutation) => {
+      const f = await shallowFixture();
+      const prior = projectPracticePriorTeaching({
+        objective: { title: '检索条件', whyNow: '区分类别。', objectives: [] },
+        prerequisites: [],
+        segments: [],
+        summary: '先过滤，再排序。',
+        nextConnection: null,
+        sourceReferences: [],
+        visualReferences: [],
+      });
+      const original = f.practice.items[0]!.initial;
+      if (mutation !== 'presentation') {
+        const phrase = mutation === 'unicode_prose' ? 'café report' : '"résumé review"';
+        original.prompt += ` Read ${phrase}.`;
+        for (const option of original.options) option.text += ` ${phrase}.`;
+      }
+      const before = projectLearnerPracticeSurface({
+        prompt: original.prompt,
+        options: original.options.map(({ optionRef, text }) => ({ id: optionRef, text })),
+      });
+      const after =
+        mutation === 'presentation'
+          ? { prompt: `**${before.prompt}**`, options: [...before.options].reverse() }
+          : {
+              prompt: before.prompt.normalize('NFD'),
+              options: before.options.map((option) => ({
+                ...option,
+                text: option.text.normalize('NFD'),
+              })),
+            };
+      expect(compareLearnerPracticeTasks(before, after)).toBe('equal');
+      const first = preparePracticeAnswerabilityReview(before, prior, 'PR1.initial', 'PR1');
+      const second = preparePracticeAnswerabilityReview(after, prior, 'PR1.initial', 'PR1');
+      expect(first.inputHash).not.toBe(second.inputHash);
+      expect(second.input.candidate).toEqual({ actionId: 'PR1.initial', ...after });
+      expect(
+        preparePracticeAnswerabilityReview(before, prior, 'PR1.initial', 'PR1').inputHash,
+      ).toBe(first.inputHash);
+      const rewritten = structuredClone(f.practice);
+      rewritten.items[0]!.initial.prompt = after.prompt;
+      rewritten.items[0]!.initial.options = after.options.map(({ id, text }) => ({
+        ...original.options.find((option) => option.optionRef === id)!,
+        text,
+      }));
+      expect(prepareTeachingReview(f.practiceInput, f.practice).candidateHash).not.toBe(
+        prepareTeachingReview(f.practiceInput, rewritten).candidateHash,
+      );
+    },
+  );
+
+  it.each([
+    'label_only',
+    'trailing_whitespace',
+    'whitespace_formatting',
+    'punctuation_only',
+    'quotation_punctuation',
+    'bracket_punctuation',
+    'markdown_bold',
+    'markdown_emphasis',
+    'markdown_nested',
+    'markdown_whitespace',
+    'markdown_punctuation',
+    'markdown_intra_word',
+    'markdown_options',
+    'markdown_option_reorder',
+    'option_reorder',
+    'private_only',
+    'wording_but_still_recognition',
+    'missing_contrast',
+    'invalid_contrast',
+    'no_case_inference',
+  ] as const)('discards a %s rewrite and retains the proven shallow original', async (rewrite) => {
+    const f = await shallowFixture();
+    const improve = vi.fn(async (draft: typeof f.practice) => {
+      const initial = draft.items[0]!.initial;
+      if (['no_case_inference', 'missing_contrast', 'invalid_contrast'].includes(rewrite))
+        deepenInitial(draft);
+      else initial.reasoningOperation = 'diagnose_cause';
+      if (rewrite === 'trailing_whitespace') initial.prompt = ` \t${initial.prompt}  \n`;
+      if (rewrite === 'whitespace_formatting') {
+        initial.prompt = initial.prompt.replace(/[。？]/gu, '$&\n\t');
+        for (const option of initial.options) option.text = ` \n${option.text}\t `;
+      }
+      if (rewrite === 'punctuation_only') {
+        initial.prompt = initial.prompt.replace(/？$/u, '?!');
+        for (const option of initial.options) option.text = option.text.replace(/。$/u, '！');
+      }
+      if (rewrite === 'quotation_punctuation') {
+        initial.prompt = initial.prompt.replace(/“/gu, '「').replace(/”/gu, '」');
+        initial.evidenceContrast!.evidence = initial
+          .evidenceContrast!.evidence.replace(/“/gu, '「')
+          .replace(/”/gu, '」');
+      }
+      if (rewrite === 'bracket_punctuation') {
+        initial.prompt = `【${initial.prompt}】`;
+        for (const option of initial.options) option.text = `(${option.text})`;
+      }
+      if (rewrite === 'markdown_bold') initial.prompt = `**${initial.prompt}**`;
+      if (rewrite === 'markdown_emphasis') initial.prompt = `_${initial.prompt}_`;
+      if (rewrite === 'markdown_nested') initial.prompt = `***__${initial.prompt}__***`;
+      if (rewrite === 'markdown_whitespace')
+        initial.prompt = ` \n**${initial.prompt.replace(/[。？]/gu, '$&\n\t')}** \t`;
+      if (rewrite === 'markdown_punctuation') {
+        initial.prompt = `**【${initial.prompt.replace(/？$/u, '?!')}】**`;
+        for (const option of initial.options) option.text = `_(${option.text})_`;
+      }
+      if (rewrite === 'markdown_intra_word') {
+        initial.prompt = initial.prompt.replace(/结果排序/gu, '结果*排序*');
+        initial.evidenceContrast!.evidence = initial.evidenceContrast!.evidence.replace(
+          /结果排序/gu,
+          '结果*排序*',
+        );
+      }
+      if (rewrite === 'markdown_options' || rewrite === 'markdown_option_reorder') {
+        for (const [index, option] of initial.options.entries())
+          option.text = index % 2 === 0 ? `**${option.text}**` : `_${option.text}_`;
+        if (rewrite === 'markdown_option_reorder') initial.options.reverse();
+      }
+      if (rewrite === 'option_reorder') initial.options.reverse();
+      if (rewrite === 'private_only') {
+        initial.requiredInference += ' 作者希望学习者进行诊断。';
+        initial.decisiveCondition += ' 作者私有判断。';
+        initial.hint += ' 私有提示改写。';
+        initial.explanation += ' 私有解释改写。';
+        for (const option of initial.options) option.feedbackIfSelected += ' 私有反馈改写。';
+      }
+      if (rewrite === 'wording_but_still_recognition')
+        initial.prompt = `${shallowPrompt} 请检查分类。`;
+      if (rewrite === 'missing_contrast') delete initial.evidenceContrast;
+      if (rewrite === 'invalid_contrast') initial.evidenceContrast!.alternativeOptionId = 'A';
+      return draft;
+    });
+    // Cosmetic rewrites deliberately receive an optimistic true: A alone must
+    // reject them. A substantive but direct-recognition rewrite fails B instead.
+    const { verified, review } = verifyShallow(
+      f,
+      improve,
+      !['no_case_inference', 'wording_but_still_recognition'].includes(rewrite),
+    );
+    const result = await verified;
+    if (rewrite.startsWith('markdown')) {
+      const rewrittenSolve = review.mock.calls.find(
+        ([prepared, round]) =>
+          round > 0 &&
+          prepared.input.purpose === 'practice_answerability' &&
+          prepared.input.candidate.actionId === `${f.practice.items[0]!.practiceSlotId}.initial`,
+      )!;
+      const solveIndex = review.mock.calls.indexOf(rewrittenSolve);
+      const solved = await review.mock.results[solveIndex]!.value;
+      expect(solved.result.decisions[0]!.requiresCaseInference).toBe(true);
+    }
+    expect(improve).toHaveBeenCalledTimes(1);
+    expect(result.candidate).toEqual(f.practice);
+    expect(result.qualityImprovement).toMatchObject({ attempts: 1, outcome: 'rejected' });
+    expect(result.receipts).toHaveLength(1);
+    expect(result.answerabilityReview.rounds).toHaveLength(1);
+    expect(result.qualityImprovement.findingsBefore).toContainEqual(
+      expect.objectContaining({ code: 'practice_initial_recognition_at_depth' }),
+    );
+    expect(f.practiceEvaluation().findings).toContainEqual(
+      expect.objectContaining({
+        code: 'practice_initial_recognition_at_depth',
+        severity: 'warning',
+      }),
+    );
+    expect(review).toHaveBeenCalledTimes(
+      (rewrite.includes('contrast') ? 1 : 2) * (1 + 2 * f.practice.items.length),
+    );
+  });
+
+  it.each(['wrong_key', 'source_authority', 'grounding'] as const)(
+    'discards genuine inference improvement with a %s hard defect',
+    async (defect) => {
+      const f = await shallowFixture();
+      const improve = vi.fn(async (draft: typeof f.practice) => {
+        deepenInitial(draft);
+        if (defect === 'wrong_key') {
+          draft.items[0]!.initial.correctOptionRef = 'B';
+          draft.items[0]!.initial.evidenceContrast!.alternativeOptionId = 'C';
+        }
+        if (defect === 'source_authority') draft.items[0]!.sourceRefs = ['S99'];
+        return draft;
+      });
+      const result = await verifyShallow(f, improve, true, defect === 'grounding').verified;
+      expect(improve).toHaveBeenCalledTimes(1);
+      expect(result.candidate).toEqual(f.practice);
+      expect(result.qualityImprovement).toMatchObject({ attempts: 1, outcome: 'rejected' });
+      expect(result.receipts).toHaveLength(1);
+      expect(result.answerabilityReview.rounds).toHaveLength(1);
+      expect(f.practiceEvaluation().findings).toContainEqual(
+        expect.objectContaining({
+          code: 'practice_initial_recognition_at_depth',
+          severity: 'warning',
+        }),
+      );
+    },
+  );
+
+  it.each([
+    'invalid',
+    'ineffective',
+    'markdown_only',
+    'uncertain',
+    'unicode_only',
+    'unicode_exact',
+  ] as const)(
+    'refuses %s shallow quality fallback when the original source fence changes',
+    async (rewrite) => {
+      const f = await shallowFixture();
+      if (rewrite.startsWith('unicode'))
+        f.practice.items[0]!.initial.prompt +=
+          rewrite === 'unicode_only' ? ' Read "café report".' : ' Read "café_count".';
+      const improve = vi.fn(async (draft: typeof f.practice) => {
+        f.practiceInput.sourceContext.offers[0]!.text += ' Changed after proof.';
+        if (rewrite === 'invalid') draft.items[0]!.initial.correctOptionRef = 'B';
+        if (rewrite === 'markdown_only') {
+          draft.items[0]!.initial.reasoningOperation = 'diagnose_cause';
+          draft.items[0]!.initial.prompt = `**${draft.items[0]!.initial.prompt}**`;
+        }
+        if (rewrite === 'uncertain') {
+          draft.items[0]!.initial.reasoningOperation = 'diagnose_cause';
+          draft.items[0]!.initial.prompt = `\`${draft.items[0]!.initial.prompt}\``;
+        }
+        if (rewrite.startsWith('unicode')) {
+          draft.items[0]!.initial.reasoningOperation = 'diagnose_cause';
+          draft.items[0]!.initial.prompt = draft.items[0]!.initial.prompt.normalize('NFD');
+        }
+        return draft;
+      });
+      await expect(verifyShallow(f, improve).verified).rejects.toMatchObject({
+        details: {
+          candidateFailure: {
+            kind: 'practice_quality_fallback_rejection',
+            diagnostics: [expect.objectContaining({ code: 'practice_original_proof_stale' })],
+          },
+        },
+      });
+      expect(improve).toHaveBeenCalledTimes(1);
+    },
+  );
 
   it('preserves focused aggregate quality diagnostics without rejecting valid Practice', async () => {
     const f = await fixture();

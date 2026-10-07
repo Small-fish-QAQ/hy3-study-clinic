@@ -107,7 +107,7 @@ const TeachingContentReviewReceiptSchema = z
 export const PRACTICE_ANSWERABILITY_POLICY_VERSION = 'practice-answerability-v2-fail-closed-fake';
 
 /** Practice acceptance changes must not invalidate accepted Lesson identity. */
-export const PRACTICE_ACCEPTANCE_POLICY_VERSION = 'practice-acceptance-v1-aggregate-quality';
+export const PRACTICE_ACCEPTANCE_POLICY_VERSION = 'practice-acceptance-v3-inference-quality';
 
 export const PracticeAnswerabilityReviewSchema = z
   .object({

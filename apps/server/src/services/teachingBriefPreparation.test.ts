@@ -45,6 +45,7 @@ import {
   evaluatePlannedPracticeQuality,
   hasCurrentPracticeAcceptancePolicy,
   practiceAggregateQualityFindings,
+  practiceQualityImprovementFindings,
 } from './lessonPedagogyEvaluator.js';
 import { TEACHING_SKELETON_PLANNER_VERSION } from './teachingSkeletonPlanner.js';
 import { hasCurrentPracticeAnswerabilityReview } from './teachingContentReview.js';
@@ -1149,6 +1150,9 @@ function preparationRequest(
 const qualityDecisionPrompt =
   '案例规则：旧任务结束后应归还占用配额，调整优先级不会改变占用计数。完成日志确认旧任务已结束，但计数仍满，新任务等待。检查状态更新链路花费1分钟，调整优先级花费5分钟；只能先选一项，希望尽快定位不符合规则的状态。应优先采用哪个方案，为什么？';
 const qualityDecisionAnswer = '先检查完成事件到计数更新的链路，以较低成本定位未归还状态。';
+const shallowDecisionPrompt =
+  '案例规则：系统记录区分任务完成事件、优先级变更和资源计数更新。当前日志明确把记录标为“任务完成事件”。这条记录应归入哪一类？';
+const shallowDecisionAnswer = '归入任务完成事件，表示一个任务结束。';
 
 async function aggregateQualityHarness(
   rewrite:
@@ -1164,13 +1168,25 @@ async function aggregateQualityHarness(
     | 'network'
     | 'review_failure'
     | 'malformed_review'
+    | 'label_only'
+    | 'trailing_whitespace'
+    | 'whitespace_formatting'
+    | 'punctuation_only'
+    | 'quotation_punctuation'
+    | 'bracket_punctuation'
+    | 'option_reorder'
+    | 'private_only'
+    | 'wording_but_still_recognition'
+    | 'no_inference'
+    | 'missing_contrast'
     | 'leak' = 'no_op',
   initialDefect?: 'missing_givens' | 'wrong_key' | 'authority' | 'grounding',
+  shallow?: { depth: DesiredDepth; operation: 'recognize' | 'classify' },
 ) {
-  const harness = await createHarness(0, 'pass', 'explain', 'deep_transfer');
+  const harness = await createHarness(0, 'pass', 'explain', shallow?.depth ?? 'deep_transfer');
   const curriculum = harness.repos.curricula.get(harness.curriculumId)!;
   const unit = curriculum.nodes.find((node) => node.id === harness.learningUnitId)!.learningUnit!;
-  unit.focus = 'focused';
+  unit.focus = shallow ? 'normal' : 'focused';
   for (const objective of unit.objectives) objective.priority = 'required';
   harness.db
     .prepare('UPDATE curriculum_versions SET payload=? WHERE id=?')
@@ -1179,6 +1195,19 @@ async function aggregateQualityHarness(
   const lesson = harness.provider.generateLessonSlotContent.bind(harness.provider);
   harness.provider.generateLessonSlotContent = async (input, opts) => {
     const candidate = await lesson(input, opts);
+    if (shallow) {
+      for (const slot of candidate.slots) {
+        const transfer = slot.workedProcess?.interaction?.transfer;
+        if (!transfer) continue;
+        transfer.reasoningOperation = 'judge_tradeoff';
+        transfer.changedCondition += '备用方案额外耗电；原处理器等待方案省电但无法满足截止要求。';
+        transfer.prompt = '本次必须满足截止要求。如何在额外耗电与等待超期之间作出权衡？';
+        transfer.requiredInference = '接受备用方案的额外耗电，以满足截止要求和独立配额限制。';
+        transfer.options[0]!.text = '在原处理器等待甲完成，优先节省电量，即使错过截止要求。';
+        transfer.options[1]!.text = '让备用处理器接收乙，在独立容量内启动，并接受额外耗电。';
+      }
+      return candidate;
+    }
     for (const slot of candidate.slots) {
       if (slot.workedProcess?.interaction) {
         const transfer = slot.workedProcess.interaction.transfer;
@@ -1210,7 +1239,7 @@ async function aggregateQualityHarness(
   harness.provider.generatePracticeContent = async (input, opts) => {
     const generated = await practice(input, opts);
     const improving = input.editorialFindings?.some((finding) =>
-      /focused_unit_angle_coverage_insufficient|reasoning_demand_below_depth/u.test(
+      /focused_unit_angle_coverage_insufficient|reasoning_demand_below_depth|practice_initial_recognition_at_depth/u.test(
         finding.problem,
       ),
     );
@@ -1219,6 +1248,39 @@ async function aggregateQualityHarness(
     for (const item of candidate.items) {
       item.sourceRefs = [];
       item.visualRefs = [];
+    }
+    if (shallow && !improving) {
+      candidate.items[0]!.initial = {
+        reasoningOperation: shallow.operation,
+        requiredInference: '识别日志直接声明的事件类别。',
+        decisiveCondition: '日志明确把记录标为任务完成事件。',
+        evidenceContrast: {
+          evidence: '当前日志明确把记录标为“任务完成事件”',
+          replacement: '当前日志明确把记录标为“优先级变更”',
+          alternativeOptionId: 'B',
+        },
+        prompt: shallowDecisionPrompt,
+        options: [
+          {
+            optionRef: 'A',
+            text: shallowDecisionAnswer,
+            feedbackIfSelected: '日志已经声明了任务完成事件。',
+          },
+          {
+            optionRef: 'B',
+            text: '归入优先级变更，表示调度顺序改变。',
+            feedbackIfSelected: '日志没有将记录标为优先级变更。',
+          },
+          {
+            optionRef: 'C',
+            text: '归入资源计数更新，表示配额数值改变。',
+            feedbackIfSelected: '任务完成记录本身没有声明配额数值更新。',
+          },
+        ],
+        correctOptionRef: 'A',
+        hint: '读取日志直接给出的类别名称。',
+        explanation: '这里只识别记录声明的事件类别，并没有推导随后发生的状态变化。',
+      };
     }
     if (improving) {
       qualityRequests.push(structuredClone(input));
@@ -1231,7 +1293,53 @@ async function aggregateQualityHarness(
         );
       if (rewrite === 'network') throw ProviderError.network();
       if (rewrite === 'ineffective') candidate.items[0]!.pedagogicalReason += ' 保留相同覆盖缺口。';
-      if (rewrite === 'improved')
+      if (
+        [
+          'label_only',
+          'trailing_whitespace',
+          'whitespace_formatting',
+          'punctuation_only',
+          'quotation_punctuation',
+          'bracket_punctuation',
+          'option_reorder',
+          'private_only',
+          'wording_but_still_recognition',
+          'missing_contrast',
+        ].includes(rewrite)
+      ) {
+        candidate.items[0]!.initial.reasoningOperation = 'diagnose_cause';
+        if (rewrite === 'missing_contrast') delete candidate.items[0]!.initial.evidenceContrast;
+      }
+      const initial = candidate.items[0]!.initial;
+      if (rewrite === 'trailing_whitespace') initial.prompt = ` \t${initial.prompt}  \n`;
+      if (rewrite === 'whitespace_formatting') {
+        initial.prompt = initial.prompt.replace(/[。？]/gu, '$&\n\t');
+        for (const option of initial.options) option.text = ` \n${option.text}\t `;
+      }
+      if (rewrite === 'punctuation_only') {
+        initial.prompt = initial.prompt.replace(/？$/u, '?!');
+        for (const option of initial.options) option.text = option.text.replace(/。$/u, '！');
+      }
+      if (rewrite === 'quotation_punctuation') {
+        initial.prompt = initial.prompt.replace(/“/gu, '「').replace(/”/gu, '」');
+        initial.evidenceContrast!.evidence = initial
+          .evidenceContrast!.evidence.replace(/“/gu, '「')
+          .replace(/”/gu, '」');
+      }
+      if (rewrite === 'bracket_punctuation') {
+        initial.prompt = `【${initial.prompt}】`;
+        for (const option of initial.options) option.text = `(${option.text})`;
+      }
+      if (rewrite === 'option_reorder') initial.options.reverse();
+      if (rewrite === 'private_only') {
+        initial.requiredInference += ' 作者希望学习者进行诊断。';
+        initial.decisiveCondition += ' 作者私有判断。';
+        initial.hint += ' 私有提示改写。';
+        initial.explanation += ' 私有解释改写。';
+        for (const option of initial.options) option.feedbackIfSelected += ' 私有反馈改写。';
+      }
+      if (rewrite === 'wording_but_still_recognition') initial.prompt += ' 请读取类别名称。';
+      if (rewrite === 'improved' || rewrite === 'no_inference')
         for (const item of candidate.items) {
           item.initial.prompt = qualityDecisionPrompt;
           item.initial.reasoningOperation = 'judge_tradeoff';
@@ -1276,12 +1384,30 @@ async function aggregateQualityHarness(
       candidate.items[0]!.capabilityTested += ' 材料保证提高优先级就会自动归还配额。';
     }
     expect(
-      practiceAggregateQualityFindings(
+      (shallow ? practiceQualityImprovementFindings : practiceAggregateQualityFindings)(
         evaluatePlannedPracticeQuality(candidate, input, {
           evaluatedAt: clock.now().toISOString(),
         }),
       ).length > 0,
-    ).toBe(!(improving && rewrite === 'improved'));
+    ).toBe(
+      !(
+        improving &&
+        [
+          'improved',
+          'label_only',
+          'trailing_whitespace',
+          'whitespace_formatting',
+          'punctuation_only',
+          'quotation_punctuation',
+          'bracket_punctuation',
+          'option_reorder',
+          'private_only',
+          'wording_but_still_recognition',
+          'missing_contrast',
+          'no_inference',
+        ].includes(rewrite)
+      ),
+    );
     return candidate;
   };
 
@@ -1321,6 +1447,25 @@ async function aggregateQualityHarness(
       };
     if (
       input.purpose === 'practice_answerability' &&
+      shallow &&
+      input.candidate.actionId === 'PR1.initial' &&
+      input.candidate.prompt.includes('当前日志明确把记录标为')
+    )
+      return {
+        decisions: [
+          {
+            actionId: input.actionIds[0]!,
+            answerId: 'A',
+            // Even an overly optimistic review cannot certify cosmetic rewrites.
+            requiresCaseInference:
+              qualityRequests.length > 0 && rewrite !== 'wording_but_still_recognition',
+            evidenceUsed: 'The public log directly states the event category.',
+          },
+        ],
+        findings: [],
+      };
+    if (
+      input.purpose === 'practice_answerability' &&
       input.candidate.prompt === qualityDecisionPrompt
     )
       return {
@@ -1330,7 +1475,7 @@ async function aggregateQualityHarness(
             answerId: input.candidate.options.find(
               (option) => option.text === qualityDecisionAnswer,
             )!.id,
-            requiresCaseInference: true,
+            requiresCaseInference: rewrite !== 'no_inference',
             evidenceUsed:
               'The visible rule excludes priority as a quota update; the cheaper update check explains the observed inconsistency.',
           },
@@ -1407,6 +1552,144 @@ afterEach(() => {
 });
 
 describe('Teaching Brief preparation', () => {
+  it.each([
+    { depth: 'working_fluency', operation: 'recognize' },
+    { depth: 'high_performance', operation: 'classify' },
+    { depth: 'deep_transfer', operation: 'recognize' },
+  ] as const)(
+    'persists valid shallow $depth/$operation Practice after one exhausted quality attempt',
+    async (shallow) => {
+      const { harness, qualityRequests, requests } = await aggregateQualityHarness(
+        'no_op',
+        undefined,
+        shallow,
+      );
+      const route = startTeachingRoute(harness);
+      const result = await harness.services.teachingBriefPreparation.prepare(
+        preparationRequest(harness, route, `shallow-${shallow.depth}`),
+      );
+      const evaluation = result.brief.practice!.qualityEvaluation;
+      expect(qualityRequests).toHaveLength(1);
+      expect(harness.provider.practiceContentCalls).toBe(2);
+      expect(evaluation).toMatchObject({
+        acceptancePolicyVersion: PRACTICE_ACCEPTANCE_POLICY_VERSION,
+        status: 'pass',
+        qualityImprovement: { attempts: 1, outcome: 'rejected' },
+      });
+      expect(practiceQualityImprovementFindings(evaluation)).toEqual([
+        expect.objectContaining({
+          code: 'practice_initial_recognition_at_depth',
+          severity: 'warning',
+        }),
+      ]);
+      expect(practiceAggregateQualityFindings(evaluation)).toEqual([]);
+      expect(hasCurrentPracticeAnswerabilityReview(result.brief)).toBe(true);
+      expect(hasCurrentPracticeAcceptancePolicy(result.brief)).toBe(true);
+      expect(evaluation.contentReview).toHaveLength(1);
+      expect(
+        evaluation.answerabilityReview!.rounds.map(({ candidateHash }) => candidateHash),
+      ).toEqual(evaluation.contentReview!.map(({ candidateHash }) => candidateHash));
+      expect(qualityRequests[0]!.courseDesign!.desiredDepth).toBe(shallow.depth);
+      expect(qualityRequests[0]!.editorialFindings![0]!.repairInstruction).toContain(
+        'not merely a different reasoningOperation label',
+      );
+      expect(requests.filter((request) => request.purpose === 'practice_grounding')).toHaveLength(
+        2,
+      );
+    },
+  );
+
+  it('persists genuine shallow-task reasoning improvement with fresh proofs', async () => {
+    const { harness, qualityRequests } = await aggregateQualityHarness('improved', undefined, {
+      depth: 'deep_transfer',
+      operation: 'classify',
+    });
+    const route = startTeachingRoute(harness);
+    const result = await harness.services.teachingBriefPreparation.prepare(
+      preparationRequest(harness, route, 'shallow-improved'),
+    );
+    expect(qualityRequests).toHaveLength(1);
+    expect(result.brief.practice!.qualityEvaluation.qualityImprovement).toMatchObject({
+      attempts: 1,
+      outcome: 'improved',
+    });
+    expect(practiceQualityImprovementFindings(result.brief.practice!.qualityEvaluation)).toEqual(
+      [],
+    );
+    expect(result.brief.practice!.items[0]!.initial.prompt).toBe(qualityDecisionPrompt);
+    expect(result.brief.practice!.qualityEvaluation.contentReview![0]!.candidateHash).not.toBe(
+      result.brief.practice!.qualityEvaluation.contentReview![1]!.candidateHash,
+    );
+    expect(hasCurrentPracticeAnswerabilityReview(result.brief)).toBe(true);
+  });
+
+  it.each([
+    'label_only',
+    'trailing_whitespace',
+    'whitespace_formatting',
+    'punctuation_only',
+    'quotation_punctuation',
+    'bracket_punctuation',
+    'option_reorder',
+    'private_only',
+    'wording_but_still_recognition',
+    'missing_contrast',
+    'no_inference',
+    'wrong_key',
+    'source_alias',
+    'grounding',
+  ] as const)(
+    'discards shallow quality rewrite %s and persists only the current proven original',
+    async (rewrite) => {
+      const { harness, qualityRequests } = await aggregateQualityHarness(rewrite, undefined, {
+        depth: 'working_fluency',
+        operation: 'recognize',
+      });
+      const route = startTeachingRoute(harness);
+      const result = await harness.services.teachingBriefPreparation.prepare(
+        preparationRequest(harness, route, `shallow-rejected-${rewrite}`),
+      );
+      const evaluation = result.brief.practice!.qualityEvaluation;
+      expect(qualityRequests).toHaveLength(1);
+      expect(evaluation.qualityImprovement).toMatchObject({ attempts: 1, outcome: 'rejected' });
+      expect(result.brief.practice!.items[0]!.initial.prompt).toBe(shallowDecisionPrompt);
+      expect(result.brief.practice!.items[0]!.initial.reasoningOperation).toBe('recognize');
+      expect(evaluation.contentReview).toHaveLength(1);
+      expect(evaluation.answerabilityReview!.rounds).toHaveLength(1);
+      expect(practiceQualityImprovementFindings(evaluation)).toEqual(
+        evaluation.qualityImprovement!.findingsBefore,
+      );
+      expect(hasCurrentPracticeAnswerabilityReview(result.brief)).toBe(true);
+    },
+  );
+
+  it.each(['missing_givens', 'wrong_key', 'authority', 'grounding'] as const)(
+    'rejects an initial shallow Practice %s hard defect without optional fallback',
+    async (defect) => {
+      const { harness, qualityRequests } = await aggregateQualityHarness('no_op', defect, {
+        depth: 'working_fluency',
+        operation: 'classify',
+      });
+      const route = startTeachingRoute(harness);
+      await expect(
+        harness.services.teachingBriefPreparation.prepare(
+          preparationRequest(harness, route, `shallow-hard-${defect}`),
+        ),
+      ).rejects.toMatchObject({
+        details: {
+          candidateFailure: {
+            kind:
+              defect === 'authority'
+                ? 'practice_content_rejection'
+                : 'teaching_content_review_failed',
+          },
+        },
+      });
+      expect(qualityRequests).toEqual([]);
+      expect(harness.repos.teachingBriefs.listForUnit('ws_1', harness.learningUnitId)).toEqual([]);
+    },
+  );
+
   it.each(['no_op', 'ineffective'] as const)(
     'accepts residual Practice aggregate warnings after exactly one %s quality improvement',
     async (rewrite) => {
@@ -1646,16 +1929,24 @@ describe('Teaching Brief preparation', () => {
   );
 
   it.each([
-    { complete: false, key: 'A', accepted: false },
-    { complete: true, key: 'A', accepted: true },
-    { complete: true, key: 'B', accepted: false },
+    { complete: false, key: 'A', accepted: false, shallow: false },
+    { complete: true, key: 'A', accepted: true, shallow: false },
+    { complete: true, key: 'B', accepted: false, shallow: false },
+    { complete: false, key: 'A', accepted: false, shallow: true },
+    { complete: true, key: 'A', accepted: true, shallow: true },
+    { complete: true, key: 'B', accepted: false, shallow: true },
   ])(
-    'gates final J18 persistence with visible givens=$complete and saved key=$key',
-    async ({ complete, key, accepted }) => {
+    'gates final J18 persistence with visible givens=$complete and saved key=$key (shallow=$shallow)',
+    async ({ complete, key, accepted, shallow }) => {
       const j18 = historicalJ18Item();
       const givens =
         '记录集：A(优先级1,时长5), B(优先级1,时长9), C(优先级2,时长2), D(优先级2,时长4)。';
-      const harness = await createHarness(0, 'pass', 'apply', 'pass_oriented');
+      const harness = await createHarness(
+        0,
+        'pass',
+        'apply',
+        shallow ? 'working_fluency' : 'pass_oriented',
+      );
       Object.defineProperty(harness.provider, 'name', { value: 'hy3' });
       const generate = harness.provider.generatePracticeContent.bind(harness.provider);
       harness.provider.generatePracticeContent = async (input, opts) => {
@@ -1665,6 +1956,7 @@ describe('Teaching Brief preparation', () => {
         item.visualRefs = [];
         item.application = structuredClone(j18.application);
         item.initial = structuredClone(j18.initial);
+        if (shallow) item.initial.reasoningOperation = 'recognize';
         item.initial.correctOptionRef = key;
         if (key === 'B') item.initial.evidenceContrast!.alternativeOptionId = 'A';
         if (complete) item.initial.prompt = givens + item.initial.prompt;
@@ -1771,7 +2063,7 @@ describe('Teaching Brief preparation', () => {
     );
   });
 
-  it.each(['answerability', 'acceptance'] as const)(
+  it.each(['answerability', 'acceptance', 'acceptance_v1', 'acceptance_v2'] as const)(
     'rejects cached old Practice %s policy and revalidates only Practice under the same accepted Lesson',
     async (policy) => {
       const harness = await createHarness();
@@ -1787,7 +2079,13 @@ describe('Teaching Brief preparation', () => {
         old.brief.practice!.qualityEvaluation.answerabilityReview!.policyVersion =
           'practice-answerability-v1-learner-visible';
       else {
-        delete old.brief.practice!.qualityEvaluation.acceptancePolicyVersion;
+        if (policy === 'acceptance_v1')
+          old.brief.practice!.qualityEvaluation.acceptancePolicyVersion =
+            'practice-acceptance-v1-aggregate-quality';
+        else if (policy === 'acceptance_v2')
+          old.brief.practice!.qualityEvaluation.acceptancePolicyVersion =
+            'practice-acceptance-v2-explicit-recognition-quality';
+        else delete old.brief.practice!.qualityEvaluation.acceptancePolicyVersion;
         delete old.brief.practice!.qualityEvaluation.qualityImprovement;
         expect(hasCurrentPracticeAnswerabilityReview(old.brief)).toBe(true);
       }
@@ -1829,7 +2127,7 @@ describe('Teaching Brief preparation', () => {
     },
   );
 
-  it.each(['answerability', 'acceptance'] as const)(
+  it.each(['answerability', 'acceptance', 'acceptance_v1', 'acceptance_v2'] as const)(
     'fences an already-bound old Practice %s policy and its cached ready projection before a new answer',
     async (policy) => {
       const harness = await createHarness();
@@ -1869,7 +2167,13 @@ describe('Teaching Brief preparation', () => {
         brief.practice!.qualityEvaluation.answerabilityReview!.policyVersion =
           'practice-answerability-obsolete';
       else {
-        delete brief.practice!.qualityEvaluation.acceptancePolicyVersion;
+        if (policy === 'acceptance_v1')
+          brief.practice!.qualityEvaluation.acceptancePolicyVersion =
+            'practice-acceptance-v1-aggregate-quality';
+        else if (policy === 'acceptance_v2')
+          brief.practice!.qualityEvaluation.acceptancePolicyVersion =
+            'practice-acceptance-v2-explicit-recognition-quality';
+        else delete brief.practice!.qualityEvaluation.acceptancePolicyVersion;
         expect(hasCurrentPracticeAnswerabilityReview(brief)).toBe(true);
       }
       harness.db

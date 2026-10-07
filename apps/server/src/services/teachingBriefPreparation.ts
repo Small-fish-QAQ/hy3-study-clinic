@@ -2012,7 +2012,9 @@ export function createTeachingBriefPreparationService({
                         code: 'shallow_task' as const,
                         problem: `${finding.code}: ${finding.message}`,
                         repairInstruction:
-                          'Improve the missing aggregate reasoning coverage within the same immutable Practice plan and source authority. Preserve a uniquely answerable visible case and correct key; never fix coverage with a dishonest operation label.',
+                          finding.code === 'practice_initial_recognition_at_depth'
+                            ? 'Deepen the initial task itself within the same immutable Practice plan and source authority: add a genuine inference from new visible case evidence, not merely a different reasoningOperation label. Supply valid evidenceContrast for the new reasoning operation. Preserve learner-visible unique answerability and the correct saved key; the rewrite needs fresh hard validation, grounding and independent case-inference proofs.'
+                            : 'Improve the missing aggregate reasoning coverage within the same immutable Practice plan and source authority. Preserve a uniquely answerable visible case and correct key; never fix coverage with a dishonest operation label.',
                       })),
                     ),
                   },
