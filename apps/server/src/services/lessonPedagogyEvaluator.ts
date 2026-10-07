@@ -1019,6 +1019,12 @@ const COGNITIVE_MESSAGES = {
     'A probabilistic model or Prompt instruction cannot guarantee obedience, eliminate fabrication, or prevent all errors. Distinguish risk reduction from an enforced validation boundary and state its limited scope.',
   missing_reasoning_declaration:
     'Every prepared action requires private reasoningOperation, requiredInference and decisiveCondition; transfer uses changedCondition.',
+  practice_reasoning_operation_missing:
+    'The Practice operation is unknown; award no operation coverage. Independent public-task evidence determines contrast applicability.',
+  practice_required_inference_missing:
+    'The private inference description is absent; description-based comparison is unavailable.',
+  practice_decisive_condition_missing:
+    'The private decisive-condition description is absent; description-based comparison is unavailable.',
   reasoning_demand_below_depth:
     'Each required objective needs a reasoning-class Lesson action, and guided/transfer actions must reason at working_fluency or deeper. Assertion authority does not cap cognition.',
   worked_interaction_answer_pre_revealed:
@@ -1038,11 +1044,11 @@ const COGNITIVE_MESSAGES = {
   focused_unit_angle_coverage_insufficient:
     'Across Lesson and Practice a focused Unit needs three reasoning operations including diagnose_cause or identify_missing, and choose_design or judge_tradeoff. Practice can complete missing Lesson angles.',
   practice_semantic_replay:
-    'Practice repeats a taught inference or an unchanged decision, regardless of operation label. Supply new evidence that distinguishes competing explanations; changing entities or labels is insufficient.',
+    'Private Practice descriptions overlap prior teaching; this is advisory and does not establish public task replay.',
   practice_initial_recognition_at_depth:
     'Practice initial must be reasoning-class at working_fluency or deeper.',
   practice_retry_semantic_replay:
-    'Retry repeats the initial operation and decisive condition or inference; prepare a materially different task.',
+    'Private retry descriptions overlap the initial descriptions; public task evidence must establish any actual replay.',
   practice_novelty_uncertain:
     'The operation is reused. Verify that the changed condition and inference create a genuinely new cognitive task.',
   practice_option_set_replays_lesson:
@@ -1128,8 +1134,9 @@ function evidenceContrastFinding(
   facts: string[],
   optionIds: string[],
   correctOptionId: string | undefined,
+  required = isReasoningOperation(action.reasoningOperation),
 ): CognitiveCode | undefined {
-  if (!isReasoningOperation(action.reasoningOperation) || optionIds.length === 0) return;
+  if (!required || optionIds.length === 0) return;
   const contrast = action.evidenceContrast;
   if (!contrast) return 'evidence_contrast_missing';
   const compact = (value: string) => value.normalize('NFKC').replace(/\s+/gu, '');
@@ -1143,6 +1150,25 @@ function evidenceContrastFinding(
   )
     return 'evidence_contrast_not_decisive';
   return;
+}
+
+/** Hard Practice applicability comes from an independently reviewed public task. */
+export function practiceEvidenceContrastFinding(
+  surface: {
+    evidenceContrast?: CognitiveAction['evidenceContrast'];
+    prompt: string;
+    options: Array<{ optionRef: string }>;
+    correctOptionRef: string;
+  },
+  requiresCaseInference: boolean,
+): CognitiveCode | undefined {
+  return evidenceContrastFinding(
+    surface,
+    [surface.prompt],
+    surface.options.map(({ optionRef }) => optionRef),
+    surface.correctOptionRef,
+    requiresCaseInference,
+  );
 }
 
 /** Narrow affirmative control claims only; vocabulary overlap is not an accuracy test. */
@@ -1485,16 +1511,20 @@ function cognitivePracticeFindings(
     const actions =
       exposure.find((entry) => entry.objectiveRef === slot.objectiveRef)?.actions ?? [];
     const context = `${practiceObjectiveTarget(slot, input)} ${sourceTextForRefs(input.sourceContext, slot.allowedSourceRefs)}`;
-    const declarationsMissing = [item.initial, item.retry].some(missingDeclaration);
-    if (declarationsMissing) add('missing_reasoning_declaration', [index], [slot.objectiveRef]);
     for (const surface of [item.initial, item.retry]) {
-      const code = evidenceContrastFinding(
+      for (const [field, code] of [
+        ['reasoningOperation', 'practice_reasoning_operation_missing'],
+        ['requiredInference', 'practice_required_inference_missing'],
+        ['decisiveCondition', 'practice_decisive_condition_missing'],
+      ] as const)
+        if (!surface[field]?.trim()) add(code, [index], [slot.objectiveRef], 'warning');
+      // Private declared intent can guide authors, but cannot establish a hard
+      // contrast obligation. The acceptance gate uses the current blind solve.
+      const code = practiceEvidenceContrastFinding(
         surface,
-        [surface.prompt],
-        surface.options.map((option) => option.optionRef),
-        surface.correctOptionRef,
+        isReasoningOperation(surface.reasoningOperation),
       );
-      if (code) add(code, [index], [slot.objectiveRef]);
+      if (code) add(code, [index], [slot.objectiveRef], 'warning');
       if (
         [surface.explanation, ...surface.options.map((option) => option.feedbackIfSelected)].some(
           overclaimsProbabilisticControl,
@@ -1505,20 +1535,13 @@ function cognitivePracticeFindings(
     if (
       depth &&
       depth !== 'pass_oriented' &&
-      !isReasoningOperation(item.initial.reasoningOperation)
+      (item.initial.reasoningOperation === 'recognize' ||
+        item.initial.reasoningOperation === 'classify')
     ) {
-      const explicitShallowOperation =
-        item.initial.reasoningOperation === 'recognize' ||
-        item.initial.reasoningOperation === 'classify';
-      add(
-        'practice_initial_recognition_at_depth',
-        [index],
-        [slot.objectiveRef],
-        explicitShallowOperation && !declarationsMissing ? 'warning' : 'error',
-      );
+      add('practice_initial_recognition_at_depth', [index], [slot.objectiveRef], 'warning');
     }
     if (actions.some((action) => definiteReplay(item.initial, action)))
-      add('practice_semantic_replay', [index], [slot.objectiveRef]);
+      add('practice_semantic_replay', [index], [slot.objectiveRef], 'warning');
     else if (
       actions.some((action) => action.reasoningOperation === item.initial.reasoningOperation)
     )
@@ -1529,9 +1552,9 @@ function cognitivePracticeFindings(
         (surface) => revealSeverity('', surface.requiredInference, [], priorTexts) === 'error',
       )
     )
-      add('practice_semantic_replay', [index], [slot.objectiveRef]);
+      add('practice_semantic_replay', [index], [slot.objectiveRef], 'warning');
     if (definiteReplay(item.initial, item.retry))
-      add('practice_retry_semantic_replay', [index], [slot.objectiveRef]);
+      add('practice_retry_semantic_replay', [index], [slot.objectiveRef], 'warning');
     else if (
       item.initial.reasoningOperation === item.retry.reasoningOperation &&
       contextRemovedOverlap(

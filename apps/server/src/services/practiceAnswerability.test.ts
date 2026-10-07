@@ -17,6 +17,7 @@ import type {
 } from '../llm/provider.js';
 import { teachingContentReviewMessages } from '../llm/prompts.js';
 import { FakeProvider } from '../llm/fakeProvider.js';
+import { validatePracticeContentCandidate } from './teachingBriefContract.js';
 import {
   hasCurrentPracticeAnswerabilityReview,
   preparePracticeAnswerabilityReview,
@@ -223,6 +224,7 @@ describe('learner-visible prepared Practice answerability', () => {
   it('rejects the same visible question with saved key B instead of A', async () => {
     const f = fixture(true);
     f.candidate.items[0]!.initial.correctOptionRef = 'B';
+    f.candidate.items[0]!.initial.evidenceContrast!.alternativeOptionId = 'C';
     await expect(f.verify()).rejects.toBeDefined();
     expect(f.revise.mock.calls[0]![0].items[0]!.initial.correctOptionRef).toBe('B');
     expect(
@@ -255,7 +257,7 @@ describe('learner-visible prepared Practice answerability', () => {
   it('does not let retry or another future question supply initial givens', async () => {
     const f = fixture();
     expect(f.candidate.items[0]!.retry.prompt).toContain('A(1,5)');
-    f.candidate.items[1]!.initial.prompt = `FUTURE_PRACTICE_SURFACE ${publicGivens}`;
+    f.candidate.items[1]!.initial.prompt += ` FUTURE_PRACTICE_SURFACE ${publicGivens}`;
     await expect(f.verify()).rejects.toBeDefined();
     const initial = f.requests.filter(
       (input) => input.purpose === 'practice_answerability' && input.actionIds[0] === 'PR1.initial',
@@ -271,11 +273,11 @@ describe('learner-visible prepared Practice answerability', () => {
   it('keeps all private sentinels out of the serialized solve while preserving public teaching and excerpts', async () => {
     const f = fixture(true);
     const item = f.candidate.items[0]!;
-    item.application!.startingState = 'PRIVATE_APPLICATION';
-    item.application!.sourceRuleOrProcedure = 'PRIVATE_RULE';
-    item.application!.expectedAction = 'PRIVATE_EXPECTED_ACTION';
-    item.capabilityTested = 'PRIVATE_CAPABILITY';
-    item.pedagogicalReason = 'PRIVATE_PEDAGOGY';
+    item.application!.startingState += ' PRIVATE_APPLICATION';
+    item.application!.sourceRuleOrProcedure += ' PRIVATE_RULE';
+    item.application!.expectedAction += ' PRIVATE_EXPECTED_ACTION';
+    item.capabilityTested += ' PRIVATE_CAPABILITY';
+    item.pedagogicalReason += ' PRIVATE_PEDAGOGY';
     item.initial.requiredInference = 'PRIVATE_INFERENCE';
     item.initial.hint = 'PRIVATE_HINT';
     item.initial.explanation = 'PRIVATE_EXPLANATION';
@@ -344,7 +346,11 @@ describe('learner-visible prepared Practice answerability', () => {
     async (kind) => {
       const f = fixture(true);
       f.candidate.items[0]!.sourceRefs = kind === 'source-backed' ? ['S1'] : [];
+      if (kind === 'source-backed')
+        f.context.sourceContext.offers[0]!.text =
+          f.candidate.items[0]!.application!.sourceRuleOrProcedure;
       f.context.computedCases = kind === 'computed';
+      expect(validatePracticeContentCandidate(f.candidate, f.context).diagnostics).toEqual([]);
       const verified = await f.verify();
       expect(verified.answerabilityReview.policyVersion).toBe(
         PRACTICE_ANSWERABILITY_POLICY_VERSION,
@@ -449,6 +455,58 @@ async function realFakeFixture(complete = false) {
 }
 
 describe('real FakeProvider learner-visible Practice answerability', () => {
+  it.each(['missing_givens', 'wrong_key', 'grounding'] as const)(
+    'keeps %s hard with complete or absent declarations',
+    async (defect) => {
+      for (const omit of [false, true]) {
+        const f = await realFakeFixture(defect !== 'missing_givens');
+        if (omit)
+          for (const item of f.candidate.items)
+            for (const surface of [item.initial, item.retry]) {
+              delete surface.reasoningOperation;
+              delete surface.requiredInference;
+              delete surface.decisiveCondition;
+            }
+        if (defect === 'wrong_key') {
+          f.candidate.items[0]!.initial.correctOptionRef = 'B';
+          f.candidate.items[0]!.initial.evidenceContrast!.alternativeOptionId = 'C';
+        }
+        const review: typeof f.review = async (prepared, round) => {
+          const response = await f.review(prepared, round);
+          if (defect === 'grounding' && prepared.input.purpose === 'practice_grounding')
+            response.result.findings.push({
+              itemId: 'PR1',
+              code: 'grounding',
+              problem: 'The stated direction is not supported by the offered rule.',
+              repairInstruction: 'Use the exact supported direction.',
+            });
+          return response;
+        };
+        await expect(
+          verifyPreparedPractice(f.context, f.candidate, f.priorTeaching, review, f.revise),
+        ).rejects.toMatchObject({
+          details: {
+            candidateFailure: {
+              diagnostics: expect.arrayContaining([
+                expect.objectContaining({
+                  code: defect === 'grounding' ? 'grounding' : 'insufficient_evidence',
+                }),
+              ]),
+            },
+          },
+        });
+        const solve =
+          f.reviews[
+            f.requests.findIndex(
+              (input) =>
+                input.purpose === 'practice_answerability' && input.actionIds[0] === 'PR1.initial',
+            )
+          ];
+        expect(solve!.decisions[0]!.answerId).toBe(defect === 'missing_givens' ? null : 'A');
+      }
+    },
+  );
+
   it('rejects J18 missing public values despite complete private application and passing Fake grounding', async () => {
     const f = await realFakeFixture();
     expect(f.candidate.items[0]!.application!.startingState).toContain(publicGivens.slice(4));
@@ -472,6 +530,7 @@ describe('real FakeProvider learner-visible Practice answerability', () => {
     async (key) => {
       const f = await realFakeFixture(true);
       f.candidate.items[0]!.initial.correctOptionRef = key;
+      if (key === 'B') f.candidate.items[0]!.initial.evidenceContrast!.alternativeOptionId = 'C';
       if (key === 'A') {
         const verified = await f.verify();
         expect(hasCurrentPracticeAnswerabilityReview(f.saved(verified))).toBe(true);
@@ -597,7 +656,11 @@ describe('real FakeProvider learner-visible Practice answerability', () => {
     async (kind) => {
       const f = await realFakeFixture(true);
       f.candidate.items[0]!.sourceRefs = kind === 'source-backed' ? ['S1'] : [];
+      if (kind === 'source-backed')
+        f.context.sourceContext.offers[0]!.text =
+          f.candidate.items[0]!.application!.sourceRuleOrProcedure;
       f.context.computedCases = kind === 'computed';
+      expect(validatePracticeContentCandidate(f.candidate, f.context).diagnostics).toEqual([]);
       const verified = await f.verify();
       expect(hasCurrentPracticeAnswerabilityReview(f.saved(verified))).toBe(true);
       expect(f.requests.filter((input) => input.purpose === 'practice_grounding')).toHaveLength(1);

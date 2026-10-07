@@ -29,6 +29,7 @@ import {
 import { AppError, notFound } from '../errors.js';
 import { curriculumSourceBlockFingerprint } from '../grounding/sourceFingerprint.js';
 import { ProviderError } from '../llm/errors.js';
+import { hasCurrentPreparedPractice } from './practiceAcceptance.js';
 import { LEARNER_CONTENT_LOCALE } from '../llm/provider.js';
 import { classifyPreparationError } from '../llm/preparationRecovery.js';
 import type {
@@ -69,7 +70,6 @@ import {
   assertCurrentCognitiveContract,
   evaluateLessonSlotPedagogy,
   evaluatePlannedPracticeQuality,
-  hasCurrentPracticeAcceptancePolicy,
 } from './lessonPedagogyEvaluator.js';
 import { visualManifestMatchesCurrentDerivations } from './advisoryVisuals.js';
 import { deriveTeachingConstruct } from './teachingConstruct.js';
@@ -79,11 +79,7 @@ import {
   type TeachingSkeletonPlanningInput,
 } from './teachingSkeletonPlanner.js';
 import { createTelemetryProvider } from './providerTelemetry.js';
-import {
-  hasCurrentPracticeAnswerabilityReview,
-  verifyPreparedPractice,
-  verifyPreparedTeaching,
-} from './teachingContentReview.js';
+import { verifyPreparedPractice, verifyPreparedTeaching } from './teachingContentReview.js';
 import { capsuleInputs, assembleCapsules } from './teachingCapsules.js';
 import { validateTeachingCapsule, usesComputedTeachingCases } from '../llm/teachingCapsule.js';
 import { confineTeachingCitations } from '../llm/teachingCitations.js';
@@ -223,8 +219,7 @@ export function isCurrentCompositionalBrief(
     candidate.pedagogyEvaluation?.policyVersion === COMPOSITIONAL_LESSON_PEDAGOGY_POLICY_VERSION &&
     candidate.practice?.qualityEvaluation.policyVersion ===
       COMPOSITIONAL_PRACTICE_QUALITY_POLICY_VERSION &&
-    hasCurrentPracticeAnswerabilityReview(candidate) &&
-    hasCurrentPracticeAcceptancePolicy(candidate)
+    hasCurrentPreparedPractice(candidate)
   );
 }
 
@@ -1050,12 +1045,9 @@ export function createTeachingBriefPreparationService({
       promptVersion: TEACHING_BRIEF_PROMPT_VERSION,
       createdAt: clock.now().toISOString(),
     });
-    if (
-      !hasCurrentPracticeAnswerabilityReview(brief) ||
-      !hasCurrentPracticeAcceptancePolicy(brief)
-    ) {
+    if (!hasCurrentPreparedPractice(brief)) {
       throw ProviderError.invalidOutput(
-        'Saved Practice lacks an exact current learner-visible answerability proof.',
+        'Saved Practice lacks exact current answerability and public integrity proofs.',
         'candidate',
         'SEMANTIC_VALIDATION_FAILURE',
         false,
@@ -1218,10 +1210,7 @@ export function createTeachingBriefPreparationService({
     const priorResult = repos.operations.getResult(operation.id);
     if (priorResult?.status === 'completed') {
       const response = TeachingBriefPreparationResponseSchema.parse(priorResult.payload);
-      if (
-        !hasCurrentPracticeAnswerabilityReview(response.brief) ||
-        !hasCurrentPracticeAcceptancePolicy(response.brief)
-      ) {
+      if (!hasCurrentPreparedPractice(response.brief)) {
         throw new AppError(
           ApiErrorCode.VersionConflict,
           'The stored Practice predates the current acceptance or answerability gate. Prepare it with a new command; its accepted Lesson is preserved.',
@@ -1925,6 +1914,7 @@ export function createTeachingBriefPreparationService({
       }
       let contentReview: PracticeQualityEvaluation['contentReview'];
       let answerabilityReview: PracticeQualityEvaluation['answerabilityReview'];
+      let integrityReview: PracticeQualityEvaluation['integrityReview'];
       let qualityImprovement: PracticeQualityEvaluation['qualityImprovement'];
       if (inferenceProvider.reviewTeachingContent) {
         let contentRevision = 0;
@@ -1943,10 +1933,16 @@ export function createTeachingBriefPreparationService({
             const solving = prepared.input.purpose === 'practice_answerability';
             const logicalCallId = solving
               ? `${operationKey}:practice-solve-${round}:${prepared.input.actionIds[0]}`
-              : `${operationKey}:practice-review-${round}`;
+              : prepared.input.purpose === 'practice_integrity'
+                ? `${operationKey}:practice-integrity-${round}`
+                : `${operationKey}:practice-review-${round}`;
             const result = await trackedReviewCall(
               logicalCallId,
-              solving ? 'practice-answerability-review-v1' : 'practice-grounding-review-v1',
+              solving
+                ? 'practice-answerability-review-v1'
+                : prepared.input.purpose === 'practice_integrity'
+                  ? 'practice-integrity-review-v1'
+                  : 'practice-grounding-review-v1',
               (opts) =>
                 inferenceProvider.reviewTeachingContent!(prepared.input, {
                   ...opts,
@@ -1991,7 +1987,7 @@ export function createTeachingBriefPreparationService({
           },
           async (draft, findings) => {
             // An authored quality rewrite no longer owns the computed draft's
-            // execution proof. Both new independent reviews remain mandatory.
+            // execution proof. Fresh grounding, public integrity and isolated solves remain mandatory.
             originalPracticeLogicalCallId = practiceLogicalCallId;
             compositionalPracticeInput.computedCases = false;
             practiceRepairAttempted = true;
@@ -2036,6 +2032,7 @@ export function createTeachingBriefPreparationService({
         practicePayload = verified.candidate;
         contentReview = verified.receipts;
         answerabilityReview = verified.answerabilityReview;
+        integrityReview = verified.integrityReview;
         qualityImprovement = verified.qualityImprovement;
         if (qualityImprovement.attempts)
           qualityImprovement.logicalCallId = `${operationKey}:practice-quality-improvement`;
@@ -2068,6 +2065,7 @@ export function createTeachingBriefPreparationService({
       );
       if (contentReview) practiceEvaluation.contentReview = contentReview;
       if (answerabilityReview) practiceEvaluation.answerabilityReview = answerabilityReview;
+      if (integrityReview) practiceEvaluation.integrityReview = integrityReview;
       if (qualityImprovement) practiceEvaluation.qualityImprovement = qualityImprovement;
       assertCurrentCognitiveContract(practiceEvaluation);
       preparationBoundary = 'assembly';

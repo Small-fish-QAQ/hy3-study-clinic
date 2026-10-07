@@ -107,7 +107,7 @@ const TeachingContentReviewReceiptSchema = z
 export const PRACTICE_ANSWERABILITY_POLICY_VERSION = 'practice-answerability-v2-fail-closed-fake';
 
 /** Practice acceptance changes must not invalidate accepted Lesson identity. */
-export const PRACTICE_ACCEPTANCE_POLICY_VERSION = 'practice-acceptance-v3-inference-quality';
+export const PRACTICE_ACCEPTANCE_POLICY_VERSION = 'practice-acceptance-v4-public-integrity';
 
 export const PracticeAnswerabilityReviewSchema = z
   .object({
@@ -140,6 +140,22 @@ export const PracticeAnswerabilityReviewSchema = z
   })
   .strict();
 export type PracticeAnswerabilityReview = z.infer<typeof PracticeAnswerabilityReviewSchema>;
+
+/** Public task comparisons, separate from grounding and isolated answerability. */
+export const PracticeIntegrityReviewSchema = z
+  .object({
+    policyVersion: z.string().min(1).max(80),
+    rounds: z
+      .array(
+        TeachingContentReviewReceiptSchema.extend({
+          inputHash: z.string().regex(/^sha256:[a-f0-9]{64}$/u),
+        }).strict(),
+      )
+      .min(1)
+      .max(MAX_TEACHING_CONTENT_REVIEWS),
+  })
+  .strict();
+export type PracticeIntegrityReview = z.infer<typeof PracticeIntegrityReviewSchema>;
 
 export const LessonPedagogyEvaluationSchema = z
   .object({
@@ -220,6 +236,8 @@ export const PracticeQualityEvaluationSchema = z
       .optional(),
     /** Absent on historical Practice; required by the current preparation/reuse gate. */
     answerabilityReview: PracticeAnswerabilityReviewSchema.optional(),
+    /** Historical JSON remains readable; current acceptance requires this proof. */
+    integrityReview: PracticeIntegrityReviewSchema.optional(),
     /** Independent from the evaluator versions used in Lesson checkpoint identity. */
     acceptancePolicyVersion: z.string().min(1).max(80).optional(),
     qualityImprovement: PracticeQualityImprovementSchema.optional(),

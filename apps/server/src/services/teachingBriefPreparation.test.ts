@@ -49,6 +49,7 @@ import {
 } from './lessonPedagogyEvaluator.js';
 import { TEACHING_SKELETON_PLANNER_VERSION } from './teachingSkeletonPlanner.js';
 import { hasCurrentPracticeAnswerabilityReview } from './teachingContentReview.js';
+import { hasCurrentPreparedPractice } from './practiceAcceptance.js';
 import {
   fingerprintObjectiveAuthorityBinding,
   fingerprintObjectiveAuthorityProposition,
@@ -1552,6 +1553,94 @@ afterEach(() => {
 });
 
 describe('Teaching Brief preparation', () => {
+  it.each(
+    (['initial', 'retry'] as const).flatMap((surface) =>
+      (['recognize', 'classify'] as const).map((operation) => ({ surface, operation })),
+    ),
+  )(
+    'reuses the same prepared shallow Practice after deleting only $surface/$operation metadata',
+    async ({ surface, operation }) => {
+      const { harness, requests } = await aggregateQualityHarness('network', undefined, {
+        depth: 'working_fluency',
+        operation,
+      });
+      const generate = harness.provider.generatePracticeContent.bind(harness.provider);
+      harness.provider.generatePracticeContent = async (input, opts) => {
+        const candidate = await generate(input, opts);
+        delete candidate.items[0]!.initial.evidenceContrast;
+        return candidate;
+      };
+      const route = startTeachingRoute(harness);
+      const request = preparationRequest(harness, route, 'metadata-invariant-prepared');
+      const first = await harness.services.teachingBriefPreparation.prepare(request);
+      expect(first.brief.practice!.items[0]!.initial.evidenceContrast).toBeUndefined();
+      expect(
+        first.brief.practice!.qualityEvaluation.answerabilityReview!.rounds[0]!.solves[0]!.result
+          .decisions[0]!.requiresCaseInference,
+      ).toBe(false);
+      expect(hasCurrentPreparedPractice(first.brief)).toBe(true);
+      expect(harness.services.teachingBriefPreparation.getCurrent(request)?.id).toBe(
+        first.brief.id,
+      );
+      const ensureRequest = {
+        command: command('metadata-invariant-bound'),
+        expectedSessionVersion: route.session.version,
+        expectedAgendaVersion: route.agenda.version,
+        expectedAgendaItemId: route.session.currentAgendaItemId!,
+      };
+      expect(
+        (await harness.services.lessonExecution.ensure('ws_1', route.session.id, ensureRequest))
+          .status,
+      ).toBe('ready');
+      const checkpointId = first.brief.composition!.acceptedLessonCheckpointId;
+      const checkpointBytes = JSON.stringify(
+        harness.repos.acceptedLessonCheckpoints.get(checkpointId),
+      );
+      const providerCalls = [
+        harness.provider.lessonContentCalls,
+        harness.provider.practiceContentCalls,
+        requests.length,
+      ];
+      const changed = structuredClone(first);
+      delete changed.brief.practice!.items[0]![surface].reasoningOperation;
+      expect(changed.brief.practice!.qualityEvaluation).toEqual(
+        first.brief.practice!.qualityEvaluation,
+      );
+      harness.db
+        .prepare('UPDATE teaching_briefs SET payload=? WHERE id=?')
+        .run(JSON.stringify(changed.brief), changed.brief.id);
+      const preparation = harness.repos.operations.getByIdempotencyKey(
+        'ws_1',
+        `teaching-brief:${harness.learningUnitId}:${request.commandId}`,
+      )!;
+      harness.db
+        .prepare('UPDATE agent_operation_results SET payload=? WHERE operation_id=?')
+        .run(JSON.stringify(changed), preparation.id);
+
+      expect(hasCurrentPreparedPractice(changed.brief)).toBe(true);
+      expect(harness.services.teachingBriefPreparation.getCurrent(request)).toEqual(changed.brief);
+      expect(await harness.services.teachingBriefPreparation.prepare(request)).toEqual(changed);
+      const reused = await harness.services.teachingBriefPreparation.prepare(
+        preparationRequest(harness, route, 'metadata-invariant-reused'),
+      );
+      expect(reused.status).toBe('reused');
+      expect(reused.brief).toEqual(changed.brief);
+      expect(harness.services.lessonExecution.get('ws_1', route.session.id).status).toBe('ready');
+      expect(
+        (await harness.services.lessonExecution.ensure('ws_1', route.session.id, ensureRequest))
+          .status,
+      ).toBe('ready');
+      expect([
+        harness.provider.lessonContentCalls,
+        harness.provider.practiceContentCalls,
+        requests.length,
+      ]).toEqual(providerCalls);
+      expect(JSON.stringify(harness.repos.acceptedLessonCheckpoints.get(checkpointId))).toBe(
+        checkpointBytes,
+      );
+    },
+  );
+
   it.each([
     { depth: 'working_fluency', operation: 'recognize' },
     { depth: 'high_performance', operation: 'classify' },
@@ -1656,6 +1745,8 @@ describe('Teaching Brief preparation', () => {
       expect(result.brief.practice!.items[0]!.initial.reasoningOperation).toBe('recognize');
       expect(evaluation.contentReview).toHaveLength(1);
       expect(evaluation.answerabilityReview!.rounds).toHaveLength(1);
+      expect(evaluation.integrityReview!.rounds).toHaveLength(1);
+      expect(hasCurrentPreparedPractice(result.brief)).toBe(true);
       expect(practiceQualityImprovementFindings(evaluation)).toEqual(
         evaluation.qualityImprovement!.findingsBefore,
       );
@@ -1866,6 +1957,8 @@ describe('Teaching Brief preparation', () => {
       });
       expect(evaluation.contentReview).toHaveLength(1);
       expect(evaluation.answerabilityReview!.rounds).toHaveLength(1);
+      expect(evaluation.integrityReview!.rounds).toHaveLength(1);
+      expect(hasCurrentPreparedPractice(result.brief)).toBe(true);
       expect(practiceAggregateQualityFindings(evaluation)).toEqual(
         evaluation.qualityImprovement!.findingsBefore,
       );
@@ -2063,7 +2156,17 @@ describe('Teaching Brief preparation', () => {
     );
   });
 
-  it.each(['answerability', 'acceptance', 'acceptance_v1', 'acceptance_v2'] as const)(
+  it.each([
+    'answerability',
+    'acceptance',
+    'acceptance_v1',
+    'acceptance_v2',
+    'acceptance_v3',
+    'integrity_missing',
+    'integrity_version',
+    'integrity_input',
+    'integrity_candidate',
+  ] as const)(
     'rejects cached old Practice %s policy and revalidates only Practice under the same accepted Lesson',
     async (policy) => {
       const harness = await createHarness();
@@ -2079,7 +2182,21 @@ describe('Teaching Brief preparation', () => {
         old.brief.practice!.qualityEvaluation.answerabilityReview!.policyVersion =
           'practice-answerability-v1-learner-visible';
       else {
-        if (policy === 'acceptance_v1')
+        if (policy === 'integrity_missing')
+          delete old.brief.practice!.qualityEvaluation.integrityReview;
+        else if (policy === 'integrity_version')
+          old.brief.practice!.qualityEvaluation.integrityReview!.policyVersion =
+            'practice-acceptance-v3-inference-quality';
+        else if (policy === 'integrity_input')
+          old.brief.practice!.qualityEvaluation.integrityReview!.rounds.at(-1)!.inputHash =
+            `sha256:${'0'.repeat(64)}`;
+        else if (policy === 'integrity_candidate')
+          old.brief.practice!.qualityEvaluation.integrityReview!.rounds.at(-1)!.candidateHash =
+            `sha256:${'0'.repeat(64)}`;
+        else if (policy === 'acceptance_v3')
+          old.brief.practice!.qualityEvaluation.acceptancePolicyVersion =
+            'practice-acceptance-v3-inference-quality';
+        else if (policy === 'acceptance_v1')
           old.brief.practice!.qualityEvaluation.acceptancePolicyVersion =
             'practice-acceptance-v1-aggregate-quality';
         else if (policy === 'acceptance_v2')
@@ -2115,6 +2232,7 @@ describe('Teaching Brief preparation', () => {
       expect(current.brief.id).not.toBe(old.brief.id);
       expect(hasCurrentPracticeAnswerabilityReview(current.brief)).toBe(true);
       expect(hasCurrentPracticeAcceptancePolicy(current.brief)).toBe(true);
+      expect(hasCurrentPreparedPractice(current.brief)).toBe(true);
       expect(harness.provider.lessonContentCalls).toBe(lessonCalls);
       expect(harness.provider.practiceContentCalls).toBeGreaterThan(practiceCalls);
       expect(harness.provider.practiceAnswerabilityCalls - answerabilityCalls).toBe(
@@ -2127,7 +2245,17 @@ describe('Teaching Brief preparation', () => {
     },
   );
 
-  it.each(['answerability', 'acceptance', 'acceptance_v1', 'acceptance_v2'] as const)(
+  it.each([
+    'answerability',
+    'acceptance',
+    'acceptance_v1',
+    'acceptance_v2',
+    'acceptance_v3',
+    'integrity_missing',
+    'integrity_version',
+    'integrity_input',
+    'integrity_candidate',
+  ] as const)(
     'fences an already-bound old Practice %s policy and its cached ready projection before a new answer',
     async (policy) => {
       const harness = await createHarness();
@@ -2167,7 +2295,21 @@ describe('Teaching Brief preparation', () => {
         brief.practice!.qualityEvaluation.answerabilityReview!.policyVersion =
           'practice-answerability-obsolete';
       else {
-        if (policy === 'acceptance_v1')
+        if (policy === 'integrity_missing')
+          delete brief.practice!.qualityEvaluation.integrityReview;
+        else if (policy === 'integrity_version')
+          brief.practice!.qualityEvaluation.integrityReview!.policyVersion =
+            'practice-acceptance-v3-inference-quality';
+        else if (policy === 'integrity_input')
+          brief.practice!.qualityEvaluation.integrityReview!.rounds.at(-1)!.inputHash =
+            `sha256:${'0'.repeat(64)}`;
+        else if (policy === 'integrity_candidate')
+          brief.practice!.qualityEvaluation.integrityReview!.rounds.at(-1)!.candidateHash =
+            `sha256:${'0'.repeat(64)}`;
+        else if (policy === 'acceptance_v3')
+          brief.practice!.qualityEvaluation.acceptancePolicyVersion =
+            'practice-acceptance-v3-inference-quality';
+        else if (policy === 'acceptance_v1')
           brief.practice!.qualityEvaluation.acceptancePolicyVersion =
             'practice-acceptance-v1-aggregate-quality';
         else if (policy === 'acceptance_v2')
@@ -2403,7 +2545,7 @@ describe('Teaching Brief preparation', () => {
       harness.db
         .prepare('SELECT COUNT(*) AS count FROM model_logical_calls WHERE study_session_id=?')
         .get(route.session.id),
-    ).toEqual({ count: 6 + 2 * result.brief.practice!.items.length });
+    ).toEqual({ count: 7 + 2 * result.brief.practice!.items.length });
     const checkpoint = harness.repos.acceptedLessonCheckpoints.get(
       result.brief.composition!.acceptedLessonCheckpointId,
     )!;
@@ -4134,51 +4276,42 @@ describe('Teaching Brief preparation', () => {
     ).toMatchObject({ lessonEvaluation: { status: 'fail' } });
   });
 
-  it('rejects missing current metadata after provider validation and retries only Practice', async () => {
+  it('accepts missing descriptive metadata after callback validation with all current public proofs', async () => {
     const harness = await createHarness();
     const route = startTeachingRoute(harness);
     const generate = harness.provider.generatePracticeContent.bind(harness.provider);
     harness.provider.generatePracticeContent = async (input, options) => {
       const payload = await generate(input, options);
-      delete payload.items[0]!.initial.requiredInference;
+      for (const item of payload.items)
+        for (const surface of [item.initial, item.retry]) {
+          delete surface.reasoningOperation;
+          delete surface.requiredInference;
+          delete surface.decisiveCondition;
+        }
       return payload;
     };
-    const pending = await harness.services.lessonExecution.ensure('ws_1', route.session.id, {
-      command: command('cognition-invalid-final-practice'),
+    const ready = await harness.services.lessonExecution.ensure('ws_1', route.session.id, {
+      command: command('cognition-missing-private-descriptions'),
       expectedSessionVersion: route.session.version,
       expectedAgendaVersion: route.agenda.version,
       expectedAgendaItemId: route.agendaItem.id,
     });
-    expect(pending.status).toBe('practice_retry_available');
-    expect(harness.repos.teachingBriefs.listForUnit('ws_1', harness.learningUnitId)).toHaveLength(
-      0,
-    );
-    const state = harness.repos.lessonExecution.getForSession(
-      route.session.id,
-      route.agendaItem.id,
-    )!;
-    const checkpoint = harness.repos.acceptedLessonCheckpoints.get(
-      state.acceptedLessonCheckpointId!,
-    )!;
-    const bytes = JSON.stringify(checkpoint);
-    harness.provider.generatePracticeContent = generate;
-    const ready = await harness.services.lessonExecution.ensure('ws_1', route.session.id, {
-      command: command('cognition-practice-only-retry'),
-      expectedSessionVersion: pending.session.version,
-      expectedAgendaVersion: pending.agenda!.version,
-      expectedAgendaItemId: route.agendaItem.id,
-    });
     expect(ready.status).toBe('ready');
     expect(harness.provider.lessonContentCalls).toBe(1);
-    expect(harness.provider.practiceContentCalls).toBe(2);
-    expect(JSON.stringify(harness.repos.acceptedLessonCheckpoints.get(checkpoint.id))).toBe(bytes);
     const brief = harness.repos.teachingBriefs.listForUnit('ws_1', harness.learningUnitId)[0]!;
-    expect(brief.practice!.items[0]!.initial).toMatchObject({
-      reasoningOperation: 'diagnose_cause',
-      requiredInference: expect.any(String),
-      decisiveCondition: expect.any(String),
-      evidenceContrast: expect.objectContaining({ evidence: expect.any(String) }),
-    });
+    expect(brief.practice!.qualityEvaluation.integrityReview?.policyVersion).toBe(
+      PRACTICE_ACCEPTANCE_POLICY_VERSION,
+    );
+    expect(hasCurrentPracticeAnswerabilityReview(brief)).toBe(true);
+    expect(brief.practice!.qualityEvaluation.findings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 'practice_required_inference_missing',
+          severity: 'warning',
+        }),
+      ]),
+    );
+    expect(brief.practice!.items[0]!.initial.reasoningOperation).toBeUndefined();
     for (const key of [
       'reasoningOperation',
       'requiredInference',
@@ -4186,6 +4319,8 @@ describe('Teaching Brief preparation', () => {
       'evidenceContrast',
       'relevanceToObjective',
       'contentReview',
+      'answerabilityReview',
+      'integrityReview',
       'teachingDesign',
     ])
       expect(JSON.stringify(ready)).not.toContain(key);

@@ -263,6 +263,7 @@ describe('executable teaching cases', () => {
     );
     expect(purposes).toEqual([
       'practice_grounding',
+      'practice_integrity',
       'practice_answerability',
       'practice_answerability',
     ]);

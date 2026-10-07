@@ -877,7 +877,11 @@ export class FakeProvider implements LlmProvider {
     input: TeachingContentReviewInput,
     opts?: ProviderCallOptions,
   ): Promise<TeachingContentReview> {
-    if (input.purpose !== 'practice_answerability' && input.purpose !== 'practice_grounding')
+    if (
+      input.purpose !== 'practice_answerability' &&
+      input.purpose !== 'practice_grounding' &&
+      input.purpose !== 'practice_integrity'
+    )
       return this.reviewPracticeRepair(input, opts);
     await this.gate(opts);
     if (input.purpose !== 'practice_answerability') return { decisions: [], findings: [] };

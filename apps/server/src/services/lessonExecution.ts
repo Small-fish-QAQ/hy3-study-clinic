@@ -32,8 +32,7 @@ import {
   invalidateGenerationDependency,
 } from './generationStages.js';
 import { createTelemetryProvider } from './providerTelemetry.js';
-import { hasCurrentPracticeAnswerabilityReview } from './teachingContentReview.js';
-import { hasCurrentPracticeAcceptancePolicy } from './lessonPedagogyEvaluator.js';
+import { hasCurrentPreparedPractice } from './practiceAcceptance.js';
 import {
   failedPracticeAttempt,
   practiceItemPassed,
@@ -291,11 +290,7 @@ export function createLessonExecutionService({
     ) {
       return null;
     }
-    if (
-      brief.practice &&
-      !state.practiceCompletedAt &&
-      (!hasCurrentPracticeAnswerabilityReview(brief) || !hasCurrentPracticeAcceptancePolicy(brief))
-    ) {
+    if (brief.practice && !state.practiceCompletedAt && !hasCurrentPreparedPractice(brief)) {
       return null;
     }
     if (brief.composition) {

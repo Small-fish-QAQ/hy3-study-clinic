@@ -7,7 +7,10 @@ import {
   type AcceptedLessonCheckpoint,
   type TeachingBrief,
 } from '@hy3-clinic/shared';
-import { preparePracticeAnswerabilityReview } from './teachingContentReview.js';
+import {
+  preparePracticeAnswerabilityReview,
+  preparePracticeIntegrityReview,
+} from './practiceAcceptance.js';
 import {
   COMPOSITIONAL_LESSON_PEDAGOGY_POLICY_VERSION,
   COMPOSITIONAL_PRACTICE_QUALITY_POLICY_VERSION,
@@ -87,8 +90,10 @@ function compositionalBrief(
     practice: {
       items: [
         {
+          id: 'practice_1',
           initial: {
-            prompt: 'Which answer follows from these public facts?',
+            reasoningOperation: 'recognize',
+            prompt: 'The public example explicitly selects Answer A. Which answer is selected?',
             options: ['A', 'B', 'C'].map((id) => ({
               id: `practice_1_initial_${id}`,
               text: `Answer ${id}`,
@@ -96,7 +101,8 @@ function compositionalBrief(
             correctOptionId: 'practice_1_initial_A',
           },
           retry: {
-            prompt: 'Which answer follows from these changed public facts?',
+            reasoningOperation: 'classify',
+            prompt: 'The public example explicitly selects Answer B. Which answer is selected?',
             options: ['A', 'B', 'C'].map((id) => ({
               id: `practice_1_retry_${id}`,
               text: `Answer ${id}`,
@@ -151,14 +157,41 @@ function compositionalBrief(
                 {
                   actionId,
                   answerId: item.correctOptionId.slice(-1),
-                  requiresCaseInference: true,
-                  evidenceUsed: 'Public case facts.',
+                  requiresCaseInference: false,
+                  evidenceUsed: 'The public example directly supplies the selected answer.',
                 },
               ],
               findings: [],
             },
           };
         }),
+      },
+    ],
+  };
+  const integrity = preparePracticeIntegrityReview(
+    brief.practice!.items.map((item) => ({
+      practiceSlotId: 'PR1',
+      initial: {
+        prompt: item.initial.prompt,
+        options: item.initial.options.map(({ id, text }) => ({ id: id.slice(-1), text })),
+        key: 'A',
+      },
+      retry: {
+        prompt: item.retry.prompt,
+        options: item.retry.options.map(({ id, text }) => ({ id: id.slice(-1), text })),
+        key: 'B',
+      },
+    })),
+    priorTeaching,
+  );
+  brief.practice!.qualityEvaluation.integrityReview = {
+    policyVersion: PRACTICE_ACCEPTANCE_POLICY_VERSION,
+    rounds: [
+      {
+        candidateHash: SKELETON_FINGERPRINT,
+        inputHash: integrity.inputHash,
+        logicalCallId: 'integrity-0',
+        result: { decisions: [], findings: [] },
       },
     ],
   };
@@ -288,6 +321,7 @@ describe('Teaching Brief preparation provenance selection', () => {
   it.each([
     'practice-acceptance-v1-aggregate-quality',
     'practice-acceptance-v2-explicit-recognition-quality',
+    'practice-acceptance-v3-inference-quality',
   ])('fences %s without changing the Lesson checkpoint or composition fingerprint', (oldPolicy) => {
     const skeleton = { fingerprint: SKELETON_FINGERPRINT };
     const checkpoint = acceptedCheckpoint();
@@ -337,7 +371,7 @@ describe('Teaching Brief preparation provenance selection', () => {
               oldProof === 'unversioned'
                 ? prepared.input
                 : {
-                    acceptancePolicyVersion: 'practice-acceptance-v2-explicit-recognition-quality',
+                    acceptancePolicyVersion: 'practice-acceptance-v3-inference-quality',
                     input: prepared.input,
                   },
             ),

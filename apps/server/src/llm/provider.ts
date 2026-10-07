@@ -851,7 +851,7 @@ export const LEARNER_CONTENT_LOCALE = 'zh-CN' as const;
 export type LearnerContentLocale = typeof LEARNER_CONTENT_LOCALE;
 
 export interface AuthoredTeachingContentReviewInput {
-  purpose?: 'practice_grounding';
+  purpose?: 'practice_grounding' | 'practice_integrity';
   computedItemIds?: string[];
   computedOutcomes?: boolean;
   stage: 'lesson' | 'practice';

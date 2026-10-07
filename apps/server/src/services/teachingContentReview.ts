@@ -4,13 +4,11 @@ import {
   TeachingContentReviewSchema,
   MAX_TEACHING_CONTENT_REVIEWS,
   PRACTICE_ANSWERABILITY_POLICY_VERSION,
-  PRACTICE_ACCEPTANCE_POLICY_VERSION,
   projectLearnerPracticeSurface,
-  projectPracticePriorTeaching,
-  type LearnerPracticeSolvingSurface,
   type PracticePriorTeaching,
   type PracticeAnswerabilityReview,
-  type TeachingBrief,
+  type PracticeIntegrityReview,
+  PRACTICE_ACCEPTANCE_POLICY_VERSION,
   type LessonSlotContentProposalPayload,
   type PracticeContentProposalPayload,
   type PracticeQualityFinding,
@@ -22,14 +20,20 @@ import type {
   LessonSlotContentGenerationInput,
   PracticeContentGenerationInput,
   AuthoredTeachingContentReviewInput,
-  PracticeAnswerabilityReviewInput,
   TeachingContentReviewInput,
 } from '../llm/provider.js';
 import { ProviderError } from '../llm/errors.js';
-import { validatePracticeContentCandidate } from './teachingBriefContract.js';
+import {
+  assertPracticeCandidate,
+  assertReviewedPracticeAcceptance,
+  preparePracticeAnswerabilityReview,
+  preparePracticeIntegrityReview,
+  practiceProofItems,
+} from './practiceAcceptance.js';
 import { compareLearnerPracticeTasks } from './practiceTaskCanonicalization.js';
 import {
   evaluatePlannedPracticeQuality,
+  practiceEvidenceContrastFinding,
   practiceQualityImprovementFindings,
 } from './lessonPedagogyEvaluator.js';
 
@@ -303,43 +307,6 @@ const initialPracticeSurface = (
   options: initial.options.map(({ optionRef, text }) => ({ id: optionRef, text })),
 });
 
-export function preparePracticeAnswerabilityReview(
-  surface: LearnerPracticeSolvingSurface,
-  priorTeaching: PracticePriorTeaching,
-  actionId: string,
-  itemId: string,
-) {
-  const input: PracticeAnswerabilityReviewInput = {
-    purpose: 'practice_answerability',
-    stage: 'practice',
-    candidate: { actionId, ...projectLearnerPracticeSurface(surface) },
-    priorTeaching: structuredClone(priorTeaching),
-    actionIds: [actionId],
-  };
-  // Bind the independent judgment to both the exact public surface and the
-  // Practice-only policy that defines when it may clear a shallow-task warning.
-  const inputHash = reviewHash({
-    acceptancePolicyVersion: PRACTICE_ACCEPTANCE_POLICY_VERSION,
-    input,
-  });
-  const validate = (raw: unknown) => {
-    const parsed = TeachingContentReviewSchema.safeParse(raw);
-    const valid =
-      parsed.success &&
-      parsed.data.decisions.length === 1 &&
-      parsed.data.decisions[0]!.actionId === actionId &&
-      parsed.data.findings.every((finding) => [actionId, itemId].includes(finding.itemId));
-    return {
-      valid,
-      diagnostics: valid
-        ? []
-        : ['practice_solve_inventory: cover the sole offered action exactly once.'],
-      diagnosticCodes: valid ? [] : ['practice_solve_inventory'],
-    };
-  };
-  return { input, inputHash, validate };
-}
-
 type PracticeReviewRequest = {
   input: TeachingContentReviewInput;
   validate: ReturnType<typeof preparePracticeAnswerabilityReview>['validate'];
@@ -369,6 +336,10 @@ export async function verifyPreparedPractice(
     policyVersion: PRACTICE_ANSWERABILITY_POLICY_VERSION,
     rounds: [],
   };
+  const integrityReview: PracticeIntegrityReview = {
+    policyVersion: PRACTICE_ACCEPTANCE_POLICY_VERSION,
+    rounds: [],
+  };
   let previousFindings: TeachingContentReview['findings'] | undefined;
   const qualityImprovement: PracticeQualityImprovement = {
     attempts: 0,
@@ -384,6 +355,7 @@ export async function verifyPreparedPractice(
         computedCases: boolean | undefined;
         receipts: typeof receipts;
         answerabilityReview: PracticeAnswerabilityReview;
+        integrityReview: PracticeIntegrityReview;
       }
     | undefined;
   const acceptOriginal = async (error: unknown) => {
@@ -414,15 +386,11 @@ export async function verifyPreparedPractice(
           ],
         },
       );
-    const validation = validatePracticeContentCandidate(original.candidate, context);
-    if (!validation.valid)
-      throw ProviderError.invalidOutput(
-        validation.diagnostics.join('; '),
-        'candidate',
-        'SEMANTIC_VALIDATION_FAILURE',
-        false,
-        validation.failureArtifact,
-      );
+    assertReviewedPracticeAcceptance(original.candidate, context, priorTeaching, {
+      contentReview: original.receipts,
+      answerabilityReview: original.answerabilityReview,
+      integrityReview: original.integrityReview,
+    });
     qualityImprovement.outcome =
       error instanceof ProviderError && error.code === ApiErrorCode.ProviderInvalidOutput
         ? 'rejected'
@@ -436,6 +404,7 @@ export async function verifyPreparedPractice(
       candidate: original.candidate,
       receipts: original.receipts,
       answerabilityReview: original.answerabilityReview,
+      integrityReview: original.integrityReview,
       qualityImprovement,
     };
   };
@@ -443,17 +412,7 @@ export async function verifyPreparedPractice(
     try {
       // Providers may ignore callbacks. Each original/revised candidate still
       // owes the complete current structural, authority and integrity contract.
-      if (improveQuality) {
-        const validation = validatePracticeContentCandidate(candidate, context);
-        if (!validation.valid)
-          throw ProviderError.invalidOutput(
-            validation.diagnostics.join('; '),
-            'candidate',
-            'SEMANTIC_VALIDATION_FAILURE',
-            false,
-            validation.failureArtifact,
-          );
-      }
+      assertPracticeCandidate(candidate, context, priorTeaching);
       const prepared = prepareTeachingReview(context, candidate);
       const allowedIds = new Set([
         ...candidate.items.map((item) => item.practiceSlotId),
@@ -488,6 +447,29 @@ export async function verifyPreparedPractice(
         );
       receipts.push({ ...grounded, candidateHash: prepared.candidateHash });
       const findings = prepared.findings(grounded.result);
+      const integrity = preparePracticeIntegrityReview(
+        practiceProofItems(candidate),
+        priorTeaching,
+      );
+      const inspected = await review(integrity, round);
+      if (!integrity.validate(inspected.result).valid)
+        throw ProviderError.invalidOutput(
+          'Practice integrity review must establish only concrete public replay or leakage.',
+          'candidate',
+          'SEMANTIC_VALIDATION_FAILURE',
+          false,
+        );
+      integrityReview.rounds.push({
+        ...inspected,
+        candidateHash: prepared.candidateHash,
+        inputHash: integrity.inputHash,
+      });
+      findings.push(
+        ...inspected.result.findings.map((finding) => ({
+          ...finding,
+          itemId: finding.itemId.split('.')[0]!,
+        })),
+      );
       const solves: PracticeAnswerabilityReview['rounds'][number]['solves'] = [];
       for (const [itemIndex, item] of candidate.items.entries()) {
         for (const surface of ['initial', 'retry'] as const) {
@@ -535,6 +517,20 @@ export async function verifyPreparedPractice(
               repairInstruction:
                 'Make this unanswered surface and its prior public teaching sufficient for one offered answer; correct the saved key and feedback if necessary. Do not rely on private application data or future questions.',
             });
+          else {
+            const contrast = practiceEvidenceContrastFinding(
+              authored,
+              decision.requiresCaseInference,
+            );
+            if (contrast)
+              findings.push({
+                itemId: item.practiceSlotId,
+                code: 'insufficient_evidence',
+                problem: `${actionId}: ${contrast}. The independent public-task solve establishes case inference, so a valid decisive contrast is required.`,
+                repairInstruction:
+                  'Quote a visible decisive case fact, replace it with a genuinely changed fact, and identify the different offered answer that would then be correct.',
+              });
+          }
         }
       }
       answerabilityReview.rounds.push({ candidateHash: prepared.candidateHash, solves });
@@ -579,6 +575,11 @@ export async function verifyPreparedPractice(
             }
           }
         }
+        assertReviewedPracticeAcceptance(candidate, context, priorTeaching, {
+          contentReview: receipts,
+          answerabilityReview,
+          integrityReview,
+        });
         const qualityFindings = practiceQualityImprovementFindings(
           evaluatePlannedPracticeQuality(candidate, context, {
             evaluatedAt: '1970-01-01T00:00:00.000Z',
@@ -596,9 +597,10 @@ export async function verifyPreparedPractice(
               computedCases: context.computedCases,
               receipts: structuredClone(receipts),
               answerabilityReview: structuredClone(answerabilityReview),
+              integrityReview: structuredClone(integrityReview),
             };
             // Spend an existing review round, never add an outer retry budget.
-            // The following round obtains fresh grounding and visible solves.
+            // The following round obtains fresh grounding, public comparison and isolated solves.
             candidate = await improveQuality(structuredClone(candidate), qualityFindings);
             continue;
           }
@@ -606,7 +608,7 @@ export async function verifyPreparedPractice(
         } else if (qualityImprovement.attempts === 1) {
           qualityImprovement.outcome = qualityFindings.length ? 'exhausted' : 'improved';
         }
-        return { candidate, receipts, answerabilityReview, qualityImprovement };
+        return { candidate, receipts, answerabilityReview, integrityReview, qualityImprovement };
       }
       const findingKey = (finding: TeachingContentReview['findings'][number]) =>
         `${finding.itemId}\u0000${finding.code}`;
@@ -641,55 +643,7 @@ export async function verifyPreparedPractice(
   throw new Error('Unreachable Practice review state.');
 }
 
-/** Bind the current gate to the saved visible surfaces, keys and prior teaching. */
-export function hasCurrentPracticeAnswerabilityReview(brief: TeachingBrief): boolean {
-  const practice = brief.practice;
-  const proof = practice?.qualityEvaluation.answerabilityReview;
-  const grounding = practice?.qualityEvaluation.contentReview;
-  if (
-    !practice ||
-    !proof ||
-    proof.policyVersion !== PRACTICE_ANSWERABILITY_POLICY_VERSION ||
-    !grounding?.length ||
-    proof.rounds.length !== grounding.length ||
-    proof.rounds.some((round, index) => round.candidateHash !== grounding[index]!.candidateHash)
-  )
-    return false;
-  const latest = proof.rounds.at(-1)!;
-  const lastGrounding = grounding.at(-1)!.result;
-  if (
-    lastGrounding.decisions.length ||
-    lastGrounding.findings.some((finding) => finding.code !== 'shallow_task') ||
-    latest.solves.length !== practice.items.length * 2 ||
-    new Set(latest.solves.map((solve) => `${solve.itemIndex}.${solve.surface}`)).size !==
-      latest.solves.length
-  )
-    return false;
-  const priorTeaching = projectPracticePriorTeaching(brief);
-  return latest.solves.every((solve) => {
-    const item = practice.items[solve.itemIndex];
-    if (!item || !solve.actionId.endsWith(`.${solve.surface}`)) return false;
-    const surface = item[solve.surface];
-    const options = surface.options.map(({ id, text }) => ({
-      id: id.slice(id.lastIndexOf('_') + 1),
-      text,
-    }));
-    const input = preparePracticeAnswerabilityReview(
-      { prompt: surface.prompt, options },
-      priorTeaching,
-      solve.actionId,
-      solve.actionId.slice(0, solve.actionId.lastIndexOf('.')),
-    );
-    const decision = solve.result.decisions[0];
-    const selected = surface.options.find(
-      (_option, index) => options[index]!.id === decision?.answerId,
-    );
-    return (
-      input.inputHash === solve.inputHash &&
-      input.validate(solve.result).valid &&
-      !solve.result.findings.some((finding) => finding.code !== 'shallow_task') &&
-      selected !== undefined &&
-      selected.id === surface.correctOptionId
-    );
-  });
-}
+export {
+  preparePracticeAnswerabilityReview,
+  hasCurrentPracticeAnswerabilityReview,
+} from './practiceAcceptance.js';

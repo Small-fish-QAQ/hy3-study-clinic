@@ -557,7 +557,7 @@ describe('calibrated cognitive teaching contract', () => {
     expect(f.practiceEvaluation().findings).toContainEqual(
       expect.objectContaining({
         code: 'evidence_contrast_not_visible',
-        severity: 'error',
+        severity: 'warning',
       }),
     );
   });
@@ -634,13 +634,13 @@ describe('calibrated cognitive teaching contract', () => {
     ).toBe(false);
   });
 
-  it('rejects an unchanged inference across different labels and teacher prose', async () => {
+  it('keeps private inference equality with labels and teacher prose advisory', async () => {
     const f = await fixture();
     f.practice.items[0]!.initial.requiredInference = f.interaction.activity.requiredInference;
     expect(f.practiceEvaluation().findings).toContainEqual(
       expect.objectContaining({
         code: 'practice_semantic_replay',
-        severity: 'error',
+        severity: 'warning',
       }),
     );
     f.practice.items[0]!.initial.requiredInference = '完成事件没有更新配额状态，应先检查归还动作。';
@@ -648,7 +648,7 @@ describe('calibrated cognitive teaching contract', () => {
     expect(f.practiceEvaluation().findings).toContainEqual(
       expect.objectContaining({
         code: 'practice_semantic_replay',
-        severity: 'error',
+        severity: 'warning',
       }),
     );
     expect(
@@ -740,7 +740,7 @@ describe('calibrated cognitive teaching contract', () => {
     const practice = structuredClone(f.practice);
     delete practice.items[0]!.initial.requiredInference;
     expect(PracticeContentProposalPayloadSchema.safeParse(practice).success).toBe(true);
-    expect(evaluatePlannedPracticeQuality(practice, f.practiceInput, at).status).toBe('fail');
+    expect(evaluatePlannedPracticeQuality(practice, f.practiceInput, at).status).toBe('pass');
   });
 
   it('requires reasoning for each objective, guided and transfer, while pass_oriented permits recognition', async () => {
@@ -825,7 +825,7 @@ describe('calibrated cognitive teaching contract', () => {
     );
   });
 
-  it('rejects noun-swapped replay but permits a reused operation with changed decisive quantities and inference', async () => {
+  it('reports private replay descriptions without claiming that they prove public replay', async () => {
     const f = await fixture();
     const initial = f.practice.items[0]!.initial;
     initial.reasoningOperation = f.interaction.activity.reasoningOperation;
@@ -833,7 +833,7 @@ describe('calibrated cognitive teaching contract', () => {
     initial.requiredInference = f.interaction.activity.requiredInference;
     initial.prompt = '把任务甲乙换成服装商品后，哪项结果会出现？';
     expect(f.practiceEvaluation().findings).toContainEqual(
-      expect.objectContaining({ code: 'practice_semantic_replay', severity: 'error' }),
+      expect.objectContaining({ code: 'practice_semantic_replay', severity: 'warning' }),
     );
     initial.decisiveCondition = '空闲5个配额，乙需要3个，且没有其他运行任务。';
     initial.requiredInference = '乙立即启动，分配后还剩两个空闲配额。';
@@ -926,7 +926,7 @@ describe('calibrated cognitive teaching contract', () => {
   );
 
   it.each(['initial', 'retry'] as const)(
-    'keeps every missing %s declaration hard and outside quality fallback',
+    'diagnoses missing %s declarations without redefining initial depth',
     async (surface) => {
       for (const field of [
         'reasoningOperation',
@@ -936,24 +936,46 @@ describe('calibrated cognitive teaching contract', () => {
         const f = await shallowFixture();
         delete f.practice.items[0]![surface][field];
         const evaluation = f.practiceEvaluation();
-        expect(evaluation.findings).toEqual(
-          expect.arrayContaining([
-            expect.objectContaining({ code: 'missing_reasoning_declaration', severity: 'error' }),
-            expect.objectContaining({
-              code: 'practice_initial_recognition_at_depth',
-              severity: 'error',
-            }),
-          ]),
-        );
-        expect(practiceQualityImprovementFindings(evaluation)).toEqual([]);
-        expect(validatePracticeContentCandidate(f.practice, f.practiceInput).valid).toBe(false);
-        expect(() => assertCurrentCognitiveContract(evaluation)).toThrow();
-        const improve = vi.fn(async (draft) => draft);
-        const { verified, review } = verifyShallow(f, improve);
-        await expect(verified).rejects.toBeDefined();
-        expect(improve).not.toHaveBeenCalled();
-        expect(review).not.toHaveBeenCalled();
+        expect(evaluation.status).toBe('pass');
+        expect(
+          evaluation.findings.some(({ code }) => code === 'missing_reasoning_declaration'),
+        ).toBe(false);
+        expect(
+          evaluation.findings.filter(
+            ({ code }) => code === 'practice_initial_recognition_at_depth',
+          ),
+        ).toHaveLength(surface === 'initial' && field === 'reasoningOperation' ? 0 : 1);
+        expect(evaluation.findings.every(({ severity }) => severity === 'warning')).toBe(true);
+        expect(validatePracticeContentCandidate(f.practice, f.practiceInput).valid).toBe(true);
+        expect(() => assertCurrentCognitiveContract(evaluation)).not.toThrow();
       }
+    },
+  );
+
+  it.each(['recognize', 'classify'] as const)(
+    'retains a correct %s shallow original with absent descriptions and no inference requirement',
+    async (operation) => {
+      const f = await shallowFixture('working_fluency', operation);
+      delete f.practice.items[0]!.initial.requiredInference;
+      delete f.practice.items[0]!.initial.decisiveCondition;
+      for (const field of ['reasoningOperation', 'requiredInference', 'decisiveCondition'] as const)
+        delete f.practice.items[0]!.retry[field];
+      const improve = vi.fn(async () => {
+        throw ProviderError.network();
+      });
+      const result = await verifyShallow(f, improve, false).verified;
+      expect(result.candidate).toEqual(f.practice);
+      expect(
+        result.answerabilityReview.rounds[0]!.solves[0]!.result.decisions[0]!.requiresCaseInference,
+      ).toBe(false);
+      expect(result.qualityImprovement).toMatchObject({ attempts: 1, outcome: 'failed' });
+      expect(result.integrityReview.rounds).toHaveLength(1);
+      expect(f.practiceEvaluation().findings).toContainEqual(
+        expect.objectContaining({
+          code: 'practice_initial_recognition_at_depth',
+          severity: 'warning',
+        }),
+      );
     },
   );
 
@@ -977,7 +999,8 @@ describe('calibrated cognitive teaching contract', () => {
       ).toEqual(result.qualityImprovement.findingsBefore);
       expect(result.receipts).toHaveLength(1);
       expect(result.answerabilityReview.rounds).toHaveLength(1);
-      expect(review).toHaveBeenCalledTimes(2 * (1 + 2 * f.practice.items.length));
+      expect(result.integrityReview.rounds).toHaveLength(1);
+      expect(review).toHaveBeenCalledTimes(2 * (2 + 2 * f.practice.items.length));
     },
   );
 
@@ -1081,6 +1104,7 @@ describe('calibrated cognitive teaching contract', () => {
         expect(result.candidate).toEqual(f.practice);
         expect(result.receipts).toHaveLength(1);
         expect(result.answerabilityReview.rounds).toHaveLength(1);
+        expect(result.integrityReview.rounds).toHaveLength(1);
         expect(
           evaluatePlannedPracticeQuality(result.candidate, f.practiceInput, at).findings,
         ).toContainEqual(
@@ -1089,7 +1113,7 @@ describe('calibrated cognitive teaching contract', () => {
             severity: 'warning',
           }),
         );
-        expect(review).toHaveBeenCalledTimes(2 * (1 + 2 * f.practice.items.length));
+        expect(review).toHaveBeenCalledTimes(2 * (2 + 2 * f.practice.items.length));
       }
     },
   );
@@ -1150,6 +1174,7 @@ describe('calibrated cognitive teaching contract', () => {
       expect(result.qualityImprovement).toMatchObject({ attempts: 1, outcome: 'rejected' });
       expect(result.receipts).toHaveLength(1);
       expect(result.answerabilityReview.rounds).toHaveLength(1);
+      expect(result.integrityReview.rounds).toHaveLength(1);
       expect(
         evaluatePlannedPracticeQuality(result.candidate, f.practiceInput, at).findings,
       ).toContainEqual(
@@ -1158,7 +1183,7 @@ describe('calibrated cognitive teaching contract', () => {
           severity: 'warning',
         }),
       );
-      expect(review).toHaveBeenCalledTimes(2 * (1 + 2 * f.practice.items.length));
+      expect(review).toHaveBeenCalledTimes(2 * (2 + 2 * f.practice.items.length));
     },
   );
 
@@ -1205,6 +1230,7 @@ describe('calibrated cognitive teaching contract', () => {
       expect(result.qualityImprovement).toMatchObject({ attempts: 1, outcome: 'rejected' });
       expect(result.receipts).toHaveLength(1);
       expect(result.answerabilityReview.rounds).toHaveLength(1);
+      expect(result.integrityReview.rounds).toHaveLength(1);
       expect(f.practiceEvaluation().findings).toContainEqual(
         expect.objectContaining({
           code: 'practice_initial_recognition_at_depth',
@@ -1373,6 +1399,7 @@ describe('calibrated cognitive teaching contract', () => {
     expect(result.qualityImprovement).toMatchObject({ attempts: 1, outcome: 'rejected' });
     expect(result.receipts).toHaveLength(1);
     expect(result.answerabilityReview.rounds).toHaveLength(1);
+    expect(result.integrityReview.rounds).toHaveLength(1);
     expect(result.qualityImprovement.findingsBefore).toContainEqual(
       expect.objectContaining({ code: 'practice_initial_recognition_at_depth' }),
     );
@@ -1382,9 +1409,7 @@ describe('calibrated cognitive teaching contract', () => {
         severity: 'warning',
       }),
     );
-    expect(review).toHaveBeenCalledTimes(
-      (rewrite.includes('contrast') ? 1 : 2) * (1 + 2 * f.practice.items.length),
-    );
+    expect(review).toHaveBeenCalledTimes(2 * (2 + 2 * f.practice.items.length));
   });
 
   it.each(['wrong_key', 'source_authority', 'grounding'] as const)(
@@ -1406,6 +1431,7 @@ describe('calibrated cognitive teaching contract', () => {
       expect(result.qualityImprovement).toMatchObject({ attempts: 1, outcome: 'rejected' });
       expect(result.receipts).toHaveLength(1);
       expect(result.answerabilityReview.rounds).toHaveLength(1);
+      expect(result.integrityReview.rounds).toHaveLength(1);
       expect(f.practiceEvaluation().findings).toContainEqual(
         expect.objectContaining({
           code: 'practice_initial_recognition_at_depth',
@@ -1665,7 +1691,7 @@ describe('calibrated cognitive teaching contract', () => {
         });
       }
       expect(improve).toHaveBeenCalledTimes(1);
-      expect(review.mock.calls.length).toBeLessThanOrEqual(2 * (1 + 2 * f.practice.items.length));
+      expect(review.mock.calls.length).toBeLessThanOrEqual(2 * (2 + 2 * f.practice.items.length));
     },
   );
 
