@@ -1633,6 +1633,229 @@ function reviewMissingAlternativeContents(
 }
 
 describe('Teaching Brief preparation', () => {
+  it.each(
+    (['initial', 'retry'] as const).flatMap((surface) =>
+      (['explanation', 'feedback'] as const).map((claim) => ({ surface, claim })),
+    ),
+  )(
+    'rejects an answerable Practice with a correct key but wrong $surface $claim',
+    async ({ surface, claim }) => {
+      const harness = await createHarness();
+      const generate = harness.provider.generatePracticeContent.bind(harness.provider);
+      const keys = new Map<string, string>();
+      harness.provider.generatePracticeContent = async (input, opts) => {
+        const candidate = await generate(input, opts);
+        for (const item of candidate.items)
+          for (const name of ['initial', 'retry'] as const)
+            keys.set(`${item.practiceSlotId}.${name}`, item[name].correctOptionRef);
+        const target = candidate.items[0]![surface];
+        if (claim === 'explanation') target.explanation = '计算说明：2 + 2 = 5。';
+        else target.options[0]!.feedbackIfSelected = '本选项的计算依据是 2 + 2 = 5。';
+        return candidate;
+      };
+      const requests: TeachingContentReviewInput[] = [];
+      const decisions: TeachingContentReview['decisions'] = [];
+      const review = harness.provider.reviewTeachingContent.bind(harness.provider);
+      harness.provider.reviewTeachingContent = async (input, opts) => {
+        requests.push(structuredClone(input));
+        const result = await review(input, opts);
+        if (input.purpose === 'practice_answerability') decisions.push(...result.decisions);
+        if (input.purpose === 'practice_grounding') {
+          // A finite arithmetic review stub inspects the actual production packet,
+          // never a separately supplied field or the test's generation flag.
+          const item = input.candidate.items.find((item) =>
+            [
+              item[surface].explanation,
+              ...item[surface].options.map((option) => option.feedbackIfSelected),
+            ].some((text) => text.includes('2 + 2 = 5')),
+          );
+          if (item)
+            return {
+              decisions: [],
+              findings: [
+                {
+                  itemId: `${item.practiceSlotId}.${surface}`,
+                  code: 'accuracy',
+                  problem: 'The teaching claim 2 + 2 = 5 is false; the sum is 4.',
+                  repairInstruction: 'Correct the explanation and option feedback.',
+                },
+              ],
+            };
+        }
+        return result;
+      };
+      const route = startTeachingRoute(harness);
+      await expect(
+        harness.services.teachingBriefPreparation.prepare(
+          preparationRequest(harness, route, `wrong-teaching-${surface}-${claim}`),
+        ),
+      ).rejects.toMatchObject({ code: ApiErrorCode.ProviderInvalidOutput });
+      expect(decisions.length).toBeGreaterThan(0);
+      for (const decision of decisions) expect(decision.answerId).toBe(keys.get(decision.actionId));
+      const rich = requests.find((input) => input.purpose === 'practice_grounding')!;
+      expect(JSON.stringify(rich)).toContain('2 + 2 = 5');
+      for (const input of requests.filter((input) => input.purpose !== 'practice_grounding')) {
+        expect(JSON.stringify(input)).not.toContain('2 + 2 = 5');
+        if (input.purpose === 'practice_answerability')
+          expect(JSON.stringify(input.candidate)).not.toMatch(
+            /correctOptionRef|feedbackIfSelected|"application"|"explanation"/u,
+          );
+      }
+      expect(harness.repos.teachingBriefs.listForUnit('ws_1', harness.learningUnitId)).toEqual([]);
+      expect(
+        harness.db.prepare('SELECT COUNT(*) AS count FROM accepted_lesson_checkpoints').get(),
+      ).toEqual({ count: 1 });
+    },
+  );
+
+  it.each([true, false])(
+    'grounds authored application rules independently of the correct public key (rule correct=%s)',
+    async (correct) => {
+      const harness = await createHarness(0, 'pass', 'apply');
+      const generate = harness.provider.generatePracticeContent.bind(harness.provider);
+      const rule = `补充计算规则：2 + 2 = ${correct ? '4' : '5'}。`;
+      harness.provider.generatePracticeContent = async (input, opts) => {
+        const candidate = await generate(input, opts);
+        candidate.items[0]!.application!.sourceRuleOrProcedure += rule;
+        return candidate;
+      };
+      const review = harness.provider.reviewTeachingContent.bind(harness.provider);
+      let reviewedRule = false;
+      harness.provider.reviewTeachingContent = async (input, opts) => {
+        const result = await review(input, opts);
+        if (input.purpose !== 'practice_grounding') {
+          expect(JSON.stringify(input)).not.toContain(rule);
+          return result;
+        }
+        const item = input.candidate.items.find((item) =>
+          item.application?.sourceRuleOrProcedure.includes('补充计算规则'),
+        )!;
+        expect(item.application!.sourceRuleOrProcedure).toContain(rule);
+        reviewedRule = true;
+        if (!item.application!.sourceRuleOrProcedure.includes('2 + 2 = 5')) return result;
+        return {
+          decisions: [],
+          findings: [
+            {
+              itemId: item.practiceSlotId,
+              code: 'accuracy',
+              problem: 'The authored rule computes 2 + 2 incorrectly.',
+              repairInstruction: 'Use 4 in the authored rule.',
+            },
+          ],
+        };
+      };
+      const route = startTeachingRoute(harness);
+      const prepared = harness.services.teachingBriefPreparation.prepare(
+        preparationRequest(harness, route, `authored-rule-${correct}`),
+      );
+      if (correct) {
+        const { brief } = await prepared;
+        expect(hasCurrentPreparedPractice(brief)).toBe(true);
+        expect(brief.practice!.items[0]!.application!.sourceRuleOrProcedure).toContain(rule);
+        brief.practice!.items[0]!.application!.sourceRuleOrProcedure += ' 后改的规则。';
+        expect(hasCurrentPracticeAnswerabilityReview(brief)).toBe(true);
+        expect(hasCurrentPreparedPractice(brief)).toBe(false);
+      } else {
+        await expect(prepared).rejects.toMatchObject({ code: ApiErrorCode.ProviderInvalidOutput });
+        expect(harness.repos.teachingBriefs.listForUnit('ws_1', harness.learningUnitId)).toEqual(
+          [],
+        );
+      }
+      expect(reviewedRule).toBe(true);
+    },
+  );
+
+  it('accepts correct concise and repetitive Practice feedback with complete grounding through preparation and reuse', async () => {
+    const harness = await createHarness();
+    const generate = harness.provider.generatePracticeContent.bind(harness.provider);
+    harness.provider.generatePracticeContent = async (input, opts) => {
+      const candidate = await generate(input, opts);
+      for (const item of candidate.items)
+        for (const name of ['initial', 'retry'] as const) {
+          const surface = item[name];
+          surface.explanation = '按题面条件计算。';
+          for (const option of surface.options)
+            option.feedbackIfSelected =
+              option.optionRef === surface.correctOptionRef ? '对。' : '不对。';
+        }
+      return candidate;
+    };
+    const review = harness.provider.reviewTeachingContent.bind(harness.provider);
+    let groundingCalls = 0;
+    harness.provider.reviewTeachingContent = async (input, opts) => {
+      if (input.purpose === 'practice_grounding') {
+        groundingCalls += 1;
+        for (const item of input.candidate.items)
+          for (const name of ['initial', 'retry'] as const) {
+            const surface = item[name];
+            expect(surface.explanation).toBe('按题面条件计算。');
+            for (const option of surface.options)
+              expect(option.feedbackIfSelected).toBe(
+                option.optionRef === surface.correctOptionRef ? '对。' : '不对。',
+              );
+          }
+      }
+      return review(input, opts);
+    };
+    const route = startTeachingRoute(harness);
+    const request = preparationRequest(harness, route, 'concise-grounded-feedback');
+    const prepared = await harness.services.teachingBriefPreparation.prepare(request);
+    expect(groundingCalls).toBe(1);
+    expect(hasCurrentPreparedPractice(prepared.brief)).toBe(true);
+    expect(prepared.brief.practice!.qualityEvaluation.groundingReview!.savedContextHash).toMatch(
+      /^sha256:/u,
+    );
+    const reused = await harness.services.teachingBriefPreparation.prepare(
+      preparationRequest(harness, route, 'reuse-concise-grounded-feedback'),
+    );
+    expect(reused.status).toBe('reused');
+    expect(reused.brief.id).toBe(prepared.brief.id);
+    expect(groundingCalls).toBe(1);
+    expect(harness.provider.practiceContentCalls).toBe(1);
+  });
+
+  it('refuses optional quality fallback when the original explanation lacks complete grounding', async () => {
+    const { harness, qualityRequests } = await aggregateQualityHarness('network', undefined, {
+      depth: 'working_fluency',
+      operation: 'recognize',
+    });
+    const generate = harness.provider.generatePracticeContent.bind(harness.provider);
+    harness.provider.generatePracticeContent = async (input, opts) => {
+      const candidate = await generate(input, opts);
+      candidate.items[0]!.initial.explanation = '计算说明：2 + 2 = 5。';
+      return candidate;
+    };
+    const review = harness.provider.reviewTeachingContent.bind(harness.provider);
+    harness.provider.reviewTeachingContent = async (input, opts) => {
+      const result = await review(input, opts);
+      if (
+        input.purpose === 'practice_grounding' &&
+        input.candidate.items[0]!.initial.explanation.includes('2 + 2 = 5')
+      )
+        return {
+          decisions: [],
+          findings: [
+            {
+              itemId: 'PR1',
+              code: 'accuracy',
+              problem: 'False sum in the original explanation.',
+              repairInstruction: 'Correct the sum.',
+            },
+          ],
+        };
+      return result;
+    };
+    const route = startTeachingRoute(harness);
+    await expect(
+      harness.services.teachingBriefPreparation.prepare(
+        preparationRequest(harness, route, 'ungrounded-original-quality-fallback'),
+      ),
+    ).rejects.toMatchObject({ code: ApiErrorCode.ProviderInvalidOutput });
+    expect(qualityRequests).toEqual([]);
+    expect(harness.repos.teachingBriefs.listForUnit('ws_1', harness.learningUnitId)).toEqual([]);
+  });
+
   it.each(['timeout', 'invalid inventory', 'unavailable'] as const)(
     'cannot persist unresolved references when material review has %s',
     async (failure) => {
@@ -2805,6 +3028,15 @@ describe('Teaching Brief preparation', () => {
     'acceptance_v1',
     'acceptance_v2',
     'acceptance_v3',
+    'acceptance_v4',
+    'grounding_missing',
+    'grounding_version',
+    'grounding_input',
+    'grounding_claims',
+    'grounding_context',
+    'explanation',
+    'feedback',
+    'source_context',
     'integrity_missing',
     'integrity_version',
     'integrity_input',
@@ -2825,7 +3057,29 @@ describe('Teaching Brief preparation', () => {
         old.brief.practice!.qualityEvaluation.answerabilityReview!.policyVersion =
           'practice-answerability-v1-learner-visible';
       else {
-        if (policy === 'integrity_missing')
+        if (policy === 'grounding_missing')
+          delete old.brief.practice!.qualityEvaluation.groundingReview;
+        else if (policy === 'grounding_version')
+          old.brief.practice!.qualityEvaluation.groundingReview!.policyVersion =
+            'grounding-obsolete';
+        else if (policy === 'grounding_input')
+          old.brief.practice!.qualityEvaluation.groundingReview!.rounds.at(-1)!.inputHash =
+            `sha256:${'0'.repeat(64)}`;
+        else if (policy === 'grounding_claims')
+          old.brief.practice!.qualityEvaluation.groundingReview!.rounds.at(-1)!.claimsHash =
+            `sha256:${'0'.repeat(64)}`;
+        else if (policy === 'grounding_context')
+          delete old.brief.practice!.qualityEvaluation.groundingReview!.savedContextHash;
+        else if (policy === 'explanation')
+          old.brief.practice!.items[0]!.initial.explanation += ' 保存后改写解释。';
+        else if (policy === 'feedback')
+          old.brief.practice!.items[0]!.retry.options[0]!.feedbackIfSelected += ' 保存后改写反馈。';
+        else if (policy === 'source_context')
+          old.brief.sourceContextFingerprint = 'changed-source-context';
+        else if (policy === 'acceptance_v4')
+          old.brief.practice!.qualityEvaluation.acceptancePolicyVersion =
+            'practice-acceptance-v4-public-integrity';
+        else if (policy === 'integrity_missing')
           delete old.brief.practice!.qualityEvaluation.integrityReview;
         else if (policy === 'integrity_version')
           old.brief.practice!.qualityEvaluation.integrityReview!.policyVersion =
@@ -2852,6 +3106,10 @@ describe('Teaching Brief preparation', () => {
       harness.db
         .prepare('UPDATE teaching_briefs SET payload=? WHERE id=?')
         .run(JSON.stringify(old.brief), old.brief.id);
+      if (policy === 'source_context')
+        harness.db
+          .prepare('UPDATE teaching_briefs SET source_context_fingerprint=? WHERE id=?')
+          .run(old.brief.sourceContextFingerprint, old.brief.id);
       const operation = harness.repos.operations.getByIdempotencyKey(
         'ws_1',
         `teaching-brief:${harness.learningUnitId}:${request.commandId}`,
@@ -2894,6 +3152,15 @@ describe('Teaching Brief preparation', () => {
     'acceptance_v1',
     'acceptance_v2',
     'acceptance_v3',
+    'acceptance_v4',
+    'grounding_missing',
+    'grounding_version',
+    'grounding_input',
+    'grounding_claims',
+    'grounding_context',
+    'explanation',
+    'feedback',
+    'source_context',
     'integrity_missing',
     'integrity_version',
     'integrity_input',
@@ -2938,7 +3205,28 @@ describe('Teaching Brief preparation', () => {
         brief.practice!.qualityEvaluation.answerabilityReview!.policyVersion =
           'practice-answerability-obsolete';
       else {
-        if (policy === 'integrity_missing')
+        if (policy === 'grounding_missing')
+          delete brief.practice!.qualityEvaluation.groundingReview;
+        else if (policy === 'grounding_version')
+          brief.practice!.qualityEvaluation.groundingReview!.policyVersion = 'grounding-obsolete';
+        else if (policy === 'grounding_input')
+          brief.practice!.qualityEvaluation.groundingReview!.rounds.at(-1)!.inputHash =
+            `sha256:${'0'.repeat(64)}`;
+        else if (policy === 'grounding_claims')
+          brief.practice!.qualityEvaluation.groundingReview!.rounds.at(-1)!.claimsHash =
+            `sha256:${'0'.repeat(64)}`;
+        else if (policy === 'grounding_context')
+          delete brief.practice!.qualityEvaluation.groundingReview!.savedContextHash;
+        else if (policy === 'explanation')
+          brief.practice!.items[0]!.initial.explanation += ' 保存后改写解释。';
+        else if (policy === 'feedback')
+          brief.practice!.items[0]!.retry.options[0]!.feedbackIfSelected += ' 保存后改写反馈。';
+        else if (policy === 'source_context')
+          brief.sourceContextFingerprint = 'changed-source-context';
+        else if (policy === 'acceptance_v4')
+          brief.practice!.qualityEvaluation.acceptancePolicyVersion =
+            'practice-acceptance-v4-public-integrity';
+        else if (policy === 'integrity_missing')
           delete brief.practice!.qualityEvaluation.integrityReview;
         else if (policy === 'integrity_version')
           brief.practice!.qualityEvaluation.integrityReview!.policyVersion =
@@ -2964,6 +3252,10 @@ describe('Teaching Brief preparation', () => {
       harness.db
         .prepare('UPDATE teaching_briefs SET payload=? WHERE id=?')
         .run(JSON.stringify(brief), brief.id);
+      if (policy === 'source_context')
+        harness.db
+          .prepare('UPDATE teaching_briefs SET source_context_fingerprint=? WHERE id=?')
+          .run(brief.sourceContextFingerprint, brief.id);
       const calls = harness.provider.practiceContentCalls;
       const lessonCalls = harness.provider.lessonContentCalls;
       const fenced = harness.services.lessonExecution.get('ws_1', route.session.id);

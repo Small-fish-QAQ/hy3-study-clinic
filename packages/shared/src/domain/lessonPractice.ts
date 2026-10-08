@@ -107,7 +107,31 @@ const TeachingContentReviewReceiptSchema = z
 export const PRACTICE_ANSWERABILITY_POLICY_VERSION = 'practice-answerability-v2-fail-closed-fake';
 
 /** Practice acceptance changes must not invalidate accepted Lesson identity. */
-export const PRACTICE_ACCEPTANCE_POLICY_VERSION = 'practice-acceptance-v4-public-integrity';
+export const PRACTICE_ACCEPTANCE_POLICY_VERSION = 'practice-acceptance-v5-grounded-claims';
+
+/** Complete authored claims, independently of the blind/public review projections. */
+export const PRACTICE_GROUNDING_POLICY_VERSION = 'practice-grounding-v1-complete-claims';
+
+export const PracticeGroundingReviewSchema = z
+  .object({
+    policyVersion: z.string().min(1).max(80),
+    rounds: z
+      .array(
+        TeachingContentReviewReceiptSchema.extend({
+          inputHash: z.string().regex(/^sha256:[a-f0-9]{64}$/u),
+          claimsHash: z.string().regex(/^sha256:[a-f0-9]{64}$/u),
+        }).strict(),
+      )
+      .min(1)
+      .max(MAX_TEACHING_CONTENT_REVIEWS),
+    /** Added only after current proofs are checked against the materialized Brief. */
+    savedContextHash: z
+      .string()
+      .regex(/^sha256:[a-f0-9]{64}$/u)
+      .optional(),
+  })
+  .strict();
+export type PracticeGroundingReview = z.infer<typeof PracticeGroundingReviewSchema>;
 
 export const PracticeAnswerabilityReviewSchema = z
   .object({
@@ -242,6 +266,8 @@ export const PracticeQualityEvaluationSchema = z
       .optional(),
     /** Absent on historical Practice; required by the current preparation/reuse gate. */
     answerabilityReview: PracticeAnswerabilityReviewSchema.optional(),
+    /** Historical JSON remains readable; current acceptance requires complete grounding. */
+    groundingReview: PracticeGroundingReviewSchema.optional(),
     /** Historical JSON remains readable; current acceptance requires this proof. */
     integrityReview: PracticeIntegrityReviewSchema.optional(),
     /** Independent from the evaluator versions used in Lesson checkpoint identity. */

@@ -2,6 +2,9 @@ import { createHash } from 'node:crypto';
 import {
   PRACTICE_ACCEPTANCE_POLICY_VERSION,
   PRACTICE_ANSWERABILITY_POLICY_VERSION,
+  PRACTICE_GROUNDING_POLICY_VERSION,
+  PracticeGroundingReviewSchema,
+  PracticeContentProposalPayloadSchema,
   PracticeAnswerabilityReviewSchema,
   PracticeIntegrityReviewSchema,
   TeachingContentReviewSchema,
@@ -11,12 +14,14 @@ import {
   type PracticePriorTeaching,
   type PracticeContentProposalPayload,
   type PracticeQualityEvaluation,
+  type TeachingContentReview,
   type TeachingBrief,
 } from '@hy3-clinic/shared';
 import type {
   AuthoredTeachingContentReviewInput,
   PracticeAnswerabilityReviewInput,
   PracticeContentGenerationInput,
+  PracticeGroundingReviewInput,
 } from '../llm/provider.js';
 import { ProviderError } from '../llm/errors.js';
 import { validatePracticeContentCandidate } from './teachingBriefContract.js';
@@ -35,8 +40,165 @@ type ProofSurface = LearnerPracticeSolvingSurface &
 type ProofItem = { practiceSlotId: string; initial: ProofSurface; retry: ProofSurface };
 type ReviewEvidence = Pick<
   PracticeQualityEvaluation,
-  'contentReview' | 'answerabilityReview' | 'integrityReview'
+  'contentReview' | 'groundingReview' | 'answerabilityReview' | 'integrityReview'
 >;
+
+/** Bind saved teaching claims through local ID materialization. Private operation
+ * labels remain optional quality metadata under Phase 2C; the raw candidate and
+ * review input hashes still bind those labels during preparation. */
+export const practiceGroundingClaimsHash = (candidate: PracticeContentProposalPayload) => {
+  const claims = PracticeContentProposalPayloadSchema.parse(candidate);
+  for (const item of claims.items)
+    for (const surface of [item.initial, item.retry]) delete surface.reasoningOperation;
+  return practiceReviewHash(claims);
+};
+
+/** Grounding owns the whole artifact, not an amended blind-solving projection. */
+export function preparePracticeGroundingReview(
+  context: PracticeContentGenerationInput,
+  candidate: PracticeContentProposalPayload,
+) {
+  const input: PracticeGroundingReviewInput = {
+    purpose: 'practice_grounding',
+    stage: 'practice',
+    computedOutcomes: context.computedCases,
+    desiredDepth: context.courseDesign?.desiredDepth ?? 'pass_oriented',
+    objectives: context.skeleton.objectives.map(({ title, description }) => ({
+      title,
+      description,
+    })),
+    sources: structuredClone(context.sourceContext.offers),
+    visualContext: structuredClone(context.visualContext),
+    candidate: structuredClone(candidate),
+    acceptedLesson: structuredClone(context.acceptedLesson),
+    actionIds: [],
+  };
+  const fingerprint = () =>
+    practiceReviewHash({
+      acceptancePolicyVersion: PRACTICE_ACCEPTANCE_POLICY_VERSION,
+      groundingPolicyVersion: PRACTICE_GROUNDING_POLICY_VERSION,
+      input,
+      // Selected review fields must not erase the current source/plan contract.
+      context: {
+        learnerLocale: context.learnerLocale,
+        courseDesign: context.courseDesign,
+        skeleton: context.skeleton,
+        sourceContext: context.sourceContext,
+        visualContext: context.visualContext,
+      },
+    });
+  const inputHash = fingerprint();
+  const ids = new Set(
+    candidate.items.flatMap(({ practiceSlotId }) => [
+      practiceSlotId,
+      `${practiceSlotId}.initial`,
+      `${practiceSlotId}.retry`,
+    ]),
+  );
+  const validate = (raw: unknown) => {
+    const parsed = TeachingContentReviewSchema.safeParse(raw);
+    const valid =
+      fingerprint() === inputHash &&
+      parsed.success &&
+      parsed.data.decisions.length === 0 &&
+      parsed.data.findings.every((finding) => ids.has(finding.itemId));
+    return {
+      valid,
+      diagnostics: valid
+        ? []
+        : ['practice_grounding_inventory: return findings only for offered items.'],
+      diagnosticCodes: valid ? [] : ['practice_grounding_inventory'],
+    };
+  };
+  return {
+    input,
+    validate,
+    candidateHash: practiceReviewHash(candidate),
+    claimsHash: practiceGroundingClaimsHash(candidate),
+    inputHash,
+    findings: (result: TeachingContentReview) =>
+      result.findings
+        .filter((finding) => finding.code !== 'shallow_task')
+        .map((finding) => ({ ...finding, itemId: finding.itemId.split('.')[0]! })),
+  };
+}
+
+function savedGroundingCandidate(brief: TeachingBrief): PracticeContentProposalPayload {
+  const items = savedProofItems(brief);
+  return PracticeContentProposalPayloadSchema.parse({
+    items: brief.practice!.items.map((item, index) => {
+      const surface = (value: typeof item.initial, name: 'initial' | 'retry') => {
+        const { correctOptionId: _key, ...claims } = value;
+        return {
+          ...claims,
+          options: value.options.map(({ id, ...option }) => ({
+            optionRef: id.slice(id.lastIndexOf('_') + 1),
+            ...option,
+          })),
+          correctOptionRef: items[index]![name].key,
+        };
+      };
+      return {
+        practiceSlotId: items[index]!.practiceSlotId,
+        capabilityTested: item.capabilityTested,
+        pedagogicalReason: item.pedagogicalReason,
+        sourceRefs: item.sourceRefIds,
+        visualRefs: item.visualRefIds,
+        application: item.application,
+        initial: surface(item.initial, 'initial'),
+        retry: surface(item.retry, 'retry'),
+      };
+    }),
+  });
+}
+
+function savedGroundingContextHash(brief: TeachingBrief): string {
+  return practiceReviewHash({
+    workspaceId: brief.workspaceId,
+    curriculumVersionId: brief.curriculumVersionId,
+    studyPlanVersionId: brief.studyPlanVersionId,
+    learningUnitId: brief.learningUnitId,
+    executionSourceManifestFingerprint: brief.executionSourceManifestFingerprint,
+    sourceContextFingerprint: brief.sourceContextFingerprint,
+    sourceManifest: brief.sourceManifest,
+    sourceReferences: brief.sourceReferences,
+    visualReferences: brief.visualReferences,
+    objective: brief.objective,
+    prerequisites: brief.prerequisites,
+    segments: brief.segments,
+    summary: brief.summary,
+    nextConnection: brief.nextConnection,
+    composition: brief.composition,
+    groundingProof: {
+      policyVersion: brief.practice!.qualityEvaluation.groundingReview?.policyVersion,
+      receipt: brief.practice!.qualityEvaluation.groundingReview?.rounds.at(-1),
+    },
+    practiceBindings: brief.practice!.items.map((item) => ({
+      id: item.id,
+      objectiveId: item.objectiveId,
+      objectiveTitle: item.objectiveTitle,
+      construct: item.construct,
+      authority: item.authority,
+    })),
+  });
+}
+
+function groundingMatches(evidence: ReviewEvidence): boolean {
+  const parsed = PracticeGroundingReviewSchema.safeParse(evidence.groundingReview);
+  const receipts = evidence.contentReview;
+  return (
+    parsed.success &&
+    parsed.data.policyVersion === PRACTICE_GROUNDING_POLICY_VERSION &&
+    !!receipts?.length &&
+    parsed.data.rounds.length === receipts.length &&
+    parsed.data.rounds.every(
+      (round, index) =>
+        round.candidateHash === receipts[index]!.candidateHash &&
+        round.logicalCallId === receipts[index]!.logicalCallId &&
+        practiceReviewHash(round.result) === practiceReviewHash(receipts[index]!.result),
+    )
+  );
+}
 
 export function practiceProofItems(candidate: PracticeContentProposalPayload): ProofItem[] {
   return candidate.items.map((item) => {
@@ -300,7 +462,8 @@ function reviewEvidenceMatches(
   priorTeaching: PracticePriorTeaching,
   evidence: ReviewEvidence,
 ): boolean {
-  if (!answerabilityMatches(items, priorTeaching, evidence)) return false;
+  if (!groundingMatches(evidence) || !answerabilityMatches(items, priorTeaching, evidence))
+    return false;
   // Only exact, current, independently solved public surfaces establish this
   // obligation. A missing private operation neither adds nor discharges it.
   if (
@@ -346,13 +509,48 @@ export function assertReviewedPracticeAcceptance(
   evidence: ReviewEvidence,
 ): void {
   assertPracticeCandidate(candidate, context, priorTeaching);
+  const grounding = preparePracticeGroundingReview(context, candidate);
+  const receipt = evidence.groundingReview?.rounds.at(-1);
   if (
     evidence.contentReview?.at(-1)?.candidateHash !== practiceReviewHash(candidate) ||
+    receipt?.inputHash !== grounding.inputHash ||
+    receipt?.claimsHash !== grounding.claimsHash ||
     !reviewEvidenceMatches(practiceProofItems(candidate), priorTeaching, evidence)
   )
     reject([
       'practice_acceptance_proof_missing_or_stale: require exact grounding, isolated solves and public integrity receipts.',
     ]);
+}
+
+/** Seal the local projection only after its exact authored/context proofs are current. */
+export function bindPracticeGroundingToBrief(
+  brief: TeachingBrief,
+  candidate: PracticeContentProposalPayload,
+  context: PracticeContentGenerationInput,
+): void {
+  const evidence = brief.practice!.qualityEvaluation;
+  assertReviewedPracticeAcceptance(
+    candidate,
+    context,
+    projectPracticePriorTeaching(brief),
+    evidence,
+  );
+  if (
+    context.sourceContext.offers.length !== brief.sourceReferences.length ||
+    context.sourceContext.offers.some(
+      (offer) =>
+        !brief.sourceReferences.some(
+          (reference) => reference.refId === offer.sourceRef && reference.quote === offer.text,
+        ),
+    )
+  )
+    reject(['practice_grounding_source_changed: saved excerpts differ from reviewed sources.']);
+  if (
+    practiceGroundingClaimsHash(savedGroundingCandidate(brief)) !==
+    practiceGroundingClaimsHash(candidate)
+  )
+    reject(['practice_grounding_projection_changed: saved claims differ from reviewed claims.']);
+  evidence.groundingReview!.savedContextHash = savedGroundingContextHash(brief);
 }
 
 /** Compatibility helper: answerability alone never grants current Practice acceptance. */
@@ -373,5 +571,15 @@ export function hasCurrentPreparedPractice(brief: TeachingBrief): boolean {
   const items = savedProofItems(brief);
   const priorTeaching = projectPracticePriorTeaching(brief);
   if (publicTaskDefects(items, priorTeaching).length) return false;
-  return reviewEvidenceMatches(items, priorTeaching, brief.practice.qualityEvaluation);
+  const evidence = brief.practice.qualityEvaluation;
+  if (!reviewEvidenceMatches(items, priorTeaching, evidence)) return false;
+  try {
+    return (
+      evidence.groundingReview!.rounds.at(-1)!.claimsHash ===
+        practiceGroundingClaimsHash(savedGroundingCandidate(brief)) &&
+      evidence.groundingReview!.savedContextHash === savedGroundingContextHash(brief)
+    );
+  } catch {
+    return false;
+  }
 }

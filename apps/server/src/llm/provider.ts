@@ -851,7 +851,7 @@ export const LEARNER_CONTENT_LOCALE = 'zh-CN' as const;
 export type LearnerContentLocale = typeof LEARNER_CONTENT_LOCALE;
 
 export interface AuthoredTeachingContentReviewInput {
-  purpose?: 'practice_grounding' | 'practice_integrity';
+  purpose?: 'practice_integrity';
   computedItemIds?: string[];
   computedOutcomes?: boolean;
   stage: 'lesson' | 'practice';
@@ -861,6 +861,20 @@ export interface AuthoredTeachingContentReviewInput {
   candidate: unknown;
   acceptedLesson?: unknown;
   actionIds: string[];
+}
+
+/** Full current authored claims. This input must never establish blind answerability. */
+export interface PracticeGroundingReviewInput {
+  purpose: 'practice_grounding';
+  stage: 'practice';
+  computedOutcomes?: boolean;
+  desiredDepth: DesiredDepth;
+  objectives: Array<{ title: string; description: string }>;
+  sources: TeachingBriefGenerationInput['sourceContext']['offers'];
+  visualContext: TeachingBriefGenerationInput['visualContext'];
+  candidate: PracticeContentProposalPayload;
+  acceptedLesson: TeachingLessonSlotContent[];
+  actionIds: [];
 }
 
 /** One isolated unanswered Practice action, with only prior public teaching. */
@@ -873,7 +887,9 @@ export interface PracticeAnswerabilityReviewInput {
 }
 
 export type TeachingContentReviewInput =
-  AuthoredTeachingContentReviewInput | PracticeAnswerabilityReviewInput;
+  | AuthoredTeachingContentReviewInput
+  | PracticeGroundingReviewInput
+  | PracticeAnswerabilityReviewInput;
 
 export interface LessonSlotContentGenerationInput {
   computedCases?: boolean;

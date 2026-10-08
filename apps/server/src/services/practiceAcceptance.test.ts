@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   PRACTICE_ACCEPTANCE_POLICY_VERSION,
+  PRACTICE_GROUNDING_POLICY_VERSION,
   LessonPracticeSurfaceSchema,
   PracticeContentProposalPayloadSchema,
   projectPracticePriorTeaching,
@@ -19,10 +20,13 @@ import { verifyPreparedPractice } from './teachingContentReview.js';
 import {
   assertPracticeCandidate,
   assertReviewedPracticeAcceptance,
+  bindPracticeGroundingToBrief,
+  hasCurrentPracticeAnswerabilityReview,
   hasCurrentPreparedPractice,
   practiceProofItems,
   preparePracticeIntegrityReview,
   preparePracticeAnswerabilityReview,
+  preparePracticeGroundingReview,
 } from './practiceAcceptance.js';
 
 const fields = ['reasoningOperation', 'requiredInference', 'decisiveCondition'] as const;
@@ -93,7 +97,15 @@ async function fixture(depth: DesiredDepth = 'working_fluency') {
     objective: { title: '检索条件', whyNow: '检查系统状态与资源约束。', objectives: [] },
     prerequisites: [],
     segments: [],
-    sourceReferences: [],
+    sourceReferences: lessonInput.sourceContext.offers.map((offer) => ({
+      refId: offer.sourceRef,
+      materialId: 'material1',
+      sourceBlockId: 'block1',
+      quote: offer.text,
+      headingPath: [],
+      pageNumber: null,
+      slideNumber: null,
+    })),
     visualReferences: [],
     summary: '系统状态变化后重新检查约束。',
     nextConnection: null,
@@ -114,8 +126,8 @@ async function fixture(depth: DesiredDepth = 'working_fluency') {
   }));
   const revise = vi.fn(async (draft: typeof candidate) => draft);
   const verify = () => verifyPreparedPractice(context, candidate, priorTeaching, review, revise);
-  const saved = (result: Awaited<ReturnType<typeof verify>>): TeachingBrief =>
-    ({
+  const saved = (result: Awaited<ReturnType<typeof verify>>): TeachingBrief => {
+    const brief = {
       ...publicLesson,
       practice: {
         schemaVersion: 1,
@@ -140,9 +152,9 @@ async function fixture(depth: DesiredDepth = 'working_fluency') {
             construct: 'identify',
             capabilityTested: item.capabilityTested,
             pedagogicalReason: item.pedagogicalReason,
-            authority: 'ai_teaching_synthesis',
-            sourceRefIds: [],
-            visualRefIds: [],
+            authority: item.sourceRefs.length ? 'exact_source' : 'ai_teaching_synthesis',
+            sourceRefIds: item.sourceRefs,
+            visualRefIds: item.visualRefs,
             application: item.application,
             initial: surface(item.initial, 'initial'),
             retry: surface(item.retry, 'retry'),
@@ -153,9 +165,13 @@ async function fixture(depth: DesiredDepth = 'working_fluency') {
           contentReview: result.receipts,
           answerabilityReview: result.answerabilityReview,
           integrityReview: result.integrityReview,
+          groundingReview: result.groundingReview,
         },
       },
-    }) as TeachingBrief;
+    } as TeachingBrief;
+    bindPracticeGroundingToBrief(brief, result.candidate, context);
+    return brief;
+  };
   return { candidate, context, publicLesson, priorTeaching, review, revise, verify, saved };
 }
 
@@ -255,6 +271,146 @@ function makeShallow(
 }
 
 describe('Practice declaration responsibilities and public acceptance', () => {
+  it('grounds the complete authored artifact while blind and integrity packets remain purpose-specific', async () => {
+    const f = await fixture();
+    const prepared = preparePracticeGroundingReview(f.context, f.candidate);
+    expect(prepared.input.candidate).toEqual(f.candidate);
+    expect(prepared.input.acceptedLesson).toEqual(f.context.acceptedLesson);
+    expect(prepared.input.sources).toEqual(f.context.sourceContext.offers);
+    expect(prepared.input.actionIds).toEqual([]);
+    const messages = JSON.stringify(teachingContentReviewMessages(prepared.input));
+    for (const item of f.candidate.items)
+      for (const name of ['initial', 'retry'] as const) {
+        expect(messages).toContain(item[name].explanation);
+        for (const option of item[name].options)
+          expect(messages).toContain(option.feedbackIfSelected);
+      }
+    expect(messages).toContain('correctOptionRef');
+    expect(messages).toContain(
+      'Concise, repetitive, stylistically weak or generic but correct feedback is acceptable',
+    );
+    const result = await f.verify();
+    expect(result.groundingReview.policyVersion).toBe(PRACTICE_GROUNDING_POLICY_VERSION);
+    expect(result.groundingReview.rounds[0]).toMatchObject({
+      inputHash: prepared.inputHash,
+      claimsHash: prepared.claimsHash,
+      candidateHash: prepared.candidateHash,
+    });
+    const ground = f.review.mock.calls.find(
+      ([request]) => request.input.purpose === 'practice_grounding',
+    )![0];
+    expect(ground.input).toEqual(prepared.input);
+    for (const [request] of f.review.mock.calls)
+      if (request.input.purpose !== 'practice_grounding')
+        expect(JSON.stringify(request.input)).not.toMatch(
+          /feedbackIfSelected|correctOptionRef|explanation|application/u,
+        );
+    // Projection copies cannot mutate the candidate or its context.
+    prepared.input.candidate.items[0]!.initial.explanation = 'Changed review copy.';
+    expect(f.candidate.items[0]!.initial.explanation).not.toBe('Changed review copy.');
+  });
+
+  it.each(['missing', 'version', 'input', 'claims', 'result', 'context_binding'] as const)(
+    'rejects %s grounding proof at the current saved acceptance gate',
+    async (mutation) => {
+      const f = await fixture();
+      const result = await f.verify();
+      const brief = f.saved(result);
+      expect(hasCurrentPreparedPractice(brief)).toBe(true);
+      const evidence = brief.practice!.qualityEvaluation;
+      if (mutation === 'missing') delete evidence.groundingReview;
+      else if (mutation === 'version')
+        evidence.groundingReview!.policyVersion = 'grounding-obsolete';
+      else if (mutation === 'input')
+        evidence.groundingReview!.rounds.at(-1)!.inputHash = `sha256:${'0'.repeat(64)}`;
+      else if (mutation === 'claims')
+        evidence.groundingReview!.rounds.at(-1)!.claimsHash = `sha256:${'0'.repeat(64)}`;
+      else if (mutation === 'context_binding') delete evidence.groundingReview!.savedContextHash;
+      else
+        evidence.groundingReview!.rounds.at(-1)!.result = {
+          decisions: [],
+          findings: [
+            {
+              itemId: 'PR1',
+              code: 'accuracy',
+              problem: 'False explanation.',
+              repairInstruction: 'Correct it.',
+            },
+          ],
+        };
+      expect(hasCurrentPreparedPractice(brief)).toBe(false);
+      if (mutation !== 'context_binding')
+        expect(() =>
+          assertReviewedPracticeAcceptance(result.candidate, f.context, f.priorTeaching, evidence),
+        ).toThrow();
+    },
+  );
+
+  it.each(['explanation', 'feedback', 'rule', 'source', 'context'] as const)(
+    'cannot certify changed %s with unchanged public solves and stale grounding',
+    async (mutation) => {
+      const f = await fixture();
+      const result = await f.verify();
+      const brief = f.saved(result);
+      if (mutation === 'explanation') {
+        result.candidate.items[0]!.initial.explanation += ' 另一个解释。';
+        brief.practice!.items[0]!.initial.explanation += ' 另一个解释。';
+      } else if (mutation === 'feedback') {
+        result.candidate.items[0]!.retry.options[0]!.feedbackIfSelected += ' 另一条反馈。';
+        brief.practice!.items[0]!.retry.options[0]!.feedbackIfSelected += ' 另一条反馈。';
+      } else if (mutation === 'rule') {
+        result.candidate.items[0]!.initial.requiredInference += ' 规则要求按可见条件重新检查约束。';
+        brief.practice!.items[0]!.initial.requiredInference += ' 规则要求按可见条件重新检查约束。';
+      } else if (mutation === 'source') {
+        f.context.sourceContext.offers[0]!.text += ' 新的来源条件。';
+        brief.sourceReferences[0]!.quote += ' 新的来源条件。';
+      } else {
+        f.context.skeleton.fingerprint = `sha256:${'0'.repeat(64)}`;
+        brief.sourceContextFingerprint = 'Changed current context';
+      }
+      expect(hasCurrentPracticeAnswerabilityReview(brief)).toBe(true);
+      expect(hasCurrentPreparedPractice(brief)).toBe(false);
+      expect(() =>
+        assertPracticeCandidate(result.candidate, f.context, f.priorTeaching),
+      ).not.toThrow();
+      expect(() =>
+        assertReviewedPracticeAcceptance(
+          result.candidate,
+          f.context,
+          f.priorTeaching,
+          brief.practice!.qualityEvaluation,
+        ),
+      ).toThrow();
+    },
+  );
+
+  it('refuses failed optional improvement fallback after the original grounding context changes', async () => {
+    const f = await fixture('deep_transfer');
+    f.candidate.items[0]!.initial.reasoningOperation = 'recognize';
+    const improve = vi.fn(async () => {
+      f.context.sourceContext.offers[0]!.text += ' 来源现已增加一个决定性条件。';
+      throw new Error('Optional improvement failed.');
+    });
+    await expect(
+      verifyPreparedPractice(f.context, f.candidate, f.priorTeaching, f.review, f.revise, improve),
+    ).rejects.toMatchObject({
+      details: { candidateFailure: { kind: 'practice_quality_fallback_rejection' } },
+    });
+    expect(improve).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects a grounding packet mutated in transit even when the provider returns a clean verdict', async () => {
+    const f = await fixture();
+    const review = f.review.getMockImplementation()!;
+    f.review.mockImplementation(async (request, round) => {
+      if (request.input.purpose === 'practice_grounding')
+        request.input.candidate.items[0]!.initial.explanation = 'An unreviewed replacement.';
+      return review(request, round);
+    });
+    await expect(f.verify()).rejects.toBeDefined();
+    expect(f.revise).not.toHaveBeenCalled();
+  });
+
   it.each(
     depths.flatMap((depth) =>
       (['initial', 'retry'] as const).flatMap((surface) =>

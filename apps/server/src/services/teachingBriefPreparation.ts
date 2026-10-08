@@ -29,7 +29,7 @@ import {
 import { AppError, notFound } from '../errors.js';
 import { curriculumSourceBlockFingerprint } from '../grounding/sourceFingerprint.js';
 import { ProviderError } from '../llm/errors.js';
-import { hasCurrentPreparedPractice } from './practiceAcceptance.js';
+import { bindPracticeGroundingToBrief, hasCurrentPreparedPractice } from './practiceAcceptance.js';
 import {
   assertLessonChoiceContract,
   hasAcceptedLessonChoiceContract,
@@ -929,6 +929,7 @@ export function createTeachingBriefPreparationService({
     practiceEvaluation: PracticeQualityEvaluation,
     practiceOperationId: string,
     practiceLogicalCallId: string,
+    practiceContext: PracticeContentGenerationInput,
   ): TeachingBrief {
     const briefId = newId('teaching_brief');
     const segments = assembleSegments(route, checkpoint);
@@ -1062,9 +1063,10 @@ export function createTeachingBriefPreparationService({
       promptVersion: TEACHING_BRIEF_PROMPT_VERSION,
       createdAt: clock.now().toISOString(),
     });
+    bindPracticeGroundingToBrief(brief, practicePayload, practiceContext);
     if (!hasCurrentPreparedPractice(brief)) {
       throw ProviderError.invalidOutput(
-        'Saved Practice lacks exact current answerability and public integrity proofs.',
+        'Saved Practice lacks exact current grounding, answerability and public integrity proofs.',
         'candidate',
         'SEMANTIC_VALIDATION_FAILURE',
         false,
@@ -1963,9 +1965,20 @@ export function createTeachingBriefPreparationService({
             }),
         });
       }
+      // Ground the artifact after display citation confinement, including every
+      // revision and optional rewrite. Nothing may alter its claims after proof.
+      const reviewablePractice = (candidate: PracticeContentProposalPayload) =>
+        provider.name === 'hy3'
+          ? confineTeachingCitations(
+              { lesson: { slots: [] }, practice: candidate },
+              { lesson: compositionalPracticeInput },
+            ).practice
+          : candidate;
+      practicePayload = reviewablePractice(practicePayload);
       let contentReview: PracticeQualityEvaluation['contentReview'];
       let answerabilityReview: PracticeQualityEvaluation['answerabilityReview'];
       let integrityReview: PracticeQualityEvaluation['integrityReview'];
+      let groundingReview: PracticeQualityEvaluation['groundingReview'];
       let qualityImprovement: PracticeQualityEvaluation['qualityImprovement'];
       if (inferenceProvider.reviewTeachingContent) {
         let contentRevision = 0;
@@ -1993,7 +2006,7 @@ export function createTeachingBriefPreparationService({
                 ? 'practice-answerability-review-v1'
                 : prepared.input.purpose === 'practice_integrity'
                   ? 'practice-integrity-review-v1'
-                  : 'practice-grounding-review-v1',
+                  : 'practice-grounding-review-v2-complete-claims',
               (opts) =>
                 inferenceProvider.reviewTeachingContent!(prepared.input, {
                   ...opts,
@@ -2018,7 +2031,7 @@ export function createTeachingBriefPreparationService({
             }
             compositionalPracticeInput.computedCases = false;
             practiceLogicalCallId = `${operationKey}:practice-revision${contentRevision > 1 ? `-${contentRevision}` : ''}`;
-            return trackedReviewCall(
+            const revised = await trackedReviewCall(
               practiceLogicalCallId,
               'practice-content-proposal-v1',
               (opts) =>
@@ -2035,6 +2048,7 @@ export function createTeachingBriefPreparationService({
                   },
                 ),
             );
+            return reviewablePractice(revised);
           },
           async (draft, findings) => {
             // An authored quality rewrite no longer owns the computed draft's
@@ -2043,7 +2057,7 @@ export function createTeachingBriefPreparationService({
             compositionalPracticeInput.computedCases = false;
             practiceRepairAttempted = true;
             practiceLogicalCallId = `${operationKey}:practice-quality-improvement`;
-            return trackedReviewCall(
+            const improved = await trackedReviewCall(
               practiceLogicalCallId,
               'practice-content-proposal-v1',
               (opts) =>
@@ -2072,6 +2086,7 @@ export function createTeachingBriefPreparationService({
                   },
                 ),
             );
+            return reviewablePractice(improved);
           },
           () => {
             if (options?.signal?.aborted) throw ProviderError.cancelled();
@@ -2084,15 +2099,10 @@ export function createTeachingBriefPreparationService({
         contentReview = verified.receipts;
         answerabilityReview = verified.answerabilityReview;
         integrityReview = verified.integrityReview;
+        groundingReview = verified.groundingReview;
         qualityImprovement = verified.qualityImprovement;
         if (qualityImprovement.attempts)
           qualityImprovement.logicalCallId = `${operationKey}:practice-quality-improvement`;
-      }
-      if (provider.name === 'hy3') {
-        practicePayload = confineTeachingCitations(
-          { lesson: { slots: [] }, practice: practicePayload },
-          { lesson: compositionalPracticeInput },
-        ).practice;
       }
       const finalValidation = validatePracticeContentCandidate(
         practicePayload,
@@ -2117,6 +2127,7 @@ export function createTeachingBriefPreparationService({
       if (contentReview) practiceEvaluation.contentReview = contentReview;
       if (answerabilityReview) practiceEvaluation.answerabilityReview = answerabilityReview;
       if (integrityReview) practiceEvaluation.integrityReview = integrityReview;
+      if (groundingReview) practiceEvaluation.groundingReview = groundingReview;
       if (qualityImprovement) practiceEvaluation.qualityImprovement = qualityImprovement;
       assertCurrentCognitiveContract(practiceEvaluation);
       preparationBoundary = 'assembly';
@@ -2129,6 +2140,7 @@ export function createTeachingBriefPreparationService({
         practiceEvaluation,
         claim.id,
         practiceLogicalCallId,
+        compositionalPracticeInput,
       );
       return repos.transaction(() => {
         const current = routeStillCurrent(input, context.fingerprint);

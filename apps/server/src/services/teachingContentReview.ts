@@ -8,6 +8,8 @@ import {
   type PracticePriorTeaching,
   type PracticeAnswerabilityReview,
   type PracticeIntegrityReview,
+  type PracticeGroundingReview,
+  PRACTICE_GROUNDING_POLICY_VERSION,
   PRACTICE_ACCEPTANCE_POLICY_VERSION,
   type LessonSlotContentProposalPayload,
   type PracticeContentProposalPayload,
@@ -28,6 +30,7 @@ import {
   assertReviewedPracticeAcceptance,
   preparePracticeAnswerabilityReview,
   preparePracticeIntegrityReview,
+  preparePracticeGroundingReview,
   practiceProofItems,
 } from './practiceAcceptance.js';
 import { compareLearnerPracticeTasks } from './practiceTaskCanonicalization.js';
@@ -346,6 +349,10 @@ export async function verifyPreparedPractice(
     policyVersion: PRACTICE_ACCEPTANCE_POLICY_VERSION,
     rounds: [],
   };
+  const groundingReview: PracticeGroundingReview = {
+    policyVersion: PRACTICE_GROUNDING_POLICY_VERSION,
+    rounds: [],
+  };
   let previousFindings: TeachingContentReview['findings'] | undefined;
   const qualityImprovement: PracticeQualityImprovement = {
     attempts: 0,
@@ -362,6 +369,7 @@ export async function verifyPreparedPractice(
         receipts: typeof receipts;
         answerabilityReview: PracticeAnswerabilityReview;
         integrityReview: PracticeIntegrityReview;
+        groundingReview: PracticeGroundingReview;
       }
     | undefined;
   const acceptOriginal = async (error: unknown) => {
@@ -396,6 +404,7 @@ export async function verifyPreparedPractice(
       contentReview: original.receipts,
       answerabilityReview: original.answerabilityReview,
       integrityReview: original.integrityReview,
+      groundingReview: original.groundingReview,
     });
     qualityImprovement.outcome =
       error instanceof ProviderError && error.code === ApiErrorCode.ProviderInvalidOutput
@@ -411,6 +420,7 @@ export async function verifyPreparedPractice(
       receipts: original.receipts,
       answerabilityReview: original.answerabilityReview,
       integrityReview: original.integrityReview,
+      groundingReview: original.groundingReview,
       qualityImprovement,
     };
   };
@@ -419,32 +429,9 @@ export async function verifyPreparedPractice(
       // Providers may ignore callbacks. Each original/revised candidate still
       // owes the complete current structural, authority and integrity contract.
       assertPracticeCandidate(candidate, context, priorTeaching);
-      const prepared = prepareTeachingReview(context, candidate);
-      const allowedIds = new Set([
-        ...candidate.items.map((item) => item.practiceSlotId),
-        ...prepared.input.actionIds,
-      ]);
-      const groundingInput: AuthoredTeachingContentReviewInput = {
-        ...prepared.input,
-        purpose: 'practice_grounding',
-        actionIds: [],
-      };
-      const validateGrounding = (raw: unknown) => {
-        const parsed = TeachingContentReviewSchema.safeParse(raw);
-        const valid =
-          parsed.success &&
-          parsed.data.decisions.length === 0 &&
-          parsed.data.findings.every((finding) => allowedIds.has(finding.itemId));
-        return {
-          valid,
-          diagnostics: valid
-            ? []
-            : ['practice_grounding_inventory: return findings only for offered items.'],
-          diagnosticCodes: valid ? [] : ['practice_grounding_inventory'],
-        };
-      };
-      const grounded = await review({ input: groundingInput, validate: validateGrounding }, round);
-      if (!validateGrounding(grounded.result).valid)
+      const prepared = preparePracticeGroundingReview(context, candidate);
+      const grounded = await review(prepared, round);
+      if (!prepared.validate(grounded.result).valid)
         throw ProviderError.invalidOutput(
           'Practice grounding review must return only findings for its exact inventory.',
           'candidate',
@@ -452,6 +439,12 @@ export async function verifyPreparedPractice(
           false,
         );
       receipts.push({ ...grounded, candidateHash: prepared.candidateHash });
+      groundingReview.rounds.push({
+        ...grounded,
+        candidateHash: prepared.candidateHash,
+        inputHash: prepared.inputHash,
+        claimsHash: prepared.claimsHash,
+      });
       const findings = prepared.findings(grounded.result);
       const integrity = preparePracticeIntegrityReview(
         practiceProofItems(candidate),
@@ -585,6 +578,7 @@ export async function verifyPreparedPractice(
           contentReview: receipts,
           answerabilityReview,
           integrityReview,
+          groundingReview,
         });
         const qualityFindings = practiceQualityImprovementFindings(
           evaluatePlannedPracticeQuality(candidate, context, {
@@ -604,6 +598,7 @@ export async function verifyPreparedPractice(
               receipts: structuredClone(receipts),
               answerabilityReview: structuredClone(answerabilityReview),
               integrityReview: structuredClone(integrityReview),
+              groundingReview: structuredClone(groundingReview),
             };
             // Spend an existing review round, never add an outer retry budget.
             // The following round obtains fresh grounding, public comparison and isolated solves.
@@ -614,7 +609,14 @@ export async function verifyPreparedPractice(
         } else if (qualityImprovement.attempts === 1) {
           qualityImprovement.outcome = qualityFindings.length ? 'exhausted' : 'improved';
         }
-        return { candidate, receipts, answerabilityReview, integrityReview, qualityImprovement };
+        return {
+          candidate,
+          receipts,
+          answerabilityReview,
+          integrityReview,
+          groundingReview,
+          qualityImprovement,
+        };
       }
       const findingKey = (finding: TeachingContentReview['findings'][number]) =>
         `${finding.itemId}\u0000${finding.code}`;

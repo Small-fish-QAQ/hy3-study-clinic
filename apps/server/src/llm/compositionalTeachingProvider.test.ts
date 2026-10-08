@@ -21,6 +21,7 @@ import type {
 } from './provider.js';
 import { MAX_COMPOSITIONAL_OUTPUT_ATTEMPTS_PER_LOGICAL_CALL } from './provider.js';
 import { preparePracticeAnswerabilityReview } from '../services/teachingContentReview.js';
+import { preparePracticeGroundingReview } from '../services/practiceAcceptance.js';
 
 function skeleton() {
   return TeachingSkeletonSchema.parse({
@@ -420,15 +421,26 @@ describe('compositional Teaching providers', () => {
       ) as unknown as typeof fetch;
     const provider = hy3(transport);
     await provider.reviewTeachingContent(prepared.input, { validateCandidate: prepared.validate });
-    const grounding = await provider.reviewTeachingContent({
-      purpose: 'practice_grounding',
-      stage: 'practice',
-      desiredDepth: 'working_fluency',
-      objectives: [],
-      sources: [{ sourceRef: 'S1', text: 'PRIVATE_FULL_SOURCE_FOR_GROUNDING' }],
-      candidate: authored,
-      acceptedLesson: authored.acceptedLesson,
-      actionIds: [],
+    const context = practiceInput();
+    context.sourceContext.offers[0]!.text = 'PRIVATE_FULL_SOURCE_FOR_GROUNDING';
+    const candidate = PracticeContentProposalPayloadSchema.parse(practicePayload());
+    candidate.items[0]!.initial = {
+      prompt: authored.prompt,
+      options: authored.options.map(({ id, ...option }) => ({ optionRef: id, ...option })),
+      correctOptionRef: 'A',
+      explanation: authored.explanation,
+      hint: authored.hint,
+    };
+    candidate.items[0]!.retry.explanation = 'PRIVATE_RETRY_EXPLANATION';
+    candidate.items[0]!.application = {
+      startingState: 'PRIVATE_APPLICATION',
+      sourceRuleOrProcedure: 'PRIVATE_RULE_AND_RATIONALE',
+      decisionRequired: 'PRIVATE_DECISION',
+      expectedAction: 'PRIVATE_EXPECTED_ACTION',
+    };
+    const rich = preparePracticeGroundingReview(context, candidate);
+    const grounding = await provider.reviewTeachingContent(rich.input, {
+      validateCandidate: rich.validate,
     });
     const calls = (transport as unknown as ReturnType<typeof vi.fn>).mock.calls;
     const solveBody = JSON.parse(String(calls[0]![1]!.body));
@@ -436,9 +448,20 @@ describe('compositional Teaching providers', () => {
     expect(JSON.stringify(solveBody.messages)).not.toMatch(/PRIVATE_[A-Z_]+/u);
     expect(JSON.stringify(solveBody.messages)).toContain(authored.prompt);
     expect(solveBody.max_tokens).toBe(8000);
-    expect(JSON.stringify(groundingBody.messages)).toContain('PRIVATE_FULL_SOURCE_FOR_GROUNDING');
+    const groundMessages = JSON.stringify(groundingBody.messages);
+    for (const text of [
+      'PRIVATE_FULL_SOURCE_FOR_GROUNDING',
+      'PRIVATE_EXPLANATION',
+      'PRIVATE_RETRY_EXPLANATION',
+      'PRIVATE_FEEDBACK',
+      'PRIVATE_WRONG_FEEDBACK',
+      'PRIVATE_OTHER_FEEDBACK',
+      'PRIVATE_RULE_AND_RATIONALE',
+      'correctOptionRef',
+    ])
+      expect(groundMessages).toContain(text);
     expect(groundingBody.messages[0].content).toContain(
-      'must never be used to establish learner-visible answerability',
+      'Computed outcomes do not certify authored prose or source fidelity',
     );
     expect(groundingBody.max_tokens).toBe(8000);
     expect(grounding.findings[0]?.code).toBe('grounding');

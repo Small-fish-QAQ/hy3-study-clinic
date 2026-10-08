@@ -1568,9 +1568,90 @@ describe('calibrated cognitive teaching contract', () => {
           .requiresCaseInference,
       ).toBe(true);
       expect(result.receipts[0]!.candidateHash).not.toBe(result.receipts[1]!.candidateHash);
-      for (const [prepared] of review.mock.calls) {
-        expect(JSON.stringify(prepared.input.candidate)).not.toContain('reasoningOperation');
-        expect(JSON.stringify(prepared.input.candidate)).not.toContain('evidenceContrast');
+      expect(new Set(review.mock.calls.map(([prepared]) => prepared.input.purpose))).toEqual(
+        new Set(['practice_answerability', 'practice_integrity', 'practice_grounding']),
+      );
+      const priorTeaching = {
+        objective: { title: '检索条件', whyNow: '区分类别并使用阈值。', outcomes: [] },
+        prerequisites: [],
+        segments: [],
+        visuals: [],
+        summary: { text: '先过滤，再排序。', nextConnection: null },
+      };
+      const publicSurface = (surface: (typeof f.practice.items)[number]['initial']) => ({
+        prompt: surface.prompt,
+        options: surface.options.map(({ optionRef, text }) => ({ id: optionRef, text })),
+      });
+      for (const [prepared, round] of review.mock.calls) {
+        const input = prepared.input;
+        const candidate = round === 0 ? f.practice : result.candidate;
+        if (input.purpose === 'practice_grounding') {
+          // Reasoning/contrast declarations are reviewed claims, never blind proof.
+          expect(input.candidate).toEqual(candidate);
+          expect(input.acceptedLesson).toEqual(f.practiceInput.acceptedLesson);
+          expect(input.sources).toEqual(f.practiceInput.sourceContext.offers);
+          expect(input.actionIds).toEqual([]);
+          expect(
+            prepared.validate({
+              decisions: [
+                {
+                  actionId: `${candidate.items[0]!.practiceSlotId}.initial`,
+                  answerId: candidate.items[0]!.initial.correctOptionRef,
+                  requiresCaseInference: true,
+                  evidenceUsed: 'The private author declaration claims this answer.',
+                },
+              ],
+              findings: [],
+            }).valid,
+          ).toBe(false);
+          continue;
+        }
+        for (const field of [
+          'reasoningOperation',
+          'requiredInference',
+          'decisiveCondition',
+          'evidenceContrast',
+          'correctOptionRef',
+          'application',
+          'explanation',
+          'feedbackIfSelected',
+          'hint',
+        ])
+          expect(JSON.stringify(input.candidate)).not.toContain(`"${field}"`);
+        const publicItems = candidate.items.map((item) => ({
+          practiceSlotId: item.practiceSlotId,
+          initial: publicSurface(item.initial),
+          retry: publicSurface(item.retry),
+        }));
+        if (input.purpose === 'practice_answerability') {
+          const actionId = input.candidate.actionId;
+          expect(
+            publicItems.flatMap((item) =>
+              (['initial', 'retry'] as const).map((surface) => ({
+                actionId: `${item.practiceSlotId}.${surface}`,
+                ...item[surface],
+              })),
+            ),
+          ).toContainEqual(input.candidate);
+          expect(input).toEqual({
+            purpose: 'practice_answerability',
+            stage: 'practice',
+            candidate: input.candidate,
+            priorTeaching,
+            actionIds: [actionId],
+          });
+        } else {
+          expect(input).toEqual({
+            purpose: 'practice_integrity',
+            stage: 'practice',
+            desiredDepth: 'pass_oriented',
+            objectives: [],
+            sources: [],
+            candidate: { items: publicItems },
+            acceptedLesson: priorTeaching,
+            actionIds: [],
+          });
+        }
       }
     },
   );

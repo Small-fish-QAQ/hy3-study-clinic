@@ -4,6 +4,8 @@ import { describe, expect, it } from 'vitest';
 import {
   PRACTICE_ANSWERABILITY_POLICY_VERSION,
   PRACTICE_ACCEPTANCE_POLICY_VERSION,
+  PRACTICE_GROUNDING_POLICY_VERSION,
+  PracticeContentProposalPayloadSchema,
   projectPracticePriorTeaching,
   type AcceptedLessonCheckpoint,
   type TeachingBrief,
@@ -11,7 +13,12 @@ import {
 import {
   preparePracticeAnswerabilityReview,
   preparePracticeIntegrityReview,
+  preparePracticeGroundingReview,
+  bindPracticeGroundingToBrief,
 } from './practiceAcceptance.js';
+import { planTeachingSkeleton } from './teachingSkeletonPlanner.js';
+import type { PracticeContentGenerationInput } from '../llm/provider.js';
+import { validatePracticeContentCandidate } from './teachingBriefContract.js';
 import {
   COMPOSITIONAL_LESSON_PEDAGOGY_POLICY_VERSION,
   COMPOSITIONAL_PRACTICE_QUALITY_POLICY_VERSION,
@@ -96,23 +103,40 @@ function compositionalBrief(
       items: [
         {
           id: 'practice_1',
+          objectiveId: 'obj1',
+          objectiveTitle: 'Public Lesson',
+          construct: 'identify',
+          capabilityTested: 'Identify the selected answer from the public example.',
+          pedagogicalReason: 'Read the example to distinguish the selected answer.',
+          authority: 'ai_teaching_synthesis',
+          sourceRefIds: [],
+          visualRefIds: [],
+          application: null,
           initial: {
             reasoningOperation: 'recognize',
             prompt: 'The public example explicitly selects Answer A. Which answer is selected?',
             options: ['A', 'B', 'C'].map((id) => ({
               id: `practice_1_initial_${id}`,
-              text: `Answer ${id}`,
+              text: `The selected identifier is ${id}.`,
+              feedbackIfSelected:
+                id === 'A' ? 'This answer is selected.' : `Answer ${id} is not selected.`,
             })),
             correctOptionId: 'practice_1_initial_A',
+            hint: 'Read the answer selected in the public example.',
+            explanation: 'The printed example explicitly selects Answer A.',
           },
           retry: {
             reasoningOperation: 'classify',
             prompt: 'The public example explicitly selects Answer B. Which answer is selected?',
             options: ['A', 'B', 'C'].map((id) => ({
               id: `practice_1_retry_${id}`,
-              text: `Answer ${id}`,
+              text: `The selected identifier is ${id}.`,
+              feedbackIfSelected:
+                id === 'B' ? 'This answer is selected.' : `Answer ${id} is not selected.`,
             })),
             correctOptionId: 'practice_1_retry_B',
+            hint: 'Read the answer selected in this new example.',
+            explanation: 'The new printed example explicitly selects Answer B.',
           },
         },
       ],
@@ -137,12 +161,82 @@ function compositionalBrief(
     brief.segments,
     [brief.objective.whyNow],
   );
-  const priorTeaching = projectPracticePriorTeaching(brief);
-  brief.practice!.qualityEvaluation.answerabilityReview = {
-    policyVersion: overrides.answerabilityPolicyVersion ?? PRACTICE_ANSWERABILITY_POLICY_VERSION,
+  const context: PracticeContentGenerationInput = {
+    workspaceName: 'Provenance fixture',
+    learnerLocale: 'zh-CN',
+    skeleton: planTeachingSkeleton({
+      learningUnitTitle: 'Public Lesson',
+      targetMinutes: 18,
+      targetDepth: 'pass_oriented',
+      objectives: [
+        {
+          objectiveRef: 'O1',
+          title: 'Public Lesson',
+          description: 'Identify the selected answer from the public example.',
+          priority: 'required',
+          construct: 'identify',
+          authorityMode: 'exact_source',
+          allowedSourceRefs: ['S1'],
+          allowedVisualRefs: [],
+        },
+      ],
+    }),
+    acceptedLesson: [],
+    sourceContext: {
+      blockCount: 0,
+      offerCount: 0,
+      serializedBytes: 0,
+      materialCount: 0,
+      sectionCount: 0,
+      offers: [],
+    },
+    visualContext: { offerCount: 0, serializedBytes: 0, offers: [] },
+  };
+  context.skeleton.fingerprint = SKELETON_FINGERPRINT;
+  const candidate = PracticeContentProposalPayloadSchema.parse({
+    items: brief.practice!.items.map((item) => {
+      const surface = (value: typeof item.initial) => {
+        const { correctOptionId, ...rest } = value;
+        return {
+          ...rest,
+          correctOptionRef: correctOptionId.slice(-1),
+          options: value.options.map(({ id, ...option }) => ({
+            optionRef: id.slice(-1),
+            ...option,
+          })),
+        };
+      };
+      return {
+        practiceSlotId: 'PR1',
+        capabilityTested: item.capabilityTested,
+        pedagogicalReason: item.pedagogicalReason,
+        sourceRefs: item.sourceRefIds,
+        visualRefs: item.visualRefIds,
+        application: item.application,
+        initial: surface(item.initial),
+        retry: surface(item.retry),
+      };
+    }),
+  });
+  const grounding = preparePracticeGroundingReview(context, candidate);
+  expect(validatePracticeContentCandidate(candidate, context).diagnostics).toEqual([]);
+  brief.practice!.qualityEvaluation.contentReview![0]!.candidateHash = grounding.candidateHash;
+  brief.practice!.qualityEvaluation.groundingReview = {
+    policyVersion: PRACTICE_GROUNDING_POLICY_VERSION,
     rounds: [
       {
-        candidateHash: SKELETON_FINGERPRINT,
+        ...brief.practice!.qualityEvaluation.contentReview![0]!,
+        inputHash: grounding.inputHash,
+        claimsHash: grounding.claimsHash,
+      },
+    ],
+  };
+  const priorTeaching = projectPracticePriorTeaching(brief);
+  brief.practice!.qualityEvaluation.answerabilityReview = {
+    policyVersion: PRACTICE_ANSWERABILITY_POLICY_VERSION,
+    rounds: [
+      {
+        candidateHash: grounding.candidateHash,
         solves: (['initial', 'retry'] as const).map((surface) => {
           const item = brief.practice!.items[0]![surface];
           const actionId = `PR1.${surface}`;
@@ -197,13 +291,16 @@ function compositionalBrief(
     policyVersion: PRACTICE_ACCEPTANCE_POLICY_VERSION,
     rounds: [
       {
-        candidateHash: SKELETON_FINGERPRINT,
+        candidateHash: grounding.candidateHash,
         inputHash: integrity.inputHash,
         logicalCallId: 'integrity-0',
         result: { decisions: [], findings: [] },
       },
     ],
   };
+  bindPracticeGroundingToBrief(brief, candidate, context);
+  brief.practice!.qualityEvaluation.answerabilityReview.policyVersion =
+    overrides.answerabilityPolicyVersion ?? PRACTICE_ANSWERABILITY_POLICY_VERSION;
   return brief;
 }
 
@@ -331,6 +428,7 @@ describe('Teaching Brief preparation provenance selection', () => {
     'practice-acceptance-v1-aggregate-quality',
     'practice-acceptance-v2-explicit-recognition-quality',
     'practice-acceptance-v3-inference-quality',
+    'practice-acceptance-v4-public-integrity',
   ])('fences %s without changing the Lesson checkpoint or composition fingerprint', (oldPolicy) => {
     const skeleton = { fingerprint: SKELETON_FINGERPRINT };
     const checkpoint = acceptedCheckpoint();
