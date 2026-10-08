@@ -4,8 +4,11 @@ import {
   LessonExecutionCommandRequestSchema,
   LessonExecutionProjectionSchema,
   LessonTutorContextSchema,
-  TeachingContentReviewSchema,
   PracticeRepairContentSchema,
+  PRACTICE_REPAIR_ACCEPTANCE_POLICY_VERSION,
+  PRACTICE_REPAIR_GENERATION_VERSION,
+  type PracticeRepairAcceptance,
+  type TeachingContentReview,
   groupLessonSegmentsForLearner,
   projectLearnerPracticeSurface,
   isExecutableTeachingAgendaItem,
@@ -25,7 +28,11 @@ import { enrichTutorContext } from '../tutor/studyContext.js';
 import type { Repositories } from '../repositories/index.js';
 import type { Clock } from '../util/ids.js';
 import { newId } from '../util/ids.js';
-import type { LlmProvider, ProviderCallOptions } from '../llm/provider.js';
+import type {
+  LlmProvider,
+  ProviderCallOptions,
+  TeachingContentReviewInput,
+} from '../llm/provider.js';
 import { enforceAgentCostPolicies } from './agentProviderRuntime.js';
 import {
   runRecoverableGenerationStage,
@@ -42,9 +49,17 @@ import {
   practiceItemPassed,
   practiceRecoveryProjection,
   practiceRepairInput,
-  practiceRepairReview,
   validatePracticeRepair,
 } from './practiceRecovery.js';
+import {
+  preparePracticeRepairReviews,
+  practiceRepairHash,
+  practiceRepairBindingHash,
+  hasPracticeRepairProof,
+  hasCurrentPracticeRepair,
+  practiceRepairAcceptanceFindings,
+  assertPracticeRepairAcceptance,
+} from './practiceRepairAcceptance.js';
 import type { AgendaWindowRolloverService } from './agendaWindowRollover.js';
 import type { CourseCommandService } from './courseCommands.js';
 import {
@@ -489,7 +504,7 @@ export function createLessonExecutionService({
       !currentWorkedInteraction || currentWorkedInteraction.stage === 'completed';
     const currentReadyToAdvance =
       (!current?.informalCheck || Boolean(interaction?.response)) && currentInteractionComplete;
-    const practice = projectPractice(brief, state);
+    const practice = projectPractice(brief, state, context);
     const allowed =
       context.session.status === 'paused'
         ? (['resume_study_session'] as const)
@@ -781,13 +796,59 @@ export function createLessonExecutionService({
     };
   }
 
+  function repairDesign(context: RouteContext, state: LessonExecutionState) {
+    return {
+      desiredDepth: context.planItem.targetDepth,
+      unitFocus:
+        context.curriculum.nodes.find((node) => node.id === state.learningUnitId)?.learningUnit
+          ?.focus ?? ('normal' as const),
+      tutorExplanations: repos.studySessions
+        .listTutorTeaching(context.session.workspaceId)
+        .filter((turn) => turn.agendaItemId === null || turn.agendaItemId === state.agendaItemId)
+        .slice(-8)
+        .map((turn) => turn.content.slice(0, 8000)),
+    };
+  }
+
+  function currentRepairAccepted(
+    context: RouteContext,
+    brief: TeachingBrief,
+    state: LessonExecutionState,
+    index: number,
+  ) {
+    const rounds = failedPracticeAttempt(state, index)?.recovery?.rounds ?? [];
+    const round = rounds.at(-1);
+    return (
+      !round ||
+      hasCurrentPracticeRepair(
+        round,
+        practiceRepairBindingHash(brief, state, index, repairDesign(context, state)),
+        rounds.slice(0, -1),
+      )
+    );
+  }
+
+  function practicePassed(
+    context: RouteContext,
+    brief: TeachingBrief,
+    state: LessonExecutionState,
+    index: number,
+  ) {
+    const rounds = failedPracticeAttempt(state, index)?.recovery?.rounds ?? [];
+    const binding = practiceRepairBindingHash(brief, state, index, repairDesign(context, state));
+    return practiceItemPassed(state, index, (round) =>
+      hasCurrentPracticeRepair(round, binding, rounds.slice(0, rounds.indexOf(round))),
+    );
+  }
+
   function projectPractice(
     brief: TeachingBrief,
     state: LessonExecutionState,
+    context: RouteContext,
   ): LearnerPracticeProjection | null {
     if (!brief.practice) return null;
     const completedItem = (itemIndex: number) => {
-      return practiceItemPassed(state, itemIndex);
+      return practicePassed(context, brief, state, itemIndex);
     };
     const unresolvedIndex = brief.practice.items.findIndex((_, index) => !completedItem(index));
     const currentItemIndex =
@@ -805,7 +866,13 @@ export function createLessonExecutionService({
     const generating =
       operation?.status === 'running' &&
       Boolean(operation.leaseExpiresAt && operation.leaseExpiresAt > clock.now().toISOString());
-    const recovery = practiceRecoveryProjection(state, item, currentItemIndex, generating);
+    const recovery = practiceRecoveryProjection(
+      state,
+      item,
+      currentItemIndex,
+      generating,
+      currentRepairAccepted(context, brief, state, currentItemIndex),
+    );
     const status = state.practiceCompletedAt
       ? 'completed'
       : !state.presentationCompletedAt
@@ -828,24 +895,30 @@ export function createLessonExecutionService({
               supplementary: item.authority === 'ai_teaching_synthesis',
               ...projectLearnerPracticeSurface(surface),
             },
-      attempts: state.practiceInteractions.map(({ recovery, ...attempt }) => ({
-        ...attempt,
-        ...(recovery?.rounds.some(
-          (round) =>
-            round.responses.length === 2 && round.responses.every((response) => response.correct),
-        )
-          ? {
-              recovered: true,
-              recoveryFeedback: recovery.rounds
-                .find(
-                  (round) =>
-                    round.responses.length === 2 &&
-                    round.responses.every((response) => response.correct),
-                )!
-                .responses.at(-1)!.feedback,
-            }
-          : {}),
-      })),
+      attempts: state.practiceInteractions.map(({ recovery, ...attempt }) => {
+        const rounds = recovery?.rounds ?? [];
+        const accepted = rounds.find(
+          (round, index) =>
+            round.responses.length === 2 &&
+            round.responses.every((response) => response.correct) &&
+            hasCurrentPracticeRepair(
+              round,
+              practiceRepairBindingHash(
+                brief,
+                state,
+                attempt.itemIndex,
+                repairDesign(context, state),
+              ),
+              rounds.slice(0, index),
+            ),
+        );
+        return {
+          ...attempt,
+          ...(accepted
+            ? { recovered: true, recoveryFeedback: accepted.responses.at(-1)!.feedback }
+            : {}),
+        };
+      }),
       recovery,
       completedAt: state.practiceCompletedAt,
       credit: 'none',
@@ -1348,14 +1421,17 @@ export function createLessonExecutionService({
           current.version !== input.expectedLessonStateVersion
         )
           throw new AppError(ApiErrorCode.VersionConflict, 'Practice repair state is stale.');
-        const index = brief.practice.items.findIndex((_, i) => !practiceItemPassed(current, i));
+        const index = brief.practice.items.findIndex(
+          (_, i) => !practicePassed(initial, brief, current, i),
+        );
         const attempt = failedPracticeAttempt(current, index);
         const recovery = attempt?.recovery ?? { rounds: [], preparationOperationId: null };
         const last = recovery.rounds.at(-1);
+        const lastAccepted = currentRepairAccepted(initial, brief, current, index);
         if (
           !attempt ||
           (recovery.rounds.length >= 3 && !input.action.learnerNote.trim()) ||
-          (last && !last.responses.some((response) => !response.correct))
+          (last && lastAccepted && !last.responses.some((response) => !response.correct))
         )
           throw new AppError(
             ApiErrorCode.ValidationError,
@@ -1415,12 +1491,30 @@ export function createLessonExecutionService({
             return parsed.success ? parsed.data.retest.map((item) => item.prompt) : [];
           })
           .slice(-24);
-        const request = practiceRepairInput(brief, current, index, input.action.learnerNote, {
+        const priorRounds = recovery.rounds.filter(
+          (round) =>
+            hasPracticeRepairProof(round.content, round.acceptance) &&
+            (round !== last || lastAccepted),
+        );
+        const requestState = {
+          ...current,
+          practiceInteractions: current.practiceInteractions.map((value) =>
+            value === attempt
+              ? { ...value, recovery: { ...recovery, rounds: priorRounds } }
+              : value,
+          ),
+        };
+        const request = practiceRepairInput(brief, requestState, index, input.action.learnerNote, {
           desiredDepth: initial.planItem.targetDepth,
           unitFocus:
             initial.curriculum.nodes.find((node) => node.id === current.learningUnitId)
               ?.learningUnit?.focus ?? 'normal',
-          archivedRetestPrompts,
+          archivedRetestPrompts: [
+            ...archivedRetestPrompts,
+            ...recovery.rounds
+              .filter((round) => !priorRounds.includes(round))
+              .flatMap((round) => round.content.retest.map((surface) => surface.prompt)),
+          ],
         });
         const tutorTeaching = repos.studySessions
           .listTutorTeaching(workspaceId)
@@ -1430,6 +1524,12 @@ export function createLessonExecutionService({
         request.tutorExplanations = tutorTeaching
           .slice(-8)
           .map((turn) => turn.content.slice(0, 8000));
+        const bindingHash = practiceRepairBindingHash(
+          brief,
+          current,
+          index,
+          repairDesign(initial, current),
+        );
         const noveltyInput = {
           ...request,
           tutorExplanations: tutorTeaching.map((turn) => turn.content),
@@ -1448,16 +1548,25 @@ export function createLessonExecutionService({
             input.expectedAgendaVersion,
             input.expectedAgendaItemId,
           );
+          const liveState = stateFor(context);
+          const liveBrief = currentBrief(context);
           if (
-            stateFor(context)?.version !== preparing.version ||
-            currentBrief(context)?.id !== brief.id
+            liveState?.version !== preparing.version ||
+            !liveBrief ||
+            liveBrief.id !== brief.id ||
+            practiceRepairBindingHash(
+              liveBrief,
+              liveState,
+              index,
+              repairDesign(context, liveState),
+            ) !== bindingHash
           )
             throw new AppError(
               ApiErrorCode.VersionConflict,
               'Practice repair lost its current Lesson binding.',
             );
         };
-        const { content, logicalCallId, reviewLogicalCallId } = await (async () => {
+        const { content, logicalCallId, acceptance } = await (async () => {
           for (let contentAttempt = 0; contentAttempt < 2; contentAttempt++) {
             commands.renew(claim, 5 * 60 * 1000);
             const logicalCallId = newId('llm_call');
@@ -1474,8 +1583,8 @@ export function createLessonExecutionService({
               learningUnitId: current.learningUnitId,
               assessmentId: null,
               operationType: 'prepare_practice_repair',
-              schemaFingerprint: 'practice-repair-v6-complete-failed-case',
-              policyFingerprint: null,
+              schemaFingerprint: PRACTICE_REPAIR_GENERATION_VERSION,
+              policyFingerprint: PRACTICE_REPAIR_ACCEPTANCE_POLICY_VERSION,
               sourceFingerprint: current.sourceContextFingerprint,
               logicalCallId,
               providerOptions: opts,
@@ -1485,7 +1594,8 @@ export function createLessonExecutionService({
                 itemIndex: index,
                 round: ordinal,
                 request,
-                version: 'practice-repair-v6-complete-failed-case',
+                bindingHash,
+                version: PRACTICE_REPAIR_GENERATION_VERSION,
               },
               assertCurrent,
               beforeGenerate: () =>
@@ -1514,53 +1624,92 @@ export function createLessonExecutionService({
                   },
                 }),
             });
-            const reviewLogicalCallId = newId('llm_call');
-            const reviewInput = practiceRepairReview(request, content);
-            commands.renew(claim, 5 * 60 * 1000);
-            const reviewed = await runRecoverableGenerationStage({
-              repos,
-              clock,
-              provider,
-              providerModel: provider.model ?? null,
-              operationId: claim.operationId,
-              owner: claim.owner,
-              fencingToken: claim.fencingToken,
-              workspaceId,
-              studySessionId: sessionId,
-              learningUnitId: current.learningUnitId,
-              assessmentId: null,
-              operationType: 'review_practice_repair',
-              schemaFingerprint: 'practice-repair-review-v1',
-              policyFingerprint: null,
-              sourceFingerprint: current.sourceContextFingerprint,
-              logicalCallId: reviewLogicalCallId,
-              providerOptions: opts,
-              stageIdentity: { briefId: brief.id, input: reviewInput },
-              assertCurrent,
-              beforeGenerate: () =>
-                enforceAgentCostPolicies(repos, {
-                  workspaceId,
-                  operationType: 'review_practice_repair',
-                  studySessionId: sessionId,
-                  at: clock.now().toISOString(),
-                  confirmedPolicyIds: [],
-                }),
-              validateResult: (value) => TeachingContentReviewSchema.parse(value),
-              invoke: (options) =>
-                reviewRepair.call(provider, structuredClone(reviewInput), options),
-            });
-            const findings = reviewed.findings
-              .filter((finding) => finding.code !== 'shallow_task')
-              .map((finding) => `${finding.problem} ${finding.repairInstruction}`);
-            for (const [i, question] of content.retest.entries()) {
-              const decisions = reviewed.decisions.filter(
-                (decision) => decision.actionId === `retest${i}.check`,
-              );
-              if (decisions.length !== 1 || decisions[0]!.answerId !== question.correctOptionId)
-                findings.push(
-                  `Retest ${i + 1} lacks a unique independently confirmed answer. ${decisions[0]?.evidenceUsed ?? ''}`,
-                );
+            const prepared = preparePracticeRepairReviews(request, content);
+            const reviewStage = async <T extends TeachingContentReview>(
+              reviewInput: TeachingContentReviewInput,
+              validate: (value: unknown) => T,
+            ) => {
+              commands.renew(claim, 5 * 60 * 1000);
+              const reviewLogicalCallId = newId('llm_call');
+              const inputHash = prepared.inputHash(reviewInput);
+              const result = await runRecoverableGenerationStage({
+                repos,
+                clock,
+                provider,
+                providerModel: provider.model ?? null,
+                operationId: claim.operationId,
+                owner: claim.owner,
+                fencingToken: claim.fencingToken,
+                workspaceId,
+                studySessionId: sessionId,
+                learningUnitId: current.learningUnitId,
+                assessmentId: null,
+                operationType: 'review_practice_repair',
+                schemaFingerprint: `${reviewInput.purpose}-review-v1`,
+                policyFingerprint: PRACTICE_REPAIR_ACCEPTANCE_POLICY_VERSION,
+                sourceFingerprint: current.sourceContextFingerprint,
+                logicalCallId: reviewLogicalCallId,
+                providerOptions: opts,
+                stageIdentity: {
+                  briefId: brief.id,
+                  candidateHash: practiceRepairHash(content),
+                  bindingHash,
+                  policyVersion: PRACTICE_REPAIR_ACCEPTANCE_POLICY_VERSION,
+                  inputHash,
+                  input: reviewInput,
+                },
+                assertCurrent,
+                beforeGenerate: () =>
+                  enforceAgentCostPolicies(repos, {
+                    workspaceId,
+                    operationType: 'review_practice_repair',
+                    studySessionId: sessionId,
+                    at: clock.now().toISOString(),
+                    confirmedPolicyIds: [],
+                  }),
+                validateResult: validate,
+                invoke: (options) =>
+                  reviewRepair.call(provider, structuredClone(reviewInput), {
+                    ...options,
+                    validateCandidate: (value) => {
+                      try {
+                        validate(value);
+                        return { valid: true, diagnostics: [], diagnosticCodes: [] };
+                      } catch (error) {
+                        return {
+                          valid: false,
+                          diagnostics: [
+                            error instanceof Error ? error.message : 'Invalid Repair review',
+                          ],
+                          diagnosticCodes: ['practice_repair_review_invalid'],
+                        };
+                      }
+                    },
+                  }),
+              });
+              return { logicalCallId: reviewLogicalCallId, inputHash, result };
+            };
+            const grounding = await reviewStage(prepared.grounding, prepared.validateGrounding);
+            const solves: PracticeRepairAcceptance['solves'] = [];
+            for (const [solveIndex, solveInput] of prepared.solves.entries()) {
+              solves.push({
+                index: solveIndex,
+                ...(await reviewStage(solveInput, (value) =>
+                  prepared.validateSolve(value, solveIndex),
+                )),
+              });
             }
+            const integrity = await reviewStage(prepared.integrity, prepared.validateIntegrity);
+            const acceptance: PracticeRepairAcceptance = {
+              policyVersion: PRACTICE_REPAIR_ACCEPTANCE_POLICY_VERSION,
+              candidateHash: practiceRepairHash(content),
+              bindingHash,
+              context: prepared.context,
+              grounding,
+              solves,
+              integrity,
+            };
+            const findings = practiceRepairAcceptanceFindings(content, acceptance);
             if (findings.length) {
               invalidateGenerationDependency(repos, logicalCallId, clock.now().toISOString());
               commands.appendEvent(claim, 'practice_repair_rejected', { draft: content, findings });
@@ -1574,13 +1723,15 @@ export function createLessonExecutionService({
                 { kind: 'practice_repair_content_rejected', findings },
               );
             }
-            return { content, logicalCallId, reviewLogicalCallId };
+            assertPracticeRepairAcceptance(content, acceptance, bindingHash);
+            return { content, logicalCallId, acceptance };
           }
           throw new Error('Practice content review exhausted.');
         })();
         return commands.complete(claim, () => {
           if (opts?.signal?.aborted) throw ProviderError.cancelled();
           assertCurrent();
+          assertPracticeRepairAcceptance(content, acceptance, bindingHash);
           const now = clock.now().toISOString();
           const next = repos.lessonExecution.update(
             {
@@ -1596,7 +1747,7 @@ export function createLessonExecutionService({
                             ? input.action.learnerNote
                             : '',
                         rounds: [
-                          ...recovery.rounds.slice(-2),
+                          ...priorRounds.slice(-2),
                           {
                             ordinal,
                             content,
@@ -1605,7 +1756,8 @@ export function createLessonExecutionService({
                                 ? input.action.learnerNote
                                 : '',
                             logicalCallId,
-                            reviewLogicalCallId,
+                            reviewLogicalCallId: acceptance.grounding.logicalCallId,
+                            acceptance,
                             createdAt: now,
                             startedAt: null,
                             responses: [],
@@ -1630,7 +1782,11 @@ export function createLessonExecutionService({
               itemIndex: index,
               round: ordinal,
               logicalCallId,
-              ...(recovery.rounds.length >= 3 ? { archivedRound: recovery.rounds[0] } : {}),
+              ...(last && !lastAccepted
+                ? { archivedRound: last }
+                : recovery.rounds.length >= 3
+                  ? { archivedRound: recovery.rounds[0] }
+                  : {}),
               credit: 'none',
             },
             createdAt: now,
@@ -1876,7 +2032,9 @@ export function createLessonExecutionService({
               ApiErrorCode.ValidationError,
               'Retest requires unfinished Practice.',
             );
-          const index = brief.practice.items.findIndex((_, i) => !practiceItemPassed(current, i));
+          const index = brief.practice.items.findIndex(
+            (_, i) => !practicePassed(context, brief, current, i),
+          );
           const attempt = failedPracticeAttempt(current, index);
           const recovery = attempt?.recovery;
           const round = recovery?.rounds.at(-1);
@@ -1884,6 +2042,7 @@ export function createLessonExecutionService({
             !attempt ||
             !recovery ||
             !round ||
+            !currentRepairAccepted(context, brief, current, index) ||
             round.responses.some((response) => !response.correct) ||
             round.responses.length >= 2
           )
@@ -1943,7 +2102,9 @@ export function createLessonExecutionService({
                 : value,
             ),
           };
-          const done = brief.practice.items.every((_, i) => practiceItemPassed(candidate, i));
+          const done = brief.practice.items.every((_, i) =>
+            practicePassed(context, brief, candidate, i),
+          );
           if (done) eventKind = 'practice_completed';
           next = repos.lessonExecution.update(
             {
@@ -1962,7 +2123,7 @@ export function createLessonExecutionService({
             );
           }
           const completedItem = (itemIndex: number) => {
-            return practiceItemPassed(current, itemIndex);
+            return practicePassed(context, brief, current, itemIndex);
           };
           const expectedItemIndex = brief.practice.items.findIndex(
             (_, index) => !completedItem(index),
@@ -2151,13 +2312,15 @@ export function createLessonExecutionService({
         preview: segment.explanation.slice(0, 260),
       }));
     const result = LessonTutorContextSchema.parse({
-      ...(projectPractice(brief, state)?.recovery
+      ...(projectPractice(brief, state, context)?.recovery
         ? (() => {
-            const practice = projectPractice(brief, state)!;
+            const practice = projectPractice(brief, state, context)!;
             const recovery = practice.recovery!;
             const attempt = failedPracticeAttempt(state, practice.currentItemIndex)!;
-            const failedRound = attempt.recovery?.rounds.findLast((round) =>
-              round.responses.some((response) => !response.correct),
+            const failedRound = attempt.recovery?.rounds.findLast(
+              (round) =>
+                hasPracticeRepairProof(round.content, round.acceptance) &&
+                round.responses.some((response) => !response.correct),
             );
             const failedIndex =
               failedRound?.responses.findIndex((response) => !response.correct) ?? -1;
@@ -2203,12 +2366,19 @@ export function createLessonExecutionService({
       summary: lesson.summary.text,
       nextConnection: lesson.summary.nextConnection,
     });
-    return enrichTutorContext(result, lesson, state, projectPractice(brief, state), anchor, {
-      desiredDepth: context.planItem.targetDepth,
-      unitFocus:
-        context.curriculum.nodes.find((node) => node.id === state.learningUnitId)?.learningUnit
-          ?.focus ?? 'normal',
-    });
+    return enrichTutorContext(
+      result,
+      lesson,
+      state,
+      projectPractice(brief, state, context),
+      anchor,
+      {
+        desiredDepth: context.planItem.targetDepth,
+        unitFocus:
+          context.curriculum.nodes.find((node) => node.id === state.learningUnitId)?.learningUnit
+            ?.focus ?? 'normal',
+      },
+    );
   }
 
   return { get, ensure, command, tutorContext };

@@ -3,19 +3,26 @@ import {
   PracticeRepairContentSchema,
   TAUGHT_SURFACE_KINDS,
   teachingSurfaceText,
+  projectPracticePriorTeaching,
   type LearnerPracticeRecovery,
   type LessonExecutionState,
   type LessonPracticeItem,
   type PracticeRepairContent,
+  type PracticeRecoveryState,
   type TeachingBrief,
 } from '@hy3-clinic/shared';
 import { AppError } from '../errors.js';
-import type { PracticeRepairInput, TeachingContentReviewInput } from '../llm/provider.js';
-import { lexicalChallengeOverlap } from './masteryRedTeamPolicy.js';
+import type { PracticeRepairInput } from '../llm/provider.js';
+import { compareLearnerPracticeTasks } from './practiceTaskCanonicalization.js';
 
 export function practiceItemPassed(
   state: Pick<LessonExecutionState, 'practiceInteractions'>,
   itemIndex: number,
+  acceptedRound?: (
+    round: NonNullable<
+      LessonExecutionState['practiceInteractions'][number]['recovery']
+    >['rounds'][number],
+  ) => boolean,
 ): boolean {
   return state.practiceInteractions.some(
     (attempt) =>
@@ -23,7 +30,9 @@ export function practiceItemPassed(
       (attempt.correct ||
         attempt.recovery?.rounds.some(
           (round) =>
-            round.responses.length === 2 && round.responses.every((response) => response.correct),
+            (!acceptedRound || acceptedRound(round)) &&
+            round.responses.length === 2 &&
+            round.responses.every((response) => response.correct),
         )),
   );
 }
@@ -34,21 +43,42 @@ export function failedPracticeAttempt(state: LessonExecutionState, itemIndex: nu
   );
 }
 
+/** The recovery panel reveals the original failed-choice feedback, then the
+ * feedback of each failed Retest. Successful responses and the original stored
+ * Practice hint are never rendered there. Lesson/Tutor hints have their own
+ * learner-visible teaching projections. Keep display and review authority here.
+ */
+function revealedRecoveryFeedback(
+  attempt: Pick<LessonExecutionState['practiceInteractions'][number], 'feedback'>,
+  rounds: PracticeRecoveryState['rounds'],
+): string[] {
+  return [
+    attempt.feedback,
+    ...rounds.flatMap((round) => {
+      const failed = round.responses.find((response) => !response.correct);
+      return failed ? [failed.feedback] : [];
+    }),
+  ];
+}
+
 export function practiceRecoveryProjection(
   state: LessonExecutionState,
   item: LessonPracticeItem,
   itemIndex: number,
   generating: boolean,
+  currentRoundAccepted = true,
 ): LearnerPracticeRecovery | null {
-  if (state.practiceCompletedAt || practiceItemPassed(state, itemIndex)) return null;
+  if (state.practiceCompletedAt || (currentRoundAccepted && practiceItemPassed(state, itemIndex)))
+    return null;
   const attempt = failedPracticeAttempt(state, itemIndex);
   if (!attempt) return null;
-  const rounds = attempt.recovery?.rounds ?? [];
+  const savedRounds = attempt.recovery?.rounds ?? [];
+  const rounds = currentRoundAccepted ? savedRounds : [];
   const round = rounds.at(-1);
   const failed = round?.responses.some((response) => !response.correct);
   const phase = generating
     ? 'preparing'
-    : failed && rounds.length >= 3
+    : (failed || !currentRoundAccepted) && savedRounds.length >= 3
       ? 'needs_support'
       : !round || failed
         ? 'diagnosis'
@@ -71,8 +101,11 @@ export function practiceRecoveryProjection(
     phase,
     selectedAnswer,
     learnerNote: attempt.recovery?.learnerNote ?? '',
-    feedback: triggeringRound?.responses.at(-1)?.feedback ?? attempt.feedback,
-    round: Math.min(3, rounds.length + (phase === 'diagnosis' || phase === 'preparing' ? 1 : 0)),
+    feedback: revealedRecoveryFeedback(attempt, rounds).at(-1)!,
+    round: Math.min(
+      3,
+      savedRounds.length + (phase === 'diagnosis' || phase === 'preparing' ? 1 : 0),
+    ),
     diagnosis:
       round && !failed
         ? {
@@ -81,7 +114,7 @@ export function practiceRecoveryProjection(
           }
         : null,
     teaching:
-      phase === 'repair' || phase === 'needs_support'
+      round && (phase === 'repair' || phase === 'needs_support')
         ? {
             explanation: round!.content.explanation,
             workedExample: round!.content.workedExample,
@@ -131,22 +164,30 @@ export function practiceRepairInput(
       explanation: surface.explanation,
     },
     learnerNote,
-    teachingContext: brief.segments
-      .filter((segment) => segment.objectiveIds.includes(item.objectiveId))
-      .flatMap((segment) =>
-        TAUGHT_SURFACE_KINDS.map((kind) =>
-          teachingSurfaceText(
-            segment,
-            kind,
-            0,
-            state.informalInteractions.find(
-              (interaction) => interaction.segmentIndex === segment.index,
+    teachingContext: [
+      JSON.stringify(projectPracticePriorTeaching(brief)),
+      ...brief.segments
+        .flatMap((segment) =>
+          TAUGHT_SURFACE_KINDS.flatMap((kind) =>
+            Array.from(
+              {
+                length: kind === 'semantic_relation' ? (segment.semanticRelations?.length ?? 0) : 1,
+              },
+              (_, ordinal) =>
+                teachingSurfaceText(
+                  segment,
+                  kind,
+                  ordinal,
+                  state.informalInteractions.find(
+                    (interaction) => interaction.segmentIndex === segment.index,
+                  ),
+                ),
             ),
           ),
-        ),
-      )
-      .filter((text): text is string => Boolean(text)),
-    sourceExcerpts: brief.sourceReferences.map((reference) => reference.quote).slice(0, 6),
+        )
+        .filter((text): text is string => Boolean(text)),
+    ],
+    sourceExcerpts: brief.sourceReferences.map((reference) => reference.quote),
     priorRounds: rounds.map((round) => round.content),
     priorResponses: rounds.flatMap((round) =>
       round.responses.map(
@@ -154,6 +195,7 @@ export function practiceRepairInput(
           `${round.content.retest[responseIndex]!.prompt}\nChosen: ${round.content.retest[responseIndex]!.options.find((option) => option.id === response.selectedOptionId)!.text}\n${response.feedback}`,
       ),
     ),
+    visibleFeedback: revealedRecoveryFeedback(attempt, rounds),
     unseenPracticePrompts: brief.practice!.items.flatMap((candidate) => [
       candidate.initial.prompt,
       candidate.retry.prompt,
@@ -168,7 +210,6 @@ export function validatePracticeRepair(
   const content = PracticeRepairContentSchema.parse(value);
   const prior = [
     input.failedPrompt,
-    ...(input.tutorExplanations ?? []).flatMap((text) => [text, ...text.split(/\n+/u)]),
     ...input.unseenPracticePrompts,
     ...input.archivedRetestPrompts,
     ...input.priorRounds.flatMap((round) => [
@@ -179,7 +220,14 @@ export function validatePracticeRepair(
   ];
   for (const question of content.retest) {
     if (
-      prior.some((prompt) => lexicalChallengeOverlap(question.prompt, prompt) >= 0.72) ||
+      prior.some(
+        (prompt) =>
+          question.prompt === prompt ||
+          compareLearnerPracticeTasks(
+            { prompt: question.prompt, options: [] },
+            { prompt, options: [] },
+          ) === 'equal',
+      ) ||
       (input.tutorExplanations ?? []).some((text) =>
         text.replace(/\s+/gu, '').includes(question.prompt.replace(/\s+/gu, '')),
       )
@@ -192,49 +240,4 @@ export function validatePracticeRepair(
     prior.push(question.prompt);
   }
   return content;
-}
-
-export function practiceRepairReview(
-  input: PracticeRepairInput,
-  content: PracticeRepairContent,
-): TeachingContentReviewInput {
-  return {
-    stage: 'practice',
-    desiredDepth: input.desiredDepth,
-    objectives: [
-      { title: input.objective.objectiveTitle, description: input.objective.capabilityTested },
-    ],
-    sources: input.sourceExcerpts.map((text, index) => ({ sourceRef: `S${index + 1}`, text })),
-    acceptedLesson: {
-      failedQuestion: input.failedPrompt,
-      selectedAnswer: input.selectedAnswer,
-      failedCase: input.failedCase,
-      failedChoiceFeedback: input.feedback,
-      learnerNote: input.learnerNote,
-      priorTeaching: input.teachingContext,
-      priorRounds: input.priorRounds.map((round) => ({
-        explanation: round.explanation,
-        workedExample: round.workedExample,
-        retestPrompts: round.retest.map((item) => item.prompt),
-      })),
-      reservedPractice: input.unseenPracticePrompts,
-      archivedRetestPrompts: input.archivedRetestPrompts,
-    },
-    candidate: {
-      itemId: 'repair',
-      authority: 'supplementary',
-      diagnosis: content.diagnosis,
-      explanation: content.explanation,
-      workedExample: content.workedExample,
-      contrast: content.contrast,
-      retest: content.retest.map((item, index) => ({
-        itemId: `retest${index}`,
-        actionId: `retest${index}.check`,
-        prompt: item.prompt,
-        options: item.options.map(({ id, text }) => ({ id, text })),
-        visibility: 'Self-contained question. Answer keys and feedback withheld until commitment.',
-      })),
-    },
-    actionIds: ['retest0.check', 'retest1.check'],
-  };
 }

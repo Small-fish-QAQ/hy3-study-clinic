@@ -1,12 +1,14 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   ApiErrorCode,
   fnv1a32,
   MixedInitiativeCommandRequestSchema,
   PracticeContentProposalPayloadSchema,
   PRACTICE_ACCEPTANCE_POLICY_VERSION,
+  PRACTICE_REPAIR_ACCEPTANCE_POLICY_VERSION,
+  PRACTICE_REPAIR_GENERATION_VERSION,
   type DesiredDepth,
   type LearningContractDraftFields,
   type LessonSlotContentProposalPayload,
@@ -58,6 +60,8 @@ import {
 import { TEACHING_SKELETON_PLANNER_VERSION } from './teachingSkeletonPlanner.js';
 import { hasCurrentPracticeAnswerabilityReview } from './teachingContentReview.js';
 import { hasCurrentPreparedPractice } from './practiceAcceptance.js';
+import * as generationStages from './generationStages.js';
+import { practiceRepairHash } from './practiceRepairAcceptance.js';
 import {
   prepareLessonGroundingReview,
   assertPreparedLessonGrounding,
@@ -181,7 +185,8 @@ class CountingProvider extends FakeProvider {
     if (
       input.purpose === 'practice_answerability' ||
       input.purpose === 'practice_grounding' ||
-      input.purpose === 'lesson_grounding'
+      input.purpose === 'lesson_grounding' ||
+      input.purpose?.startsWith('repair_')
     )
       return super.reviewTeachingContent(input, opts);
     return {
@@ -7533,6 +7538,748 @@ function recoveryAuthorityDigest(db: SqliteDb) {
 }
 
 describe('Post-Practice recovery', () => {
+  it.each(['stored original hint', 'revealed Tutor hint'] as const)(
+    'uses only actually revealed rules in both independent solves after reload (%s)',
+    async (exposure) => {
+      const { harness, route, get, act } = await failedPracticeHarness();
+      const rule = '模型Z准入规则：甲且乙同时为真即可准入；任一为假就禁止准入。';
+      const state = harness.repos.lessonExecution.getForSession(
+        route.session.id,
+        route.agendaItem.id,
+      )!;
+      harness.repos.lessonExecution.update(
+        {
+          ...state,
+          practiceInteractions: state.practiceInteractions.map((attempt) => ({
+            ...attempt,
+            hint: rule,
+          })),
+          version: state.version + 1,
+        },
+        state.version,
+      );
+      const reloaded = get();
+      expect(reloaded.practice!.attempts[0]!.hint).toBe(rule); // Stored, not rendered by recovery.
+      expect(JSON.stringify(reloaded.practice!.recovery)).not.toContain(rule);
+      if (exposure === 'revealed Tutor hint') {
+        const tutor = harness.provider.respondToTutorTurn.bind(harness.provider);
+        harness.provider.respondToTutorTurn = async (input, opts) => ({
+          ...(await tutor(input, opts)),
+          text: rule,
+        });
+        const response = await harness.services.studySessions.submitTurn('ws_1', route.session.id, {
+          commandId: 'reveal-model-z-rule',
+          expectedSessionVersion: get().session.version,
+          content: '请说明模型Z的规则。',
+        });
+        expect(response.exchanges.find((exchange) => exchange.role === 'tutor')?.content).toBe(
+          rule,
+        );
+        expect(
+          harness.repos.studySessions
+            .listExchanges(route.session.id)
+            .findLast((exchange) => exchange.role === 'tutor')?.content,
+        ).toBe(rule);
+      }
+      const firstSavedFeedback = 'FIRST_SUCCESS_SAVED_ONLY';
+      const retests = [false, true].map((second, index) => ({
+        prompt: `模型Z新情境${index + 1}：甲=真，乙=${second ? '真' : '假'}。按已学规则判断能否准入。`,
+        options: [
+          {
+            id: 'A',
+            text: '禁止准入，因为两项未同时成立。',
+            feedbackIfSelected: second ? '两项同时成立，应准入。' : '乙为假，所以禁止准入。',
+          },
+          {
+            id: 'B',
+            text: '允许准入，因为两项同时成立。',
+            feedbackIfSelected: second ? '两项同时为真，所以准入。' : '乙为假，不能准入。',
+          },
+          {
+            id: 'C',
+            text: '只要甲为真就准入，无需乙。',
+            feedbackIfSelected: '模型Z要求两项同时成立，甲不能替代乙。',
+          },
+        ],
+        correctOptionId: second ? 'B' : 'A',
+        hint: rule,
+        explanation: second
+          ? '甲乙均为真，合取为真，可以准入。'
+          : `甲真乙假，合取为假，禁止准入。${firstSavedFeedback}`,
+      }));
+      const author = harness.provider.generatePracticeRepair.bind(harness.provider);
+      const reviewer = harness.provider.reviewTeachingContent.bind(harness.provider);
+      const solves: TeachingContentReviewInput[] = [];
+      let authorCalls = 0;
+      harness.provider.generatePracticeRepair = async (input, opts) => {
+        authorCalls++;
+        return { ...(await author(input, opts)), retest: structuredClone(retests) };
+      };
+      harness.provider.reviewTeachingContent = async (input, opts) => {
+        if (input.purpose === 'repair_grounding') {
+          // This finite supplemental model owns independently checked AND
+          // outcomes; rich grounding cannot establish public visibility.
+          expect(input.candidate.retest).toEqual(retests);
+          expect(input.evidence.visibleFeedback).not.toContain(rule);
+          return { decisions: [], findings: [] };
+        }
+        if (input.purpose === 'repair_integrity') {
+          expect(input.candidate.map((surface) => surface.prompt)).toEqual(
+            retests.map((surface) => surface.prompt),
+          );
+          return { decisions: [], findings: [] };
+        }
+        if (input.purpose === 'repair_answerability') {
+          solves.push(structuredClone(input));
+          const known = retests.findIndex((surface) => surface.prompt === input.candidate.prompt);
+          const hasRule = input.priorTeaching.some((text) => text.includes(rule));
+          const answerText =
+            known === 0 ? '禁止准入，因为两项未同时成立。' : '允许准入，因为两项同时成立。';
+          const answerId =
+            known >= 0 && hasRule
+              ? (input.candidate.options.find((option) => option.text === answerText)?.id ?? null)
+              : null;
+          return {
+            decisions: [
+              {
+                actionId: input.candidate.actionId,
+                answerId,
+                requiresCaseInference: true,
+                evidenceUsed: hasRule
+                  ? 'Apply the revealed AND rule to this case’s own operands.'
+                  : 'Model Z’s governing rule has never been revealed.',
+              },
+            ],
+            findings: [],
+          };
+        }
+        return reviewer(input, opts);
+      };
+      if (exposure === 'stored original hint') {
+        await expect(
+          act({ kind: 'prepare_practice_repair', learnerNote: '' }),
+        ).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
+        expect(authorCalls).toBe(2);
+        expect(get().practice?.recovery?.phase).toBe('diagnosis');
+        expect(get().practice?.completedAt).toBeNull();
+      } else {
+        await act({ kind: 'prepare_practice_repair', learnerNote: '' });
+        expect(get().practice?.recovery?.phase).toBe('repair');
+        await act({ kind: 'start_practice_retest' });
+        expect(get().practice?.recovery?.retest?.prompt).toBe(retests[0]!.prompt);
+        expect(JSON.stringify(get().practice?.recovery)).not.toContain(retests[1]!.prompt);
+        await act({ kind: 'submit_practice_retest', index: 0, optionId: 'A' });
+        const second = get();
+        expect(second.practice?.recovery?.retest?.prompt).toBe(retests[1]!.prompt);
+        expect(JSON.stringify(second.practice?.recovery)).not.toContain(firstSavedFeedback);
+        expect(
+          JSON.stringify(harness.services.lessonExecution.tutorContext('ws_1', route.session.id)),
+        ).not.toContain(firstSavedFeedback);
+        expect(
+          (await act({ kind: 'submit_practice_retest', index: 1, optionId: 'B' })).practice
+            ?.completedAt,
+        ).toBeTruthy();
+        expect(authorCalls).toBe(1);
+      }
+      for (const input of solves)
+        if (input.purpose === 'repair_answerability') {
+          expect(input.priorTeaching.some((text) => text.includes(rule))).toBe(
+            exposure === 'revealed Tutor hint',
+          );
+          expect(JSON.stringify(input)).not.toContain(firstSavedFeedback);
+          expect(JSON.stringify(input)).not.toContain('correctOptionId');
+          expect(JSON.stringify(input)).not.toContain(
+            retests[input.candidate.actionId === 'retest0.check' ? 1 : 0]!.prompt,
+          );
+        }
+    },
+  );
+
+  it('retains actually rendered failed Retest feedback after reload without promoting saved hints or successful feedback', async () => {
+    const { harness, route, get, act } = await failedPracticeHarness();
+    await act({ kind: 'prepare_practice_repair', learnerNote: '' });
+    await act({ kind: 'start_practice_retest' });
+    await act({ kind: 'submit_practice_retest', index: 0, optionId: 'B' });
+    const visibleFailure = get().practice!.recovery!.feedback;
+    const previous = harness.repos.lessonExecution.getForSession(
+      route.session.id,
+      route.agendaItem.id,
+    )!.practiceInteractions[0]!.recovery!.rounds[0]!.content;
+    const solves: TeachingContentReviewInput[] = [];
+    const reviewer = harness.provider.reviewTeachingContent.bind(harness.provider);
+    harness.provider.reviewTeachingContent = async (input, opts) => {
+      if (input.purpose === 'repair_answerability') solves.push(structuredClone(input));
+      return reviewer(input, opts);
+    };
+    await act({ kind: 'prepare_practice_repair', learnerNote: '' });
+    for (const input of solves)
+      if (input.purpose === 'repair_answerability') {
+        expect(input.priorTeaching).toContain(visibleFailure);
+        expect(input.priorTeaching).not.toContain(previous.retest[0]!.hint);
+        expect(JSON.stringify(input)).not.toContain(previous.retest[1]!.prompt);
+      }
+    expect(solves).toHaveLength(2);
+    expect(get().practice?.recovery?.phase).toBe('repair');
+  });
+
+  it.each(['necessary only', 'sufficient and public'] as const)(
+    'requires a determinate reservoir through actual Fake preparation, reload and execution (%s)',
+    async (premises) => {
+      const { harness, get, act } = await failedPracticeHarness();
+      const author = harness.provider.generatePracticeRepair.bind(harness.provider);
+      let authorCalls = 0;
+      harness.provider.generatePracticeRepair = async (input, opts) => {
+        authorCalls++;
+        const content = await author(input, opts);
+        if (premises === 'necessary only')
+          content.retest[0]!.prompt =
+            '水库规则：每个阀门独立控制对应城区，阀门开启才供水，关闭就停止供水。东阀关闭，西阀开启。哪个城区仍收到供水，为什么？';
+        return content;
+      };
+      if (premises === 'necessary only') {
+        await expect(
+          act({ kind: 'prepare_practice_repair', learnerNote: '' }),
+        ).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
+        expect(authorCalls).toBe(2);
+        expect(get().practice?.recovery?.teaching).toBeNull();
+        await expect(act({ kind: 'start_practice_retest' })).rejects.toMatchObject({
+          code: 'VALIDATION_ERROR',
+        });
+      } else {
+        await act({ kind: 'prepare_practice_repair', learnerNote: '' });
+        await act({ kind: 'start_practice_retest' });
+        expect(get().practice?.recovery?.retest?.prompt).toContain('开启即可向对应城区供水');
+        await act({ kind: 'submit_practice_retest', index: 0, optionId: 'A' });
+        expect(get().practice?.recovery?.retest?.index).toBe(1);
+        expect(
+          (await act({ kind: 'submit_practice_retest', index: 1, optionId: 'A' })).practice
+            ?.completedAt,
+        ).toBeTruthy();
+      }
+    },
+  );
+
+  it('keeps the three-round support boundary when the latest proof becomes stale and recovers with a new learner note', async () => {
+    const { harness, route, get, act } = await failedPracticeHarness();
+    for (let index = 0; index < 3; index++) {
+      await act({ kind: 'prepare_practice_repair', learnerNote: '' });
+      await act({ kind: 'start_practice_retest' });
+      await act({ kind: 'submit_practice_retest', index: 0, optionId: 'B' });
+    }
+    const state = harness.repos.lessonExecution.getForSession(
+      route.session.id,
+      route.agendaItem.id,
+    )!;
+    const changed = structuredClone(state);
+    changed.practiceInteractions[0]!.recovery!.rounds.at(-1)!.acceptance!.policyVersion =
+      'obsolete';
+    harness.repos.lessonExecution.update({ ...changed, version: state.version + 1 }, state.version);
+    expect(get().practice?.recovery).toMatchObject({
+      phase: 'needs_support',
+      round: 3,
+      teaching: null,
+      retest: null,
+    });
+    await expect(act({ kind: 'prepare_practice_repair', learnerNote: '' })).rejects.toMatchObject({
+      code: 'VALIDATION_ERROR',
+    });
+    await act({
+      kind: 'prepare_practice_repair',
+      learnerNote: 'I have reviewed the necessary conditions.',
+    });
+    expect(get().practice?.recovery?.phase).toBe('repair');
+    expect(get().practice?.completedAt).toBeNull();
+  });
+
+  it.each(['visible', 'hidden authoring', 'another Retest', 'unrevealed feedback'])(
+    'admits a rule learned in Repair only when the new Retest owns its required facts (%s)',
+    async (location) => {
+      const { harness, route, get, act } = await failedPracticeHarness();
+      const author = harness.provider.generatePracticeRepair.bind(harness.provider);
+      const reviewer = harness.provider.reviewTeachingContent.bind(harness.provider);
+      const seen: TeachingContentReviewInput[] = [];
+      let calls = 0;
+      const fact = 'PRIVATE_SECOND_FACT: 乙=假';
+      const options = [
+        {
+          id: 'A',
+          text: '不准入，两个条件未同时成立。',
+          feedbackIfSelected: '甲真乙假，所以合取为假。',
+        },
+        { id: 'B', text: '准入，至少一个条件成立。', feedbackIfSelected: '合取不能用析取替代。' },
+        { id: 'C', text: '准入，只需要甲成立。', feedbackIfSelected: '甲不能替代乙。' },
+      ];
+      harness.provider.generatePracticeRepair = async (...args) => {
+        calls++;
+        const packet = await author(...args);
+        packet.retest[1] = {
+          prompt: `独立准入案例：甲=真；${location === 'visible' ? '乙=假；' : ''}按刚学过的“且”规则判断是否准入。`,
+          options,
+          correctOptionId: 'A',
+          hint: '分别核对两个条件。',
+          explanation: fact + '。因此不准入。',
+        };
+        if (location === 'another Retest')
+          packet.retest[0] = {
+            ...packet.retest[1],
+            prompt: '独立准入案例：甲=真；乙=假；请判断当前合取结果。',
+          };
+        if (location === 'unrevealed feedback')
+          packet.retest[0]!.options[0]!.feedbackIfSelected += fact;
+        return packet;
+      };
+      harness.provider.reviewTeachingContent = async (input, opts) => {
+        seen.push(structuredClone(input));
+        // The rich reviewers intentionally accept this finite authored model. They
+        // cannot discharge the separately tested public solving obligation.
+        if (input.purpose === 'repair_grounding') {
+          expect(input.evidence.failedCase!.expectedAnswer).toBeTruthy();
+          return { decisions: [], findings: [] };
+        }
+        if (input.purpose === 'repair_integrity') return { decisions: [], findings: [] };
+        if (input.purpose === 'repair_answerability') {
+          expect(JSON.stringify(input)).not.toContain(fact);
+          if (input.candidate.prompt.startsWith('独立准入案例')) {
+            // Independent finite solver: AND(true,false)=false. Neither a saved
+            // key nor the other task may supply the absent second operand.
+            const hasRule = input.priorTeaching.some((text) =>
+              text.includes('“且”规则中一项成立不能替代另一项'),
+            );
+            const complete =
+              input.candidate.prompt.includes('甲=真') && input.candidate.prompt.includes('乙=假');
+            return {
+              decisions: [
+                {
+                  actionId: input.actionIds[0],
+                  answerId: hasRule && complete ? 'A' : null,
+                  requiresCaseInference: true,
+                  evidenceUsed: complete
+                    ? 'Visible true and false operands make the taught conjunction false.'
+                    : 'The second operand is absent from this public task.',
+                },
+              ],
+              findings: [],
+            };
+          }
+        }
+        return reviewer(input, opts);
+      };
+      if (location === 'visible') {
+        await act({ kind: 'prepare_practice_repair', learnerNote: '' });
+        await act({ kind: 'start_practice_retest' });
+        await act({ kind: 'submit_practice_retest', index: 0, optionId: 'A' });
+        const atSecond = get().practice!.recovery!;
+        expect(atSecond.retest?.index).toBe(1);
+        expect(JSON.stringify(atSecond)).not.toContain(fact);
+        const finished = await act({ kind: 'submit_practice_retest', index: 1, optionId: 'A' });
+        expect(finished.practice?.completedAt).toBeTruthy();
+        expect(calls).toBe(1);
+      } else {
+        await expect(
+          act({ kind: 'prepare_practice_repair', learnerNote: '' }),
+        ).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
+        expect(calls).toBe(2);
+        expect(get().practice?.completedAt).toBeNull();
+        expect(
+          harness.repos.lessonExecution.getForSession(route.session.id, route.agendaItem.id)!
+            .practiceInteractions[0]!.recovery!.rounds,
+        ).toHaveLength(0);
+      }
+      const solves = seen.filter((input) => input.purpose === 'repair_answerability');
+      expect(solves.length).toBeGreaterThanOrEqual(2);
+      for (const input of solves)
+        if (input.purpose === 'repair_answerability') {
+          expect(input.actionIds).toHaveLength(1);
+          expect(JSON.stringify(input)).not.toContain('expectedAnswer');
+          expect(JSON.stringify(input)).not.toContain('sourceExcerpts');
+        }
+    },
+  );
+
+  it.each([
+    'diagnosis',
+    'teaching',
+    'worked conclusion',
+    'contrast',
+    'retest explanation',
+    'hint',
+    'correct feedback',
+    'distractor feedback',
+  ])(
+    'blocks incorrect Repair %s with correct keys through production admission and exactly one packet revision',
+    async (field) => {
+      const { harness, route, get, act } = await failedPracticeHarness();
+      const author = harness.provider.generatePracticeRepair.bind(harness.provider);
+      let calls = 0;
+      harness.provider.generatePracticeRepair = async (...args) => {
+        calls++;
+        const packet = await author(...args);
+        const wrong = 'A false condition makes every conjunction true.';
+        if (field === 'diagnosis') packet.diagnosis.gap = wrong;
+        if (field === 'teaching') packet.explanation = wrong;
+        if (field === 'worked conclusion') packet.workedExample.conclusion = wrong;
+        if (field === 'contrast') packet.contrast = wrong;
+        if (field === 'retest explanation') packet.retest[1]!.explanation = wrong;
+        if (field === 'hint') packet.retest[0]!.hint = wrong;
+        if (field === 'correct feedback') packet.retest[0]!.options[0]!.feedbackIfSelected = wrong;
+        if (field === 'distractor feedback')
+          packet.retest[1]!.options[2]!.feedbackIfSelected = wrong;
+        return packet;
+      };
+      const authority = recoveryAuthorityDigest(harness.db);
+      await expect(act({ kind: 'prepare_practice_repair', learnerNote: '' })).rejects.toMatchObject(
+        { code: 'VALIDATION_ERROR' },
+      );
+      expect(calls).toBe(2);
+      expect(get().practice?.recovery?.phase).toBe('diagnosis');
+      expect(get().practice?.completedAt).toBeNull();
+      expect(
+        harness.repos.lessonExecution.getForSession(route.session.id, route.agendaItem.id)!
+          .practiceInteractions[0]!.recovery!.rounds,
+      ).toHaveLength(0);
+      expect(recoveryAuthorityDigest(harness.db)).toEqual(authority);
+      harness.provider.generatePracticeRepair = author;
+      await act({ kind: 'prepare_practice_repair', learnerNote: '' });
+      expect(get().practice?.recovery?.phase).toBe('repair');
+    },
+  );
+
+  it('rechecks every purpose after a feedback-only packet correction although both public tasks stay identical', async () => {
+    const { harness, route, get, act } = await failedPracticeHarness();
+    const author = harness.provider.generatePracticeRepair.bind(harness.provider);
+    const reviewer = harness.provider.reviewTeachingContent.bind(harness.provider);
+    const seen: TeachingContentReviewInput[] = [];
+    harness.provider.generatePracticeRepair = async (input, opts) => {
+      const content = await author(input, opts);
+      if (!input.revision)
+        content.retest[1]!.options[2]!.feedbackIfSelected = 'Wrongly endorses this distractor.';
+      return content;
+    };
+    harness.provider.reviewTeachingContent = async (input, opts) => {
+      seen.push(structuredClone(input));
+      return reviewer(input, opts);
+    };
+    await act({ kind: 'prepare_practice_repair', learnerNote: '' });
+    expect(get().practice?.recovery?.phase).toBe('repair');
+    expect(seen.map((input) => input.purpose)).toEqual([
+      'repair_grounding',
+      'repair_answerability',
+      'repair_answerability',
+      'repair_integrity',
+      'repair_grounding',
+      'repair_answerability',
+      'repair_answerability',
+      'repair_integrity',
+    ]);
+    const solves = seen.filter((input) => input.purpose === 'repair_answerability');
+    expect(solves[0]).toEqual(solves[2]);
+    expect(solves[1]).toEqual(solves[3]);
+    const round = harness.repos.lessonExecution
+      .getForSession(route.session.id, route.agendaItem.id)!
+      .practiceInteractions[0]!.recovery!.rounds.at(-1)!;
+    expect(round.acceptance?.grounding.result.findings).toEqual([]);
+    expect(round.acceptance?.solves).toHaveLength(2);
+  });
+
+  it.each([
+    'missing proof',
+    'old policy',
+    'old policy after first answer',
+    'grounding input',
+    'solve input',
+    'integrity input',
+    'binding',
+    'feedback',
+    'material finding',
+  ])(
+    'fences stored Repair %s on replay, exposure, start and submission, then allows current re-preparation',
+    async (change) => {
+      const { harness, route, get, act } = await failedPracticeHarness();
+      const before = get();
+      await act({ kind: 'prepare_practice_repair', learnerNote: '' });
+      await act({ kind: 'start_practice_retest' });
+      if (change === 'old policy after first answer')
+        await act({ kind: 'submit_practice_retest', index: 0, optionId: 'A' });
+      const state = harness.repos.lessonExecution.getForSession(
+        route.session.id,
+        route.agendaItem.id,
+      )!;
+      const changed = structuredClone(state);
+      const round = changed.practiceInteractions[0]!.recovery!.rounds.at(-1)!;
+      const stale = `sha256:${'0'.repeat(64)}`;
+      if (change === 'missing proof') delete round.acceptance;
+      if (change.startsWith('old policy'))
+        round.acceptance!.policyVersion = 'practice-repair-acceptance-v1-purpose-proofs';
+      if (change === 'grounding input') round.acceptance!.grounding.inputHash = stale;
+      if (change === 'solve input') round.acceptance!.solves[1]!.inputHash = stale;
+      if (change === 'integrity input') round.acceptance!.integrity.inputHash = stale;
+      if (change === 'binding') round.acceptance!.bindingHash = stale;
+      if (change === 'feedback')
+        round.content.retest[1]!.options[2]!.feedbackIfSelected = 'Changed after review.';
+      if (change === 'material finding')
+        round.acceptance!.grounding.result.findings.push({
+          itemId: 'repair',
+          code: 'accuracy',
+          problem: 'False saved claim.',
+          repairInstruction: 'Correct it.',
+        });
+      harness.repos.lessonExecution.update(
+        { ...changed, version: state.version + 1 },
+        state.version,
+      );
+      expect(get().practice?.recovery).toMatchObject({
+        phase: 'diagnosis',
+        teaching: null,
+        retest: null,
+      });
+      expect(
+        harness.services.lessonExecution.tutorContext('ws_1', route.session.id)?.activeQuestion,
+      ).toBeUndefined();
+      await expect(
+        harness.services.lessonExecution.command('ws_1', route.session.id, {
+          command: command('recovery-fixture-2'),
+          expectedSessionVersion: before.session.version,
+          expectedAgendaVersion: before.agenda!.version,
+          expectedAgendaItemId: route.agendaItem.id,
+          expectedLessonStateVersion: before.progress!.stateVersion,
+          action: { kind: 'prepare_practice_repair', learnerNote: '' },
+        }),
+      ).rejects.toMatchObject({ code: 'VERSION_CONFLICT' });
+      await expect(act({ kind: 'start_practice_retest' })).rejects.toMatchObject({
+        code: 'VALIDATION_ERROR',
+      });
+      await expect(
+        act({
+          kind: 'submit_practice_retest',
+          index: change === 'old policy after first answer' ? 1 : 0,
+          optionId: 'A',
+        }),
+      ).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
+      expect(get().practice?.completedAt).toBeNull();
+      await act({ kind: 'prepare_practice_repair', learnerNote: '' });
+      expect(get().practice?.recovery?.phase).toBe('repair');
+    },
+  );
+
+  it('does not fabricate proof for an unknown Fake Repair, even when its saved key is A', async () => {
+    const { harness, route, act } = await failedPracticeHarness();
+    const author = harness.provider.generatePracticeRepair.bind(harness.provider);
+    let calls = 0;
+    harness.provider.generatePracticeRepair = async (...args) => {
+      calls++;
+      const content = await author(...args);
+      content.retest[1]!.prompt = 'Unknown case: use hidden information to decide.';
+      return content;
+    };
+    await expect(act({ kind: 'prepare_practice_repair', learnerNote: '' })).rejects.toMatchObject({
+      code: 'VALIDATION_ERROR',
+    });
+    expect(calls).toBe(2);
+    expect(
+      harness.repos.lessonExecution.getForSession(route.session.id, route.agendaItem.id)!
+        .practiceInteractions[0]!.recovery!.rounds,
+    ).toHaveLength(0);
+  });
+
+  it('keeps all quality-only opinions advisory in actual Repair preparation and completion', async () => {
+    const { harness, route, get, act } = await failedPracticeHarness();
+    const reviewer = harness.provider.reviewTeachingContent.bind(harness.provider);
+    harness.provider.reviewTeachingContent = async (input, opts) => {
+      const result = await reviewer(input, opts);
+      if (input.purpose === 'repair_grounding' || input.purpose === 'repair_integrity')
+        return {
+          ...result,
+          advisories: [
+            {
+              itemId: 'repair',
+              code: 'weak_transfer' as const,
+              problem: 'Prefer more difficult cases.',
+              repairInstruction: 'Make them harder.',
+            },
+          ],
+        };
+      if (input.purpose === 'repair_answerability')
+        result.decisions[0]!.requiresCaseInference = false;
+      return result;
+    };
+    const authority = recoveryAuthorityDigest(harness.db);
+    await act({ kind: 'prepare_practice_repair', learnerNote: '' });
+    await act({ kind: 'start_practice_retest' });
+    await act({ kind: 'submit_practice_retest', index: 0, optionId: 'A' });
+    expect(get().practice?.recovery?.retest?.index).toBe(1);
+    const completed = await act({ kind: 'submit_practice_retest', index: 1, optionId: 'A' });
+    expect(completed.practice?.completedAt).toBeTruthy();
+    expect(
+      harness.repos.lessonExecution.getForSession(route.session.id, route.agendaItem.id)
+        ?.practiceCompletedAt,
+    ).toBeTruthy();
+    expect(recoveryAuthorityDigest(harness.db)).toEqual(authority);
+  });
+
+  it('reuses only current completed author/grounding/first-solve stages after cancellation during the second solve', async () => {
+    const { harness, route, get, act } = await failedPracticeHarness();
+    const reviewer = harness.provider.reviewTeachingContent.bind(harness.provider);
+    const entered = deferred<void>(),
+      release = deferred<void>();
+    harness.provider.reviewTeachingContent = async (input, opts) => {
+      if (input.purpose === 'repair_answerability' && input.actionIds[0] === 'retest1.check') {
+        entered.resolve(undefined);
+        await release.promise;
+      }
+      return reviewer(input, opts);
+    };
+    const abort = new AbortController();
+    const pending = act(
+      { kind: 'prepare_practice_repair', learnerNote: 'Keep this reasoning.' },
+      { signal: abort.signal },
+    );
+    await entered.promise;
+    abort.abort();
+    release.resolve(undefined);
+    await expect(pending).rejects.toMatchObject({ code: 'REQUEST_CANCELLED' });
+    expect(get().practice?.recovery?.phase).toBe('diagnosis');
+    harness.provider.reviewTeachingContent = reviewer;
+    await act({ kind: 'prepare_practice_repair', learnerNote: 'Keep this reasoning.' });
+    expect(get().practice?.recovery?.phase).toBe('repair');
+    expect(
+      harness.db
+        .prepare(
+          "SELECT count(*) AS n FROM model_logical_calls WHERE workspace_id='ws_1' AND cache_status='hit' AND operation_type IN ('prepare_practice_repair','review_practice_repair')",
+        )
+        .get(),
+    ).toEqual({ n: 3 });
+    const round = harness.repos.lessonExecution
+      .getForSession(route.session.id, route.agendaItem.id)!
+      .practiceInteractions[0]!.recovery!.rounds.at(-1)!;
+    expect(round.acceptance!.solves).toHaveLength(2);
+  });
+
+  it('ignores completed author and review caches issued under the defective contract on an explicit recovery retry', async () => {
+    const { harness, route, get, act } = await failedPracticeHarness();
+    const originalStage = generationStages.runRecoverableGenerationStage;
+    const completed: Parameters<typeof originalStage>[0][] = [];
+    const spy = vi
+      .spyOn(generationStages, 'runRecoverableGenerationStage')
+      .mockImplementation((async (stage) => {
+        const result = await originalStage(stage);
+        completed.push(stage);
+        return result;
+      }) as typeof originalStage);
+    const entered = deferred<void>(),
+      release = deferred<void>();
+    const reviewer = harness.provider.reviewTeachingContent.bind(harness.provider);
+    const author = harness.provider.generatePracticeRepair.bind(harness.provider);
+    let authorCalls = 0;
+    harness.provider.generatePracticeRepair = async (input, opts) => {
+      authorCalls++;
+      return author(input, opts);
+    };
+    harness.provider.reviewTeachingContent = async (input, opts) => {
+      if (
+        input.purpose === 'repair_answerability' &&
+        input.candidate.actionId === 'retest1.check'
+      ) {
+        entered.resolve(undefined);
+        await release.promise;
+      }
+      return reviewer(input, opts);
+    };
+    const oldPolicy = 'practice-repair-acceptance-v1-purpose-proofs';
+    const oldGeneration = 'practice-repair-v7-purpose-proofs';
+    const staleCacheKeys: string[] = [];
+    try {
+      const abort = new AbortController();
+      const pending = act(
+        { kind: 'prepare_practice_repair', learnerNote: 'Retain my reasoning.' },
+        { signal: abort.signal },
+      );
+      await entered.promise;
+      abort.abort();
+      release.resolve(undefined);
+      await expect(pending).rejects.toMatchObject({ code: 'REQUEST_CANCELLED' });
+      expect(completed).toHaveLength(3);
+      expect(PRACTICE_REPAIR_ACCEPTANCE_POLICY_VERSION).not.toBe(oldPolicy);
+      expect(PRACTICE_REPAIR_GENERATION_VERSION).not.toBe(oldGeneration);
+      // Keep genuine completed Fake dependencies, but place them exclusively
+      // under the old contract identities. No historical upgrade is attempted.
+      for (const stage of completed) {
+        const event = harness.repos.operations
+          .listEvents(stage.operationId)
+          .find(
+            (entry) =>
+              entry.kind === 'generation_stage_completed' &&
+              entry.payload.logicalCallId === stage.logicalCallId,
+          );
+        const currentKey = event!.payload.cacheKey as string;
+        const cached = harness.repos.telemetry.peekCache(currentKey)!;
+        const input = structuredClone(stage.stageIdentity) as Record<string, unknown>;
+        const schemaFingerprint =
+          stage.operationType === 'prepare_practice_repair'
+            ? oldGeneration
+            : stage.schemaFingerprint;
+        if ('version' in input) input.version = oldGeneration;
+        if ('policyVersion' in input) {
+          input.policyVersion = oldPolicy;
+          input.inputHash = practiceRepairHash({ policyVersion: oldPolicy, input: input.input });
+        }
+        const fingerprint = createHash('sha256')
+          .update(
+            JSON.stringify({
+              version: 'generation-stage-v1',
+              workspaceId: stage.workspaceId,
+              studySessionId: stage.studySessionId,
+              learningUnitId: stage.learningUnitId,
+              assessmentId: stage.assessmentId,
+              operationType: stage.operationType,
+              schemaFingerprint,
+              sourceFingerprint: stage.sourceFingerprint,
+              provider: stage.provider.name,
+              model: stage.providerModel,
+              input,
+            }),
+          )
+          .digest('hex');
+        const cacheKey = `generation-stage-v1:${fingerprint}`;
+        expect(cacheKey).not.toBe(currentKey);
+        harness.db
+          .prepare('DELETE FROM semantic_cache_entries WHERE cache_key = ?')
+          .run(currentKey);
+        harness.repos.telemetry.putCache({
+          ...cached,
+          cacheKey,
+          schemaFingerprint,
+          policyFingerprint: oldPolicy,
+          validationFingerprint: fingerprint,
+        });
+        harness.db
+          .prepare('UPDATE model_logical_calls SET schema_fingerprint = ? WHERE id = ?')
+          .run(schemaFingerprint, stage.logicalCallId);
+        staleCacheKeys.push(cacheKey);
+      }
+    } finally {
+      spy.mockRestore();
+      release.resolve(undefined);
+    }
+    harness.provider.reviewTeachingContent = reviewer;
+    await act({ kind: 'prepare_practice_repair', learnerNote: 'Retain my reasoning.' });
+    expect(authorCalls).toBe(2);
+    expect(get().practice?.recovery?.phase).toBe('repair');
+    expect(
+      harness.db
+        .prepare(
+          "SELECT count(*) AS n FROM model_logical_calls WHERE cache_status = 'hit' AND operation_type IN ('prepare_practice_repair', 'review_practice_repair')",
+        )
+        .get(),
+    ).toEqual({ n: 0 });
+    for (const cacheKey of staleCacheKeys)
+      expect(harness.repos.telemetry.peekCache(cacheKey)?.hitCount).toBe(0);
+    const round = harness.repos.lessonExecution
+      .getForSession(route.session.id, route.agendaItem.id)!
+      .practiceInteractions[0]!.recovery!.rounds.at(-1)!;
+    expect(round.acceptance!.policyVersion).toBe(PRACTICE_REPAIR_ACCEPTANCE_POLICY_VERSION);
+    expect(round.acceptance!.solves).toHaveLength(2);
+  });
+
   it('persists a fast Repair failure, rejects the stale version, and permits an explicit latest-version retry without Formal consequences', async () => {
     const { harness, route, get, act, brief } = await failedPracticeHarness();
     const before = get();
@@ -7861,7 +8608,7 @@ describe('Post-Practice recovery', () => {
     harness.provider.generatePracticeRepair = async (input, opts) => {
       requests.push(structuredClone(input));
       const content = await author(input, opts);
-      if (input.revision) content.explanation += ' 必须同时满足两项条件。';
+      if (!input.revision) content.explanation = 'The explanation omitted the necessary condition.';
       return content;
     };
     harness.provider.reviewTeachingContent = async (input, opts) => {

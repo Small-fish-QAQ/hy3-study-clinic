@@ -2,6 +2,8 @@ import { z } from 'zod';
 import { FormalAssessmentConstructSchema } from './sourceAuthority.js';
 import { PrivateReasoningFields } from './reasoningOperation.js';
 import { TeachingDesignSchema } from './teachingDesign.js';
+import { DesiredDepthSchema } from './learningContract.js';
+import { UnitFocusSchema } from './curriculum.js';
 
 export const LessonPedagogyCriterionSchema = z.enum([
   'objective_alignment',
@@ -458,6 +460,95 @@ export const PracticeRepairContentSchema = z
   .strict();
 export type PracticeRepairContent = z.infer<typeof PracticeRepairContentSchema>;
 
+/** V1 admitted unrevealed Practice hints and necessary-only Fake reservoir
+ * premises. Its receipts cannot authorize current Repair packets. */
+export const PRACTICE_REPAIR_ACCEPTANCE_POLICY_VERSION =
+  'practice-repair-acceptance-v2-visible-premises';
+export const PRACTICE_REPAIR_GENERATION_VERSION = 'practice-repair-v8-visible-premises';
+
+/** Local immutable authoring context. Revision drafts never become evidence. */
+export const PracticeRepairContextSchema = z
+  .object({
+    desiredDepth: DesiredDepthSchema,
+    unitFocus: UnitFocusSchema,
+    objective: z
+      .object({
+        objectiveTitle: z.string(),
+        construct: FormalAssessmentConstructSchema,
+        capabilityTested: z.string(),
+      })
+      .strict(),
+    failedPrompt: z.string(),
+    selectedAnswer: z.string(),
+    feedback: z.string(),
+    failedCase: z
+      .object({ options: z.array(z.string()), expectedAnswer: z.string(), explanation: z.string() })
+      .strict()
+      .optional(),
+    learnerNote: z.string(),
+    teachingContext: z.array(z.string()),
+    sourceExcerpts: z.array(z.string()),
+    priorRounds: z.array(PracticeRepairContentSchema).max(3),
+    priorResponses: z.array(z.string()),
+    unseenPracticePrompts: z.array(z.string()),
+    archivedRetestPrompts: z.array(z.string()),
+    tutorExplanations: z.array(z.string()).optional(),
+    /** Only feedback/hints actually rendered before this packet; never all saved responses. */
+    visibleFeedback: z.array(z.string()).optional(),
+  })
+  .strict();
+export type PracticeRepairContext = z.infer<typeof PracticeRepairContextSchema>;
+
+export const PracticeRepairGroundingResultSchema = TeachingContentReviewSchema.extend({
+  decisions: TeachingContentReviewSchema.shape.decisions.max(0),
+  findings: TeachingContentReviewSchema.shape.findings.refine((findings) =>
+    findings.every(({ code }) =>
+      ['accuracy', 'grounding', 'insufficient_evidence', 'misconception'].includes(code),
+    ),
+  ),
+  advisories: TeachingContentReviewSchema.shape.findings
+    .refine((findings) =>
+      findings.every(({ code }) => ['shallow_task', 'weak_transfer'].includes(code)),
+    )
+    .optional(),
+}).strict();
+export const PracticeRepairIntegrityResultSchema = PracticeRepairGroundingResultSchema.extend({
+  findings: TeachingContentReviewSchema.shape.findings.refine((findings) =>
+    findings.every(({ code }) => ['answer_leak', 'practice_replay'].includes(code)),
+  ),
+}).strict();
+
+const RepairReceiptFields = {
+  logicalCallId: z.string().min(1),
+  inputHash: z.string().regex(/^sha256:[a-f0-9]{64}$/u),
+};
+export const PracticeRepairAcceptanceSchema = z
+  .object({
+    policyVersion: z.string().min(1).max(80),
+    candidateHash: z.string().regex(/^sha256:[a-f0-9]{64}$/u),
+    bindingHash: z.string().regex(/^sha256:[a-f0-9]{64}$/u),
+    context: PracticeRepairContextSchema,
+    grounding: z
+      .object({ ...RepairReceiptFields, result: PracticeRepairGroundingResultSchema })
+      .strict(),
+    solves: z
+      .array(
+        z
+          .object({
+            ...RepairReceiptFields,
+            index: z.number().int().min(0).max(1),
+            result: TeachingContentReviewSchema,
+          })
+          .strict(),
+      )
+      .length(2),
+    integrity: z
+      .object({ ...RepairReceiptFields, result: PracticeRepairIntegrityResultSchema })
+      .strict(),
+  })
+  .strict();
+export type PracticeRepairAcceptance = z.infer<typeof PracticeRepairAcceptanceSchema>;
+
 export const PracticeRecoveryStateSchema = z
   .object({
     preparationOperationId: z.string().min(1).nullable(),
@@ -471,6 +562,8 @@ export const PracticeRecoveryStateSchema = z
             learnerNote: z.string().max(1000),
             logicalCallId: z.string().min(1),
             reviewLogicalCallId: z.string().min(1).optional(),
+            /** Absence never grants current admission; disposable old rounds need re-preparation. */
+            acceptance: PracticeRepairAcceptanceSchema.optional(),
             createdAt: z.string().datetime(),
             startedAt: z.string().datetime().nullable(),
             responses: z

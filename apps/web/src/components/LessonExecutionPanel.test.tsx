@@ -215,6 +215,68 @@ afterEach(() => {
 });
 
 describe('LessonExecutionPanel', () => {
+  it.each([
+    'diagnosis',
+    'repair',
+    'needs_support',
+    'preparing',
+    'first Retest',
+    'second Retest',
+  ] as const)(
+    'keeps stored original hints hidden in the actual recovery UI across reload (%s)',
+    async (phase) => {
+      vi.useFakeTimers();
+      const retest = phase === 'first Retest' || phase === 'second Retest';
+      const projection = practiceRepairLesson(retest ? 'repair' : phase);
+      const storedHint = 'UNREVEALED_ORIGINAL_HINT';
+      projection.practice!.attempts[0]!.hint = storedHint;
+      projection.practice!.recovery!.feedback = 'REVEALED_FAILURE_FEEDBACK';
+      if (phase === 'repair')
+        projection.practice!.recovery!.teaching = {
+          explanation: 'REVEALED_REPAIR_RULE',
+          workedExample: {
+            prompt: '公开条件模型',
+            steps: ['甲为真。', '乙为假。'],
+            conclusion: '两项未同时成立。',
+          },
+          contrast: '公开提示：且需要两项成立，或只需要至少一项成立。',
+        };
+      if (retest) {
+        projection.allowedActions = ['submit_practice_retest'];
+        projection.practice!.recovery!.phase = 'retest';
+        projection.practice!.recovery!.retest = {
+          index: phase === 'first Retest' ? 0 : 1,
+          prompt: `PUBLIC_${phase}`,
+          options: [
+            { id: 'A', text: '允许' },
+            { id: 'B', text: '禁止' },
+            { id: 'C', text: '无法判断' },
+          ],
+        };
+        // Even a stored feedback value is not rendered before a Retest answer.
+        projection.practice!.recovery!.feedback = 'UNREVEALED_SAVED_RETEST_FEEDBACK';
+      }
+      vi.spyOn(api, 'getLessonExecution').mockResolvedValue(projection);
+      const command = vi.spyOn(api, 'lessonExecutionCommand');
+      const verify = () => {
+        expect(screen.queryByText(storedHint)).not.toBeInTheDocument();
+        expect(screen.queryByText('UNREVEALED_SAVED_RETEST_FEEDBACK')).not.toBeInTheDocument();
+        if (retest) expect(screen.getByText(`PUBLIC_${phase}`)).toBeInTheDocument();
+        else expect(screen.getByText('REVEALED_FAILURE_FEEDBACK')).toBeInTheDocument();
+        if (phase === 'repair')
+          expect(screen.getByText('REVEALED_REPAIR_RULE')).toBeInTheDocument();
+      };
+      const view = render(<LessonExecutionPanel {...repairProps} />);
+      await act(async () => {});
+      verify();
+      view.unmount();
+      render(<LessonExecutionPanel {...repairProps} />);
+      await act(async () => {});
+      verify();
+      expect(command).not.toHaveBeenCalled();
+    },
+  );
+
   it.each([false, true])(
     'refreshes Repair failure with latest versions (polled=%s) and preserves viewed content and reasoning',
     async (polled) => {

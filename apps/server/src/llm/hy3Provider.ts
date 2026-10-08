@@ -30,6 +30,8 @@ import {
   QuizGenerationPayloadSchema,
   RepairGenerationPayloadSchema,
   PracticeRepairContentSchema,
+  PracticeRepairGroundingResultSchema,
+  PracticeRepairIntegrityResultSchema,
   RemediationPlanProposalPayloadSchema,
   StudyPlanProposalPayloadSchema,
   TeachingBriefProposalPayloadSchema,
@@ -1191,13 +1193,18 @@ export class Hy3Provider implements LlmProvider {
       teachingContentReviewMessages(input),
       input.purpose === 'lesson_grounding'
         ? LessonGroundingResultSchema
-        : TeachingContentReviewSchema,
+        : input.purpose === 'repair_grounding'
+          ? PracticeRepairGroundingResultSchema
+          : input.purpose === 'repair_integrity'
+            ? PracticeRepairIntegrityResultSchema
+            : TeachingContentReviewSchema,
       opts,
       'Return the complete review. Cover each offered actionId exactly once and use only offered item identities. Keep decisions and concrete findings within the requested schema.',
       {
         maxTokens: 8000,
-        schemaName:
-          input.purpose === 'practice_answerability'
+        schemaName: input.purpose?.startsWith('repair_')
+          ? `${input.purpose}-review-v1`
+          : input.purpose === 'practice_answerability'
             ? 'practice-answerability-review-v1'
             : input.purpose === 'practice_grounding'
               ? 'practice-grounding-review-v1'

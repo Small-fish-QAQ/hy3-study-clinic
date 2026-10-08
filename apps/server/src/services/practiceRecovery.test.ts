@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { FakeProvider } from '../llm/fakeProvider.js';
 import type { PracticeRepairInput } from '../llm/provider.js';
-import { practiceRepairReview, validatePracticeRepair } from './practiceRecovery.js';
+import { validatePracticeRepair } from './practiceRecovery.js';
+import { preparePracticeRepairReviews } from './practiceRepairAcceptance.js';
 
 const input: PracticeRepairInput = {
   desiredDepth: 'deep_transfer',
@@ -29,20 +30,26 @@ const input: PracticeRepairInput = {
 };
 
 describe('Practice repair content boundaries', () => {
-  it('withholds keys and feedback from independent review while preserving the actual diagnosis evidence and depth', async () => {
+  it('grounds complete claims but isolates each blind solve from hidden and future evidence', async () => {
     const content = await new FakeProvider().generatePracticeRepair(input);
-    const review = practiceRepairReview(input, content);
-    expect(review.desiredDepth).toBe('deep_transfer');
-    expect(review.acceptedLesson).toMatchObject({
+    const review = preparePracticeRepairReviews(input, content);
+    expect(review.grounding.desiredDepth).toBe('deep_transfer');
+    expect(review.grounding.evidence).toMatchObject({
       selectedAnswer: input.selectedAnswer,
       learnerNote: input.learnerNote,
       failedCase: input.failedCase,
-      failedChoiceFeedback: input.feedback,
+      feedback: input.feedback,
     });
-    const serialized = JSON.stringify(review);
+    expect(review.grounding.candidate).toEqual(content);
+    const serialized = JSON.stringify(review.solves);
     expect(serialized).not.toContain('correctOptionId');
     expect(serialized).not.toContain('feedbackIfSelected');
     expect(serialized).not.toContain(content.retest[0]!.explanation);
+    expect(JSON.stringify(review.solves[0])).not.toContain(content.retest[1]!.prompt);
+    expect(JSON.stringify(review.solves[1])).not.toContain(content.retest[0]!.prompt);
+    expect(serialized).not.toContain(input.failedCase!.explanation);
+    expect(serialized).not.toContain(input.sourceExcerpts[0]);
+    expect(serialized).not.toContain(input.learnerNote);
   });
   it('rejects replay of an exposed archived case and fabricated authority fields', async () => {
     const content = await new FakeProvider().generatePracticeRepair(input);

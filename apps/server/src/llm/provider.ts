@@ -79,7 +79,7 @@ import type {
   ObjectiveAuthoritySemanticRepairProposal,
   UnitFocus,
   PracticeRepairContent,
-  LessonPracticeItem,
+  PracticeRepairContext,
   LearnerPracticeSolvingSurface,
   PracticePriorTeaching,
 } from '@hy3-clinic/shared';
@@ -88,22 +88,7 @@ import type { TeachingStrategies } from './teachingStrategy.js';
 /** One original plus independently bounded schema and candidate repairs. */
 export const MAX_STRUCTURED_OUTPUT_ATTEMPTS_PER_LOGICAL_CALL = 3;
 
-export interface PracticeRepairInput {
-  desiredDepth: DesiredDepth;
-  unitFocus: UnitFocus;
-  objective: Pick<LessonPracticeItem, 'objectiveTitle' | 'construct' | 'capabilityTested'>;
-  failedPrompt: string;
-  selectedAnswer: string;
-  feedback: string;
-  failedCase?: { options: string[]; expectedAnswer: string; explanation: string };
-  learnerNote: string;
-  teachingContext: string[];
-  sourceExcerpts: string[];
-  priorRounds: PracticeRepairContent[];
-  priorResponses: string[];
-  unseenPracticePrompts: string[];
-  archivedRetestPrompts: string[];
-  tutorExplanations?: string[];
+export interface PracticeRepairInput extends PracticeRepairContext {
   revision?: { draft: PracticeRepairContent; findings: string[] };
 }
 /**
@@ -902,11 +887,43 @@ export interface PracticeAnswerabilityReviewInput {
   actionIds: string[];
 }
 
+/** Complete Repair claims; rich evidence has no authority to solve unanswered Retests. */
+export interface PracticeRepairGroundingReviewInput {
+  purpose: 'repair_grounding';
+  stage: 'practice';
+  desiredDepth: DesiredDepth;
+  objective: PracticeRepairContext['objective'];
+  evidence: PracticeRepairContext;
+  candidate: PracticeRepairContent;
+  actionIds: [];
+}
+
+export interface PracticeRepairAnswerabilityReviewInput {
+  purpose: 'repair_answerability';
+  stage: 'practice';
+  candidate: LearnerPracticeSolvingSurface & { actionId: string };
+  priorTeaching: string[];
+  actionIds: [string];
+}
+
+/** Private reserved prompts are comparison evidence only, never solving givens. */
+export interface PracticeRepairIntegrityReviewInput {
+  purpose: 'repair_integrity';
+  stage: 'practice';
+  candidate: Array<LearnerPracticeSolvingSurface & { itemId: string }>;
+  priorTeaching: string[];
+  comparisonPrompts: string[];
+  actionIds: [];
+}
+
 export type TeachingContentReviewInput =
   | AuthoredTeachingContentReviewInput
   | PracticeGroundingReviewInput
   | LessonGroundingReviewInput
-  | PracticeAnswerabilityReviewInput;
+  | PracticeAnswerabilityReviewInput
+  | PracticeRepairGroundingReviewInput
+  | PracticeRepairAnswerabilityReviewInput
+  | PracticeRepairIntegrityReviewInput;
 
 export interface LessonSlotContentGenerationInput {
   computedCases?: boolean;
