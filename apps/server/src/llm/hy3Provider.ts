@@ -34,6 +34,8 @@ import {
   StudyPlanProposalPayloadSchema,
   TeachingBriefProposalPayloadSchema,
   TeachingContentReviewSchema,
+  LessonGroundingResultSchema,
+  LESSON_GROUNDING_REVIEW_SCHEMA_VERSION,
   TeachingCapsulePayloadSchema,
   LessonSlotContentProposalPayloadSchema,
   PracticeContentProposalPayloadSchema,
@@ -1187,7 +1189,9 @@ export class Hy3Provider implements LlmProvider {
   ): Promise<TeachingContentReview> {
     return this.complete(
       teachingContentReviewMessages(input),
-      TeachingContentReviewSchema,
+      input.purpose === 'lesson_grounding'
+        ? LessonGroundingResultSchema
+        : TeachingContentReviewSchema,
       opts,
       'Return the complete review. Cover each offered actionId exactly once and use only offered item identities. Keep decisions and concrete findings within the requested schema.',
       {
@@ -1197,7 +1201,9 @@ export class Hy3Provider implements LlmProvider {
             ? 'practice-answerability-review-v1'
             : input.purpose === 'practice_grounding'
               ? 'practice-grounding-review-v1'
-              : 'teaching-content-review-v1',
+              : input.purpose === 'lesson_grounding'
+                ? LESSON_GROUNDING_REVIEW_SCHEMA_VERSION
+                : 'teaching-content-review-v1',
         immutableItemIds: [],
         allowIndependentRepair: false,
       },

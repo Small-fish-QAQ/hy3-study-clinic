@@ -13,12 +13,16 @@ import {
   type LessonExecutionCommandRequest,
   type TeachingBriefInformalCheck,
   type TeachingContentReview,
+  type LessonPedagogyEvaluation,
 } from '@hy3-clinic/shared';
 import { openDatabase, type SqliteDb } from '../db/database.js';
 import { migrate } from '../db/migrate.js';
 import { AppError } from '../errors.js';
 import { curriculumSourceBlockFingerprint } from '../grounding/sourceFingerprint.js';
 import { FakeProvider } from '../llm/fakeProvider.js';
+import { Hy3Provider } from '../llm/hy3Provider.js';
+import { createFakeLessonFixture } from '../llm/fakeLessonFixtures.js';
+import { confineTeachingCitations } from '../llm/teachingCitations.js';
 import { ProviderError } from '../llm/errors.js';
 import type {
   LessonSlotContentGenerationInput,
@@ -29,6 +33,7 @@ import type {
   TutorTurnInput,
   TeachingContentReviewInput,
   TeachingCapsuleGenerationInput,
+  LessonGroundingReviewInput,
 } from '../llm/provider.js';
 import { createRepositories, type Repositories } from '../repositories/index.js';
 import {
@@ -53,6 +58,13 @@ import {
 import { TEACHING_SKELETON_PLANNER_VERSION } from './teachingSkeletonPlanner.js';
 import { hasCurrentPracticeAnswerabilityReview } from './teachingContentReview.js';
 import { hasCurrentPreparedPractice } from './practiceAcceptance.js';
+import {
+  prepareLessonGroundingReview,
+  assertPreparedLessonGrounding,
+  bindLessonGroundingToCheckpoint,
+  checkpointLessonCandidate,
+  lessonGroundingHash,
+} from './lessonGrounding.js';
 import {
   fingerprintObjectiveAuthorityBinding,
   fingerprintObjectiveAuthorityProposition,
@@ -109,6 +121,31 @@ function breakLessonChoice(
   }
 }
 
+function breakLessonGrounding(evaluation: LessonPedagogyEvaluation, defect: string) {
+  if (defect === 'grounding_missing') delete evaluation.groundingReview;
+  else if (defect === 'grounding_version')
+    evaluation.groundingReview!.policyVersion = 'lesson-grounding-v1-complete-claims';
+  else if (defect === 'grounding_result')
+    evaluation.groundingReview!.rounds.at(-1)!.result.findings = [
+      {
+        itemId: 'lesson.narrative',
+        code: 'insufficient_evidence',
+        problem: 'The saved rationale contradicts the authorized source.',
+        repairInstruction: 'Correct the rationale.',
+      },
+    ];
+  else if (defect === 'grounding_exposure') delete evaluation.groundingReview!.exposureContextHash;
+  else {
+    const key =
+      defect === 'grounding_input'
+        ? 'inputHash'
+        : defect === 'grounding_candidate'
+          ? 'candidateHash'
+          : 'claimsHash';
+    evaluation.groundingReview!.rounds.at(-1)![key] = `sha256:${'0'.repeat(64)}`;
+  }
+}
+
 function historicalJ18Item() {
   const captured = JSON.parse(
     readFileSync(
@@ -141,7 +178,11 @@ class CountingProvider extends FakeProvider {
   ): Promise<TeachingContentReview> {
     opts?.onRequestSent?.();
     if (input.purpose === 'practice_answerability') this.practiceAnswerabilityCalls += 1;
-    if (input.purpose === 'practice_answerability' || input.purpose === 'practice_grounding')
+    if (
+      input.purpose === 'practice_answerability' ||
+      input.purpose === 'practice_grounding' ||
+      input.purpose === 'lesson_grounding'
+    )
       return super.reviewTeachingContent(input, opts);
     return {
       decisions: input.actionIds.map((actionId) => ({
@@ -1231,8 +1272,7 @@ async function aggregateQualityHarness(
     .run(JSON.stringify(curriculum), curriculum.id);
 
   const lesson = harness.provider.generateLessonSlotContent.bind(harness.provider);
-  harness.provider.generateLessonSlotContent = async (input, opts) => {
-    const candidate = await lesson(input, opts);
+  const adaptLessonFixture = (candidate: LessonSlotContentProposalPayload) => {
     if (shallow) {
       for (const slot of candidate.slots) {
         const transfer = slot.workedProcess?.interaction?.transfer;
@@ -1271,6 +1311,8 @@ async function aggregateQualityHarness(
     }
     return candidate;
   };
+  harness.provider.generateLessonSlotContent = async (input, opts) =>
+    adaptLessonFixture(await lesson(input, opts));
 
   const qualityRequests: PracticeContentGenerationInput[] = [];
   const practice = harness.provider.generatePracticeContent.bind(harness.provider);
@@ -1453,6 +1495,14 @@ async function aggregateQualityHarness(
   const review = harness.provider.reviewTeachingContent.bind(harness.provider);
   harness.provider.reviewTeachingContent = async (input, opts) => {
     requests.push(structuredClone(input));
+    if (input.purpose === 'lesson_grounding') {
+      opts?.onRequestSent?.();
+      return reviewKnownLessonVariant(
+        input,
+        adaptLessonFixture,
+        harness.provider.lastLessonContentInput!,
+      );
+    }
     if (input.purpose === 'practice_grounding' && qualityRequests.length > 0) {
       if (rewrite === 'review_failure') throw ProviderError.timeout(1);
       if (rewrite === 'malformed_review')
@@ -1585,8 +1635,11 @@ function makeCurrentRouteObjectivesArtifactFree(harness: Harness): string[] {
   return objectives.map((objective) => objective.id);
 }
 
-afterEach(() => {
+afterEach(async () => {
   while (databases.length > 0) databases.pop()!.close();
+  // Offline providers and SQLite finish synchronously. Let the worker receive
+  // its pending progress acknowledgements between the many fixture cases.
+  await new Promise<void>((resolve) => setImmediate(resolve));
 });
 
 async function ordinaryLessonHarness() {
@@ -1602,6 +1655,58 @@ async function ordinaryLessonHarness() {
   return harness;
 }
 
+/** Explicit expectations for adapted test Lessons, outside production Fake's finite registry. */
+function reviewKnownLessonVariant(
+  input: LessonGroundingReviewInput,
+  transform: (expected: LessonSlotContentProposalPayload) => LessonSlotContentProposalPayload,
+  context: LessonSlotContentGenerationInput,
+  confined = false,
+): TeachingContentReview {
+  const known = transform(
+    createFakeLessonFixture({
+      courseDesign: input.courseDesign,
+      skeleton: { ...input.lessonPlan, objectives: input.objectives },
+      sourceContext: { offers: input.sources },
+      learningContext: input.learningContext,
+    }),
+  );
+  const expected = confined
+    ? confineTeachingCitations({ lesson: known, practice: { items: [] } }, { lesson: context })
+        .lesson
+    : known;
+  return {
+    decisions: [],
+    findings:
+      lessonGroundingHash(input.candidate) === lessonGroundingHash(expected)
+        ? []
+        : [
+            {
+              itemId: 'lesson.narrative',
+              code: 'grounding',
+              problem: 'This adapted test Lesson differs from its explicit known-correct fixture.',
+              repairInstruction: 'Restore the exact correct test fixture.',
+            },
+          ],
+  };
+}
+
+function installKnownLessonVariant(
+  harness: Harness,
+  transform: (expected: LessonSlotContentProposalPayload) => LessonSlotContentProposalPayload,
+) {
+  const review = harness.provider.reviewTeachingContent.bind(harness.provider);
+  harness.provider.reviewTeachingContent = async (input, opts) => {
+    if (input.purpose !== 'lesson_grounding') return review(input, opts);
+    opts?.onRequestSent?.();
+    return reviewKnownLessonVariant(
+      input,
+      transform,
+      harness.provider.lastLessonContentInput!,
+      harness.provider.name === 'hy3',
+    );
+  };
+}
+
 /** An independent offline oracle for fixtures whose task needs D/E contents.
  * The production reference inventory must never decide this semantic fact. */
 function reviewMissingAlternativeContents(
@@ -1611,7 +1716,8 @@ function reviewMissingAlternativeContents(
   const review = harness.provider.reviewTeachingContent.bind(harness.provider);
   harness.provider.reviewTeachingContent = async (input, opts) => {
     const result = await review(input, opts);
-    if (!('stage' in input) || input.stage !== 'lesson') return result;
+    if (!('stage' in input) || input.stage !== 'lesson' || input.purpose === 'lesson_grounding')
+      return result;
     const publicText = JSON.stringify(input.candidate);
     expect(publicText).not.toContain('semanticRelations');
     if (definingText && publicText.includes(definingText)) return result;
@@ -1633,6 +1739,612 @@ function reviewMissingAlternativeContents(
 }
 
 describe('Teaching Brief preparation', () => {
+  it.each([
+    'insufficient_evidence',
+    'accuracy',
+    'grounding',
+    'misconception',
+    'answer_leak',
+    'revealing_hint',
+    'practice_replay',
+    'shallow_task',
+    'weak_transfer',
+  ] as const)(
+    'actual Hy3 review and checkpoint acceptance cannot discard material %s',
+    async (code) => {
+      const harness = await createHarness(0, 'pass', 'apply');
+      const generate = harness.provider.generateLessonSlotContent.bind(harness.provider);
+      let itemId = '';
+      harness.provider.generateLessonSlotContent = async (input, opts) => {
+        const lesson = await generate(input, opts);
+        const slot = lesson.slots.find((slot) => slot.workedProcess)!;
+        itemId = slot.slotId;
+        slot.workedProcess!.interaction!.activity.correctDebrief =
+          '甲占用2后仍有3个空闲配额，因此乙可同时启动。';
+        return lesson;
+      };
+      const groundingProvider = new Hy3Provider({
+        baseUrl: 'https://example.test/v1',
+        apiKey: 'offline-test',
+        model: 'offline-review',
+        timeoutMs: 1000,
+        fetchImpl: async () =>
+          new Response(
+            JSON.stringify({
+              choices: [
+                {
+                  message: {
+                    content: JSON.stringify({
+                      decisions: [],
+                      findings: [
+                        {
+                          itemId,
+                          code,
+                          problem:
+                            'The delayed debrief is false: 4 minus 2 leaves 2, so the task requiring 3 waits.',
+                          repairInstruction:
+                            'Correct the current capacity and the delayed conclusion.',
+                        },
+                      ],
+                    }),
+                  },
+                  finish_reason: 'stop',
+                },
+              ],
+            }),
+            { status: 200, headers: { 'content-type': 'application/json' } },
+          ),
+      });
+      const review = harness.provider.reviewTeachingContent.bind(harness.provider);
+      harness.provider.reviewTeachingContent = (input, opts) =>
+        input.purpose === 'lesson_grounding'
+          ? groundingProvider.reviewTeachingContent(input, opts)
+          : review(input, opts);
+      const route = startTeachingRoute(harness);
+      await expect(
+        harness.services.teachingBriefPreparation.prepare(
+          preparationRequest(harness, route, `grounding-code-${code}`),
+        ),
+      ).rejects.toMatchObject({ code: ApiErrorCode.ProviderInvalidOutput });
+      expect(
+        harness.db.prepare('SELECT COUNT(*) AS n FROM accepted_lesson_checkpoints').get(),
+      ).toEqual({ n: 0 });
+      expect(harness.repos.teachingBriefs.listForUnit('ws_1', harness.learningUnitId)).toEqual([]);
+      expect(
+        harness.services.teachingBriefPreparation.getAcceptedLessonPreview(
+          preparationRequest(harness, route, `grounding-code-${code}`),
+        ),
+      ).toBeNull();
+    },
+  );
+
+  it('accepts and exposes supported concise teaching with quality-only advisories through actual Hy3 review', async () => {
+    const harness = await createHarness(0, 'pass', 'apply');
+    const generate = harness.provider.generateLessonSlotContent.bind(harness.provider);
+    harness.provider.generateLessonSlotContent = async (input, opts) => {
+      const lesson = await generate(input, opts);
+      const interaction = lesson.slots.find((slot) => slot.workedProcess)!.workedProcess!
+        .interaction!;
+      for (const action of [interaction.activity, interaction.scaffold, interaction.transfer])
+        for (const option of action.options)
+          option.feedbackIfSelected = option.id === action.correctOptionId ? '对。' : '不对。';
+      return lesson;
+    };
+    const review = harness.provider.reviewTeachingContent.bind(harness.provider);
+    harness.provider.reviewTeachingContent = async (input, opts) => {
+      if (input.purpose !== 'lesson_grounding') return review(input, opts);
+      const actualFakeResult = await review(input, opts);
+      expect(actualFakeResult.findings).toEqual([]);
+      return new Hy3Provider({
+        baseUrl: 'https://example.test/v1',
+        apiKey: 'offline-test',
+        model: 'offline-review',
+        timeoutMs: 1000,
+        fetchImpl: async () =>
+          new Response(
+            JSON.stringify({
+              choices: [
+                {
+                  message: {
+                    content: JSON.stringify({
+                      decisions: [],
+                      findings: [],
+                      advisories: [
+                        {
+                          itemId: input.candidate.slots[0]!.slotId,
+                          code: 'shallow_task',
+                          problem: 'Prefer longer feedback.',
+                          repairInstruction: 'Optionally add detail.',
+                        },
+                        {
+                          itemId: 'lesson.narrative',
+                          code: 'weak_transfer',
+                          problem: 'Prefer richer transfer.',
+                          repairInstruction: 'Optionally add a second case.',
+                        },
+                      ],
+                    }),
+                  },
+                  finish_reason: 'stop',
+                },
+              ],
+            }),
+            { status: 200, headers: { 'content-type': 'application/json' } },
+          ),
+      }).reviewTeachingContent(input, opts);
+    };
+    const route = startTeachingRoute(harness);
+    const request = preparationRequest(harness, route, 'grounding-quality-only');
+    const accepted = await harness.services.teachingBriefPreparation.prepare(request);
+    expect(
+      accepted.brief.pedagogyEvaluation!.groundingReview!.rounds.at(-1)!.result.advisories,
+    ).toHaveLength(2);
+    expect(harness.provider.lessonContentCalls).toBe(1);
+    expect(
+      (
+        await harness.services.teachingBriefPreparation.prepare(
+          preparationRequest(harness, route, 'grounding-quality-reuse'),
+        )
+      ).status,
+    ).toBe('reused');
+    const exposed = await harness.services.lessonExecution.ensure('ws_1', route.session.id, {
+      command: command('grounding-quality-execution'),
+      expectedSessionVersion: route.session.version,
+      expectedAgendaVersion: route.agenda.version,
+      expectedAgendaItemId: route.agendaItem.id,
+    });
+    expect(exposed.status).toBe('ready');
+    expect(exposed.lesson).not.toBeNull();
+  });
+
+  it('unknown Fake teaching cannot acquire a checkpoint or execution proof', async () => {
+    const harness = await createHarness(0, 'pass', 'apply');
+    const generate = harness.provider.generateLessonSlotContent.bind(harness.provider);
+    harness.provider.generateLessonSlotContent = async (input, opts) => {
+      const lesson = await generate(input, opts);
+      lesson.slots.find((slot) => slot.workedProcess)!.workedProcess!.whyResultFollows =
+        'This unknown hardware borrows capacity from a future processor state.';
+      return lesson;
+    };
+    const route = startTeachingRoute(harness);
+    const result = await harness.services.lessonExecution.ensure('ws_1', route.session.id, {
+      command: command('unknown-fake-execution'),
+      expectedSessionVersion: route.session.version,
+      expectedAgendaVersion: route.agenda.version,
+      expectedAgendaItemId: route.agendaItem.id,
+    });
+    expect(result.status).toBe('retry_available');
+    expect(result.lesson).toBeNull();
+    expect(harness.services.lessonExecution.get('ws_1', route.session.id).lesson).toBeNull();
+    expect(
+      harness.db.prepare('SELECT COUNT(*) AS n FROM accepted_lesson_checkpoints').get(),
+    ).toEqual({ n: 0 });
+  });
+
+  it.each([
+    'guided_feedback',
+    'guided_correction',
+    'correct_debrief',
+    'scaffold_feedback',
+    'scaffold_debrief',
+    'transfer_feedback',
+    'transfer_debrief',
+    'continuation',
+    'result',
+    'final_rationale',
+    'check_feedback',
+    'expected_signal',
+    'summary',
+    'forward_bridge',
+  ] as const)(
+    'rejects materially false delayed Lesson %s even with correct saved keys',
+    async (field) => {
+      const harness =
+        field === 'check_feedback' || field === 'expected_signal'
+          ? await ordinaryLessonHarness()
+          : await createHarness(0, 'pass', 'apply');
+      const generate = harness.provider.generateLessonSlotContent.bind(harness.provider);
+      const falseClaim = ' 补充运算：2 + 2 = 5。';
+      harness.provider.generateLessonSlotContent = async (input, opts) => {
+        const lesson = await generate(input, opts);
+        const process = lesson.slots.find((slot) => slot.workedProcess)?.workedProcess;
+        const interaction = process?.interaction;
+        if (field === 'guided_feedback')
+          interaction!.activity.options[0]!.feedbackIfSelected += falseClaim;
+        else if (field === 'guided_correction')
+          interaction!.activity.options.find(
+            (option) => option.misconception,
+          )!.misconception!.correction += falseClaim;
+        else if (field === 'correct_debrief') interaction!.activity.correctDebrief += falseClaim;
+        else if (field === 'scaffold_feedback')
+          interaction!.scaffold.options[0]!.feedbackIfSelected += falseClaim;
+        else if (field === 'scaffold_debrief') interaction!.scaffold.debrief += falseClaim;
+        else if (field === 'transfer_feedback')
+          interaction!.transfer.options[0]!.feedbackIfSelected += falseClaim;
+        else if (field === 'transfer_debrief') interaction!.transfer.debrief += falseClaim;
+        else if (field === 'continuation') process!.steps.at(-1)!.reason += falseClaim;
+        else if (field === 'result') process!.result += falseClaim;
+        else if (field === 'final_rationale') process!.whyResultFollows += falseClaim;
+        else if (field === 'check_feedback')
+          lesson.slots.find(
+            (slot) => slot.informalCheck?.options,
+          )!.informalCheck!.options![0]!.feedbackIfSelected += falseClaim;
+        else if (field === 'expected_signal')
+          lesson.slots.find((slot) => slot.informalCheck)!.informalCheck!.expectedSignal +=
+            falseClaim;
+        else if (field === 'summary') lesson.narrative!.summary += falseClaim;
+        else lesson.narrative!.forwardBridge = (lesson.narrative!.forwardBridge ?? '') + falseClaim;
+        return lesson;
+      };
+      const review = harness.provider.reviewTeachingContent.bind(harness.provider);
+      let groundings = 0;
+      harness.provider.reviewTeachingContent = async (input, opts) => {
+        const result = await review(input, opts);
+        if (input.purpose !== 'lesson_grounding') return result;
+        groundings += 1;
+        expect(input.actionIds).toEqual([]);
+        const slot = input.candidate.slots.find((slot) =>
+          JSON.stringify(slot).includes(falseClaim.trim()),
+        );
+        expect(
+          slot || JSON.stringify(input.candidate.narrative).includes(falseClaim.trim()),
+        ).toBeTruthy();
+        // The real Fake reviewer must reject this entire unsupported claim;
+        // this wrapper observes the production result and supplies no verdict.
+        expect(result.findings.length).toBeGreaterThan(0);
+        return result;
+      };
+      const route = startTeachingRoute(harness);
+      await expect(
+        harness.services.teachingBriefPreparation.prepare(
+          preparationRequest(harness, route, `false-delayed-${field}`),
+        ),
+      ).rejects.toMatchObject({ code: ApiErrorCode.ProviderInvalidOutput });
+      // The same still-failing candidate reuses its exact negative review; it
+      // cannot reroll a passing judgment or exceed the existing candidate budget.
+      expect(groundings).toBe(1);
+      expect(harness.provider.practiceContentCalls).toBe(0);
+      expect(
+        harness.db.prepare('SELECT COUNT(*) AS n FROM accepted_lesson_checkpoints').get(),
+      ).toEqual({ n: 0 });
+    },
+  );
+
+  it('accepts concise correct delayed teaching and intentional distractors with a current Fake grounding proof', async () => {
+    const harness = await createHarness(0, 'pass', 'apply');
+    const generate = harness.provider.generateLessonSlotContent.bind(harness.provider);
+    harness.provider.generateLessonSlotContent = async (input, opts) => {
+      const lesson = await generate(input, opts);
+      const interaction = lesson.slots.find((slot) => slot.workedProcess)!.workedProcess!
+        .interaction!;
+      for (const action of [interaction.activity, interaction.scaffold, interaction.transfer])
+        for (const option of action.options)
+          option.feedbackIfSelected = option.id === action.correctOptionId ? '对。' : '不对。';
+      return lesson;
+    };
+    let groundings = 0;
+    const review = harness.provider.reviewTeachingContent.bind(harness.provider);
+    harness.provider.reviewTeachingContent = async (input, opts) => {
+      if (input.purpose === 'lesson_grounding') {
+        groundings += 1;
+        const interaction = input.candidate.slots.find((slot) => slot.workedProcess)!.workedProcess!
+          .interaction!;
+        expect(interaction.activity.options.some((option) => option.misconception !== null)).toBe(
+          true,
+        );
+        expect(interaction.activity.options[0]!.feedbackIfSelected).toBe('对。');
+      }
+      return review(input, opts);
+    };
+    const route = startTeachingRoute(harness);
+    const request = preparationRequest(harness, route, 'concise-delayed-lesson');
+    const prepared = await harness.services.teachingBriefPreparation.prepare(request);
+    expect(hasCurrentPreparedLesson(prepared.brief)).toBe(true);
+    const checkpoint = harness.repos.acceptedLessonCheckpoints.get(
+      prepared.brief.composition!.acceptedLessonCheckpointId,
+    )!;
+    const proof = checkpoint.lessonEvaluation.groundingReview!;
+    expect(proof.rounds).toHaveLength(1);
+    expect(proof.checkpointContextHash).toMatch(/^sha256:/u);
+    expect(proof.exposureContextHash).toMatch(/^sha256:/u);
+    const context = harness.provider.lastLessonContentInput!;
+    expect(
+      prepareLessonGroundingReview(context, checkpointLessonCandidate(checkpoint)).inputHash,
+    ).toBe(proof.rounds[0]!.inputHash);
+    expect(() =>
+      assertPreparedLessonGrounding(checkpointLessonCandidate(checkpoint), context, proof),
+    ).not.toThrow();
+    expect(await harness.services.teachingBriefPreparation.prepare(request)).toEqual(prepared);
+    expect(
+      (
+        await harness.services.teachingBriefPreparation.prepare(
+          preparationRequest(harness, route, 'reuse-grounded-lesson'),
+        )
+      ).status,
+    ).toBe('reused');
+    expect(groundings).toBe(1);
+    expect(hasCurrentPreparedPractice(prepared.brief)).toBe(true);
+  });
+
+  it('checks actual execution replay and resets incompatible Lesson responses on current regeneration', async () => {
+    const harness = await createHarness();
+    const route = startTeachingRoute(harness);
+    const ensure = {
+      command: command('grounded-execution'),
+      expectedSessionVersion: route.session.version,
+      expectedAgendaVersion: route.agenda.version,
+      expectedAgendaItemId: route.agendaItem.id,
+    };
+    const ready = await harness.services.lessonExecution.ensure('ws_1', route.session.id, ensure);
+    const start = {
+      ...ensure,
+      command: command('grounded-start'),
+      expectedLessonStateVersion: ready.progress!.stateVersion,
+      action: { kind: 'start_lesson' as const },
+    };
+    const started = await harness.services.lessonExecution.command('ws_1', route.session.id, start);
+    const present = {
+      ...start,
+      command: command('grounded-present'),
+      expectedSessionVersion: started.session.version,
+      expectedAgendaVersion: started.agenda.version,
+      expectedLessonStateVersion: started.progress!.stateVersion,
+      action: { kind: 'move_to_segment' as const, segmentIndex: 0 },
+    };
+    const presented = await harness.services.lessonExecution.command(
+      'ws_1',
+      route.session.id,
+      present,
+    );
+    const cachedCommand = {
+      ...present,
+      command: command('cached-grounded-present'),
+      expectedSessionVersion: presented.session.version,
+      expectedAgendaVersion: presented.agenda.version,
+      expectedLessonStateVersion: presented.progress!.stateVersion,
+    };
+    // Seed a completed receipt through the real command service at current
+    // route versions, so replay reaches the exposure gate rather than the
+    // earlier Session-version fence.
+    const cachedClaim = harness.services.courseCommands.begin(
+      cachedCommand.command,
+      'lesson_execution_command',
+      {
+        sessionId: route.session.id,
+        expectedSessionVersion: cachedCommand.expectedSessionVersion,
+        expectedAgendaVersion: cachedCommand.expectedAgendaVersion,
+        expectedAgendaItemId: cachedCommand.expectedAgendaItemId,
+        expectedLessonStateVersion: cachedCommand.expectedLessonStateVersion,
+        action: cachedCommand.action,
+      },
+      { studySessionId: route.session.id },
+    );
+    harness.services.courseCommands.complete(cachedClaim, () => presented);
+    const state = harness.repos.lessonExecution.getForSession(
+      route.session.id,
+      route.agendaItem.id,
+    )!;
+    const brief = harness.repos.teachingBriefs.get(state.teachingBriefId!)!;
+    brief.segments[0]!.explanation += ' Changed after grounding.';
+    harness.db
+      .prepare('UPDATE teaching_briefs SET payload=? WHERE id=?')
+      .run(JSON.stringify(brief), brief.id);
+    expect(harness.services.lessonExecution.get('ws_1', route.session.id).lesson).toBeNull();
+    expect(harness.services.lessonExecution.tutorContext('ws_1', route.session.id)).toBeNull();
+    const replay = await harness.services.lessonExecution.command(
+      'ws_1',
+      route.session.id,
+      cachedCommand,
+    );
+    expect(replay.status).toBe('preparation_needed');
+    expect(replay.lesson).toBeNull();
+    const renewed = await harness.services.lessonExecution.ensure('ws_1', route.session.id, {
+      ...ensure,
+      command: command('regenerate-current-grounding'),
+      expectedSessionVersion: presented.session.version,
+      expectedAgendaVersion: presented.agenda.version,
+    });
+    expect(renewed.status, renewed.message ?? '').toBe('ready');
+    expect(renewed.progress!.presentedSegmentIndexes).toEqual([]);
+    expect(renewed.progress!.currentSegmentIndex).toBe(0);
+    expect(renewed.progress!.presentationCompletedAt).toBeNull();
+    expect(
+      harness.repos.lessonExecution.getForSession(route.session.id, route.agendaItem.id)!
+        .informalInteractions,
+    ).toEqual([]);
+    expect(harness.provider.lessonContentCalls).toBe(1);
+  });
+
+  it('invalidates accepted, cached and executable Lesson proof when current concept context changes', async () => {
+    const harness = await createHarness();
+    const route = startTeachingRoute(harness);
+    const request = preparationRequest(harness, route, 'grounding-context-original');
+    const prepared = await harness.services.teachingBriefPreparation.prepare(request);
+    const ensure = {
+      command: command('grounding-context-bound'),
+      expectedSessionVersion: route.session.version,
+      expectedAgendaVersion: route.agenda.version,
+      expectedAgendaItemId: route.agendaItem.id,
+    };
+    expect(
+      (await harness.services.lessonExecution.ensure('ws_1', route.session.id, ensure)).status,
+    ).toBe('ready');
+    harness.db
+      .prepare('UPDATE concepts SET summary=? WHERE id=?')
+      .run('Changed concept context.', 'con_1');
+    expect(harness.services.teachingBriefPreparation.getAcceptedLessonPreview(request)).toBeNull();
+    expect(harness.services.teachingBriefPreparation.getCurrent(request)).toBeNull();
+    expect(harness.services.lessonExecution.get('ws_1', route.session.id).lesson).toBeNull();
+    expect(harness.services.lessonExecution.tutorContext('ws_1', route.session.id)).toBeNull();
+    await expect(harness.services.teachingBriefPreparation.prepare(request)).rejects.toMatchObject({
+      code: ApiErrorCode.VersionConflict,
+    });
+    const renewed = await harness.services.lessonExecution.ensure('ws_1', route.session.id, {
+      ...ensure,
+      command: command('grounding-context-renewed'),
+    });
+    expect(renewed.status).toBe('ready');
+    const state = harness.repos.lessonExecution.getForSession(
+      route.session.id,
+      route.agendaItem.id,
+    )!;
+    const current = harness.repos.teachingBriefs.get(state.teachingBriefId!)!;
+    expect(current.composition!.acceptedLessonCheckpointId).not.toBe(
+      prepared.brief.composition!.acceptedLessonCheckpointId,
+    );
+    expect(hasCurrentPreparedLesson(current)).toBe(true);
+    expect(harness.provider.lessonContentCalls).toBe(2);
+    // Grounding context participates in reuse identity even when excerpts and
+    // slot planning remain the same.
+    expect(current.sourceContextFingerprint).not.toBe(prepared.brief.sourceContextFingerprint);
+  });
+
+  it('rejects context changes during the final Lesson grounding call before checkpoint acceptance', async () => {
+    const harness = await createHarness();
+    const review = harness.provider.reviewTeachingContent.bind(harness.provider);
+    harness.provider.reviewTeachingContent = async (input, opts) => {
+      const result = await review(input, opts);
+      if (input.purpose === 'lesson_grounding')
+        harness.db
+          .prepare('UPDATE concepts SET summary=? WHERE id=?')
+          .run('Changed during grounding.', 'con_1');
+      return result;
+    };
+    const route = startTeachingRoute(harness);
+    await expect(
+      harness.services.teachingBriefPreparation.prepare(
+        preparationRequest(harness, route, 'grounding-context-race'),
+      ),
+    ).rejects.toMatchObject({ code: ApiErrorCode.ProviderInvalidOutput });
+    expect(
+      harness.db.prepare('SELECT COUNT(*) AS count FROM accepted_lesson_checkpoints').get(),
+    ).toEqual({
+      count: 0,
+    });
+    expect(harness.repos.teachingBriefs.listForUnit('ws_1', harness.learningUnitId)).toEqual([]);
+  });
+
+  it.each([true, false])(
+    'requires complete grounding for computed capsule acceptance (correct=%s)',
+    async (correct) => {
+      const harness = await createHarness(0, 'pass', 'apply');
+      Object.defineProperty(harness.provider, 'name', { value: 'hy3' });
+      Object.assign(harness.provider, {
+        generateTeachingCapsule: async (
+          input: TeachingCapsuleGenerationInput,
+          opts?: ProviderCallOptions,
+        ) => {
+          opts?.onRequestSent?.();
+          const fake = new FakeProvider();
+          const lesson = await fake.generateLessonSlotContent(input.lesson);
+          const process = lesson.slots.find((slot) => slot.workedProcess)!.workedProcess!;
+          if (!correct) process.interaction!.transfer.debrief += ' 补充运算：2 + 2 = 5。';
+          const practice = await fake.generatePracticeContent({
+            workspaceName: input.lesson.workspaceName,
+            learnerLocale: input.lesson.learnerLocale,
+            courseDesign: input.lesson.courseDesign,
+            sourceContext: input.lesson.sourceContext,
+            visualContext: input.lesson.visualContext,
+            acceptedLesson: [...input.priorLesson, ...lesson.slots],
+            skeleton: {
+              ...input.lesson.skeleton,
+              practicePlan: {
+                schemaVersion: 1,
+                slots: input.practiceSlots,
+                activityBudget: { minMinutes: 1, maxMinutes: 1 },
+              },
+            },
+          });
+          return { lesson, practice };
+        },
+      });
+      const review = harness.provider.reviewTeachingContent.bind(harness.provider);
+      let groundingCalls = 0;
+      harness.provider.reviewTeachingContent = async (input, opts) => {
+        const result = await review(input, opts);
+        if (input.purpose !== 'lesson_grounding') return result;
+        groundingCalls += 1;
+        expect(input.computedOutcomes).toBe(true);
+        const slot = input.candidate.slots.find((slot) => slot.workedProcess)!;
+        expect(slot.workedProcess!.steps.length).toBeGreaterThan(1);
+        if (!correct)
+          expect(slot.workedProcess!.interaction!.transfer.debrief).toContain('2 + 2 = 5');
+        expect(result.findings.length > 0).toBe(!correct);
+        return result;
+      };
+      const route = startTeachingRoute(harness);
+      const pending = harness.services.teachingBriefPreparation.prepare(
+        preparationRequest(harness, route, `computed-lesson-grounding-${correct}`),
+      );
+      if (correct) {
+        const prepared = await pending;
+        expect(hasCurrentPreparedLesson(prepared.brief)).toBe(true);
+        expect(prepared.brief.pedagogyEvaluation!.jointAuthoring!.executionVerified).toBe(true);
+        expect(prepared.brief.pedagogyEvaluation!.groundingReview!.rounds).toHaveLength(1);
+        expect(
+          (
+            await harness.services.teachingBriefPreparation.prepare(
+              preparationRequest(harness, route, 'computed-grounding-reuse'),
+            )
+          ).status,
+        ).toBe('reused');
+      } else {
+        await expect(pending).rejects.toMatchObject({ code: ApiErrorCode.ProviderInvalidOutput });
+        expect(
+          harness.db.prepare('SELECT COUNT(*) AS n FROM accepted_lesson_checkpoints').get(),
+        ).toEqual({ n: 0 });
+      }
+      expect(groundingCalls).toBe(1);
+    },
+  );
+
+  it.each(['network', 'cancel', 'inventory'] as const)(
+    'keeps grounding failure %s retryable without accepting or exposing a Lesson',
+    async (failure) => {
+      const harness = await createHarness();
+      const review = harness.provider.reviewTeachingContent.bind(harness.provider);
+      harness.provider.reviewTeachingContent = async (input, opts) => {
+        if (input.purpose !== 'lesson_grounding') return review(input, opts);
+        if (failure === 'network') throw ProviderError.network();
+        if (failure === 'cancel') throw ProviderError.cancelled();
+        return {
+          decisions: [
+            {
+              actionId: 'L1.check',
+              answerId: 'A',
+              requiresCaseInference: true,
+              evidenceUsed: 'An authored answer cannot certify grounding.',
+            },
+          ],
+          findings: [],
+        };
+      };
+      const route = startTeachingRoute(harness);
+      const request = {
+        command: command(`grounding-failure-${failure}`),
+        expectedSessionVersion: route.session.version,
+        expectedAgendaVersion: route.agenda.version,
+        expectedAgendaItemId: route.agendaItem.id,
+      };
+      const pending = harness.services.lessonExecution.ensure('ws_1', route.session.id, request);
+      if (failure === 'cancel')
+        await expect(pending).rejects.toMatchObject({ code: ApiErrorCode.RequestCancelled });
+      else expect((await pending).status).toBe('retry_available');
+      expect(harness.services.lessonExecution.get('ws_1', route.session.id).lesson).toBeNull();
+      expect(
+        harness.db.prepare('SELECT COUNT(*) AS n FROM accepted_lesson_checkpoints').get(),
+      ).toEqual({ n: 0 });
+      harness.provider.reviewTeachingContent = review;
+      expect(
+        (
+          await harness.services.lessonExecution.ensure('ws_1', route.session.id, {
+            ...request,
+            command: command(`grounding-recovered-${failure}`),
+          })
+        ).status,
+      ).toBe('ready');
+    },
+  );
   it.each(
     (['initial', 'retry'] as const).flatMap((surface) =>
       (['explanation', 'feedback'] as const).map((claim) => ({ surface, claim })),
@@ -1898,8 +2610,7 @@ describe('Teaching Brief preparation', () => {
   ])('prepares and reuses reviewed label-level tasks: %s', async (prompt) => {
     const harness = await ordinaryLessonHarness();
     const generate = harness.provider.generateLessonSlotContent.bind(harness.provider);
-    harness.provider.generateLessonSlotContent = async (input, opts) => {
-      const lesson = await generate(input, opts);
+    const adaptLessonFixture = (lesson: LessonSlotContentProposalPayload) => {
       const check = lesson.slots.find((slot) => slot.informalCheck)!.informalCheck!;
       check.kind = 'own_words';
       check.prompt += ' ' + prompt;
@@ -1908,10 +2619,13 @@ describe('Teaching Brief preparation', () => {
       delete check.evidenceContrast;
       return lesson;
     };
+    harness.provider.generateLessonSlotContent = async (input, opts) =>
+      adaptLessonFixture(await generate(input, opts));
+    installKnownLessonVariant(harness, adaptLessonFixture);
     const review = harness.provider.reviewTeachingContent.bind(harness.provider);
     let lessonReviews = 0;
     harness.provider.reviewTeachingContent = async (input, opts) => {
-      if ('stage' in input && input.stage === 'lesson') {
+      if ('stage' in input && input.stage === 'lesson' && input.purpose !== 'lesson_grounding') {
         lessonReviews++;
         expect(JSON.stringify(input.candidate)).toContain(prompt);
         expect(JSON.stringify(input.candidate)).not.toContain('semanticRelations');
@@ -1946,8 +2660,7 @@ describe('Teaching Brief preparation', () => {
   it('prepares, replays and binds answerable open Lesson reasoning with the existing call budget', async () => {
     const harness = await ordinaryLessonHarness();
     const generate = harness.provider.generateLessonSlotContent.bind(harness.provider);
-    harness.provider.generateLessonSlotContent = async (input, opts) => {
-      const lesson = await generate(input, opts);
+    const adaptLessonFixture = (lesson: LessonSlotContentProposalPayload) => {
       const check = lesson.slots.find((slot) => slot.informalCheck)!.informalCheck!;
       check.kind = 'own_words';
       delete check.options;
@@ -1956,6 +2669,9 @@ describe('Teaching Brief preparation', () => {
       check.prompt += '请解释你的设计决定，并给出依据。';
       return lesson;
     };
+    harness.provider.generateLessonSlotContent = async (input, opts) =>
+      adaptLessonFixture(await generate(input, opts));
+    installKnownLessonVariant(harness, adaptLessonFixture);
     const route = startTeachingRoute(harness);
     const request = preparationRequest(harness, route, 'open-lesson-preparation');
     const prepared = await harness.services.teachingBriefPreparation.prepare(request);
@@ -1991,8 +2707,7 @@ describe('Teaching Brief preparation', () => {
         'Option D means retain a candidate with score 80; Option E means retain a candidate with score 40.';
       reviewMissingAlternativeContents(harness, definitions);
       const generate = harness.provider.generateLessonSlotContent.bind(harness.provider);
-      harness.provider.generateLessonSlotContent = async (input, opts) => {
-        const lesson = await generate(input, opts);
+      const adaptLessonFixture = (lesson: LessonSlotContentProposalPayload) => {
         const check = lesson.slots.find((slot) => slot.informalCheck)!.informalCheck!;
         check.kind = 'own_words';
         delete check.options;
@@ -2010,6 +2725,9 @@ describe('Teaching Brief preparation', () => {
           });
         return lesson;
       };
+      harness.provider.generateLessonSlotContent = async (input, opts) =>
+        adaptLessonFixture(await generate(input, opts));
+      installKnownLessonVariant(harness, adaptLessonFixture);
       const route = startTeachingRoute(harness);
       const request = preparationRequest(harness, route, 'exposure-preparation-' + placement);
       if (placement === 'serialized relation') {
@@ -2172,6 +2890,13 @@ describe('Teaching Brief preparation', () => {
     'missing_pair',
     'hidden_key',
     'absent_references',
+    'grounding_missing',
+    'grounding_version',
+    'grounding_result',
+    'grounding_input',
+    'grounding_candidate',
+    'grounding_claims',
+    'grounding_exposure',
   ] as const)(
     'fences stored Lesson %s from completed replay, fresh reuse and ready bound execution',
     async (defect) => {
@@ -2201,6 +2926,16 @@ describe('Teaching Brief preparation', () => {
           'teaching-lesson-content-v18-source-faithful-models';
       else if (defect === 'choice_context')
         delete old.brief.pedagogyEvaluation!.choiceContextFingerprint;
+      else if (
+        defect === 'grounding_missing' ||
+        defect === 'grounding_version' ||
+        defect === 'grounding_result' ||
+        defect === 'grounding_input' ||
+        defect === 'grounding_candidate' ||
+        defect === 'grounding_claims' ||
+        defect === 'grounding_exposure'
+      )
+        breakLessonGrounding(old.brief.pedagogyEvaluation!, defect);
       else breakLessonChoice(old.brief.segments, defect);
       expect(hasCurrentPreparedLesson(old.brief)).toBe(false);
       harness.db
@@ -2264,6 +2999,13 @@ describe('Teaching Brief preparation', () => {
     'missing_pair',
     'hidden_key',
     'absent_references',
+    'grounding_missing',
+    'grounding_version',
+    'grounding_result',
+    'grounding_input',
+    'grounding_candidate',
+    'grounding_claims',
+    'grounding_exposure',
   ] as const)(
     'checks a persisted checkpoint with %s independently of the current Brief and completed result',
     async (defect) => {
@@ -2283,10 +3025,22 @@ describe('Teaching Brief preparation', () => {
       )!;
       // Only this in-memory fixture permits seeding a historical/corrupt row.
       harness.db.exec('DROP TRIGGER prevent_accepted_lesson_checkpoint_update');
-      if (defect === 'evaluator' || defect === 'choice_context') {
+      if (
+        defect === 'evaluator' ||
+        defect === 'choice_context' ||
+        defect === 'grounding_missing' ||
+        defect === 'grounding_version' ||
+        defect === 'grounding_result' ||
+        defect === 'grounding_input' ||
+        defect === 'grounding_candidate' ||
+        defect === 'grounding_claims' ||
+        defect === 'grounding_exposure'
+      ) {
         if (defect === 'evaluator')
           checkpoint.lessonEvaluation.policyVersion = 'lesson-pedagogy-v9-scientific-notation';
-        else delete checkpoint.lessonEvaluation.choiceContextFingerprint;
+        else if (defect === 'choice_context')
+          delete checkpoint.lessonEvaluation.choiceContextFingerprint;
+        else breakLessonGrounding(checkpoint.lessonEvaluation, defect);
         harness.db
           .prepare('UPDATE accepted_lesson_checkpoints SET lesson_evaluation_payload=? WHERE id=?')
           .run(JSON.stringify(checkpoint.lessonEvaluation), checkpoint.id);
@@ -2334,7 +3088,7 @@ describe('Teaching Brief preparation', () => {
     },
   );
 
-  it('preserves completed Lesson history with its original versions, evaluations and historical schema shape', async () => {
+  it('refuses exposure of obsolete completed Lesson proofs without upgrading their authority', async () => {
     const harness = await ordinaryLessonHarness();
     const route = startTeachingRoute(harness);
     await harness.services.lessonExecution.ensure('ws_1', route.session.id, {
@@ -2406,9 +3160,8 @@ describe('Teaching Brief preparation', () => {
       },
     );
     const history = harness.services.lessonExecution.get('ws_1', route.session.id);
-    expect(history.status).toBe('ready');
-    expect(history.lesson).not.toBeNull();
-    expect(history.allowedActions).toEqual(['review_lesson']);
+    expect(history.status).toBe('preparation_needed');
+    expect(history.lesson).toBeNull();
     expect(JSON.stringify(harness.repos.teachingBriefs.get(brief.id))).toBe(briefBytes);
     expect(JSON.stringify(harness.repos.acceptedLessonCheckpoints.get(checkpoint.id))).toBe(
       checkpointBytes,
@@ -2991,6 +3744,29 @@ describe('Teaching Brief preparation', () => {
       executionVerified: true,
       practiceExecutionVerified: true,
     };
+    // Build current offline Lesson review evidence for the simulated computed
+    // authoring context. Only cached Practice claims are under test here.
+    const currentLessonContext = {
+      ...harness.provider.lastLessonContentInput!,
+      preparedTogether: true,
+      computedCases: true,
+    };
+    const currentGrounding = prepareLessonGroundingReview(
+      currentLessonContext,
+      checkpointLessonCandidate(cachedCheckpoint),
+    );
+    Object.assign(cachedCheckpoint.lessonEvaluation.groundingReview!.rounds[0]!, {
+      inputHash: currentGrounding.inputHash,
+      candidateHash: currentGrounding.candidateHash,
+      claimsHash: currentGrounding.claimsHash,
+      result: await provider.reviewTeachingContent(currentGrounding.input),
+    });
+    bindLessonGroundingToCheckpoint(
+      cachedCheckpoint,
+      checkpointLessonCandidate(cachedCheckpoint),
+      currentLessonContext,
+      prepared.brief,
+    );
     harness.repos.acceptedLessonCheckpoints.findReusable = () => cachedCheckpoint;
     const oldBrief = structuredClone(prepared.brief);
     oldBrief.practice!.qualityEvaluation.answerabilityReview!.policyVersion =
@@ -3288,7 +4064,7 @@ describe('Teaching Brief preparation', () => {
         command: command('bound-practice-current-policy'),
       });
       expect(fresh.status).toBe('ready');
-      expect(fresh.practice?.status).toBe('available');
+      expect(fresh.practice?.status).toBe(policy === 'source_context' ? 'locked' : 'available');
       expect(harness.provider.practiceContentCalls).toBeGreaterThan(calls);
       expect(harness.provider.lessonContentCalls).toBe(lessonCalls);
       expect(JSON.stringify(harness.repos.acceptedLessonCheckpoints.get(checkpointId))).toBe(
@@ -3333,7 +4109,11 @@ describe('Teaching Brief preparation', () => {
       let rejectedReviews = 0;
       const review = harness.provider.reviewTeachingContent.bind(harness.provider);
       harness.provider.reviewTeachingContent = async (input, opts) => {
-        if (recover === 'rejected' && rejectedReviews++ < 2) {
+        if (
+          recover === 'rejected' &&
+          input.purpose !== 'lesson_grounding' &&
+          rejectedReviews++ < 2
+        ) {
           const result = await review(input, opts);
           result.findings = [
             {
@@ -3480,7 +4260,7 @@ describe('Teaching Brief preparation', () => {
       harness.db
         .prepare('SELECT COUNT(*) AS count FROM model_logical_calls WHERE study_session_id=?')
         .get(route.session.id),
-    ).toEqual({ count: 7 + 2 * result.brief.practice!.items.length });
+    ).toEqual({ count: 8 + 2 * result.brief.practice!.items.length });
     const checkpoint = harness.repos.acceptedLessonCheckpoints.get(
       result.brief.composition!.acceptedLessonCheckpointId,
     )!;
@@ -3513,10 +4293,16 @@ describe('Teaching Brief preparation', () => {
             return opts?.validateCandidate?.(candidate) ?? validation;
           },
         });
+      installKnownLessonVariant(harness, (lesson) => {
+        const slot = lesson.slots.find((content) => content.workedProcess)!;
+        slot.workedProcess!.result = '5.2×10^0';
+        slot.explanation += ' 补充计算：0.052×10^2 = 5.2×10^0。';
+        return lesson;
+      });
       const review = harness.provider.reviewTeachingContent.bind(harness.provider);
       harness.provider.reviewTeachingContent = async (input, opts) => {
         const reviewed = await review(input, opts);
-        if (input.stage === 'lesson') {
+        if (input.stage === 'lesson' && input.purpose !== 'lesson_grounding') {
           lessonReviews += 1;
           const slot = (input.candidate as LessonSlotContentProposalPayload).slots.find((content) =>
             content.explanation.includes(claim),
@@ -4841,7 +5627,7 @@ describe('Teaching Brief preparation', () => {
     },
   );
 
-  it('preserves the accepted Lesson checkpoint when Lesson usage reaches the canonical operation cap', async () => {
+  it('refuses an ungrounded Lesson checkpoint when the canonical operation cap blocks review', async () => {
     const harness = await createHarness();
     const route = startTeachingRoute(harness);
     harness.provider.lessonUsageMicrounits = 100;
@@ -4868,7 +5654,7 @@ describe('Teaching Brief preparation', () => {
     expect(harness.provider.practiceContentCalls).toBe(0);
     expect(
       harness.db.prepare('SELECT COUNT(*) AS count FROM accepted_lesson_checkpoints').get(),
-    ).toEqual({ count: 1 });
+    ).toEqual({ count: 0 });
     const lessonLogicalCallId = `teaching-brief:${harness.learningUnitId}:${input.commandId}:lesson`;
     const practiceLogicalCallId = `teaching-brief:${harness.learningUnitId}:${input.commandId}:practice`;
     expect(harness.repos.telemetry.getLogicalCall(lessonLogicalCallId)).toMatchObject({
@@ -6260,16 +7046,21 @@ describe('Teaching Brief preparation', () => {
   it('runs a prepared worked interaction locally with targeted repair, resume, and fading support', async () => {
     const harness = await createHarness(0, 'pass', 'apply');
     const generate = harness.provider.generateLessonSlotContent.bind(harness.provider);
-    harness.provider.generateLessonSlotContent = async (input, options) => {
-      const lesson = await generate(input, options);
+    const adaptLessonFixture = (lesson: LessonSlotContentProposalPayload) => {
       const process = lesson.slots.find((slot) => slot.workedProcess)?.workedProcess;
       if (process) {
         // Exercise the independent supplementary interaction under a cited source rule.
-        process.ruleOrProcedure = input.sourceContext.offers[0]!.text;
-        process.sourceRefs = [input.sourceContext.offers[0]!.sourceRef];
+        process.ruleOrProcedure =
+          harness.provider.lastLessonContentInput!.sourceContext.offers[0]!.text;
+        process.sourceRefs = [
+          harness.provider.lastLessonContentInput!.sourceContext.offers[0]!.sourceRef,
+        ];
       }
       return lesson;
     };
+    harness.provider.generateLessonSlotContent = async (input, options) =>
+      adaptLessonFixture(await generate(input, options));
+    installKnownLessonVariant(harness, adaptLessonFixture);
     const unit = harness.repos.curricula
       .get(harness.curriculumId)!
       .nodes.find((node) => node.id === harness.learningUnitId)!;

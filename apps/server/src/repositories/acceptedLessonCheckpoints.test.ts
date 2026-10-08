@@ -15,6 +15,7 @@ import {
 import { makeWorkspace, T0 } from '../testing/fixtures.js';
 import { HISTORICAL_TEACHING_SKELETON_V1 } from '../testing/historicalTeachingSkeletonV1.js';
 import { createRepositories, type Repositories } from './index.js';
+import { seedLessonGroundingProof } from '../testing/lessonGroundingFixture.js';
 
 const T1 = '2026-01-01T00:01:00.000Z';
 const LEASE_END = '2026-01-01T01:00:00.000Z';
@@ -151,6 +152,7 @@ function seedActiveRoute(): void {
       ...overrides,
     });
   logicalCall('lesson_logical_1');
+  logicalCall('lesson_logical_1-grounding', { schemaFingerprint: 'lesson-grounding-review-v2' });
   logicalCall('lesson_logical_wrong_type', {
     operationType: 'prepare_teaching_lesson_content',
   });
@@ -184,7 +186,7 @@ function checkpoint(overrides: Partial<AcceptedLessonCheckpoint> = {}): Accepted
       },
     ],
   });
-  return {
+  return seedLessonGroundingProof({
     id: 'accepted_lesson_1',
     workspaceId: 'ws_1',
     studySessionId: 'session_1',
@@ -229,7 +231,7 @@ function checkpoint(overrides: Partial<AcceptedLessonCheckpoint> = {}): Accepted
     promptVersion: 'lesson-content-v1-compositional',
     createdAt: T1,
     ...overrides,
-  };
+  });
 }
 
 function historicalV1Checkpoint(): AcceptedLessonCheckpoint {
@@ -372,10 +374,64 @@ describe('accepted Lesson checkpoints repository', () => {
   it('persists a failed independent Lesson evaluation as an immutable diagnostic', () => {
     const failed = checkpoint();
     failed.lessonEvaluation.status = 'fail';
+    seedLessonGroundingProof(failed);
     const stored = repos.acceptedLessonCheckpoints.create(failed);
     expect(stored.lessonEvaluation.status).toBe('fail');
     expect(db.prepare('SELECT COUNT(*) AS count FROM accepted_lesson_checkpoints').get()).toEqual({
       count: 1,
+    });
+  });
+
+  it.each([
+    'missing',
+    'obsolete',
+    'negative_receipt',
+    'changed_claims',
+    'changed_context',
+    'missing_binding',
+  ] as const)('rejects %s complete Lesson grounding at checkpoint persistence', (defect) => {
+    const candidate = checkpoint();
+    if (defect === 'missing') delete candidate.lessonEvaluation.groundingReview;
+    else if (defect === 'obsolete')
+      candidate.lessonEvaluation.groundingReview!.policyVersion =
+        'lesson-grounding-v1-complete-claims';
+    else if (defect === 'negative_receipt')
+      candidate.lessonEvaluation.groundingReview!.rounds.at(-1)!.result.findings = [
+        {
+          itemId: candidate.lessonContent[0]!.slotId,
+          code: 'insufficient_evidence',
+          problem: 'The delayed rationale contradicts the authorized excerpt.',
+          repairInstruction: 'Correct the teaching claim.',
+        },
+      ];
+    else if (defect === 'changed_claims') candidate.lessonContent[0]!.explanation += ' 2 + 2 = 5.';
+    else if (defect === 'changed_context') candidate.sourceContextFingerprint = 'changed-source';
+    else delete candidate.lessonEvaluation.groundingReview!.exposureContextHash;
+    expect(() => repos.acceptedLessonCheckpoints.create(candidate)).toThrow(
+      'requires complete current grounding',
+    );
+    expect(db.prepare('SELECT COUNT(*) AS count FROM accepted_lesson_checkpoints').get()).toEqual({
+      count: 0,
+    });
+  });
+
+  it.each([
+    ['failed', 'status', 'failed'],
+    ['wrong schema', 'schema_fingerprint', 'practice-grounding-review-v1'],
+    ['obsolete grounding schema', 'schema_fingerprint', 'lesson-grounding-review-v1'],
+    ['wrong source', 'source_fingerprint', 'other-source'],
+    ['wrong operation', 'operation_id', 'operation_completed'],
+    ['wrong unit', 'learning_unit_id', 'other-unit'],
+  ])('rejects %s grounding call provenance at checkpoint persistence', (_label, column, value) => {
+    db.prepare(`UPDATE model_logical_calls SET ${column}=? WHERE id=?`).run(
+      value,
+      'lesson_logical_1-grounding',
+    );
+    expect(() => repos.acceptedLessonCheckpoints.create(checkpoint())).toThrow(
+      'requires its exact completed grounding calls',
+    );
+    expect(db.prepare('SELECT COUNT(*) AS count FROM accepted_lesson_checkpoints').get()).toEqual({
+      count: 0,
     });
   });
 

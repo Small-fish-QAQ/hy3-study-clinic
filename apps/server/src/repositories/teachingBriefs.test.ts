@@ -19,6 +19,7 @@ import {
 import { planTeachingSkeleton } from '../services/teachingSkeletonPlanner.js';
 import { makeBlock, makeMaterial, makeWorkspace, T0 } from '../testing/fixtures.js';
 import { createRepositories, type Repositories } from './index.js';
+import { seedLessonGroundingProof } from '../testing/lessonGroundingFixture.js';
 
 const T1 = '2026-01-01T00:01:00.000Z';
 const T2 = '2026-01-01T00:02:00.000Z';
@@ -44,7 +45,10 @@ function insertLogicalCall(
   id: string,
   operationId: string,
   sessionId: string,
-  schemaFingerprint: 'lesson-slot-content-proposal-v1' | 'practice-content-proposal-v1',
+  schemaFingerprint:
+    | 'lesson-slot-content-proposal-v1'
+    | 'practice-content-proposal-v1'
+    | 'lesson-grounding-review-v2',
   sourceFingerprint: string | null = SOURCE_CONTEXT_FINGERPRINT,
 ): void {
   repos.telemetry.insertLogicalCall({
@@ -77,6 +81,12 @@ function seedSession(sessionId: string, operationId: string): void {
        'manifest-1', 1, 'active', 'on_route', 'agenda_item_1', '[]', 0, ?, ?)`,
   ).run(sessionId, T0, T0);
   insertOperation(operationId, sessionId);
+  insertLogicalCall(
+    `lesson_logical_${sessionId}-grounding`,
+    operationId,
+    sessionId,
+    'lesson-grounding-review-v2',
+  );
   insertLogicalCall(
     `lesson_logical_${sessionId}`,
     operationId,
@@ -199,7 +209,7 @@ function acceptedLessonCheckpoint(sessionId: 'session_a' | 'session_b'): Accepte
       },
     ],
   });
-  return {
+  const checkpoint: AcceptedLessonCheckpoint = {
     id: `accepted_lesson_${sessionId}`,
     workspaceId: 'ws_1',
     studySessionId: sessionId,
@@ -244,6 +254,10 @@ function acceptedLessonCheckpoint(sessionId: 'session_a' | 'session_b'): Accepte
     promptVersion: LESSON_CONTENT_PROMPT_VERSION,
     createdAt: T1,
   };
+  return seedLessonGroundingProof(
+    checkpoint,
+    teachingBrief(checkpoint, `practice_fixture_${sessionId}`, `brief_fixture_${sessionId}`),
+  );
 }
 
 function practiceItem() {

@@ -7,6 +7,7 @@ import {
   PRACTICE_GROUNDING_POLICY_VERSION,
   PracticeContentProposalPayloadSchema,
   projectPracticePriorTeaching,
+  projectAcceptedLessonSegments,
   type AcceptedLessonCheckpoint,
   type TeachingBrief,
 } from '@hy3-clinic/shared';
@@ -32,6 +33,7 @@ import {
   selectCurrentAcceptedLessonCheckpoint,
   TEACHING_BRIEF_PROMPT_VERSION,
 } from './teachingBriefPreparation.js';
+import { seedLessonGroundingProof } from '../testing/lessonGroundingFixture.js';
 
 const SKELETON_FINGERPRINT = `sha256:${'a'.repeat(64)}`;
 
@@ -43,30 +45,101 @@ function acceptedCheckpoint(
     status?: 'pass' | 'fail';
   } = {},
 ): AcceptedLessonCheckpoint {
-  const checkpoint = {
+  const skeleton = planTeachingSkeleton({
+    learningUnitTitle: 'Public Lesson',
+    targetMinutes: 18,
+    targetDepth: 'pass_oriented',
+    objectives: [
+      {
+        objectiveRef: 'O1',
+        title: 'Public Lesson',
+        description: 'Identify the selected answer from the public example.',
+        priority: 'required',
+        construct: 'identify',
+        authorityMode: 'exact_source',
+        allowedSourceRefs: ['S1'],
+        allowedVisualRefs: [],
+      },
+    ],
+  });
+  skeleton.fingerprint = SKELETON_FINGERPRINT;
+  const checkpoint: AcceptedLessonCheckpoint = {
+    id: 'checkpoint',
+    workspaceId: 'workspace',
+    studySessionId: 'session',
+    sessionAgendaId: 'agenda',
+    agendaItemId: 'item',
+    expectedSessionVersion: 1,
+    expectedAgendaVersion: 1,
+    curriculumVersionId: 'curriculum',
+    studyPlanVersionId: 'plan',
+    studyPlanItemId: 'plan_item',
+    learningUnitId: 'unit',
+    executionSourceManifestFingerprint: 'manifest',
+    sourceContextFingerprint: 'context',
+    operationId: 'operation',
+    provider: 'fake',
+    providerModel: null,
+    createdAt: '2026-10-08T00:00:00.000Z',
+    skeleton,
     promptVersion: overrides.promptVersion ?? LESSON_CONTENT_PROMPT_VERSION,
     lessonLogicalCallId:
       overrides.lessonLogicalCallId === undefined
         ? 'lesson_logical_1'
         : overrides.lessonLogicalCallId,
     lessonEvaluation: {
+      schemaVersion: 1,
+      evaluator: 'independent-deterministic-lesson-evaluator',
+      independent: true,
+      boundedRepairAttempted: false,
+      estimatedActiveMinutes: { min: 10, max: 20 },
+      claimedAgendaMinutes: 18,
+      findings: [],
+      evaluatedAt: '2026-10-08T00:00:00.000Z',
       policyVersion: overrides.policyVersion ?? COMPOSITIONAL_LESSON_PEDAGOGY_POLICY_VERSION,
       status: overrides.status ?? 'pass',
     },
-    lessonContent: [
-      {
-        lessonNarrative: {
-          whyNow: 'Why this matters now.',
-          summary: 'A coherent Lesson summary.',
-          forwardBridge: null,
-        },
-      },
-    ],
-  } as AcceptedLessonCheckpoint;
+    lessonContent: skeleton.lessonSlots.map((slot, index) => ({
+      slotId: slot.slotId,
+      explanation: 'The public rule connects the condition with its consequence.',
+      sourceRefs: [],
+      visualRefs: [],
+      semanticRelations: [],
+      workedProcess: null,
+      ...(index === 0
+        ? {
+            lessonNarrative: {
+              whyNow: 'Why this matters now.',
+              summary: 'A coherent Lesson summary.',
+              forwardBridge: null,
+            },
+          }
+        : {}),
+    })),
+  };
   checkpoint.lessonEvaluation.choiceContextFingerprint = lessonChoiceContextFingerprint(
     checkpoint.lessonContent,
   );
-  return checkpoint;
+  return seedLessonGroundingProof(checkpoint, {
+    objective: {
+      title: 'Public Lesson',
+      whyNow: 'Why this matters now.',
+      objectives: skeleton.objectives.map((o) => ({
+        id: 'objective_1',
+        title: o.title,
+        description: o.description,
+        priority: o.priority,
+        construct: o.construct,
+      })),
+    },
+    prerequisites: [],
+    segments: projectAcceptedLessonSegments(checkpoint, ['objective_1']),
+    summary: 'A coherent Lesson summary.',
+    nextConnection: null,
+    sourceReferences: [],
+    visualReferences: [],
+    sourceManifest: { fingerprint: 'manifest', revisions: [] },
+  });
 }
 
 function compositionalBrief(
@@ -79,9 +152,19 @@ function compositionalBrief(
     acceptancePolicyVersion?: string;
   } = {},
 ): TeachingBrief {
+  const checkpoint = acceptedCheckpoint({ policyVersion: overrides.lessonPolicyVersion });
   const brief = {
+    workspaceId: checkpoint.workspaceId,
+    curriculumVersionId: checkpoint.curriculumVersionId,
+    studyPlanVersionId: checkpoint.studyPlanVersionId,
+    learningUnitId: checkpoint.learningUnitId,
+    executionSourceManifestFingerprint: checkpoint.executionSourceManifestFingerprint,
+    sourceContextFingerprint: checkpoint.sourceContextFingerprint,
+    sourceManifest: { fingerprint: 'manifest', revisions: [] },
     promptVersion: TEACHING_BRIEF_PROMPT_VERSION,
     composition: {
+      acceptedLessonCheckpointId: checkpoint.id,
+      lessonOperationId: checkpoint.operationId,
       skeletonFingerprint: SKELETON_FINGERPRINT,
       lessonPromptVersion: LESSON_CONTENT_PROMPT_VERSION,
       practicePromptVersion: PRACTICE_CONTENT_PROMPT_VERSION,
@@ -94,7 +177,7 @@ function compositionalBrief(
     },
     objective: { title: 'Public Lesson', whyNow: 'A prior taught rule.', objectives: [] },
     prerequisites: [],
-    segments: [],
+    segments: projectAcceptedLessonSegments(checkpoint, ['objective_1']),
     sourceReferences: [],
     visualReferences: [],
     summary: 'Apply the taught rule to the new facts.',
@@ -157,10 +240,21 @@ function compositionalBrief(
       },
     },
   } as TeachingBrief;
+  brief.objective.objectives = checkpoint.skeleton.objectives.map((objective) => ({
+    id: 'objective_1',
+    title: objective.title,
+    description: objective.description,
+    priority: objective.priority,
+    construct: objective.construct,
+  }));
   brief.pedagogyEvaluation!.choiceContextFingerprint = lessonChoiceContextFingerprint(
     brief.segments,
     [brief.objective.whyNow],
   );
+  checkpoint.lessonEvaluation = { ...checkpoint.lessonEvaluation, ...brief.pedagogyEvaluation };
+  checkpoint.lessonLogicalCallId = brief.composition!.lessonLogicalCallId!;
+  seedLessonGroundingProof(checkpoint, brief);
+  brief.pedagogyEvaluation = checkpoint.lessonEvaluation;
   const context: PracticeContentGenerationInput = {
     workspaceName: 'Provenance fixture',
     learnerLocale: 'zh-CN',

@@ -17,6 +17,9 @@ import {
   type PracticeQualityImprovement,
   type PracticeQualityEvaluation,
   type TeachingContentReview,
+  type LessonGroundingReview,
+  LESSON_GROUNDING_POLICY_VERSION,
+  LessonGroundingResultSchema,
 } from '@hy3-clinic/shared';
 import type {
   LessonSlotContentGenerationInput,
@@ -34,6 +37,7 @@ import {
   practiceProofItems,
 } from './practiceAcceptance.js';
 import { compareLearnerPracticeTasks } from './practiceTaskCanonicalization.js';
+import { prepareLessonGroundingReview } from './lessonGrounding.js';
 import {
   evaluatePlannedPracticeQuality,
   practiceEvidenceContrastFinding,
@@ -144,28 +148,77 @@ export async function verifyPreparedTeaching<
   ) => Promise<{ result: TeachingContentReview; logicalCallId: string }>,
   revise: (draft: T, findings: TeachingContentReview['findings']) => Promise<T>,
   computedItemIds: ReadonlySet<string> = new Set(),
+  lessonGrounding?: {
+    reviewChoices: (candidate: LessonSlotContentProposalPayload) => boolean;
+    onFindings?: (findings: TeachingContentReview['findings']) => void;
+    review: (
+      prepared: ReturnType<typeof prepareLessonGroundingReview>,
+      round: number,
+    ) => Promise<{ result: TeachingContentReview; logicalCallId: string }>;
+  },
 ) {
   const receipts = [];
+  const groundingReview: LessonGroundingReview = {
+    policyVersion: LESSON_GROUNDING_POLICY_VERSION,
+    rounds: [],
+  };
   let previousFindings: TeachingContentReview['findings'] | undefined;
+  let previousCandidateHash: string | undefined;
   for (let round = 0; round < MAX_TEACHING_CONTENT_REVIEWS; round += 1) {
     const prepared = prepareTeachingReview(context, candidate, computedItemIds);
-    const reviewed = await review(prepared, round);
-    if (!prepared.validate(reviewed.result).valid)
-      throw ProviderError.invalidOutput(
-        'Teaching review did not cover its exact action inventory.',
-        'candidate',
-        'SEMANTIC_VALIDATION_FAILURE',
-        false,
-      );
-    receipts.push({ ...reviewed, candidateHash: prepared.candidateHash });
-    const findings = prepared.findings(reviewed.result);
-    if (!findings.length) return { candidate, receipts };
+    const grounding = lessonGrounding
+      ? prepareLessonGroundingReview(
+          context as LessonSlotContentGenerationInput,
+          candidate as LessonSlotContentProposalPayload,
+        )
+      : undefined;
+    const findings: TeachingContentReview['findings'] = [];
+    if (
+      !lessonGrounding ||
+      lessonGrounding.reviewChoices(candidate as LessonSlotContentProposalPayload)
+    ) {
+      const reviewed = await review(prepared, round);
+      if (!prepared.validate(reviewed.result).valid)
+        throw ProviderError.invalidOutput(
+          'Teaching review did not cover its exact action inventory.',
+          'candidate',
+          'SEMANTIC_VALIDATION_FAILURE',
+          false,
+        );
+      receipts.push({ ...reviewed, candidateHash: prepared.candidateHash });
+      findings.push(...prepared.findings(reviewed.result));
+    }
+    if (grounding) {
+      const reviewed = await lessonGrounding!.review(grounding, round);
+      if (!grounding.validate(reviewed.result).valid)
+        throw ProviderError.invalidOutput(
+          'Lesson grounding did not review its exact current claims and context.',
+          'candidate',
+          'SEMANTIC_VALIDATION_FAILURE',
+          false,
+        );
+      groundingReview.rounds.push({
+        ...reviewed,
+        result: LessonGroundingResultSchema.parse(reviewed.result),
+        candidateHash: grounding.candidateHash,
+        claimsHash: grounding.claimsHash,
+        inputHash: grounding.inputHash,
+      });
+      findings.push(...grounding.findings(reviewed.result));
+    }
+    lessonGrounding?.onFindings?.(findings);
+    if (!findings.length)
+      return {
+        candidate,
+        receipts,
+        groundingReview: lessonGrounding ? groundingReview : undefined,
+      };
     const findingKey = (finding: TeachingContentReview['findings'][number]) =>
       `${finding.itemId}\u0000${finding.code}`;
     const resolvedPriorDefect = previousFindings?.some(
       (prior) => !findings.some((current) => findingKey(current) === findingKey(prior)),
     );
-    const changedDraft = round > 0 && receipts[round - 1]!.candidateHash !== prepared.candidateHash;
+    const changedDraft = round > 0 && previousCandidateHash !== prepared.candidateHash;
     // One extra correction is worthwhile when the first revision demonstrably
     // resolved a defect and revealed another. Never reroll unchanged material
     // or keep asking the reviewer until a still-failing draft gets a pass.
@@ -184,6 +237,7 @@ export async function verifyPreparedTeaching<
         },
       );
     previousFindings = findings;
+    previousCandidateHash = prepared.candidateHash;
     candidate = await revise(candidate, findings);
   }
   throw new Error('Unreachable teaching review state.');

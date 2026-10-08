@@ -1,10 +1,12 @@
 import {
   AcceptedLessonCheckpointSchema,
   ApiErrorCode,
+  LESSON_GROUNDING_REVIEW_SCHEMA_VERSION,
   type AcceptedLessonCheckpoint,
 } from '@hy3-clinic/shared';
 import type { SqliteDb } from '../db/database.js';
 import { AppError } from '../errors.js';
+import { hasCurrentCheckpointLessonGrounding } from '../services/lessonGrounding.js';
 
 interface AcceptedLessonCheckpointRow {
   id: string;
@@ -115,6 +117,11 @@ export function createAcceptedLessonCheckpointsRepo(db: SqliteDb) {
   const createTx = db.transaction(
     (rawInput: AcceptedLessonCheckpoint): AcceptedLessonCheckpoint => {
       const checkpoint = AcceptedLessonCheckpointSchema.parse(rawInput);
+      if (!hasCurrentCheckpointLessonGrounding(checkpoint))
+        throw new AppError(
+          ApiErrorCode.VersionConflict,
+          'Accepted Lesson checkpoint persistence requires complete current grounding.',
+        );
       const route = db
         .prepare(
           `SELECT s.workspace_id, s.curriculum_id, s.plan_id, s.agenda_id,
@@ -244,6 +251,29 @@ export function createAcceptedLessonCheckpointsRepo(db: SqliteDb) {
           'Accepted Lesson checkpoint persistence requires its exact completed Lesson logical call.',
         );
       }
+      const groundingCallsValid = checkpoint.lessonEvaluation.groundingReview!.rounds.every(
+        (round) => {
+          const call = db
+            .prepare(
+              `SELECT COUNT(*) AS n FROM model_logical_calls WHERE id=? AND operation_id=? AND workspace_id=? AND study_session_id=? AND learning_unit_id=? AND operation_type='prepare_teaching_brief' AND schema_fingerprint=? AND source_fingerprint=? AND status='completed'`,
+            )
+            .get(
+              round.logicalCallId,
+              checkpoint.operationId,
+              checkpoint.workspaceId,
+              checkpoint.studySessionId,
+              checkpoint.learningUnitId,
+              LESSON_GROUNDING_REVIEW_SCHEMA_VERSION,
+              checkpoint.sourceContextFingerprint,
+            ) as { n: number };
+          return call.n === 1;
+        },
+      );
+      if (!groundingCallsValid)
+        throw new AppError(
+          ApiErrorCode.VersionConflict,
+          'Accepted Lesson checkpoint persistence requires its exact completed grounding calls.',
+        );
       db.prepare(
         `INSERT INTO accepted_lesson_checkpoints
            (id, workspace_id, study_session_id, session_agenda_id, agenda_item_id,

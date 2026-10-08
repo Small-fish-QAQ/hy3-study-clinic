@@ -22,6 +22,7 @@ import type {
 import { MAX_COMPOSITIONAL_OUTPUT_ATTEMPTS_PER_LOGICAL_CALL } from './provider.js';
 import { preparePracticeAnswerabilityReview } from '../services/teachingContentReview.js';
 import { preparePracticeGroundingReview } from '../services/practiceAcceptance.js';
+import { prepareLessonGroundingReview } from '../services/lessonGrounding.js';
 
 function skeleton() {
   return TeachingSkeletonSchema.parse({
@@ -503,6 +504,50 @@ describe('compositional Teaching providers', () => {
     expect(body.messages[0].content).toContain(
       'Direct user permissions alone are not attribute-based',
     );
+  });
+  it('sends complete Lesson grounding claims through Hy3 without a solving decision or live request', async () => {
+    const context = lessonInput();
+    context.skeleton.lessonSlots[1]!.learnerActionRequired = true;
+    context.workedInteractionSlotId = 'L2';
+    const candidate = await new FakeProvider().generateLessonSlotContent(context);
+    const process = candidate.slots.find((slot) => slot.workedProcess)!.workedProcess!;
+    process.whyResultFollows = 'DELAYED_FINAL_RATIONALE';
+    process.steps.at(-1)!.reason = 'DELAYED_CONTINUATION_REASON';
+    process.interaction!.activity.options[1]!.feedbackIfSelected = 'DELAYED_DISTRACTOR_FEEDBACK';
+    process.interaction!.transfer.debrief = 'DELAYED_TRANSFER_DEBRIEF';
+    const result = {
+      decisions: [],
+      findings: [
+        {
+          itemId: candidate.slots.find((slot) => slot.workedProcess)!.slotId,
+          code: 'grounding',
+          problem: 'A delayed rationale contradicts the authorized rule.',
+          repairInstruction: 'Correct that rationale.',
+        },
+      ],
+    };
+    const transport = vi
+      .fn()
+      .mockResolvedValue(response(JSON.stringify(result))) as unknown as typeof fetch;
+    const prepared = prepareLessonGroundingReview(context, candidate);
+    expect(
+      await hy3(transport).reviewTeachingContent(prepared.input, {
+        validateCandidate: prepared.validate,
+      }),
+    ).toEqual(result);
+    const calls = (transport as unknown as ReturnType<typeof vi.fn>).mock.calls;
+    const body = JSON.parse(String(calls[0]![1]!.body));
+    for (const text of [
+      'DELAYED_FINAL_RATIONALE',
+      'DELAYED_CONTINUATION_REASON',
+      'DELAYED_DISTRACTOR_FEEDBACK',
+      'DELAYED_TRANSFER_DEBRIEF',
+      'correctOptionId',
+    ])
+      expect(JSON.stringify(body.messages)).toContain(text);
+    expect(body.messages[0].content).toContain('Return no decisions');
+    expect(body.max_tokens).toBe(8000);
+    expect(calls).toHaveLength(1);
   });
   it.each([
     {

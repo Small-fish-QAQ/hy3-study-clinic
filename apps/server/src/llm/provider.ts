@@ -877,6 +877,22 @@ export interface PracticeGroundingReviewInput {
   actionIds: [];
 }
 
+/** Full Lesson claims, including post-answer teaching. Never a blind solving input. */
+export interface LessonGroundingReviewInput {
+  purpose: 'lesson_grounding';
+  stage: 'lesson';
+  computedOutcomes?: boolean;
+  /** Locally planned inventory, never authored claims or answerability evidence. */
+  lessonPlan: Pick<LessonTeachingSkeleton, 'learningUnitTitle' | 'lessonSlots'>;
+  courseDesign?: LessonSlotContentGenerationInput['courseDesign'];
+  objectives: LessonSlotContentGenerationInput['skeleton']['objectives'];
+  sources: TeachingBriefGenerationInput['sourceContext']['offers'];
+  visualContext: TeachingBriefGenerationInput['visualContext'];
+  learningContext: LessonSlotContentGenerationInput['learningContext'];
+  candidate: LessonSlotContentProposalPayload;
+  actionIds: [];
+}
+
 /** One isolated unanswered Practice action, with only prior public teaching. */
 export interface PracticeAnswerabilityReviewInput {
   purpose: 'practice_answerability';
@@ -889,6 +905,7 @@ export interface PracticeAnswerabilityReviewInput {
 export type TeachingContentReviewInput =
   | AuthoredTeachingContentReviewInput
   | PracticeGroundingReviewInput
+  | LessonGroundingReviewInput
   | PracticeAnswerabilityReviewInput;
 
 export interface LessonSlotContentGenerationInput {

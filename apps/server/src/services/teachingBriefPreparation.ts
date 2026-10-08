@@ -1,5 +1,7 @@
 import { createHash } from 'node:crypto';
 import {
+  LessonGroundingResultSchema,
+  LESSON_GROUNDING_REVIEW_SCHEMA_VERSION,
   ApiErrorCode,
   TeachingBriefPreparationRequestSchema,
   TeachingBriefPreparationResponseSchema,
@@ -88,6 +90,15 @@ import { verifyPreparedPractice, verifyPreparedTeaching } from './teachingConten
 import { capsuleInputs, assembleCapsules } from './teachingCapsules.js';
 import { validateTeachingCapsule, usesComputedTeachingCases } from '../llm/teachingCapsule.js';
 import { confineTeachingCitations } from '../llm/teachingCitations.js';
+import {
+  assertPreparedLessonGrounding,
+  bindLessonGroundingToCheckpoint,
+  checkpointLessonCandidate,
+  hasCurrentCheckpointLessonGrounding,
+  hasCurrentLessonGrounding,
+  hasCurrentLessonGroundingProjection,
+} from './lessonGrounding.js';
+import { LESSON_GROUNDING_POLICY_VERSION } from '@hy3-clinic/shared';
 import { TeachingStrategiesSchema, validateTeachingStrategies } from '../llm/teachingStrategy.js';
 import {
   assertCurrentLessonObjectiveAuthoritySemanticSupport,
@@ -96,13 +107,13 @@ import {
 
 export const TEACHING_BRIEF_PROMPT_VERSION =
   'teaching-brief-v3-compositional-source-guided-interaction';
-export const LESSON_CONTENT_PROMPT_VERSION = 'teaching-lesson-content-v19-public-choice-contract';
+export const LESSON_CONTENT_PROMPT_VERSION = 'teaching-lesson-content-v21-grounding-admission';
 export const PRACTICE_CONTENT_PROMPT_VERSION =
   'teaching-practice-content-v17-source-faithful-models';
 /**
  * Retain the accepted R2 lease window. It is renewed before each bounded call;
  * this is a stale-worker fence, not a target preparation duration. Computed
- * teaching normally needs one compact call per objective, with no editor/reviewer.
+ * teaching uses compact authoring calls plus the required independent reviews.
  */
 export const COMPOSITIONAL_PREPARATION_LEASE_MS = 152 * 60 * 1000;
 
@@ -174,6 +185,7 @@ export function compositionFingerprint(
     lessonPedagogy: COMPOSITIONAL_LESSON_PEDAGOGY_POLICY_VERSION,
     practiceQuality: COMPOSITIONAL_PRACTICE_QUALITY_POLICY_VERSION,
   },
+  lessonReviewContext?: LessonSlotContentGenerationInput,
 ): string {
   return `lesson_context_${fingerprint({
     sourceContextFingerprint: contextFingerprint,
@@ -182,6 +194,8 @@ export function compositionFingerprint(
     lessonPromptVersion: LESSON_CONTENT_PROMPT_VERSION,
     practicePromptVersion: PRACTICE_CONTENT_PROMPT_VERSION,
     lessonPedagogyPolicyVersion: policyVersions.lessonPedagogy,
+    lessonGroundingPolicyVersion: LESSON_GROUNDING_POLICY_VERSION,
+    lessonReviewContext,
     practiceQualityPolicyVersion: policyVersions.practiceQuality,
   }).slice(0, 40)}`;
 }
@@ -194,6 +208,7 @@ export function isCurrentAcceptedLessonCheckpoint(
     checkpoint.lessonEvaluation.policyVersion === COMPOSITIONAL_LESSON_PEDAGOGY_POLICY_VERSION &&
     checkpoint.lessonLogicalCallId !== null &&
     checkpoint.lessonContent[0]?.lessonNarrative !== undefined &&
+    hasCurrentCheckpointLessonGrounding(checkpoint) &&
     hasAcceptedLessonChoiceContract(checkpoint.lessonContent, checkpoint.lessonEvaluation)
   );
 }
@@ -205,17 +220,18 @@ export function selectCurrentAcceptedLessonCheckpoint(
   if (!isCurrentAcceptedLessonCheckpoint(checkpoint)) {
     throw new AppError(
       ApiErrorCode.VersionConflict,
-      'The accepted Lesson checkpoint lacks current evaluation, logical-call provenance, or a valid public choice contract.',
+      'The accepted Lesson checkpoint lacks current grounding, evaluation, logical-call provenance, or a valid public choice contract.',
     );
   }
   return checkpoint;
 }
 
-/** Current authority is checked without rewriting any historical evaluation. */
+/** Current acceptance requires separate grounding and public choice evidence. */
 export function hasCurrentPreparedLesson(brief: TeachingBrief): boolean {
   return (
     brief.composition?.lessonPromptVersion === LESSON_CONTENT_PROMPT_VERSION &&
     brief.pedagogyEvaluation?.policyVersion === COMPOSITIONAL_LESSON_PEDAGOGY_POLICY_VERSION &&
+    hasCurrentLessonGrounding(brief) &&
     hasAcceptedLessonChoiceContract(brief.segments, brief.pedagogyEvaluation, [
       brief.objective?.whyNow ?? '',
     ])
@@ -832,6 +848,38 @@ export function createTeachingBriefPreparationService({
     };
   }
 
+  function currentLessonGroundingContext(
+    route: ReturnType<typeof routeContext>,
+    input: TeachingBriefGenerationInput,
+    checkpoint: AcceptedLessonCheckpoint,
+  ) {
+    const context = lessonInput(route, input, checkpoint.skeleton);
+    const joint = checkpoint.lessonEvaluation.jointAuthoring;
+    if (joint) {
+      context.preparedTogether = true;
+      context.computedCases = joint.executionVerified;
+    }
+    return context;
+  }
+
+  function hasCurrentLessonReviewContext(
+    route: ReturnType<typeof routeContext>,
+    input: TeachingBriefGenerationInput,
+    checkpoint: AcceptedLessonCheckpoint,
+  ) {
+    try {
+      assertPreparedLessonGrounding(
+        checkpointLessonCandidate(checkpoint),
+        currentLessonGroundingContext(route, input, checkpoint),
+        checkpoint.lessonEvaluation.groundingReview,
+      );
+      return true;
+    } catch (error) {
+      if (error instanceof ProviderError) return false;
+      throw error;
+    }
+  }
+
   function derivedObjective(
     route: ReturnType<typeof routeContext>,
     input: TeachingBriefGenerationInput,
@@ -1063,6 +1111,10 @@ export function createTeachingBriefPreparationService({
       promptVersion: TEACHING_BRIEF_PROMPT_VERSION,
       createdAt: clock.now().toISOString(),
     });
+    if (!hasCurrentPreparedLesson(brief))
+      throw ProviderError.invalidOutput(
+        'Materialized Lesson changed its grounded claims or context.',
+      );
     bindPracticeGroundingToBrief(brief, practicePayload, practiceContext);
     if (!hasCurrentPreparedPractice(brief)) {
       throw ProviderError.invalidOutput(
@@ -1121,7 +1173,7 @@ export function createTeachingBriefPreparationService({
 
   function checkpointIdentity(
     input: TeachingBriefRouteInput,
-    contextFingerprint: string,
+    sourceContextFingerprint: string,
     skeleton: TeachingSkeleton,
   ) {
     return {
@@ -1136,7 +1188,7 @@ export function createTeachingBriefPreparationService({
       studyPlanItemId: input.expectedStudyPlanItemId,
       learningUnitId: input.learningUnitId,
       executionSourceManifestFingerprint: input.expectedExecutionSourceManifestFingerprint,
-      sourceContextFingerprint: compositionFingerprint(contextFingerprint, skeleton),
+      sourceContextFingerprint,
       skeletonFingerprint: skeleton.fingerprint,
       promptVersion: LESSON_CONTENT_PROMPT_VERSION,
     };
@@ -1172,22 +1224,39 @@ export function createTeachingBriefPreparationService({
       throw error;
     }
     const checkpoint = repos.acceptedLessonCheckpoints.findReusable(
-      checkpointIdentity(input, context.fingerprint, skeleton),
+      checkpointIdentity(
+        input,
+        compositionFingerprint(
+          context.fingerprint,
+          skeleton,
+          undefined,
+          lessonInput(route, generationInput, skeleton),
+        ),
+        skeleton,
+      ),
     );
-    if (!isCurrentAcceptedLessonCheckpoint(checkpoint)) {
+    if (
+      !isCurrentAcceptedLessonCheckpoint(checkpoint) ||
+      !hasCurrentLessonReviewContext(route, generationInput, checkpoint)
+    ) {
       return null;
     }
     const metadata = localLessonMetadata(route, generationInput, checkpoint);
-    return {
-      checkpointId: checkpoint.id,
+    const lessonProjection = {
+      sourceManifest: route.curriculum.executionSourceManifest,
       objective: metadata.objective,
       prerequisites: metadata.prerequisites,
       segments: assembleSegments(route, checkpoint),
-      formalOpportunities: metadata.formalOpportunities,
       summary: metadata.summary,
       nextConnection: metadata.nextConnection,
       sourceReferences: context.references,
       visualReferences: context.visualReferences,
+    };
+    if (!hasCurrentLessonGroundingProjection(checkpoint, lessonProjection)) return null;
+    return {
+      checkpointId: checkpoint.id,
+      ...lessonProjection,
+      formalOpportunities: metadata.formalOpportunities,
       pedagogyEvaluation: checkpoint.lessonEvaluation,
     };
   }
@@ -1200,7 +1269,7 @@ export function createTeachingBriefPreparationService({
     if (!inferenceProvider.reviewTeachingContent) {
       throw new AppError(
         ApiErrorCode.ValidationError,
-        'Prepared Practice requires the independent content-review capability.',
+        'Prepared Lesson and Practice require the independent content-review capability.',
       );
     }
     const operationStudySession = repos.studySessions.get(input.studySessionId);
@@ -1234,11 +1303,12 @@ export function createTeachingBriefPreparationService({
         : undefined;
       if (
         !hasCurrentPreparedLesson(response.brief) ||
-        !isCurrentAcceptedLessonCheckpoint(checkpoint)
+        !isCurrentAcceptedLessonCheckpoint(checkpoint) ||
+        acceptedLessonPreview(input)?.checkpointId !== checkpoint.id
       ) {
         throw new AppError(
           ApiErrorCode.VersionConflict,
-          'The stored Lesson lacks the current public choice contract. Prepare it with a new command; historical evaluations are preserved.',
+          'The stored Lesson lacks current grounding, authorized context, or its public choice contract. Prepare it with a new command.',
         );
       }
       if (!hasCurrentPreparedPractice(response.brief)) {
@@ -1312,13 +1382,20 @@ export function createTeachingBriefPreparationService({
         }
         throw error;
       }
-      const scopedFingerprint = compositionFingerprint(context.fingerprint, skeleton);
+      const scopedFingerprint = compositionFingerprint(
+        context.fingerprint,
+        skeleton,
+        undefined,
+        lessonInput(route, generationInput, skeleton),
+      );
       const effectiveObjectives = derivedObjective(route, generationInput, skeleton);
       const history = repos.teachingBriefs.listForUnit(input.workspaceId, input.learningUnitId);
       const reusableCheckpoint = repos.acceptedLessonCheckpoints.findReusable(
-        checkpointIdentity(input, context.fingerprint, skeleton),
+        checkpointIdentity(input, scopedFingerprint, skeleton),
       );
       let checkpoint = selectCurrentAcceptedLessonCheckpoint(reusableCheckpoint);
+      if (checkpoint && !hasCurrentLessonReviewContext(route, generationInput, checkpoint))
+        checkpoint = undefined;
       checkpointForDiagnostics = checkpoint;
       const reusableCandidate = checkpoint
         ? repos.teachingBriefs.findReusable({
@@ -1627,14 +1704,10 @@ export function createTeachingBriefPreparationService({
           });
         }
         let contentReview: LessonPedagogyEvaluation['contentReview'];
+        let groundingReview: LessonPedagogyEvaluation['groundingReview'];
         // Rendering/schema defects do not need (or wait for) semantic review.
         assertLessonChoiceContract(lessonPayload.slots);
-        if (
-          provider.name === 'hy3' ||
-          lessonChoiceNeedsMaterialReview(lessonPayload.slots, [
-            lessonPayload.narrative?.whyNow ?? '',
-          ])
-        ) {
+        {
           // REAL Lesson already uses this review once plus its existing bounded
           // corrections. The offline provider also exercises it for unresolved
           // references; generation/cache validity alone cannot accept them.
@@ -1642,7 +1715,13 @@ export function createTeachingBriefPreparationService({
           // faithful to the source. Review every rule and explanation, while
           // only asking the reviewer to solve actions not already computed.
           const reviewContext = compositionalLessonInput;
-          const reviewScope = (payload: LessonSlotContentProposalPayload) => payload;
+          const reviewScope = (payload: LessonSlotContentProposalPayload) =>
+            provider.name === 'hy3'
+              ? confineTeachingCitations(
+                  { lesson: payload, practice: { items: [] } },
+                  { lesson: compositionalLessonInput },
+                ).lesson
+              : payload;
           let contentRevision = 0;
           const verified = await verifyPreparedTeaching(
             reviewContext,
@@ -1658,7 +1737,6 @@ export function createTeachingBriefPreparationService({
                     validateCandidate: prepared.validate,
                   }),
               );
-              rejectedTeachingItems = prepared.findings(result).map((finding) => finding.itemId);
               return { logicalCallId, result };
             },
             async (draft, findings) => {
@@ -1752,40 +1830,64 @@ export function createTeachingBriefPreparationService({
                 return reviewScope(revised);
               }
               lessonLogicalCallId = `${operationKey}:lesson-revision${contentRevision > 1 ? `-${contentRevision}` : ''}`;
-              return trackedReviewCall(
-                lessonLogicalCallId,
-                'lesson-slot-content-proposal-v1',
-                (opts) =>
-                  inferenceProvider.generateLessonSlotContent(
-                    {
-                      ...structuredClone(compositionalLessonInput),
-                      draftForReview: draft,
-                      editorialFindings: findings,
-                    },
-                    {
-                      ...opts,
-                      validateCandidate: (candidate) =>
-                        validateLessonSlotContentCandidate(candidate, compositionalLessonInput),
-                    },
-                  ),
+              return reviewScope(
+                await trackedReviewCall(
+                  lessonLogicalCallId,
+                  'lesson-slot-content-proposal-v1',
+                  (opts) =>
+                    inferenceProvider.generateLessonSlotContent(
+                      {
+                        ...structuredClone(compositionalLessonInput),
+                        draftForReview: draft,
+                        editorialFindings: findings,
+                      },
+                      {
+                        ...opts,
+                        validateCandidate: (candidate) =>
+                          validateLessonSlotContentCandidate(candidate, compositionalLessonInput),
+                      },
+                    ),
+                ),
               );
             },
             computedSlotIds,
+            {
+              onFindings: (findings) => {
+                rejectedTeachingItems = findings.map((finding) => finding.itemId);
+              },
+              reviewChoices: (candidate) =>
+                provider.name === 'hy3' ||
+                lessonChoiceNeedsMaterialReview(candidate.slots, [
+                  candidate.narrative?.whyNow ?? '',
+                ]),
+              review: async (prepared, round) => {
+                const logicalCallId = `${operationKey}:lesson-grounding-${round}`;
+                const result = await trackedReviewCall(
+                  logicalCallId,
+                  LESSON_GROUNDING_REVIEW_SCHEMA_VERSION,
+                  (opts) =>
+                    inferenceProvider.reviewTeachingContent!(structuredClone(prepared.input), {
+                      ...opts,
+                      validateCandidate: prepared.validate,
+                    }),
+                  {
+                    identity: { inputHash: prepared.inputHash, input: prepared.input },
+                    validateResult: (raw) => {
+                      if (!prepared.validate(raw).valid)
+                        throw ProviderError.invalidOutput(
+                          'Lesson grounding dependency no longer matches its exact claims/context.',
+                        );
+                      return LessonGroundingResultSchema.parse(raw);
+                    },
+                  },
+                );
+                return { logicalCallId, result };
+              },
+            },
           );
-          lessonPayload = {
-            ...lessonPayload,
-            ...(verified.candidate.narrative ? { narrative: verified.candidate.narrative } : {}),
-            slots: lessonPayload.slots.map(
-              (slot) => verified.candidate.slots.find((s) => s.slotId === slot.slotId) ?? slot,
-            ),
-          };
-          contentReview = verified.receipts;
-        }
-        if (provider.name === 'hy3') {
-          lessonPayload = confineTeachingCitations(
-            { lesson: lessonPayload, practice: { items: [] } },
-            { lesson: compositionalLessonInput },
-          ).lesson;
+          lessonPayload = verified.candidate;
+          if (verified.receipts.length) contentReview = verified.receipts;
+          groundingReview = verified.groundingReview;
         }
         assertLessonChoiceContract(lessonPayload.slots, [lessonPayload.narrative?.whyNow ?? '']);
         const lessonEvaluation = evaluateLessonSlotPedagogy(
@@ -1797,6 +1899,7 @@ export function createTeachingBriefPreparationService({
           },
         );
         if (contentReview) lessonEvaluation.contentReview = contentReview;
+        lessonEvaluation.groundingReview = groundingReview;
         if (jointAuthoring) lessonEvaluation.jointAuthoring = jointAuthoring;
         if (
           !hasAcceptedLessonChoiceContract(lessonPayload.slots, lessonEvaluation, [
@@ -1824,37 +1927,54 @@ export function createTeachingBriefPreparationService({
           const current = routeStillCurrent(input, context.fingerprint);
           assertLessonObjectiveAuthoritySemanticSupport(current.route);
           const concurrentCandidate = repos.acceptedLessonCheckpoints.findReusable(
-            checkpointIdentity(input, context.fingerprint, skeleton),
+            checkpointIdentity(input, scopedFingerprint, skeleton),
           );
           const concurrent = selectCurrentAcceptedLessonCheckpoint(concurrentCandidate);
-          return (
-            concurrent ??
-            repos.acceptedLessonCheckpoints.create({
-              id: newId('accepted_lesson'),
-              workspaceId: input.workspaceId,
-              studySessionId: input.studySessionId,
-              sessionAgendaId: input.sessionAgendaId,
-              agendaItemId: input.expectedAgendaItemId,
-              expectedSessionVersion: input.expectedSessionVersion,
-              expectedAgendaVersion: input.expectedAgendaVersion,
-              curriculumVersionId: input.curriculumVersionId,
-              studyPlanVersionId: input.studyPlanVersionId,
-              studyPlanItemId: input.expectedStudyPlanItemId,
-              learningUnitId: input.learningUnitId,
-              executionSourceManifestFingerprint: input.expectedExecutionSourceManifestFingerprint,
-              sourceContextFingerprint: scopedFingerprint,
-              skeleton,
-              lessonContent: acceptedLessonContent,
-              lessonEvaluation,
-              operationId: claim.id,
-              lessonLogicalCallId,
-              provider: provider.name,
-              providerModel:
-                provider.name === 'hy3' ? (provider.model ?? providerModel ?? null) : null,
-              promptVersion: LESSON_CONTENT_PROMPT_VERSION,
-              createdAt: clock.now().toISOString(),
-            })
+          const currentInput = providerInput(current.route, current.context);
+          if (concurrent && hasCurrentLessonReviewContext(current.route, currentInput, concurrent))
+            return concurrent;
+          const candidateCheckpoint: AcceptedLessonCheckpoint = {
+            id: newId('accepted_lesson'),
+            workspaceId: input.workspaceId,
+            studySessionId: input.studySessionId,
+            sessionAgendaId: input.sessionAgendaId,
+            agendaItemId: input.expectedAgendaItemId,
+            expectedSessionVersion: input.expectedSessionVersion,
+            expectedAgendaVersion: input.expectedAgendaVersion,
+            curriculumVersionId: input.curriculumVersionId,
+            studyPlanVersionId: input.studyPlanVersionId,
+            studyPlanItemId: input.expectedStudyPlanItemId,
+            learningUnitId: input.learningUnitId,
+            executionSourceManifestFingerprint: input.expectedExecutionSourceManifestFingerprint,
+            sourceContextFingerprint: scopedFingerprint,
+            skeleton,
+            lessonContent: acceptedLessonContent,
+            lessonEvaluation,
+            operationId: claim.id,
+            lessonLogicalCallId,
+            provider: provider.name,
+            providerModel:
+              provider.name === 'hy3' ? (provider.model ?? providerModel ?? null) : null,
+            promptVersion: LESSON_CONTENT_PROMPT_VERSION,
+            createdAt: clock.now().toISOString(),
+          };
+          const metadata = localLessonMetadata(current.route, currentInput, candidateCheckpoint);
+          bindLessonGroundingToCheckpoint(
+            candidateCheckpoint,
+            lessonPayload,
+            currentLessonGroundingContext(current.route, currentInput, candidateCheckpoint),
+            {
+              objective: metadata.objective,
+              prerequisites: metadata.prerequisites,
+              segments: assembleSegments(current.route, candidateCheckpoint),
+              summary: metadata.summary,
+              nextConnection: metadata.nextConnection,
+              sourceReferences: current.context.references,
+              visualReferences: current.context.visualReferences,
+              sourceManifest: current.route.curriculum.executionSourceManifest,
+            },
           );
+          return repos.acceptedLessonCheckpoints.create(candidateCheckpoint);
         });
         checkpointForDiagnostics = checkpoint;
       }
@@ -2145,6 +2265,14 @@ export function createTeachingBriefPreparationService({
       return repos.transaction(() => {
         const current = routeStillCurrent(input, context.fingerprint);
         assertLessonObjectiveAuthoritySemanticSupport(current.route);
+        if (
+          !hasCurrentLessonReviewContext(
+            current.route,
+            providerInput(current.route, current.context),
+            checkpoint,
+          )
+        )
+          throw new AppError(ApiErrorCode.VersionConflict, 'Lesson grounding context changed.');
         const concurrentCandidate = repos.teachingBriefs.findReusable({
           workspaceId: input.workspaceId,
           curriculumVersionId: input.curriculumVersionId,
@@ -2297,16 +2425,29 @@ export function createTeachingBriefPreparationService({
         throw error;
       }
       const checkpoint = repos.acceptedLessonCheckpoints.findReusable(
-        checkpointIdentity(input, context.fingerprint, skeleton),
+        checkpointIdentity(
+          input,
+          compositionFingerprint(
+            context.fingerprint,
+            skeleton,
+            undefined,
+            lessonInput(route, generationInput, skeleton),
+          ),
+          skeleton,
+        ),
       );
-      if (!isCurrentAcceptedLessonCheckpoint(checkpoint)) return null;
+      if (
+        !isCurrentAcceptedLessonCheckpoint(checkpoint) ||
+        !hasCurrentLessonReviewContext(route, generationInput, checkpoint)
+      )
+        return null;
       const candidate = repos.teachingBriefs.findReusable({
         workspaceId: input.workspaceId,
         curriculumVersionId: input.curriculumVersionId,
         studyPlanVersionId: input.studyPlanVersionId,
         learningUnitId: input.learningUnitId,
         manifestFingerprint: input.expectedExecutionSourceManifestFingerprint,
-        sourceContextFingerprint: compositionFingerprint(context.fingerprint, skeleton),
+        sourceContextFingerprint: checkpoint.sourceContextFingerprint,
         acceptedLessonCheckpointId: checkpoint.id,
       });
       return isCurrentCompositionalBrief(candidate, skeleton) ? candidate : null;

@@ -33,7 +33,6 @@ import {
 } from './generationStages.js';
 import { createTelemetryProvider } from './providerTelemetry.js';
 import { hasCurrentPreparedPractice } from './practiceAcceptance.js';
-import { hasValidLessonChoiceContract } from './lessonChoiceContract.js';
 import {
   hasCurrentPreparedLesson,
   isCurrentAcceptedLessonCheckpoint,
@@ -298,13 +297,7 @@ export function createLessonExecutionService({
     if (brief.practice && !state.practiceCompletedAt && !hasCurrentPreparedPractice(brief)) {
       return null;
     }
-    if (
-      !reviewable(context) &&
-      (brief.composition
-        ? !hasCurrentPreparedLesson(brief)
-        : !hasValidLessonChoiceContract(brief.segments, [brief.objective.whyNow]))
-    )
-      return null;
+    if (!hasCurrentPreparedLesson(brief)) return null;
     if (brief.composition) {
       const checkpoint = repos.acceptedLessonCheckpoints.get(
         brief.composition.acceptedLessonCheckpointId,
@@ -322,7 +315,14 @@ export function createLessonExecutionService({
       ) {
         return null;
       }
-      if (!reviewable(context) && !isCurrentAcceptedLessonCheckpoint(checkpoint)) return null;
+      if (!isCurrentAcceptedLessonCheckpoint(checkpoint)) return null;
+      // A hash of saved context cannot certify that this source/plan context
+      // is still authorized now. Reconstruct the current bounded projection
+      // through the same read-only source and authority gate as preview/reuse.
+      const currentLesson = teachingBriefPreparation.getAcceptedLessonPreview(
+        preparationRouteInput(context),
+      );
+      if (currentLesson?.checkpointId !== checkpoint.id) return null;
     }
     return brief;
   }
@@ -1075,7 +1075,7 @@ export function createLessonExecutionService({
     );
     if (claim.replayPayload) {
       const replay = LessonExecutionProjectionSchema.parse(claim.replayPayload);
-      if (replay.status === 'ready' && !currentBrief(initial)) return get(workspaceId, sessionId);
+      if (replay.lesson) return get(workspaceId, sessionId);
       return replay;
     }
     let claimedState: LessonExecutionState;
@@ -1187,6 +1187,17 @@ export function createLessonExecutionService({
         if (!latest || latest.preparationOperationId !== claim.operationId)
           throw new AppError(ApiErrorCode.VersionConflict, 'Lesson preparation was superseded.');
         const now = clock.now().toISOString();
+        const replacedIncompatibleBrief =
+          !!latest.teachingBriefId && latest.teachingBriefId !== response.brief.id;
+        const previousBrief = latest.teachingBriefId
+          ? repos.teachingBriefs.get(latest.teachingBriefId)
+          : undefined;
+        const resetLesson =
+          replacedIncompatibleBrief &&
+          (!previousBrief ||
+            !hasCurrentPreparedLesson(previousBrief) ||
+            latest.acceptedLessonCheckpointId !==
+              response.brief.composition?.acceptedLessonCheckpointId);
         const next = repos.lessonExecution.update(
           {
             ...latest,
@@ -1198,6 +1209,17 @@ export function createLessonExecutionService({
             preparationOperationId: null,
             version: latest.version + 1,
             updatedAt: now,
+            ...(resetLesson
+              ? {
+                  currentSegmentIndex: 0,
+                  presentedSegmentIndexes: [],
+                  informalInteractions: [],
+                  presentationCompletedAt: null,
+                }
+              : {}),
+            ...(replacedIncompatibleBrief
+              ? { practiceInteractions: [], practiceCompletedAt: null }
+              : {}),
           },
           latest.version,
         );
@@ -1207,7 +1229,7 @@ export function createLessonExecutionService({
           seq: repos.lessonExecution.listEvents(next.id).length + 1,
           commandId: input.command.commandId,
           kind: 'preparation_ready',
-          payload: { reused: response.status === 'reused' },
+          payload: { reused: response.status === 'reused', replacedIncompatibleBrief },
           createdAt: now,
         });
         return next;
@@ -1310,7 +1332,10 @@ export function createLessonExecutionService({
       },
       { studySessionId: sessionId },
     );
-    if (claim.replayPayload) return LessonExecutionProjectionSchema.parse(claim.replayPayload);
+    if (claim.replayPayload) {
+      const replay = LessonExecutionProjectionSchema.parse(claim.replayPayload);
+      return replay.lesson ? get(workspaceId, sessionId) : replay;
+    }
     try {
       if (input.action.kind === 'prepare_practice_repair') {
         const current = stateFor(initial);

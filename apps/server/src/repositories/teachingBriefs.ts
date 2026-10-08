@@ -1,5 +1,6 @@
 import {
   ApiErrorCode,
+  AcceptedLessonCheckpointSchema,
   LessonPedagogyEvaluationSchema,
   StudyPlanItemSchema,
   TeachingBriefSchema,
@@ -11,6 +12,10 @@ import {
 import type { SqliteDb } from '../db/database.js';
 import { curriculumSourceBlockFingerprint } from '../grounding/sourceFingerprint.js';
 import { AppError } from '../errors.js';
+import {
+  hasCurrentCheckpointLessonGrounding,
+  hasCurrentLessonGrounding,
+} from '../services/lessonGrounding.js';
 
 interface TeachingBriefRow {
   id: string;
@@ -130,22 +135,28 @@ export function createTeachingBriefsRepo(db: SqliteDb) {
     if (brief.composition) {
       const predecessor = db
         .prepare(
-          `SELECT workspace_id, curriculum_id, study_plan_id, learning_unit_id,
+          `SELECT id, workspace_id, curriculum_id, study_plan_id, learning_unit_id,
                   study_session_id,
+                  session_agenda_id, agenda_item_id, expected_session_version, expected_agenda_version,
                   study_plan_item_id,
                   manifest_fingerprint, source_context_fingerprint,
                   skeleton_version, skeleton_fingerprint, operation_id,
                   lesson_logical_call_id, skeleton_payload, lesson_payload,
-                  lesson_evaluation_payload, prompt_version
+                  lesson_evaluation_payload, prompt_version, provider, provider_model, created_at
            FROM accepted_lesson_checkpoints WHERE id = ?`,
         )
         .get(brief.composition.acceptedLessonCheckpointId) as
         | {
+            id: string;
             workspace_id: string;
             curriculum_id: string;
             study_plan_id: string;
             learning_unit_id: string;
             study_session_id: string;
+            session_agenda_id: string;
+            agenda_item_id: string;
+            expected_session_version: number;
+            expected_agenda_version: number;
             study_plan_item_id: string;
             manifest_fingerprint: string;
             source_context_fingerprint: string;
@@ -157,6 +168,9 @@ export function createTeachingBriefsRepo(db: SqliteDb) {
             lesson_payload: string;
             lesson_evaluation_payload: string;
             prompt_version: string;
+            provider: string;
+            provider_model: string | null;
+            created_at: string;
           }
         | undefined;
       const practiceOperation = db
@@ -203,23 +217,40 @@ export function createTeachingBriefsRepo(db: SqliteDb) {
       const requiresLogicalCallProvenance = brief.promptVersion.startsWith(
         'teaching-brief-v3-compositional',
       );
+      const predecessorCheckpoint = predecessor
+        ? AcceptedLessonCheckpointSchema.parse({
+            id: predecessor.id,
+            workspaceId: predecessor.workspace_id,
+            studySessionId: predecessor.study_session_id,
+            sessionAgendaId: predecessor.session_agenda_id,
+            agendaItemId: predecessor.agenda_item_id,
+            expectedSessionVersion: predecessor.expected_session_version,
+            expectedAgendaVersion: predecessor.expected_agenda_version,
+            curriculumVersionId: predecessor.curriculum_id,
+            studyPlanVersionId: predecessor.study_plan_id,
+            studyPlanItemId: predecessor.study_plan_item_id,
+            learningUnitId: predecessor.learning_unit_id,
+            executionSourceManifestFingerprint: predecessor.manifest_fingerprint,
+            sourceContextFingerprint: predecessor.source_context_fingerprint,
+            operationId: predecessor.operation_id,
+            lessonLogicalCallId: predecessor.lesson_logical_call_id,
+            provider: predecessor.provider,
+            providerModel: predecessor.provider_model,
+            createdAt: predecessor.created_at,
+            skeleton: TeachingSkeletonSchema.parse(JSON.parse(predecessor.skeleton_payload)),
+            lessonContent: TeachingLessonSlotContentsSchema.parse(
+              JSON.parse(predecessor.lesson_payload),
+            ),
+            lessonEvaluation: LessonPedagogyEvaluationSchema.parse(
+              JSON.parse(predecessor.lesson_evaluation_payload),
+            ),
+            promptVersion: predecessor.prompt_version,
+          })
+        : undefined;
       const matchesAcceptedLessonProjection =
-        predecessor && objectiveIds
-          ? teachingBriefMatchesAcceptedLessonProjection(
-              brief,
-              {
-                id: brief.composition.acceptedLessonCheckpointId,
-                skeleton: TeachingSkeletonSchema.parse(JSON.parse(predecessor.skeleton_payload)),
-                lessonContent: TeachingLessonSlotContentsSchema.parse(
-                  JSON.parse(predecessor.lesson_payload),
-                ),
-                lessonEvaluation: LessonPedagogyEvaluationSchema.parse(
-                  JSON.parse(predecessor.lesson_evaluation_payload),
-                ),
-                promptVersion: predecessor.prompt_version,
-              },
-              objectiveIds,
-            )
+        predecessorCheckpoint && objectiveIds
+          ? hasCurrentCheckpointLessonGrounding(predecessorCheckpoint) &&
+            teachingBriefMatchesAcceptedLessonProjection(brief, predecessorCheckpoint, objectiveIds)
           : false;
       const jointIds = predecessor
         ? LessonPedagogyEvaluationSchema.parse(JSON.parse(predecessor.lesson_evaluation_payload))
@@ -242,6 +273,7 @@ export function createTeachingBriefsRepo(db: SqliteDb) {
         predecessor.skeleton_fingerprint !== brief.composition.skeletonFingerprint ||
         predecessor.operation_id !== brief.composition.lessonOperationId ||
         !matchesAcceptedLessonProjection ||
+        !hasCurrentLessonGrounding(brief) ||
         !practiceOperation ||
         practiceOperation.workspace_id !== brief.workspaceId ||
         practiceOperation.status !== 'running' ||

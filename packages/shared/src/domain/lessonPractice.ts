@@ -112,6 +112,59 @@ export const PRACTICE_ACCEPTANCE_POLICY_VERSION = 'practice-acceptance-v5-ground
 /** Complete authored claims, independently of the blind/public review projections. */
 export const PRACTICE_GROUNDING_POLICY_VERSION = 'practice-grounding-v1-complete-claims';
 
+/** Complete Lesson claims, separate from the learner-visible choice contract. */
+export const LESSON_GROUNDING_POLICY_VERSION =
+  'lesson-grounding-v2-purpose-admission-offline-fixtures';
+export const LESSON_GROUNDING_REVIEW_SCHEMA_VERSION = 'lesson-grounding-review-v2';
+
+/** Lesson-only purpose contract: no material finding may be filtered out as quality. */
+export const LessonGroundingResultSchema = TeachingContentReviewSchema.extend({
+  decisions: TeachingContentReviewSchema.shape.decisions.max(0),
+  findings: TeachingContentReviewSchema.shape.findings.refine(
+    (findings) =>
+      findings.every(({ code }) =>
+        ['accuracy', 'grounding', 'insufficient_evidence', 'misconception'].includes(code),
+      ),
+    'Lesson grounding findings must identify material correctness or source defects.',
+  ),
+  // Quality opinions never authorize or reject teaching. Keeping them in a
+  // separate inventory prevents a generic code from silently erasing a defect.
+  advisories: TeachingContentReviewSchema.shape.findings
+    .refine(
+      (findings) => findings.every(({ code }) => ['shallow_task', 'weak_transfer'].includes(code)),
+      'Lesson grounding advisories may contain only quality opinions.',
+    )
+    .optional(),
+}).strict();
+export type LessonGroundingResult = z.infer<typeof LessonGroundingResultSchema>;
+
+export const LessonGroundingReviewSchema = z
+  .object({
+    policyVersion: z.string().min(1).max(80),
+    rounds: z
+      .array(
+        TeachingContentReviewReceiptSchema.extend({
+          result: LessonGroundingResultSchema,
+          inputHash: z.string().regex(/^sha256:[a-f0-9]{64}$/u),
+          claimsHash: z.string().regex(/^sha256:[a-f0-9]{64}$/u),
+        }).strict(),
+      )
+      .min(1)
+      .max(MAX_TEACHING_CONTENT_REVIEWS),
+    /** Bound only after verifying the final candidate and current review context. */
+    checkpointContextHash: z
+      .string()
+      .regex(/^sha256:[a-f0-9]{64}$/u)
+      .optional(),
+    /** The exact Lesson projection, including source/visual authority and local metadata. */
+    exposureContextHash: z
+      .string()
+      .regex(/^sha256:[a-f0-9]{64}$/u)
+      .optional(),
+  })
+  .strict();
+export type LessonGroundingReview = z.infer<typeof LessonGroundingReviewSchema>;
+
 export const PracticeGroundingReviewSchema = z
   .object({
     policyVersion: z.string().min(1).max(80),
@@ -209,6 +262,8 @@ export const LessonPedagogyEvaluationSchema = z
       .min(1)
       .max(MAX_TEACHING_CONTENT_REVIEWS)
       .optional(),
+    /** Added after evaluation; mandatory at Lesson acceptance and execution. */
+    groundingReview: LessonGroundingReviewSchema.optional(),
     teachingDesign: z
       .object({
         logicalCallId: z.string().min(1),
