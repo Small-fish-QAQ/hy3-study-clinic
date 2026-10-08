@@ -174,6 +174,12 @@ export const LessonPedagogyEvaluationSchema = z
     claimedAgendaMinutes: z.number().int().positive(),
     findings: z.array(LessonPedagogyFindingSchema).max(100),
     evaluatedAt: z.string().datetime(),
+    /** Current Lesson acceptance binds its actual exposed choice context.
+     * Optional so historical evaluations remain readable. */
+    choiceContextFingerprint: z
+      .string()
+      .regex(/^sha256:[a-f0-9]{64}$/u)
+      .optional(),
     contentReview: z
       .array(TeachingContentReviewReceiptSchema)
       .min(1)

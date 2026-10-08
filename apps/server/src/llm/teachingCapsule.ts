@@ -194,7 +194,7 @@ export function teachingCapsuleMessages(input: TeachingCapsuleGenerationInput): 
         'Every worked step, including the later hidden continuation, must contain real case content. Never output the words "hidden", "隐藏", or instructions to hide content instead of writing the actual action and result. State every governing numeric/overlap/window parameter needed for the claimed outcome; do not assume an unspecified overlap size copies a particular sentence.',
         'Guided choices need answer-specific feedback and a misconception for each distractor (correct option has null). Hint is a neutral inspection strategy. Scaffold isolates a smaller answerable inference. Transfer changes a governing condition and the reasoning, with less support. Continue and explain consequences only after commitment. Check ALL state updates and final results for consistency.',
         'Transfer prompt must restate its concrete current case state and changed governing constraint, so it can be solved without reading guided-answer feedback or an unspecified previous result.',
-        'Every action including scaffold needs reasoningOperation, requiredInference and decisiveCondition (transfer uses changedCondition). All except scaffold need evidenceContrast: an EXACT CONTIGUOUS visible fact, a concrete replacement, and a different offered option that becomes correct when ONLY that fact changes. Guided evidence may occur in startingState, inputs, the visible prompt or an already modelled resultingState; other evidence in the stem or transfer changedCondition. Do not summarize the quote or cite a future hidden solution. These fields are private metadata; do not echo them or O*/S*/L*/PR* aliases in learner text.',
+        'Every action including scaffold needs reasoningOperation, requiredInference and decisiveCondition (transfer uses changedCondition). Reasoning choices except scaffold need evidenceContrast: an EXACT CONTIGUOUS visible fact, a concrete replacement, and a different offered option that becomes correct when ONLY that fact changes. Ordinary Lesson checks may instead use complete open explanation, diagnosis, prediction, reflection, construction or justification without options/key; higher depth does not require multiple-choice presentation. For structured/keyed informal choices use choose_alternative so the UI exposes all choices. Never depend on unavailable offered alternatives. Guided evidence may occur in startingState, inputs, the visible prompt or an already modelled resultingState; other choice evidence in the stem or transfer changedCondition. Do not summarize the quote or cite a future hidden solution. These fields are private metadata; do not echo them or O*/S*/L*/PR* aliases in learner text.',
         'Write natural Simplified Chinese. Use compact but substantive content. Normally three options, two process steps, one sentence per feedback, and no redundant optional components. Stay within the exact offered inventory. Technical truth takes precedence over inventing complexity.',
         'Every option, including the correct one, requires a nonempty feedbackIfSelected string; null is only for the correct guided option misconception. Write the visible prompt first, then copy evidenceContrast.evidence EXACTLY from it, preserving punctuation and every character. Do not paraphrase a quotation. Source aliases occur only in sourceRefs; never write them into explanation or other learner prose. Write "根据资料中的规则" rather than "根据S1规则". Before returning, inspect every option feedback and every learner-facing explanation for these constraints.',
         'If revision is supplied, address those concrete findings in the affected portion. Recompute dependent answers and feedback while preserving its exact inventory. The prior Lesson is already prepared exposure; do not rewrite or replay it.',
@@ -253,7 +253,11 @@ export function validateTeachingCapsule(raw: unknown, input: TeachingCapsuleGene
       ),
     },
   };
-  const lessonCheck = validateLessonSlotContentCandidate(parsed.data.lesson, localLesson);
+  const lessonCheck = validateLessonSlotContentCandidate(
+    parsed.data.lesson,
+    localLesson,
+    input.priorLesson,
+  );
   const practiceCheck = input.practiceSlots.length
     ? validatePracticeContentCandidate(parsed.data.practice, {
         workspaceName: input.lesson.workspaceName,

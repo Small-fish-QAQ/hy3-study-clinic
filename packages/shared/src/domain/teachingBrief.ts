@@ -149,7 +149,7 @@ export const TeachingBriefInformalCheckSchema = z
     kind: InformalCheckKindSchema,
     prompt: z.string().min(1).max(700),
     expectedSignal: z.string().max(500).nullable(),
-    /** Optional only for historical non-structured checks. */
+    /** Open responses omit choices/key; current choice-kind requirements are enforced at server acceptance. */
     options: z
       .array(
         z

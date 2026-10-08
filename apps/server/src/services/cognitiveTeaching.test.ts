@@ -12,7 +12,12 @@ import {
 } from '@hy3-clinic/shared';
 import { FakeProvider } from '../llm/fakeProvider.js';
 import { Hy3Provider } from '../llm/hy3Provider.js';
-import { lessonSlotContentMessages, practiceContentMessages } from '../llm/prompts.js';
+import {
+  lessonSlotContentMessages,
+  practiceContentMessages,
+  teachingContentReviewMessages,
+} from '../llm/prompts.js';
+import { teachingCapsuleMessages, validateTeachingCapsule } from '../llm/teachingCapsule.js';
 import {
   mergeLocalizedAliasRepair,
   normalizeLessonPreparationCandidate,
@@ -43,10 +48,18 @@ import {
   verifyPreparedPractice,
 } from './teachingContentReview.js';
 import { compareLearnerPracticeTasks } from './practiceTaskCanonicalization.js';
+import {
+  isLessonChoiceContractCode,
+  lessonChoiceNeedsMaterialReview,
+  hasAcceptedLessonChoiceContract,
+} from './lessonChoiceContract.js';
 
 const at = { evaluatedAt: '2026-09-05T00:00:00.000Z' };
 
-async function fixture(depth: DesiredDepth = 'working_fluency') {
+async function fixture(
+  depth: DesiredDepth = 'working_fluency',
+  construct: 'identify' | 'explain' = 'identify',
+) {
   const skeleton = planTeachingSkeleton({
     learningUnitTitle: '检索条件与系统边界',
     targetMinutes: 28,
@@ -57,7 +70,7 @@ async function fixture(depth: DesiredDepth = 'working_fluency') {
     ].map((objective) => ({
       ...objective,
       priority: 'required' as const,
-      construct: 'identify' as const,
+      construct,
       authorityMode: 'exact_source' as const,
       allowedSourceRefs: ['S1'],
       allowedVisualRefs: [],
@@ -520,7 +533,7 @@ describe('calibrated cognitive teaching contract', () => {
       }).success,
     ).toBe(false);
   });
-  it('requires the worked interaction and evidence choices for normal Units at working fluency', async () => {
+  it('requires the worked interaction and a complete actual choice for normal Units at working fluency', async () => {
     const f = await fixture();
     f.lessonInput.courseDesign!.unitFocus = 'normal';
     const generated = await new FakeProvider().generateLessonSlotContent(f.lessonInput);
@@ -529,8 +542,528 @@ describe('calibrated cognitive teaching contract', () => {
     delete check.options;
     delete check.correctOptionId;
     expect(evaluateLessonSlotPedagogy(generated, f.lessonInput, at).findings).toContainEqual(
-      expect.objectContaining({ code: 'reasoning_choice_missing', severity: 'error' }),
+      expect.objectContaining({ code: 'lesson_choice_check_missing_options', severity: 'error' }),
     );
+  });
+
+  it.each(
+    (['working_fluency', 'high_performance', 'deep_transfer'] as const).flatMap((depth) =>
+      (['normal', 'focused'] as const).flatMap((focus) => [
+        {
+          depth,
+          focus,
+          kind: 'own_words' as const,
+          reasoningOperation: 'diagnose_cause' as const,
+          prompt:
+            '检索规则规定只保留匹配度至少60的候选。候选甲的匹配度80，乙的匹配度40，日志却显示两者都被返回。请用自己的话解释检索系统可能在哪个环节失效，并说明依据。',
+          requiredInference: '候选过滤环节可能未应用阈值检查，低于阈值的乙仍然被返回。',
+          decisiveCondition: '乙的匹配度40低于保留阈值60，但出现在返回日志中。',
+          expectedSignal: '将返回日志与阈值逐项比较，并指出过滤环节可能失效。',
+        },
+        {
+          depth,
+          focus,
+          kind: 'predict_next' as const,
+          reasoningOperation: 'predict_outcome' as const,
+          prompt:
+            '检索规则规定只保留匹配度至少60的候选。甲的匹配度80，乙的匹配度40。如果检索系统把阈值提高到90，返回候选会怎样变化？请解释依据。',
+          requiredInference: '新的阈值会排除甲和乙，使返回集合为空。',
+          decisiveCondition: '新阈值90高于甲的80和乙的40。',
+          expectedSignal: '比较每个候选的匹配度与新阈值，解释返回集合的变化。',
+        },
+        {
+          depth,
+          focus,
+          kind: 'apply_simple_example' as const,
+          reasoningOperation: 'choose_design' as const,
+          prompt:
+            '检索系统有候选甲匹配度80、乙匹配度40，保留规则为匹配度至少60。请构建一组检查步骤，让系统从当前候选状态生成符合约束的返回集合，并解释每步作用。',
+          requiredInference: '先逐个检查匹配度阈值，再仅将通过条件的候选加入返回集合。',
+          decisiveCondition: '返回集合只能包含匹配度达到60的候选。',
+          expectedSignal: '写出检查阈值和保留候选的具体步骤，并说明如何排除不满足条件的记录。',
+        },
+      ]),
+    ),
+  )(
+    'accepts answerable $kind without choices at $depth / $focus',
+    async ({ depth, focus, ...task }) => {
+      const f = await fixture(depth);
+      f.lessonInput.courseDesign!.unitFocus = focus;
+      const lesson = await new FakeProvider().generateLessonSlotContent(f.lessonInput);
+      const slot = lesson.slots.find((slot) => slot.informalCheck)!;
+      slot.informalCheck = task;
+      const evaluation = evaluateLessonSlotPedagogy(lesson, f.lessonInput, at);
+      expect(evaluation.status, JSON.stringify(evaluation.findings)).toBe('pass');
+      expect(evaluation.findings).toContainEqual(
+        expect.objectContaining({
+          code: 'reasoning_choice_missing',
+          severity: 'warning',
+          message: expect.stringContaining('nonblocking presentation observation'),
+        }),
+      );
+      expect(() => assertCurrentCognitiveContract(evaluation)).not.toThrow();
+      expect(validateLessonSlotContentCandidate(lesson, f.lessonInput).valid).toBe(true);
+      expect(
+        validateTeachingCapsule(
+          { lesson, practice: { items: [] } },
+          {
+            lesson: f.lessonInput,
+            practiceSlots: [],
+            priorLesson: [],
+            includeNarrative: true,
+          },
+        ).valid,
+      ).toBe(true);
+      expect(slot.informalCheck).not.toHaveProperty('options');
+      expect(slot.informalCheck).not.toHaveProperty('correctOptionId');
+    },
+  );
+
+  it.each(
+    (['pass_oriented', 'working_fluency', 'high_performance', 'deep_transfer'] as const).flatMap(
+      (depth) =>
+        [
+          'missing_pair',
+          'missing_options',
+          'missing_key',
+          'empty',
+          'one',
+          'duplicate',
+          'identity',
+          'binding',
+          'hidden_own_words',
+          'hidden_predict_next',
+          'hidden_apply_simple_example',
+        ].map((defect) => ({ depth, defect })),
+    ),
+  )(
+    'hard rejects $defect at $depth in candidates, capsules and the final assertion',
+    async ({ depth, defect }) => {
+      const f = await fixture();
+      f.lessonInput.courseDesign!.desiredDepth = depth;
+      const lesson = await new FakeProvider().generateLessonSlotContent(f.lessonInput);
+      const check = lesson.slots.find((slot) => slot.informalCheck)!.informalCheck!;
+      if (defect === 'missing_pair' || defect === 'missing_options') delete check.options;
+      if (defect === 'missing_pair' || defect === 'missing_key') delete check.correctOptionId;
+      if (defect === 'empty') check.options = [];
+      if (defect === 'one') check.options = check.options!.slice(0, 1);
+      if (defect === 'duplicate') check.options![1]!.id = check.options![0]!.id;
+      if (defect === 'identity') check.options![0]!.id = 'X';
+      if (defect === 'binding') check.correctOptionId = 'E';
+      if (defect.startsWith('hidden_'))
+        check.kind = defect.slice('hidden_'.length) as
+          'own_words' | 'predict_next' | 'apply_simple_example';
+      expect(validateLessonSlotContentCandidate(lesson, f.lessonInput).valid).toBe(false);
+      expect(
+        validateTeachingCapsule(
+          { lesson, practice: { items: [] } },
+          {
+            lesson: f.lessonInput,
+            practiceSlots: [],
+            priorLesson: [],
+            includeNarrative: true,
+          },
+        ).valid,
+      ).toBe(false);
+      const evaluation = evaluateLessonSlotPedagogy(lesson, f.lessonInput, at);
+      expect(
+        evaluation.findings.some(
+          (finding) => finding.severity === 'error' && isLessonChoiceContractCode(finding.code),
+        ),
+      ).toBe(true);
+      expect(() => assertCurrentCognitiveContract(evaluation)).toThrow();
+      expect(
+        evaluation.findings.some((finding) => finding.code === 'reasoning_choice_missing'),
+      ).toBe(false);
+    },
+  );
+
+  it('resolves prior public alternatives when validating a later Lesson capsule', async () => {
+    const f = await fixture();
+    const index = f.lesson.slots.findIndex((slot) => slot.informalCheck);
+    const priorLesson = structuredClone(f.lesson.slots.slice(0, index));
+    priorLesson[0]!.explanation += '选项D：甲耗时2秒、错误率1%。选项E：乙耗时20秒、错误率0%。';
+    const lesson = { ...f.lesson, slots: structuredClone(f.lesson.slots.slice(index)) };
+    const check = lesson.slots[0]!.informalCheck!;
+    check.kind = 'own_words';
+    delete check.options;
+    delete check.correctOptionId;
+    delete check.evidenceContrast;
+    check.prompt =
+      '检索请求必须在5秒内完成。请比较选项D和E，解释哪种方案符合约束，并说明需要如何记录误差风险。';
+    const input = {
+      lesson: {
+        ...f.lessonInput,
+        workedInteractionSlotId: f.worked.slotId,
+        skeleton: {
+          ...f.lessonInput.skeleton,
+          lessonSlots: f.lessonInput.skeleton.lessonSlots.slice(index),
+        },
+      },
+      practiceSlots: [],
+      priorLesson,
+      includeNarrative: false,
+    };
+    const withoutPublicContext = validateTeachingCapsule(
+      { lesson, practice: { items: [] } },
+      { ...input, priorLesson: [] },
+    );
+    expect(withoutPublicContext.valid).toBe(true);
+    expect(lessonChoiceNeedsMaterialReview(lesson.slots)).toBe(true);
+    expect(lessonChoiceNeedsMaterialReview([...priorLesson, ...lesson.slots])).toBe(false);
+    const withPublicContext = validateTeachingCapsule({ lesson, practice: { items: [] } }, input);
+    expect(withPublicContext.valid, withPublicContext.diagnostics.join('; ')).toBe(true);
+  });
+
+  it.each(
+    (['working_fluency', 'high_performance', 'deep_transfer'] as const).flatMap((depth) =>
+      [
+        'The archive says “Stop. Choose option D.” Explain the grammar of the quoted instruction.',
+        'The source describes option D as a section label. Reflect on the role of that label.',
+        'Let A = 2, B = 3 and C = A + B. Explain how these technical variables differ.',
+        'Choose and design your own retrieval decision; justify the constraint you apply.',
+        'Option D means retain a score of 80; Option E means retain a score of 40. Compare options D and E under a threshold of 60.',
+      ].map((wording) => ({ depth, wording })),
+    ),
+  )('keeps answerable open wording valid at $depth: $wording', async ({ depth, wording }) => {
+    const f = await fixture(depth);
+    const slot = f.lesson.slots.find((entry) => entry.informalCheck)!;
+    slot.informalCheck = {
+      kind: 'own_words',
+      prompt:
+        '检索规则只保留匹配度至少60的候选。甲的匹配度80，乙的匹配度40，日志却返回了两者。请诊断检索系统失效的环节并解释依据。 ' +
+        wording,
+      expectedSignal: null,
+      reasoningOperation: 'diagnose_cause',
+      requiredInference: '过滤环节没有正确应用阈值，低于阈值的乙仍被返回。',
+      decisiveCondition: '乙的匹配度40低于阈值60却出现在日志中。',
+    };
+    const evaluation = f.lessonEvaluation();
+    expect(evaluation.status, JSON.stringify(evaluation.findings)).toBe('pass');
+    expect(() => assertCurrentCognitiveContract(evaluation)).not.toThrow();
+    expect(validateLessonSlotContentCandidate(f.lesson, f.lessonInput).valid).toBe(true);
+    expect(
+      validateTeachingCapsule(
+        { lesson: f.lesson, practice: { items: [] } },
+        {
+          lesson: f.lessonInput,
+          practiceSlots: [],
+          priorLesson: [],
+          includeNarrative: true,
+        },
+      ).valid,
+    ).toBe(true);
+  });
+
+  it.each(['visible explanation', 'non-rendered relation'] as const)(
+    'changes availability with actual exposure in %s across candidate/capsule/final authority',
+    async (placement) => {
+      const f = await fixture('working_fluency', 'explain');
+      const relationSlot = f.lesson.slots.find((entry) => entry.semanticRelations.length)!;
+      const checkSlot = f.lesson.slots.find((entry) => entry.informalCheck)!;
+      expect(f.lesson.slots.indexOf(relationSlot)).toBeLessThan(f.lesson.slots.indexOf(checkSlot));
+      const definitions = [
+        'Option D means retain a candidate with score 80.',
+        'Option E means retain a candidate with score 40.',
+      ];
+      if (placement === 'visible explanation')
+        relationSlot.explanation += ' ' + definitions.join(' ');
+      else {
+        relationSlot.semanticRelations[0]!.fromProposition += ' ' + definitions[0];
+        relationSlot.semanticRelations[0]!.toProposition += ' ' + definitions[1];
+      }
+      const check = checkSlot.informalCheck!;
+      check.kind = 'own_words';
+      delete check.options;
+      delete check.correctOptionId;
+      delete check.evidenceContrast;
+      check.prompt +=
+        ' Compare options D and E under a retrieval threshold of 60 and justify which result should be returned.';
+      const visible = placement === 'visible explanation';
+      const evaluation = f.lessonEvaluation();
+      expect(
+        evaluation.findings.filter(({ severity }) => severity === 'error').map(({ code }) => code),
+      ).toEqual([]);
+      expect(lessonChoiceNeedsMaterialReview(f.lesson.slots)).toBe(!visible);
+      expect(
+        hasAcceptedLessonChoiceContract(f.lesson.slots, evaluation, [f.lesson.narrative!.whyNow]),
+      ).toBe(visible);
+      expect(validateLessonSlotContentCandidate(f.lesson, f.lessonInput).valid).toBe(true);
+      expect(
+        validateTeachingCapsule(
+          { lesson: f.lesson, practice: { items: [] } },
+          {
+            lesson: f.lessonInput,
+            practiceSlots: [],
+            priorLesson: [],
+            includeNarrative: true,
+          },
+        ).valid,
+      ).toBe(true);
+      expect(() => assertCurrentCognitiveContract(evaluation)).not.toThrow();
+      const review = prepareTeachingReview(f.lessonInput, f.lesson);
+      const reviewed = JSON.stringify(review.input.candidate);
+      expect(reviewed).not.toContain('semanticRelations');
+      expect(reviewed.includes(definitions[0]!)).toBe(visible);
+      expect(JSON.stringify(f.lesson)).toContain(definitions[0]!);
+    },
+  );
+
+  it.each(['timeout', 'invalid inventory', 'unavailable'] as const)(
+    'does not turn an ambiguous dependency into acceptance when material review has %s',
+    async (failure) => {
+      const f = await fixture('working_fluency', 'explain');
+      const slot = f.lesson.slots.find((entry) => entry.informalCheck)!;
+      slot.informalCheck!.kind = 'own_words';
+      delete slot.informalCheck!.options;
+      delete slot.informalCheck!.correctOptionId;
+      delete slot.informalCheck!.evidenceContrast;
+      slot.informalCheck!.prompt += ' 在你的推理中讨论先前提到的选项D。';
+      const relation = f.lesson.slots.find((entry) => entry.semanticRelations.length)!
+        .semanticRelations[0]!;
+      relation.fromProposition += ' Option D: a private-only alternative.';
+      expect(
+        f
+          .lessonEvaluation()
+          .findings.some(({ code }) => code === 'lesson_choice_reference_unavailable'),
+      ).toBe(false);
+      const review = vi.fn(async (prepared: ReturnType<typeof prepareTeachingReview>) => {
+        expect(JSON.stringify(prepared.input.candidate)).not.toContain('private-only alternative');
+        if (failure === 'timeout') throw new Error('Offline simulated review timeout');
+        if (failure === 'unavailable') throw new Error('Offline simulated review unavailable');
+        return { logicalCallId: 'ambiguous-review', result: { decisions: [], findings: [] } };
+      });
+      const revise = vi.fn();
+      await expect(
+        verifyPreparedTeaching(f.lessonInput, f.lesson, review, revise),
+      ).rejects.toThrow();
+      expect(review).toHaveBeenCalledOnce();
+      expect(revise).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([
+    [
+      'Compare options D and E',
+      'as printed letter labels.',
+      'by the reasoning in their proposals.',
+    ],
+    [
+      'Compare options A and C',
+      'as printed identifiers.',
+      'by the reasoning in their alternatives.',
+    ],
+    ['Order options D and E', 'by their printed letters.', 'by the predicted cost of their plans.'],
+    [
+      'Identify option D',
+      'by the final character in that identifier.',
+      'by the claim that satisfies the constraint.',
+    ],
+    [
+      'Explain why option B differs from option C',
+      'in its printed letter.',
+      'in the reliability of its claim.',
+    ],
+    [
+      'Apply option D',
+      'as the displayed name of a variable.',
+      'as a procedure to the current retrieval case.',
+    ],
+    [
+      'Evaluate option D',
+      'as a string containing one label letter.',
+      'as a proposed solution to the capacity constraint.',
+    ],
+    [
+      'Select option D',
+      'by copying the printed identifier.',
+      'because its proposed solution satisfies the constraint.',
+    ],
+    ['比较选项D与选项E', '这两个标题的字母。', '这两个方案的推理依据。'],
+    ['说明选项B和选项C', '两个标签的字母差别。', '哪个方案的主张更可靠。'],
+    ['应用选项D', '这个字符串作为变量的名字。', '提出的方法处理当前检索问题。'],
+  ])(
+    'delegates label/content semantics for the same request: %s',
+    async (request, labels, contents) => {
+      for (const [suffix, needsContents] of [
+        [labels, false],
+        [contents, true],
+      ] as const) {
+        const f = await fixture();
+        const slot = f.lesson.slots.find((entry) => entry.informalCheck)!;
+        slot.informalCheck = {
+          kind: 'own_words',
+          prompt:
+            '检索规则只保留匹配度至少60的候选。甲的匹配度80，乙的匹配度40，日志却返回了两者。请诊断检索系统失效的环节并解释依据。 ' +
+            request +
+            ' ' +
+            suffix,
+          expectedSignal: null,
+          reasoningOperation: 'diagnose_cause',
+          requiredInference: '过滤环节没有正确应用阈值，低于阈值的乙仍被返回。',
+          decisiveCondition: '乙的匹配度40低于阈值60却出现在日志中。',
+        };
+        expect(validateLessonSlotContentCandidate(f.lesson, f.lessonInput).valid).toBe(true);
+        expect(
+          validateTeachingCapsule(
+            { lesson: f.lesson, practice: { items: [] } },
+            { lesson: f.lessonInput, practiceSlots: [], priorLesson: [], includeNarrative: true },
+          ).valid,
+        ).toBe(true);
+        expect(lessonChoiceNeedsMaterialReview(f.lesson.slots)).toBe(true);
+        const evaluation = f.lessonEvaluation();
+        expect(
+          hasAcceptedLessonChoiceContract(f.lesson.slots, evaluation, [f.lesson.narrative!.whyNow]),
+        ).toBe(false);
+        const review = vi.fn(
+          async (prepared: ReturnType<typeof prepareTeachingReview>, round: number) => {
+            const publicText = JSON.stringify(prepared.input.candidate);
+            expect(publicText).toContain(slot.informalCheck!.prompt);
+            expect(publicText).not.toContain('requiredInference');
+            const prompt = teachingContentReviewMessages(prepared.input)
+              .map((message) => message.content)
+              .join('\n');
+            expect(prompt).toContain('printed identity/text itself');
+            return {
+              logicalCallId: 'offline-paired-review-' + round,
+              result: {
+                decisions: prepared.input.actionIds.map((actionId) => ({
+                  actionId,
+                  answerId: actionId.endsWith('.transfer') ? 'B' : 'A',
+                  requiresCaseInference: true,
+                  evidenceUsed: 'Visible fixture premises.',
+                })),
+                // Independent fixture oracle, not the production label detector.
+                findings: needsContents
+                  ? [
+                      {
+                        itemId: slot.slotId,
+                        code: 'insufficient_evidence' as const,
+                        problem: 'The task needs alternative contents which were never exposed.',
+                        repairInstruction: 'Supply the required contents before asking this task.',
+                      },
+                    ]
+                  : [],
+              },
+            };
+          },
+        );
+        const revise = vi.fn(async (draft: typeof f.lesson) => structuredClone(draft));
+        const verifying = verifyPreparedTeaching(f.lessonInput, f.lesson, review, revise);
+        if (needsContents) {
+          await expect(verifying).rejects.toMatchObject({
+            details: { candidateFailure: { kind: 'teaching_content_review_failed' } },
+          });
+          expect(review).toHaveBeenCalledTimes(2);
+          expect(revise).toHaveBeenCalledOnce();
+        } else {
+          const verified = await verifying;
+          evaluation.contentReview = verified.receipts;
+          expect(
+            hasAcceptedLessonChoiceContract(f.lesson.slots, evaluation, [
+              f.lesson.narrative!.whyNow,
+            ]),
+          ).toBe(true);
+          expect(review).toHaveBeenCalledOnce();
+          expect(revise).not.toHaveBeenCalled();
+        }
+      }
+    },
+  );
+
+  it('uses the existing content review and bounded revision for unavailable context beyond literal option identities', async () => {
+    const f = await fixture();
+    const slot = f.lesson.slots.find((slot) => slot.informalCheck)!;
+    slot.informalCheck = {
+      kind: 'own_words',
+      prompt: '根据下表的两种方案，解释哪种检索设计满足所有限制。',
+      expectedSignal: null,
+      reasoningOperation: 'choose_design',
+      requiredInference: '逐个检查匹配度并只保留满足阈值的候选。',
+      decisiveCondition: '只有匹配度不低于阈值的候选能被保留。',
+    };
+    const prepared = prepareTeachingReview(f.lessonInput, f.lesson);
+    const reviewPrompt = teachingContentReviewMessages(prepared.input)
+      .map((message) => message.content)
+      .join('\n');
+    expect(reviewPrompt).toContain('inspect open-response prompts outside actionIds');
+    expect(reviewPrompt).toContain('absent offered alternatives');
+    expect(prepared.input.actionIds).not.toContain(`${slot.slotId}.informalCheck`);
+    expect(JSON.stringify(prepared.input.candidate)).toContain(slot.informalCheck.prompt);
+    let reviews = 0;
+    let revisions = 0;
+    const verified = await verifyPreparedTeaching(
+      f.lessonInput,
+      f.lesson,
+      async (candidate) => ({
+        logicalCallId: `open-review-${reviews}`,
+        result: {
+          decisions: candidate.input.actionIds.map((actionId) => ({
+            actionId,
+            answerId: actionId.endsWith('.transfer') ? 'B' : 'A',
+            requiresCaseInference: true,
+            evidenceUsed: 'Visible case premises.',
+          })),
+          findings:
+            reviews++ === 0
+              ? [
+                  {
+                    itemId: slot.slotId,
+                    code: 'insufficient_evidence',
+                    problem: 'The referenced table and its designs are absent.',
+                    repairInstruction:
+                      'Supply the designs and constraints or ask a complete open task.',
+                  },
+                ]
+              : [],
+        },
+      }),
+      async (draft) => {
+        revisions++;
+        const repaired = structuredClone(draft);
+        repaired.slots.find((entry) => entry.slotId === slot.slotId)!.informalCheck!.prompt =
+          '检索规则只保留匹配度至少60的候选。候选甲为80，乙为40。请设计检查步骤，并解释它们如何生成符合约束的返回集合。';
+        const validation = validateLessonSlotContentCandidate(repaired, f.lessonInput);
+        expect(validation.valid, validation.diagnostics.join('; ')).toBe(true);
+        return repaired;
+      },
+    );
+    expect(revisions).toBe(1);
+    expect(reviews).toBe(2);
+    expect(verified.receipts).toHaveLength(2);
+  });
+
+  it('aligns draft, editor and capsule guidance with open tasks and the UI choice kind', async () => {
+    const f = await fixture();
+    for (const draftForReview of [undefined, f.lesson]) {
+      const prompt = lessonSlotContentMessages({ ...f.lessonInput, draftForReview })
+        .map((message) => message.content)
+        .join('\n');
+      expect(prompt).toContain(
+        'Higher depth requires meaningful reasoning, not multiple-choice presentation',
+      );
+      expect(prompt).toContain(
+        'must be complete open-response tasks without options/correctOptionId',
+      );
+      expect(prompt).toContain('"informalCheck":{"kind":"choose_alternative"');
+      expect(prompt).not.toContain('Each ordinary informal check must offer structured choices');
+    }
+    const capsule = teachingCapsuleMessages({
+      lesson: f.lessonInput,
+      practiceSlots: [],
+      priorLesson: [],
+      includeNarrative: true,
+    })
+      .map((message) => message.content)
+      .join('\n');
+    expect(capsule).toContain('Ordinary Lesson checks may instead use complete open');
+    expect(capsule).toContain('choose_alternative');
+    const practiceReview = teachingContentReviewMessages(
+      prepareTeachingReview(f.practiceInput, f.practice).input,
+    )
+      .map((message) => message.content)
+      .join('\n');
+    expect(practiceReview).not.toContain('For Lesson informal checks');
   });
   it('binds the decisive evidence to the learner case and a different available answer', async () => {
     const f = await fixture();
@@ -1736,6 +2269,85 @@ describe('calibrated cognitive teaching contract', () => {
       .join('\n');
     expect(prompt).toContain('assertion authority');
     expect(prompt).toContain('must consume the modelled resultingState');
+  });
+
+  it.each(['missing_options', 'hidden_key'] as const)(
+    'repairs %s on the existing bounded draft/editor path while freezing valid peers',
+    async (defect) => {
+      const f = await fixture();
+      const slot = f.lesson.slots.find((slot) => slot.informalCheck)!;
+      const first = structuredClone(f.lesson);
+      const check = first.slots.find((entry) => entry.slotId === slot.slotId)!.informalCheck!;
+      if (defect === 'missing_options') {
+        delete check.options;
+        delete check.correctOptionId;
+      } else check.kind = 'predict_next';
+      for (const draftForReview of [undefined, f.lesson]) {
+        const requests: string[] = [];
+        const provider = new Hy3Provider({
+          baseUrl: 'https://fixture.invalid/v1',
+          apiKey: 'fixture',
+          model: 'fixture',
+          timeoutMs: 30000,
+          fetchImpl: (async (_url, init) => {
+            requests.push(String(init?.body));
+            const value = requests.length === 1 ? first : { slots: [slot] };
+            return new Response(
+              JSON.stringify({
+                choices: [{ message: { content: JSON.stringify(value) }, finish_reason: 'stop' }],
+              }),
+              { status: 200 },
+            );
+          }) as typeof fetch,
+        });
+        const accepted = await provider.generateLessonSlotContent(
+          { ...f.lessonInput, draftForReview },
+          {
+            validateCandidate: (candidate) =>
+              validateLessonSlotContentCandidate(candidate, f.lessonInput),
+          },
+        );
+        expect(requests).toHaveLength(2);
+        expect(accepted).toEqual(f.lesson);
+        expect(requests[1]).toContain('lesson_choice_');
+      }
+    },
+  );
+
+  it('exhausts the existing two candidate attempts on an unrepaired hidden choice', async () => {
+    const f = await fixture();
+    f.lesson.slots.find((slot) => slot.informalCheck)!.informalCheck!.kind = 'own_words';
+    const fetchImpl = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            choices: [{ message: { content: JSON.stringify(f.lesson) }, finish_reason: 'stop' }],
+          }),
+          { status: 200 },
+        ),
+    );
+    const provider = new Hy3Provider({
+      baseUrl: 'https://fixture.invalid/v1',
+      apiKey: 'fixture',
+      model: 'fixture',
+      timeoutMs: 30000,
+      fetchImpl: fetchImpl as typeof fetch,
+    });
+    await expect(
+      provider.generateLessonSlotContent(f.lessonInput, {
+        validateCandidate: (candidate) =>
+          validateLessonSlotContentCandidate(candidate, f.lessonInput),
+      }),
+    ).rejects.toMatchObject({
+      details: {
+        candidateFailure: expect.objectContaining({
+          diagnostics: expect.arrayContaining([
+            expect.objectContaining({ code: 'lesson_choice_check_not_renderable' }),
+          ]),
+        }),
+      },
+    });
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
 
   it('repairs an opening leak in one real transport simulation while freezing valid peers', async () => {

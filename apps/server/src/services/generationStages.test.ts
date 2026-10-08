@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
+import { TeachingBriefInformalCheckSchema } from '@hy3-clinic/shared';
 import { openDatabase, type SqliteDb } from '../db/database.js';
 import { migrate } from '../db/migrate.js';
 import { FakeProvider } from '../llm/fakeProvider.js';
@@ -14,6 +15,10 @@ import {
   runRecoverableGenerationStage,
   invalidateGenerationDependency,
 } from './generationStages.js';
+import {
+  assertLessonChoiceContract,
+  lessonChoiceNeedsMaterialReview,
+} from './lessonChoiceContract.js';
 
 let db: SqliteDb;
 let repos: Repositories;
@@ -72,6 +77,97 @@ beforeEach(() => {
 afterEach(() => db.close());
 
 describe('recoverable generation dependencies', () => {
+  it.each(['missing_choices', 'hidden_key'] as const)(
+    'revalidates a schema-readable cached Lesson with %s and only reuses its valid successor',
+    async (defect) => {
+      const check = {
+        kind: 'choose_alternative',
+        prompt: 'A job needs three units and capacity is two. Which step satisfies the limit?',
+        expectedSignal: null,
+        options: [
+          {
+            id: 'A',
+            text: 'Wait for capacity.',
+            feedbackIfSelected: 'Waiting respects the limit.',
+          },
+          { id: 'B', text: 'Start now.', feedbackIfSelected: 'Starting exceeds capacity.' },
+        ],
+        correctOptionId: 'A',
+      };
+      const invalid = structuredClone(check);
+      if (defect === 'hidden_key') invalid.kind = 'own_words';
+      else {
+        Reflect.deleteProperty(invalid, 'options');
+        Reflect.deleteProperty(invalid, 'correctOptionId');
+      }
+      const invalidPayload = { units: ['one'], slots: [{ informalCheck: invalid }] };
+      const validPayload = { units: ['one'], slots: [{ informalCheck: check }] };
+      generate.mockResolvedValueOnce(invalidPayload).mockResolvedValueOnce(validPayload);
+      const lessonSchema = schema.extend({
+        slots: z.array(z.object({ informalCheck: TeachingBriefInformalCheckSchema })),
+      });
+      const historical = {
+        ...stage('historical-lesson'),
+        schemaFingerprint: 'lesson-choice-test-v1',
+        validateResult: (raw: unknown) => lessonSchema.parse(raw),
+      };
+      await runRecoverableGenerationStage(historical);
+      const original = repos.telemetry.getLogicalCall('call-historical-lesson');
+      const current = (id: string) => ({
+        ...stage(id),
+        schemaFingerprint: 'lesson-choice-test-v1',
+        validateResult: (raw: unknown) => {
+          const payload = lessonSchema.parse(raw);
+          assertLessonChoiceContract(payload.slots);
+          return payload;
+        },
+      });
+      expect(await runRecoverableGenerationStage(current('current-lesson'))).toEqual(validPayload);
+      expect(repos.telemetry.getLogicalCall('call-current-lesson')?.cacheStatus).not.toBe('hit');
+      expect(await runRecoverableGenerationStage(current('current-lesson-replay'))).toEqual(
+        validPayload,
+      );
+      expect(repos.telemetry.getLogicalCall('call-current-lesson-replay')?.cacheStatus).toBe('hit');
+      expect(generate).toHaveBeenCalledTimes(2);
+      expect(repos.telemetry.listAttempts('call-current-lesson-replay')).toEqual([]);
+      expect(repos.telemetry.getLogicalCall('call-historical-lesson')).toEqual(original);
+    },
+  );
+
+  it('keeps cached generation distinct from material acceptance of unresolved labels', async () => {
+    const payload = {
+      units: ['one'],
+      slots: [
+        {
+          informalCheck: {
+            kind: 'own_words',
+            prompt: 'Compare options D and E.',
+            expectedSignal: null,
+          },
+        },
+      ],
+    };
+    generate.mockResolvedValueOnce(payload);
+    const lessonSchema = schema.extend({
+      slots: z.array(z.object({ informalCheck: TeachingBriefInformalCheckSchema })),
+    });
+    const current = (id: string) => ({
+      ...stage(id),
+      schemaFingerprint: 'lesson-choice-review-test-v1',
+      validateResult: (raw: unknown) => {
+        const result = lessonSchema.parse(raw);
+        assertLessonChoiceContract(result.slots);
+        return result;
+      },
+    });
+    for (const id of ['ambiguous-lesson', 'ambiguous-replay']) {
+      const generated = await runRecoverableGenerationStage(current(id));
+      expect(lessonChoiceNeedsMaterialReview(generated.slots)).toBe(true);
+    }
+    expect(repos.telemetry.getLogicalCall('call-ambiguous-replay')?.cacheStatus).toBe('hit');
+    expect(generate).toHaveBeenCalledOnce();
+  });
+
   it('replaces a quality-rejected dependency once and reuses the validated successor', async () => {
     const original = stage('original');
     await runRecoverableGenerationStage(original);

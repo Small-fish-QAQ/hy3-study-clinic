@@ -676,7 +676,7 @@ const TeachingLessonInformalCheckContentSchema = z
     kind: InformalCheckKindSchema,
     prompt: z.string().min(1).max(700),
     expectedSignal: z.string().max(500).nullable(),
-    /** Structured choices are optional only for persisted pre-R1 content. */
+    /** Open responses omit choices/key; historical missing choice pairs stay readable for server revalidation. */
     options: z.array(TeachingInformalCheckOptionSchema).min(2).max(5).optional(),
     correctOptionId: z
       .string()

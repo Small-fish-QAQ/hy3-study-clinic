@@ -30,6 +30,11 @@ import { AppError, notFound } from '../errors.js';
 import { curriculumSourceBlockFingerprint } from '../grounding/sourceFingerprint.js';
 import { ProviderError } from '../llm/errors.js';
 import { hasCurrentPreparedPractice } from './practiceAcceptance.js';
+import {
+  assertLessonChoiceContract,
+  hasAcceptedLessonChoiceContract,
+  lessonChoiceNeedsMaterialReview,
+} from './lessonChoiceContract.js';
 import { LEARNER_CONTENT_LOCALE } from '../llm/provider.js';
 import { classifyPreparationError } from '../llm/preparationRecovery.js';
 import type {
@@ -91,7 +96,7 @@ import {
 
 export const TEACHING_BRIEF_PROMPT_VERSION =
   'teaching-brief-v3-compositional-source-guided-interaction';
-export const LESSON_CONTENT_PROMPT_VERSION = 'teaching-lesson-content-v18-source-faithful-models';
+export const LESSON_CONTENT_PROMPT_VERSION = 'teaching-lesson-content-v19-public-choice-contract';
 export const PRACTICE_CONTENT_PROMPT_VERSION =
   'teaching-practice-content-v17-source-faithful-models';
 /**
@@ -188,7 +193,8 @@ export function isCurrentAcceptedLessonCheckpoint(
     checkpoint?.promptVersion === LESSON_CONTENT_PROMPT_VERSION &&
     checkpoint.lessonEvaluation.policyVersion === COMPOSITIONAL_LESSON_PEDAGOGY_POLICY_VERSION &&
     checkpoint.lessonLogicalCallId !== null &&
-    checkpoint.lessonContent[0]?.lessonNarrative !== undefined
+    checkpoint.lessonContent[0]?.lessonNarrative !== undefined &&
+    hasAcceptedLessonChoiceContract(checkpoint.lessonContent, checkpoint.lessonEvaluation)
   );
 }
 
@@ -199,10 +205,21 @@ export function selectCurrentAcceptedLessonCheckpoint(
   if (!isCurrentAcceptedLessonCheckpoint(checkpoint)) {
     throw new AppError(
       ApiErrorCode.VersionConflict,
-      'The accepted Lesson checkpoint is legacy or lacks current evaluation and logical-call provenance.',
+      'The accepted Lesson checkpoint lacks current evaluation, logical-call provenance, or a valid public choice contract.',
     );
   }
   return checkpoint;
+}
+
+/** Current authority is checked without rewriting any historical evaluation. */
+export function hasCurrentPreparedLesson(brief: TeachingBrief): boolean {
+  return (
+    brief.composition?.lessonPromptVersion === LESSON_CONTENT_PROMPT_VERSION &&
+    brief.pedagogyEvaluation?.policyVersion === COMPOSITIONAL_LESSON_PEDAGOGY_POLICY_VERSION &&
+    hasAcceptedLessonChoiceContract(brief.segments, brief.pedagogyEvaluation, [
+      brief.objective?.whyNow ?? '',
+    ])
+  );
 }
 
 export function isCurrentCompositionalBrief(
@@ -216,7 +233,7 @@ export function isCurrentCompositionalBrief(
     candidate.composition.practicePromptVersion === PRACTICE_CONTENT_PROMPT_VERSION &&
     candidate.composition.lessonLogicalCallId !== undefined &&
     candidate.composition.practiceLogicalCallId !== undefined &&
-    candidate.pedagogyEvaluation?.policyVersion === COMPOSITIONAL_LESSON_PEDAGOGY_POLICY_VERSION &&
+    hasCurrentPreparedLesson(candidate) &&
     candidate.practice?.qualityEvaluation.policyVersion ===
       COMPOSITIONAL_PRACTICE_QUALITY_POLICY_VERSION &&
     hasCurrentPreparedPractice(candidate)
@@ -1210,6 +1227,18 @@ export function createTeachingBriefPreparationService({
     const priorResult = repos.operations.getResult(operation.id);
     if (priorResult?.status === 'completed') {
       const response = TeachingBriefPreparationResponseSchema.parse(priorResult.payload);
+      const checkpoint = response.brief.composition
+        ? repos.acceptedLessonCheckpoints.get(response.brief.composition.acceptedLessonCheckpointId)
+        : undefined;
+      if (
+        !hasCurrentPreparedLesson(response.brief) ||
+        !isCurrentAcceptedLessonCheckpoint(checkpoint)
+      ) {
+        throw new AppError(
+          ApiErrorCode.VersionConflict,
+          'The stored Lesson lacks the current public choice contract. Prepare it with a new command; historical evaluations are preserved.',
+        );
+      }
       if (!hasCurrentPreparedPractice(response.brief)) {
         throw new AppError(
           ApiErrorCode.VersionConflict,
@@ -1596,7 +1625,17 @@ export function createTeachingBriefPreparationService({
           });
         }
         let contentReview: LessonPedagogyEvaluation['contentReview'];
-        if (provider.name === 'hy3' && inferenceProvider.reviewTeachingContent) {
+        // Rendering/schema defects do not need (or wait for) semantic review.
+        assertLessonChoiceContract(lessonPayload.slots);
+        if (
+          provider.name === 'hy3' ||
+          lessonChoiceNeedsMaterialReview(lessonPayload.slots, [
+            lessonPayload.narrative?.whyNow ?? '',
+          ])
+        ) {
+          // REAL Lesson already uses this review once plus its existing bounded
+          // corrections. The offline provider also exercises it for unresolved
+          // references; generation/cache validity alone cannot accept them.
           // Executed arithmetic does not establish that the authored model is
           // faithful to the source. Review every rule and explanation, while
           // only asking the reviewer to solve actions not already computed.
@@ -1746,6 +1785,7 @@ export function createTeachingBriefPreparationService({
             { lesson: compositionalLessonInput },
           ).lesson;
         }
+        assertLessonChoiceContract(lessonPayload.slots, [lessonPayload.narrative?.whyNow ?? '']);
         const lessonEvaluation = evaluateLessonSlotPedagogy(
           lessonPayload,
           compositionalLessonInput,
@@ -1756,6 +1796,17 @@ export function createTeachingBriefPreparationService({
         );
         if (contentReview) lessonEvaluation.contentReview = contentReview;
         if (jointAuthoring) lessonEvaluation.jointAuthoring = jointAuthoring;
+        if (
+          !hasAcceptedLessonChoiceContract(lessonPayload.slots, lessonEvaluation, [
+            lessonPayload.narrative?.whyNow ?? '',
+          ])
+        )
+          throw ProviderError.invalidOutput(
+            'Unresolved alternative content requires a successful material review of the exposed Lesson.',
+            'candidate',
+            'SEMANTIC_VALIDATION_FAILURE',
+            false,
+          );
         assertCurrentCognitiveContract(lessonEvaluation);
         if (!lessonPayload.narrative) {
           throw new AppError(

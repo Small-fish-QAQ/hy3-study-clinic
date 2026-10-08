@@ -24,11 +24,17 @@ import type {
 import { containsInternalTeachingAlias } from '../llm/preparationRecovery.js';
 import { ProviderError } from '../llm/errors.js';
 import { disclosesPracticeAnswer, literalTeachingText } from './teachingText.js';
+import {
+  isLessonChoiceContractCode,
+  lessonChoiceContractIssues,
+  lessonChoiceContextFingerprint,
+  lessonInformalChoiceIssues,
+} from './lessonChoiceContract.js';
 
 export const LESSON_PEDAGOGY_POLICY_VERSION = 'lesson-pedagogy-v2';
 export const PRACTICE_QUALITY_POLICY_VERSION = 'lesson-practice-v1';
 export const COMPOSITIONAL_LESSON_PEDAGOGY_POLICY_VERSION =
-  'lesson-pedagogy-v9-scientific-notation';
+  'lesson-pedagogy-v10-public-choice-contract';
 export const COMPOSITIONAL_PRACTICE_QUALITY_POLICY_VERSION = 'lesson-practice-v8-literal-identity';
 
 const PRACTICE_AGGREGATE_QUALITY_CODES = new Set([
@@ -1008,7 +1014,7 @@ const COGNITIVE_MESSAGES = {
   relation_objective_reference_outside_slot:
     'A private relation objective reference must name an objective already bound to this immutable slot.',
   reasoning_choice_missing:
-    'At working_fluency or deeper each informal check must offer concrete competing choices with evidenceContrast, so the learner commits before the deciding explanation.',
+    'This open-response check supplies no structured competing choices. This is a nonblocking presentation observation; it does not establish missing reasoning, evidence, or premature explanation.',
   evidence_contrast_missing:
     'A reasoning choice needs evidenceContrast: quote a decisive case fact, replace it with a concrete changed fact, and identify the different offered option that would then be correct. Design the case before explaining its conclusion.',
   evidence_contrast_not_visible:
@@ -1195,7 +1201,11 @@ export function assertCurrentCognitiveContract(
       ? applyPracticeAggregateAcceptancePolicy(evaluation)
       : evaluation;
   const errors = acceptedEvaluation.findings.filter(
-    (finding) => finding.severity === 'error' && Object.hasOwn(COGNITIVE_MESSAGES, finding.code),
+    (finding) =>
+      finding.severity === 'error' &&
+      (Object.hasOwn(COGNITIVE_MESSAGES, finding.code) ||
+        (evaluation.evaluator === 'independent-deterministic-lesson-evaluator' &&
+          isLessonChoiceContractCode(finding.code))),
   );
   if (errors.length)
     throw ProviderError.invalidOutput(
@@ -1393,8 +1403,15 @@ function cognitiveLessonFindings(
       );
     }
     if (check) {
-      if (depth && depth !== 'pass_oriented' && !check.options?.length)
-        add('reasoning_choice_missing', [index], slot.objectiveRefs);
+      if (
+        depth &&
+        depth !== 'pass_oriented' &&
+        check.kind !== 'choose_alternative' &&
+        check.options === undefined &&
+        check.correctOptionId === undefined &&
+        lessonInformalChoiceIssues(check, pre).length === 0
+      )
+        add('reasoning_choice_missing', [index], slot.objectiveRefs, 'warning');
       inspectEvidence(
         check,
         [check.prompt, content.explanation, content.example?.text, content.contrast?.text].filter(
@@ -2007,7 +2024,6 @@ function lessonIssueMessage(code: string, slotId: string): string {
     lesson_planning_language_leak: `${slotId} exposes internal planning language or copies a private obligation into learner-facing text.`,
     lesson_source_location_trivia: `${slotId} asks where source text appears instead of eliciting the planned capability.`,
     missing_planned_learner_action: `${slotId} must contain the learner action required by the immutable skeleton.`,
-    lesson_choice_check_missing_options: `${slotId} choice check requires structured options and one deterministically gradeable answer.`,
     unplanned_lesson_learner_action: `${slotId} cannot add a learner action outside the immutable skeleton budget.`,
     missing_planned_boundary_work: `${slotId} must fill the planned contrast or misconception boundary role.`,
     missing_typed_semantic_relation: `${slotId} requires a typed relation between two distinct meaningful propositions.`,
@@ -2034,14 +2050,12 @@ function lessonIssueMessage(code: string, slotId: string): string {
 }
 
 function lessonCriterionForCode(code: string): LessonPedagogyFinding['criterion'] {
+  if (isLessonChoiceContractCode(code) || code === 'reasoning_choice_missing')
+    return 'learner_activity';
   if (code.includes('alias_leak') || code.includes('planning_language')) return 'source_grounding';
   if (code.includes('worked_process') || code.includes('worked_interaction'))
     return 'worked_example';
-  if (
-    code.includes('learner_action') ||
-    code === 'lesson_source_location_trivia' ||
-    code === 'lesson_choice_check_missing_options'
-  ) {
+  if (code.includes('learner_action') || code === 'lesson_source_location_trivia') {
     return 'learner_activity';
   }
   if (code.includes('boundary')) return 'misconception_or_contrast';
@@ -2057,9 +2071,31 @@ function lessonCriterionForCode(code: string): LessonPedagogyFinding['criterion'
 export function evaluateLessonSlotPedagogy(
   payload: LessonSlotContentProposalPayload,
   input: LessonSlotContentGenerationInput,
-  options: { evaluatedAt: string; boundedRepairAttempted?: boolean },
+  options: {
+    evaluatedAt: string;
+    boundedRepairAttempted?: boolean;
+    visiblePriorLesson?: readonly TeachingLessonSlotContent[];
+  },
 ): LessonPedagogyEvaluation {
   const findings: LessonPedagogyFinding[] = cognitiveLessonFindings(payload, input);
+  const prior = options.visiblePriorLesson ?? [];
+  for (const issue of lessonChoiceContractIssues(
+    [...prior, ...payload.slots],
+    [payload.narrative?.whyNow ?? ''],
+  )) {
+    if (issue.index < prior.length) continue;
+    const slotId = payload.slots[issue.index - prior.length]!.slotId;
+    const index = input.skeleton.lessonSlots.findIndex((slot) => slot.slotId === slotId);
+    findings.push(
+      lessonFinding(
+        'learner_activity',
+        issue.code,
+        issue.message,
+        index >= 0 ? [index] : [],
+        input.skeleton.lessonSlots[index]?.objectiveRefs ?? [],
+      ),
+    );
+  }
   const contentById = new Map(payload.slots.map((content) => [content.slotId, content]));
   const focusedInteractionSlotId = conceptualWorkedInteractionSlotId(input);
 
@@ -2154,12 +2190,6 @@ export function evaluateLessonSlotPedagogy(
         if (!hasMeaningfulOverlap(content.informalCheck.prompt, domainTarget)) {
           codes.add('lesson_slot_content_not_objective_aligned');
         }
-        if (
-          content.informalCheck.kind === 'choose_alternative' &&
-          (!content.informalCheck.options || !content.informalCheck.correctOptionId)
-        ) {
-          codes.add('lesson_choice_check_missing_options');
-        }
       }
     } else if (content.informalCheck || workedInteraction) {
       codes.add('unplanned_lesson_learner_action');
@@ -2240,6 +2270,9 @@ export function evaluateLessonSlotPedagogy(
   return LessonPedagogyEvaluationSchema.parse({
     schemaVersion: 1,
     policyVersion: COMPOSITIONAL_LESSON_PEDAGOGY_POLICY_VERSION,
+    choiceContextFingerprint: lessonChoiceContextFingerprint(payload.slots, [
+      payload.narrative?.whyNow ?? '',
+    ]),
     evaluator: 'independent-deterministic-lesson-evaluator',
     independent: true,
     status: findings.some((finding) => finding.severity === 'error') ? 'fail' : 'pass',

@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { lessonChoiceContextFingerprint } from './lessonChoiceContract.js';
 import { describe, expect, it } from 'vitest';
 import {
   PRACTICE_ANSWERABILITY_POLICY_VERSION,
@@ -35,7 +36,7 @@ function acceptedCheckpoint(
     status?: 'pass' | 'fail';
   } = {},
 ): AcceptedLessonCheckpoint {
-  return {
+  const checkpoint = {
     promptVersion: overrides.promptVersion ?? LESSON_CONTENT_PROMPT_VERSION,
     lessonLogicalCallId:
       overrides.lessonLogicalCallId === undefined
@@ -55,6 +56,10 @@ function acceptedCheckpoint(
       },
     ],
   } as AcceptedLessonCheckpoint;
+  checkpoint.lessonEvaluation.choiceContextFingerprint = lessonChoiceContextFingerprint(
+    checkpoint.lessonContent,
+  );
+  return checkpoint;
 }
 
 function compositionalBrief(
@@ -128,6 +133,10 @@ function compositionalBrief(
       },
     },
   } as TeachingBrief;
+  brief.pedagogyEvaluation!.choiceContextFingerprint = lessonChoiceContextFingerprint(
+    brief.segments,
+    [brief.objective.whyNow],
+  );
   const priorTeaching = projectPracticePriorTeaching(brief);
   brief.practice!.qualityEvaluation.answerabilityReview = {
     policyVersion: overrides.answerabilityPolicyVersion ?? PRACTICE_ANSWERABILITY_POLICY_VERSION,

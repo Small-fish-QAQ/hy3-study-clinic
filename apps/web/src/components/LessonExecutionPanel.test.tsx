@@ -937,6 +937,57 @@ describe('LessonExecutionPanel', () => {
     expect(screen.getByRole('textbox', { name: '练习回应' })).toBeEnabled();
   });
 
+  it.each(['explanation', 'example', 'semantic metadata'] as const)(
+    'exposes identical alternative definitions only on a rendered %s surface',
+    async (placement) => {
+      const projection = readyLesson({
+        stateVersion: 2,
+        currentSegmentIndex: 0,
+        segmentCount: 2,
+        presentedSegmentIndexes: [0],
+        presentationStatus: 'in_progress',
+        presentationCompletedAt: null,
+      });
+      const definitions = 'Option D means wait for capacity; Option E means start immediately.';
+      projection.allowedActions = ['respond_to_informal_check'];
+      const segment = projection.lesson!.segments[0]!;
+      segment.informalCheck = {
+        ...segment.informalCheck!,
+        prompt: 'Compare options D and E and justify the decision.',
+        response: null,
+        respondedAt: null,
+        guidance: null,
+      };
+      if (placement === 'explanation') segment.explanation = definitions;
+      else if (placement === 'example')
+        segment.example = { text: definitions, origin: 'hy3_synthesis', sources: [] };
+      else
+        segment.semanticRelations = [
+          {
+            kind: 'condition_action',
+            fromProposition: definitions,
+            toProposition: 'The capacity constraint governs admission.',
+            origin: 'hy3_synthesis',
+            sources: [],
+          },
+        ];
+      vi.spyOn(api, 'getLessonExecution').mockResolvedValue(projection);
+      render(
+        <LessonExecutionPanel
+          workspaceId="ws_1"
+          sessionId="session_1"
+          agendaItemId="item_1"
+          active
+        />,
+      );
+      await screen.findByText(segment.informalCheck.prompt);
+      if (placement === 'semantic metadata')
+        expect(screen.queryByText(definitions)).not.toBeInTheDocument();
+      else expect(screen.getByText(definitions)).toBeInTheDocument();
+      expect(screen.getByRole('textbox', { name: '练习回应' })).toBeEnabled();
+    },
+  );
+
   it('renders a supported choose check as real choices with deterministic feedback', async () => {
     const user = userEvent.setup();
     const choice = readyLesson({

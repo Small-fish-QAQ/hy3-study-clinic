@@ -11,6 +11,8 @@ import {
   type LearningContractDraftFields,
   type LessonSlotContentProposalPayload,
   type LessonExecutionCommandRequest,
+  type TeachingBriefInformalCheck,
+  type TeachingContentReview,
 } from '@hy3-clinic/shared';
 import { openDatabase, type SqliteDb } from '../db/database.js';
 import { migrate } from '../db/migrate.js';
@@ -43,6 +45,7 @@ import { deriveTeachUnitDurations, resolveStudyPlanPlannability } from './studyP
 import { validateLessonSlotContentCandidate } from './teachingBriefContract.js';
 import {
   evaluatePlannedPracticeQuality,
+  COMPOSITIONAL_LESSON_PEDAGOGY_POLICY_VERSION,
   hasCurrentPracticeAcceptancePolicy,
   practiceAggregateQualityFindings,
   practiceQualityImprovementFindings,
@@ -65,12 +68,46 @@ import {
   COMPOSITIONAL_PREPARATION_LEASE_MS,
   LESSON_CONTENT_PROMPT_VERSION,
   PRACTICE_CONTENT_PROMPT_VERSION,
+  hasCurrentPreparedLesson,
+  isCurrentAcceptedLessonCheckpoint,
 } from './teachingBriefPreparation.js';
 
 const clock = fixedClock(T0);
 const databases: SqliteDb[] = [];
 const LESSON_INPUT_MUTATION_SENTINEL = 'LESSON_PROVIDER_INPUT_MUTATION_SENTINEL';
 const PRACTICE_INPUT_MUTATION_SENTINEL = 'PRACTICE_PROVIDER_INPUT_MUTATION_SENTINEL';
+
+type LessonChoiceDefect =
+  'missing_pair' | 'hidden_key' | 'absent_references' | 'missing_key' | 'binding';
+function breakLessonChoice(
+  surfaces: Array<{ informalCheck?: TeachingBriefInformalCheck }>,
+  defect: LessonChoiceDefect,
+) {
+  const check = surfaces.find((surface) => surface.informalCheck)!.informalCheck!;
+  check.kind = 'choose_alternative';
+  check.options ??= [
+    {
+      id: 'A',
+      text: 'Wait for capacity.',
+      feedbackIfSelected: 'This satisfies the capacity limit.',
+    },
+    { id: 'B', text: 'Start immediately.', feedbackIfSelected: 'This exceeds the capacity limit.' },
+  ];
+  check.correctOptionId ??= 'A';
+  if (defect === 'missing_pair') {
+    delete check.options;
+    delete check.correctOptionId;
+  } else if (defect === 'hidden_key') check.kind = 'own_words';
+  else if (defect === 'missing_key') delete check.correctOptionId;
+  else if (defect === 'binding') check.correctOptionId = 'E';
+  else {
+    check.kind = 'predict_next';
+    delete check.options;
+    delete check.correctOptionId;
+    delete check.evidenceContrast;
+    check.prompt = '请比较选项D和E，并说明哪种方案能满足检索条件。';
+  }
+}
 
 function historicalJ18Item() {
   const captured = JSON.parse(
@@ -101,7 +138,7 @@ class CountingProvider extends FakeProvider {
   override async reviewTeachingContent(
     input: TeachingContentReviewInput,
     opts?: ProviderCallOptions,
-  ) {
+  ): Promise<TeachingContentReview> {
     opts?.onRequestSent?.();
     if (input.purpose === 'practice_answerability') this.practiceAnswerabilityCalls += 1;
     if (input.purpose === 'practice_answerability' || input.purpose === 'practice_grounding')
@@ -1552,7 +1589,613 @@ afterEach(() => {
   while (databases.length > 0) databases.pop()!.close();
 });
 
+async function ordinaryLessonHarness() {
+  const harness = await createHarness();
+  const { baseObjective, routeSecond } = addSameUnitRouteAndDeferredObjectives(harness);
+  const curriculum = harness.repos.curricula.get(harness.curriculumId)!;
+  const unit = curriculum.nodes.find((node) => node.id === harness.learningUnitId)!.learningUnit!;
+  unit.objectives.find((objective) => objective.id === routeSecond.id)!.priority = 'required';
+  harness.db
+    .prepare('UPDATE curriculum_versions SET payload=? WHERE id=?')
+    .run(JSON.stringify(curriculum), curriculum.id);
+  setTeachingPlanObjectiveIds(harness, [baseObjective.id, routeSecond.id]);
+  return harness;
+}
+
+/** An independent offline oracle for fixtures whose task needs D/E contents.
+ * The production reference inventory must never decide this semantic fact. */
+function reviewMissingAlternativeContents(
+  harness: Awaited<ReturnType<typeof ordinaryLessonHarness>>,
+  definingText?: string,
+) {
+  const review = harness.provider.reviewTeachingContent.bind(harness.provider);
+  harness.provider.reviewTeachingContent = async (input, opts) => {
+    const result = await review(input, opts);
+    if (!('stage' in input) || input.stage !== 'lesson') return result;
+    const publicText = JSON.stringify(input.candidate);
+    expect(publicText).not.toContain('semanticRelations');
+    if (definingText && publicText.includes(definingText)) return result;
+    const candidate = input.candidate as {
+      slots: Array<{ slotId: string; informalCheck?: unknown }>;
+    };
+    return {
+      ...result,
+      findings: [
+        {
+          itemId: candidate.slots.find((slot) => slot.informalCheck)!.slotId,
+          code: 'insufficient_evidence',
+          problem: 'The alternative contents required by this fixture were not exposed.',
+          repairInstruction: 'Show the required contents before asking this task.',
+        },
+      ],
+    };
+  };
+}
+
 describe('Teaching Brief preparation', () => {
+  it.each(['timeout', 'invalid inventory', 'unavailable'] as const)(
+    'cannot persist unresolved references when material review has %s',
+    async (failure) => {
+      const harness = await ordinaryLessonHarness();
+      const generate = harness.provider.generateLessonSlotContent.bind(harness.provider);
+      harness.provider.generateLessonSlotContent = async (input, opts) => {
+        const lesson = await generate(input, opts);
+        breakLessonChoice(lesson.slots, 'absent_references');
+        return lesson;
+      };
+      const review = harness.provider.reviewTeachingContent.bind(harness.provider);
+      harness.provider.reviewTeachingContent = async (input, opts) => {
+        if (!('stage' in input) || input.stage !== 'lesson') return review(input, opts);
+        opts?.onRequestSent?.();
+        if (failure === 'timeout') throw ProviderError.timeout(30000);
+        if (failure === 'unavailable') throw new Error('Offline review unavailable');
+        return { decisions: [], findings: [] };
+      };
+      const route = startTeachingRoute(harness);
+      await expect(
+        harness.services.teachingBriefPreparation.prepare(
+          preparationRequest(harness, route, 'fail-closed-reference-' + failure),
+        ),
+      ).rejects.toThrow();
+      expect(
+        harness.db.prepare('SELECT COUNT(*) AS n FROM accepted_lesson_checkpoints').get(),
+      ).toEqual({ n: 0 });
+      expect(harness.repos.teachingBriefs.listForUnit('ws_1', harness.learningUnitId)).toEqual([]);
+      expect(harness.provider.lessonContentCalls).toBe(1);
+      expect(harness.provider.practiceContentCalls).toBe(0);
+    },
+  );
+
+  it.each([
+    'Compare options D and E as letter labels and state which letter comes first alphabetically.',
+    'Order option D and option E by the last letter in each printed heading.',
+    'Explain how option D functions as a source heading.',
+    '比较选项D和选项E这两个标题的字母，并说明它们的区别。',
+    '说明选项D这个标识符的字符数。',
+  ])('prepares and reuses reviewed label-level tasks: %s', async (prompt) => {
+    const harness = await ordinaryLessonHarness();
+    const generate = harness.provider.generateLessonSlotContent.bind(harness.provider);
+    harness.provider.generateLessonSlotContent = async (input, opts) => {
+      const lesson = await generate(input, opts);
+      const check = lesson.slots.find((slot) => slot.informalCheck)!.informalCheck!;
+      check.kind = 'own_words';
+      check.prompt += ' ' + prompt;
+      delete check.options;
+      delete check.correctOptionId;
+      delete check.evidenceContrast;
+      return lesson;
+    };
+    const review = harness.provider.reviewTeachingContent.bind(harness.provider);
+    let lessonReviews = 0;
+    harness.provider.reviewTeachingContent = async (input, opts) => {
+      if ('stage' in input && input.stage === 'lesson') {
+        lessonReviews++;
+        expect(JSON.stringify(input.candidate)).toContain(prompt);
+        expect(JSON.stringify(input.candidate)).not.toContain('semanticRelations');
+      }
+      return review(input, opts);
+    };
+    const route = startTeachingRoute(harness);
+    const request = preparationRequest(harness, route, 'reviewed-label-level');
+    const prepared = await harness.services.teachingBriefPreparation.prepare(request);
+    expect(lessonReviews).toBe(1);
+    expect(prepared.brief.pedagogyEvaluation!.contentReview).toHaveLength(1);
+    expect(hasCurrentPreparedLesson(prepared.brief)).toBe(true);
+    expect(await harness.services.teachingBriefPreparation.prepare(request)).toEqual(prepared);
+    expect(
+      (
+        await harness.services.lessonExecution.ensure('ws_1', route.session.id, {
+          command: command('bind-reviewed-labels'),
+          expectedSessionVersion: route.session.version,
+          expectedAgendaVersion: route.agenda.version,
+          expectedAgendaItemId: route.agendaItem.id,
+        })
+      ).status,
+    ).toBe('ready');
+    expect(lessonReviews).toBe(1);
+    expect(harness.provider.lessonContentCalls).toBe(1);
+    expect(harness.provider.practiceContentCalls).toBe(1);
+    const missingReview = structuredClone(prepared.brief);
+    delete missingReview.pedagogyEvaluation!.contentReview;
+    expect(hasCurrentPreparedLesson(missingReview)).toBe(false);
+  });
+
+  it('prepares, replays and binds answerable open Lesson reasoning with the existing call budget', async () => {
+    const harness = await ordinaryLessonHarness();
+    const generate = harness.provider.generateLessonSlotContent.bind(harness.provider);
+    harness.provider.generateLessonSlotContent = async (input, opts) => {
+      const lesson = await generate(input, opts);
+      const check = lesson.slots.find((slot) => slot.informalCheck)!.informalCheck!;
+      check.kind = 'own_words';
+      delete check.options;
+      delete check.correctOptionId;
+      delete check.evidenceContrast;
+      check.prompt += '请解释你的设计决定，并给出依据。';
+      return lesson;
+    };
+    const route = startTeachingRoute(harness);
+    const request = preparationRequest(harness, route, 'open-lesson-preparation');
+    const prepared = await harness.services.teachingBriefPreparation.prepare(request);
+    expect(hasCurrentPreparedLesson(prepared.brief)).toBe(true);
+    const check = prepared.brief.segments.find((segment) => segment.informalCheck)!.informalCheck!;
+    expect(check.kind).toBe('own_words');
+    expect(check).not.toHaveProperty('options');
+    expect(prepared.brief.pedagogyEvaluation!.findings).toContainEqual(
+      expect.objectContaining({ code: 'reasoning_choice_missing', severity: 'warning' }),
+    );
+    expect(harness.provider.lessonContentCalls).toBe(1);
+    expect(harness.provider.practiceContentCalls).toBe(1);
+    expect(await harness.services.teachingBriefPreparation.prepare(request)).toEqual(prepared);
+    expect(harness.services.teachingBriefPreparation.getCurrent(request)?.id).toBe(
+      prepared.brief.id,
+    );
+    const bound = await harness.services.lessonExecution.ensure('ws_1', route.session.id, {
+      command: command('open-lesson-bound'),
+      expectedSessionVersion: route.session.version,
+      expectedAgendaVersion: route.agenda.version,
+      expectedAgendaItemId: route.agendaItem.id,
+    });
+    expect(bound.status).toBe('ready');
+    expect(harness.provider.lessonContentCalls).toBe(1);
+    expect(harness.provider.practiceContentCalls).toBe(1);
+  });
+
+  it.each(['visible text', 'serialized relation'] as const)(
+    'enforces the exposure boundary for %s at preparation and stored replay/execution',
+    async (placement) => {
+      const harness = await ordinaryLessonHarness();
+      const definitions =
+        'Option D means retain a candidate with score 80; Option E means retain a candidate with score 40.';
+      reviewMissingAlternativeContents(harness, definitions);
+      const generate = harness.provider.generateLessonSlotContent.bind(harness.provider);
+      harness.provider.generateLessonSlotContent = async (input, opts) => {
+        const lesson = await generate(input, opts);
+        const check = lesson.slots.find((slot) => slot.informalCheck)!.informalCheck!;
+        check.kind = 'own_words';
+        delete check.options;
+        delete check.correctOptionId;
+        delete check.evidenceContrast;
+        check.prompt += '请比较选项D和E，并说明哪种方案能满足检索条件。';
+        if (placement === 'visible text') lesson.slots[0]!.explanation += ' ' + definitions;
+        else
+          lesson.slots[0]!.semanticRelations.push({
+            kind: 'condition_action',
+            fromProposition: definitions,
+            toProposition: 'The retrieval threshold determines which result survives.',
+            relevanceToObjective: 'Use the retrieval condition to justify the decision.',
+            sourceRefs: [],
+          });
+        return lesson;
+      };
+      const route = startTeachingRoute(harness);
+      const request = preparationRequest(harness, route, 'exposure-preparation-' + placement);
+      if (placement === 'serialized relation') {
+        await expect(
+          harness.services.teachingBriefPreparation.prepare(request),
+        ).rejects.toMatchObject({
+          code: ApiErrorCode.ProviderInvalidOutput,
+          details: { candidateFailure: { kind: 'teaching_content_review_failed' } },
+        });
+        expect(
+          harness.db.prepare('SELECT COUNT(*) AS n FROM accepted_lesson_checkpoints').get(),
+        ).toEqual({ n: 0 });
+        expect(harness.provider.practiceContentCalls).toBe(0);
+        return;
+      }
+      const prepared = await harness.services.teachingBriefPreparation.prepare(request);
+      expect(hasCurrentPreparedLesson(prepared.brief)).toBe(true);
+      expect(await harness.services.teachingBriefPreparation.prepare(request)).toEqual(prepared);
+      const ensureRequest = {
+        command: command('bind-visible-definitions'),
+        expectedSessionVersion: route.session.version,
+        expectedAgendaVersion: route.agenda.version,
+        expectedAgendaItemId: route.agendaItem.id,
+      };
+      expect(
+        (await harness.services.lessonExecution.ensure('ws_1', route.session.id, ensureRequest))
+          .status,
+      ).toBe('ready');
+
+      // Moving the exact same definition into non-rendered metadata must revoke
+      // active authority, even while current versions and the checkpoint remain.
+      const hidden = structuredClone(prepared);
+      const segment = hidden.brief.segments[0]!;
+      segment.explanation = segment.explanation.replace(' ' + definitions, '');
+      segment.semanticRelations = [
+        ...(segment.semanticRelations ?? []),
+        {
+          kind: 'condition_action',
+          fromProposition: definitions,
+          toProposition: 'The retrieval threshold determines which result survives.',
+          relevanceToObjective: 'Use the retrieval condition to justify the decision.',
+          sourceRefIds: [],
+        },
+      ];
+      expect(hasCurrentPreparedLesson(hidden.brief)).toBe(false);
+      harness.db
+        .prepare('UPDATE teaching_briefs SET payload=? WHERE id=?')
+        .run(JSON.stringify(hidden.brief), hidden.brief.id);
+      const operation = harness.repos.operations.getByIdempotencyKey(
+        'ws_1',
+        'teaching-brief:' + harness.learningUnitId + ':' + request.commandId,
+      )!;
+      harness.db
+        .prepare('UPDATE agent_operation_results SET payload=? WHERE operation_id=?')
+        .run(JSON.stringify(hidden), operation.id);
+      const bytes = JSON.stringify(harness.repos.teachingBriefs.get(hidden.brief.id));
+      const calls = [harness.provider.lessonContentCalls, harness.provider.practiceContentCalls];
+      await expect(
+        harness.services.teachingBriefPreparation.prepare(request),
+      ).rejects.toMatchObject({ code: ApiErrorCode.VersionConflict });
+      expect(harness.services.teachingBriefPreparation.getCurrent(request)).toBeNull();
+      expect(harness.services.lessonExecution.get('ws_1', route.session.id).status).toBe(
+        'preparation_needed',
+      );
+      expect(
+        (await harness.services.lessonExecution.ensure('ws_1', route.session.id, ensureRequest))
+          .status,
+      ).toBe('preparation_needed');
+      expect([harness.provider.lessonContentCalls, harness.provider.practiceContentCalls]).toEqual(
+        calls,
+      );
+      expect(JSON.stringify(harness.repos.teachingBriefs.get(hidden.brief.id))).toBe(bytes);
+    },
+  );
+
+  it.each(['missing_pair', 'hidden_key', 'absent_references', 'missing_key', 'binding'] as const)(
+    'rejects a %s Lesson returned after the provider validation callback before saving a checkpoint',
+    async (defect) => {
+      const harness = await ordinaryLessonHarness();
+      if (defect === 'absent_references') reviewMissingAlternativeContents(harness);
+      const generate = harness.provider.generateLessonSlotContent.bind(harness.provider);
+      harness.provider.generateLessonSlotContent = async (input, opts) => {
+        const lesson = await generate(input, opts);
+        breakLessonChoice(lesson.slots, defect);
+        return lesson;
+      };
+      const route = startTeachingRoute(harness);
+      await expect(
+        harness.services.teachingBriefPreparation.prepare(
+          preparationRequest(harness, route, `bypass-${defect}`),
+        ),
+      ).rejects.toMatchObject({
+        code: ApiErrorCode.ProviderInvalidOutput,
+        details: {
+          candidateFailure: {
+            kind:
+              defect === 'absent_references'
+                ? 'teaching_content_review_failed'
+                : 'lesson_choice_contract_rejection',
+          },
+        },
+      });
+      expect(
+        harness.db.prepare('SELECT COUNT(*) AS n FROM accepted_lesson_checkpoints').get(),
+      ).toEqual({ n: 0 });
+      expect(harness.repos.teachingBriefs.listForUnit('ws_1', harness.learningUnitId)).toEqual([]);
+      expect(harness.provider.lessonContentCalls).toBe(defect === 'absent_references' ? 2 : 1);
+      expect(harness.provider.practiceContentCalls).toBe(0);
+    },
+  );
+
+  it('rejects hidden choices from a capsule provider that bypasses its validation callback', async () => {
+    const harness = await createHarness(0, 'pass', 'explain', 'pass_oriented');
+    Object.defineProperty(harness.provider, 'name', { value: 'hy3' });
+    let capsules = 0;
+    Object.assign(harness.provider, {
+      generateTeachingCapsule: async (
+        input: TeachingCapsuleGenerationInput,
+        opts?: ProviderCallOptions,
+      ) => {
+        capsules++;
+        opts?.onRequestSent?.();
+        const provider = new FakeProvider();
+        const lesson = await provider.generateLessonSlotContent(input.lesson);
+        const practice = input.practiceSlots.length
+          ? await provider.generatePracticeContent({
+              ...input.lesson,
+              skeleton: {
+                ...input.lesson.skeleton,
+                practicePlan: {
+                  schemaVersion: 1,
+                  slots: input.practiceSlots,
+                  activityBudget: { minMinutes: 1, maxMinutes: 1 },
+                },
+              },
+              acceptedLesson: [...input.priorLesson, ...lesson.slots],
+            })
+          : { items: [] };
+        breakLessonChoice(lesson.slots, 'hidden_key');
+        return { lesson, practice };
+      },
+    });
+    const route = startTeachingRoute(harness);
+    await expect(
+      harness.services.teachingBriefPreparation.prepare(
+        preparationRequest(harness, route, 'capsule-choice-bypass'),
+      ),
+    ).rejects.toMatchObject({ code: ApiErrorCode.ProviderInvalidOutput });
+    expect(capsules).toBe(1);
+    expect(
+      harness.db.prepare('SELECT COUNT(*) AS n FROM accepted_lesson_checkpoints').get(),
+    ).toEqual({ n: 0 });
+    expect(harness.repos.teachingBriefs.listForUnit('ws_1', harness.learningUnitId)).toEqual([]);
+  });
+
+  it.each([
+    'evaluator',
+    'prompt',
+    'choice_context',
+    'missing_pair',
+    'hidden_key',
+    'absent_references',
+  ] as const)(
+    'fences stored Lesson %s from completed replay, fresh reuse and ready bound execution',
+    async (defect) => {
+      const harness = await ordinaryLessonHarness();
+      const route = startTeachingRoute(harness);
+      const request = preparationRequest(harness, route, `lesson-current-${defect}`);
+      const prepared = await harness.services.teachingBriefPreparation.prepare(request);
+      const ensureRequest = {
+        command: command(`bound-lesson-${defect}`),
+        expectedSessionVersion: route.session.version,
+        expectedAgendaVersion: route.agenda.version,
+        expectedAgendaItemId: route.agendaItem.id,
+      };
+      expect(
+        (await harness.services.lessonExecution.ensure('ws_1', route.session.id, ensureRequest))
+          .status,
+      ).toBe('ready');
+      const state = harness.repos.lessonExecution.getForSession(
+        route.session.id,
+        route.agendaItem.id,
+      )!;
+      const old = structuredClone(prepared);
+      if (defect === 'evaluator')
+        old.brief.pedagogyEvaluation!.policyVersion = 'lesson-pedagogy-v9-scientific-notation';
+      else if (defect === 'prompt')
+        old.brief.composition!.lessonPromptVersion =
+          'teaching-lesson-content-v18-source-faithful-models';
+      else if (defect === 'choice_context')
+        delete old.brief.pedagogyEvaluation!.choiceContextFingerprint;
+      else breakLessonChoice(old.brief.segments, defect);
+      expect(hasCurrentPreparedLesson(old.brief)).toBe(false);
+      harness.db
+        .prepare('UPDATE teaching_briefs SET payload=? WHERE id=?')
+        .run(JSON.stringify(old.brief), old.brief.id);
+      const operation = harness.repos.operations.getByIdempotencyKey(
+        'ws_1',
+        `teaching-brief:${harness.learningUnitId}:${request.commandId}`,
+      )!;
+      harness.db
+        .prepare('UPDATE agent_operation_results SET payload=? WHERE operation_id=?')
+        .run(JSON.stringify(old), operation.id);
+      const originalBytes = JSON.stringify(harness.repos.teachingBriefs.get(old.brief.id));
+      const calls = [harness.provider.lessonContentCalls, harness.provider.practiceContentCalls];
+      await expect(
+        harness.services.teachingBriefPreparation.prepare(request),
+      ).rejects.toMatchObject({ code: ApiErrorCode.VersionConflict });
+      expect(harness.services.teachingBriefPreparation.getCurrent(request)).toBeNull();
+      const fenced = harness.services.lessonExecution.get('ws_1', route.session.id);
+      expect(fenced.status).toBe('preparation_needed');
+      expect(fenced.lesson).toBeNull();
+      await expect(
+        harness.services.lessonExecution.command('ws_1', route.session.id, {
+          command: command(`old-lesson-action-${defect}`),
+          expectedSessionVersion: route.session.version,
+          expectedAgendaVersion: route.agenda.version,
+          expectedAgendaItemId: route.agendaItem.id,
+          expectedLessonStateVersion: state.version,
+          action: { kind: 'start_lesson' },
+        }),
+      ).rejects.toMatchObject({ code: ApiErrorCode.ValidationError });
+      expect(
+        (await harness.services.lessonExecution.ensure('ws_1', route.session.id, ensureRequest))
+          .status,
+      ).toBe('preparation_needed');
+      expect([harness.provider.lessonContentCalls, harness.provider.practiceContentCalls]).toEqual(
+        calls,
+      );
+      expect(JSON.stringify(harness.repos.teachingBriefs.get(old.brief.id))).toBe(originalBytes);
+      const fresh = await harness.services.lessonExecution.ensure('ws_1', route.session.id, {
+        ...ensureRequest,
+        command: command(`renew-lesson-${defect}`),
+      });
+      expect(fresh.status).toBe('ready');
+      const renewedState = harness.repos.lessonExecution.getForSession(
+        route.session.id,
+        route.agendaItem.id,
+      )!;
+      expect(renewedState.teachingBriefId).not.toBe(old.brief.id);
+      expect(
+        hasCurrentPreparedLesson(harness.repos.teachingBriefs.get(renewedState.teachingBriefId!)!),
+      ).toBe(true);
+      expect(harness.provider.lessonContentCalls).toBe(calls[0]);
+    },
+  );
+
+  it.each([
+    'evaluator',
+    'prompt',
+    'choice_context',
+    'missing_pair',
+    'hidden_key',
+    'absent_references',
+  ] as const)(
+    'checks a persisted checkpoint with %s independently of the current Brief and completed result',
+    async (defect) => {
+      const harness = await ordinaryLessonHarness();
+      const route = startTeachingRoute(harness);
+      const request = preparationRequest(harness, route, `checkpoint-before-${defect}`);
+      const prepared = await harness.services.teachingBriefPreparation.prepare(request);
+      const ensureRequest = {
+        command: command(`bound-checkpoint-${defect}`),
+        expectedSessionVersion: route.session.version,
+        expectedAgendaVersion: route.agenda.version,
+        expectedAgendaItemId: route.agendaItem.id,
+      };
+      await harness.services.lessonExecution.ensure('ws_1', route.session.id, ensureRequest);
+      const checkpoint = harness.repos.acceptedLessonCheckpoints.get(
+        prepared.brief.composition!.acceptedLessonCheckpointId,
+      )!;
+      // Only this in-memory fixture permits seeding a historical/corrupt row.
+      harness.db.exec('DROP TRIGGER prevent_accepted_lesson_checkpoint_update');
+      if (defect === 'evaluator' || defect === 'choice_context') {
+        if (defect === 'evaluator')
+          checkpoint.lessonEvaluation.policyVersion = 'lesson-pedagogy-v9-scientific-notation';
+        else delete checkpoint.lessonEvaluation.choiceContextFingerprint;
+        harness.db
+          .prepare('UPDATE accepted_lesson_checkpoints SET lesson_evaluation_payload=? WHERE id=?')
+          .run(JSON.stringify(checkpoint.lessonEvaluation), checkpoint.id);
+      } else if (defect === 'prompt') {
+        checkpoint.promptVersion = 'teaching-lesson-content-v18-source-faithful-models';
+        harness.db
+          .prepare('UPDATE accepted_lesson_checkpoints SET prompt_version=? WHERE id=?')
+          .run(checkpoint.promptVersion, checkpoint.id);
+      } else {
+        breakLessonChoice(checkpoint.lessonContent, defect);
+        harness.db
+          .prepare('UPDATE accepted_lesson_checkpoints SET lesson_payload=? WHERE id=?')
+          .run(JSON.stringify(checkpoint.lessonContent), checkpoint.id);
+      }
+      expect(
+        isCurrentAcceptedLessonCheckpoint(
+          harness.repos.acceptedLessonCheckpoints.get(checkpoint.id),
+        ),
+      ).toBe(false);
+      const bytes = JSON.stringify(harness.repos.acceptedLessonCheckpoints.get(checkpoint.id));
+      const calls = [harness.provider.lessonContentCalls, harness.provider.practiceContentCalls];
+      await expect(
+        harness.services.teachingBriefPreparation.prepare(request),
+      ).rejects.toMatchObject({ code: ApiErrorCode.VersionConflict });
+      expect(harness.services.teachingBriefPreparation.getCurrent(request)).toBeNull();
+      expect(harness.services.lessonExecution.get('ws_1', route.session.id).status).toBe(
+        'preparation_needed',
+      );
+      expect(
+        (await harness.services.lessonExecution.ensure('ws_1', route.session.id, ensureRequest))
+          .status,
+      ).toBe('preparation_needed');
+      if (defect !== 'prompt')
+        await expect(
+          harness.services.teachingBriefPreparation.prepare(
+            preparationRequest(harness, route, `checkpoint-revalidate-${defect}`),
+          ),
+        ).rejects.toMatchObject({ code: ApiErrorCode.VersionConflict });
+      expect([harness.provider.lessonContentCalls, harness.provider.practiceContentCalls]).toEqual(
+        calls,
+      );
+      expect(JSON.stringify(harness.repos.acceptedLessonCheckpoints.get(checkpoint.id))).toBe(
+        bytes,
+      );
+    },
+  );
+
+  it('preserves completed Lesson history with its original versions, evaluations and historical schema shape', async () => {
+    const harness = await ordinaryLessonHarness();
+    const route = startTeachingRoute(harness);
+    await harness.services.lessonExecution.ensure('ws_1', route.session.id, {
+      command: command('history-lesson'),
+      expectedSessionVersion: route.session.version,
+      expectedAgendaVersion: route.agenda.version,
+      expectedAgendaItemId: route.agendaItem.id,
+    });
+    const state = harness.repos.lessonExecution.getForSession(
+      route.session.id,
+      route.agendaItem.id,
+    )!;
+    const brief = harness.repos.teachingBriefs.get(state.teachingBriefId!)!;
+    const checkpoint = harness.repos.acceptedLessonCheckpoints.get(
+      brief.composition!.acceptedLessonCheckpointId,
+    )!;
+    // Seed persisted pre-policy history; production checkpoints stay immutable.
+    harness.db.exec('DROP TRIGGER prevent_accepted_lesson_checkpoint_update');
+    breakLessonChoice(brief.segments, 'missing_pair');
+    breakLessonChoice(checkpoint.lessonContent, 'missing_pair');
+    brief.composition!.lessonPromptVersion = 'teaching-lesson-content-v18-source-faithful-models';
+    brief.pedagogyEvaluation!.policyVersion = checkpoint.lessonEvaluation.policyVersion =
+      'lesson-pedagogy-v9-scientific-notation';
+    harness.db
+      .prepare('UPDATE teaching_briefs SET payload=? WHERE id=?')
+      .run(JSON.stringify(brief), brief.id);
+    harness.db
+      .prepare(
+        'UPDATE accepted_lesson_checkpoints SET prompt_version=?, lesson_payload=?, lesson_evaluation_payload=? WHERE id=?',
+      )
+      .run(
+        brief.composition!.lessonPromptVersion,
+        JSON.stringify(checkpoint.lessonContent),
+        JSON.stringify(checkpoint.lessonEvaluation),
+        checkpoint.id,
+      );
+    const briefBytes = JSON.stringify(harness.repos.teachingBriefs.get(brief.id));
+    const checkpointBytes = JSON.stringify(
+      harness.repos.acceptedLessonCheckpoints.get(checkpoint.id),
+    );
+    harness.repos.lessonExecution.update(
+      {
+        ...state,
+        presentedSegmentIndexes: brief.segments.map((segment) => segment.index),
+        presentationCompletedAt: T0,
+        practiceCompletedAt: T0,
+        version: state.version + 1,
+        updatedAt: T0,
+      },
+      state.version,
+    );
+    const agenda = harness.repos.sessionAgendas.get(route.agenda.id)!;
+    harness.repos.sessionAgendas.update(
+      {
+        ...agenda,
+        items: agenda.items.map((item) =>
+          item.id === route.agendaItem.id ? { ...item, state: 'completed' as const } : item,
+        ),
+        version: agenda.version + 1,
+        updatedAt: T0,
+      },
+      agenda.version,
+      {
+        id: 'history-completed-event',
+        eventType: 'test_completed_history',
+        actor: 'local',
+        payload: {},
+        createdAt: T0,
+      },
+    );
+    const history = harness.services.lessonExecution.get('ws_1', route.session.id);
+    expect(history.status).toBe('ready');
+    expect(history.lesson).not.toBeNull();
+    expect(history.allowedActions).toEqual(['review_lesson']);
+    expect(JSON.stringify(harness.repos.teachingBriefs.get(brief.id))).toBe(briefBytes);
+    expect(JSON.stringify(harness.repos.acceptedLessonCheckpoints.get(checkpoint.id))).toBe(
+      checkpointBytes,
+    );
+    expect(harness.provider.lessonContentCalls).toBe(1);
+    expect(COMPOSITIONAL_LESSON_PEDAGOGY_POLICY_VERSION).not.toBe(
+      brief.pedagogyEvaluation!.policyVersion,
+    );
+  });
+
   it.each(
     (['initial', 'retry'] as const).flatMap((surface) =>
       (['recognize', 'classify'] as const).map((operation) => ({ surface, operation })),

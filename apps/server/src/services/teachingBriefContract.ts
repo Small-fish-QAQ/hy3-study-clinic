@@ -479,6 +479,7 @@ const PRACTICE_FORBIDDEN_LOCAL_KEYS = new Set([
 export function validateLessonSlotContentCandidate(
   candidate: unknown,
   input: LessonSlotContentGenerationInput,
+  visiblePriorLesson: readonly TeachingLessonSlotContent[] = [],
 ): ProviderCandidateValidation {
   const expectedIds = input.skeleton.lessonSlots.map((slot) => slot.slotId);
   const expected = new Set(expectedIds);
@@ -634,21 +635,11 @@ export function validateLessonSlotContentCandidate(
         itemIds: [content.slotId],
       });
     }
-    if (
-      content.informalCheck?.kind === 'choose_alternative' &&
-      (!content.informalCheck.options || !content.informalCheck.correctOptionId)
-    ) {
-      invalidIds.add(content.slotId);
-      diagnostics.push({
-        code: 'lesson_choice_check_missing_options',
-        message: `${content.slotId} choice check requires structured choices and one locally gradable answer.`,
-        itemIds: [content.slotId],
-      });
-    }
   }
 
   const evaluation = evaluateLessonSlotPedagogy(parsed.data, input, {
     evaluatedAt: '1970-01-01T00:00:00.000Z',
+    visiblePriorLesson,
   });
   const evaluatedInvalidIds = lessonEvaluationInvalidSlotIds(evaluation, input);
   if (evaluation.status === 'fail' && evaluatedInvalidIds.length === 0) {

@@ -33,6 +33,11 @@ import {
 } from './generationStages.js';
 import { createTelemetryProvider } from './providerTelemetry.js';
 import { hasCurrentPreparedPractice } from './practiceAcceptance.js';
+import { hasValidLessonChoiceContract } from './lessonChoiceContract.js';
+import {
+  hasCurrentPreparedLesson,
+  isCurrentAcceptedLessonCheckpoint,
+} from './teachingBriefPreparation.js';
 import {
   failedPracticeAttempt,
   practiceItemPassed,
@@ -293,6 +298,13 @@ export function createLessonExecutionService({
     if (brief.practice && !state.practiceCompletedAt && !hasCurrentPreparedPractice(brief)) {
       return null;
     }
+    if (
+      !reviewable(context) &&
+      (brief.composition
+        ? !hasCurrentPreparedLesson(brief)
+        : !hasValidLessonChoiceContract(brief.segments, [brief.objective.whyNow]))
+    )
+      return null;
     if (brief.composition) {
       const checkpoint = repos.acceptedLessonCheckpoints.get(
         brief.composition.acceptedLessonCheckpointId,
@@ -310,6 +322,7 @@ export function createLessonExecutionService({
       ) {
         return null;
       }
+      if (!reviewable(context) && !isCurrentAcceptedLessonCheckpoint(checkpoint)) return null;
     }
     return brief;
   }

@@ -51,13 +51,18 @@ const AUTHOR_KEYS = new Set([
   'expectedSignal',
 ]);
 
-function withoutAuthorDeclarations(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(withoutAuthorDeclarations);
+function withoutAuthorDeclarations(value: unknown, lessonVisibility = false): unknown {
+  if (Array.isArray(value))
+    return value.map((item) => withoutAuthorDeclarations(item, lessonVisibility));
   if (value === null || typeof value !== 'object') return value;
   const result = Object.fromEntries(
     Object.entries(value)
-      .filter(([key]) => !AUTHOR_KEYS.has(key))
-      .map(([key, child]) => [key, withoutAuthorDeclarations(child)]),
+      // LessonExecutionPanel does not render these relations. Even an ambiguous
+      // dependency's material review cannot use them as public availability.
+      .filter(
+        ([key]) => !AUTHOR_KEYS.has(key) && !(lessonVisibility && key === 'semanticRelations'),
+      )
+      .map(([key, child]) => [key, withoutAuthorDeclarations(child, lessonVisibility)]),
   );
   const original = value as Record<string, unknown>;
   if (original.activity && original.scaffold && original.transfer) {
@@ -74,6 +79,7 @@ function withoutAuthorDeclarations(value: unknown): unknown {
   if (Array.isArray(original.steps) && typeof interaction?.pauseAfterStepIndex === 'number') {
     result.steps = withoutAuthorDeclarations(
       original.steps.slice(0, interaction.pauseAfterStepIndex + 1),
+      lessonVisibility,
     );
     result.afterGuidedResponse = {
       visibility:
@@ -226,8 +232,8 @@ export function prepareTeachingReview(
     })),
     sources: context.sourceContext.offers.map(({ sourceRef, text }) => ({ sourceRef, text })),
     candidate: context.computedCases
-      ? compactComputedReview(withoutAuthorDeclarations(annotated))
-      : withoutAuthorDeclarations(annotated),
+      ? compactComputedReview(withoutAuthorDeclarations(annotated, 'slots' in candidate))
+      : withoutAuthorDeclarations(annotated, 'slots' in candidate),
     ...('acceptedLesson' in context
       ? {
           acceptedLesson: context.computedCases
