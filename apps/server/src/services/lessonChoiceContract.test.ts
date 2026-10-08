@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { TeachingBriefInformalCheckSchema } from '@hy3-clinic/shared';
+import {
+  TeachingBriefInformalCheckSchema,
+  LESSON_CONTENT_REVIEW_POLICY_VERSION,
+} from '@hy3-clinic/shared';
 import {
   assertLessonChoiceContract,
   hasValidLessonChoiceContract,
@@ -56,6 +59,7 @@ function acceptedEvaluation(
               result: { decisions: [], findings: [] },
             },
           ],
+          contentReviewPolicyVersion: LESSON_CONTENT_REVIEW_POLICY_VERSION,
         }
       : {}),
   });

@@ -16,7 +16,7 @@ import type {
 } from '../llm/provider.js';
 import { planTeachingSkeleton } from './teachingSkeletonPlanner.js';
 import { evaluatePlannedPracticeQuality } from './lessonPedagogyEvaluator.js';
-import { verifyPreparedPractice } from './teachingContentReview.js';
+import { verifyPreparedPractice, practiceReviewQualityFindings } from './teachingContentReview.js';
 import {
   assertPracticeCandidate,
   assertReviewedPracticeAcceptance,
@@ -166,6 +166,15 @@ async function fixture(depth: DesiredDepth = 'working_fluency') {
           answerabilityReview: result.answerabilityReview,
           integrityReview: result.integrityReview,
           groundingReview: result.groundingReview,
+          qualityImprovement: result.qualityImprovement,
+          findings: [
+            ...evaluatePlannedPracticeQuality(result.candidate, context, at).findings,
+            ...practiceReviewQualityFindings(result.candidate, context, {
+              contentReview: result.receipts,
+              answerabilityReview: result.answerabilityReview,
+              integrityReview: result.integrityReview,
+            }),
+          ],
         },
       },
     } as TeachingBrief;
@@ -271,6 +280,126 @@ function makeShallow(
 }
 
 describe('Practice declaration responsibilities and public acceptance', () => {
+  it.each(
+    (['practice_grounding', 'practice_integrity', 'practice_answerability'] as const).flatMap(
+      (purpose) =>
+        (['insufficient_evidence', 'revealing_hint', 'weak_transfer'] as const).map((code) => ({
+          purpose,
+          code,
+        })),
+    ),
+  )(
+    'accepts explicit $purpose quality $code with current saved proofs',
+    async ({ purpose, code }) => {
+      const f = await fixture('pass_oriented');
+      const review = f.review.getMockImplementation()!;
+      f.review.mockImplementation(async (request, round) => {
+        const reviewed = await review(request, round);
+        if (request.input.purpose === purpose)
+          reviewed.result.advisories = [
+            {
+              itemId: 'PR1',
+              code,
+              qualityAspect: 'transfer',
+              problem: 'The correct new capacity case could explore a richer changed constraint.',
+              repairInstruction:
+                'Consider a second constraint while preserving the correct rule and public givens.',
+            },
+          ];
+        return reviewed;
+      });
+      const result = await f.verify();
+      expect(result.qualityImprovement).toMatchObject({ attempts: 0, outcome: 'retained' });
+      expect(f.revise).not.toHaveBeenCalled();
+      const brief = f.saved(result);
+      expect(hasCurrentPreparedPractice(brief)).toBe(true);
+      expect(brief.practice!.qualityEvaluation.findings).toContainEqual(
+        expect.objectContaining({ severity: 'warning', code: `practice_review_${code}` }),
+      );
+      // The exact same source rule and delayed feedback remain legitimate teaching.
+      expect(result.candidate).toEqual(f.candidate);
+      expect(result.groundingReview.rounds).toHaveLength(1);
+      expect(result.answerabilityReview.rounds).toHaveLength(1);
+    },
+  );
+
+  it.each(['shallow_task', 'weak_transfer'] as const)(
+    'rejects a false explanation reported as material %s, without an optional escape',
+    async (code) => {
+      const f = await fixture('pass_oriented');
+      f.candidate.items[0]!.retry.explanation += ' 补充运算：2 + 2 = 5。';
+      const review = f.review.getMockImplementation()!;
+      f.review.mockImplementation(async (request, round) => {
+        const reviewed = await review(request, round);
+        if (
+          request.input.purpose === 'practice_grounding' &&
+          request.input.candidate.items[0]!.retry.explanation.includes('2 + 2 = 5')
+        )
+          reviewed.result.findings = [
+            {
+              itemId: 'PR1.retry',
+              code,
+              responsibility: 'grounding',
+              problem: 'The delayed explanation says 2 + 2 = 5, contradicting the correct sum 4.',
+              repairInstruction: 'Correct the false calculation.',
+            },
+          ];
+        return reviewed;
+      });
+      const improve = vi.fn(async () => f.candidate);
+      await expect(
+        verifyPreparedPractice(
+          f.context,
+          f.candidate,
+          f.priorTeaching,
+          f.review,
+          f.revise,
+          improve,
+        ),
+      ).rejects.toMatchObject({
+        details: { candidateFailure: { kind: 'teaching_content_review_failed' } },
+      });
+      expect(f.revise).toHaveBeenCalledOnce();
+      expect(improve).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([
+    'missing_responsibility',
+    'wrong_purpose',
+    'material_as_advisory',
+    'solver_finding',
+    'unknown_item',
+  ] as const)('cannot fabricate acceptance with %s review output', async (defect) => {
+    const f = await fixture('pass_oriented');
+    const review = f.review.getMockImplementation()!;
+    f.review.mockImplementation(async (request, round) => {
+      const reviewed = await review(request, round);
+      const finding = {
+        itemId: 'PR1',
+        code: 'weak_transfer' as const,
+        problem: 'The exact rule is contradicted by a false assertion.',
+        repairInstruction: 'Correct the assertion.',
+      };
+      if (request.input.purpose === 'practice_grounding') {
+        if (defect === 'missing_responsibility') reviewed.result.findings = [finding];
+        if (defect === 'wrong_purpose')
+          reviewed.result.findings = [{ ...finding, responsibility: 'integrity' }];
+        if (defect === 'material_as_advisory')
+          reviewed.result.advisories = [
+            { ...finding, responsibility: 'grounding', qualityAspect: 'transfer' },
+          ];
+        if (defect === 'unknown_item')
+          reviewed.result.advisories = [{ ...finding, itemId: 'PR999', qualityAspect: 'style' }];
+      }
+      if (request.input.purpose === 'practice_answerability' && defect === 'solver_finding')
+        reviewed.result.findings = [finding];
+      return reviewed;
+    });
+    await expect(f.verify()).rejects.toMatchObject({ code: 'PROVIDER_INVALID_OUTPUT' });
+    expect(f.revise).not.toHaveBeenCalled();
+  });
+
   it('grounds the complete authored artifact while blind and integrity packets remain purpose-specific', async () => {
     const f = await fixture();
     const prepared = preparePracticeGroundingReview(f.context, f.candidate);
@@ -333,6 +462,7 @@ describe('Practice declaration responsibilities and public acceptance', () => {
             {
               itemId: 'PR1',
               code: 'accuracy',
+              responsibility: 'grounding',
               problem: 'False explanation.',
               repairInstruction: 'Correct it.',
             },

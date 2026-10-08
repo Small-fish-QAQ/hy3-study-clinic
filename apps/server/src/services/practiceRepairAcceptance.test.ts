@@ -162,6 +162,39 @@ describe('Repair purpose acceptance', () => {
   it('passes complete controlled claims and keeps legitimately taught rules in both isolated inputs', async () => {
     const { content, prepared, proof } = await fixture();
     expect(hasPracticeRepairProof(content, proof)).toBe(true);
+    // New generic metadata cannot broaden these completed purpose contracts.
+    const advisory = {
+      itemId: 'repair',
+      code: 'weak_transfer' as const,
+      problem: 'Prefer more teaching richness.',
+      repairInstruction: 'Consider a clearer contrast.',
+    };
+    expect(
+      hasPracticeRepairProof(content, {
+        ...proof,
+        grounding: {
+          ...proof.grounding,
+          result: {
+            ...proof.grounding.result,
+            advisories: [
+              {
+                ...advisory,
+                responsibility: 'grounding',
+              },
+            ],
+          },
+        },
+      }),
+    ).toBe(false);
+    expect(
+      hasPracticeRepairProof(content, {
+        ...proof,
+        solves: proof.solves.map((solve) => ({
+          ...solve,
+          result: { ...solve.result, advisories: [advisory] },
+        })),
+      }),
+    ).toBe(false);
     for (const [index, input] of prepared.solves.entries()) {
       const serialized = JSON.stringify(input);
       expect(input.priorTeaching).toContain(context.teachingContext[0]);

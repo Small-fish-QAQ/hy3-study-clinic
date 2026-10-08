@@ -226,6 +226,30 @@ describe('complete Lesson grounding', () => {
     },
   );
 
+  it('keeps authority metadata out of the completed grounding quality inventory', async () => {
+    const f = await fixture();
+    const raw = {
+      decisions: [],
+      findings: [],
+      advisories: [
+        {
+          itemId: f.candidate.slots[0]!.slotId,
+          code: 'weak_transfer',
+          responsibility: 'grounding',
+          problem: 'A material source contradiction must not be put in quality advisories.',
+          repairInstruction: 'Report the concrete contradiction as a grounding finding.',
+        },
+      ],
+    };
+    expect(f.prepared.validate(raw).valid).toBe(false);
+    expect(() =>
+      assertPreparedLessonGrounding(f.candidate, f.context, {
+        ...f.proof,
+        rounds: [{ ...f.proof.rounds[0]!, result: raw }],
+      }),
+    ).toThrow();
+  });
+
   it('cannot hide a correctness finding in the quality inventory', async () => {
     const f = await fixture();
     expect(

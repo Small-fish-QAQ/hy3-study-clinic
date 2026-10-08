@@ -414,6 +414,7 @@ describe('compositional Teaching providers', () => {
                 itemId: 'PR1',
                 code: 'grounding',
                 problem: 'A cited rule is unsupported.',
+                responsibility: 'grounding',
                 repairInstruction: 'Correct the source attribution.',
               },
             ],
@@ -590,6 +591,15 @@ describe('compositional Teaching providers', () => {
           { actionId: 'PR1.initial', answerId: 'A', requiresCaseInference, evidenceUsed },
         ],
         findings: [],
+        advisories: [
+          {
+            itemId: 'PR1.initial',
+            code: 'insufficient_evidence',
+            qualityAspect: 'difficulty',
+            problem: 'A correct task could use more demanding case evidence.',
+            repairInstruction: 'Consider a richer case without losing unique answerability.',
+          },
+        ],
       };
       const transport = vi
         .fn()
@@ -613,6 +623,71 @@ describe('compositional Teaching providers', () => {
       expect(systemPrompt).not.toContain('"requiresCaseInference":true');
       expect(JSON.stringify(prepared.input)).not.toContain('reasoningOperation');
       expect(JSON.stringify(prepared.input)).not.toContain('correctOption');
+    },
+  );
+
+  it.each(['grounding_purpose', 'solver_finding'] as const)(
+    'rejects unsupported %s review output through the actual offline Hy3 parser',
+    async (defect) => {
+      const context = lessonInput();
+      const fake = new FakeProvider();
+      const lesson = await fake.generateLessonSlotContent(context);
+      const practiceContext = { ...context, acceptedLesson: lesson.slots };
+      const candidate = await fake.generatePracticeContent(practiceContext);
+      const prepared =
+        defect === 'grounding_purpose'
+          ? preparePracticeGroundingReview(practiceContext, candidate)
+          : preparePracticeAnswerabilityReview(
+              {
+                prompt: 'The value is 4. Which offered value is twice it?',
+                options: [
+                  { id: 'A', text: '8' },
+                  { id: 'B', text: '4' },
+                  { id: 'C', text: '2' },
+                ],
+              },
+              projectPracticePriorTeaching({
+                objective: { title: 'Doubling', whyNow: 'Apply the printed rule.', objectives: [] },
+                prerequisites: [],
+                segments: [],
+                summary: 'Doubling multiplies by two.',
+                sourceReferences: [],
+                visualReferences: [],
+                nextConnection: null,
+              }),
+              'PR1.initial',
+              'PR1',
+            );
+      const invalid = {
+        decisions:
+          defect === 'grounding_purpose'
+            ? []
+            : [
+                {
+                  actionId: 'PR1.initial',
+                  answerId: 'A',
+                  requiresCaseInference: true,
+                  evidenceUsed: 'Four doubled is eight.',
+                },
+              ],
+        findings: [
+          {
+            itemId: 'PR1',
+            code: 'weak_transfer',
+            responsibility: 'integrity',
+            problem: 'This material concern belongs to public integrity, not this purpose.',
+            repairInstruction: 'Verify it through its responsible boundary.',
+          },
+        ],
+      };
+      const transport = vi.fn(async () =>
+        response(JSON.stringify(invalid)),
+      ) as unknown as typeof fetch;
+      await expect(
+        hy3(transport).reviewTeachingContent(prepared.input, {
+          validateCandidate: prepared.validate,
+        }),
+      ).rejects.toMatchObject({ code: 'PROVIDER_INVALID_OUTPUT' });
     },
   );
   it.each(['lesson', 'practice'] as const)(

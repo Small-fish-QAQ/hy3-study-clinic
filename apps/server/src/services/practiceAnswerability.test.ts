@@ -9,6 +9,7 @@ import {
   TeachingSkeletonSchema,
   projectLearnerPracticeSurface,
   projectPracticePriorTeaching,
+  type TeachingBrief,
   type TeachingContentReview,
 } from '@hy3-clinic/shared';
 import type {
@@ -57,7 +58,10 @@ function fixture(complete = false) {
   );
   if (complete)
     candidate.items[0]!.initial.prompt = publicGivens + candidate.items[0]!.initial.prompt;
-  const brief = TeachingBriefSchema.parse(JSON.parse(snapshot.rows.teaching_briefs[0]!.payload));
+  // Keep the unsupported captured Brief intact for public-content projection.
+  // This fixture is never admitted as a current Brief; the regression below
+  // asserts its strict rejection. Each solve test obtains fresh purpose proofs.
+  const brief = JSON.parse(snapshot.rows.teaching_briefs[0]!.payload) as TeachingBrief;
   // Only this quoted rule is exposed by the Lesson. The full source offer is
   // available to grounding, but must not become a new case's missing givens.
   const quote = '仅当主键相等时比较次键；每个键有独立方向。';
@@ -144,6 +148,25 @@ function fixture(complete = false) {
 }
 
 describe('learner-visible prepared Practice answerability', () => {
+  it('rejects the intact captured J18 Brief instead of stripping its obsolete combined receipt', () => {
+    const payload = snapshot.rows.teaching_briefs[0]!.payload;
+    const captured = JSON.parse(payload) as TeachingBrief;
+    const review = captured.practice!.qualityEvaluation.contentReview![0]!;
+    expect(review.result.decisions.length).toBeGreaterThan(0);
+    const parsed = TeachingBriefSchema.safeParse(captured);
+    expect(parsed.success).toBe(false);
+    if (!parsed.success)
+      expect(parsed.error.issues).toContainEqual(
+        expect.objectContaining({
+          path: ['practice', 'qualityEvaluation', 'contentReview', 0, 'result', 'decisions'],
+          code: 'too_big',
+        }),
+      );
+    fixture(true);
+    expect(JSON.parse(snapshot.rows.teaching_briefs[0]!.payload)).toEqual(captured);
+    expect(snapshot.rows.teaching_briefs[0]!.payload).toBe(payload);
+  });
+
   it('projects completed prior teaching without conditional help, private Lesson declarations or unused source offers', () => {
     const f = fixture(true);
     const worked = f.brief.segments.find(
@@ -328,6 +351,7 @@ describe('learner-visible prepared Practice answerability', () => {
           itemId: 'PR1',
           code: 'accuracy',
           problem: 'The authored rule contradicts the source at the equality boundary.',
+          responsibility: 'grounding',
           repairInstruction: 'Restore the exact source rule.',
         });
       return response;
@@ -478,6 +502,7 @@ describe('real FakeProvider learner-visible Practice answerability', () => {
               itemId: 'PR1',
               code: 'grounding',
               problem: 'The stated direction is not supported by the offered rule.',
+              responsibility: 'grounding',
               repairInstruction: 'Use the exact supported direction.',
             });
           return response;

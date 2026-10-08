@@ -1,6 +1,8 @@
 import { createHash } from 'node:crypto';
 import {
   TeachingBriefInformalCheckSchema,
+  LessonContentReviewResultSchema,
+  LESSON_CONTENT_REVIEW_POLICY_VERSION,
   type LessonPedagogyEvaluation,
 } from '@hy3-clinic/shared';
 import { ProviderError } from '../llm/errors.js';
@@ -255,9 +257,14 @@ export function hasAcceptedLessonChoiceContract(
     evaluation.choiceContextFingerprint !== lessonChoiceContextFingerprint(surfaces, visibleBefore)
   )
     return false;
-  if (!lessonChoiceNeedsMaterialReview(surfaces, visibleBefore)) return true;
   const reviewed = evaluation.contentReview?.at(-1);
-  return Boolean(reviewed && reviewed.result.findings.every(({ code }) => code === 'shallow_task'));
+  if (!reviewed) return !lessonChoiceNeedsMaterialReview(surfaces, visibleBefore);
+  const result = LessonContentReviewResultSchema.safeParse(reviewed.result);
+  return (
+    evaluation.contentReviewPolicyVersion === LESSON_CONTENT_REVIEW_POLICY_VERSION &&
+    result.success &&
+    result.data.findings.length === 0
+  );
 }
 
 export function hasValidLessonChoiceContract(

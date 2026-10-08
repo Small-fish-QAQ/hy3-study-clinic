@@ -41,9 +41,18 @@ function parseObjectiveIds(payload: string): string[] | undefined {
   }
 }
 
-function hydrate(row: TeachingBriefRow): TeachingBrief {
-  return TeachingBriefSchema.parse({
-    ...(JSON.parse(row.payload) as object),
+function hydrate(row: TeachingBriefRow): TeachingBrief | undefined {
+  let payload: unknown;
+  try {
+    payload = JSON.parse(row.payload);
+  } catch (error) {
+    if (error instanceof SyntaxError) return undefined;
+    throw error;
+  }
+  // Incompatible pre-release rows are unavailable, never upgraded into proof.
+  // Writes and every current acceptance gate still require their strict contract.
+  const parsed = TeachingBriefSchema.safeParse({
+    ...(payload as object),
     id: row.id,
     workspaceId: row.workspace_id,
     curriculumVersionId: row.curriculum_id,
@@ -56,6 +65,7 @@ function hydrate(row: TeachingBriefRow): TeachingBrief {
     promptVersion: row.prompt_version,
     createdAt: row.created_at,
   });
+  return parsed.success ? parsed.data : undefined;
 }
 
 export function createTeachingBriefsRepo(db: SqliteDb) {
@@ -88,7 +98,7 @@ export function createTeachingBriefsRepo(db: SqliteDb) {
       .all(input) as TeachingBriefRow[];
     for (const row of rows) {
       const brief = hydrate(row);
-      if (brief.composition?.acceptedLessonCheckpointId === input.acceptedLessonCheckpointId) {
+      if (brief?.composition?.acceptedLessonCheckpointId === input.acceptedLessonCheckpointId) {
         return brief;
       }
     }
@@ -487,7 +497,10 @@ export function createTeachingBriefsRepo(db: SqliteDb) {
              ORDER BY created_at ASC, id ASC`,
           )
           .all(workspaceId, learningUnitId) as TeachingBriefRow[]
-      ).map(hydrate);
+      ).flatMap((row) => {
+        const brief = hydrate(row);
+        return brief ? [brief] : [];
+      });
     },
   };
 }

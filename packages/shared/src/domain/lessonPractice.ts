@@ -47,8 +47,40 @@ export const PracticeQualityFindingSchema = PedagogyFindingBaseSchema.extend({
   criterion: PracticeQualityCriterionSchema,
   itemIndexes: z.array(z.number().int().nonnegative()).max(12),
   objectiveRefs: z.array(z.string().min(1).max(40)).max(30),
+  repairInstruction: z.string().min(1).max(1000).optional(),
 }).strict();
 export type PracticeQualityFinding = z.infer<typeof PracticeQualityFindingSchema>;
+
+const TeachingReviewFindingSchema = z
+  .object({
+    itemId: z.string().min(1).max(40),
+    code: z.enum([
+      'answer_leak',
+      'insufficient_evidence',
+      'shallow_task',
+      'weak_transfer',
+      'practice_replay',
+      'accuracy',
+      'grounding',
+      'misconception',
+      'revealing_hint',
+    ]),
+    problem: z.string().min(1).max(800),
+    repairInstruction: z.string().min(1).max(1000),
+  })
+  .strict();
+
+const TeachingReviewResponsibilitySchema = z.enum(['grounding', 'answerability', 'integrity']);
+const TeachingReviewQualityAspectSchema = z.enum(['difficulty', 'transfer', 'richness', 'style']);
+
+/** Codes describe the concern; only its purpose and evidence establish authority. */
+export const TeachingQualityAdvisorySchema = TeachingReviewFindingSchema.extend({
+  qualityAspect: TeachingReviewQualityAspectSchema,
+});
+
+const MaterialTeachingFindingSchema = TeachingReviewFindingSchema.extend({
+  responsibility: TeachingReviewResponsibilitySchema,
+});
 
 export const TeachingContentReviewSchema = z
   .object({
@@ -67,31 +99,52 @@ export const TeachingContentReviewSchema = z
           .strict(),
       )
       .max(40),
-    findings: z
-      .array(
-        z
-          .object({
-            itemId: z.string().min(1).max(40),
-            code: z.enum([
-              'answer_leak',
-              'insufficient_evidence',
-              'shallow_task',
-              'weak_transfer',
-              'practice_replay',
-              'accuracy',
-              'grounding',
-              'misconception',
-              'revealing_hint',
-            ]),
-            problem: z.string().min(1).max(800),
-            repairInstruction: z.string().min(1).max(1000),
-          })
-          .strict(),
-      )
-      .max(30),
+    findings: z.array(TeachingReviewFindingSchema).max(30),
   })
   .strict();
-export type TeachingContentReview = z.infer<typeof TeachingContentReviewSchema>;
+// The provider interface covers all purposes; each runtime schema admits only
+// its own fields. Keep the completed Lesson/Repair purpose contracts strict.
+type TeachingReviewFinding = z.infer<typeof TeachingReviewFindingSchema> & {
+  responsibility?: z.infer<typeof TeachingReviewResponsibilitySchema>;
+  qualityAspect?: z.infer<typeof TeachingReviewQualityAspectSchema>;
+};
+export type TeachingContentReview = Omit<
+  z.infer<typeof TeachingContentReviewSchema>,
+  'findings'
+> & {
+  findings: TeachingReviewFinding[];
+  advisories?: TeachingReviewFinding[];
+};
+
+export const LESSON_CONTENT_REVIEW_POLICY_VERSION = 'lesson-content-review-v2-purpose-authority';
+
+export const LessonContentReviewResultSchema = TeachingContentReviewSchema.extend({
+  findings: z.array(MaterialTeachingFindingSchema).max(30),
+  advisories: z.array(TeachingQualityAdvisorySchema).max(30).optional(),
+}).strict();
+
+export const PracticeGroundingResultSchema = LessonContentReviewResultSchema.extend({
+  decisions: TeachingContentReviewSchema.shape.decisions.max(0),
+  findings: z
+    .array(MaterialTeachingFindingSchema.extend({ responsibility: z.literal('grounding') }))
+    .max(30),
+}).strict();
+
+/** Answerability is established by the sole independent decision, never a quality verdict. */
+export const PracticeAnswerabilityResultSchema = TeachingContentReviewSchema.extend({
+  decisions: TeachingContentReviewSchema.shape.decisions.length(1),
+  findings: TeachingContentReviewSchema.shape.findings.max(0),
+  advisories: z.array(TeachingQualityAdvisorySchema).max(30).optional(),
+}).strict();
+
+export const PracticeIntegrityResultSchema = TeachingContentReviewSchema.extend({
+  decisions: TeachingContentReviewSchema.shape.decisions.max(0),
+  findings: TeachingContentReviewSchema.shape.findings.refine(
+    (findings) => findings.every(({ code }) => ['practice_replay', 'answer_leak'].includes(code)),
+    'Practice integrity findings must establish public replay or leakage.',
+  ),
+  advisories: z.array(TeachingQualityAdvisorySchema).max(30).optional(),
+}).strict();
 
 /** One initial review plus at most two corrections when concrete defects improve. */
 export const MAX_TEACHING_CONTENT_REVIEWS = 3;
@@ -106,13 +159,13 @@ const TeachingContentReviewReceiptSchema = z
 
 /** Independent of Lesson generation, composition identity and pedagogy severity. */
 // V1 could contain Fake suffix guesses; none of those proofs may certify current Practice.
-export const PRACTICE_ANSWERABILITY_POLICY_VERSION = 'practice-answerability-v2-fail-closed-fake';
+export const PRACTICE_ANSWERABILITY_POLICY_VERSION = 'practice-answerability-v3-purpose-authority';
 
 /** Practice acceptance changes must not invalidate accepted Lesson identity. */
-export const PRACTICE_ACCEPTANCE_POLICY_VERSION = 'practice-acceptance-v5-grounded-claims';
+export const PRACTICE_ACCEPTANCE_POLICY_VERSION = 'practice-acceptance-v6-purpose-authority';
 
 /** Complete authored claims, independently of the blind/public review projections. */
-export const PRACTICE_GROUNDING_POLICY_VERSION = 'practice-grounding-v1-complete-claims';
+export const PRACTICE_GROUNDING_POLICY_VERSION = 'practice-grounding-v2-purpose-authority';
 
 /** Complete Lesson claims, separate from the learner-visible choice contract. */
 export const LESSON_GROUNDING_POLICY_VERSION =
@@ -173,6 +226,7 @@ export const PracticeGroundingReviewSchema = z
     rounds: z
       .array(
         TeachingContentReviewReceiptSchema.extend({
+          result: PracticeGroundingResultSchema,
           inputHash: z.string().regex(/^sha256:[a-f0-9]{64}$/u),
           claimsHash: z.string().regex(/^sha256:[a-f0-9]{64}$/u),
         }).strict(),
@@ -205,7 +259,7 @@ export const PracticeAnswerabilityReviewSchema = z
                     itemIndex: z.number().int().min(0).max(7),
                     surface: z.enum(['initial', 'retry']),
                     inputHash: z.string().regex(/^sha256:[a-f0-9]{64}$/u),
-                    result: TeachingContentReviewSchema,
+                    result: PracticeAnswerabilityResultSchema,
                   })
                   .strict(),
               )
@@ -227,6 +281,7 @@ export const PracticeIntegrityReviewSchema = z
     rounds: z
       .array(
         TeachingContentReviewReceiptSchema.extend({
+          result: PracticeIntegrityResultSchema,
           inputHash: z.string().regex(/^sha256:[a-f0-9]{64}$/u),
         }).strict(),
       )
@@ -260,10 +315,12 @@ export const LessonPedagogyEvaluationSchema = z
       .regex(/^sha256:[a-f0-9]{64}$/u)
       .optional(),
     contentReview: z
-      .array(TeachingContentReviewReceiptSchema)
+      .array(TeachingContentReviewReceiptSchema.extend({ result: LessonContentReviewResultSchema }))
       .min(1)
       .max(MAX_TEACHING_CONTENT_REVIEWS)
       .optional(),
+    contentReviewPolicyVersion: z.string().min(1).max(80).optional(),
+    contentReviewQualityDisposition: z.literal('retained').optional(),
     /** Added after evaluation; mandatory at Lesson acceptance and execution. */
     groundingReview: LessonGroundingReviewSchema.optional(),
     teachingDesign: z
@@ -293,6 +350,7 @@ export const PracticeQualityImprovementSchema = z
     attempts: z.number().int().min(0).max(1),
     outcome: z.enum([
       'not_needed',
+      'retained',
       'improved',
       'exhausted',
       'review_budget_exhausted',
@@ -317,7 +375,7 @@ export const PracticeQualityEvaluationSchema = z
     findings: z.array(PracticeQualityFindingSchema).max(100),
     evaluatedAt: z.string().datetime(),
     contentReview: z
-      .array(TeachingContentReviewReceiptSchema)
+      .array(TeachingContentReviewReceiptSchema.extend({ result: PracticeGroundingResultSchema }))
       .min(1)
       .max(MAX_TEACHING_CONTENT_REVIEWS)
       .optional(),

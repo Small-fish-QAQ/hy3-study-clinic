@@ -5,6 +5,7 @@ import {
   LessonPedagogyEvaluationSchema,
   PracticeQualityEvaluationSchema,
   PRACTICE_ACCEPTANCE_POLICY_VERSION,
+  LESSON_CONTENT_REVIEW_POLICY_VERSION,
   projectAcceptedLessonSegments,
   projectLearnerPracticeSurface,
   projectPracticePriorTeaching,
@@ -224,6 +225,7 @@ function verifyShallow(
               itemId: f.practice.items[0]!.practiceSlotId,
               code: 'grounding',
               problem: 'The rewritten rule contradicts the authorized source.',
+              responsibility: 'grounding',
               repairInstruction: 'Restore the supported rule.',
             },
           ],
@@ -285,6 +287,7 @@ describe('calibrated cognitive teaching contract', () => {
     const finding = {
       itemId: f.worked.slotId,
       code: 'accuracy' as const,
+      responsibility: 'grounding' as const,
       problem: 'A strict bound became inclusive.',
       repairInstruction: 'Use < instead of <=.',
     };
@@ -317,6 +320,7 @@ describe('calibrated cognitive teaching contract', () => {
     const actionFinding = {
       itemId: decisions[0]!.actionId,
       code: 'accuracy' as const,
+      responsibility: 'grounding' as const,
       problem: 'The case result contradicts its update.',
       repairInstruction: 'Recompute the changed state.',
     };
@@ -365,12 +369,13 @@ describe('calibrated cognitive teaching contract', () => {
           {
             itemId: f.worked.slotId,
             code: 'shallow_task',
+            responsibility: 'integrity',
             problem: 'The prompt already states the exact keyed result.',
             repairInstruction: 'Withhold the new result until the learner has answered.',
           },
         ],
       }),
-    ).toEqual([]);
+    ).toEqual(expect.arrayContaining([expect.objectContaining({ code: 'shallow_task' })]));
     expect(computedReview.findings({ decisions: binaryDisagreement, findings: [] })).toEqual([]);
     expect(
       computedReview.findings({
@@ -408,6 +413,47 @@ describe('calibrated cognitive teaching contract', () => {
     ).toBe(false);
   });
 
+  it('refuses generic public proof and quality acceptance after the review packet changes in transit', async () => {
+    const f = await fixture();
+    const revise = vi.fn(async (draft: typeof f.lesson) => draft);
+    await expect(
+      verifyPreparedTeaching(
+        f.lessonInput,
+        f.lesson,
+        async (prepared) => {
+          const publicCandidate = prepared.input.candidate as typeof f.lesson;
+          publicCandidate.slots.find(
+            (slot) => slot.workedProcess,
+          )!.workedProcess!.steps[0]!.resultingState +=
+            ' 新补入的可见条件：当前配额足够启动所有任务。';
+          return {
+            logicalCallId: 'mutated-public-review',
+            result: {
+              decisions: prepared.input.actionIds.map((actionId) => ({
+                actionId,
+                answerId: actionId.endsWith('.transfer') ? 'B' : 'A',
+                requiresCaseInference: true,
+                evidenceUsed: 'The supplied public packet contains the needed condition.',
+              })),
+              findings: [],
+              advisories: [
+                {
+                  itemId: f.worked.slotId,
+                  code: 'insufficient_evidence',
+                  qualityAspect: 'richness',
+                  problem: 'The case could explore another constraint.',
+                  repairInstruction: 'Consider a richer case.',
+                },
+              ],
+            },
+          };
+        },
+        revise,
+      ),
+    ).rejects.toMatchObject({ code: 'PROVIDER_INVALID_OUTPUT' });
+    expect(revise).not.toHaveBeenCalled();
+  });
+
   it('rechecks one concrete revision and binds both reviews to the exact candidates', async () => {
     const f = await fixture();
     let revisions = 0;
@@ -429,6 +475,7 @@ describe('calibrated cognitive teaching contract', () => {
                   {
                     itemId: f.worked.slotId,
                     code: 'accuracy',
+                    responsibility: 'grounding',
                     problem: 'Final state disagrees with the update.',
                     repairInstruction: 'Recompute the final state.',
                   },
@@ -495,6 +542,7 @@ describe('calibrated cognitive teaching contract', () => {
                   {
                     itemId: f.worked.slotId,
                     code: round === 0 ? 'accuracy' : 'insufficient_evidence',
+                    responsibility: round === 0 ? 'grounding' : 'answerability',
                     problem:
                       round === 0
                         ? 'Incorrect state update.'
@@ -520,12 +568,13 @@ describe('calibrated cognitive teaching contract', () => {
       ...f.lessonEvaluation(),
       contentReview: verified.receipts,
     });
+    const practiceVerified = await verifyShallow(f, async (draft) => draft);
     const practiceReceipt = PracticeQualityEvaluationSchema.parse({
       ...f.practiceEvaluation(),
-      contentReview: verified.receipts,
+      contentReview: practiceVerified.verified.receipts,
     });
     expect(lessonReceipt.contentReview).toEqual(verified.receipts);
-    expect(practiceReceipt.contentReview).toEqual(verified.receipts);
+    expect(practiceReceipt.contentReview).toEqual(practiceVerified.verified.receipts);
     expect(
       LessonPedagogyEvaluationSchema.safeParse({
         ...lessonReceipt,
@@ -939,6 +988,7 @@ describe('calibrated cognitive teaching contract', () => {
                       {
                         itemId: slot.slotId,
                         code: 'insufficient_evidence' as const,
+                        responsibility: 'answerability' as const,
                         problem: 'The task needs alternative contents which were never exposed.',
                         repairInstruction: 'Supply the required contents before asking this task.',
                       },
@@ -959,6 +1009,7 @@ describe('calibrated cognitive teaching contract', () => {
         } else {
           const verified = await verifying;
           evaluation.contentReview = verified.receipts;
+          evaluation.contentReviewPolicyVersion = LESSON_CONTENT_REVIEW_POLICY_VERSION;
           expect(
             hasAcceptedLessonChoiceContract(f.lesson.slots, evaluation, [
               f.lesson.narrative!.whyNow,
@@ -1010,6 +1061,7 @@ describe('calibrated cognitive teaching contract', () => {
                   {
                     itemId: slot.slotId,
                     code: 'insufficient_evidence',
+                    responsibility: 'answerability',
                     problem: 'The referenced table and its designs are absent.',
                     repairInstruction:
                       'Supply the designs and constraints or ask a complete open task.',
@@ -2212,6 +2264,7 @@ describe('calibrated cognitive teaching contract', () => {
               itemId: f.practice.items[0]!.practiceSlotId,
               code: round === 0 ? 'accuracy' : 'grounding',
               problem: `Concrete review defect ${round}.`,
+              responsibility: 'grounding',
               repairInstruction: 'Correct the named draft.',
             });
           return {

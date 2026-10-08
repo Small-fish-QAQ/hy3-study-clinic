@@ -2,6 +2,10 @@ import { createHash } from 'node:crypto';
 import {
   LessonGroundingResultSchema,
   LESSON_GROUNDING_REVIEW_SCHEMA_VERSION,
+  LESSON_CONTENT_REVIEW_POLICY_VERSION,
+  PRACTICE_ANSWERABILITY_POLICY_VERSION,
+  PRACTICE_ACCEPTANCE_POLICY_VERSION,
+  PRACTICE_GROUNDING_POLICY_VERSION,
   ApiErrorCode,
   TeachingBriefPreparationRequestSchema,
   TeachingBriefPreparationResponseSchema,
@@ -86,7 +90,12 @@ import {
   type TeachingSkeletonPlanningInput,
 } from './teachingSkeletonPlanner.js';
 import { createTelemetryProvider } from './providerTelemetry.js';
-import { verifyPreparedPractice, verifyPreparedTeaching } from './teachingContentReview.js';
+import {
+  verifyPreparedPractice,
+  verifyPreparedTeaching,
+  lessonReviewQualityFindings,
+  practiceReviewQualityFindings,
+} from './teachingContentReview.js';
 import { capsuleInputs, assembleCapsules } from './teachingCapsules.js';
 import { validateTeachingCapsule, usesComputedTeachingCases } from '../llm/teachingCapsule.js';
 import { confineTeachingCitations } from '../llm/teachingCitations.js';
@@ -195,6 +204,7 @@ export function compositionFingerprint(
     practicePromptVersion: PRACTICE_CONTENT_PROMPT_VERSION,
     lessonPedagogyPolicyVersion: policyVersions.lessonPedagogy,
     lessonGroundingPolicyVersion: LESSON_GROUNDING_POLICY_VERSION,
+    lessonContentReviewPolicyVersion: LESSON_CONTENT_REVIEW_POLICY_VERSION,
     lessonReviewContext,
     practiceQualityPolicyVersion: policyVersions.practiceQuality,
   }).slice(0, 40)}`;
@@ -1297,7 +1307,13 @@ export function createTeachingBriefPreparationService({
     }).operation;
     const priorResult = repos.operations.getResult(operation.id);
     if (priorResult?.status === 'completed') {
-      const response = TeachingBriefPreparationResponseSchema.parse(priorResult.payload);
+      const parsed = TeachingBriefPreparationResponseSchema.safeParse(priorResult.payload);
+      if (!parsed.success)
+        throw new AppError(
+          ApiErrorCode.VersionConflict,
+          'The stored Teaching Brief result is incompatible with the current contract. Prepare it with a new command.',
+        );
+      const response = parsed.data;
       const checkpoint = response.brief.composition
         ? repos.acceptedLessonCheckpoints.get(response.brief.composition.acceptedLessonCheckpointId)
         : undefined;
@@ -1730,7 +1746,7 @@ export function createTeachingBriefPreparationService({
               const logicalCallId = `${operationKey}:lesson-review-${round}`;
               const result = await trackedReviewCall(
                 logicalCallId,
-                'teaching-content-review-v1',
+                LESSON_CONTENT_REVIEW_POLICY_VERSION,
                 (opts) =>
                   inferenceProvider.reviewTeachingContent!(prepared.input, {
                     ...opts,
@@ -1898,7 +1914,17 @@ export function createTeachingBriefPreparationService({
             boundedRepairAttempted: lessonRepairAttempted,
           },
         );
-        if (contentReview) lessonEvaluation.contentReview = contentReview;
+        if (contentReview) {
+          lessonEvaluation.contentReview = contentReview;
+          lessonEvaluation.contentReviewPolicyVersion = LESSON_CONTENT_REVIEW_POLICY_VERSION;
+          const advisories = lessonReviewQualityFindings(lessonPayload, contentReview);
+          if (advisories.length) {
+            // Joint authoring mutates shared provenance. Keep the already proven
+            // Lesson rather than introduce optional rollback machinery.
+            lessonEvaluation.contentReviewQualityDisposition = 'retained';
+            lessonEvaluation.findings = [...lessonEvaluation.findings, ...advisories].slice(0, 100);
+          }
+        }
         lessonEvaluation.groundingReview = groundingReview;
         if (jointAuthoring) lessonEvaluation.jointAuthoring = jointAuthoring;
         if (
@@ -2123,10 +2149,10 @@ export function createTeachingBriefPreparationService({
             const result = await trackedReviewCall(
               logicalCallId,
               solving
-                ? 'practice-answerability-review-v1'
+                ? PRACTICE_ANSWERABILITY_POLICY_VERSION
                 : prepared.input.purpose === 'practice_integrity'
-                  ? 'practice-integrity-review-v1'
-                  : 'practice-grounding-review-v2-complete-claims',
+                  ? PRACTICE_ACCEPTANCE_POLICY_VERSION
+                  : PRACTICE_GROUNDING_POLICY_VERSION,
               (opts) =>
                 inferenceProvider.reviewTeachingContent!(prepared.input, {
                   ...opts,
@@ -2193,9 +2219,10 @@ export function createTeachingBriefPreparationService({
                         code: 'shallow_task' as const,
                         problem: `${finding.code}: ${finding.message}`,
                         repairInstruction:
-                          finding.code === 'practice_initial_recognition_at_depth'
+                          finding.repairInstruction ??
+                          (finding.code === 'practice_initial_recognition_at_depth'
                             ? 'Deepen the initial task itself within the same immutable Practice plan and source authority: add a genuine inference from new visible case evidence, not merely a different reasoningOperation label. Supply valid evidenceContrast for the new reasoning operation. Preserve learner-visible unique answerability and the correct saved key; the rewrite needs fresh hard validation, grounding and independent case-inference proofs.'
-                            : 'Improve the missing aggregate reasoning coverage within the same immutable Practice plan and source authority. Preserve a uniquely answerable visible case and correct key; never fix coverage with a dishonest operation label.',
+                            : 'Improve the missing aggregate reasoning coverage within the same immutable Practice plan and source authority. Preserve a uniquely answerable visible case and correct key; never fix coverage with a dishonest operation label.'),
                       })),
                     ),
                   },
@@ -2249,6 +2276,14 @@ export function createTeachingBriefPreparationService({
       if (integrityReview) practiceEvaluation.integrityReview = integrityReview;
       if (groundingReview) practiceEvaluation.groundingReview = groundingReview;
       if (qualityImprovement) practiceEvaluation.qualityImprovement = qualityImprovement;
+      practiceEvaluation.findings = [
+        ...practiceEvaluation.findings,
+        ...practiceReviewQualityFindings(
+          practicePayload,
+          compositionalPracticeInput,
+          practiceEvaluation,
+        ),
+      ].slice(0, 100);
       assertCurrentCognitiveContract(practiceEvaluation);
       preparationBoundary = 'assembly';
       const brief = materialize(

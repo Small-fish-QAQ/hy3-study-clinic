@@ -7,7 +7,9 @@ import {
   PracticeContentProposalPayloadSchema,
   PracticeAnswerabilityReviewSchema,
   PracticeIntegrityReviewSchema,
-  TeachingContentReviewSchema,
+  PracticeGroundingResultSchema,
+  PracticeAnswerabilityResultSchema,
+  PracticeIntegrityResultSchema,
   projectLearnerPracticeSurface,
   projectPracticePriorTeaching,
   type LearnerPracticeSolvingSurface,
@@ -96,12 +98,14 @@ export function preparePracticeGroundingReview(
     ]),
   );
   const validate = (raw: unknown) => {
-    const parsed = TeachingContentReviewSchema.safeParse(raw);
+    const parsed = PracticeGroundingResultSchema.safeParse(raw);
     const valid =
       fingerprint() === inputHash &&
       parsed.success &&
       parsed.data.decisions.length === 0 &&
-      parsed.data.findings.every((finding) => ids.has(finding.itemId));
+      [...parsed.data.findings, ...(parsed.data.advisories ?? [])].every((finding) =>
+        ids.has(finding.itemId),
+      );
     return {
       valid,
       diagnostics: valid
@@ -117,9 +121,7 @@ export function preparePracticeGroundingReview(
     claimsHash: practiceGroundingClaimsHash(candidate),
     inputHash,
     findings: (result: TeachingContentReview) =>
-      result.findings
-        .filter((finding) => finding.code !== 'shallow_task')
-        .map((finding) => ({ ...finding, itemId: finding.itemId.split('.')[0]! })),
+      result.findings.map((finding) => ({ ...finding, itemId: finding.itemId.split('.')[0]! })),
   };
 }
 
@@ -270,12 +272,14 @@ export function preparePracticeAnswerabilityReview(
     input,
   });
   const validate = (raw: unknown) => {
-    const parsed = TeachingContentReviewSchema.safeParse(raw);
+    const parsed = PracticeAnswerabilityResultSchema.safeParse(raw);
     const valid =
       parsed.success &&
       parsed.data.decisions.length === 1 &&
       parsed.data.decisions[0]!.actionId === actionId &&
-      parsed.data.findings.every((finding) => [actionId, itemId].includes(finding.itemId));
+      (parsed.data.advisories ?? []).every((finding) =>
+        [actionId, itemId].includes(finding.itemId),
+      );
     return {
       valid,
       diagnostics: valid
@@ -316,14 +320,12 @@ export function preparePracticeIntegrityReview(
     ]),
   );
   const validate = (raw: unknown) => {
-    const parsed = TeachingContentReviewSchema.safeParse(raw);
+    const parsed = PracticeIntegrityResultSchema.safeParse(raw);
     const valid =
       parsed.success &&
       parsed.data.decisions.length === 0 &&
-      parsed.data.findings.every(
-        (finding) =>
-          ids.has(finding.itemId) &&
-          (finding.code === 'practice_replay' || finding.code === 'answer_leak'),
+      [...parsed.data.findings, ...(parsed.data.advisories ?? [])].every((finding) =>
+        ids.has(finding.itemId),
       );
     return {
       valid,
@@ -419,11 +421,11 @@ function answerabilityMatches(
   )
     return false;
   const latest = parsed.data.rounds.at(-1)!;
-  const lastGrounding = TeachingContentReviewSchema.safeParse(grounding.at(-1)!.result);
+  const lastGrounding = PracticeGroundingResultSchema.safeParse(grounding.at(-1)!.result);
   if (
     !lastGrounding.success ||
     lastGrounding.data.decisions.length ||
-    lastGrounding.data.findings.some((finding) => finding.code !== 'shallow_task') ||
+    lastGrounding.data.findings.length ||
     latest.solves.length !== items.length * 2 ||
     new Set(latest.solves.map((solve) => `${solve.itemIndex}.${solve.surface}`)).size !==
       latest.solves.length ||
@@ -449,7 +451,7 @@ function answerabilityMatches(
     return (
       prepared.inputHash === solve.inputHash &&
       prepared.validate(solve.result).valid &&
-      !solve.result.findings.some((finding) => finding.code !== 'shallow_task') &&
+      solve.result.findings.length === 0 &&
       surface.options.some(
         (option) => option.id === decision?.answerId && option.id === surface.key,
       )

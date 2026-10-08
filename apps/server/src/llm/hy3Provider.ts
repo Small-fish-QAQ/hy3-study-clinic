@@ -36,6 +36,14 @@ import {
   StudyPlanProposalPayloadSchema,
   TeachingBriefProposalPayloadSchema,
   TeachingContentReviewSchema,
+  LessonContentReviewResultSchema,
+  PracticeGroundingResultSchema,
+  PracticeAnswerabilityResultSchema,
+  PracticeIntegrityResultSchema,
+  LESSON_CONTENT_REVIEW_POLICY_VERSION,
+  PRACTICE_GROUNDING_POLICY_VERSION,
+  PRACTICE_ANSWERABILITY_POLICY_VERSION,
+  PRACTICE_ACCEPTANCE_POLICY_VERSION,
   LessonGroundingResultSchema,
   LESSON_GROUNDING_REVIEW_SCHEMA_VERSION,
   TeachingCapsulePayloadSchema,
@@ -1189,7 +1197,7 @@ export class Hy3Provider implements LlmProvider {
     input: TeachingContentReviewInput,
     opts?: ProviderCallOptions,
   ): Promise<TeachingContentReview> {
-    return this.complete(
+    return this.complete<TeachingContentReview>(
       teachingContentReviewMessages(input),
       input.purpose === 'lesson_grounding'
         ? LessonGroundingResultSchema
@@ -1197,7 +1205,15 @@ export class Hy3Provider implements LlmProvider {
           ? PracticeRepairGroundingResultSchema
           : input.purpose === 'repair_integrity'
             ? PracticeRepairIntegrityResultSchema
-            : TeachingContentReviewSchema,
+            : input.purpose === 'practice_grounding'
+              ? PracticeGroundingResultSchema
+              : input.purpose === 'practice_answerability'
+                ? PracticeAnswerabilityResultSchema
+                : input.purpose === 'practice_integrity'
+                  ? PracticeIntegrityResultSchema
+                  : input.purpose === 'repair_answerability'
+                    ? TeachingContentReviewSchema
+                    : LessonContentReviewResultSchema,
       opts,
       'Return the complete review. Cover each offered actionId exactly once and use only offered item identities. Keep decisions and concrete findings within the requested schema.',
       {
@@ -1205,12 +1221,14 @@ export class Hy3Provider implements LlmProvider {
         schemaName: input.purpose?.startsWith('repair_')
           ? `${input.purpose}-review-v1`
           : input.purpose === 'practice_answerability'
-            ? 'practice-answerability-review-v1'
+            ? PRACTICE_ANSWERABILITY_POLICY_VERSION
             : input.purpose === 'practice_grounding'
-              ? 'practice-grounding-review-v1'
+              ? PRACTICE_GROUNDING_POLICY_VERSION
               : input.purpose === 'lesson_grounding'
                 ? LESSON_GROUNDING_REVIEW_SCHEMA_VERSION
-                : 'teaching-content-review-v1',
+                : input.purpose === 'practice_integrity'
+                  ? PRACTICE_ACCEPTANCE_POLICY_VERSION
+                  : LESSON_CONTENT_REVIEW_POLICY_VERSION,
         immutableItemIds: [],
         allowIndependentRepair: false,
       },

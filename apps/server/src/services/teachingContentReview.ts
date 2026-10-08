@@ -1,7 +1,12 @@
 import { createHash } from 'node:crypto';
 import {
   ApiErrorCode,
-  TeachingContentReviewSchema,
+  LessonContentReviewResultSchema,
+  LESSON_CONTENT_REVIEW_POLICY_VERSION,
+  PracticeGroundingResultSchema,
+  PracticeAnswerabilityResultSchema,
+  PracticeIntegrityResultSchema,
+  TeachingQualityAdvisorySchema,
   MAX_TEACHING_CONTENT_REVIEWS,
   PRACTICE_ANSWERABILITY_POLICY_VERSION,
   projectLearnerPracticeSurface,
@@ -18,6 +23,8 @@ import {
   type PracticeQualityEvaluation,
   type TeachingContentReview,
   type LessonGroundingReview,
+  type LessonPedagogyFinding,
+  type LessonPedagogyEvaluation,
   LESSON_GROUNDING_POLICY_VERSION,
   LessonGroundingResultSchema,
 } from '@hy3-clinic/shared';
@@ -173,10 +180,10 @@ export async function verifyPreparedTeaching<
         )
       : undefined;
     const findings: TeachingContentReview['findings'] = [];
-    if (
+    const reviewChoices =
       !lessonGrounding ||
-      lessonGrounding.reviewChoices(candidate as LessonSlotContentProposalPayload)
-    ) {
+      lessonGrounding.reviewChoices(candidate as LessonSlotContentProposalPayload);
+    if (reviewChoices) {
       const reviewed = await review(prepared, round);
       if (!prepared.validate(reviewed.result).valid)
         throw ProviderError.invalidOutput(
@@ -185,8 +192,9 @@ export async function verifyPreparedTeaching<
           'SEMANTIC_VALIDATION_FAILURE',
           false,
         );
-      receipts.push({ ...reviewed, candidateHash: prepared.candidateHash });
-      findings.push(...prepared.findings(reviewed.result));
+      const result = LessonContentReviewResultSchema.parse(reviewed.result);
+      receipts.push({ ...reviewed, result, candidateHash: prepared.candidateHash });
+      findings.push(...prepared.findings(result));
     }
     if (grounding) {
       const reviewed = await lessonGrounding!.review(grounding, round);
@@ -210,7 +218,10 @@ export async function verifyPreparedTeaching<
     if (!findings.length)
       return {
         candidate,
-        receipts,
+        // Prior-round public findings cannot certify or veto a corrected
+        // candidate that no longer requires that review. Telemetry retains
+        // those calls; complete current grounding remains mandatory.
+        receipts: reviewChoices ? receipts : [],
         groundingReview: lessonGrounding ? groundingReview : undefined,
       };
     const findingKey = (finding: TeachingContentReview['findings'][number]) =>
@@ -279,6 +290,7 @@ export function prepareTeachingReview(
       }
   }
   const input: AuthoredTeachingContentReviewInput = {
+    ...('slots' in candidate ? { purpose: 'lesson_public' as const } : {}),
     stage: 'slots' in candidate ? 'lesson' : 'practice',
     computedOutcomes: context.computedCases,
     ...(computedItemIds.size ? { computedItemIds: [...computedItemIds] } : {}),
@@ -304,15 +316,19 @@ export function prepareTeachingReview(
     'slots' in candidate
       ? candidate.slots.map((s) => s.slotId)
       : candidate.items.map((s) => s.practiceSlotId);
+  const fingerprint = () =>
+    reviewHash({ policyVersion: LESSON_CONTENT_REVIEW_POLICY_VERSION, input });
+  const inputHash = fingerprint();
   const validate = (raw: unknown) => {
-    const parsed = TeachingContentReviewSchema.safeParse(raw);
+    const parsed = LessonContentReviewResultSchema.safeParse(raw);
     const ids = parsed.success ? parsed.data.decisions.map((decision) => decision.actionId) : [];
     const valid =
+      fingerprint() === inputHash &&
       parsed.success &&
-      ((context.computedCases && ids.length === 0) ||
+      ((input.computedOutcomes && ids.length === 0) ||
         (ids.length === answers.size && new Set(ids).size === answers.size)) &&
       ids.every((id) => answers.has(id)) &&
-      parsed.data.findings.every(
+      [...parsed.data.findings, ...(parsed.data.advisories ?? [])].every(
         (finding) => itemIds.includes(finding.itemId) || answers.has(finding.itemId),
       );
     return {
@@ -326,12 +342,10 @@ export function prepareTeachingReview(
     };
   };
   const findings = (review: TeachingContentReview): TeachingContentReview['findings'] => [
-    ...review.findings
-      .filter((finding) => finding.code !== 'shallow_task')
-      .map((finding) => ({
-        ...finding,
-        itemId: answers.get(finding.itemId)?.itemId ?? finding.itemId,
-      })),
+    ...review.findings.map((finding) => ({
+      ...finding,
+      itemId: answers.get(finding.itemId)?.itemId ?? finding.itemId,
+    })),
     ...review.decisions.flatMap<TeachingContentReview['findings'][number]>((decision) => {
       const expected = answers.get(decision.actionId)!;
       if (decision.answerId !== expected.answerId)
@@ -344,11 +358,7 @@ export function prepareTeachingReview(
               'Make the visible evidence sufficient and the keyed answer unambiguous; recompute all feedback and subsequent states.',
           },
         ];
-      // Difficulty opinions remain in the receipt, including explicit shallow_task
-      // findings. REAL review repeatedly called rule application "copying" and
-      // moved that rejection between unchanged actions. Deterministic cognitive
-      // contracts and browser acceptance own that claim; correctness, grounding,
-      // leakage and the remaining concrete defects still fail closed here.
+      // Inference depth is quality. Material findings are never erased by code.
       return [];
     }),
   ];
@@ -362,6 +372,61 @@ export function prepareTeachingReview(
 
 const reviewHash = (value: unknown) =>
   `sha256:${createHash('sha256').update(JSON.stringify(value)).digest('hex')}`;
+
+export function lessonReviewQualityFindings(
+  candidate: LessonSlotContentProposalPayload,
+  receipts: LessonPedagogyEvaluation['contentReview'],
+): LessonPedagogyFinding[] {
+  const result = LessonContentReviewResultSchema.safeParse(receipts?.at(-1)?.result);
+  if (!result.success) return [];
+  return (result.data.advisories ?? []).map((advisory) => ({
+    severity: 'warning',
+    criterion: 'learner_activity',
+    code: `lesson_review_${advisory.code}`,
+    message: advisory.problem,
+    segmentIndexes: candidate.slots.flatMap((slot, index) =>
+      slot.slotId === advisory.itemId.split('.')[0] ? [index] : [],
+    ),
+    objectiveRefs: [],
+  }));
+}
+
+/** Diagnostics from the selected candidate's current proofs share the existing quality budget. */
+export function practiceReviewQualityFindings(
+  candidate: PracticeContentProposalPayload,
+  context: PracticeContentGenerationInput,
+  evidence: Pick<
+    PracticeQualityEvaluation,
+    'contentReview' | 'answerabilityReview' | 'integrityReview'
+  >,
+): PracticeQualityFinding[] {
+  const advisories = [
+    ...(evidence.contentReview?.at(-1)?.result.advisories ?? []),
+    ...(evidence.integrityReview?.rounds.at(-1)?.result.advisories ?? []),
+    ...(evidence.answerabilityReview?.rounds
+      .at(-1)
+      ?.solves.flatMap((solve) => solve.result.advisories ?? []) ?? []),
+  ];
+  const unique = new Map<string, PracticeQualityFinding>();
+  for (const raw of advisories) {
+    const advisory = TeachingQualityAdvisorySchema.parse(raw);
+    const itemIndexes = candidate.items.flatMap((item, index) =>
+      item.practiceSlotId === advisory.itemId.split('.')[0] ? [index] : [],
+    );
+    unique.set(JSON.stringify(advisory), {
+      severity: 'warning',
+      criterion: 'meaningful_action',
+      code: `practice_review_${advisory.code}`,
+      message: advisory.problem,
+      repairInstruction: advisory.repairInstruction,
+      itemIndexes,
+      objectiveRefs: itemIndexes.map(
+        (index) => context.skeleton.practicePlan.slots[index]!.objectiveRef,
+      ),
+    });
+  }
+  return [...unique.values()].slice(0, 100);
+}
 
 const initialPracticeSurface = (
   initial: PracticeContentProposalPayload['items'][number]['initial'],
@@ -492,9 +557,15 @@ export async function verifyPreparedPractice(
           'SEMANTIC_VALIDATION_FAILURE',
           false,
         );
-      receipts.push({ ...grounded, candidateHash: prepared.candidateHash });
+      const groundingResult = PracticeGroundingResultSchema.parse(grounded.result);
+      receipts.push({
+        ...grounded,
+        result: groundingResult,
+        candidateHash: prepared.candidateHash,
+      });
       groundingReview.rounds.push({
         ...grounded,
+        result: groundingResult,
         candidateHash: prepared.candidateHash,
         inputHash: prepared.inputHash,
         claimsHash: prepared.claimsHash,
@@ -514,6 +585,7 @@ export async function verifyPreparedPractice(
         );
       integrityReview.rounds.push({
         ...inspected,
+        result: PracticeIntegrityResultSchema.parse(inspected.result),
         candidateHash: prepared.candidateHash,
         inputHash: integrity.inputHash,
       });
@@ -548,16 +620,12 @@ export async function verifyPreparedPractice(
             );
           solves.push({
             ...solved,
+            result: PracticeAnswerabilityResultSchema.parse(solved.result),
             actionId,
             itemIndex,
             surface,
             inputHash: solve.inputHash,
           });
-          findings.push(
-            ...solved.result.findings
-              .filter((finding) => finding.code !== 'shallow_task')
-              .map((finding) => ({ ...finding, itemId: item.practiceSlotId })),
-          );
           const decision = solved.result.decisions[0]!;
           if (
             !visible.options.some((option) => option.id === decision.answerId) ||
@@ -634,14 +702,21 @@ export async function verifyPreparedPractice(
           integrityReview,
           groundingReview,
         });
-        const qualityFindings = practiceQualityImprovementFindings(
-          evaluatePlannedPracticeQuality(candidate, context, {
-            evaluatedAt: '1970-01-01T00:00:00.000Z',
+        const qualityFindings = [
+          ...practiceQualityImprovementFindings(
+            evaluatePlannedPracticeQuality(candidate, context, {
+              evaluatedAt: '1970-01-01T00:00:00.000Z',
+            }),
+          ),
+          ...practiceReviewQualityFindings(candidate, context, {
+            contentReview: receipts,
+            answerabilityReview,
+            integrityReview,
           }),
-        );
-        if (improveQuality && qualityFindings.length && qualityImprovement.attempts === 0) {
+        ].slice(0, 100);
+        if (qualityFindings.length && qualityImprovement.attempts === 0) {
           qualityImprovement.findingsBefore = structuredClone(qualityFindings);
-          if (round < MAX_TEACHING_CONTENT_REVIEWS - 1) {
+          if (improveQuality && round < MAX_TEACHING_CONTENT_REVIEWS - 1) {
             qualityImprovement.attempts = 1;
             original = {
               candidate: structuredClone(candidate),
@@ -659,7 +734,7 @@ export async function verifyPreparedPractice(
             candidate = await improveQuality(structuredClone(candidate), qualityFindings);
             continue;
           }
-          qualityImprovement.outcome = 'review_budget_exhausted';
+          qualityImprovement.outcome = improveQuality ? 'review_budget_exhausted' : 'retained';
         } else if (qualityImprovement.attempts === 1) {
           qualityImprovement.outcome = qualityFindings.length ? 'exhausted' : 'improved';
         }
