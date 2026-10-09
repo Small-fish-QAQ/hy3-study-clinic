@@ -30,6 +30,18 @@ export const PrivateReasoningFields = {
   evidenceContrast: EvidenceContrastSchema.optional(),
 };
 
+/** Ordinary Practice annotations carry no answerability or depth authority.
+ * Keep the existing Lesson/Retest contracts separate. */
+export const PracticePrivateReasoningFields = {
+  ...PrivateReasoningFields,
+  requiredInference: z.string().trim().max(300).optional(),
+  decisiveCondition: z.string().trim().max(300).optional(),
+  evidenceContrast: EvidenceContrastSchema.extend({
+    evidence: z.string().trim().max(250),
+    replacement: z.string().trim().max(250),
+  }).optional(),
+};
+
 /** Lesson authoring annotations are optional. Compact facts need no prose quota. */
 export const LessonPrivateReasoningFields = {
   ...PrivateReasoningFields,

@@ -8,6 +8,8 @@ import {
   type TeachingBriefProposalPayload,
   type LessonPedagogyFinding,
   LessonPedagogyEvaluationSchema,
+  type PracticeQualityFinding,
+  PracticeQualityEvaluationSchema,
 } from '@hy3-clinic/shared';
 import type {
   LessonSlotContentGenerationInput,
@@ -20,6 +22,7 @@ import {
   evaluatePlannedPracticeQuality,
   evaluatePracticeQuality,
   boundLessonFindings,
+  boundPracticeFindings,
 } from './lessonPedagogyEvaluator.js';
 import { planTeachingSkeleton } from './teachingSkeletonPlanner.js';
 import { capsuleInputs } from './teachingCapsules.js';
@@ -432,11 +435,11 @@ describe('independent Lesson and Practice semantic evaluators', () => {
       },
     },
     {
-      name: 'a Practice prompt cannot contain its complete answer',
+      name: 'a Practice prompt cannot announce its actual answer',
       code: 'practice_prompt_leaks_answer',
       mutate: (payload) => {
         payload.practice.items[0]!.initial.prompt =
-          'Which explanation is correct: It changes candidate eligibility.';
+          'The correct answer is It changes candidate eligibility.';
       },
     },
     {
@@ -1001,6 +1004,116 @@ function compositionalInputs(
   return { lessonInput, practiceInput, lesson, practice };
 }
 
+describe('Practice representation and advisory admission', () => {
+  it.each([
+    'omitted',
+    'compact',
+    'application',
+    'repeated_feedback',
+    'quotation',
+    'negated_guarantee',
+    'display_words',
+  ] as const)('keeps %s authoring preferences nonblocking', (variant) => {
+    const f = compositionalInputs('apply');
+    const item = f.practice.items[0]!;
+    if (variant === 'omitted') {
+      delete item.capabilityTested;
+      delete item.pedagogicalReason;
+      delete item.application;
+      for (const action of [item.initial, item.retry]) {
+        delete action.reasoningOperation;
+        delete action.requiredInference;
+        delete action.decisiveCondition;
+        delete action.evidenceContrast;
+      }
+    }
+    if (variant === 'compact') {
+      item.capabilityTested = '识别';
+      item.pedagogicalReason = '复习';
+      item.initial.evidenceContrast = {
+        evidence: 'x>0',
+        replacement: 'x<0',
+        alternativeOptionId: 'B',
+      };
+    }
+    if (variant === 'application')
+      item.application = { startingState: 'x>0', expectedAction: 'x<0' };
+    if (variant === 'repeated_feedback')
+      for (const option of item.initial.options)
+        option.feedbackIfSelected = 'Compare the offered candidate with the stated condition.';
+    if (variant === 'quotation')
+      item.initial.prompt = f.practiceInput.sourceContext.offers[0]!.text + item.initial.prompt;
+    if (variant === 'negated_guarantee')
+      item.initial.explanation = '“提示词保证模型不会编造”是错误的说法。应核查实际执行条件。';
+    if (variant === 'display_words') {
+      item.capabilityTested = 'O1';
+      item.initial.prompt += ' The hash directory has global depth three.';
+    }
+    expect(PracticeContentProposalPayloadSchema.safeParse(f.practice).success).toBe(true);
+    const evaluation = evaluatePlannedPracticeQuality(f.practice, f.practiceInput, { evaluatedAt });
+    expect(evaluation.status).toBe('pass');
+    expect(evaluation.findings.every((finding) => finding.severity === 'warning')).toBe(true);
+  });
+
+  it.each(['unoffered_key', 'duplicate_ref', 'duplicate_text', 'announced_answer'] as const)(
+    'retains genuine deterministic %s defects',
+    (defect) => {
+      const f = compositionalInputs('apply');
+      const surface = f.practice.items[0]!.initial;
+      if (defect === 'unoffered_key') surface.correctOptionRef = 'E';
+      if (defect === 'duplicate_ref') surface.options[1]!.optionRef = surface.options[0]!.optionRef;
+      if (defect === 'duplicate_text') surface.options[1]!.text = surface.options[0]!.text;
+      if (defect === 'announced_answer')
+        surface.prompt =
+          'The correct answer is ' +
+          surface.options.find((o) => o.optionRef === surface.correctOptionRef)!.text;
+      expect(
+        evaluatePlannedPracticeQuality(f.practice, f.practiceInput, { evaluatedAt }).status,
+      ).toBe('fail');
+    },
+  );
+
+  it('bounds overflow advisories without discarding hard errors or affected item coverage', () => {
+    const warnings: PracticeQualityFinding[] = Array.from({ length: 180 }, (_, index) => ({
+      code: 'practice_content_not_substantive',
+      criterion: 'item_validity',
+      severity: 'warning',
+      message: 'Optional private description is absent.',
+      itemIndexes: [index % 8],
+      objectiveRefs: ['O' + ((index % 8) + 1)],
+    }));
+    const errors: PracticeQualityFinding[] = Array.from({ length: 120 }, (_, index) => ({
+      code: 'invalid_or_duplicate_practice_options',
+      criterion: 'item_validity',
+      severity: 'error',
+      message: 'Actual key is unavailable.',
+      itemIndexes: [index % 8],
+      objectiveRefs: ['O' + ((index % 8) + 1)],
+    }));
+    const findings = boundPracticeFindings([...warnings, ...errors]);
+    expect(findings).toHaveLength(2);
+    expect(findings[0]!.occurrenceCount).toBe(180);
+    expect(findings[1]).toMatchObject({
+      severity: 'error',
+      occurrenceCount: 120,
+      itemIndexes: [0, 1, 2, 3, 4, 5, 6, 7],
+    });
+    expect(boundPracticeFindings([...findings, ...warnings])[0]!.occurrenceCount).toBe(360);
+    expect(
+      PracticeQualityEvaluationSchema.safeParse({
+        schemaVersion: 1,
+        policyVersion: 'test',
+        evaluator: 'independent-deterministic-practice-evaluator',
+        independent: true,
+        status: 'fail',
+        boundedRepairAttempted: false,
+        findings,
+        evaluatedAt,
+      }).success,
+    ).toBe(true);
+  });
+});
+
 describe('compositional Lesson and Practice evaluators', () => {
   it('validates completed objective depth using reasoning in earlier authoring portions', () => {
     const fixture = compositionalInputs('apply', 35, 'high_performance');
@@ -1493,7 +1606,7 @@ describe('compositional Lesson and Practice evaluators', () => {
     ]);
   });
 
-  it('rejects apply/下一步 markers when typed application data is absent', () => {
+  it('keeps absent private application advisory independently of apply wording', () => {
     const fixture = compositionalInputs('apply');
     fixture.practice.items[0]!.application = null;
     fixture.practice.items[0]!.initial.prompt =
@@ -1504,6 +1617,7 @@ describe('compositional Lesson and Practice evaluators', () => {
     expect(evaluation.findings.map((finding) => finding.code)).toContain(
       'practice_apply_missing_typed_application',
     );
+    expect(evaluation.status).toBe('pass');
   });
 
   it('demotes lexical APPLY relevance/source compatibility to warnings', () => {
@@ -1535,7 +1649,7 @@ describe('compositional Lesson and Practice evaluators', () => {
     );
   });
 
-  it('treats worked-interaction hints, scaffolds, feedback, and transfer as Practice exposure', () => {
+  it('retires lexical comparison with conditional Lesson hints, scaffolds and transfer', () => {
     const fixture = compositionalInputs('apply');
     const interaction = fixture.lesson.slots.find((slot) => slot.workedProcess?.interaction)!
       .workedProcess!.interaction!;
@@ -1544,24 +1658,26 @@ describe('compositional Lesson and Practice evaluators', () => {
       evaluatePlannedPracticeQuality(fixture.practice, fixture.practiceInput, {
         evaluatedAt,
       }).findings.map((finding) => finding.code),
-    ).toContain('practice_repeats_accepted_lesson');
+    ).not.toContain('practice_repeats_accepted_lesson');
 
     fixture.practice.items[0]!.initial.prompt = interaction.scaffold.prompt;
     expect(
       evaluatePlannedPracticeQuality(fixture.practice, fixture.practiceInput, {
         evaluatedAt,
       }).findings.map((finding) => finding.code),
-    ).toContain('practice_repeats_accepted_lesson');
+    ).not.toContain('practice_repeats_accepted_lesson');
   });
 
-  it('rejects source-location trivia in compositional Practice', () => {
+  it('records source-location trivia as a quality warning', () => {
     const fixture = compositionalInputs('explain');
     fixture.practice.items[0]!.retry.prompt = 'On which page is the retrieval condition described?';
     expect(
       evaluatePlannedPracticeQuality(fixture.practice, fixture.practiceInput, {
         evaluatedAt,
-      }).findings.map((finding) => finding.code),
-    ).toContain('source_location_trivia');
+      }).findings,
+    ).toContainEqual(
+      expect.objectContaining({ code: 'source_location_trivia', severity: 'warning' }),
+    );
   });
 
   it('accepts source-stated procedural action questions without treating them as location trivia', () => {
@@ -1618,14 +1734,14 @@ describe('compositional Lesson and Practice evaluators', () => {
       evaluatePlannedPracticeQuality(fixture.practice, fixture.practiceInput, {
         evaluatedAt,
       }).findings.map((f) => f.code),
-    ).toContain('retry_surface_not_meaningfully_changed');
+    ).not.toContain('retry_surface_not_meaningfully_changed');
   });
 
   it.each([
     'On which page is the retrieval condition described?',
     'Which section contains the retrieval condition?',
     'Which source mentions the retrieval condition?',
-  ])('continues to reject actual source-location trivia: %s', (prompt) => {
+  ])('keeps actual source-location trivia advisory: %s', (prompt) => {
     const fixture = compositionalInputs('explain');
     fixture.practice.items[0]!.retry.prompt = prompt;
     expect(

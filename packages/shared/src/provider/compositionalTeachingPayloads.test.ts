@@ -7,6 +7,8 @@ import { ReasoningOperationSchema } from '../domain/reasoningOperation.js';
 import {
   LearnerPracticeProjectionSchema,
   LessonPracticeSurfaceSchema,
+  PreparedPracticeSurfaceSchema,
+  PracticeRepairContentSchema,
 } from '../domain/lessonPractice.js';
 
 it('keeps the eight private cognitive operations out of learner Practice projections', () => {
@@ -123,6 +125,40 @@ function practiceItem() {
 }
 
 describe('compositional provider payloads', () => {
+  it('supports omitted private Practice descriptions and compact contrast without relaxing Retest', () => {
+    const item: Record<string, unknown> = practiceItem();
+    delete item.capabilityTested;
+    delete item.pedagogicalReason;
+    delete item.application;
+    const compact = {
+      ...surface(),
+      evidenceContrast: {
+        evidence: 'x>0',
+        replacement: 'x<0',
+        alternativeOptionId: 'B',
+      },
+    };
+    item.initial = compact;
+    expect(PracticeContentProposalPayloadSchema.safeParse({ items: [item] }).success).toBe(true);
+    const saved = {
+      ...compact,
+      correctOptionId: 'A',
+      options: compact.options.map(({ optionRef, ...option }) => ({ id: optionRef, ...option })),
+    };
+    delete (saved as Record<string, unknown>).correctOptionRef;
+    expect(PreparedPracticeSurfaceSchema.safeParse(saved).success).toBe(true);
+    expect(LessonPracticeSurfaceSchema.safeParse(saved).success).toBe(false);
+    expect(PracticeRepairContentSchema.shape.retest.element.safeParse(saved).success).toBe(false);
+    expect(
+      PreparedPracticeSurfaceSchema.safeParse({ ...saved, correctOptionId: 'E' }).success,
+    ).toBe(false);
+    expect(
+      PreparedPracticeSurfaceSchema.safeParse({
+        ...saved,
+        options: [saved.options[0], saved.options[0], saved.options[2]],
+      }).success,
+    ).toBe(false);
+  });
   it('accepts stable Lesson slot content with typed semantic reasoning', () => {
     expect(
       LessonSlotContentProposalPayloadSchema.parse({ slots: [lessonSlot()] }).slots[0],

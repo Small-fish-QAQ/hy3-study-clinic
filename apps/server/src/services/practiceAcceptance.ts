@@ -27,10 +27,7 @@ import type {
 } from '../llm/provider.js';
 import { ProviderError } from '../llm/errors.js';
 import { validatePracticeContentCandidate } from './teachingBriefContract.js';
-import {
-  hasCurrentPracticeAcceptancePolicy,
-  practiceEvidenceContrastFinding,
-} from './lessonPedagogyEvaluator.js';
+import { hasCurrentPracticeAcceptancePolicy } from './lessonPedagogyEvaluator.js';
 import { compareLearnerPracticeTasks } from './practiceTaskCanonicalization.js';
 
 export const practiceReviewHash = (value: unknown) =>
@@ -465,24 +462,6 @@ function reviewEvidenceMatches(
   evidence: ReviewEvidence,
 ): boolean {
   if (!groundingMatches(evidence) || !answerabilityMatches(items, priorTeaching, evidence))
-    return false;
-  // Only exact, current, independently solved public surfaces establish this
-  // obligation. A missing private operation neither adds nor discharges it.
-  if (
-    evidence.answerabilityReview!.rounds.at(-1)!.solves.some((solve) => {
-      const surface = items[solve.itemIndex]![solve.surface];
-      return (
-        practiceEvidenceContrastFinding(
-          {
-            ...surface,
-            options: surface.options.map(({ id }) => ({ optionRef: id })),
-            correctOptionRef: surface.key,
-          },
-          solve.result.decisions[0]!.requiresCaseInference,
-        ) !== undefined
-      );
-    })
-  )
     return false;
   const parsed = PracticeIntegrityReviewSchema.safeParse(evidence.integrityReview);
   const grounding = evidence.contentReview!;

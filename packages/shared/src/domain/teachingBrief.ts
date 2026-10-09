@@ -777,22 +777,6 @@ export const TeachingBriefSchema = z
           });
         }
       }
-      if (brief.promptVersion?.startsWith('teaching-brief-v3-compositional')) {
-        if (item.construct === 'apply' && !item.application) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: ['practice', 'items', itemIndex, 'application'],
-            message: 'compositional apply Practice requires typed procedural application facts',
-          });
-        }
-        if (item.construct !== 'apply' && item.application) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: ['practice', 'items', itemIndex, 'application'],
-            message: 'typed procedural application facts are reserved for apply Practice',
-          });
-        }
-      }
     }
   });
 export type TeachingBrief = z.infer<typeof TeachingBriefSchema>;

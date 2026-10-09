@@ -816,7 +816,9 @@ describe('compositional Teaching providers', () => {
     expect(practicePrompt).toContain('"acceptedLesson"');
     expect(practicePrompt).toContain('"desiredDepth":"deep_transfer"');
     expect(practicePrompt).toContain('"unitFocus":"focused"');
-    expect(practicePrompt).toContain('Never quote or closely reproduce');
+    expect(practicePrompt).toContain(
+      'Practice may quote taught rules or necessary source material',
+    );
     expect(practicePrompt).toContain('never prove application');
     expect(schemaNames).toEqual([
       'lesson-slot-content-v6-quality-advisory',

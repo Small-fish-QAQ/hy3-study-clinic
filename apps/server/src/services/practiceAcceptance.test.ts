@@ -7,6 +7,7 @@ import {
   projectPracticePriorTeaching,
   type DesiredDepth,
   type TeachingBrief,
+  type TeachingContentReview,
 } from '@hy3-clinic/shared';
 import { FakeProvider } from '../llm/fakeProvider.js';
 import { teachingContentReviewMessages } from '../llm/prompts.js';
@@ -15,6 +16,13 @@ import type {
   PracticeContentGenerationInput,
 } from '../llm/provider.js';
 import { planTeachingSkeleton } from './teachingSkeletonPlanner.js';
+import { validatePracticeContentCandidate } from './teachingBriefContract.js';
+import { disclosesPracticeAnswer } from './teachingText.js';
+import {
+  practiceQualityVariant,
+  reviewPracticeQualityVariant,
+  type PracticeQualityVariant,
+} from '../testing/practiceQualityFixture.js';
 import { evaluatePlannedPracticeQuality } from './lessonPedagogyEvaluator.js';
 import { verifyPreparedPractice, practiceReviewQualityFindings } from './teachingContentReview.js';
 import {
@@ -188,23 +196,21 @@ const shallowCases = [
   { label: '结果排序', answerId: 'A', alternativeId: 'B' },
   { label: '候选过滤', answerId: 'B', alternativeId: 'A' },
 ] as const;
-const contrastDefects = ['missing', 'invisible', 'same_fact', 'same_answer', 'unoffered'] as const;
+const contrastRepresentations = ['missing', 'paraphrased', 'unoffered'] as const;
 
 function damageContrast(
   value: Pick<
     Awaited<ReturnType<typeof fixture>>['candidate']['items'][number]['initial'],
     'evidenceContrast'
   >,
-  defect: (typeof contrastDefects)[number],
-  correctOptionRef: string,
+  representation: (typeof contrastRepresentations)[number],
 ) {
-  if (defect === 'missing') delete value.evidenceContrast;
-  else if (defect === 'invisible')
-    value.evidenceContrast!.evidence = 'This fact never appears in the public task.';
-  else if (defect === 'same_fact')
-    value.evidenceContrast!.replacement = value.evidenceContrast!.evidence;
-  else
-    value.evidenceContrast!.alternativeOptionId = defect === 'same_answer' ? correctOptionRef : 'E';
+  if (representation === 'missing') delete value.evidenceContrast;
+  else if (representation === 'paraphrased')
+    value.evidenceContrast!.evidence = value.evidenceContrast!.evidence.includes('旧任务')
+      ? '完成记录确认旧任务已经结束。'
+      : '本次占用计数已经清零，但任务仍在等待。';
+  else value.evidenceContrast!.alternativeOptionId = 'E';
 }
 
 function makeShallow(
@@ -280,6 +286,210 @@ function makeShallow(
 }
 
 describe('Practice declaration responsibilities and public acceptance', () => {
+  it.each<PracticeQualityVariant>([
+    'omitted',
+    'compact',
+    'paraphrased',
+    'repeated_feedback',
+    'source_quotation',
+    'option_cases',
+    'label_mentions',
+    'conditional_rule',
+    'symbolic_contrast',
+  ])('accepts and seals the independently controlled %s representation', async (variant) => {
+    const f = await fixture('pass_oriented');
+    practiceQualityVariant(f.candidate, variant, f.context);
+    f.review.mockImplementation(async (request, round) => ({
+      result: await reviewPracticeQualityVariant(request.input, variant, f.context),
+      logicalCallId:
+        'quality:' + round + ':' + request.input.purpose + ':' + request.input.actionIds.join(','),
+    }));
+    expect(validatePracticeContentCandidate(f.candidate, f.context).valid).toBe(true);
+    expect(() => assertPracticeCandidate(f.candidate, f.context, f.priorTeaching)).not.toThrow();
+    const result = await f.verify();
+    expect(f.revise).not.toHaveBeenCalled();
+    const brief = f.saved(result);
+    expect(hasCurrentPreparedPractice(brief)).toBe(true);
+    expect(
+      result.answerabilityReview.rounds[0]!.solves.map((s) => s.result.decisions[0]!.answerId),
+    ).toEqual(
+      ['option_cases', 'conditional_rule', 'symbolic_contrast'].includes(variant)
+        ? ['A', 'C']
+        : ['A', 'B'],
+    );
+    if (variant === 'conditional_rule' || variant === 'symbolic_contrast') {
+      expect(result.candidate.items[0]!.initial.prompt).toBe(
+        '对任意有符号数 n：若 n > 0，正确答案是正数；若 n = 0，正确答案是零；若 n < 0，正确答案是负数。本题 n = 7 - 4，应选哪个标签？',
+      );
+      expect(result.candidate.items[0]!.retry.prompt).toBe(
+        '对任意有符号数 n：若 n > 0，正确答案是正数；若 n = 0，正确答案是零；若 n < 0，正确答案是负数。本题 n = 2 - 6，应选哪个标签？',
+      );
+      expect(f.review.mock.calls.map(([request]) => request.input.purpose)).toEqual([
+        'practice_grounding',
+        'practice_integrity',
+        'practice_answerability',
+        'practice_answerability',
+      ]);
+      const missingIntegrity = structuredClone(brief.practice!.qualityEvaluation);
+      delete missingIntegrity.integrityReview;
+      expect(() =>
+        assertReviewedPracticeAcceptance(
+          result.candidate,
+          f.context,
+          f.priorTeaching,
+          missingIntegrity,
+        ),
+      ).toThrow();
+      const withoutIntegrity = structuredClone(brief);
+      delete withoutIntegrity.practice!.qualityEvaluation.integrityReview;
+      expect(hasCurrentPreparedPractice(withoutIntegrity)).toBe(false);
+    }
+    brief.practice!.items[0]!.initial.explanation += ' 2 + 2 = 5.';
+    expect(hasCurrentPreparedPractice(brief)).toBe(false);
+  });
+
+  it.each([
+    'announcement',
+    'semantic_disclosure',
+    'wrong_key',
+    'nonunique_answers',
+    'missing_givens',
+    'reordered_replay',
+  ] as const)(
+    'rejects conditional-rule %s through current production admission',
+    async (defect) => {
+      const f = await fixture('pass_oriented');
+      practiceQualityVariant(f.candidate, 'conditional_rule', f.context);
+      const item = f.candidate.items[0]!;
+      if (defect === 'announcement') item.initial.prompt += '本题的正确答案是正数。';
+      if (defect === 'semantic_disclosure') item.initial.prompt += ' 本题计算后的数位于零的右侧。';
+      if (defect === 'wrong_key') item.initial.correctOptionRef = 'B';
+      if (defect === 'nonunique_answers') item.initial.options[1]!.text = '大于零';
+      if (defect === 'missing_givens')
+        item.initial.prompt = item.initial.prompt.replace('7 - 4', '未知');
+      if (defect === 'reordered_replay') {
+        item.retry = structuredClone(item.initial);
+        item.retry.options.reverse();
+        item.retry.requiredInference = 'Different private metadata cannot establish a new task.';
+      }
+      const results: TeachingContentReview[] = [];
+      f.review.mockImplementation(async (request, round) => {
+        const result = await reviewPracticeQualityVariant(
+          request.input,
+          'conditional_rule',
+          f.context,
+        );
+        results.push(result);
+        return {
+          result,
+          logicalCallId:
+            'conditional:' +
+            round +
+            ':' +
+            request.input.purpose +
+            ':' +
+            request.input.actionIds.join(','),
+        };
+      });
+      if (defect === 'announcement') {
+        expect(validatePracticeContentCandidate(f.candidate, f.context).diagnosticCodes).toContain(
+          'practice_prompt_leaks_answer',
+        );
+        await expect(f.verify()).rejects.toBeDefined();
+        expect(f.review).not.toHaveBeenCalled();
+      } else if (defect === 'semantic_disclosure') {
+        expect(disclosesPracticeAnswer(item.initial.prompt, '正数')).toBe(false);
+        expect(validatePracticeContentCandidate(f.candidate, f.context).valid).toBe(true);
+        await expect(f.verify()).rejects.toMatchObject({
+          details: {
+            candidateFailure: { diagnostics: [expect.objectContaining({ code: 'answer_leak' })] },
+          },
+        });
+        expect(
+          results
+            .flatMap((result) => result.findings)
+            .every((finding) => finding.code === 'answer_leak'),
+        ).toBe(true);
+      } else {
+        await expect(f.verify()).rejects.toBeDefined();
+        if (defect === 'reordered_replay') expect(f.review).not.toHaveBeenCalled();
+        else
+          expect(results.flatMap((result) => result.decisions)).toContainEqual(
+            expect.objectContaining({
+              actionId: 'PR1.initial',
+              answerId: defect === 'wrong_key' ? 'A' : null,
+            }),
+          );
+      }
+    },
+  );
+
+  it('rejects a supplied unchanged-fact counterfactual through controlled grounding', async () => {
+    const f = await fixture('pass_oriented');
+    practiceQualityVariant(f.candidate, 'paraphrased', f.context);
+    const contrast = f.candidate.items[0]!.initial.evidenceContrast!;
+    contrast.replacement = contrast.evidence;
+    expect(validatePracticeContentCandidate(f.candidate, f.context).valid).toBe(true);
+    f.review.mockImplementation(async (request, round) => ({
+      result: await reviewPracticeQualityVariant(request.input, 'paraphrased', f.context),
+      logicalCallId:
+        'counterfactual:' +
+        round +
+        ':' +
+        request.input.purpose +
+        ':' +
+        request.input.actionIds.join(','),
+    }));
+    await expect(f.verify()).rejects.toMatchObject({
+      details: {
+        candidateFailure: {
+          diagnostics: [
+            expect.objectContaining({
+              code: 'accuracy',
+              message: expect.stringContaining('still says the old task has completed'),
+            }),
+          ],
+        },
+      },
+    });
+    expect(f.revise).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    'wrong_key',
+    'nonunique_cases',
+    'missing_givens',
+    'false_feedback',
+    'replay',
+    'announcement',
+  ] as const)(
+    'never admits the controlled public %s defect through advisory allowance',
+    async (defect) => {
+      const f = await fixture('pass_oriented');
+      practiceQualityVariant(f.candidate, 'option_cases', f.context);
+      const surface = f.candidate.items[0]!.initial;
+      if (defect === 'wrong_key') surface.correctOptionRef = 'B';
+      if (defect === 'nonunique_cases') surface.options[1]!.text = 'Queue Q needs 2 slots';
+      if (defect === 'missing_givens') surface.prompt = 'Which offered queue can start?';
+      if (defect === 'false_feedback')
+        surface.options[1]!.feedbackIfSelected = '7 <= 5, so Q fits.';
+      if (defect === 'replay') f.candidate.items[0]!.retry = structuredClone(surface);
+      if (defect === 'announcement') surface.prompt += ' The answer is Queue P needs 4 slots.';
+      f.review.mockImplementation(async (request, round) => ({
+        result: await reviewPracticeQualityVariant(request.input, 'option_cases', f.context),
+        logicalCallId:
+          'negative:' +
+          round +
+          ':' +
+          request.input.purpose +
+          ':' +
+          request.input.actionIds.join(','),
+      }));
+      await expect(f.verify()).rejects.toBeDefined();
+      expect(f.revise.mock.calls.length).toBeLessThanOrEqual(1);
+    },
+  );
+
   it.each(
     (['practice_grounding', 'practice_integrity', 'practice_answerability'] as const).flatMap(
       (purpose) =>
@@ -640,9 +850,9 @@ describe('Practice declaration responsibilities and public acceptance', () => {
       ),
     ),
   )(
-    'requires public-inference contrast on $surface at $depth with $operation or unknown',
+    'accepts private contrast preferences on $surface at $depth with $operation or unknown',
     async ({ depth, surface, operation }) => {
-      for (const defect of contrastDefects) {
+      for (const representation of contrastRepresentations) {
         const f = await fixture(depth);
         const value = f.candidate.items[0]![surface];
         value.reasoningOperation = operation;
@@ -657,32 +867,26 @@ describe('Practice declaration responsibilities and public acceptance', () => {
         // Contrast is outside the blind solve input. Keep the exact valid
         // public receipts while testing both declared and unknown operations.
         const broken = f.saved({ ...accepted, candidate: structuredClone(accepted.candidate) });
-        damageContrast(broken.practice!.items[0]![surface], defect, value.correctOptionRef);
+        damageContrast(broken.practice!.items[0]![surface], representation);
         expect(broken.practice!.qualityEvaluation).toEqual(proofs);
         expect(hasCurrentPreparedPractice(broken)).toBe(false);
         delete broken.practice!.items[0]![surface].reasoningOperation;
         expect(hasCurrentPreparedPractice(broken)).toBe(false);
 
-        damageContrast(value, defect, value.correctOptionRef);
-        const expectedCode =
-          defect === 'missing'
-            ? 'evidence_contrast_missing'
-            : defect === 'invisible'
-              ? 'evidence_contrast_not_visible'
-              : 'evidence_contrast_not_decisive';
+        damageContrast(value, representation);
         for (const unknown of [false, true]) {
           if (unknown) delete value.reasoningOperation;
           f.review.mockClear();
-          await expect(f.verify()).rejects.toMatchObject({
-            details: {
-              candidateFailure: {
-                diagnostics: expect.arrayContaining([
-                  expect.objectContaining({ message: expect.stringContaining(expectedCode) }),
-                ]),
-              },
-            },
-          });
-          expect(f.review).toHaveBeenCalledTimes(2 * (2 + 2 * f.candidate.items.length));
+          if (representation === 'unoffered') {
+            await expect(f.verify()).rejects.toMatchObject({
+              details: { candidateFailure: { kind: 'practice_content_rejection' } },
+            });
+          } else {
+            const renewed = await f.verify();
+            expect(hasCurrentPreparedPractice(f.saved(renewed))).toBe(true);
+            expect(f.revise).not.toHaveBeenCalled();
+            expect(f.review).toHaveBeenCalledTimes(2 + 2 * f.candidate.items.length);
+          }
         }
       }
     },

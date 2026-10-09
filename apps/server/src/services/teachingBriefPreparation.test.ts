@@ -54,9 +54,18 @@ import {
   T0,
 } from '../testing/fixtures.js';
 import { fixedClock } from '../util/ids.js';
+import {
+  practiceQualityVariant,
+  reviewPracticeQualityVariant,
+  type PracticeQualityVariant,
+} from '../testing/practiceQualityFixture.js';
 import { createServices, type Services } from './index.js';
 import { deriveTeachUnitDurations, resolveStudyPlanPlannability } from './studyPlanValidation.js';
-import { validateLessonSlotContentCandidate } from './teachingBriefContract.js';
+import {
+  validateLessonSlotContentCandidate,
+  validatePracticeContentCandidate,
+} from './teachingBriefContract.js';
+import { disclosesPracticeAnswer } from './teachingText.js';
 import {
   evaluatePlannedPracticeQuality,
   COMPOSITIONAL_LESSON_PEDAGOGY_POLICY_VERSION,
@@ -2815,6 +2824,10 @@ describe('Teaching Brief preparation', () => {
               },
             },
           });
+          practiceQualityVariant(practice, 'omitted', {
+            ...input.lesson,
+            acceptedLesson: [...input.priorLesson, ...lesson.slots],
+          });
           return { lesson, practice };
         },
       });
@@ -3065,6 +3078,295 @@ describe('Teaching Brief preparation', () => {
         );
       }
       expect(reviewedRule).toBe(true);
+    },
+  );
+
+  it.each<PracticeQualityVariant>([
+    'omitted',
+    'compact',
+    'paraphrased',
+    'repeated_feedback',
+    'source_quotation',
+    'option_cases',
+    'label_mentions',
+    'conditional_rule',
+    'symbolic_contrast',
+  ])('prepares, persists, reloads and reuses the grounded %s Practice variant', async (variant) => {
+    const harness = await createHarness(0, 'pass', 'apply', 'pass_oriented');
+    const generate = harness.provider.generatePracticeContent.bind(harness.provider);
+    let context: PracticeContentGenerationInput;
+    harness.provider.generatePracticeContent = async (input, opts) => {
+      context = structuredClone(input);
+      return practiceQualityVariant(await generate(input, opts), variant, context);
+    };
+    const review = harness.provider.reviewTeachingContent.bind(harness.provider);
+    harness.provider.reviewTeachingContent = async (input, opts) => {
+      if (!input.purpose?.startsWith('practice_')) return review(input, opts);
+      opts?.onRequestSent?.();
+      return reviewPracticeQualityVariant(input, variant, context);
+    };
+    const route = startTeachingRoute(harness);
+    const request = preparationRequest(harness, route, 'quality-variant-' + variant);
+    const prepared = await harness.services.teachingBriefPreparation.prepare(request);
+    const checkpoint = harness.repos.acceptedLessonCheckpoints.get(
+      prepared.brief.composition!.acceptedLessonCheckpointId,
+    )!;
+    const checkpointBytes = JSON.stringify(checkpoint);
+    expect(prepared.brief.practice!.qualityEvaluation).toMatchObject({
+      status: 'pass',
+      acceptancePolicyVersion: PRACTICE_ACCEPTANCE_POLICY_VERSION,
+      qualityImprovement: { attempts: 0 },
+    });
+    if (variant === 'omitted') {
+      expect(prepared.brief.practice!.items[0]!.capabilityTested).toBeUndefined();
+      expect(prepared.brief.practice!.items[0]!.application).toBeUndefined();
+    }
+    const restart = createServices({ repos: harness.repos, provider: harness.provider, clock });
+    const loaded = harness.repos.teachingBriefs.get(prepared.brief.id)!;
+    expect(hasCurrentPreparedPractice(loaded)).toBe(true);
+    expect((await restart.teachingBriefPreparation.prepare(request)).brief.id).toBe(
+      prepared.brief.id,
+    );
+    expect(
+      (
+        await restart.teachingBriefPreparation.prepare(
+          preparationRequest(harness, route, 'reuse-quality-variant-' + variant),
+        )
+      ).status,
+    ).toBe('reused');
+    expect(
+      (
+        await restart.lessonExecution.ensure('ws_1', route.session.id, {
+          command: command('execute-quality-variant-' + variant),
+          expectedSessionVersion: route.session.version,
+          expectedAgendaVersion: route.agenda.version,
+          expectedAgendaItemId: route.agendaItem.id,
+        })
+      ).status,
+    ).toBe('ready');
+    expect(harness.provider.lessonContentCalls).toBe(1);
+    expect(harness.provider.practiceContentCalls).toBe(1);
+    expect(JSON.stringify(harness.repos.acceptedLessonCheckpoints.get(checkpoint.id))).toBe(
+      checkpointBytes,
+    );
+  });
+
+  it.each(['announcement', 'semantic_disclosure', 'false_counterfactual'] as const)(
+    'blocks %s before Practice persistence while retaining the accepted Lesson',
+    async (defect) => {
+      const harness = await createHarness(0, 'pass', 'apply', 'pass_oriented');
+      const variant = defect === 'false_counterfactual' ? 'paraphrased' : 'conditional_rule';
+      const generate = harness.provider.generatePracticeContent.bind(harness.provider);
+      let context: PracticeContentGenerationInput;
+      harness.provider.generatePracticeContent = async (input, opts) => {
+        context = structuredClone(input);
+        const candidate = practiceQualityVariant(await generate(input, opts), variant, context);
+        const surface = candidate.items[0]!.initial;
+        if (defect === 'announcement') surface.prompt += '本题的正确答案是正数。';
+        if (defect === 'semantic_disclosure') {
+          surface.prompt += ' 本题计算后的数位于零的右侧。';
+          expect(disclosesPracticeAnswer(surface.prompt, '正数')).toBe(false);
+        }
+        if (defect === 'false_counterfactual')
+          surface.evidenceContrast!.replacement = surface.evidenceContrast!.evidence;
+        expect(validatePracticeContentCandidate(candidate, context).valid).toBe(
+          defect !== 'announcement',
+        );
+        return candidate;
+      };
+      const reviewed: Array<{ purpose: string; result: TeachingContentReview }> = [];
+      const review = harness.provider.reviewTeachingContent.bind(harness.provider);
+      harness.provider.reviewTeachingContent = async (input, opts) => {
+        if (!input.purpose?.startsWith('practice_')) return review(input, opts);
+        opts?.onRequestSent?.();
+        const result = await reviewPracticeQualityVariant(input, variant, context);
+        reviewed.push({ purpose: input.purpose, result });
+        return result;
+      };
+      const route = startTeachingRoute(harness);
+      await expect(
+        harness.services.teachingBriefPreparation.prepare(
+          preparationRequest(harness, route, 'targeted-review-fix-' + defect),
+        ),
+      ).rejects.toMatchObject({
+        details: {
+          candidateFailure: {
+            kind:
+              defect === 'announcement'
+                ? 'practice_content_rejection'
+                : 'teaching_content_review_failed',
+            diagnostics: [
+              expect.objectContaining({
+                code:
+                  defect === 'announcement'
+                    ? 'practice_prompt_leaks_answer'
+                    : defect === 'semantic_disclosure'
+                      ? 'answer_leak'
+                      : 'accuracy',
+              }),
+            ],
+          },
+        },
+      });
+      expect(harness.repos.teachingBriefs.listForUnit('ws_1', harness.learningUnitId)).toEqual([]);
+      expect(
+        harness.db.prepare('SELECT COUNT(*) AS count FROM accepted_lesson_checkpoints').get(),
+      ).toEqual({ count: 1 });
+      if (defect === 'announcement') expect(reviewed).toEqual([]);
+      else {
+        expect(
+          reviewed
+            .filter(({ purpose }) => purpose === 'practice_answerability')
+            .flatMap(({ result }) => result.decisions),
+        ).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({ actionId: 'PR1.initial', answerId: 'A' }),
+            expect.objectContaining({
+              actionId: 'PR1.retry',
+              answerId: defect === 'semantic_disclosure' ? 'C' : 'B',
+            }),
+          ]),
+        );
+        const responsibleReview = reviewed.filter(
+          ({ purpose }) =>
+            purpose ===
+            (defect === 'semantic_disclosure' ? 'practice_integrity' : 'practice_grounding'),
+        );
+        expect(responsibleReview.flatMap(({ result }) => result.findings)).toContainEqual(
+          expect.objectContaining({
+            code: defect === 'semantic_disclosure' ? 'answer_leak' : 'accuracy',
+            problem: expect.stringContaining(
+              defect === 'semantic_disclosure'
+                ? '零的右侧'
+                : 'still says the old task has completed',
+            ),
+          }),
+        );
+      }
+    },
+  );
+
+  it.each(['failed_rewrite', 'material_feedback'] as const)(
+    'retains complete advisory coverage and hard authority with %s at production persistence',
+    async (mode) => {
+      const harness = await ordinaryLessonHarness();
+      const generate = harness.provider.generatePracticeContent.bind(harness.provider);
+      let context: PracticeContentGenerationInput;
+      harness.provider.generatePracticeContent = async (input, opts) => {
+        if (input.editorialFindings?.some((f) => f.problem.startsWith('practice_review_')))
+          throw ProviderError.network();
+        context = structuredClone(input);
+        const candidate = practiceQualityVariant(await generate(input, opts), 'omitted', context);
+        if (mode === 'material_feedback')
+          candidate.items[0]!.retry.options[0]!.feedbackIfSelected += ' 2 + 2 = 5.';
+        return candidate;
+      };
+      const review = harness.provider.reviewTeachingContent.bind(harness.provider);
+      harness.provider.reviewTeachingContent = async (input, opts) => {
+        if (!input.purpose?.startsWith('practice_')) return review(input, opts);
+        opts?.onRequestSent?.();
+        const result = await reviewPracticeQualityVariant(input, 'omitted', context);
+        const itemId =
+          input.purpose === 'practice_answerability' ? input.candidate.actionId : 'PR1';
+        result.advisories = Array.from({ length: 30 }, (_, index) => ({
+          itemId,
+          code: 'weak_transfer',
+          qualityAspect: 'richness',
+          problem: input.purpose + ': Optional richer illustration ' + index,
+          repairInstruction:
+            'Consider another constraint while preserving the verified public case.',
+        }));
+        return result;
+      };
+      const route = startTeachingRoute(harness);
+      const request = preparationRequest(harness, route, 'overflow-practice-' + mode);
+      if (mode === 'material_feedback') {
+        await expect(
+          harness.services.teachingBriefPreparation.prepare(request),
+        ).rejects.toMatchObject({
+          details: { candidateFailure: { kind: 'teaching_content_review_failed' } },
+        });
+        expect(harness.repos.teachingBriefs.listForUnit('ws_1', harness.learningUnitId)).toEqual(
+          [],
+        );
+      } else {
+        const prepared = await harness.services.teachingBriefPreparation.prepare(request);
+        const evaluation = prepared.brief.practice!.qualityEvaluation;
+        expect(evaluation.qualityImprovement).toMatchObject({ attempts: 1, outcome: 'failed' });
+        expect(evaluation.findings.length).toBeLessThanOrEqual(100);
+        expect(
+          evaluation.findings.find((f) => f.code === 'practice_review_weak_transfer'),
+        ).toMatchObject({
+          occurrenceCount: 120,
+          itemIndexes: [0],
+        });
+        expect(
+          hasCurrentPreparedPractice(harness.repos.teachingBriefs.get(prepared.brief.id)!),
+        ).toBe(true);
+        expect(prepared.brief.composition!.practiceLogicalCallId).toMatch(/:practice$/u);
+      }
+      expect(
+        harness.db.prepare('SELECT COUNT(*) AS n FROM accepted_lesson_checkpoints').get(),
+      ).toEqual({ n: 1 });
+    },
+  );
+
+  it.each(['joint', 'independent_editor'] as const)(
+    'accepts omitted annotations through actual %s callback validation and persistence',
+    async (mode) => {
+      const harness = await createHarness(0, 'pass', 'explain', 'pass_oriented');
+      Object.defineProperty(harness.provider, 'name', { value: 'hy3' });
+      const generate = harness.provider.generatePracticeContent.bind(harness.provider);
+      let context: PracticeContentGenerationInput;
+      harness.provider.generatePracticeContent = async (input, opts) => {
+        context = structuredClone(input);
+        const candidate = practiceQualityVariant(await generate(input, opts), 'omitted', context);
+        expect(opts?.validateCandidate?.(candidate)?.valid ?? true).toBe(true);
+        return candidate;
+      };
+      if (mode === 'joint')
+        Object.assign(harness.provider, {
+          generateTeachingCapsule: async (
+            input: TeachingCapsuleGenerationInput,
+            opts?: ProviderCallOptions,
+          ) => {
+            opts?.onRequestSent?.();
+            const fake = new FakeProvider();
+            const lesson = await fake.generateLessonSlotContent(input.lesson);
+            const practice = input.practiceSlots.length
+              ? await harness.provider.generatePracticeContent({
+                  ...input.lesson,
+                  skeleton: {
+                    ...input.lesson.skeleton,
+                    practicePlan: {
+                      schemaVersion: 1,
+                      slots: input.practiceSlots,
+                      activityBudget: { minMinutes: 1, maxMinutes: 1 },
+                    },
+                  },
+                  acceptedLesson: [...input.priorLesson, ...lesson.slots],
+                })
+              : { items: [] };
+            const candidate = { lesson, practice };
+            expect(opts?.validateCandidate?.(candidate)?.valid).toBe(true);
+            return candidate;
+          },
+        });
+      const review = harness.provider.reviewTeachingContent.bind(harness.provider);
+      harness.provider.reviewTeachingContent = async (input, opts) => {
+        if (!input.purpose?.startsWith('practice_')) return review(input, opts);
+        opts?.onRequestSent?.();
+        return reviewPracticeQualityVariant(input, 'omitted', context);
+      };
+      const route = startTeachingRoute(harness);
+      const prepared = await harness.services.teachingBriefPreparation.prepare(
+        preparationRequest(harness, route, 'quality-' + mode),
+      );
+      expect(hasCurrentPreparedPractice(prepared.brief)).toBe(true);
+      expect(prepared.brief.composition!.practiceLogicalCallId).toMatch(
+        mode === 'joint' ? /:capsule-\d+$/u : /:practice-editor$/u,
+      );
+      expect(prepared.brief.practice!.qualityEvaluation.contentReview).toHaveLength(1);
     },
   );
 
@@ -4398,6 +4700,7 @@ describe('Teaching Brief preparation', () => {
     'acceptance_v2',
     'acceptance_v3',
     'acceptance_v4',
+    'acceptance_v6',
     'grounding_missing',
     'grounding_version',
     'grounding_input',
@@ -4468,6 +4771,9 @@ describe('Teaching Brief preparation', () => {
         else if (policy === 'acceptance_v2')
           old.brief.practice!.qualityEvaluation.acceptancePolicyVersion =
             'practice-acceptance-v2-explicit-recognition-quality';
+        else if (policy === 'acceptance_v6')
+          old.brief.practice!.qualityEvaluation.acceptancePolicyVersion =
+            'practice-acceptance-v6-purpose-authority';
         else delete old.brief.practice!.qualityEvaluation.acceptancePolicyVersion;
         delete old.brief.practice!.qualityEvaluation.qualityImprovement;
         expect(hasCurrentPracticeAnswerabilityReview(old.brief)).toBe(true);
@@ -4522,6 +4828,7 @@ describe('Teaching Brief preparation', () => {
     'acceptance_v2',
     'acceptance_v3',
     'acceptance_v4',
+    'acceptance_v6',
     'grounding_missing',
     'grounding_version',
     'grounding_input',
@@ -4615,6 +4922,9 @@ describe('Teaching Brief preparation', () => {
         else if (policy === 'acceptance_v2')
           brief.practice!.qualityEvaluation.acceptancePolicyVersion =
             'practice-acceptance-v2-explicit-recognition-quality';
+        else if (policy === 'acceptance_v6')
+          brief.practice!.qualityEvaluation.acceptancePolicyVersion =
+            'practice-acceptance-v6-purpose-authority';
         else delete brief.practice!.qualityEvaluation.acceptancePolicyVersion;
         expect(hasCurrentPracticeAnswerabilityReview(brief)).toBe(true);
       }
@@ -8382,8 +8692,22 @@ describe('embedded Study Tutor', () => {
   });
 });
 
-async function failedPracticeHarness() {
+async function failedPracticeHarness(omitDescriptions = false) {
   const harness = await createHarness(0, 'pass', 'explain', 'pass_oriented');
+  if (omitDescriptions) {
+    const generate = harness.provider.generatePracticeContent.bind(harness.provider);
+    let context: PracticeContentGenerationInput;
+    harness.provider.generatePracticeContent = async (input, opts) => {
+      context = structuredClone(input);
+      return practiceQualityVariant(await generate(input, opts), 'omitted', context);
+    };
+    const review = harness.provider.reviewTeachingContent.bind(harness.provider);
+    harness.provider.reviewTeachingContent = async (input, opts) => {
+      if (!input.purpose?.startsWith('practice_')) return review(input, opts);
+      opts?.onRequestSent?.();
+      return reviewPracticeQualityVariant(input, 'omitted', context);
+    };
+  }
   const route = startTeachingRoute(harness);
   await harness.services.lessonExecution.ensure('ws_1', route.session.id, {
     command: command('recovery-fixture-prepare'),
@@ -8461,6 +8785,28 @@ function recoveryAuthorityDigest(db: SqliteDb) {
 }
 
 describe('Post-Practice recovery', () => {
+  it('preserves Repair input and Retest acceptance after omitted Practice descriptions', async () => {
+    const { harness, route, act, brief } = await failedPracticeHarness(true);
+    expect(brief.practice!.items[0]!.capabilityTested).toBeUndefined();
+    const author = harness.provider.generatePracticeRepair.bind(harness.provider);
+    harness.provider.generatePracticeRepair = async (input, opts) => {
+      expect(input.objective.capabilityTested).toBe('');
+      expect(input.objective.construct).toBe(brief.practice!.items[0]!.construct);
+      return author(input, opts);
+    };
+    const authority = recoveryAuthorityDigest(harness.db);
+    await act({ kind: 'prepare_practice_repair', learnerNote: '' });
+    await act({ kind: 'start_practice_retest' });
+    await act({ kind: 'submit_practice_retest', index: 0, optionId: 'A' });
+    const completed = await act({ kind: 'submit_practice_retest', index: 1, optionId: 'A' });
+    expect(completed.practice!.completedAt).toBeTruthy();
+    expect(
+      harness.repos.lessonExecution.getForSession(route.session.id, route.agendaItem.id)!
+        .practiceCompletedAt,
+    ).toBeTruthy();
+    expect(recoveryAuthorityDigest(harness.db)).toEqual(authority);
+  });
+
   it.each(['stored original hint', 'revealed Tutor hint'] as const)(
     'uses only actually revealed rules in both independent solves after reload (%s)',
     async (exposure) => {

@@ -47,7 +47,7 @@ import { compareLearnerPracticeTasks } from './practiceTaskCanonicalization.js';
 import { prepareLessonGroundingReview } from './lessonGrounding.js';
 import {
   evaluatePlannedPracticeQuality,
-  practiceEvidenceContrastFinding,
+  boundPracticeFindings,
   practiceQualityImprovementFindings,
 } from './lessonPedagogyEvaluator.js';
 
@@ -606,7 +606,7 @@ export function practiceReviewQualityFindings(
       ),
     });
   }
-  return [...unique.values()].slice(0, 100);
+  return boundPracticeFindings([...unique.values()]);
 }
 
 const initialPracticeSurface = (
@@ -819,20 +819,6 @@ export async function verifyPreparedPractice(
               repairInstruction:
                 'Make this unanswered surface and its prior public teaching sufficient for one offered answer; correct the saved key and feedback if necessary. Do not rely on private application data or future questions.',
             });
-          else {
-            const contrast = practiceEvidenceContrastFinding(
-              authored,
-              decision.requiresCaseInference,
-            );
-            if (contrast)
-              findings.push({
-                itemId: item.practiceSlotId,
-                code: 'insufficient_evidence',
-                problem: `${actionId}: ${contrast}. The independent public-task solve establishes case inference, so a valid decisive contrast is required.`,
-                repairInstruction:
-                  'Quote a visible decisive case fact, replace it with a genuinely changed fact, and identify the different offered answer that would then be correct.',
-              });
-          }
         }
       }
       answerabilityReview.rounds.push({ candidateHash: prepared.candidateHash, solves });
@@ -883,7 +869,7 @@ export async function verifyPreparedPractice(
           integrityReview,
           groundingReview,
         });
-        const qualityFindings = [
+        const qualityFindings = boundPracticeFindings([
           ...practiceQualityImprovementFindings(
             evaluatePlannedPracticeQuality(candidate, context, {
               evaluatedAt: '1970-01-01T00:00:00.000Z',
@@ -894,7 +880,7 @@ export async function verifyPreparedPractice(
             answerabilityReview,
             integrityReview,
           }),
-        ].slice(0, 100);
+        ]);
         if (qualityFindings.length && qualityImprovement.attempts === 0) {
           qualityImprovement.findingsBefore = structuredClone(qualityFindings);
           if (improveQuality && round < MAX_TEACHING_CONTENT_REVIEWS - 1) {

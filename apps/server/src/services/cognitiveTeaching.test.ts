@@ -202,6 +202,10 @@ function deepenInitial(draft: Awaited<ReturnType<typeof shallowFixture>>['practi
   initial.options[0]!.text = '只返回候选甲，因为只有甲满足最低匹配度。';
   initial.options[1]!.text = '只返回候选乙，因为只有乙满足最低匹配度。';
   initial.options[2]!.text = '同时返回甲乙，因为排序会保留全部候选。';
+  initial.options[0]!.feedbackIfSelected = '80至少为60，甲通过过滤。';
+  initial.options[1]!.feedbackIfSelected = '40小于60，乙没有通过过滤。';
+  initial.options[2]!.feedbackIfSelected = '过滤排除乙，后续排序不会恢复已排除的候选。';
+  initial.hint = '逐个把匹配度与最低阈值比较。';
   initial.explanation =
     '先把80和40分别与60比较，过滤去掉不满足阈值的候选；排序不能恢复已过滤的候选。';
   return draft;
@@ -216,7 +220,29 @@ function verifyShallow(
   const provider = new FakeProvider();
   const review = vi.fn<Parameters<typeof verifyPreparedPractice>[3]>(async (prepared, round) => {
     const input = prepared.input;
-    if (groundingDefect && round > 0 && input.purpose === 'practice_grounding')
+    const reasoning =
+      input.purpose === 'practice_grounding'
+        ? input.candidate.items.find((item) => item.initial.prompt === reasoningPrompt)?.initial
+        : undefined;
+    // Finite independently controlled teaching claims: 80 >= 60, 40 < 60;
+    // swapping those values uniquely selects B. Private formatting is irrelevant.
+    const falseReasoningClaim =
+      reasoning &&
+      (reasoning.options.some(
+        (option, index) =>
+          option.feedbackIfSelected !==
+          [
+            '80至少为60，甲通过过滤。',
+            '40小于60，乙没有通过过滤。',
+            '过滤排除乙，后续排序不会恢复已排除的候选。',
+          ][index],
+      ) ||
+        (reasoning.evidenceContrast?.replacement === '候选甲匹配度40，候选乙匹配度80' &&
+          reasoning.evidenceContrast.alternativeOptionId !== 'B'));
+    if (
+      (groundingDefect && round > 0 && input.purpose === 'practice_grounding') ||
+      falseReasoningClaim
+    )
       return {
         result: {
           decisions: [],
@@ -224,7 +250,9 @@ function verifyShallow(
             {
               itemId: f.practice.items[0]!.practiceSlotId,
               code: 'grounding',
-              problem: 'The rewritten rule contradicts the authorized source.',
+              problem: falseReasoningClaim
+                ? 'The feedback or supplied swapped-score counterfactual contradicts 80 >= 60 and 40 < 60.'
+                : 'The rewritten rule contradicts the authorized source.',
               responsibility: 'grounding',
               repairInstruction: 'Restore the supported rule.',
             },
@@ -2063,15 +2091,13 @@ describe('calibrated cognitive teaching contract', () => {
     'option_reorder',
     'private_only',
     'wording_but_still_recognition',
-    'missing_contrast',
     'invalid_contrast',
     'no_case_inference',
   ] as const)('discards a %s rewrite and retains the proven shallow original', async (rewrite) => {
     const f = await shallowFixture();
     const improve = vi.fn(async (draft: typeof f.practice) => {
       const initial = draft.items[0]!.initial;
-      if (['no_case_inference', 'missing_contrast', 'invalid_contrast'].includes(rewrite))
-        deepenInitial(draft);
+      if (['no_case_inference', 'invalid_contrast'].includes(rewrite)) deepenInitial(draft);
       else initial.reasoningOperation = 'diagnose_cause';
       if (rewrite === 'trailing_whitespace') initial.prompt = ` \t${initial.prompt}  \n`;
       if (rewrite === 'whitespace_formatting') {
@@ -2123,7 +2149,6 @@ describe('calibrated cognitive teaching contract', () => {
       }
       if (rewrite === 'wording_but_still_recognition')
         initial.prompt = `${shallowPrompt} 请检查分类。`;
-      if (rewrite === 'missing_contrast') delete initial.evidenceContrast;
       if (rewrite === 'invalid_contrast') initial.evidenceContrast!.alternativeOptionId = 'A';
       return draft;
     });
@@ -2162,6 +2187,24 @@ describe('calibrated cognitive teaching contract', () => {
       }),
     );
     expect(review).toHaveBeenCalledTimes(2 * (2 + 2 * f.practice.items.length));
+  });
+
+  it('accepts genuine independently solved improvement without private contrast', async () => {
+    const f = await shallowFixture();
+    const improve = vi.fn(async (draft: typeof f.practice) => {
+      deepenInitial(draft);
+      delete draft.items[0]!.initial.evidenceContrast;
+      return draft;
+    });
+    const result = await verifyShallow(f, improve).verified;
+    expect(improve).toHaveBeenCalledTimes(1);
+    expect(result.candidate.items[0]!.initial.prompt).toBe(reasoningPrompt);
+    expect(result.candidate.items[0]!.initial.evidenceContrast).toBeUndefined();
+    expect(result.qualityImprovement).toMatchObject({ attempts: 1, outcome: 'improved' });
+    expect(result.receipts).toHaveLength(2);
+    expect(result.answerabilityReview.rounds).toHaveLength(2);
+    expect(result.integrityReview.rounds).toHaveLength(2);
+    expect(result.receipts[1]!.candidateHash).not.toBe(result.receipts[0]!.candidateHash);
   });
 
   it.each(['wrong_key', 'source_authority', 'grounding'] as const)(

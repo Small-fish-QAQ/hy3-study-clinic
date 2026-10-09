@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { FormalAssessmentConstructSchema } from './sourceAuthority.js';
-import { PrivateReasoningFields } from './reasoningOperation.js';
+import { PrivateReasoningFields, PracticePrivateReasoningFields } from './reasoningOperation.js';
 import { TeachingDesignSchema } from './teachingDesign.js';
 import { DesiredDepthSchema } from './learningContract.js';
 import { UnitFocusSchema } from './curriculum.js';
@@ -50,6 +50,7 @@ export const PracticeQualityFindingSchema = PedagogyFindingBaseSchema.extend({
   itemIndexes: z.array(z.number().int().nonnegative()).max(12),
   objectiveRefs: z.array(z.string().min(1).max(40)).max(30),
   repairInstruction: z.string().min(1).max(1000).optional(),
+  occurrenceCount: z.number().int().positive().optional(),
 }).strict();
 export type PracticeQualityFinding = z.infer<typeof PracticeQualityFindingSchema>;
 
@@ -164,7 +165,7 @@ const TeachingContentReviewReceiptSchema = z
 export const PRACTICE_ANSWERABILITY_POLICY_VERSION = 'practice-answerability-v3-purpose-authority';
 
 /** Practice acceptance changes must not invalidate accepted Lesson identity. */
-export const PRACTICE_ACCEPTANCE_POLICY_VERSION = 'practice-acceptance-v6-purpose-authority';
+export const PRACTICE_ACCEPTANCE_POLICY_VERSION = 'practice-acceptance-v7-quality-advisory';
 
 /** Complete authored claims, independently of the blind/public review projections. */
 export const PRACTICE_GROUNDING_POLICY_VERSION = 'practice-grounding-v2-purpose-authority';
@@ -404,7 +405,7 @@ export const LessonPracticeOptionSchema = z
   .strict();
 export type LessonPracticeOption = z.infer<typeof LessonPracticeOptionSchema>;
 
-export const LessonPracticeSurfaceSchema = z
+const PracticeSurfaceBaseSchema = z
   .object({
     ...PrivateReasoningFields,
     prompt: z.string().min(1).max(1200),
@@ -413,25 +414,38 @@ export const LessonPracticeSurfaceSchema = z
     hint: z.string().min(1).max(700),
     explanation: z.string().min(1).max(1200),
   })
-  .strict()
-  .superRefine((surface, ctx) => {
-    const ids = surface.options.map((option) => option.id);
-    if (new Set(ids).size !== ids.length) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['options'],
-        message: 'Practice option identities must be unique',
-      });
-    }
-    if (!ids.includes(surface.correctOptionId)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['correctOptionId'],
-        message: 'Practice correct option must reference an offered option',
-      });
-    }
-  });
+  .strict();
+
+function validatePracticeSurfaceOptions(
+  surface: { options: { id: string }[]; correctOptionId: string },
+  ctx: z.RefinementCtx,
+): void {
+  const ids = surface.options.map((option) => option.id);
+  if (new Set(ids).size !== ids.length) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['options'],
+      message: 'Practice option identities must be unique',
+    });
+  }
+  if (!ids.includes(surface.correctOptionId)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['correctOptionId'],
+      message: 'Practice correct option must reference an offered option',
+    });
+  }
+}
+/** Repair/Retest retain their existing private declaration representation. */
+export const LessonPracticeSurfaceSchema = PracticeSurfaceBaseSchema.superRefine(
+  validatePracticeSurfaceOptions,
+);
 export type LessonPracticeSurface = z.infer<typeof LessonPracticeSurfaceSchema>;
+
+/** Ordinary prepared Practice supports compact or omitted author annotations. */
+export const PreparedPracticeSurfaceSchema = PracticeSurfaceBaseSchema.extend(
+  PracticePrivateReasoningFields,
+).superRefine(validatePracticeSurfaceOptions);
 
 export const LessonPracticeItemSchema = z
   .object({
@@ -439,23 +453,23 @@ export const LessonPracticeItemSchema = z
     objectiveId: z.string().min(1),
     objectiveTitle: z.string().min(1).max(300),
     construct: FormalAssessmentConstructSchema,
-    capabilityTested: z.string().min(1).max(700),
-    pedagogicalReason: z.string().min(1).max(700),
+    capabilityTested: z.string().max(700).optional(),
+    pedagogicalReason: z.string().max(700).optional(),
     authority: z.enum(['exact_source', 'advisory_visual', 'ai_teaching_synthesis']),
     sourceRefIds: z.array(z.string().min(1).max(40)).max(8),
     visualRefIds: z.array(z.string().regex(/^V[1-9][0-9]*$/u)).max(8),
     application: z
       .object({
-        startingState: z.string().min(1).max(900),
-        sourceRuleOrProcedure: z.string().min(1).max(1200),
-        decisionRequired: z.string().min(1).max(700),
-        expectedAction: z.string().min(1).max(700),
+        startingState: z.string().max(900).optional(),
+        sourceRuleOrProcedure: z.string().max(1200).optional(),
+        decisionRequired: z.string().max(700).optional(),
+        expectedAction: z.string().max(700).optional(),
       })
       .strict()
       .nullable()
       .optional(),
-    initial: LessonPracticeSurfaceSchema,
-    retry: LessonPracticeSurfaceSchema,
+    initial: PreparedPracticeSurfaceSchema,
+    retry: PreparedPracticeSurfaceSchema,
   })
   .strict()
   .superRefine((item, ctx) => {

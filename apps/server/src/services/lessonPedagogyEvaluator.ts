@@ -66,6 +66,40 @@ export function boundLessonFindings(findings: LessonPedagogyFinding[]): LessonPe
   });
 }
 
+/** Preserve every rule, severity and affected item when diagnostics exceed the
+ * serialized inventory. Admission always evaluates the complete findings. */
+export function boundPracticeFindings(
+  findings: PracticeQualityFinding[],
+): PracticeQualityFinding[] {
+  if (findings.length <= 100) return findings;
+  const groups = new Map<string, PracticeQualityFinding[]>();
+  for (const finding of findings) {
+    const key = finding.severity + ':' + finding.criterion + ':' + finding.code;
+    const group = groups.get(key) ?? [];
+    group.push(finding);
+    groups.set(key, group);
+  }
+  return [...groups.values()].map((group) => {
+    if (group.length === 1) return group[0]!;
+    const first = group[0]!;
+    const occurrenceCount = group.reduce(
+      (count, finding) => count + (finding.occurrenceCount ?? 1),
+      0,
+    );
+    return {
+      ...first,
+      occurrenceCount,
+      message: (
+        occurrenceCount +
+        ' occurrences consolidated; all affected items/objectives are listed. Representative diagnostic: ' +
+        first.message
+      ).slice(0, 800),
+      itemIndexes: [...new Set(group.flatMap((finding) => finding.itemIndexes))],
+      objectiveRefs: [...new Set(group.flatMap((finding) => finding.objectiveRefs))],
+    };
+  });
+}
+
 /** A pass reports absence of deterministic hard defects, not achieved quality. */
 export function hasCurrentLessonPedagogy(
   evaluation: LessonPedagogyEvaluation | undefined,
@@ -1207,7 +1241,7 @@ function evidenceContrastFinding(
   return;
 }
 
-/** Hard Practice applicability comes from an independently reviewed public task. */
+/** Private counterfactual annotations are advisory, never public-solving evidence. */
 export function practiceEvidenceContrastFinding(
   surface: {
     evidenceContrast?: CognitiveAction['evidenceContrast'];
@@ -1532,7 +1566,7 @@ function cognitivePracticeFindings(
           overclaimsProbabilisticControl,
         )
       )
-        add('probabilistic_control_overclaimed', [index], [slot.objectiveRef]);
+        add('probabilistic_control_overclaimed', [index], [slot.objectiveRef], 'warning');
     }
     if (
       depth &&
@@ -1666,6 +1700,14 @@ function practiceFindingSeverity(code: string): PracticeQualityFinding['severity
     'practice_capability_not_objective_aligned',
     'practice_surface_not_objective_aligned',
     'practice_promotes_construct',
+    'practice_content_not_substantive',
+    'practice_internal_alias_leak',
+    'practice_planning_language_leak',
+    'source_location_trivia',
+    'practice_feedback_not_contingent',
+    'practice_apply_missing_typed_application',
+    'practice_application_missing_real_state_or_action',
+    'practice_application_outside_planned_construct',
     'practice_application_relevance_uncertain',
     'practice_application_source_incompatible',
     'practice_application_not_observable_in_surface',
@@ -2316,125 +2358,8 @@ function correctOptionText(item: ProposedPracticeSlotContent, surface: 'initial'
   );
 }
 
-function hasLongVerbatimSpan(candidate: string, source: string): boolean {
-  const sourceWords = normalized(source).split(/\s+/u).filter(Boolean);
-  if (sourceWords.length >= 12) {
-    for (let index = 0; index <= sourceWords.length - 12; index += 1) {
-      const span = sourceWords.slice(index, index + 12).join(' ');
-      if (normalized(candidate).includes(span)) return true;
-    }
-  }
-  const compactCandidate = normalized(candidate).replace(/\s+/gu, '');
-  const compactSource = normalized(source).replace(/\s+/gu, '');
-  const hanThreshold = /\p{Script=Han}/u.test(source) ? 24 : 64;
-  if (compactSource.length < hanThreshold) {
-    return compactSource.length >= 16 && compactCandidate.includes(compactSource);
-  }
-  for (let index = 0; index <= compactSource.length - hanThreshold; index += 1) {
-    if (compactCandidate.includes(compactSource.slice(index, index + hanThreshold))) return true;
-  }
-  return false;
-}
-
-function acceptedLessonExposureTexts(input: PracticeContentGenerationInput): string[] {
-  return input.acceptedLesson
-    .flatMap((content) => {
-      const interaction = content.workedProcess?.interaction;
-      return [
-        content.lessonNarrative?.whyNow,
-        content.lessonNarrative?.summary,
-        content.explanation,
-        ...content.semanticRelations.flatMap((relation) => [
-          relation.fromProposition,
-          relation.toProposition,
-        ]),
-        content.workedProcess?.startingState,
-        ...(content.workedProcess?.inputs ?? []),
-        content.workedProcess?.ruleOrProcedure,
-        ...(content.workedProcess?.steps.flatMap((step) => [step.action, step.resultingState]) ??
-          []),
-        content.workedProcess?.result,
-        content.workedProcess?.whyResultFollows,
-        interaction?.activity.prompt,
-        interaction?.activity.correctDebrief,
-        ...(interaction?.activity.options.flatMap((option) => [
-          option.text,
-          option.feedbackIfSelected,
-          option.misconception?.hypothesis,
-          option.misconception?.whyTempting,
-          option.misconception?.correction,
-        ]) ?? []),
-        interaction?.hint,
-        interaction?.scaffold.prompt,
-        interaction?.scaffold.debrief,
-        ...(interaction?.scaffold.options.flatMap((option) => [
-          option.text,
-          option.feedbackIfSelected,
-        ]) ?? []),
-        interaction?.transfer.changedCondition,
-        interaction?.transfer.prompt,
-        interaction?.transfer.debrief,
-        ...(interaction?.transfer.options.flatMap((option) => [
-          option.text,
-          option.feedbackIfSelected,
-        ]) ?? []),
-        content.example?.text,
-        content.contrast?.text,
-        content.misconception?.hypothesis,
-        content.misconception?.correction,
-        content.informalCheck?.prompt,
-      ];
-    })
-    .filter((value): value is string => Boolean(value));
-}
-
-function repeatsAcceptedLessonSurface(
-  surfaceText: string,
-  input: PracticeContentGenerationInput,
-): boolean {
-  const removeSharedDomainContext = (value: string) => {
-    let result = normalized(value);
-    const sharedContext = [
-      ...input.skeleton.objectives.flatMap((objective) => [objective.title, objective.description]),
-      ...input.sourceContext.offers.map((offer) => offer.text),
-    ];
-    for (const context of sharedContext) {
-      const exact = normalized(context);
-      if (exact.length >= 8) result = result.split(exact).join(' ');
-    }
-    return result.replace(/\s+/gu, ' ').trim();
-  };
-  const candidate = removeSharedDomainContext(surfaceText);
-  if (!candidate) return false;
-  const copiedTeachingProse = input.acceptedLesson
-    .flatMap((content) => [
-      content.explanation,
-      content.example?.text,
-      content.contrast?.text,
-      content.misconception?.correction,
-      content.lessonNarrative?.summary,
-    ])
-    .filter((text): text is string => Boolean(text))
-    .some((text) => {
-      const full = removeSharedDomainContext(text);
-      return full.length >= 24 && candidate.includes(full);
-    });
-  if (copiedTeachingProse) return true;
-  return acceptedLessonExposureTexts(input).some((exposure) => {
-    const comparableExposure = removeSharedDomainContext(exposure);
-    if (!comparableExposure) return false;
-    if (candidate === comparableExposure) return true;
-    // Reusing givens or a learned rule is necessary for a new derivation. A shared
-    // substring cannot distinguish that from replay; exact complete surfaces and
-    // the separate inference/answer checks remain hard.
-    return false;
-  });
-}
-
 function practiceLearnerVisibleText(item: ProposedPracticeSlotContent): string {
   return [
-    item.capabilityTested,
-    item.pedagogicalReason,
     item.initial.prompt,
     item.initial.hint,
     item.initial.explanation,
@@ -2468,26 +2393,26 @@ function applicationIssueCodes(
   ];
   if (
     requiredTexts.some(
-      (value) => !isSubstantiveText(value) || GENERIC_PLACEHOLDER_LANGUAGE.test(value),
+      (value) => !isSubstantiveText(value) || GENERIC_PLACEHOLDER_LANGUAGE.test(value ?? ''),
     ) ||
-    !isSemanticallyDistinct(application.startingState, application.expectedAction)
+    !isSemanticallyDistinct(application.startingState ?? '', application.expectedAction ?? '')
   ) {
     issues.push('practice_application_missing_real_state_or_action');
   }
   if (
-    !hasBoundedSemanticCompatibility(application.startingState, domainTarget) ||
-    !hasBoundedSemanticCompatibility(application.expectedAction, domainTarget)
+    !hasBoundedSemanticCompatibility(application.startingState ?? '', domainTarget) ||
+    !hasBoundedSemanticCompatibility(application.expectedAction ?? '', domainTarget)
   ) {
     issues.push('practice_application_relevance_uncertain');
   }
   if (
     item.sourceRefs.length > 0 &&
     (slot.authorityMode !== 'exact_source' ||
-      !hasBoundedSemanticCompatibility(application.sourceRuleOrProcedure, citedSource))
+      !hasBoundedSemanticCompatibility(application.sourceRuleOrProcedure ?? '', citedSource))
   ) {
     issues.push('practice_application_source_incompatible');
   }
-  const applicationTrace = `${application.startingState} ${application.sourceRuleOrProcedure} ${application.decisionRequired} ${application.expectedAction}`;
+  const applicationTrace = requiredTexts.filter(Boolean).join(' ');
   for (const surfaceName of ['initial', 'retry'] as const) {
     const surface = item[surfaceName];
     const correctText = correctOptionText(item, surfaceName);
@@ -2508,18 +2433,16 @@ function applicationIssueCodes(
 function practiceIssueMessage(code: string, practiceSlotId: string): string {
   const messages: Record<string, string> = {
     practice_capability_not_objective_aligned: `${practiceSlotId} does not make its locally planned objective capability observable.`,
-    practice_content_not_substantive: `${practiceSlotId} contains labels or placeholders instead of a substantive Practice item.`,
-    practice_internal_alias_leak: `${practiceSlotId} exposes an internal objective, source, Lesson, or Practice alias in learner-facing text.`,
-    practice_planning_language_leak: `${practiceSlotId} exposes private planning language in learner-facing text.`,
+    practice_content_not_substantive: `${practiceSlotId} has absent or compact private descriptions; this does not establish a public task defect.`,
+    practice_internal_alias_leak: `${practiceSlotId} public text resembles an internal alias; check presentation without granting citation authority.`,
+    practice_planning_language_leak: `${practiceSlotId} public text resembles planning vocabulary; this is a presentation observation.`,
     practice_promotes_construct: `${practiceSlotId} asks for a construct that the immutable Practice plan explicitly prohibits.`,
     source_location_trivia: `${practiceSlotId} asks where source text appears rather than testing the planned capability.`,
     invalid_or_duplicate_practice_options: `${practiceSlotId} needs unique options and a correct answer that references an offered option.`,
-    practice_prompt_leaks_answer: `${practiceSlotId} repeats the complete correct option in its prompt.`,
-    practice_prompt_quotes_answer_source: `${practiceSlotId} quotes a substantial span of the source that supports its answer.`,
-    practice_repeats_accepted_lesson: `${practiceSlotId} repeats an accepted Lesson explanation or worked case instead of testing a changed situation.`,
+    practice_prompt_leaks_answer: `${practiceSlotId} explicitly announces its keyed answer in the unanswered prompt.`,
+    practice_evidence_contrast_option_unavailable: `${practiceSlotId} supplied contrast references an option absent from its own task.`,
     practice_surface_not_objective_aligned: `${practiceSlotId} prompt and answer are not meaningfully anchored to its objective or selected source.`,
     practice_feedback_not_contingent: `${practiceSlotId} must give option-contingent feedback rather than the same response for every choice.`,
-    retry_surface_not_meaningfully_changed: `${practiceSlotId} retry must test the same construct in a materially changed context.`,
     practice_apply_missing_typed_application: `${practiceSlotId} cannot satisfy APPLY with lexical apply/next-step wording; it needs typed state, source rule, decision, and expected action data.`,
     practice_application_missing_real_state_or_action: `${practiceSlotId} application fields must describe a real starting state and observable action rather than labels.`,
     practice_application_relevance_uncertain: `${practiceSlotId} application fields have low lexical overlap with the planned objective or source; retain this only as an advisory relevance signal.`,
@@ -2550,8 +2473,8 @@ function practiceCriterionForCode(code: string): PracticeQualityFinding['criteri
 
 /**
  * Independent Practice-only evaluation against the immutable local Practice
- * Plan. In particular, APPLY acceptance is based on typed application facts
- * and source-compatible use, never on apply/next-step vocabulary alone.
+ * Plan. Private application descriptions and lexical quality do not establish
+ * correctness; current public solving and complete grounding own that evidence.
  */
 export function evaluatePlannedPracticeQuality(
   payload: PracticeContentProposalPayload,
@@ -2581,7 +2504,7 @@ export function evaluatePlannedPracticeQuality(
     }
 
     for (const prohibited of slot.prohibitedStrongerConstructs) {
-      if (PROMOTED_CONSTRUCT_LANGUAGE[prohibited].test(item.capabilityTested)) {
+      if (PROMOTED_CONSTRUCT_LANGUAGE[prohibited].test(item.capabilityTested ?? '')) {
         codes.add('practice_promotes_construct');
         break;
       }
@@ -2605,11 +2528,11 @@ export function evaluatePlannedPracticeQuality(
       if (correctText && disclosesPracticeAnswer(surface.prompt, correctText)) {
         codes.add('practice_prompt_leaks_answer');
       }
-      if (item.sourceRefs.length > 0 && hasLongVerbatimSpan(surface.prompt, citedSource)) {
-        codes.add('practice_prompt_quotes_answer_source');
-      }
-      if (repeatsAcceptedLessonSurface(surface.prompt, input)) {
-        codes.add('practice_repeats_accepted_lesson');
+      if (
+        surface.evidenceContrast &&
+        !optionRefs.includes(surface.evidenceContrast.alternativeOptionId)
+      ) {
+        codes.add('practice_evidence_contrast_option_unavailable');
       }
       if (
         !isSubstantiveText(surface.prompt) ||
@@ -2630,10 +2553,6 @@ export function evaluatePlannedPracticeQuality(
       if (feedback.length > 1 && new Set(feedback).size === 1) {
         codes.add('practice_feedback_not_contingent');
       }
-    }
-
-    if (literalTeachingText(item.initial.prompt) === literalTeachingText(item.retry.prompt)) {
-      codes.add('retry_surface_not_meaningfully_changed');
     }
 
     for (const code of codes) {
@@ -2684,7 +2603,7 @@ export function evaluatePlannedPracticeQuality(
       independent: true,
       status: findings.some((finding) => finding.severity === 'error') ? 'fail' : 'pass',
       boundedRepairAttempted: options.boundedRepairAttempted ?? false,
-      findings,
+      findings: boundPracticeFindings(findings),
       evaluatedAt: options.evaluatedAt,
     }),
   );

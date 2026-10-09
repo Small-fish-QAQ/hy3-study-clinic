@@ -153,7 +153,9 @@ export function practiceRepairInput(
     objective: {
       objectiveTitle: item.objectiveTitle,
       construct: item.construct,
-      capabilityTested: item.capabilityTested,
+      // Preserve the Repair input's string contract without inventing a missing
+      // Practice author description.
+      capabilityTested: item.capabilityTested ?? '',
     },
     failedPrompt: surface.prompt,
     selectedAnswer: surface.options.find((option) => option.id === selected)!.text,

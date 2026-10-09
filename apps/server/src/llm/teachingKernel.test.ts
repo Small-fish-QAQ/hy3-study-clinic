@@ -143,136 +143,180 @@ describe('executable teaching cases', () => {
     expect(derived.retry.useTransferRules).toBe(true);
     expect(derived.diagnosis.probes.every((p) => p.observe?.length)).toBe(true);
   });
-  it('compiles sufficient visible cases and passes the isolated Practice answerability gate', async () => {
-    const skeleton = planTeachingSkeleton({
-      learningUnitTitle: '角色权限',
-      targetMinutes: 22,
-      targetDepth: 'working_fluency',
-      objectives: [
-        {
-          objectiveRef: 'O1',
-          title: '解释角色权限',
-          description: '解释用户通过角色获得权限，并判断角色变更后的操作范围。',
-          priority: 'required',
-          construct: 'explain',
-          authorityMode: 'exact_source',
-          allowedSourceRefs: ['S1'],
-          allowedVisualRefs: [],
+  it.each(['complete', 'omitted', 'paraphrased', 'false_feedback'] as const)(
+    'compiles and reviews computed Practice with %s annotations/claims',
+    async (variant) => {
+      const skeleton = planTeachingSkeleton({
+        learningUnitTitle: '角色权限',
+        targetMinutes: 22,
+        targetDepth: 'working_fluency',
+        objectives: [
+          {
+            objectiveRef: 'O1',
+            title: '解释角色权限',
+            description: '解释用户通过角色获得权限，并判断角色变更后的操作范围。',
+            priority: 'required',
+            construct: 'explain',
+            authorityMode: 'exact_source',
+            allowedSourceRefs: ['S1'],
+            allowedVisualRefs: [],
+          },
+        ],
+      });
+      const input = {
+        lesson: {
+          workspaceName: 'Course',
+          learnerLocale: 'zh-CN' as const,
+          courseDesign: { desiredDepth: 'working_fluency' as const, unitFocus: 'normal' as const },
+          skeleton,
+          workedInteractionSlotId: skeleton.lessonSlots.find((s) => s.learnerActionRequired)!
+            .slotId,
+          sourceContext: {
+            offers: [
+              {
+                sourceRef: 'S1',
+                materialTitle: 'Source',
+                headingPath: [],
+                pageNumber: null,
+                slideNumber: null,
+                text: '角色将权限赋予用户。',
+                authorizedObjectiveRefs: ['O1'],
+              },
+            ],
+            blockCount: 1,
+            offerCount: 1,
+            serializedBytes: 1,
+            materialCount: 1,
+            sectionCount: 1,
+          },
+          learningContext: {
+            concepts: [],
+            canonicalConcepts: [],
+            prerequisites: [],
+            nextConnection: null,
+          },
         },
-      ],
-    });
-    const input = {
-      lesson: {
-        workspaceName: 'Course',
-        learnerLocale: 'zh-CN' as const,
-        courseDesign: { desiredDepth: 'working_fluency' as const, unitFocus: 'normal' as const },
-        skeleton,
-        workedInteractionSlotId: skeleton.lessonSlots.find((s) => s.learnerActionRequired)!.slotId,
-        sourceContext: {
-          offers: [
-            {
-              sourceRef: 'S1',
-              materialTitle: 'Source',
-              headingPath: [],
-              pageNumber: null,
-              slideNumber: null,
-              text: '角色将权限赋予用户。',
-              authorizedObjectiveRefs: ['O1'],
-            },
-          ],
-          blockCount: 1,
-          offerCount: 1,
-          serializedBytes: 1,
-          materialCount: 1,
-          sectionCount: 1,
-        },
-        learningContext: {
-          concepts: [],
-          canonicalConcepts: [],
-          prerequisites: [],
-          nextConnection: null,
-        },
-      },
-      practiceSlots: skeleton.practicePlan.slots,
-      priorLesson: [],
-      includeNarrative: true,
-    };
-    const capsule = compileTeachingKernel(kernelFixture(), input);
-    const shape = TeachingCapsulePayloadSchema.safeParse(capsule);
-    expect(shape.success, JSON.stringify(shape.success ? null : shape.error.issues)).toBe(true);
-    const validation = validateTeachingCapsule(capsule, input);
-    expect(validation.valid, JSON.stringify(validation.diagnostics)).toBe(true);
-    expect(capsule.practice.items[0]!.initial.prompt).not.toContain('角色甲同时有读写');
-    expect(capsule.practice.items[0]!.initial.options[2]!.text).toContain('角色甲同时有读写');
-    expect(capsule.lesson.slots.every((s) => s.sourceRefs.length === 0)).toBe(true);
-    const worked = capsule.lesson.slots.find((s) => s.workedProcess)!.workedProcess!;
-    expect(worked.interaction!.activity.options[1]!.feedbackIfSelected).not.toContain(
-      worked.steps[1]!.resultingState,
-    );
-    expect(worked.interaction!.scaffold.prompt).toContain('先只做一小步');
-    const priorTeaching = projectPracticePriorTeaching({
-      objective: { title: '角色权限', whyNow: capsule.lesson.narrative!.whyNow, objectives: [] },
-      prerequisites: [],
-      segments: projectAcceptedLessonSegments({ skeleton, lessonContent: capsule.lesson.slots }, [
-        'objective_1',
-      ]),
-      sourceReferences: [],
-      visualReferences: [],
-      summary: capsule.lesson.narrative!.summary,
-      nextConnection: capsule.lesson.narrative!.forwardBridge,
-    });
-    const purposes: string[] = [];
-    const verified = await verifyPreparedPractice(
-      {
-        ...input.lesson,
-        skeleton,
-        computedCases: true,
-        acceptedLesson: capsule.lesson.slots,
-      },
-      capsule.practice,
-      priorTeaching,
-      async (prepared, round) => {
-        const result: TeachingContentReview = { decisions: [], findings: [] };
-        purposes.push(prepared.input.purpose!);
-        if (prepared.input.purpose === 'practice_answerability') {
-          const visible = prepared.input;
-          expect(JSON.stringify(visible.priorTeaching)).toContain(
-            '合并权限 = 角色甲权限 ∪ 角色乙权限',
-          );
-          expect(JSON.stringify(visible)).not.toContain('correctOption');
-          expect(JSON.stringify(visible)).not.toContain('feedbackIfSelected');
-          expect(visible.candidate.options).toHaveLength(3);
-          const initial = visible.actionIds[0]!.endsWith('.initial');
-          expect(visible.candidate.prompt).toContain(initial ? '实验记录' : '目标要求');
-          // Fixed finite-case answers: both observations identify the third
-          // hypothesis; retaining read and removing write requires the first
-          // intervention. The stub never reads private application or keys.
-          result.decisions.push({
-            actionId: visible.actionIds[0]!,
-            answerId: initial ? 'C' : 'A',
-            requiresCaseInference: true,
-            evidenceUsed:
-              'The public permission-union rule and observations determine this option.',
-          });
+        practiceSlots: skeleton.practicePlan.slots,
+        priorLesson: [],
+        includeNarrative: true,
+      };
+      const capsule = compileTeachingKernel(kernelFixture(), input);
+      const shape = TeachingCapsulePayloadSchema.safeParse(capsule);
+      expect(shape.success, JSON.stringify(shape.success ? null : shape.error.issues)).toBe(true);
+      const validation = validateTeachingCapsule(capsule, input);
+      expect(validation.valid, JSON.stringify(validation.diagnostics)).toBe(true);
+      expect(capsule.practice.items[0]!.initial.prompt).not.toContain('角色甲同时有读写');
+      expect(capsule.practice.items[0]!.initial.options[2]!.text).toContain('角色甲同时有读写');
+      expect(capsule.lesson.slots.every((s) => s.sourceRefs.length === 0)).toBe(true);
+      const worked = capsule.lesson.slots.find((s) => s.workedProcess)!.workedProcess!;
+      expect(worked.interaction!.activity.options[1]!.feedbackIfSelected).not.toContain(
+        worked.steps[1]!.resultingState,
+      );
+      expect(worked.interaction!.scaffold.prompt).toContain('先只做一小步');
+      const priorTeaching = projectPracticePriorTeaching({
+        objective: { title: '角色权限', whyNow: capsule.lesson.narrative!.whyNow, objectives: [] },
+        prerequisites: [],
+        segments: projectAcceptedLessonSegments({ skeleton, lessonContent: capsule.lesson.slots }, [
+          'objective_1',
+        ]),
+        sourceReferences: [],
+        visualReferences: [],
+        summary: capsule.lesson.narrative!.summary,
+        nextConnection: capsule.lesson.narrative!.forwardBridge,
+      });
+      const purposes: string[] = [];
+      const expected = compileTeachingKernel(kernelFixture(), input).practice;
+      if (variant === 'omitted') {
+        for (const item of capsule.practice.items) {
+          delete item.capabilityTested;
+          delete item.pedagogicalReason;
+          delete item.application;
+          for (const surface of [item.initial, item.retry]) {
+            delete surface.evidenceContrast;
+            delete surface.reasoningOperation;
+            delete surface.requiredInference;
+            delete surface.decisiveCondition;
+          }
         }
-        return { result, logicalCallId: `computed-public:${round}:${purposes.length}` };
-      },
-      async () => {
-        throw new Error('A complete computed case must not require revision.');
-      },
-    );
-    expect(purposes).toEqual([
-      'practice_grounding',
-      'practice_integrity',
-      'practice_answerability',
-      'practice_answerability',
-    ]);
-    expect(
-      verified.answerabilityReview.rounds[0]!.solves.map(
-        (solve) => solve.result.decisions[0]!.answerId,
-      ),
-    ).toEqual(['C', 'A']);
-  });
+      }
+      if (variant === 'paraphrased')
+        capsule.practice.items[0]!.initial.evidenceContrast!.evidence = '两次独立实验都允许读写。';
+      if (variant === 'false_feedback')
+        capsule.practice.items[0]!.retry.options[0]!.feedbackIfSelected += ' 2 + 2 = 5.';
+      const pending = verifyPreparedPractice(
+        {
+          ...input.lesson,
+          skeleton,
+          computedCases: true,
+          acceptedLesson: capsule.lesson.slots,
+        },
+        capsule.practice,
+        priorTeaching,
+        async (prepared, round) => {
+          const result: TeachingContentReview = { decisions: [], findings: [] };
+          purposes.push(prepared.input.purpose!);
+          if (prepared.input.purpose === 'practice_grounding') {
+            for (const [index, item] of prepared.input.candidate.items.entries())
+              for (const name of ['initial', 'retry'] as const)
+                if (
+                  item[name].explanation !== expected.items[index]![name].explanation ||
+                  JSON.stringify(item[name].options) !==
+                    JSON.stringify(expected.items[index]![name].options)
+                )
+                  result.findings.push({
+                    itemId: item.practiceSlotId,
+                    code: 'accuracy',
+                    responsibility: 'grounding',
+                    problem:
+                      'Computed teaching feedback differs from the independently calculated fixture.',
+                    repairInstruction: 'Restore truthful computed feedback.',
+                  });
+          }
+          if (prepared.input.purpose === 'practice_answerability') {
+            const visible = prepared.input;
+            expect(JSON.stringify(visible.priorTeaching)).toContain(
+              '合并权限 = 角色甲权限 ∪ 角色乙权限',
+            );
+            expect(JSON.stringify(visible)).not.toContain('correctOption');
+            expect(JSON.stringify(visible)).not.toContain('feedbackIfSelected');
+            expect(visible.candidate.options).toHaveLength(3);
+            const initial = visible.actionIds[0]!.endsWith('.initial');
+            expect(visible.candidate.prompt).toContain(initial ? '实验记录' : '目标要求');
+            // Fixed finite-case answers: both observations identify the third
+            // hypothesis; retaining read and removing write requires the first
+            // intervention. The stub never reads private application or keys.
+            result.decisions.push({
+              actionId: visible.actionIds[0]!,
+              answerId: initial ? 'C' : 'A',
+              requiresCaseInference: true,
+              evidenceUsed:
+                'The public permission-union rule and observations determine this option.',
+            });
+          }
+          return { result, logicalCallId: `computed-public:${round}:${purposes.length}` };
+        },
+        async () => {
+          throw new Error('A complete computed case must not require revision.');
+        },
+      );
+      if (variant === 'false_feedback') {
+        await expect(pending).rejects.toThrow('A complete computed case must not require revision');
+        return;
+      }
+      const verified = await pending;
+      expect(purposes).toEqual([
+        'practice_grounding',
+        'practice_integrity',
+        'practice_answerability',
+        'practice_answerability',
+      ]);
+      expect(
+        verified.answerabilityReview.rounds[0]!.solves.map(
+          (solve) => solve.result.decisions[0]!.answerId,
+        ),
+      ).toEqual(['C', 'A']);
+    },
+  );
   it('selects partial observations whose combination is necessary for the actual diagnosis', () => {
     const proposed = kernelFixture();
     proposed.diagnosis.probes = [

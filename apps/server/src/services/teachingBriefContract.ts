@@ -393,21 +393,6 @@ function lessonAliasRepairScope(
   };
 }
 
-function practiceAliasRepairScope(
-  payload: ReturnType<typeof PracticeContentProposalPayloadSchema.parse>,
-): NonNullable<ProviderTargetedRepairScope['localizedTextRepair']> {
-  const components = ['capabilityTested', 'pedagogicalReason', 'initial', 'retry'] as const;
-  return {
-    rootNarrative: false,
-    items: payload.items.flatMap((item) => {
-      const affected = components.filter((component) => learnerTextContainsAlias(item[component]));
-      return affected.length > 0
-        ? [{ itemId: item.practiceSlotId, components: [...affected] }]
-        : [];
-    }),
-  };
-}
-
 function lessonContentSourceRefs(content: TeachingLessonSlotContent): string[] {
   return [
     ...content.sourceRefs,
@@ -853,9 +838,5 @@ export function validatePracticeContentCandidate(
     invalidIds,
     diagnostics,
     targetedRepairAllowed: !immutableOrderMismatch,
-    ...(diagnostics.length > 0 &&
-    diagnostics.every((diagnostic) => diagnostic.code === 'practice_internal_alias_leak')
-      ? { localizedTextRepair: practiceAliasRepairScope(parsed.data) }
-      : {}),
   });
 }

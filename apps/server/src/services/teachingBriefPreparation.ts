@@ -78,6 +78,7 @@ import { profileTeachingBrief } from './teachingBriefQuality.js';
 import {
   COMPOSITIONAL_LESSON_PEDAGOGY_POLICY_VERSION,
   COMPOSITIONAL_PRACTICE_QUALITY_POLICY_VERSION,
+  boundPracticeFindings,
   assertCurrentCognitiveContract,
   boundLessonFindings,
   evaluateLessonSlotPedagogy,
@@ -1461,7 +1462,11 @@ export function createTeachingBriefPreparationService({
         logicalCallId: string,
         schemaFingerprint: string,
         invoke: (providerOptions?: ProviderCallOptions) => Promise<T>,
-        dependency?: { identity: unknown; validateResult: (value: unknown) => T },
+        dependency?: {
+          identity: unknown;
+          practiceBoundary?: boolean;
+          validateResult: (value: unknown) => T;
+        },
       ) => {
         routeStillCurrent(input, context.fingerprint);
         renewPreparationLease(claim.id, owner, claim.fencingToken);
@@ -1501,6 +1506,9 @@ export function createTeachingBriefPreparationService({
                 stageVersion: 'teaching-stages-v3-independent-cases',
                 lessonVersion: LESSON_CONTENT_PROMPT_VERSION,
                 practiceVersion: PRACTICE_CONTENT_PROMPT_VERSION,
+                ...(dependency.practiceBoundary
+                  ? { practiceAcceptancePolicyVersion: PRACTICE_ACCEPTANCE_POLICY_VERSION }
+                  : {}),
                 curriculumId: input.curriculumVersionId,
                 studyPlanId: input.studyPlanVersionId,
                 sessionAgendaId: input.sessionAgendaId,
@@ -1582,6 +1590,7 @@ export function createTeachingBriefPreparationService({
                 }),
               {
                 identity: capsuleInput,
+                practiceBoundary: capsuleInput.practiceSlots.length > 0,
                 validateResult: (raw) => {
                   const result = confineTeachingCitations(
                     TeachingCapsulePayloadSchema.parse(raw),
@@ -2253,7 +2262,7 @@ export function createTeachingBriefPreparationService({
                         repairInstruction:
                           finding.repairInstruction ??
                           (finding.code === 'practice_initial_recognition_at_depth'
-                            ? 'Deepen the initial task itself within the same immutable Practice plan and source authority: add a genuine inference from new visible case evidence, not merely a different reasoningOperation label. Supply valid evidenceContrast for the new reasoning operation. Preserve learner-visible unique answerability and the correct saved key; the rewrite needs fresh hard validation, grounding and independent case-inference proofs.'
+                            ? 'Deepen the initial task itself within the same immutable Practice plan and source authority: add a genuine inference from new visible case evidence, not merely a different reasoningOperation label. Private contrast annotations remain optional. Preserve learner-visible unique answerability and the correct saved key; the rewrite needs fresh hard validation, grounding and independent case-inference proofs.'
                             : 'Improve the missing aggregate reasoning coverage within the same immutable Practice plan and source authority. Preserve a uniquely answerable visible case and correct key; never fix coverage with a dishonest operation label.'),
                       })),
                     ),
@@ -2308,14 +2317,14 @@ export function createTeachingBriefPreparationService({
       if (integrityReview) practiceEvaluation.integrityReview = integrityReview;
       if (groundingReview) practiceEvaluation.groundingReview = groundingReview;
       if (qualityImprovement) practiceEvaluation.qualityImprovement = qualityImprovement;
-      practiceEvaluation.findings = [
+      practiceEvaluation.findings = boundPracticeFindings([
         ...practiceEvaluation.findings,
         ...practiceReviewQualityFindings(
           practicePayload,
           compositionalPracticeInput,
           practiceEvaluation,
         ),
-      ].slice(0, 100);
+      ]);
       assertCurrentCognitiveContract(practiceEvaluation);
       preparationBoundary = 'assembly';
       const brief = materialize(

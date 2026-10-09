@@ -310,15 +310,15 @@ export const TeachingPracticePlanSchema = z
 export type TeachingPracticePlan = z.infer<typeof TeachingPracticePlanSchema>;
 
 /**
- * Provider-fillable APPLY scenario facts. The local PracticePlan still owns
- * construct, capability, source authority, and whether this structure is required.
+ * Optional private Practice application descriptions. The local PracticePlan
+ * owns construct, capability and source authority, independent of these labels.
  */
 export const TeachingPracticeApplicationContentSchema = z
   .object({
-    startingState: z.string().min(1).max(900),
-    sourceRuleOrProcedure: z.string().min(1).max(1200),
-    decisionRequired: z.string().min(1).max(700),
-    expectedAction: z.string().min(1).max(700),
+    startingState: z.string().max(900).optional(),
+    sourceRuleOrProcedure: z.string().max(1200).optional(),
+    decisionRequired: z.string().max(700).optional(),
+    expectedAction: z.string().max(700).optional(),
   })
   .strict();
 export type TeachingPracticeApplicationContent = z.infer<

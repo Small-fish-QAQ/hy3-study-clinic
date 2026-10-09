@@ -21,6 +21,7 @@ import { DesiredDepthSchema } from '../domain/learningContract.js';
 import { UnitFocusSchema } from '../domain/curriculum.js';
 import { MasteryChallengeFamilySchema } from '../domain/assessmentIntent.js';
 import { RepairDiagnosticCategorySchema, RepairInterventionModeSchema } from '../domain/repair.js';
+import { PracticePrivateReasoningFields } from '../domain/reasoningOperation.js';
 import {
   InformalCheckKindSchema,
   PrivateReasoningFields,
@@ -1316,13 +1317,13 @@ export type LessonSlotContentProposalPayload = z.infer<
 export const ProposedPracticeSlotContentSchema = z
   .object({
     practiceSlotId: z.string().regex(/^PR[1-9][0-9]*$/u),
-    capabilityTested: z.string().min(1).max(700),
-    pedagogicalReason: z.string().min(1).max(700),
+    capabilityTested: z.string().max(700).optional(),
+    pedagogicalReason: z.string().max(700).optional(),
     sourceRefs: z.array(z.string().regex(/^S[1-9][0-9]*$/u)).max(8),
     visualRefs: z.array(z.string().regex(/^V[1-9][0-9]*$/u)).max(8),
-    application: TeachingPracticeApplicationContentSchema.nullable(),
-    initial: ProposedLessonPracticeSurfaceSchema,
-    retry: ProposedLessonPracticeSurfaceSchema,
+    application: TeachingPracticeApplicationContentSchema.nullable().optional(),
+    initial: ProposedLessonPracticeSurfaceSchema.extend(PracticePrivateReasoningFields),
+    retry: ProposedLessonPracticeSurfaceSchema.extend(PracticePrivateReasoningFields),
   })
   .strict()
   .superRefine((item, ctx) => {

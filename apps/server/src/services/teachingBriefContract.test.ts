@@ -624,7 +624,7 @@ describe('compositional provider candidate validation', () => {
     })
       .map((message) => message.content)
       .join('\n');
-    expect(practicePrompt).toContain('Never reuse the accepted Lesson worked case');
+    expect(practicePrompt).toContain('Do not replay the same publicly exposed deciding case');
     expect(practicePrompt).toContain('use a materially changed scenario');
     expect(practicePrompt).toContain(
       'materially changed retry scenario—not merely changed wording',
@@ -959,7 +959,7 @@ describe('compositional provider candidate validation', () => {
     expect(removedId).toBe(input.skeleton.lessonSlots[1]!.slotId);
   });
 
-  it('rejects Lesson aliases outside a slot and source-location Practice trivia', async () => {
+  it('rejects structured Lesson aliases outside a slot while keeping Practice trivia advisory', async () => {
     const provider = new FakeProvider();
     const lessonInput = compositionalContractInput();
     const lesson = await provider.generateLessonSlotContent(lessonInput);
@@ -980,8 +980,8 @@ describe('compositional provider candidate validation', () => {
     const practice = await provider.generatePracticeContent(practiceInput);
     practice.items[0]!.initial.prompt = 'On which page is bounded retrieval described?';
     const result = validatePracticeContentCandidate(practice, practiceInput);
-    expect(result.diagnosticCodes).toContain('source_location_trivia');
-    expect(result.targetedRepair).toEqual({ invalidItemIds: ['PR1'] });
+    expect(result.valid).toBe(true);
+    expect(result.targetedRepair).toBeUndefined();
   });
 
   it('T3/T4/T6 keeps source and supplementary lanes distinct and blocks learner-facing internals', async () => {
@@ -1024,7 +1024,7 @@ describe('compositional provider candidate validation', () => {
     );
   });
 
-  it('T4/T5 scopes alias-only recovery to the exact learner-facing components', async () => {
+  it('T4/T5 keeps lexical display aliases advisory without a correctness repair', async () => {
     const provider = new FakeProvider();
     const lessonInput = compositionalContractInput();
     const lesson = await provider.generateLessonSlotContent(lessonInput);
@@ -1047,17 +1047,11 @@ describe('compositional provider candidate validation', () => {
     const practice = await provider.generatePracticeContent(practiceInput);
     practice.items[0]!.initial.hint = `${practice.items[0]!.initial.hint} See S1.`;
     const practiceResult = validatePracticeContentCandidate(practice, practiceInput);
-    expect(practiceResult.diagnosticCodes).toEqual(['practice_internal_alias_leak']);
-    expect(practiceResult.targetedRepair).toMatchObject({
-      invalidItemIds: ['PR1'],
-      localizedTextRepair: {
-        rootNarrative: false,
-        items: [{ itemId: 'PR1', components: ['initial'] }],
-      },
-    });
+    expect(practiceResult.valid).toBe(true);
+    expect(practiceResult.targetedRepair).toBeUndefined();
   });
 
-  it('T12-T14 blocks answer-bearing quotations, accepted-Lesson repetition, and same retries', async () => {
+  it('T12-T14 leaves quotation, prose overlap and same-prompt task integrity to public review', async () => {
     const provider = new FakeProvider();
     const lessonInput = compositionalContractInput();
     const lesson = await provider.generateLessonSlotContent(lessonInput);
@@ -1075,8 +1069,7 @@ describe('compositional provider candidate validation', () => {
     const quoted = structuredClone(practice);
     quoted.items[0]!.initial.prompt = `${lessonInput.sourceContext.offers[0]!.text} Which conclusion follows?`;
     const quotedResult = validatePracticeContentCandidate(quoted, practiceInput);
-    expect(quotedResult.diagnosticCodes).toContain('practice_prompt_quotes_answer_source');
-    expect(quotedResult.targetedRepair).toEqual({ invalidItemIds: ['PR1'] });
+    expect(quotedResult.valid).toBe(true);
 
     const repeatedCase =
       'A concrete retrieval case begins with three candidates, removes two that fail the condition, and returns the remaining eligible passage.';
@@ -1089,13 +1082,10 @@ describe('compositional provider candidate validation', () => {
     const repeated = structuredClone(practice);
     repeated.items[0]!.initial.prompt = `${repeatedCase} Which result should the learner choose?`;
     const repeatedResult = validatePracticeContentCandidate(repeated, exposureInput);
-    expect(repeatedResult.diagnosticCodes).toContain('practice_repeats_accepted_lesson');
-    expect(repeatedResult.targetedRepair).toEqual({ invalidItemIds: ['PR1'] });
+    expect(repeatedResult.valid).toBe(true);
 
     const sameRetry = structuredClone(practice);
     sameRetry.items[0]!.retry.prompt = sameRetry.items[0]!.initial.prompt;
-    expect(validatePracticeContentCandidate(sameRetry, practiceInput).diagnosticCodes).toContain(
-      'retry_surface_not_meaningfully_changed',
-    );
+    expect(validatePracticeContentCandidate(sameRetry, practiceInput).valid).toBe(true);
   });
 });
