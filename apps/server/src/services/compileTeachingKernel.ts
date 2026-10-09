@@ -1,5 +1,6 @@
 import type { TeachingCapsulePayload } from '@hy3-clinic/shared';
 import type { TeachingCapsuleGenerationInput } from '../llm/provider.js';
+import { literalTeachingText } from './teachingText.js';
 import {
   evaluateKernel,
   kernelOutcomes,
@@ -7,6 +8,8 @@ import {
   outcomeKey,
   interventionWinner,
   diagnosisSignatures,
+  validateKernel,
+  kernelValueKey,
   type TeachingKernel,
   type KernelRule,
   type KernelState,
@@ -17,6 +20,8 @@ export function compileTeachingKernel(
   k: TeachingKernel,
   input: TeachingCapsuleGenerationInput,
 ): TeachingCapsulePayload {
+  const validity = validateKernel(k);
+  if (!validity.valid) throw Error(validity.diagnostics.join(' '));
   const labels = new Map(
     [...k.inputs, ...k.rules, ...k.transfer.extraInputs, ...k.transfer.extraRules].map((i) => [
       i.key,
@@ -25,12 +30,14 @@ export function compileTeachingKernel(
   );
   const value = (v: KernelValue): string =>
     Array.isArray(v)
-      ? `{${v.join('、') || '空集'}}`
+      ? `{${[...new Set(v)].map((element) => JSON.stringify(element)).join(', ')}}`
       : typeof v === 'boolean'
         ? v
           ? '是'
           : '否'
-        : String(v);
+        : typeof v === 'string'
+          ? JSON.stringify(v)
+          : String(v);
   const state = (s: KernelState) =>
     Object.entries(s)
       .map(([key, v]) => `${labels.get(key)}=${value(v)}`)
@@ -84,48 +91,54 @@ export function compileTeachingKernel(
   const final = kernelPatch(k.guided.base, k.guided.changes);
   const expected = kernelOutcomes(k.rules, final, k.goals);
   const before = kernelOutcomes(k.rules, k.guided.base, k.goals);
-  const vectors = [expected, before];
+  const changedOutcome = outcomeKey(expected) !== outcomeKey(before);
+  const vectors = changedOutcome ? [expected, before] : [expected];
   for (let n = 0; vectors.length < 3 && n < 2 ** k.goals.length; n++) {
     const v = k.goals.map((_, i) => Boolean(n & (1 << i)));
     if (!vectors.some((old) => outcomeKey(old) === outcomeKey(v))) vectors.push(v);
   }
-  const caseFact = `初始输入：${state(k.guided.base)}。变更：${state(k.guided.changes)}。`;
+  const changeText = state(k.guided.changes) || '无，保持初始输入';
+  const caseFact = `初始输入：${state(k.guided.base)}。变更：${changeText}。`;
   const alternativeFact = `初始输入：${state(k.guided.base)}。变更：无，保持初始输入。`;
   const calculation = trace(k.rules, final);
   const guided = {
     reasoningOperation: 'predict_outcome' as const,
     requiredInference: `完成变更后推导：${vector(k.goals, expected)}`,
-    decisiveCondition: `${state(k.guided.changes)}`,
-    evidenceContrast: {
-      evidence: caseFact,
-      replacement: alternativeFact,
-      alternativeOptionId: 'B',
-    },
-    prompt: '执行这组变更后，下面哪组判断同时成立？请先沿规则推演，再选择。',
+    decisiveCondition: changeText,
+    ...(changedOutcome
+      ? {
+          evidenceContrast: {
+            evidence: caseFact,
+            replacement: alternativeFact,
+            alternativeOptionId: 'B',
+          },
+        }
+      : {}),
+    prompt: '按给定输入完成本次核对后，下面哪组判断同时成立？请先沿规则推演，再选择。',
     options: vectors.map((v, i) => ({
       id: ids[i]!,
       text: vector(k.goals, v),
       feedbackIfSelected:
         i === 0
           ? `这些判断与完整推演一致。${calculation}`
-          : i === 1
+          : i === 1 && changedOutcome
             ? '这组选项沿用了变更前的结果。先核对本次改动影响了哪条规则，再决定最终判断是否需要变化。'
-            : '这组选项把部分条件的变化直接当作全部判断的变化。先分开核对每条依赖，下一小步会帮助你定位。',
+            : '这组判断与给定规则的推演不一致。分别核对每个目标；输入改变时，最终结果也可能保持不变。',
       misconception:
         i === 0
           ? null
           : {
               hypothesis:
-                i === 1 ? '沿用变更前的结果。' : '只更新部分条件，没有把影响传到最终判断。',
+                i === 1 && changedOutcome ? '沿用变更前的结果。' : '没有按给定规则核对每个目标。',
               whyTempting:
-                i === 1
+                i === 1 && changedOutcome
                   ? `初始状态确实得到${vector(k.goals, before)}，容易在更新后仍沿用。`
-                  : '个别输入保持不变，容易误以为所有判断也不变。',
-              correction: `先应用${state(k.guided.changes)}，再逐层重算受影响的规则。保留未受影响的数据，但不要因此沿用整个旧结论。`,
+                  : '只检查一个条件或凭印象判断，容易漏掉其他规则。',
+              correction: `先核对本次输入（${changeText}），再按顺序计算每个目标。结果是否改变，要由规则的计算确定。`,
             },
     })),
     correctOptionId: 'A',
-    correctDebrief: `从输入到中间结果，再到最终判断：${calculation}`,
+    correctDebrief: `按给定输入依次核对规则：${calculation}`,
   };
   const intervention = (scene: TeachingKernel['retry'], rs: KernelRule[], goals: string[]) => {
     const win = interventionWinner(rs, goals, scene);
@@ -134,6 +147,18 @@ export function compileTeachingKernel(
     const actual = scene.choices.map((c) =>
       kernelOutcomes(rs, kernelPatch(scene.base, c.changes), goals),
     );
+    // A changed target is a valid counterfactual only if its alternative is
+    // uniquely supported. Two losing configurations may share that outcome.
+    const contrast =
+      actual.filter((v) => outcomeKey(v) === outcomeKey(actual[other]!)).length === 1
+        ? {
+            evidenceContrast: {
+              evidence: target,
+              replacement: `目标要求：${vector(goals, actual[other]!)}`,
+              alternativeOptionId: ids[other]!,
+            },
+          }
+        : {};
     const options = scene.choices.map((c, i) => ({
       id: ids[i]!,
       text: `${c.label}（${state(c.changes) || '保持输入不变'}）`,
@@ -143,11 +168,7 @@ export function compileTeachingKernel(
       reasoningOperation: 'choose_design' as const,
       requiredInference: `比较干预结果，选择${scene.choices[win]!.label}以满足${vector(goals, scene.desired)}`,
       decisiveCondition: target,
-      evidenceContrast: {
-        evidence: target,
-        replacement: `目标要求：${vector(goals, actual[other]!)}`,
-        alternativeOptionId: ids[other]!,
-      },
+      ...contrast,
       prompt: `${scene.context}\n初始输入：${state(scene.base)}。${target}。比较下列三种假设改动，哪一种会得到这组结果？`,
       options,
       correctOptionId: ids[win]!,
@@ -164,34 +185,44 @@ export function compileTeachingKernel(
   const intermediate = evaluateKernel(k.rules, final)[first.key]!;
   const previous = evaluateKernel(k.rules, k.guided.base)[first.key]!;
   const wrong =
-    JSON.stringify(intermediate) !== JSON.stringify(previous)
+    kernelValueKey(intermediate) !== kernelValueKey(previous)
       ? previous
       : typeof intermediate === 'boolean'
         ? !intermediate
         : typeof intermediate === 'number'
-          ? intermediate + 1
+          ? intermediate === 0
+            ? 1
+            : -intermediate
           : Array.isArray(intermediate)
-            ? ['未沿依赖计算']
-            : '尚未计算';
+            ? [...intermediate, `${intermediate.join('')}（模型外元素）`]
+            : `${intermediate}（未按规则核对）`;
+  const scaffoldAnswers = [intermediate, wrong].map((v) => `本步结果：${value(v)}`);
+  // The schema trims text and the public buttons render plain text with collapsed
+  // whitespace. Internal type inequality alone cannot prove a usable choice pair.
+  if (
+    kernelValueKey(intermediate) === kernelValueKey(wrong) ||
+    new Set(scaffoldAnswers.map(literalTeachingText)).size !== 2
+  )
+    throw Error('Cannot construct semantically and visibly distinct scaffold answers.');
   const scaffold = {
     reasoningOperation: 'predict_outcome' as const,
-    requiredInference: `计算${first.label}作为下一层规则的输入。`,
-    decisiveCondition: state(k.guided.changes),
-    prompt: `先只做一小步：应用变更后，按“${equation(first)}”计算，中间结果是什么？`,
+    requiredInference: `计算${first.label}，核对本题的一步。`,
+    decisiveCondition: changeText,
+    prompt: `先只做一小步：应用变更后，按“${equation(first)}”计算，本步结果是什么？`,
     options: [
       {
         id: 'A',
-        text: `中间结果：${value(intermediate)}`,
-        feedbackIfSelected: `这一步把输入转换成${first.label}，后续判断仍要继续推导。`,
+        text: scaffoldAnswers[0]!,
+        feedbackIfSelected: `这一步按给定规则得到${first.label}；全题还需核对其他规则。`,
       },
       {
         id: 'B',
-        text: `中间结果：${value(wrong)}`,
+        text: scaffoldAnswers[1]!,
         feedbackIfSelected: `按${equation(first)}重算，结果为${value(intermediate)}。`,
       },
     ],
     correctOptionId: 'A',
-    debrief: `中间结果：${value(intermediate)}。这还不是整题结论，需要带入后续规则。`,
+    debrief: `本步结果：${value(intermediate)}。全题的判断按列出的全部规则核对。`,
   };
   const wp = {
     startingState: k.guided.context,
@@ -209,19 +240,20 @@ export function compileTeachingKernel(
       },
       {
         action: '执行变更并重算全部依赖',
-        reason: '最终判断取决于更新后的中间结果，不能直接沿用旧结论。',
+        reason: '按当前输入核对全部依赖；输入改变也可能保持最终判断不变。',
         resultingState: calculation,
       },
     ],
     learnerDecision: guided.prompt,
     result: vector(k.goals, expected),
-    whyResultFollows: `这些判断都沿同一机制从输入推到结果。先更新输入，再按依赖逐层计算，才能区分“原来的规则已足够”和“还受到新增条件约束”。如果直接记住上一个答案，就会错过边界变化。`,
+    whyResultFollows:
+      '每个判断均按列出的规则从当前输入逐层计算。补充规则是否影响本题判断，需要结合其实际依赖核对，不能仅凭新增条件就断言结果必然改变。',
     sourceRefs: [],
     interaction: {
       pauseAfterStepIndex: 0,
       sourceRefs: [],
       activity: guided,
-      hint: '先标出变更影响的输入，沿规则追到两个最终判断；分别核对，避免只算其中一条。',
+      hint: '先标出当前输入，按规则核对每个目标；输入变化是否改变结果，需要分别计算。',
       scaffold,
       transfer: {
         changedCondition: `${k.transfer.boundaryRule}\n新增规则：${rules(k.transfer.extraRules)}`,
@@ -244,6 +276,12 @@ export function compileTeachingKernel(
       )
       .join('；');
   const evidence = `实验记录：${observations(k.diagnosis.actual)}`;
+  const sufficientProbe = k.diagnosis.probes.findIndex(
+    (_, i) =>
+      signatures.filter(
+        (v) => outcomeKey(v[i]!) === outcomeKey(signatures[k.diagnosis.actual]![i]!),
+      ).length === 1,
+  );
   const diag = {
     prompt: `${k.diagnosis.context}\n已存档的基准配置：${state(k.diagnosis.base)}。下列三个候选配置中恰有一个与实际一致；按各候选列出的改动更新基准，未列出的输入保持基准值。每次实验都从同一实际配置重新开始。${evidence}。哪个候选能同时解释两次实验？`,
     options: k.diagnosis.hypotheses.map((h, i) => ({
@@ -252,10 +290,10 @@ export function compileTeachingKernel(
       feedbackIfSelected: `若采用该假设，两次实验应为：${observations(i)}。${i === k.diagnosis.actual ? '与两次记录均一致。' : '至少一次记录不符，故可排除此假设。'}`,
     })),
     correctOptionRef: ids[k.diagnosis.actual]!,
-    hint: '把每个假设分别代入两次实验。能解释一次并不足够，两次都相符才保留。',
-    explanation: `三种假设的观测组合各不相同；${k.diagnosis.hypotheses[k.diagnosis.actual]!.label}与两次记录都一致。在限定的三个假设内可确定它，不能据此排除模型外所有可能。`,
+    hint: '把候选的预测与实验记录逐项核对；保留与给出的全部记录一致的候选。',
+    explanation: `三种假设的观测组合各不相同；${k.diagnosis.hypotheses[k.diagnosis.actual]!.label}与两次记录都一致。${sufficientProbe >= 0 ? `${k.diagnosis.probes[sufficientProbe]!.label}的记录单独已能确定本题候选，另一记录也与它一致。` : '任一记录单独仍有多个候选，合并两次记录才可确定本题候选。'}在限定的三个假设内可确定它，不能据此排除模型外所有可能。`,
     reasoningOperation: 'diagnose_cause' as const,
-    requiredInference: `用两次实验区分假设，确定${k.diagnosis.hypotheses[k.diagnosis.actual]!.label}。`,
+    requiredInference: `核对实验记录，确定${k.diagnosis.hypotheses[k.diagnosis.actual]!.label}。`,
     decisiveCondition: '两个实验的联合结果区分所有给定假设。',
     evidenceContrast: {
       evidence,
@@ -294,7 +332,7 @@ export function compileTeachingKernel(
           ...retrySurface,
           options: retry.options.map(({ id, ...o }) => ({ ...o, optionRef: id })),
           correctOptionRef: retryCorrect,
-          hint: '分别应用每个方案，再按规则计算两个目标；不要凭方案名称猜测。',
+          hint: '分别应用每个方案，再按规则计算所有目标；不要凭方案名称猜测。',
           explanation: retryDebrief,
         },
       })),

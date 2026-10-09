@@ -84,6 +84,18 @@ export type KernelValue = z.infer<typeof ValueSchema>;
 export type KernelState = Record<string, KernelValue>;
 export type KernelRule = z.infer<typeof RuleSchema>;
 
+/** Compiled dependencies, unlike accepted Lessons, must follow the current compiler. */
+export const COMPUTED_TEACHING_GENERATION_VERSION = 'teaching-kernel-v3-public-choices';
+
+export const kernelValueKey = (value: KernelValue) =>
+  JSON.stringify(Array.isArray(value) ? [...new Set(value)].sort() : value);
+export const kernelStateKey = (state: KernelState) =>
+  JSON.stringify(
+    Object.keys(state)
+      .sort()
+      .map((key) => [key, kernelValueKey(state[key]!)]),
+  );
+
 function numbers(args: KernelValue[]) {
   if (!args.every((v) => typeof v === 'number')) throw Error('Numeric rule needs numeric inputs.');
   return args as number[];
@@ -169,6 +181,8 @@ export function evaluateKernel(rules: KernelRule[], state: KernelState): KernelS
         values[rule.key] = a[0] ? a[1]! : a[2]!;
         break;
     }
+    if (typeof values[rule.key] === 'number' && !Number.isFinite(values[rule.key]))
+      throw Error(`Rule ${rule.key} must produce a finite number.`);
   }
   return values;
 }
@@ -178,19 +192,26 @@ export function kernelOutcomes(
   goals: string[],
 ): boolean[] {
   const values = evaluateKernel(rules, state);
+  if (new Set(goals).size !== goals.length) throw Error('Computed goals must be unique.');
   return goals.map((key) => {
-    if (typeof values[key] !== 'boolean') throw Error(`Goal ${key} must be a computed boolean.`);
+    if (!rules.some((rule) => rule.key === key) || typeof values[key] !== 'boolean')
+      throw Error(`Goal ${key} must be a computed boolean.`);
     return values[key] as boolean;
   });
 }
 export function kernelPatch(state: KernelState, changes: KernelState): KernelState {
-  if (Object.keys(changes).some((key) => !(key in state)))
+  if (Object.keys(changes).some((key) => !Object.hasOwn(state, key)))
     throw Error('An intervention may change only declared inputs.');
   return { ...state, ...changes };
 }
 export const outcomeKey = (v: boolean[]) => v.map((x) => (x ? '1' : '0')).join('');
-/** Author proposals supply scenarios; local authoring chooses distinct observable interventions. */
-export function buildTeachingCases(proposal: TeachingKernel): TeachingKernel {
+/** Prefer varied cases within the existing bounded pool; answer uniqueness is mandatory. */
+export function buildTeachingCases(
+  proposal: TeachingKernel,
+  diagnosisStates?: KernelState[],
+): TeachingKernel {
+  if (diagnosisStates && diagnosisStates.length > 4096)
+    throw Error('Use at most 4096 enumerated input configurations.');
   const kernel = structuredClone(proposal);
   const offeredValues = new Map<string, Map<string, KernelValue>>();
   for (const state of [
@@ -203,23 +224,24 @@ export function buildTeachingCases(proposal: TeachingKernel): TeachingKernel {
     ...kernel.retry.choices.map((c) => c.changes),
     ...kernel.diagnosis.hypotheses.map((c) => c.changes),
     ...kernel.diagnosis.probes.map((c) => c.changes),
+    ...(diagnosisStates ?? []),
   ])
     for (const [key, value] of Object.entries(state)) {
       const values = offeredValues.get(key) ?? new Map<string, KernelValue>();
-      values.set(JSON.stringify(value), value);
+      values.set(kernelValueKey(value), value);
       offeredValues.set(key, values);
     }
-  const distinctChoices = (
-    scene: TeachingKernel['retry'],
-    rules: KernelRule[],
-    goals: string[],
-  ) => {
+  const selectChoices = (scene: TeachingKernel['retry'], rules: KernelRule[], goals: string[]) => {
+    const result = (choice: TeachingKernel['retry']['choices'][number]) =>
+      outcomeKey(kernelOutcomes(rules, kernelPatch(scene.base, choice.changes), goals));
+    // A valid proposal already owns its requested target and concrete choices.
+    if (scene.choices.filter((c) => result(c) === outcomeKey(scene.desired)).length === 1) return;
     const choices = [
       ...scene.choices,
       { label: '保持当前配置', changes: {} },
       ...Object.keys(scene.base).flatMap((key) =>
         [...(offeredValues.get(key)?.values() ?? [])]
-          .filter((value) => JSON.stringify(value) !== JSON.stringify(scene.base[key]))
+          .filter((value) => kernelValueKey(value) !== kernelValueKey(scene.base[key]!))
           .map((value) => ({
             label: `调整${kernel.inputs.find((i) => i.key === key)?.label ?? kernel.transfer.extraInputs.find((i) => i.key === key)?.label}`,
             changes: { [key]: value },
@@ -228,99 +250,31 @@ export function buildTeachingCases(proposal: TeachingKernel): TeachingKernel {
     ];
     const atomic = choices.filter((c) => Object.keys(c.changes).length === 1).slice(0, 48);
     for (let i = 0; i < atomic.length; i++)
-      for (let j = i + 1; j < atomic.length; j++) {
-        const a = atomic[i]!,
-          b = atomic[j]!;
-        if (Object.keys(a.changes)[0] !== Object.keys(b.changes)[0])
-          choices.push({ label: '同时调整两个输入', changes: { ...a.changes, ...b.changes } });
-      }
-    const seen = new Map<string, (typeof choices)[number]>();
-    const isNewBoundary =
-      rules.length > kernel.rules.length && goals.length === kernel.goals.length;
-    const differs = (choice: (typeof choices)[number], result: string) =>
-      isNewBoundary &&
-      outcomeKey(
-        kernelOutcomes(kernel.rules, kernelPatch(scene.base, choice.changes), kernel.goals),
-      ) !== result;
-    for (const choice of choices) {
-      const key = outcomeKey(kernelOutcomes(rules, kernelPatch(scene.base, choice.changes), goals));
-      const current = seen.get(key);
-      if (!current || (!differs(current, key) && differs(choice, key))) seen.set(key, choice);
-    }
-    const distinct = [...seen.values()];
-    if (distinct.length >= 3) scene.choices = distinct.slice(0, 3);
+      for (let j = i + 1; j < atomic.length; j++)
+        if (Object.keys(atomic[i]!.changes)[0] !== Object.keys(atomic[j]!.changes)[0])
+          choices.push({
+            label: '同时调整两个输入',
+            changes: { ...atomic[i]!.changes, ...atomic[j]!.changes },
+          });
+    const configs = new Map<string, (typeof choices)[number]>();
+    for (const choice of choices)
+      configs.set(kernelStateKey(kernelPatch(scene.base, choice.changes)), choice);
+    const winner = [...configs.values()].find((c) => result(c) === outcomeKey(scene.desired));
+    const losers = [...configs.values()].filter((c) => result(c) !== outcomeKey(scene.desired));
+    if (!winner || losers.length < 2) return; // Final validation reports the material failure.
+    const different = losers.find((c) => result(c) !== result(losers[0]!));
+    scene.choices = [winner, losers[0]!, different ?? losers[1]!];
   };
-  distinctChoices(
+  selectChoices(
     kernel.transfer,
     [...kernel.rules, ...kernel.transfer.extraRules],
     kernel.transfer.goals,
   );
-  if (kernel.goals.length === kernel.transfer.goals.length) {
-    const original = kernel.transfer.choices.map((c) =>
-      outcomeKey(
-        kernelOutcomes(kernel.rules, kernelPatch(kernel.transfer.base, c.changes), kernel.goals),
-      ),
-    );
-    const extended = kernel.transfer.choices.map((c) =>
-      kernelOutcomes(
-        [...kernel.rules, ...kernel.transfer.extraRules],
-        kernelPatch(kernel.transfer.base, c.changes),
-        kernel.transfer.goals,
-      ),
-    );
-    const strong = extended.find((v, index) => {
-      const matching = original.flatMap((o, i) => (o === outcomeKey(v) ? [i] : []));
-      return matching.length !== 1 || matching[0] !== index;
-    });
-    const oldMatches = original.flatMap((o, i) =>
-      o === outcomeKey(kernel.transfer.desired) ? [i] : [],
-    );
-    const winner = extended.findIndex((v) => outcomeKey(v) === outcomeKey(kernel.transfer.desired));
-    if (strong && (winner < 0 || (oldMatches.length === 1 && oldMatches[0] === winner))) {
-      kernel.transfer.desired = strong;
-      kernel.transfer.context =
-        '在原机制上叠加一个明确的额外约束。比较备选配置，判断原有条件与新增限制如何共同决定结果。';
-    }
-  }
-  distinctChoices(kernel.retry, kernel.rules, kernel.goals);
-  const retryBase = {
-    ...kernel.retry.base,
-    ...Object.fromEntries(
-      kernel.transfer.extraInputs.map((i) => [i.key, kernel.transfer.base[i.key]!]),
-    ),
-  };
-  const extendedRetry: TeachingKernel['retry'] = {
-    ...kernel.retry,
-    base: retryBase,
-    useTransferRules: true,
-    context:
-      '现在比较另一组配置。沿用下列额外约束，预测各项改动后哪些操作仍可执行；原有规则与新增限制都必须满足。',
-  };
-  const retryRules = [...kernel.rules, ...kernel.transfer.extraRules];
-  distinctChoices(extendedRetry, retryRules, kernel.transfer.goals);
-  const retryOutcomes = extendedRetry.choices.map((c) =>
-    kernelOutcomes(retryRules, kernelPatch(extendedRetry.base, c.changes), kernel.transfer.goals),
+  selectChoices(
+    kernel.retry,
+    kernel.retry.useTransferRules ? [...kernel.rules, ...kernel.transfer.extraRules] : kernel.rules,
+    kernel.retry.useTransferRules ? kernel.transfer.goals : kernel.goals,
   );
-  const retryOld = extendedRetry.choices.map((c) =>
-    outcomeKey(
-      kernelOutcomes(kernel.rules, kernelPatch(extendedRetry.base, c.changes), kernel.goals),
-    ),
-  );
-  const newTarget = retryOutcomes.find((v, i) => {
-    const oldMatches = retryOld.flatMap((o, j) => (o === outcomeKey(v) ? [j] : []));
-    return (
-      (oldMatches.length !== 1 || oldMatches[0] !== i) &&
-      outcomeKey(v) !== outcomeKey(kernel.transfer.desired)
-    );
-  });
-  if (
-    newTarget &&
-    new Set(retryOutcomes.map(outcomeKey)).size === 3 &&
-    JSON.stringify(extendedRetry.base) !== JSON.stringify(kernel.transfer.base)
-  ) {
-    extendedRetry.desired = newTarget;
-    kernel.retry = extendedRetry;
-  }
   const probes = [
     ...kernel.diagnosis.probes.map((p) => p.changes),
     {},
@@ -332,46 +286,73 @@ export function buildTeachingCases(proposal: TeachingKernel): TeachingKernel {
       )
       .slice(0, 64),
   ];
-  const usable = probes
-    .flatMap((changes) =>
-      [kernel.goals, ...kernel.goals.map((goal) => [goal])].map((observe) => ({
-        changes,
-        observe,
-        results: kernel.diagnosis.hypotheses.map((h) =>
-          outcomeKey(
-            kernelOutcomes(
-              kernel.rules,
-              kernelPatch(kernelPatch(kernel.diagnosis.base, h.changes), changes),
-              observe,
-            ),
-          ),
-        ),
-      })),
-    )
-    .filter((p) => new Set(p.results).size === 2);
+  // Blueprint derivation may choose from its already enumerated configurations.
+  // Direct proposals keep their three named hypotheses.
+  const candidates =
+    diagnosisStates ??
+    kernel.diagnosis.hypotheses.map((h) => kernelPatch(kernel.diagnosis.base, h.changes));
+  const tested = probes.flatMap((changes) =>
+    [kernel.goals, ...kernel.goals.map((goal) => [goal])].map((observe) => ({
+      changes,
+      observe,
+      results: candidates.map((state) =>
+        outcomeKey(kernelOutcomes(kernel.rules, kernelPatch(state, changes), observe)),
+      ),
+    })),
+  );
+  const usable = [
+    ...new Map(
+      tested
+        .filter((probe) => new Set(probe.results).size >= 2)
+        .map((probe) => [JSON.stringify(probe.results), probe]),
+    ).values(),
+  ];
+  type Selection = {
+    first: (typeof usable)[number];
+    second: (typeof usable)[number];
+    indexes: number[];
+    actual: number;
+  };
+  let fallback: Selection | undefined;
+  let preferred: Selection | undefined;
   outer: for (let i = 0; i < usable.length; i++)
     for (let j = i + 1; j < usable.length; j++) {
-      if (
-        new Set(
-          kernel.diagnosis.hypotheses.map(
-            (_, h) => `${usable[i]!.results[h]}|${usable[j]!.results[h]}`,
-          ),
-        ).size === 3
-      ) {
-        kernel.diagnosis.probes = [
-          { label: '独立实验一', changes: usable[i]!.changes, observe: usable[i]!.observe },
-          { label: '独立实验二', changes: usable[j]!.changes, observe: usable[j]!.observe },
-        ];
-        const demandingCase = kernel.diagnosis.hypotheses.findIndex((_, h) =>
-          [usable[i]!, usable[j]!].every(
-            (probe) => probe.results.filter((result) => result === probe.results[h]).length >= 2,
-          ),
-        );
-        if (demandingCase < 0) continue;
-        kernel.diagnosis.actual = demandingCase;
+      const first = usable[i]!,
+        second = usable[j]!;
+      const signatures = new Map<string, number>();
+      for (let h = 0; h < candidates.length && signatures.size < 3; h++)
+        signatures.set(`${first.results[h]}|${second.results[h]}`, h);
+      if (signatures.size !== 3) continue;
+      const indexes = [...signatures.values()];
+      const actual = indexes.findIndex((h) =>
+        [first, second].every(
+          (probe) => indexes.filter((n) => probe.results[n] === probe.results[h]).length >= 2,
+        ),
+      );
+      const selection = { first, second, indexes, actual: actual < 0 ? 0 : actual };
+      fallback ??= selection;
+      if (actual >= 0) {
+        preferred = selection;
         break outer;
       }
     }
+  const selected = preferred ?? fallback;
+  if (selected) {
+    if (diagnosisStates)
+      kernel.diagnosis.hypotheses = selected.indexes.map((h, i) => ({
+        label: `候选配置${['甲', '乙', '丙'][i]}`,
+        changes: Object.fromEntries(
+          Object.entries(candidates[h]!).filter(
+            ([key, value]) => kernelValueKey(value) !== kernelValueKey(kernel.diagnosis.base[key]!),
+          ),
+        ),
+      }));
+    kernel.diagnosis.probes = [
+      { label: '独立实验一', changes: selected.first.changes, observe: selected.first.observe },
+      { label: '独立实验二', changes: selected.second.changes, observe: selected.second.observe },
+    ];
+    kernel.diagnosis.actual = selected.actual;
+  }
   return kernel;
 }
 export function interventionWinner(
@@ -382,8 +363,8 @@ export function interventionWinner(
   const outcomes = scene.choices.map((choice) =>
     outcomeKey(kernelOutcomes(rules, kernelPatch(scene.base, choice.changes), goals)),
   );
-  if (new Set(outcomes).size !== 3)
-    throw Error('The three interventions must produce distinct outcome vectors.');
+  if (scene.desired.length !== goals.length)
+    throw Error('Desired outcomes must cover exactly the computed goals.');
   const matches = outcomes.flatMap((outcome, i) =>
     outcome === outcomeKey(scene.desired) ? [i] : [],
   );
@@ -413,93 +394,39 @@ export function validateKernel(raw: unknown) {
   try {
     const k = parsed.data;
     const inputs = k.inputs.map((i) => i.key);
+    const extendedInputs = [...inputs, ...k.transfer.extraInputs.map((i) => i.key)];
     if (
-      new Set(inputs).size !== inputs.length ||
+      new Set(extendedInputs).size !== extendedInputs.length ||
       new Set(k.inputs.map((i) => i.label)).size !== inputs.length
     )
       throw Error('Input keys and labels must be unique.');
     const checkState = (state: KernelState, keys = inputs) => {
-      if (Object.keys(state).length !== keys.length || keys.some((key) => !(key in state)))
+      if (
+        Object.keys(state).length !== keys.length ||
+        keys.some((key) => !Object.hasOwn(state, key))
+      )
         throw Error('Every case base must have exactly all declared inputs.');
     };
     checkState(k.guided.base);
     checkState(k.diagnosis.base);
-    checkState(
-      k.retry.base,
-      k.retry.useTransferRules ? [...inputs, ...k.transfer.extraInputs.map((i) => i.key)] : inputs,
-    );
-    checkState(k.transfer.base, [...inputs, ...k.transfer.extraInputs.map((i) => i.key)]);
-    const leaves = new Map(inputs.map((key) => [key, new Set([key])]));
-    const ancestors = new Map<string, Set<string>>();
-    for (const rule of k.rules) {
-      ancestors.set(
-        rule.key,
-        new Set(rule.args.flatMap((key) => [key, ...(ancestors.get(key) ?? [])])),
-      );
-      leaves.set(rule.key, new Set(rule.args.flatMap((key) => [...(leaves.get(key) ?? [])])));
-    }
-    if (k.goals.some((key) => (leaves.get(key)?.size ?? 0) < 2))
-      throw Error(
-        'Each goal must compare/combine at least two inputs, not copy a supplied boolean.',
-      );
-    if (
-      k.goals.some((goal) =>
-        k.goals.some((other) => other !== goal && ancestors.get(other)?.has(goal)),
-      )
-    )
-      throw Error(
-        'Goals must be independent final consequences, not an intermediate condition alongside its own resulting outcome. Use two concrete operations or task subgoals.',
-      );
-    const before = kernelOutcomes(k.rules, k.guided.base, k.goals);
-    const after = kernelOutcomes(k.rules, kernelPatch(k.guided.base, k.guided.changes), k.goals);
-    if (outcomeKey(before) === outcomeKey(after))
-      throw Error('Guided changes must change at least one outcome.');
+    checkState(k.retry.base, k.retry.useTransferRules ? extendedInputs : inputs);
+    checkState(k.transfer.base, extendedInputs);
+    kernelOutcomes(k.rules, k.guided.base, k.goals);
+    kernelOutcomes(k.rules, kernelPatch(k.guided.base, k.guided.changes), k.goals);
     interventionWinner(
       k.retry.useTransferRules ? [...k.rules, ...k.transfer.extraRules] : k.rules,
       k.retry.useTransferRules ? k.transfer.goals : k.goals,
       k.retry,
     );
-    if (JSON.stringify(k.retry.base) === JSON.stringify(k.guided.base))
-      throw Error(
-        'Retry must use a new input configuration, not the guided starting state with the same old conclusion.',
-      );
     const extended = [...k.rules, ...k.transfer.extraRules];
-    if (!k.transfer.goals.some((key) => k.transfer.extraRules.some((r) => r.key === key)))
-      throw Error('Transfer must use a new governing rule.');
-    const transferWinner = interventionWinner(extended, k.transfer.goals, k.transfer);
-    if (k.transfer.goals.length === k.goals.length) {
-      const oldWinners = k.transfer.choices.flatMap((choice, i) =>
-        outcomeKey(
-          kernelOutcomes(k.rules, kernelPatch(k.transfer.base, choice.changes), k.goals),
-        ) === outcomeKey(k.transfer.desired)
-          ? [i]
-          : [],
-      );
-      if (oldWinners.length === 1 && oldWinners[0] === transferWinner)
-        throw Error(
-          'Transfer must defeat mechanical reuse: ignoring the new rule currently yields the same unique winning choice. Change the boundary case.',
-        );
-    }
+    kernelOutcomes(extended, k.transfer.base, k.transfer.goals);
+    interventionWinner(extended, k.transfer.goals, k.transfer);
+    for (const hypothesis of k.diagnosis.hypotheses)
+      kernelOutcomes(k.rules, kernelPatch(k.diagnosis.base, hypothesis.changes), k.goals);
     const signatures = diagnosisSignatures(k).map((v) => v.map(outcomeKey).join('|'));
     if (new Set(signatures).size !== 3)
       throw Error(
         'The two probes must distinguish all three hypotheses; change the data/probes rather than claiming an unsupported unique cause.',
-      );
-    const observations = diagnosisSignatures(k);
-    if ([0, 1].some((i) => new Set(observations.map((v) => outcomeKey(v[i]!))).size === 3))
-      throw Error(
-        'Each experiment alone must leave at least two hypotheses possible; only their combined observations should distinguish all three. Do not directly report the hidden input as a goal.',
-      );
-    if (
-      [0, 1].some(
-        (i) =>
-          observations.filter(
-            (v) => outcomeKey(v[i]!) === outcomeKey(observations[k.diagnosis.actual]![i]!),
-          ).length < 2,
-      )
-    )
-      throw Error(
-        'The actual hidden case must remain ambiguous after either experiment alone, so the learner needs both records.',
       );
     return { valid: true, diagnostics: [], diagnosticCodes: [] };
   } catch (error) {

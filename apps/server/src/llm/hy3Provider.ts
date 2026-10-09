@@ -1113,8 +1113,10 @@ export class Hy3Provider implements LlmProvider {
           timeoutMs: opts?.timeoutMs ?? Math.max(this.config.timeoutMs, 180_000),
           validateCandidate: (candidate) => {
             let kernel;
+            let capsule;
             try {
               kernel = deriveTeachingKernel(TeachingBlueprintSchema.parse(candidate));
+              capsule = compileTeachingKernel(kernel, input);
             } catch (error) {
               return {
                 valid: false,
@@ -1124,7 +1126,6 @@ export class Hy3Provider implements LlmProvider {
             }
             const valid = validateKernel(kernel);
             if (!valid.valid) return valid;
-            const capsule = compileTeachingKernel(kernel, input);
             const shape = TeachingCapsulePayloadSchema.safeParse(capsule);
             if (!shape.success)
               return {
@@ -1140,7 +1141,7 @@ export class Hy3Provider implements LlmProvider {
             return opts?.validateCandidate?.(capsule) ?? valid;
           },
         },
-        'Repair the small rule graph or input value ranges using the diagnostics. Do not emit Lesson, Practice, cases, or answer keys. All dependencies must be declared and the independent outcomes must vary across the input ranges.',
+        'Repair the small rule graph or input value ranges using the diagnostics. Do not emit Lesson, Practice, cases, or answer keys. Declare every dependency. The fixed tasks need one target winner among three configurations and three distinguishable combined diagnosis signatures. Outcome variety, independent goals, changed results and two necessary probes are preferences, not correctness requirements.',
         {
           maxTokens: 16_000,
           schemaName: 'teaching-blueprint-v1',

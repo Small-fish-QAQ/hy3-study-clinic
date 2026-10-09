@@ -20,6 +20,14 @@ import { compileTeachingKernel } from '../services/compileTeachingKernel.js';
 import { validateTeachingCapsule } from './teachingCapsule.js';
 import { deriveTeachingKernel } from './teachingBlueprint.js';
 import { verifyPreparedPractice } from '../services/teachingContentReview.js';
+import {
+  thresholdBlueprint,
+  verificationKernel,
+  kernelCapsuleInput,
+  valueDisplayBlueprint,
+  transferReplayBlueprint,
+  noDistinctRetryBlueprint,
+} from '../testing/teachingKernelFixture.js';
 
 export function kernelFixture(): TeachingKernel {
   const base = { role: ['read'], second: ['write'], read: 'read', write: 'write' };
@@ -96,6 +104,282 @@ export function kernelFixture(): TeachingKernel {
   });
 }
 describe('executable teaching cases', () => {
+  it.each(['number_string', 'singleton_empty'] as const)(
+    'keeps Astra %s scaffold answers distinct in the compiled public capsule',
+    (kind) => {
+      const k = deriveTeachingKernel(valueDisplayBlueprint(kind));
+      expect(validateKernel(k).valid).toBe(true);
+      const capsule = TeachingCapsulePayloadSchema.parse(
+        compileTeachingKernel(k, kernelCapsuleInput()),
+      );
+      expect(validateTeachingCapsule(capsule, kernelCapsuleInput()).valid).toBe(true);
+      const process = capsule.lesson.slots.find((s) => s.workedProcess)!.workedProcess!;
+      const choices = process.interaction!.scaffold.options.map(({ text }) =>
+        text.normalize('NFC').replace(/\s+/gu, ' ').trim(),
+      );
+      expect(choices).toHaveLength(2);
+      expect(new Set(choices).size).toBe(2);
+      expect(choices).toEqual(
+        kind === 'number_string'
+          ? ['本步结果：1', '本步结果："1"']
+          : ['本步结果：{"空集"}', '本步结果：{}'],
+      );
+      expect(process.interaction!.scaffold.correctOptionId).toBe('A');
+      expect(process.steps[0]!.resultingState).toContain(
+        kind === 'number_string' ? '数值常量=1；文字常量="1"' : '单成员集合={"空集"}；空集合={}',
+      );
+      expect(process.steps[1]!.resultingState).toContain(
+        kind === 'number_string' ? '选取值=1' : '选取值={"空集"}',
+      );
+      expect(process.interaction!.scaffold.options[1]!.feedbackIfSelected).toContain(
+        choices[0]!.slice('本步结果：'.length),
+      );
+    },
+  );
+  it.each(['number_string', 'singleton_empty'] as const)(
+    'preserves truthful Astra %s no-op guidance with one displayed scaffold answer',
+    (kind) => {
+      const k = deriveTeachingKernel(valueDisplayBlueprint(kind));
+      k.guided.base = { ...k.guided.base, ...k.guided.changes };
+      k.guided.changes = {};
+      const capsule = TeachingCapsulePayloadSchema.parse(
+        compileTeachingKernel(k, kernelCapsuleInput()),
+      );
+      const interaction = capsule.lesson.slots.find((s) => s.workedProcess)!.workedProcess!
+        .interaction!;
+      expect(new Set(interaction.scaffold.options.map(({ text }) => text)).size).toBe(2);
+      expect(interaction.activity.evidenceContrast).toBeUndefined();
+      expect(interaction.activity.options[0]!.misconception).toBeNull();
+      expect(interaction.activity.options[1]!.feedbackIfSelected).not.toContain('沿用了变更前');
+    },
+  );
+  it('keeps a singleton containing an element delimiter distinct from two separate set members', () => {
+    const b = valueDisplayBlueprint('singleton_empty');
+    b.inputs[1]!.values = [['甲、乙']];
+    b.inputs[2]!.values = [['甲', '乙']];
+    const capsule = compileTeachingKernel(deriveTeachingKernel(b), kernelCapsuleInput());
+    expect(
+      capsule.lesson.slots
+        .find((s) => s.workedProcess)!
+        .workedProcess!.interaction!.scaffold.options.map(({ text }) => text),
+    ).toEqual(['本步结果：{"甲、乙"}', '本步结果：{"甲", "乙"}']);
+  });
+  it.each(['Unicode normalization', 'collapsed whitespace'] as const)(
+    'retains material failure if distinct values collide after %s on the public scaffold',
+    (kind) => {
+      const b = valueDisplayBlueprint('number_string');
+      b.inputs[1]!.values = [kind === 'Unicode normalization' ? 'é' : 'a  b'];
+      b.inputs[2]!.values = [kind === 'Unicode normalization' ? 'e\u0301' : 'a b'];
+      const k = deriveTeachingKernel(b);
+      expect(validateKernel(k).valid).toBe(true);
+      expect(() => compileTeachingKernel(k, kernelCapsuleInput())).toThrow(
+        'visibly distinct scaffold',
+      );
+    },
+  );
+  it('constructs a genuinely different same-base retry for the Astra fixed-target mechanism', () => {
+    const k = deriveTeachingKernel(transferReplayBlueprint());
+    expect(validateKernel(k).valid).toBe(true);
+    expect(k.retry.base).toEqual(k.transfer.base);
+    const publicConfigurations = (scene: typeof k.retry) =>
+      scene.choices
+        .map(({ changes }) => ({ ...scene.base, ...changes }))
+        .map(({ a, b }) => JSON.stringify([a, b]))
+        .sort();
+    expect(k.retry.desired).toEqual(k.transfer.desired);
+    expect(publicConfigurations(k.retry)).not.toEqual(publicConfigurations(k.transfer));
+    for (const scene of [k.transfer, k.retry]) {
+      const results = scene.choices.map(({ changes }) => {
+        const state = { ...scene.base, ...changes };
+        return [Boolean(state.a && state.b), !state.constant];
+      });
+      expect(
+        results.filter((r) => JSON.stringify(r) === JSON.stringify(scene.desired)),
+      ).toHaveLength(1);
+    }
+    const capsule = compileTeachingKernel(k, kernelCapsuleInput());
+    const transfer = capsule.lesson.slots.find((s) => s.workedProcess)!.workedProcess!.interaction!
+      .transfer;
+    expect(capsule.practice.items[0]!.retry.options.map(({ text }) => text).sort()).not.toEqual(
+      transfer.options.map(({ text }) => text).sort(),
+    );
+  });
+  it('fails honestly when the finite decision configurations cannot supply a non-replaying retry', () => {
+    expect(() => deriveTeachingKernel(noDistinctRetryBlueprint())).toThrow('distinct retry');
+  });
+  it('compiles verification into three distinct judgments with truthful keys, feedback and probe guidance', () => {
+    const input = kernelCapsuleInput();
+    const capsule = compileTeachingKernel(verificationKernel(), input);
+    expect(validateTeachingCapsule(capsule, input).valid).toBe(true);
+    const process = capsule.lesson.slots.find((s) => s.workedProcess)!.workedProcess!;
+    const guided = process.interaction!.activity;
+    // Independently: 1 >= 1 and !false are true, before and after a no-op.
+    expect(guided.options).toHaveLength(3);
+    expect(new Set(guided.options.map((o) => o.text)).size).toBe(3);
+    expect(guided.options.filter((o) => o.text === '允许读取：是；尚未启用：是')).toHaveLength(1);
+    expect(guided.correctOptionId).toBe('A');
+    expect(guided.options[0]!.misconception).toBeNull();
+    expect(guided.evidenceContrast).toBeUndefined();
+    expect(process.steps[0]!.resultingState).toContain('无，保持初始输入');
+    expect(process.steps[1]!.resultingState).toBe('允许读取=是 → 尚未启用=是');
+    expect(process.result).toBe('允许读取：是；尚未启用：是');
+    const item = capsule.practice.items[0]!;
+    expect(item.initial.correctOptionRef).toBe('A');
+    expect(item.retry.correctOptionRef).toBe('C');
+    expect(item.initial.explanation).toContain('单独已能确定');
+    expect(item.initial.hint).not.toContain('能解释一次并不足够');
+    expect(process.whyResultFollows).toContain('结合其实际依赖核对');
+    expect(process.interaction!.transfer.debrief).toContain('只有保留当前配置符合全部目标');
+    expect(process.interaction!.scaffold.options[0]!.text).toBe('本步结果：是');
+    expect(process.interaction!.scaffold.options[1]!.text).toBe('本步结果：否');
+  });
+  it('omits an intervention counterfactual whose changed target would have two correct alternatives', () => {
+    const k = verificationKernel();
+    k.retry.choices[1]!.changes = { x: 0, active: false };
+    k.retry.choices[2]!.changes = { x: 0, active: true };
+    k.retry.desired = [true, true];
+    // Use a coupled pair of goals: both losing configurations now yield false,false.
+    k.rules[1] = { key: 'also_read', label: '另一许可判断', op: 'and', args: ['read_ok'] };
+    k.goals = ['read_ok', 'also_read'];
+    k.transfer.goals = k.goals;
+    k.transfer.choices = structuredClone(k.retry.choices);
+    k.diagnosis.hypotheses = [
+      { label: '值为零阈值为一', changes: { x: 0 } },
+      { label: '值为一阈值为一', changes: {} },
+      { label: '值为二阈值为一', changes: { x: 2 } },
+    ];
+    k.diagnosis.probes = [
+      { label: '阈值设为一', changes: { threshold: 1 } },
+      { label: '阈值设为二', changes: { threshold: 2 } },
+    ];
+    const capsule = compileTeachingKernel(k, kernelCapsuleInput());
+    expect(capsule.practice.items[0]!.retry.evidenceContrast).toBeUndefined();
+    expect(
+      capsule.lesson.slots.find((s) => s.workedProcess)!.workedProcess!.interaction!.transfer
+        .evidenceContrast,
+    ).toBeUndefined();
+    expect(capsule.practice.items[0]!.retry.options[1]!.feedbackIfSelected).toContain(
+      '允许读取：否；另一许可判断：否',
+    );
+    expect(capsule.practice.items[0]!.retry.options[2]!.feedbackIfSelected).toContain(
+      '允许读取：否；另一许可判断：否',
+    );
+  });
+  it.each(['cycle', 'ambiguous'] as const)('refuses to compile %s executable content', (defect) => {
+    const k = verificationKernel();
+    if (defect === 'cycle') k.rules[0]!.args[0] = 'read_ok';
+    else k.diagnosis.hypotheses[1] = structuredClone(k.diagnosis.hypotheses[0]!);
+    expect(() => compileTeachingKernel(k, kernelCapsuleInput())).toThrow();
+  });
+  it('derives three distinct configurations with two reachable outcomes and one target winner', () => {
+    const b = thresholdBlueprint();
+    // Independently specified truth table for the shared threshold rule.
+    for (const [x, threshold, expected] of [
+      [0, 1, false],
+      [1, 1, true],
+      [1, 2, false],
+      [2, 2, true],
+    ] as const)
+      expect(kernelOutcomes(b.rules, { x, threshold, active: true }, b.goals)).toEqual([
+        expected,
+        expected,
+      ]);
+    const k = deriveTeachingKernel(b);
+    expect(validateKernel(k).valid).toBe(true);
+    for (const scene of [k.transfer, k.retry]) {
+      const outcomes = scene.choices.map((c) => {
+        const state = { ...scene.base, ...c.changes };
+        return [
+          Number(state.x) >= Number(state.threshold),
+          Number(state.x) >= Number(state.threshold),
+        ];
+      });
+      expect(new Set(outcomes.map((v) => JSON.stringify(v))).size).toBe(2);
+      expect(
+        outcomes.filter((o) => JSON.stringify(o) === JSON.stringify(scene.desired)),
+      ).toHaveLength(1);
+      expect(
+        new Set(scene.choices.map((c) => JSON.stringify({ ...scene.base, ...c.changes }))).size,
+      ).toBe(3);
+    }
+    expect(new Set(diagnosisSignatures(k).map((v) => JSON.stringify(v))).size).toBe(3);
+  });
+  it('accepts no-op guided work, single-input and dependent goals, same-base tasks and one sufficient probe', () => {
+    const k = verificationKernel();
+    expect(validateKernel(k)).toMatchObject({ valid: true });
+    expect(kernelOutcomes(k.rules, k.guided.base, k.goals)).toEqual([true, true]);
+    expect(interventionWinner(k.rules, k.goals, k.retry)).toBe(2);
+    expect(diagnosisSignatures(k)).toEqual([
+      [
+        [true, true],
+        [true, true],
+      ],
+      [
+        [false, true],
+        [false, true],
+      ],
+      [
+        [true, false],
+        [true, false],
+      ],
+    ]);
+    k.rules.push({
+      key: 'both',
+      label: '两个判断均成立',
+      op: 'and',
+      args: ['read_ok', 'inactive'],
+    });
+    k.goals = ['read_ok', 'both'];
+    k.transfer.goals = k.goals;
+    // Dependent goal values are computed in rule order, never copied from inputs.
+    expect(validateKernel(k).valid).toBe(true);
+  });
+  it.each(['zero', 'multiple'] as const)(
+    'rejects %s target winners with repeated outcome vectors',
+    (kind) => {
+      const k = verificationKernel();
+      if (kind === 'zero') k.retry.desired = [false, false];
+      else k.retry.choices[1]!.changes = { x: 2, active: true };
+      expect(validateKernel(k)).toMatchObject({
+        valid: false,
+        diagnosticCodes: ['teaching_kernel_case_inconsistent'],
+      });
+      expect(() => interventionWinner(k.rules, k.goals, k.retry)).toThrow('Exactly one');
+    },
+  );
+  it.each(['missing', 'cycle', 'raw_input', 'non_boolean', 'mutation', 'ambiguous'] as const)(
+    'retains material rejection for %s computation defects',
+    (kind) => {
+      const k = verificationKernel();
+      if (kind === 'missing') k.rules[0]!.args[0] = 'undeclared';
+      if (kind === 'cycle') k.rules[0]!.args[0] = k.rules[0]!.key;
+      if (kind === 'raw_input') k.goals[1] = 'active';
+      if (kind === 'non_boolean') k.rules[0]!.op = 'add';
+      if (kind === 'mutation') k.guided.changes.undeclared = true;
+      if (kind === 'ambiguous')
+        k.diagnosis.hypotheses[1] = structuredClone(k.diagnosis.hypotheses[0]!);
+      expect(validateKernel(k).valid).toBe(false);
+    },
+  );
+  it('preserves finite computations, the enumeration cap and honest impossibility failure', () => {
+    const b = thresholdBlueprint();
+    b.inputs[0]!.values = [0];
+    b.inputs[1]!.values = [1];
+    expect(() => deriveTeachingKernel(b)).toThrow('three distinct input configurations');
+    const large = thresholdBlueprint();
+    large.inputs = Array.from({ length: 7 }, (_, i) => ({
+      key: `input${i}`,
+      label: `输入${i}`,
+      values: [0, 1, 2, 3],
+    }));
+    expect(() => deriveTeachingKernel(large)).toThrow('4096');
+    expect(() =>
+      evaluateKernel([{ key: 'sum', label: '求和', op: 'add', args: ['a', 'b'] }], {
+        a: 1e308,
+        b: 1e308,
+      }),
+    ).toThrow('finite');
+  });
   it('preserves strict and inclusive numeric boundaries at and around equality', () => {
     const comparisons = TeachingKernelSchema.shape.rules.parse(
       ['lt', 'lte', 'gt', 'gte'].map((op) => ({

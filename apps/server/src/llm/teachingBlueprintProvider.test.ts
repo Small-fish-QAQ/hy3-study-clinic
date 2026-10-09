@@ -5,6 +5,7 @@ import {
   validateTeachingCapsule,
   usesComputedTeachingCases,
   teachingCapsuleMessages,
+  teachingCapsuleGenerationIdentity,
 } from './teachingCapsule.js';
 import { TeachingBlueprintSchema } from './teachingBlueprint.js';
 import { TeachingCapsulePayloadSchema } from '@hy3-clinic/shared';
@@ -12,6 +13,14 @@ import { confineTeachingCitations } from './teachingCitations.js';
 import { compileTeachingKernel } from '../services/compileTeachingKernel.js';
 import { deriveTeachingKernel } from './teachingBlueprint.js';
 import type { TeachingCapsuleGenerationInput } from './provider.js';
+import {
+  thresholdBlueprint,
+  kernelCapsuleInput,
+  valueDisplayBlueprint,
+  transferReplayBlueprint,
+  noDistinctRetryBlueprint,
+} from '../testing/teachingKernelFixture.js';
+import { COMPUTED_TEACHING_GENERATION_VERSION } from './teachingKernel.js';
 
 const blueprint = TeachingBlueprintSchema.parse({
   explanation:
@@ -105,6 +114,126 @@ const response = (content: string, finish_reason = 'stop') =>
     headers: { 'content-type': 'application/json' },
   });
 describe('compact teaching generation', () => {
+  it.each(['number_string', 'singleton_empty', 'fixed_target'] as const)(
+    'admits the fixed Astra %s public cases through the real local-stub callback',
+    async (kind) => {
+      const fixture = kernelCapsuleInput();
+      const mechanism =
+        kind === 'fixed_target' ? transferReplayBlueprint() : valueDisplayBlueprint(kind);
+      const fetchImpl = vi.fn(async () => response(JSON.stringify(mechanism)));
+      const validateCandidate = vi.fn((candidate: unknown) =>
+        validateTeachingCapsule(candidate, fixture),
+      );
+      const provider = new Hy3Provider({
+        baseUrl: 'https://example.test/v1',
+        apiKey: 'test-key',
+        model: 'test-model',
+        timeoutMs: 30_000,
+        fetchImpl,
+      });
+      const capsule = await provider.generateTeachingCapsule(fixture, { validateCandidate });
+      expect(fetchImpl).toHaveBeenCalledOnce();
+      expect(validateCandidate).toHaveBeenCalledOnce();
+      const interaction = capsule.lesson.slots.find((s) => s.workedProcess)!.workedProcess!
+        .interaction!;
+      if (kind === 'fixed_target')
+        expect(capsule.practice.items[0]!.retry.options.map(({ text }) => text).sort()).not.toEqual(
+          interaction.transfer.options.map(({ text }) => text).sort(),
+        );
+      else
+        expect(interaction.scaffold.options.map(({ text }) => text)).toEqual(
+          kind === 'number_string'
+            ? ['本步结果：1', '本步结果："1"']
+            : ['本步结果：{"空集"}', '本步结果：{}'],
+        );
+    },
+  );
+  it.each(['public normalization collision', 'no distinct retry'] as const)(
+    'uses the existing bounded material failure for Astra %s',
+    async (kind) => {
+      const fixture = kernelCapsuleInput();
+      const mechanism =
+        kind === 'no distinct retry'
+          ? noDistinctRetryBlueprint()
+          : valueDisplayBlueprint('number_string');
+      if (kind === 'public normalization collision') {
+        mechanism.inputs[1]!.values = ['é'];
+        mechanism.inputs[2]!.values = ['e\u0301'];
+      }
+      const fetchImpl = vi.fn(async () => response(JSON.stringify(mechanism)));
+      const provider = new Hy3Provider({
+        baseUrl: 'https://example.test/v1',
+        apiKey: 'test-key',
+        model: 'test-model',
+        timeoutMs: 30_000,
+        fetchImpl,
+      });
+      await expect(
+        provider.generateTeachingCapsule(fixture, {
+          validateCandidate: (candidate) => validateTeachingCapsule(candidate, fixture),
+        }),
+      ).rejects.toMatchObject({
+        technicalFailureCode: 'REPAIR_EXHAUSTED:SEMANTIC_VALIDATION_FAILURE',
+      });
+      expect(fetchImpl).toHaveBeenCalledTimes(2);
+    },
+  );
+  it('accepts a faithful two-outcome mechanism through the real provider callback in one local stub request', async () => {
+    const fixture = kernelCapsuleInput();
+    const mechanism = thresholdBlueprint();
+    const fetchImpl = vi.fn(async () => response(JSON.stringify(mechanism)));
+    const provider = new Hy3Provider({
+      baseUrl: 'https://example.test/v1',
+      apiKey: 'test-key',
+      model: 'test-model',
+      timeoutMs: 30_000,
+      fetchImpl,
+    });
+    const capsule = await provider.generateTeachingCapsule(fixture, {
+      validateCandidate: (c) => validateTeachingCapsule(c, fixture),
+    });
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(validateTeachingCapsule(capsule, fixture).valid).toBe(true);
+    const retry = capsule.practice.items[0]!.retry;
+    expect(
+      retry.options.filter((o) => o.feedbackIfSelected.includes('。同时满足全部目标。')),
+    ).toHaveLength(1);
+    expect(retry.evidenceContrast).toBeUndefined();
+  });
+  it.each(['invalid dependency', 'impossible target'] as const)(
+    'retains bounded provider rejection for %s',
+    async (defect) => {
+      const fixture = kernelCapsuleInput();
+      const mechanism = thresholdBlueprint();
+      if (defect === 'invalid dependency') mechanism.rules[0]!.args[0] = 'missing';
+      else mechanism.inputs[0]!.values = [0, -1, -2];
+      const fetchImpl = vi.fn(async () => response(JSON.stringify(mechanism)));
+      const provider = new Hy3Provider({
+        baseUrl: 'https://example.test/v1',
+        apiKey: 'test-key',
+        model: 'test-model',
+        timeoutMs: 30_000,
+        fetchImpl,
+      });
+      await expect(
+        provider.generateTeachingCapsule(fixture, {
+          validateCandidate: (c) => validateTeachingCapsule(c, fixture),
+        }),
+      ).rejects.toMatchObject({
+        technicalFailureCode: 'REPAIR_EXHAUSTED:SEMANTIC_VALIDATION_FAILURE',
+      });
+      expect(fetchImpl).toHaveBeenCalledTimes(2);
+    },
+  );
+  it('versions compiled dependencies without changing authored inputs or accepted-Lesson policies', () => {
+    const fixture = kernelCapsuleInput();
+    expect(teachingCapsuleGenerationIdentity(fixture)).toMatchObject({
+      computedGenerationVersion: COMPUTED_TEACHING_GENERATION_VERSION,
+    });
+    expect(fixture).not.toHaveProperty('computedGenerationVersion');
+    fixture.authoringStrategy = 'authored';
+    expect(teachingCapsuleGenerationIdentity(fixture)).toBe(fixture);
+  });
   it('offers the required worked process in a later capsule even when the shared interaction owner is earlier', () => {
     const fixture = input();
     fixture.authoringStrategy = 'authored';

@@ -19,6 +19,8 @@ import {
   type TeachingBriefInformalCheck,
   type TeachingContentReview,
   type LessonPedagogyEvaluation,
+  type TeachingCapsulePayload,
+  type PracticePriorTeaching,
 } from '@hy3-clinic/shared';
 import { openDatabase, type SqliteDb } from '../db/database.js';
 import { migrate } from '../db/migrate.js';
@@ -32,6 +34,15 @@ import {
   createFakeLessonChangedTransfer,
 } from '../llm/fakeLessonFixtures.js';
 import { confineTeachingCitations } from '../llm/teachingCitations.js';
+import {
+  verificationKernel,
+  thresholdBlueprint,
+  valueDisplayBlueprint,
+  transferReplayBlueprint,
+} from '../testing/teachingKernelFixture.js';
+import { compileTeachingKernel } from './compileTeachingKernel.js';
+import { deriveTeachingKernel } from '../llm/teachingBlueprint.js';
+import { COMPUTED_TEACHING_GENERATION_VERSION } from '../llm/teachingKernel.js';
 import { ProviderError } from '../llm/errors.js';
 import type {
   LessonSlotContentGenerationInput,
@@ -1677,6 +1688,352 @@ async function ordinaryLessonHarness() {
   return harness;
 }
 
+type KernelDefect =
+  | 'none'
+  | 'false_transition'
+  | 'duplicate_choices'
+  | 'false_extension'
+  | 'false_feedback'
+  | 'wrong_key'
+  | 'wrong_diagnosis_key'
+  | 'missing_givens'
+  | 'unsupported_contrast'
+  | 'replay'
+  | 'leak'
+  | 'context_drift';
+
+type ComputedFixtureMode =
+  'verification' | 'two_outcomes' | 'number_string' | 'singleton_empty' | 'fixed_target';
+
+/** Finite, independently checked fixture registry. Unknown or altered complete
+ * claims fail; the public solver never reads the candidate's private key. */
+async function computedKernelHarness(
+  defect: KernelDefect | 'scaffold_collision' | 'transfer_replay' = 'none',
+  mode: ComputedFixtureMode = 'verification',
+) {
+  const harness = await createHarness();
+  Object.defineProperty(harness.provider, 'name', { value: 'hy3' });
+  const knownSlots = new Map<string, TeachingCapsulePayload['lesson']['slots'][number]>();
+  const knownItems = new Map<string, TeachingCapsulePayload['practice']['items'][number]>();
+  let knownNarrative: TeachingCapsulePayload['lesson']['narrative'];
+  const knownAnswers = new Map<string, { initial: string; retry: string }>();
+  let capsuleCalls = 0;
+  const purposes: string[] = [];
+  Object.assign(harness.provider, {
+    generateTeachingCapsule: async (
+      input: TeachingCapsuleGenerationInput,
+      opts?: ProviderCallOptions,
+    ) => {
+      opts?.onRequestSent?.();
+      capsuleCalls++;
+      const k =
+        mode === 'verification'
+          ? verificationKernel()
+          : deriveTeachingKernel(
+              mode === 'two_outcomes'
+                ? thresholdBlueprint()
+                : mode === 'fixed_target'
+                  ? transferReplayBlueprint()
+                  : valueDisplayBlueprint(mode),
+            );
+      const capsule = compileTeachingKernel(k, input);
+      // A finite oracle independent of the interpreter and compiler: both fixture
+      // models use the explicitly specified threshold comparison; verification
+      // also observes !active. No candidate-authored answer supplies this oracle.
+      const labels = new Map(k.rules.map((r) => [r.key, r.label]));
+      const outcomes = (state: Record<string, unknown>, goals = k.goals) =>
+        goals.map((goal) =>
+          mode === 'fixed_target'
+            ? goal === 'allowed'
+              ? Boolean(state.a && state.b)
+              : !state.constant
+            : mode === 'number_string' || mode === 'singleton_empty'
+              ? goal === 'same'
+                ? Boolean(state.flag)
+                : Boolean(state.flag && state.enabled)
+              : goal === 'inactive'
+                ? !state.active
+                : Number(state.x) >= Number(state.threshold),
+        );
+      const vector = (values: boolean[], goals = k.goals) =>
+        goals.map((g, i) => `${labels.get(g)}：${values[i] ? '是' : '否'}`).join('；');
+      const finalState = { ...k.guided.base, ...k.guided.changes };
+      const trace = k.rules
+        .map((r) => {
+          const picked = finalState.flag ? finalState.num : finalState.txt;
+          const display =
+            r.key !== 'picked'
+              ? outcomes(finalState, [r.key])[0]
+                ? '是'
+                : '否'
+              : Array.isArray(picked)
+                ? `{${picked.map((v) => JSON.stringify(v)).join(', ')}}`
+                : typeof picked === 'string'
+                  ? JSON.stringify(picked)
+                  : String(picked);
+          return `${r.label}=${display}`;
+        })
+        .join(' → ');
+      const signatures = k.diagnosis.hypotheses.map((h) =>
+        k.diagnosis.probes.map((probe) =>
+          outcomes(
+            { ...k.diagnosis.base, ...h.changes, ...probe.changes },
+            probe.observe ?? k.goals,
+          ),
+        ),
+      );
+      const diagnosisMatches = signatures.flatMap((values, i) =>
+        JSON.stringify(values) === JSON.stringify(signatures[k.diagnosis.actual]) ? [i] : [],
+      );
+      expect(diagnosisMatches).toHaveLength(1);
+      const interventionAnswer = (scene: typeof k.retry) => {
+        const matches = scene.choices.flatMap((c, i) =>
+          JSON.stringify(outcomes({ ...scene.base, ...c.changes })) ===
+          JSON.stringify(scene.desired)
+            ? [i]
+            : [],
+        );
+        expect(matches).toHaveLength(1);
+        return ['A', 'B', 'C'][matches[0]!]!;
+      };
+      for (const slot of capsule.lesson.slots) {
+        if (slot.workedProcess) {
+          expect(slot.workedProcess.result).toBe(vector(outcomes(finalState)));
+          expect(slot.workedProcess.steps[1]!.resultingState).toBe(trace);
+          expect(slot.workedProcess.interaction!.activity.options[0]!.text).toBe(
+            vector(outcomes(finalState)),
+          );
+          expect(
+            new Set(slot.workedProcess.interaction!.activity.options.map((o) => o.text)).size,
+          ).toBe(3);
+          if (mode === 'number_string' || mode === 'singleton_empty') {
+            expect(
+              slot.workedProcess.interaction!.scaffold.options.map(({ text }) => text),
+            ).toEqual(
+              mode === 'number_string'
+                ? ['本步结果：1', '本步结果："1"']
+                : ['本步结果：{"空集"}', '本步结果：{}'],
+            );
+            expect(slot.workedProcess.interaction!.scaffold.correctOptionId).toBe('A');
+          }
+          expect(slot.workedProcess.interaction!.transfer.correctOptionId).toBe(
+            interventionAnswer(k.transfer),
+          );
+          for (const [i, option] of slot.workedProcess.interaction!.transfer.options.entries())
+            expect(option.feedbackIfSelected).toContain(
+              vector(outcomes({ ...k.transfer.base, ...k.transfer.choices[i]!.changes })),
+            );
+        }
+        knownSlots.set(slot.slotId, structuredClone(slot));
+      }
+      if (capsule.lesson.narrative) knownNarrative = structuredClone(capsule.lesson.narrative);
+      for (const item of capsule.practice.items) {
+        const initialAnswer = ['A', 'B', 'C'][diagnosisMatches[0]!]!;
+        expect(item.initial.correctOptionRef).toBe(initialAnswer);
+        for (const [probeIndex, probe] of k.diagnosis.probes.entries()) {
+          const goals = probe.observe ?? k.goals;
+          expect(item.initial.prompt).toContain(
+            `→${vector(signatures[k.diagnosis.actual]![probeIndex]!, goals)}`,
+          );
+          for (const [i, option] of item.initial.options.entries())
+            expect(option.feedbackIfSelected).toContain(
+              `→${vector(signatures[i]![probeIndex]!, goals)}`,
+            );
+        }
+        const retryAnswer = interventionAnswer(k.retry);
+        expect(item.retry.correctOptionRef).toBe(retryAnswer);
+        for (const [i, option] of item.retry.options.entries())
+          expect(option.feedbackIfSelected).toContain(
+            vector(outcomes({ ...k.retry.base, ...k.retry.choices[i]!.changes })),
+          );
+        knownItems.set(item.practiceSlotId, structuredClone(item));
+        knownAnswers.set(item.practiceSlotId, { initial: initialAnswer, retry: retryAnswer });
+      }
+      const process = capsule.lesson.slots.find((s) => s.workedProcess)?.workedProcess;
+      if (process && defect === 'false_transition')
+        process.steps[1]!.resultingState = '允许读取=否 → 尚未启用=是';
+      if (process && defect === 'duplicate_choices')
+        process.interaction!.activity.options[1]!.text =
+          process.interaction!.activity.options[0]!.text;
+      if (process && defect === 'false_extension')
+        process.interaction!.transfer.debrief += ' 核对总数必然撤销读取许可。';
+      if (process && defect === 'scaffold_collision') {
+        const text = mode === 'number_string' ? '本步结果：1' : '本步结果：{空集}';
+        for (const option of process.interaction!.scaffold.options) option.text = text;
+      }
+      const item = capsule.practice.items[0];
+      if (process && item && defect === 'transfer_replay') {
+        const {
+          changedCondition: _changed,
+          correctOptionId,
+          debrief,
+          options,
+          ...transfer
+        } = process.interaction!.transfer;
+        item.retry = {
+          ...transfer,
+          prompt: `现在请再比较一次。${transfer.prompt}`,
+          options: options.map(({ id, ...option }) => ({ ...option, optionRef: id })),
+          correctOptionRef: correctOptionId,
+          hint: '分别核对给定条件。',
+          explanation: debrief,
+        };
+        // These repeated claims are factually correct. Grounding must not stand
+        // in for the separate integrity judgment about prior public exposure.
+        knownItems.set(item.practiceSlotId, structuredClone(item));
+      }
+      if (item && defect === 'false_feedback')
+        item.retry.options[0]!.feedbackIfSelected += ' 1 >= 1 为否。';
+      if (item && defect === 'wrong_key') item.retry.correctOptionRef = 'A';
+      if (item && defect === 'wrong_diagnosis_key') item.initial.correctOptionRef = 'B';
+      if (item && defect === 'missing_givens')
+        item.initial.prompt = item.initial.prompt.replace(/已存档的基准配置：[^。]+。/u, '');
+      if (item && defect === 'unsupported_contrast')
+        item.retry.evidenceContrast = {
+          evidence: '目标要求：允许读取：是；尚未启用：否',
+          replacement: '目标要求：允许读取：是；尚未启用：否',
+          alternativeOptionId: 'A',
+        };
+      if (item && defect === 'replay') item.retry = structuredClone(item.initial);
+      if (item && defect === 'leak')
+        item.initial.prompt += ` 本题正确答案是${item.initial.options[0]!.text}。`;
+      // Deliberately ignore validateCandidate: service/dependency/final gates must
+      // still refuse defects, and complete grounding must cover computed prose.
+      return capsule;
+    },
+  });
+  harness.provider.reviewTeachingContent = async (input, opts) => {
+    opts?.onRequestSent?.();
+    purposes.push(input.purpose ?? 'other');
+    if (input.purpose === 'lesson_grounding') {
+      const expected = {
+        narrative: knownNarrative,
+        slots: input.candidate.slots.map((s) => knownSlots.get(s.slotId)),
+      };
+      if (defect === 'context_drift')
+        harness.db
+          .prepare('UPDATE concepts SET summary=? WHERE id=?')
+          .run('Changed during grounding.', 'con_1');
+      return {
+        decisions: [],
+        findings:
+          lessonGroundingHash(input.candidate) === lessonGroundingHash(expected)
+            ? []
+            : [
+                {
+                  itemId: input.candidate.slots[0]!.slotId,
+                  code: 'accuracy',
+                  responsibility: 'grounding',
+                  problem:
+                    'The complete candidate contradicts the independently checked finite fixture.',
+                  repairInstruction:
+                    'Restore the verified calculation, choices and supplement claims.',
+                },
+              ],
+      };
+    }
+    if (input.purpose === 'practice_grounding') {
+      const expected = {
+        items: input.candidate.items.map((item) => knownItems.get(item.practiceSlotId)),
+      };
+      // Grounding can verify these conditional calculations from its controlled
+      // complete case, but cannot give the public solver the omitted base.
+      const claims = structuredClone(input.candidate);
+      if (defect === 'missing_givens')
+        for (const item of claims.items)
+          item.initial.prompt = knownItems.get(item.practiceSlotId)!.initial.prompt;
+      return {
+        decisions: [],
+        findings:
+          lessonGroundingHash(claims) === lessonGroundingHash(expected)
+            ? []
+            : [
+                {
+                  itemId: input.candidate.items[0]!.practiceSlotId,
+                  code: 'accuracy',
+                  responsibility: 'grounding',
+                  problem:
+                    'The saved Practice differs from the independently checked keys, feedback or counterfactual.',
+                  repairInstruction: 'Restore the verified complete fixture.',
+                },
+              ],
+      };
+    }
+    if (input.purpose === 'practice_answerability') {
+      const publicText = JSON.stringify(input);
+      expect(publicText).not.toContain('correctOption');
+      expect(publicText).not.toContain('feedbackIfSelected');
+      expect(publicText).not.toContain('evidenceContrast');
+      const [slotId, surface] = input.actionIds[0]!.split('.') as [string, 'initial' | 'retry'];
+      const expected = knownItems.get(slotId)![surface];
+      const completePublicTask =
+        lessonGroundingHash({
+          prompt: input.candidate.prompt,
+          options: input.candidate.options,
+        }) ===
+        lessonGroundingHash({
+          prompt: expected.prompt,
+          options: expected.options.map((o) => ({ id: o.optionRef, text: o.text })),
+        });
+      return {
+        findings: [],
+        decisions: [
+          {
+            actionId: input.actionIds[0]!,
+            answerId: completePublicTask ? knownAnswers.get(slotId)![surface] : null,
+            requiresCaseInference: true,
+            evidenceUsed:
+              'The explicit threshold truth table and candidate configurations are compared with the public observations or target; missing public facts cannot be supplied by the fixture key.',
+          },
+        ],
+      };
+    }
+    if (input.purpose === 'practice_integrity' && defect === 'transfer_replay') {
+      const prior = input.acceptedLesson as PracticePriorTeaching;
+      const taught = prior.segments.find((s) => s.workedProcess?.transfer)!.workedProcess!
+        .transfer!;
+      const candidate = input.candidate as {
+        items: Array<{
+          practiceSlotId: string;
+          retry: {
+            prompt: string;
+            options: Array<{ id: string; text: string }>;
+          };
+        }>;
+      };
+      const retry = candidate.items[0]!.retry;
+      expect(retry.prompt.slice(retry.prompt.indexOf('初始输入：'))).toBe(
+        taught.prompt.slice(taught.prompt.indexOf('初始输入：')),
+      );
+      expect(retry.options.map(({ text }) => text).sort()).toEqual(
+        taught.options.map(({ text }) => text).sort(),
+      );
+      return {
+        decisions: [],
+        findings: [
+          {
+            itemId: `${candidate.items[0]!.practiceSlotId}.retry`,
+            code: 'practice_replay',
+            problem:
+              'The retry repeats the public transfer base, target and offered configurations despite its introductory wording.',
+            repairInstruction: 'Use a substantively different finite decision case.',
+          },
+        ],
+      };
+    }
+    return {
+      findings: [],
+      decisions: input.actionIds.map((actionId) => ({
+        actionId,
+        answerId: 'A',
+        requiresCaseInference: true,
+        evidenceUsed: 'The independently specified 1 >= 1 and !false model determines A.',
+      })),
+    };
+  };
+  return { harness, purposes, knownAnswers, capsuleCalls: () => capsuleCalls };
+}
+
 /** Explicit expectations for adapted test Lessons, outside production Fake's finite registry. */
 function reviewKnownLessonVariant(
   input: LessonGroundingReviewInput,
@@ -1763,6 +2120,326 @@ function reviewMissingAlternativeContents(
 }
 
 describe('Teaching Brief preparation', () => {
+  it.each([
+    'verification',
+    'two_outcomes',
+    'number_string',
+    'singleton_empty',
+    'fixed_target',
+  ] as const)(
+    'persists, reloads, reuses and executes computed %s and its new public tasks',
+    async (mode) => {
+      const { harness, purposes, knownAnswers, capsuleCalls } = await computedKernelHarness(
+        'none',
+        mode,
+      );
+      const route = startTeachingRoute(harness);
+      const request = preparationRequest(harness, route, 'kernel-verification-lifecycle');
+      const prepared = await harness.services.teachingBriefPreparation.prepare(request);
+      const stored = harness.repos.teachingBriefs.get(prepared.brief.id)!;
+      expect(stored).toEqual(prepared.brief);
+      expect(hasCurrentPreparedLesson(stored)).toBe(true);
+      expect(hasCurrentPreparedPractice(stored)).toBe(true);
+      const checkpoint = harness.repos.acceptedLessonCheckpoints.get(
+        stored.composition!.acceptedLessonCheckpointId,
+      )!;
+      expect(isCurrentAcceptedLessonCheckpoint(checkpoint)).toBe(true);
+      expect(purposes).toContain('lesson_grounding');
+      expect(purposes.filter((p) => p === 'practice_answerability')).toHaveLength(2);
+      const count = capsuleCalls();
+      expect(
+        (
+          await harness.services.teachingBriefPreparation.prepare(
+            preparationRequest(harness, route, 'kernel-verification-reuse'),
+          )
+        ).status,
+      ).toBe('reused');
+      const restarted = createServices({
+        repos: createRepositories(harness.db),
+        provider: harness.provider,
+        clock,
+      });
+      let current = await restarted.lessonExecution.ensure('ws_1', route.session.id, {
+        command: command('kernel-bind'),
+        expectedSessionVersion: route.session.version,
+        expectedAgendaVersion: route.agenda.version,
+        expectedAgendaItemId: route.agendaItem.id,
+      });
+      let sequence = 0;
+      const act = async (action: LessonExecutionCommandRequest['action']) => {
+        current = await restarted.lessonExecution.command('ws_1', route.session.id, {
+          command: command(`kernel-action-${++sequence}`),
+          expectedSessionVersion: current.session.version,
+          expectedAgendaVersion: current.agenda!.version,
+          expectedAgendaItemId: route.agendaItem.id,
+          expectedLessonStateVersion: current.progress!.stateVersion,
+          action,
+        });
+      };
+      await act({ kind: 'start_lesson' });
+      for (
+        let step = 0;
+        step < 20 && !current.allowedActions.includes('complete_presentation');
+        step++
+      ) {
+        const index = current.progress!.currentSegmentIndex;
+        const interaction = current.lesson!.segments[index]!.workedProcess?.interaction;
+        if (
+          interaction?.stage === 'guided' &&
+          (mode === 'number_string' || mode === 'singleton_empty')
+        ) {
+          await act({
+            kind: 'respond_to_worked_interaction',
+            segmentIndex: index,
+            phase: 'guided',
+            response: 'B',
+          });
+          const scaffold = current.lesson!.segments[index]!.workedProcess!.interaction!.scaffold!;
+          expect(scaffold.options.map(({ text }) => text)).toEqual(
+            mode === 'number_string'
+              ? ['本步结果：1', '本步结果："1"']
+              : ['本步结果：{"空集"}', '本步结果：{}'],
+          );
+          expect(JSON.stringify(scaffold)).not.toContain('correctOption');
+          await act({
+            kind: 'respond_to_worked_interaction',
+            segmentIndex: index,
+            phase: 'scaffold',
+            response: 'A',
+          });
+          expect(
+            current.lesson!.segments[index]!.workedProcess!.interaction!.scaffold!.correct,
+          ).toBe(true);
+        } else if (interaction?.stage === 'guided' || interaction?.stage === 'transfer') {
+          const phase = interaction.stage;
+          await act({
+            kind: 'respond_to_worked_interaction',
+            segmentIndex: index,
+            phase,
+            response: 'A',
+          });
+          const revealed = current.lesson!.segments[index]!.workedProcess!.interaction!;
+          expect((phase === 'guided' ? revealed.activity : revealed.transfer)!.correct).toBe(true);
+        } else if (current.currentInformalCheck && !current.currentInformalCheck.response)
+          await act({ kind: 'respond_to_informal_check', segmentIndex: index, response: 'A' });
+        else await act({ kind: 'move_to_segment', segmentIndex: index + 1 });
+      }
+      expect(current.allowedActions).toContain('complete_presentation');
+      await act({ kind: 'complete_presentation' });
+      const solved = knownAnswers.values().next().value!.initial;
+      const correctIndex = ['A', 'B', 'C'].indexOf(solved);
+      await act({
+        kind: 'submit_practice_response',
+        itemIndex: 0,
+        optionId: stored.practice!.items[0]!.initial.options[correctIndex]!.id,
+      });
+      expect(current.practice!.attempts[0]).toMatchObject({ correct: true, credit: 'none' });
+      expect(capsuleCalls()).toBe(count);
+      expect(harness.repos.mastery.listByWorkspace('ws_1')).toEqual([]);
+    },
+  );
+  it.each(['number_string', 'singleton_empty', 'fixed_target'] as const)(
+    'refuses Astra %s public defects with callbacks bypassed and no defective persistence',
+    async (mode) => {
+      const defect = mode === 'fixed_target' ? 'transfer_replay' : 'scaffold_collision';
+      const { harness, purposes } = await computedKernelHarness(defect, mode);
+      const route = startTeachingRoute(harness);
+      await expect(
+        harness.services.teachingBriefPreparation.prepare(
+          preparationRequest(harness, route, `astra-bypass-${mode}`),
+        ),
+      ).rejects.toBeDefined();
+      expect(harness.repos.teachingBriefs.listForUnit('ws_1', harness.learningUnitId)).toEqual([]);
+      expect(
+        harness.db.prepare('SELECT count(*) AS n FROM accepted_lesson_checkpoints').get(),
+      ).toEqual({ n: mode === 'fixed_target' ? 1 : 0 });
+      expect(purposes).toContain(
+        mode === 'fixed_target' ? 'practice_integrity' : 'lesson_grounding',
+      );
+    },
+  );
+  it.each([
+    'false_transition',
+    'duplicate_choices',
+    'false_extension',
+    'false_feedback',
+    'wrong_key',
+    'wrong_diagnosis_key',
+    'missing_givens',
+    'unsupported_contrast',
+    'replay',
+    'leak',
+    'context_drift',
+  ] as const)(
+    'refuses computed %s despite ignored callbacks, without persisting a defective Brief',
+    async (defect) => {
+      const { harness, purposes } = await computedKernelHarness(defect);
+      const route = startTeachingRoute(harness);
+      await expect(
+        harness.services.teachingBriefPreparation.prepare(
+          preparationRequest(harness, route, `kernel-defect-${defect}`),
+        ),
+      ).rejects.toBeDefined();
+      expect(harness.repos.teachingBriefs.listForUnit('ws_1', harness.learningUnitId)).toEqual([]);
+      const practiceDefect = [
+        'false_feedback',
+        'wrong_key',
+        'wrong_diagnosis_key',
+        'missing_givens',
+        'unsupported_contrast',
+        'replay',
+      ].includes(defect);
+      expect(
+        harness.db.prepare('SELECT count(*) AS n FROM accepted_lesson_checkpoints').get(),
+      ).toEqual({ n: practiceDefect ? 1 : 0 });
+      if (practiceDefect && defect !== 'replay') expect(purposes).toContain('practice_grounding');
+      if (defect === 'missing_givens')
+        expect(purposes.filter((p) => p === 'practice_answerability')).toHaveLength(2);
+      if (
+        ['false_transition', 'duplicate_choices', 'false_extension', 'context_drift'].includes(
+          defect,
+        )
+      )
+        expect(purposes).toContain('lesson_grounding');
+    },
+  );
+  it.each(['stale_receipt', 'changed_claim', 'source_drift'] as const)(
+    'fences computed %s on reload, completed replay and active execution',
+    async (defect) => {
+      const { harness } = await computedKernelHarness();
+      const route = startTeachingRoute(harness);
+      const request = preparationRequest(harness, route, `kernel-freshness-${defect}`);
+      const prepared = await harness.services.teachingBriefPreparation.prepare(request);
+      await harness.services.lessonExecution.ensure('ws_1', route.session.id, {
+        command: command(`kernel-freshness-bind-${defect}`),
+        expectedSessionVersion: route.session.version,
+        expectedAgendaVersion: route.agenda.version,
+        expectedAgendaItemId: route.agendaItem.id,
+      });
+      const changed = structuredClone(prepared);
+      if (defect === 'stale_receipt')
+        changed.brief.practice!.qualityEvaluation.answerabilityReview!.rounds[0]!.candidateHash = `sha256:${'0'.repeat(64)}`;
+      if (defect === 'changed_claim')
+        changed.brief.practice!.items[0]!.retry.explanation += ' 错误的新增断言。';
+      if (defect === 'source_drift')
+        harness.db
+          .prepare('UPDATE source_blocks SET content=content || ? WHERE id=?')
+          .run(' changed source', 'blk_1');
+      else {
+        harness.db
+          .prepare('UPDATE teaching_briefs SET payload=? WHERE id=?')
+          .run(JSON.stringify(changed.brief), prepared.brief.id);
+        const operation = harness.repos.operations.getByIdempotencyKey(
+          'ws_1',
+          `teaching-brief:${harness.learningUnitId}:${request.commandId}`,
+        )!;
+        harness.db
+          .prepare('UPDATE agent_operation_results SET payload=? WHERE operation_id=?')
+          .run(JSON.stringify(changed), operation.id);
+      }
+      if (defect === 'source_drift')
+        expect(() => harness.services.teachingBriefPreparation.getCurrent(request)).toThrow(
+          'stale',
+        );
+      else expect(harness.services.teachingBriefPreparation.getCurrent(request)).toBeNull();
+      await expect(
+        harness.services.teachingBriefPreparation.prepare(request),
+      ).rejects.toBeDefined();
+      if (defect === 'source_drift')
+        expect(() => harness.services.lessonExecution.get('ws_1', route.session.id)).toThrow(
+          'stale',
+        );
+      else expect(harness.services.lessonExecution.get('ws_1', route.session.id).lesson).toBeNull();
+    },
+  );
+  it.each(['current', 'old compiler'] as const)(
+    'resumes interrupted computed generation with %s dependency identity',
+    async (version) => {
+      const { harness, capsuleCalls } = await computedKernelHarness();
+      const route = startTeachingRoute(harness);
+      const review = harness.provider.reviewTeachingContent.bind(harness.provider);
+      harness.provider.reviewTeachingContent = async (input, opts) => {
+        if (input.purpose === 'lesson_grounding') throw ProviderError.network();
+        return review(input, opts);
+      };
+      const original = generationStages.runRecoverableGenerationStage;
+      type Stage = Parameters<typeof original>[0];
+      const completed: Stage[] = [];
+      const spy = vi
+        .spyOn(generationStages, 'runRecoverableGenerationStage')
+        .mockImplementation(async (stage) => {
+          const result = await original(stage);
+          if (stage.schemaFingerprint === 'teaching-capsule-v1') completed.push(stage);
+          return result;
+        });
+      const oldKeys: string[] = [];
+      try {
+        await expect(
+          harness.services.teachingBriefPreparation.prepare(
+            preparationRequest(harness, route, `kernel-interrupt-${version}`),
+          ),
+        ).rejects.toBeDefined();
+        expect(completed.length).toBeGreaterThan(0);
+        expect(
+          harness.db.prepare('SELECT count(*) AS n FROM accepted_lesson_checkpoints').get(),
+        ).toEqual({ n: 0 });
+        for (const stage of completed) {
+          const input = structuredClone(stage.stageIdentity) as { input: Record<string, unknown> };
+          expect(input.input.computedGenerationVersion).toBe(COMPUTED_TEACHING_GENERATION_VERSION);
+          if (version === 'current') continue;
+          delete input.input.computedGenerationVersion;
+          const event = harness.repos.operations
+            .listEvents(stage.operationId)
+            .find(
+              (e) =>
+                e.kind === 'generation_stage_completed' &&
+                (e.payload as { logicalCallId?: string }).logicalCallId === stage.logicalCallId,
+            )!;
+          const currentKey = (event.payload as { cacheKey: string }).cacheKey;
+          const cached = harness.repos.telemetry.peekCache(currentKey)!;
+          const fingerprint = createHash('sha256')
+            .update(
+              JSON.stringify({
+                version: 'generation-stage-v1',
+                workspaceId: stage.workspaceId,
+                studySessionId: stage.studySessionId,
+                learningUnitId: stage.learningUnitId,
+                assessmentId: stage.assessmentId,
+                operationType: stage.operationType,
+                schemaFingerprint: stage.schemaFingerprint,
+                sourceFingerprint: stage.sourceFingerprint,
+                provider: stage.provider.name,
+                model: stage.providerModel,
+                input,
+              }),
+            )
+            .digest('hex');
+          const cacheKey = `generation-stage-v1:${fingerprint}`;
+          expect(cacheKey).not.toBe(currentKey);
+          harness.db
+            .prepare('DELETE FROM semantic_cache_entries WHERE cache_key=?')
+            .run(currentKey);
+          harness.repos.telemetry.putCache({
+            ...cached,
+            cacheKey,
+            validationFingerprint: fingerprint,
+          });
+          oldKeys.push(cacheKey);
+        }
+      } finally {
+        spy.mockRestore();
+      }
+      const before = capsuleCalls();
+      harness.provider.reviewTeachingContent = review;
+      const resumed = await harness.services.teachingBriefPreparation.prepare(
+        preparationRequest(harness, route, `kernel-resume-${version}`),
+      );
+      expect(hasCurrentPreparedLesson(resumed.brief)).toBe(true);
+      expect(hasCurrentPreparedPractice(resumed.brief)).toBe(true);
+      expect(capsuleCalls()).toBe(version === 'current' ? before : before * 2);
+      for (const key of oldKeys) expect(harness.repos.telemetry.peekCache(key)!.hitCount).toBe(0);
+    },
+  );
   it('persists, reads, reuses and executes a current Brief with its complete review receipts', async () => {
     const harness = await createHarness(0, 'pass', 'apply', 'pass_oriented');
     Object.defineProperty(harness.provider, 'name', { value: 'hy3' });

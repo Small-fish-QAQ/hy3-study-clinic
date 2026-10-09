@@ -1,10 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
-import { TeachingBriefInformalCheckSchema } from '@hy3-clinic/shared';
+import { TeachingBriefInformalCheckSchema, TeachingCapsulePayloadSchema } from '@hy3-clinic/shared';
 import { openDatabase, type SqliteDb } from '../db/database.js';
 import { migrate } from '../db/migrate.js';
 import { FakeProvider } from '../llm/fakeProvider.js';
 import { ProviderError } from '../llm/errors.js';
+import { kernelCapsuleInput, valueDisplayBlueprint } from '../testing/teachingKernelFixture.js';
+import {
+  teachingCapsuleGenerationIdentity,
+  validateTeachingCapsule,
+} from '../llm/teachingCapsule.js';
+import { deriveTeachingKernel } from '../llm/teachingBlueprint.js';
+import { compileTeachingKernel } from './compileTeachingKernel.js';
 import type { ProviderCallOptions } from '../llm/provider.js';
 import { createRepositories, type Repositories } from '../repositories/index.js';
 import { makeWorkspace, T0 } from '../testing/fixtures.js';
@@ -24,7 +31,7 @@ let db: SqliteDb;
 let repos: Repositories;
 const clock = fixedClock(T0);
 const schema = z.object({ units: z.array(z.string()).length(1) }).strict();
-const generate = vi.fn(async (_input: unknown, opts?: ProviderCallOptions) => {
+const generate = vi.fn(async (_input: unknown, opts?: ProviderCallOptions): Promise<unknown> => {
   opts?.onRequestSent?.();
   return { units: ['one'] };
 });
@@ -77,6 +84,68 @@ beforeEach(() => {
 afterEach(() => db.close());
 
 describe('recoverable generation dependencies', () => {
+  it('cannot reuse the schema-valid ambiguous capsule cached by the pre-Astra v2 compiler', async () => {
+    const input = kernelCapsuleInput();
+    const fixed = compileTeachingKernel(
+      deriveTeachingKernel(valueDisplayBlueprint('number_string')),
+      input,
+    );
+    const old = structuredClone(fixed);
+    for (const slot of old.lesson.slots)
+      if (slot.workedProcess) {
+        slot.workedProcess.interaction!.scaffold.options[1]!.text =
+          slot.workedProcess.interaction!.scaffold.options[0]!.text;
+      }
+    // The existing schema/capsule gate admits these bytes. Neither cached kernels
+    // nor a recompilation step exist, so unchanged v2 identity would reuse them.
+    expect(validateTeachingCapsule(old, input).valid).toBe(true);
+    generate.mockResolvedValueOnce(old).mockResolvedValueOnce(fixed);
+    const capsuleStage = (id: string, identity: unknown) => ({
+      ...stage(id, identity),
+      schemaFingerprint: 'teaching-capsule-v1',
+      validateResult: (raw: unknown) => {
+        expect(validateTeachingCapsule(raw, input).valid).toBe(true);
+        return TeachingCapsulePayloadSchema.parse(raw);
+      },
+    });
+    await runRecoverableGenerationStage(
+      capsuleStage('pre-astra', {
+        ...input,
+        computedGenerationVersion: 'teaching-kernel-v2-correctness',
+      }),
+    );
+    const result = await runRecoverableGenerationStage(
+      capsuleStage('fixed-astra', teachingCapsuleGenerationIdentity(input)),
+    );
+    expect(repos.telemetry.getLogicalCall('call-fixed-astra')!.cacheStatus).not.toBe('hit');
+    expect(result).toEqual(TeachingCapsulePayloadSchema.parse(fixed));
+    await runRecoverableGenerationStage(
+      capsuleStage('fixed-astra-reuse', teachingCapsuleGenerationIdentity(input)),
+    );
+    expect(repos.telemetry.getLogicalCall('call-fixed-astra-reuse')!.cacheStatus).toBe('hit');
+    expect(generate).toHaveBeenCalledTimes(2);
+  });
+  it('cannot reuse a pre-compiler computed dependency but still reuses unrelated authored dependencies', async () => {
+    const input = kernelCapsuleInput();
+    await runRecoverableGenerationStage(stage('old-compiler', input));
+    const historical = repos.telemetry.getLogicalCall('call-old-compiler');
+    await runRecoverableGenerationStage(
+      stage('current-compiler', teachingCapsuleGenerationIdentity(input)),
+    );
+    expect(repos.telemetry.getLogicalCall('call-current-compiler')!.cacheStatus).not.toBe('hit');
+    await runRecoverableGenerationStage(
+      stage('current-compiler-reuse', teachingCapsuleGenerationIdentity(input)),
+    );
+    expect(repos.telemetry.getLogicalCall('call-current-compiler-reuse')!.cacheStatus).toBe('hit');
+    input.authoringStrategy = 'authored';
+    await runRecoverableGenerationStage(stage('old-authored', input));
+    await runRecoverableGenerationStage(
+      stage('current-authored', teachingCapsuleGenerationIdentity(input)),
+    );
+    expect(repos.telemetry.getLogicalCall('call-current-authored')!.cacheStatus).toBe('hit');
+    expect(repos.telemetry.getLogicalCall('call-old-compiler')).toEqual(historical);
+    expect(generate).toHaveBeenCalledTimes(3);
+  });
   it.each(['missing_choices', 'hidden_key'] as const)(
     'revalidates a schema-readable cached Lesson with %s and only reuses its valid successor',
     async (defect) => {
@@ -162,7 +231,7 @@ describe('recoverable generation dependencies', () => {
     });
     for (const id of ['ambiguous-lesson', 'ambiguous-replay']) {
       const generated = await runRecoverableGenerationStage(current(id));
-      expect(lessonChoiceNeedsMaterialReview(generated.slots)).toBe(true);
+      expect(lessonChoiceNeedsMaterialReview(lessonSchema.parse(generated).slots)).toBe(true);
     }
     expect(repos.telemetry.getLogicalCall('call-ambiguous-replay')?.cacheStatus).toBe('hit');
     expect(generate).toHaveBeenCalledOnce();

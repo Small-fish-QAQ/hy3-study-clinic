@@ -100,7 +100,11 @@ import {
   practiceReviewQualityFindings,
 } from './teachingContentReview.js';
 import { capsuleInputs, assembleCapsules } from './teachingCapsules.js';
-import { validateTeachingCapsule, usesComputedTeachingCases } from '../llm/teachingCapsule.js';
+import {
+  validateTeachingCapsule,
+  usesComputedTeachingCases,
+  teachingCapsuleGenerationIdentity,
+} from '../llm/teachingCapsule.js';
 import { confineTeachingCitations } from '../llm/teachingCitations.js';
 import {
   assertPreparedLessonGrounding,
@@ -1589,7 +1593,7 @@ export function createTeachingBriefPreparationService({
                     validateTeachingCapsule(candidate, capsuleInput),
                 }),
               {
-                identity: capsuleInput,
+                identity: teachingCapsuleGenerationIdentity(capsuleInput),
                 practiceBoundary: capsuleInput.practiceSlots.length > 0,
                 validateResult: (raw) => {
                   const result = confineTeachingCitations(
@@ -1827,7 +1831,7 @@ export function createTeachingBriefPreparationService({
                         validateCandidate: (c) => validateTeachingCapsule(c, part),
                       }),
                     {
-                      identity: part,
+                      identity: teachingCapsuleGenerationIdentity(part),
                       validateResult: (raw) => {
                         const result = confineTeachingCitations(
                           TeachingCapsulePayloadSchema.parse(raw),

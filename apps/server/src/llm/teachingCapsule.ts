@@ -9,6 +9,7 @@ import {
 } from './preparationRecovery.js';
 import type { TeachingCapsuleGenerationInput, ProviderCandidateNormalization } from './provider.js';
 import { lessonSlotContentMessages, practiceContentMessages, type ChatMessage } from './prompts.js';
+import { COMPUTED_TEACHING_GENERATION_VERSION } from './teachingKernel.js';
 
 /** Working-fluency cases are finite predictions/diagnoses. Higher depth keeps
  * its richer open authoring contract rather than silently inheriting this floor. */
@@ -20,6 +21,14 @@ export function usesComputedTeachingCases(input: TeachingCapsuleGenerationInput)
     input.lesson.skeleton.lessonSlots.some((s) => s.learnerActionRequired) &&
     input.lesson.skeleton.lessonSlots.every((s) => s.authorityMode !== 'advisory_visual')
   );
+}
+
+/** Cache entries hold compiled capsules. Keep this compiler identity out of
+ * unrelated authored dependencies and already accepted Lesson identities. */
+export function teachingCapsuleGenerationIdentity(input: TeachingCapsuleGenerationInput) {
+  return usesComputedTeachingCases(input)
+    ? { ...input, computedGenerationVersion: COMPUTED_TEACHING_GENERATION_VERSION }
+    : input;
 }
 
 export function teachingCapsuleMessages(input: TeachingCapsuleGenerationInput): ChatMessage[] {
