@@ -413,6 +413,107 @@ describe('calibrated cognitive teaching contract', () => {
     ).toBe(false);
   });
 
+  it.each([
+    'delayed_guided',
+    'opening',
+    'scaffold_hint',
+    'transfer_hint',
+    'transfer_feedback',
+    'transfer_continuation',
+    'final_rationale',
+  ] as const)(
+    'uses real response ordering for %s in the existing material review and exhaustion path',
+    async (surface) => {
+      const f = await fixture();
+      const guidedResult = '乙应等待甲归还配额。';
+      const scaffoldResult = '3-2=1，缺口为一个配额。';
+      const transferResult = '新的截止案例应让备用处理器接收乙。';
+      if (surface === 'delayed_guided') f.interaction.hint = guidedResult;
+      if (surface === 'opening') f.lesson.narrative!.whyNow = guidedResult;
+      if (surface === 'scaffold_hint') f.interaction.hint = scaffoldResult;
+      if (surface === 'transfer_hint') f.interaction.hint = transferResult;
+      if (surface === 'transfer_feedback')
+        f.interaction.activity.options[1]!.feedbackIfSelected = transferResult;
+      if (surface === 'transfer_continuation') f.process.steps[1]!.reason = transferResult;
+      if (surface === 'final_rationale') f.process.whyResultFollows = transferResult;
+      const revise = vi.fn(async (draft: typeof f.lesson) => draft);
+      let reviews = 0;
+      const review = async (prepared: ReturnType<typeof prepareTeachingReview>) => {
+        reviews += 1;
+        // This finite oracle uses the actual public quota fixture (4-2=2<3,
+        // 3-2=1, spare 3 fits the deadline task), never authored keys/labels.
+        const publicLesson = prepared.input.candidate as {
+          responseContexts: Array<{
+            actionId: string;
+            visibleBefore: string[];
+            conditionalBefore: Array<{ texts: string[] }>;
+            prompt: string;
+          }>;
+        };
+        const response = (name: string) =>
+          publicLesson.responseContexts.find(
+            ({ actionId }) => actionId === `${f.worked.slotId}.${name}`,
+          )!;
+        const guided = response('guided');
+        const scaffold = response('scaffold');
+        const transfer = response('transfer');
+        expect(guided.visibleBefore.join('\n')).toContain('空闲配额为2');
+        expect(transfer.visibleBefore.join('\n')).toContain('空闲容量3');
+        expect(scaffold.prompt).toContain('相差多少');
+        expect(guided.visibleBefore).not.toContain(f.process.result);
+        expect(transfer.visibleBefore).not.toContain(f.process.whyResultFollows);
+        expect(JSON.stringify(guided)).not.toContain(f.interaction.activity.correctDebrief);
+        const laterTransferExposure = [
+          ...transfer.visibleBefore,
+          ...transfer.conditionalBefore.flatMap(({ texts }) => texts),
+        ];
+        const witness = guided.visibleBefore.includes(guidedResult)
+          ? guidedResult
+          : scaffold.visibleBefore.includes(scaffoldResult)
+            ? scaffoldResult
+            : laterTransferExposure.includes(transferResult)
+              ? transferResult
+              : undefined;
+        const result: TeachingContentReview = {
+          decisions: prepared.input.actionIds.map((actionId) => ({
+            actionId,
+            answerId: actionId.endsWith('.transfer') ? 'B' : 'A',
+            requiresCaseInference: true,
+            evidenceUsed:
+              'The controlled public capacity, gap and independent spare capacity determine the offered outcomes.',
+          })),
+          findings: witness
+            ? [
+                {
+                  itemId: f.worked.slotId,
+                  code: 'answer_leak',
+                  responsibility: 'integrity',
+                  problem: `Before the corresponding independent response, the rendered branch states: ${witness}`,
+                  repairInstruction: 'Move this specific case result after its own response.',
+                },
+              ]
+            : [],
+        };
+        return { logicalCallId: `ordered-public-${reviews}`, result };
+      };
+      const pending = verifyPreparedTeaching(f.lessonInput, f.lesson, review, revise);
+      if (surface === 'delayed_guided' || surface === 'final_rationale') {
+        expect((await pending).candidate).toEqual(f.lesson);
+        expect(revise).not.toHaveBeenCalled();
+        expect(reviews).toBe(1);
+      } else {
+        await expect(pending).rejects.toMatchObject({
+          details: { candidateFailure: { kind: 'teaching_content_review_failed' } },
+        });
+        expect(revise).toHaveBeenCalledTimes(1);
+        expect(reviews).toBe(2);
+      }
+      const computed = prepareTeachingReview({ ...f.lessonInput, computedCases: true }, f.lesson);
+      expect(JSON.stringify(computed.input.candidate)).toContain('afterGuidedResponse');
+      expect(JSON.stringify(computed.input.candidate)).toContain('responseContexts');
+    },
+  );
+
   it('refuses generic public proof and quality acceptance after the review packet changes in transit', async () => {
     const f = await fixture();
     const revise = vi.fn(async (draft: typeof f.lesson) => draft);
@@ -1091,9 +1192,7 @@ describe('calibrated cognitive teaching contract', () => {
       const prompt = lessonSlotContentMessages({ ...f.lessonInput, draftForReview })
         .map((message) => message.content)
         .join('\n');
-      expect(prompt).toContain(
-        'Higher depth requires meaningful reasoning, not multiple-choice presentation',
-      );
+      expect(prompt).toContain('An ordinary action is also valid there');
       expect(prompt).toContain(
         'must be complete open-response tasks without options/correctOptionId',
       );
@@ -1125,7 +1224,7 @@ describe('calibrated cognitive teaching contract', () => {
     expect(f.lessonEvaluation().findings).toContainEqual(
       expect.objectContaining({
         code: 'evidence_contrast_not_visible',
-        severity: 'error',
+        severity: 'warning',
       }),
     );
     contrast.evidence = '甲运行中，空闲配额为2';
@@ -1133,7 +1232,7 @@ describe('calibrated cognitive teaching contract', () => {
     expect(f.lessonEvaluation().findings).toContainEqual(
       expect.objectContaining({
         code: 'evidence_contrast_not_decisive',
-        severity: 'error',
+        severity: 'warning',
       }),
     );
     contrast.alternativeOptionId = 'B';
@@ -1204,7 +1303,7 @@ describe('calibrated cognitive teaching contract', () => {
     expect(f.lessonEvaluation().findings).toContainEqual(
       expect.objectContaining({
         code: 'worked_process_has_no_real_transition',
-        severity: 'error',
+        severity: 'warning',
       }),
     );
   });
@@ -1287,7 +1386,7 @@ describe('calibrated cognitive teaching contract', () => {
     expect(f.lessonInput.skeleton.objectives.every((o) => o.construct === 'identify')).toBe(true);
   });
 
-  it('keeps historical parsing and private projection round trips without granting current acceptance', async () => {
+  it('accepts absent Lesson annotations without treating them as public correctness proof', async () => {
     const f = await fixture();
     const segments = projectAcceptedLessonSegments(
       { skeleton: f.lessonInput.skeleton, lessonContent: f.lesson.slots },
@@ -1313,15 +1412,10 @@ describe('calibrated cognitive teaching contract', () => {
     expect(LessonSlotContentProposalPayloadSchema.safeParse(historical).success).toBe(true);
     const evaluation = evaluateLessonSlotPedagogy(historical, f.lessonInput, at);
     expect(evaluation.findings).toContainEqual(
-      expect.objectContaining({ code: 'missing_reasoning_declaration', severity: 'error' }),
+      expect.objectContaining({ code: 'missing_reasoning_declaration', severity: 'warning' }),
     );
-    expect(() => assertCurrentCognitiveContract(evaluation)).toThrow(
-      expect.objectContaining({
-        details: expect.objectContaining({
-          candidateFailure: expect.objectContaining({ kind: 'cognitive_teaching_rejection' }),
-        }),
-      }),
-    );
+    expect(() => assertCurrentCognitiveContract(evaluation)).not.toThrow();
+    expect(validateLessonSlotContentCandidate(historical, f.lessonInput).valid).toBe(true);
     const practice = structuredClone(f.practice);
     delete practice.items[0]!.initial.requiredInference;
     expect(PracticeContentProposalPayloadSchema.safeParse(practice).success).toBe(true);
@@ -1346,7 +1440,7 @@ describe('calibrated cognitive teaching contract', () => {
   });
 
   it.each(['rule', 'step', 'opening', 'objective', 'hint', 'inline'] as const)(
-    'rejects a substantial exact Chinese conclusion on the %s surface, with a removal control',
+    'delegates contextual Chinese result disclosure on %s to public review',
     async (surface) => {
       const f = await fixture();
       const conclusion = '分组标签必须由链路中的其他组件写入，距离排序本身不能产生类别名称。';
@@ -1365,17 +1459,9 @@ describe('calibrated cognitive teaching contract', () => {
         slot.informalCheck!.options![0]!.text = conclusion;
         slot.explanation = conclusion;
       }
-      expect(f.lessonEvaluation().findings).toContainEqual(
-        expect.objectContaining({
-          code:
-            surface === 'hint'
-              ? 'worked_interaction_hint_reveals_answer'
-              : surface === 'inline'
-                ? 'informal_check_answer_pre_revealed'
-                : 'worked_interaction_answer_pre_revealed',
-          severity: 'error',
-        }),
-      );
+      expect(
+        f.lessonEvaluation().findings.filter((finding) => finding.severity === 'error'),
+      ).toEqual([]);
     },
   );
 
@@ -1391,7 +1477,7 @@ describe('calibrated cognitive teaching contract', () => {
       f
         .lessonEvaluation()
         .findings.filter((finding) => finding.code === 'worked_interaction_answer_pre_revealed'),
-    ).toEqual([expect.objectContaining({ severity: 'warning' })]);
+    ).toEqual([]);
   });
 
   it('keeps candidate questions and concise causal corrections advisory', async () => {
@@ -2205,15 +2291,15 @@ describe('calibrated cognitive teaching contract', () => {
     ).toBe(false);
   });
 
-  it('does not relax Lesson reasoning demand or unrelated Practice cognitive errors', async () => {
+  it('makes Lesson reasoning demand advisory without relaxing unrelated Practice errors', async () => {
     const f = await fixture();
     f.interaction.activity.reasoningOperation = 'recognize';
     const lessonEvaluation = f.lessonEvaluation();
     expect(lessonEvaluation.findings).toContainEqual(
-      expect.objectContaining({ code: 'reasoning_demand_below_depth', severity: 'error' }),
+      expect.objectContaining({ code: 'reasoning_demand_below_depth', severity: 'warning' }),
     );
-    expect(validateLessonSlotContentCandidate(f.lesson, f.lessonInput).valid).toBe(false);
-    expect(() => assertCurrentCognitiveContract(lessonEvaluation)).toThrow();
+    expect(validateLessonSlotContentCandidate(f.lesson, f.lessonInput).valid).toBe(true);
+    expect(() => assertCurrentCognitiveContract(lessonEvaluation)).not.toThrow();
     for (const code of ['missing_reasoning_declaration', 'practice_initial_recognition_at_depth']) {
       const practice = f.practiceEvaluation();
       practice.findings.push({
@@ -2387,7 +2473,7 @@ describe('calibrated cognitive teaching contract', () => {
     );
     const normalized = normalizeLessonPreparationCandidate(candidate).candidate;
     expect(LessonSlotContentProposalPayloadSchema.safeParse(normalized).success).toBe(true);
-    expect(validateLessonSlotContentCandidate(normalized, f.lessonInput).valid).toBe(false);
+    expect(validateLessonSlotContentCandidate(normalized, f.lessonInput).valid).toBe(true);
     expect(
       lessonReasoningExposure(f.lesson.slots, f.lessonInput.skeleton)
         .flatMap((entry) => entry.actions)
@@ -2402,7 +2488,7 @@ describe('calibrated cognitive teaching contract', () => {
       .map((message) => message.content)
       .join('\n');
     expect(prompt).toContain('assertion authority');
-    expect(prompt).toContain('must consume the modelled resultingState');
+    expect(prompt).toContain('reveal all decisive premises, rules and concrete state');
   });
 
   it.each(['missing_options', 'hidden_key'] as const)(
@@ -2484,7 +2570,7 @@ describe('calibrated cognitive teaching contract', () => {
     expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
 
-  it('repairs an opening leak in one real transport simulation while freezing valid peers', async () => {
+  it('does not spend deterministic transport repairs on private inference equality', async () => {
     const f = await fixture();
     const first = structuredClone(f.lesson);
     first.narrative!.whyNow = f.interaction.activity.requiredInference!;
@@ -2510,8 +2596,9 @@ describe('calibrated cognitive teaching contract', () => {
       validateCandidate: (candidate) =>
         validateLessonSlotContentCandidate(candidate, f.lessonInput),
     });
-    expect(requests).toHaveLength(2);
-    expect(accepted).toEqual(f.lesson);
-    expect(requests[1]).toContain('corrected narrative');
+    expect(requests).toHaveLength(1);
+    expect(accepted).toEqual(first);
+    // Generation alone is untrusted: the current public/grounding reviews
+    // still determine whether this is an actual early disclosure.
   });
 });

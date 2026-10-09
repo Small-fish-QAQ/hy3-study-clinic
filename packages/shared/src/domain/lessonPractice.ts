@@ -40,6 +40,8 @@ export const LessonPedagogyFindingSchema = PedagogyFindingBaseSchema.extend({
   criterion: LessonPedagogyCriterionSchema,
   segmentIndexes: z.array(z.number().int().nonnegative()).max(12),
   objectiveRefs: z.array(z.string().min(1).max(40)).max(30),
+  /** Consolidated occurrences of this rule; absent means one finding. */
+  occurrenceCount: z.number().int().positive().optional(),
 }).strict();
 export type LessonPedagogyFinding = z.infer<typeof LessonPedagogyFindingSchema>;
 
@@ -116,7 +118,7 @@ export type TeachingContentReview = Omit<
   advisories?: TeachingReviewFinding[];
 };
 
-export const LESSON_CONTENT_REVIEW_POLICY_VERSION = 'lesson-content-review-v2-purpose-authority';
+export const LESSON_CONTENT_REVIEW_POLICY_VERSION = 'lesson-content-review-v3-response-exposure';
 
 export const LessonContentReviewResultSchema = TeachingContentReviewSchema.extend({
   findings: z.array(MaterialTeachingFindingSchema).max(30),
@@ -297,6 +299,7 @@ export const LessonPedagogyEvaluationSchema = z
     policyVersion: z.string().min(1).max(80),
     evaluator: z.literal('independent-deterministic-lesson-evaluator'),
     independent: z.literal(true),
+    /** Hard deterministic validity only; warnings do not assert achieved depth. */
     status: z.enum(['pass', 'fail']),
     boundedRepairAttempted: z.boolean(),
     estimatedActiveMinutes: z

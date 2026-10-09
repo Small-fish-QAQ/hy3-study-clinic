@@ -545,17 +545,17 @@ function TeachingSegmentContent({
           <small>这是提醒，不是对你的判断。</small>
         </aside>
       ) : null}
-      {readOnly && segment.informalCheck ? (
+      {readOnly && segment.informalCheck && !segment.informalCheck.response ? (
         <section className="lesson-informal-check" aria-label="讲解中的思考点">
           <p className="eyebrow">讲解中的思考点</p>
           <h5>{segment.informalCheck.prompt}</h5>
           <p className="small muted">非正式练习准备完成后即可开始并记录回应。</p>
         </section>
-      ) : checkActive ? (
+      ) : checkActive || (readOnly && Boolean(segment.informalCheck?.response)) ? (
         <InformalCheck
           segment={segment}
           response={responseDraft}
-          disabled={!active || busy || commandLoading}
+          disabled={readOnly || !active || busy || commandLoading}
           submitting={commandLoading}
           onResponseChange={onResponseChange}
           onSubmit={() =>
@@ -739,9 +739,9 @@ function ReadyLesson({
             !readOnly &&
             presented.size > 0 &&
             section.segments.some((segment) => segment.index === currentIndex);
-          const visibleSegments = readOnly
-            ? section.segments
-            : section.segments.filter((segment) => presented.has(segment.index));
+          const visibleSegments = section.segments.filter((segment) =>
+            presented.has(segment.index),
+          );
           if (visibleSegments.length === 0) return null;
           return (
             <section
@@ -811,7 +811,8 @@ function ReadyLesson({
         })}
       </div>
 
-      {lesson.summary.available && (readOnly || presentationCompleted || canComplete) ? (
+      {lesson.summary.available &&
+      (presentationCompleted || progress.presentationStatus === 'summary_ready') ? (
         <section className="lesson-summary" aria-label="本节总结">
           <p className="eyebrow">本节总结</p>
           {lesson.summary.text ? <p>{lesson.summary.text}</p> : null}

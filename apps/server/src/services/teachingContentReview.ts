@@ -82,12 +82,17 @@ function withoutAuthorDeclarations(value: unknown, lessonVisibility = false): un
   if (original.activity && original.scaffold && original.transfer) {
     result.afterWrongGuidedResponse = {
       visibility:
-        'Hint and scaffold are shown only AFTER a wrong guided answer is committed. They may explain that error. Judge scaffold sufficiency independently; do not classify this delayed assistance as a pre-guided-answer leak.',
+        'Hint and scaffold are shown only AFTER a wrong guided answer is committed. They may explain that error. Hint and selected guided feedback precede the unanswered scaffold, and this entire assistance path can precede transfer. Check those later unanswered results independently.',
       hint: result.hint,
       scaffold: result.scaffold,
     };
     delete result.hint;
     delete result.scaffold;
+    result.transfer = {
+      ...(result.transfer as Record<string, unknown>),
+      visibility:
+        'Shown only when guided is resolved: after a correct guided response or any committed scaffold response. Continuation, result and guided debrief already precede transfer; final rationale does not.',
+    };
   }
   const interaction = original.interaction as { pauseAfterStepIndex?: number } | undefined;
   if (Array.isArray(original.steps) && typeof interaction?.pauseAfterStepIndex === 'number') {
@@ -97,7 +102,7 @@ function withoutAuthorDeclarations(value: unknown, lessonVisibility = false): un
     );
     result.afterGuidedResponse = {
       visibility:
-        'Continuation and result withheld from independent solution. The learner sees these only after the guided response.',
+        'Shown when guided is resolved (correct guided response or committed scaffold), BEFORE the unanswered transfer. Hidden before guided/scaffold responses.',
     };
     result.afterTransferResponse = {
       visibility: 'HIDDEN until the learner answers transfer.',
@@ -120,7 +125,174 @@ function withoutAuthorDeclarations(value: unknown, lessonVisibility = false): un
     for (const key of ['correctDebrief', 'debrief', 'explanation', 'expectedSignal'])
       delete result[key];
   }
+  if (lessonVisibility && original.kind && !Array.isArray(original.options))
+    result.afterResponse = {
+      visibility:
+        'Coaching shown only after this open response is committed; it may precede later completed Lesson slots.',
+    };
   return result;
+}
+
+/** Response-scoped public exposure, matching lessonExecution.projectWorkedProcess.
+ * A task never receives its own feedback, private inference or future teaching.
+ * Conditional branches can establish a later leak, but cannot fill missing
+ * premises for a task which must also be answerable without that assistance. */
+function lessonResponseContexts(
+  candidate: LessonSlotContentProposalPayload,
+  context: LessonSlotContentGenerationInput,
+) {
+  const prior = [
+    ...context.skeleton.objectives.flatMap(({ title, description }) => [title, description]),
+    candidate.narrative?.whyNow ?? '',
+  ];
+  const conditional: Array<{ visibility: string; texts: string[] }> = [];
+  const responses: Array<{
+    actionId: string;
+    visibleBefore: string[];
+    conditionalBefore: typeof conditional;
+    prompt: string;
+    options: Array<{ id: string; text: string }>;
+  }> = [];
+  const publicAction = (action: { prompt: string; options?: Array<{ text: string }> }) => [
+    action.prompt,
+    ...(action.options?.map(({ text }) => text) ?? []),
+  ];
+  const feedback = (
+    action: {
+      options?: Array<{
+        id: string;
+        feedbackIfSelected: string;
+        misconception?: { hypothesis: string; whyTempting: string; correction: string } | null;
+      }>;
+    },
+    stage: string,
+  ) =>
+    (action.options ?? []).map((option) => ({
+      visibility: `Only if ${stage} option ${option.id} was committed. Hypotheses are proposed misconceptions, not teacher-endorsed facts.`,
+      texts: [
+        option.feedbackIfSelected,
+        ...(option.misconception
+          ? [
+              `Misconception hypothesis: ${option.misconception.hypothesis}`,
+              option.misconception.whyTempting,
+              option.misconception.correction,
+            ]
+          : []),
+      ],
+    }));
+  const add = (
+    actionId: string,
+    action: { prompt: string; options?: Array<{ id: string; text: string }> },
+    visibleBefore: string[],
+    conditionalBefore = conditional,
+  ) =>
+    responses.push({
+      actionId,
+      prompt: action.prompt,
+      options: action.options?.map(({ id, text }) => ({ id, text })) ?? [],
+      visibleBefore: [...visibleBefore],
+      conditionalBefore: structuredClone(conditionalBefore),
+    });
+  for (const slot of candidate.slots) {
+    const teaching = [
+      slot.explanation,
+      slot.example?.text ?? '',
+      slot.contrast?.text ?? '',
+      ...(slot.misconception
+        ? [
+            `Possible misconception: ${slot.misconception.hypothesis}`,
+            slot.misconception.correction,
+          ]
+        : []),
+    ];
+    const before = [...prior, ...teaching];
+    prior.push(...teaching);
+    const process = slot.workedProcess;
+    const graph = process?.interaction;
+    const steps = (end?: number) =>
+      process?.steps
+        .slice(0, end)
+        .flatMap((step) => [step.action, step.reason, step.resultingState]) ?? [];
+    const model = process
+      ? [process.startingState, ...(process.inputs ?? []), process.ruleOrProcedure]
+      : [];
+    if (graph && process) {
+      const guidedBefore = [...before, ...model, ...steps(graph.pauseAfterStepIndex + 1)];
+      add(`${slot.slotId}.guided`, graph.activity, guidedBefore);
+      const guidedBranches = feedback(graph.activity, `${slot.slotId}.guided`);
+      const wrongBranches = guidedBranches.filter(
+        (_, index) => graph.activity.options[index]!.id !== graph.activity.correctOptionId,
+      );
+      add(
+        `${slot.slotId}.scaffold`,
+        graph.scaffold,
+        [...guidedBefore, ...publicAction(graph.activity), graph.hint],
+        [...conditional, ...wrongBranches],
+      );
+      const assistance = {
+        visibility: `Only after a wrong ${slot.slotId}.guided response and a committed scaffold, before transfer. Scaffold hypotheses/options are proposed answers.`,
+        texts: [graph.hint, ...publicAction(graph.scaffold), graph.scaffold.debrief],
+      };
+      const transferBranches = [
+        ...conditional,
+        ...guidedBranches,
+        assistance,
+        ...feedback(graph.scaffold, `${slot.slotId}.scaffold`),
+      ];
+      add(
+        `${slot.slotId}.transfer`,
+        graph.transfer,
+        [
+          ...before,
+          ...model,
+          ...steps(),
+          process.result,
+          ...publicAction(graph.activity),
+          graph.activity.correctDebrief,
+          graph.transfer.changedCondition,
+        ],
+        transferBranches,
+      );
+      conditional.push(
+        ...guidedBranches,
+        assistance,
+        ...feedback(graph.scaffold, `${slot.slotId}.scaffold`),
+        ...feedback(graph.transfer, `${slot.slotId}.transfer`),
+      );
+      prior.push(
+        ...model,
+        ...steps(),
+        process.result,
+        process.whyResultFollows,
+        ...publicAction(graph.activity),
+        graph.activity.correctDebrief,
+        graph.transfer.changedCondition,
+        ...publicAction(graph.transfer),
+        graph.transfer.debrief,
+      );
+    } else if (process) {
+      before.push(
+        ...model,
+        ...steps(),
+        process.learnerDecision ?? '',
+        process.result,
+        process.whyResultFollows,
+      );
+      prior.push(
+        ...model,
+        ...steps(),
+        process.learnerDecision ?? '',
+        process.result,
+        process.whyResultFollows,
+      );
+    }
+    if (slot.informalCheck) {
+      add(`${slot.slotId}.check`, slot.informalCheck, before);
+      conditional.push(...feedback(slot.informalCheck, `${slot.slotId}.check`));
+      prior.push(...publicAction(slot.informalCheck), slot.informalCheck.expectedSignal ?? '');
+    }
+  }
+  return responses;
 }
 
 /** Calculated traces repeat the same rule graph in every option's feedback.
@@ -300,9 +472,18 @@ export function prepareTeachingReview(
       description,
     })),
     sources: context.sourceContext.offers.map(({ sourceRef, text }) => ({ sourceRef, text })),
-    candidate: context.computedCases
-      ? compactComputedReview(withoutAuthorDeclarations(annotated, 'slots' in candidate))
-      : withoutAuthorDeclarations(annotated, 'slots' in candidate),
+    candidate:
+      'slots' in candidate
+        ? {
+            ...(withoutAuthorDeclarations(annotated, true) as Record<string, unknown>),
+            responseContexts: lessonResponseContexts(
+              candidate,
+              context as LessonSlotContentGenerationInput,
+            ),
+          }
+        : context.computedCases
+          ? compactComputedReview(withoutAuthorDeclarations(annotated))
+          : withoutAuthorDeclarations(annotated),
     ...('acceptedLesson' in context
       ? {
           acceptedLesson: context.computedCases

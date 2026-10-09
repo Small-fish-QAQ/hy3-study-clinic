@@ -12,6 +12,8 @@ import {
 import type { SqliteDb } from '../db/database.js';
 import { curriculumSourceBlockFingerprint } from '../grounding/sourceFingerprint.js';
 import { AppError } from '../errors.js';
+import { hasCurrentLessonPedagogy } from '../services/lessonPedagogyEvaluator.js';
+import { hasAcceptedLessonChoiceContract } from '../services/lessonChoiceContract.js';
 import {
   hasCurrentCheckpointLessonGrounding,
   hasCurrentLessonGrounding,
@@ -284,6 +286,11 @@ export function createTeachingBriefsRepo(db: SqliteDb) {
         predecessor.operation_id !== brief.composition.lessonOperationId ||
         !matchesAcceptedLessonProjection ||
         !hasCurrentLessonGrounding(brief) ||
+        !hasCurrentLessonPedagogy(brief.pedagogyEvaluation) ||
+        !brief.pedagogyEvaluation ||
+        !hasAcceptedLessonChoiceContract(brief.segments, brief.pedagogyEvaluation, [
+          brief.objective?.whyNow ?? '',
+        ]) ||
         !practiceOperation ||
         practiceOperation.workspace_id !== brief.workspaceId ||
         practiceOperation.status !== 'running' ||

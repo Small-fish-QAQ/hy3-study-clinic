@@ -22,12 +22,21 @@ export const EvidenceContrastSchema = z
   })
   .strict();
 
-/** Optional for historical JSON; current generation policy requires declarations. */
+/** Practice declarations; their descriptions do not establish public correctness. */
 export const PrivateReasoningFields = {
   reasoningOperation: ReasoningOperationSchema.optional(),
   requiredInference: z.string().trim().min(1).max(300).optional(),
   decisiveCondition: z.string().trim().min(1).max(300).optional(),
   evidenceContrast: EvidenceContrastSchema.optional(),
+};
+
+/** Lesson authoring annotations are optional. Compact facts need no prose quota. */
+export const LessonPrivateReasoningFields = {
+  ...PrivateReasoningFields,
+  evidenceContrast: EvidenceContrastSchema.extend({
+    evidence: z.string().trim().min(1).max(250),
+    replacement: z.string().trim().min(1).max(250),
+  }).optional(),
 };
 
 export function isReasoningOperation(operation: ReasoningOperation | undefined): boolean {

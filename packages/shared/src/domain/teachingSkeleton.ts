@@ -1,12 +1,12 @@
 import { z } from 'zod';
 import {
   InformalCheckKindSchema,
-  PrivateReasoningFields,
   TeachingBriefSegmentPurposeSchema,
   TeachingWorkedProcessInteractionSchema,
   type TeachingBrief,
   type TeachingBriefSegment,
 } from './teachingBrief.js';
+import { LessonPrivateReasoningFields } from './reasoningOperation.js';
 import { LessonPedagogyEvaluationSchema } from './lessonPractice.js';
 import { FormalAssessmentConstructSchema } from './sourceAuthority.js';
 
@@ -557,54 +557,38 @@ export type TeachingSkeleton = z.infer<typeof TeachingSkeletonSchema>;
 export const TeachingSemanticRelationSchema = z
   .object({
     kind: TeachingRelationKindSchema,
-    fromProposition: z.string().min(1).max(700),
-    toProposition: z.string().min(1).max(700),
-    relevanceToObjective: z.string().min(1).max(700),
+    fromProposition: z.string().trim().min(1).max(700),
+    toProposition: z.string().trim().min(1).max(700),
+    relevanceToObjective: z.string().trim().min(1).max(700),
     sourceRefs: z.array(SourceAliasSchema).max(8),
   })
   .strict()
   .superRefine((relation, ctx) => {
-    const normalize = (value: string) =>
-      value
-        .normalize('NFKC')
-        .toLocaleLowerCase('en-US')
-        .replace(
-          /\b(?:because|therefore|thus|hence|consequently|so)\b|因为|所以|因此|从而|故/gu,
-          ' ',
-        )
-        .replace(/[^\p{L}\p{N}]+/gu, '');
-    if (normalize(relation.fromProposition) === normalize(relation.toProposition)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['toProposition'],
-        message: 'a semantic relation requires two distinct propositions or states',
-      });
-    }
     addDuplicateIssue(relation.sourceRefs, ['sourceRefs'], 'relation source aliases', ctx);
   });
 export type TeachingSemanticRelation = z.infer<typeof TeachingSemanticRelationSchema>;
 
 export const TeachingWorkedProcessSchema = z
   .object({
-    startingState: z.string().min(1).max(900),
+    startingState: z.string().trim().min(1).max(900),
     /** Optional only for historical non-interactive worked processes. */
-    inputs: z.array(z.string().min(1).max(500)).min(1).max(6).optional(),
-    ruleOrProcedure: z.string().min(1).max(1200),
+    inputs: z.array(z.string().trim().min(1).max(500)).min(1).max(6).optional(),
+    ruleOrProcedure: z.string().trim().min(1).max(1200),
     steps: z
       .array(
         z
           .object({
-            action: z.string().min(1).max(700),
-            reason: z.string().min(1).max(700),
-            resultingState: z.string().min(1).max(700),
+            action: z.string().trim().min(1).max(700),
+            reason: z.string().trim().min(1).max(700),
+            resultingState: z.string().trim().min(1).max(700),
           })
           .strict(),
       )
       .min(1)
       .max(8),
-    learnerDecision: z.string().min(1).max(700).nullable(),
-    result: z.string().min(1).max(900),
-    whyResultFollows: z.string().min(1).max(900),
+    learnerDecision: z.string().trim().min(1).max(700).nullable(),
+    result: z.string().trim().min(1).max(900),
+    whyResultFollows: z.string().trim().min(1).max(900),
     /** Empty means the worked case is explicitly Hy3 supplementary teaching. */
     sourceRefs: z.array(SourceAliasSchema).max(8),
     /** Absent on historical worked processes. */
@@ -627,13 +611,6 @@ export const TeachingWorkedProcessSchema = z
         message: 'interactive worked processes require explicit relevant inputs',
       });
     }
-    if (process.learnerDecision === null) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['learnerDecision'],
-        message: 'interactive worked processes require a concrete learner decision',
-      });
-    }
     if (process.interaction.pauseAfterStepIndex >= process.steps.length - 1) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -646,7 +623,7 @@ export type TeachingWorkedProcess = z.infer<typeof TeachingWorkedProcessSchema>;
 
 const TeachingLessonIllustrationContentSchema = z
   .object({
-    text: z.string().min(1).max(1800),
+    text: z.string().trim().min(1).max(1800),
     sourceRefs: z.array(SourceAliasSchema).max(8),
     visualRefs: z.array(VisualAliasSchema).max(8),
   })
@@ -654,8 +631,8 @@ const TeachingLessonIllustrationContentSchema = z
 
 const TeachingLessonMisconceptionContentSchema = z
   .object({
-    hypothesis: z.string().min(1).max(600),
-    correction: z.string().min(1).max(1000),
+    hypothesis: z.string().trim().min(1).max(600),
+    correction: z.string().trim().min(1).max(1000),
     sourceRefs: z.array(SourceAliasSchema).max(8),
     visualRefs: z.array(VisualAliasSchema).max(8),
   })
@@ -664,17 +641,17 @@ const TeachingLessonMisconceptionContentSchema = z
 export const TeachingInformalCheckOptionSchema = z
   .object({
     id: z.string().regex(/^[A-E]$/u),
-    text: z.string().min(1).max(600),
-    feedbackIfSelected: z.string().min(1).max(900),
+    text: z.string().trim().min(1).max(600),
+    feedbackIfSelected: z.string().trim().min(1).max(900),
   })
   .strict();
 export type TeachingInformalCheckOption = z.infer<typeof TeachingInformalCheckOptionSchema>;
 
 const TeachingLessonInformalCheckContentSchema = z
   .object({
-    ...PrivateReasoningFields,
+    ...LessonPrivateReasoningFields,
     kind: InformalCheckKindSchema,
-    prompt: z.string().min(1).max(700),
+    prompt: z.string().trim().min(1).max(700),
     expectedSignal: z.string().max(500).nullable(),
     /** Open responses omit choices/key; historical missing choice pairs stay readable for server revalidation. */
     options: z.array(TeachingInformalCheckOptionSchema).min(2).max(5).optional(),
@@ -708,8 +685,8 @@ const TeachingLessonInformalCheckContentSchema = z
 /** Learner-facing whole-Lesson prose authored once, before slot fields are filled. */
 export const TeachingLessonNarrativeSchema = z
   .object({
-    whyNow: z.string().min(1).max(1000),
-    summary: z.string().min(1).max(1200),
+    whyNow: z.string().trim().min(1).max(1000),
+    summary: z.string().trim().min(1).max(1200),
     forwardBridge: z.string().max(800).nullable(),
   })
   .strict();
@@ -724,7 +701,7 @@ export const TeachingLessonSlotContentSchema = z
     slotId: z.string().regex(/^L[1-9][0-9]*$/u),
     /** Present only on the first slot for current generation; optional for historical rows. */
     lessonNarrative: TeachingLessonNarrativeSchema.optional(),
-    explanation: z.string().min(1).max(2400),
+    explanation: z.string().trim().min(1).max(2400),
     sourceRefs: z.array(SourceAliasSchema).max(8),
     visualRefs: z.array(VisualAliasSchema).max(8),
     semanticRelations: z.array(TeachingSemanticRelationSchema).max(4),

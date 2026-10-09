@@ -17,6 +17,9 @@ import {
   validateTeachingBriefCandidate,
 } from './teachingBriefContract.js';
 import { profileTeachingBrief } from './teachingBriefQuality.js';
+import { evaluateLessonSlotPedagogy } from './lessonPedagogyEvaluator.js';
+import { prepareLessonGroundingReview } from './lessonGrounding.js';
+import { FAKE_LESSON_MATH_SOURCE } from '../llm/fakeLessonFixtures.js';
 import { planTeachingSkeleton } from './teachingSkeletonPlanner.js';
 
 function input(): TeachingBriefGenerationInput {
@@ -359,6 +362,97 @@ function lessonContractPrompt(
 }
 
 describe('compositional provider candidate validation', () => {
+  it('admits an eleven-slot high-warning Lesson with actual Fake grounding and retains late hard defects', async () => {
+    const provider = new FakeProvider();
+    const input = compositionalContractInput('apply');
+    const objectives = Array.from({ length: 5 }, (_, index) => ({
+      ...input.skeleton.objectives[0]!,
+      objectiveRef: `O${index + 1}`,
+    }));
+    input.skeleton = planTeachingSkeleton({
+      learningUnitTitle: input.skeleton.learningUnitTitle,
+      targetMinutes: 80,
+      targetDepth: 'working_fluency',
+      objectives,
+    });
+    input.courseDesign = { desiredDepth: 'working_fluency', unitFocus: 'focused' };
+    for (const offer of input.sourceContext.offers) {
+      offer.authorizedObjectiveRefs = objectives.map((objective) => objective.objectiveRef);
+      offer.text +=
+        ' 根据资料，O1 denotes a tree whose global depth is two. “Prompt instructions guarantee models never fabricate answers” is false.';
+    }
+    const lesson = await provider.generateLessonSlotContent(input);
+    expect(lesson.slots).toHaveLength(11);
+    for (const slot of lesson.slots) {
+      slot.semanticRelations = [];
+      if (slot.workedProcess) slot.workedProcess.learnerDecision = null;
+      const interaction = slot.workedProcess?.interaction;
+      for (const action of [
+        slot.informalCheck,
+        interaction?.activity,
+        interaction?.scaffold,
+        interaction?.transfer,
+      ]) {
+        if (!action) continue;
+        delete action.reasoningOperation;
+        delete action.requiredInference;
+        delete action.evidenceContrast;
+        if ('decisiveCondition' in action) delete action.decisiveCondition;
+      }
+      if (interaction) {
+        interaction.scaffold.options[0]!.feedbackIfSelected = '对。';
+      }
+    }
+    const evaluate = () =>
+      evaluateLessonSlotPedagogy(lesson, input, { evaluatedAt: '2026-01-01T00:00:00.000Z' });
+    const evaluation = evaluate();
+    expect(evaluation.status).toBe('pass');
+    expect(evaluation.findings.every((finding) => finding.severity === 'warning')).toBe(true);
+    expect(
+      evaluation.findings.reduce((count, finding) => count + (finding.occurrenceCount ?? 1), 0),
+    ).toBe(102);
+    expect(evaluation.findings.length).toBeLessThanOrEqual(100);
+    expect(validateLessonSlotContentCandidate(lesson, input).valid).toBe(true);
+    expect(
+      (await provider.reviewTeachingContent(prepareLessonGroundingReview(input, lesson).input))
+        .findings,
+    ).toEqual([]);
+
+    // This error is appended by the slot checks after the large warning inventory.
+    const lastIndex = lesson.slots.length - 1;
+    lesson.slots[lastIndex]!.semanticRelations = [
+      {
+        kind: 'difference_discrimination',
+        fromProposition: 'The eligibility condition excludes a failing candidate.',
+        toProposition: 'The remaining candidate is returned.',
+        relevanceToObjective: 'O99',
+        sourceRefs: ['S1'],
+      },
+    ];
+    lesson.slots[lastIndex]!.workedProcess = structuredClone(
+      lesson.slots.find((slot) => slot.workedProcess)!.workedProcess,
+    );
+    const invalid = evaluate();
+    expect(invalid.status).toBe('fail');
+    expect(invalid.findings).toContainEqual(
+      expect.objectContaining({
+        code: 'relation_objective_reference_outside_slot',
+        severity: 'error',
+        segmentIndexes: [lastIndex],
+      }),
+    );
+    expect(invalid.findings).toContainEqual(
+      expect.objectContaining({
+        code: 'unplanned_worked_process',
+        severity: 'error',
+        segmentIndexes: [lastIndex],
+      }),
+    );
+    const admission = validateLessonSlotContentCandidate(lesson, input);
+    expect(admission.valid).toBe(false);
+    expect(admission.diagnosticCodes).toContain('relation_objective_reference_outside_slot');
+  });
+
   it('allows uncited supplementary teaching while still rejecting foreign citation aliases', async () => {
     const input = compositionalContractInput();
     const provider = new FakeProvider();
@@ -397,21 +491,20 @@ describe('compositional provider candidate validation', () => {
     const prompt = lessonSlotContentMessages(compositionalContractInput())
       .map((message) => message.content)
       .join('\n');
-    expect(prompt).toContain('worked_process needs a complete workedProcess');
-    expect(prompt).toContain('semanticRelations are optional');
-    expect(prompt).toContain('prepared Teacher <-> Learner activity');
-    expect(prompt).toContain('before the continuation, result, or final rationale is revealed');
+    expect(prompt).toContain('Every declared interaction requires explicit inputs');
+    expect(prompt).toContain('Typed semantic relations are optional');
+    expect(prompt).toContain(
+      'A correct worked example plus an ordinary informalCheck is also supported',
+    );
+    expect(prompt).toContain('withhold its result until the guided response');
     expect(prompt).toContain('hypothesis, whyTempting and correction');
-    expect(prompt).toContain('hint points at concrete scenario evidence');
-    expect(prompt).toContain('scaffold asks a smaller independently meaningful sub-inference');
+    expect(prompt).toContain('Hint/scaffold are delayed until a wrong guided response');
+    expect(prompt).toContain('must not disclose an unanswered scaffold or future transfer result');
     expect(prompt).toContain('No live generation during interaction');
     expect(prompt).toContain('component-level sourceRefs independently');
     expect(prompt).toContain('keep interaction.sourceRefs empty');
-    expect(prompt).toContain(
-      'first learnerActionRequired slot into the one substantial worked interaction',
-    );
-    expect(prompt).toContain('worked comparison, boundary case, counterexample');
-    expect(prompt).toContain('does not change the objective construct');
+    expect(prompt).toContain('An ordinary action is also valid there');
+    expect(prompt).toContain('Keep ownership fixed');
     expect(prompt).not.toContain('worked_process needs both a semantic relation');
   });
 
@@ -436,7 +529,7 @@ describe('compositional provider candidate validation', () => {
     expect(prompt).toContain('revisit the anchor after explaining the mechanism');
   });
 
-  it('T3-T5 requires a genuine worked case, end-to-end process trace, and causal explanation', () => {
+  it('T3-T5 prefers a useful worked trace without making prose length a correctness requirement', () => {
     const prompt = lessonContractPrompt('working_fluency');
 
     expect(prompt).toContain(
@@ -446,10 +539,11 @@ describe('compositional provider candidate validation', () => {
     expect(prompt).toContain('mechanisms and causal relationships');
     expect(prompt).toContain('plausible competing model');
     expect(prompt).toContain('transfer and Practice initial must be reasoning-class');
-    expect(prompt).toContain('never a one-sentence example');
-    expect(prompt).toContain('initial situation and relevant inputs');
-    expect(prompt).toContain('intermediate consequence');
-    expect(prompt).toContain('important step or assumption were removed or changed');
+    expect(prompt).toContain('Prefer a useful trace with explicit inputs');
+    expect(prompt).toContain(
+      'Concise truthful examples and state-preserving verification are valid',
+    );
+    expect(prompt).toContain('Every declared interaction requires explicit inputs');
     expect(prompt).toContain('process, mechanism, causal chain, architecture, workflow');
     expect(prompt).toContain('trace at least one concrete instance end to end');
     expect(prompt).toContain(
@@ -491,7 +585,7 @@ describe('compositional provider candidate validation', () => {
     expect(normalPrompt).not.toContain('FOCUSED UNIT');
   });
 
-  it('T10/T11 makes an appropriate inline check reason on a novel surface without adding check volume', () => {
+  it('T10/T11 prefers useful reasoning without granting operation coverage hard authority', () => {
     const lessonInput = {
       ...compositionalContractInput(),
       courseDesign: { desiredDepth: 'working_fluency', unitFocus: 'focused' },
@@ -501,11 +595,9 @@ describe('compositional provider candidate validation', () => {
       .join('\n');
 
     expect(lessonPrompt).toContain('already planned learnerActionRequired slots');
-    expect(lessonPrompt).toContain(
-      'every required objective must elicit a reasoning-class operation with a withheld inference',
-    );
-    expect(lessonPrompt).toContain('recognition alone cannot satisfy this depth');
-    expect(lessonPrompt).toContain('understand -> reason -> transfer');
+    expect(lessonPrompt).toContain('prefer reasoning and transfer beyond recognition when useful');
+    expect(lessonPrompt).toContain('Operation coverage is a quality goal');
+    expect(lessonPrompt).toContain('do not add slots or length merely to satisfy it');
     expect(lessonPrompt).toContain('Do not simply restate the exact worked case in its check');
     expect(lessonPrompt).toContain('scenario A');
     expect(lessonPrompt).toContain('scenario B, a changed variable, a removed stage');
@@ -599,6 +691,123 @@ describe('compositional provider candidate validation', () => {
     });
   });
 
+  it('accepts optional Lesson annotations and concise truthful feedback with actual Fake grounding', async () => {
+    const provider = new FakeProvider();
+    const input = {
+      ...compositionalContractInput('apply'),
+      courseDesign: { desiredDepth: 'working_fluency', unitFocus: 'normal' } as const,
+    };
+    const lesson = await provider.generateLessonSlotContent(input);
+    for (const slot of lesson.slots) {
+      slot.semanticRelations = [];
+      if (slot.workedProcess) slot.workedProcess.learnerDecision = null;
+      const interaction = slot.workedProcess?.interaction;
+      for (const action of [
+        slot.informalCheck,
+        interaction?.activity,
+        interaction?.scaffold,
+        interaction?.transfer,
+      ]) {
+        if (!action) continue;
+        delete action.reasoningOperation;
+        delete action.requiredInference;
+        delete action.evidenceContrast;
+        if ('decisiveCondition' in action) delete action.decisiveCondition;
+      }
+    }
+    const slot = lesson.slots.find((slot) => slot.workedProcess)!;
+    const scaffold = slot.workedProcess!.interaction!.scaffold;
+    scaffold.options[0]!.feedbackIfSelected = '对。';
+    expect(validateLessonSlotContentCandidate(lesson, input).valid).toBe(true);
+    const evaluation = evaluateLessonSlotPedagogy(lesson, input, {
+      evaluatedAt: '2026-01-01T00:00:00.000Z',
+    });
+    expect(evaluation.status).toBe('pass');
+    expect(evaluation.findings).toContainEqual(
+      expect.objectContaining({ code: 'missing_reasoning_declaration', severity: 'warning' }),
+    );
+    expect(
+      (await provider.reviewTeachingContent(prepareLessonGroundingReview(input, lesson).input))
+        .findings,
+    ).toEqual([]);
+    for (const feedback of ['不对。', '3减2等于2。']) {
+      scaffold.options[0]!.feedbackIfSelected = feedback;
+      expect(
+        (await provider.reviewTeachingContent(prepareLessonGroundingReview(input, lesson).input))
+          .findings,
+      ).toContainEqual(expect.objectContaining({ itemId: slot.slotId }));
+    }
+    scaffold.correctOptionId = 'E';
+    expect(validateLessonSlotContentCandidate(lesson, input).diagnosticCodes).toContain(
+      'invalid_lesson_slot_content_shape',
+    );
+  });
+
+  it('retains contextual vocabulary/guarantee advisories while grounding rejects a new unsupported claim', async () => {
+    const provider = new FakeProvider();
+    const input = compositionalContractInput();
+    input.sourceContext.offers[0]!.text =
+      '“Prompt instructions guarantee models never fabricate answers” is false. O1 denotes a tree whose global depth is two.';
+    const lesson = await provider.generateLessonSlotContent(input);
+    expect(validateLessonSlotContentCandidate(lesson, input).valid).toBe(true);
+    const evaluation = evaluateLessonSlotPedagogy(lesson, input, {
+      evaluatedAt: '2026-01-01T00:00:00.000Z',
+    });
+    for (const code of [
+      'lesson_internal_alias_leak',
+      'lesson_planning_language_leak',
+      'probabilistic_control_overclaimed',
+    ])
+      expect(evaluation.findings).toContainEqual(
+        expect.objectContaining({ code, severity: 'warning' }),
+      );
+    expect(
+      (await provider.reviewTeachingContent(prepareLessonGroundingReview(input, lesson).input))
+        .findings,
+    ).toEqual([]);
+    const slot = lesson.slots.find((slot) => slot.semanticRelations.length)!;
+    slot.explanation += ' Prompt instructions guarantee models never fabricate answers.';
+    expect(
+      (await provider.reviewTeachingContent(prepareLessonGroundingReview(input, lesson).input))
+        .findings,
+    ).toContainEqual(expect.objectContaining({ itemId: slot.slotId }));
+    slot.sourceRefs = ['S9'];
+    expect(validateLessonSlotContentCandidate(lesson, input).diagnosticCodes).toContain(
+      'lesson_source_alias_outside_slot_authority',
+    );
+  });
+
+  it('accepts symbol-distinct concise mathematics while grounding rejects the reversed implication', async () => {
+    const provider = new FakeProvider();
+    const input = compositionalContractInput();
+    input.sourceContext.offers[0]!.text = FAKE_LESSON_MATH_SOURCE;
+    const lesson = await provider.generateLessonSlotContent(input);
+    const planned = input.skeleton.lessonSlots.find(
+      (slot) => slot.qualityContract === 'semantic_relation',
+    )!;
+    const slot = lesson.slots.find((slot) => slot.slotId === planned.slotId)!;
+    slot.semanticRelations = [
+      {
+        kind: 'condition_action',
+        fromProposition: 'x>0',
+        toProposition: 'x>=0',
+        relevanceToObjective: planned.objectiveRefs[0]!,
+        sourceRefs: [planned.allowedSourceRefs[0]!],
+      },
+    ];
+    expect(validateLessonSlotContentCandidate(lesson, input).valid).toBe(true);
+    expect(
+      (await provider.reviewTeachingContent(prepareLessonGroundingReview(input, lesson).input))
+        .findings,
+    ).toEqual([]);
+    slot.semanticRelations[0]!.fromProposition = 'x>=0';
+    slot.semanticRelations[0]!.toProposition = 'x>0';
+    expect(
+      (await provider.reviewTeachingContent(prepareLessonGroundingReview(input, lesson).input))
+        .findings,
+    ).toContainEqual(expect.objectContaining({ itemId: slot.slotId }));
+  });
+
   it.each(['5.2×10^0', '2.4×10^1', '2.4×10^-1'])(
     'accepts complete scientific notation through the Lesson candidate contract: %s',
     async (result) => {
@@ -614,34 +823,22 @@ describe('compositional provider candidate validation', () => {
   );
 
   it.each(['5.2×10^', '10^^2', '×10^1'])(
-    'rejects malformed scientific notation through the Lesson candidate contract: %s',
+    'leaves malformed mathematical claims to complete grounding: %s',
     async (result) => {
       const input = compositionalContractInput('apply');
       const candidate = await new FakeProvider().generateLessonSlotContent(input);
       const slot = candidate.slots.find((slot) => slot.workedProcess)!;
       slot.workedProcess!.result = result;
       const validation = validateLessonSlotContentCandidate(candidate, input);
-      expect(validation.valid).toBe(false);
-      expect(validation.diagnosticCodes).toContain('worked_process_missing_required_structure');
-      expect(validation.targetedRepair).toEqual({ invalidItemIds: [slot.slotId] });
+      expect(validation.valid).toBe(true);
+      const reviewed = await new FakeProvider().reviewTeachingContent(
+        prepareLessonGroundingReview(input, candidate).input,
+      );
+      expect(reviewed.findings).toContainEqual(expect.objectContaining({ itemId: slot.slotId }));
     },
   );
 
   it.each([
-    [
-      'placeholder state',
-      'worked_process_missing_required_structure',
-      (slot: TeachingLessonSlotContent) => {
-        slot.workedProcess!.startingState = 'placeholder';
-      },
-    ],
-    [
-      'hidden step state',
-      'worked_process_missing_required_structure',
-      (slot: TeachingLessonSlotContent) => {
-        slot.workedProcess!.steps[1]!.resultingState = '隐藏';
-      },
-    ],
     [
       'empty rule',
       'invalid_lesson_slot_content_shape',
@@ -654,13 +851,6 @@ describe('compositional provider candidate validation', () => {
       'invalid_lesson_slot_content_shape',
       (slot: TeachingLessonSlotContent) => {
         Reflect.deleteProperty(slot.workedProcess!, 'ruleOrProcedure');
-      },
-    ],
-    [
-      'unchanged step state',
-      'worked_process_has_no_real_transition',
-      (slot: TeachingLessonSlotContent) => {
-        slot.workedProcess!.steps[0]!.resultingState = slot.workedProcess!.startingState;
       },
     ],
     [
@@ -712,10 +902,10 @@ describe('compositional provider candidate validation', () => {
     const invalidSlotId = input.skeleton.lessonSlots.find(
       (slot) => slot.qualityContract === 'semantic_relation',
     )!.slotId;
-    candidate.slots.find((slot) => slot.slotId === invalidSlotId)!.semanticRelations = [];
+    candidate.slots.find((slot) => slot.slotId === invalidSlotId)!.sourceRefs = ['S9'];
     const result = validateLessonSlotContentCandidate(candidate, input);
     expect(result.valid).toBe(false);
-    expect(result.diagnosticCodes).toContain('missing_typed_semantic_relation');
+    expect(result.diagnosticCodes).toContain('lesson_source_alias_outside_slot_authority');
     expect(result.targetedRepair).toEqual({ invalidItemIds: [invalidSlotId] });
     expect(result.failureArtifact?.context).toMatchObject({
       invalidItemIds: [invalidSlotId],
@@ -814,15 +1004,23 @@ describe('compositional provider candidate validation', () => {
     leaked.narrative!.summary =
       'This Lesson develops O1 through the locally planned instructional spine and S1.';
     const leakage = validateLessonSlotContentCandidate(leaked, input);
-    expect(leakage.valid).toBe(false);
-    expect(leakage.diagnosticCodes).toEqual(
-      expect.arrayContaining(['lesson_internal_alias_leak', 'lesson_planning_language_leak']),
+    expect(leakage.valid).toBe(true);
+    const evaluate = (candidate: typeof valid) =>
+      evaluateLessonSlotPedagogy(candidate, input, {
+        evaluatedAt: '2026-01-01T00:00:00.000Z',
+      });
+    expect(evaluate(leaked).findings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: 'lesson_internal_alias_leak', severity: 'warning' }),
+        expect.objectContaining({ code: 'lesson_planning_language_leak', severity: 'warning' }),
+      ]),
     );
 
     const copiedPurpose = structuredClone(valid);
     copiedPurpose.slots[0]!.explanation = input.skeleton.lessonSlots[0]!.purpose;
-    expect(validateLessonSlotContentCandidate(copiedPurpose, input).diagnosticCodes).toContain(
-      'lesson_planning_language_leak',
+    expect(validateLessonSlotContentCandidate(copiedPurpose, input).valid).toBe(true);
+    expect(evaluate(copiedPurpose).findings).toContainEqual(
+      expect.objectContaining({ code: 'lesson_planning_language_leak', severity: 'warning' }),
     );
   });
 
@@ -834,14 +1032,8 @@ describe('compositional provider candidate validation', () => {
     target.explanation = `${target.explanation} Internal citation S1.`;
 
     const lessonResult = validateLessonSlotContentCandidate(lesson, lessonInput);
-    expect(lessonResult.diagnosticCodes).toEqual(['lesson_internal_alias_leak']);
-    expect(lessonResult.targetedRepair).toMatchObject({
-      invalidItemIds: [target.slotId],
-      localizedTextRepair: {
-        rootNarrative: false,
-        items: [{ itemId: target.slotId, components: ['explanation'] }],
-      },
-    });
+    expect(lessonResult.valid).toBe(true);
+    expect(lessonResult.targetedRepair).toBeUndefined();
 
     const cleanLesson = await provider.generateLessonSlotContent(lessonInput);
     const practiceInput: PracticeContentGenerationInput = {

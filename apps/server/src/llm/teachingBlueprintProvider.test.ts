@@ -126,20 +126,20 @@ describe('compact teaching generation', () => {
     expect(computed.lesson.slots[0]!.informalCheck).toBeUndefined();
   });
   it.each([true, false])(
-    'validates a newly exposed semantic defect after capsule schema repair (fixed=%s)',
+    'validates an unauthorized Lesson reference after capsule schema repair (fixed=%s)',
     async (fixed) => {
       const fixture = input();
       fixture.authoringStrategy = 'authored';
       const valid = compileTeachingKernel(deriveTeachingKernel(blueprint), fixture);
-      const aliasLeak = structuredClone(valid);
-      aliasLeak.lesson.slots[0]!.explanation += '根据S1规则进行检查。';
-      const malformed = JSON.parse(JSON.stringify(aliasLeak));
+      const unauthorized = structuredClone(valid);
+      unauthorized.lesson.slots[0]!.sourceRefs = ['S9'];
+      const malformed = JSON.parse(JSON.stringify(unauthorized));
       malformed.practice.items[0].initial.options[0].feedbackIfSelected = null;
       const fetchImpl = vi
         .fn()
         .mockResolvedValueOnce(response(JSON.stringify(malformed)))
-        .mockResolvedValueOnce(response(JSON.stringify(aliasLeak)))
-        .mockResolvedValueOnce(response(JSON.stringify(fixed ? valid : aliasLeak)));
+        .mockResolvedValueOnce(response(JSON.stringify(unauthorized)))
+        .mockResolvedValueOnce(response(JSON.stringify(fixed ? valid : unauthorized)));
       const provider = new Hy3Provider({
         baseUrl: 'https://example.test/v1',
         apiKey: 'test-key',
@@ -157,9 +157,37 @@ describe('compact teaching generation', () => {
       }
       expect(fetchImpl).toHaveBeenCalledTimes(3);
       const repair = JSON.parse(String(fetchImpl.mock.calls[2]![1].body));
-      expect(repair.messages.at(-1).content).toContain('lesson_internal_alias_leak');
+      expect(repair.messages.at(-1).content).toContain(
+        'lesson_source_alias_outside_slot_authority',
+      );
     },
   );
+  it('retains advisory Lesson prose after required capsule schema repair without another quality rewrite', async () => {
+    const fixture = input();
+    fixture.authoringStrategy = 'authored';
+    const candidate = compileTeachingKernel(deriveTeachingKernel(blueprint), fixture);
+    candidate.lesson.slots[0]!.explanation += '根据S1规则进行检查。';
+    const malformed = JSON.parse(JSON.stringify(candidate));
+    malformed.practice.items[0].initial.options[0].feedbackIfSelected = null;
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(response(JSON.stringify(malformed)))
+      .mockResolvedValueOnce(response(JSON.stringify(candidate)));
+    const provider = new Hy3Provider({
+      baseUrl: 'https://example.test/v1',
+      apiKey: 'test-key',
+      model: 'test-model',
+      timeoutMs: 30_000,
+      fetchImpl: fetchImpl as typeof fetch,
+    });
+    const generated = await provider.generateTeachingCapsule(fixture, {
+      validateCandidate: (candidate) => validateTeachingCapsule(candidate, fixture),
+    });
+    expect(validateTeachingCapsule(generated, fixture).valid).toBe(true);
+    expect(generated.lesson.slots[0]!.explanation).toContain('根据S1规则进行检查。');
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    // Generation remains untrusted until current public and complete grounding reviews.
+  });
   it('keeps generated examples supplementary while retaining only complete verbatim component citations', () => {
     const context = input();
     const payload = compileTeachingKernel(deriveTeachingKernel(blueprint), context);

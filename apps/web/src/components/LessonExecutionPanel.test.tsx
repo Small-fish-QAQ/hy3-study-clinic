@@ -1227,7 +1227,7 @@ describe('LessonExecutionPanel', () => {
     expect(command).toHaveBeenCalledTimes(2);
   });
 
-  it('preserves an accepted Lesson as a read-only preview while retrying only Practice', async () => {
+  it('hides unanswered results in recovery, reload and retry before normal Lesson presentation', async () => {
     const user = userEvent.setup();
     const recovery = practiceRetryLesson();
     recovery.lesson!.segments[1]!.workedProcess = {
@@ -1271,6 +1271,10 @@ describe('LessonExecutionPanel', () => {
         transfer: null,
       },
     };
+    const summaryAnswer = '案例结论：只读预览选项 A；迁移结论：重新限定动作。';
+    const laterAnswer = '后续讲解中的已解案例：只读预览选项 A。';
+    recovery.lesson!.summary.text = summaryAnswer;
+    recovery.lesson!.segments[1]!.explanation = laterAnswer;
     const retry = deferred<LessonExecutionProjection>();
     const authoritativeRecovery = structuredClone(recovery);
     authoritativeRecovery.session.version = 4;
@@ -1278,11 +1282,12 @@ describe('LessonExecutionPanel', () => {
     const get = vi
       .spyOn(api, 'getLessonExecution')
       .mockResolvedValueOnce(recovery)
+      .mockResolvedValueOnce(recovery)
       .mockResolvedValueOnce(authoritativeRecovery);
     const prepare = vi.spyOn(api, 'prepareLessonExecution').mockReturnValue(retry.promise);
     const command = vi.spyOn(api, 'lessonExecutionCommand');
 
-    render(
+    let rendered = render(
       <LessonExecutionPanel
         workspaceId="ws_1"
         sessionId="session_1"
@@ -1295,13 +1300,20 @@ describe('LessonExecutionPanel', () => {
       await screen.findByRole('heading', { name: '讲解已安全保存，练习还需要重试' }),
     ).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: '理解条件概率' })).toBeInTheDocument();
-    expect(screen.getByText('条件概率把观察范围收窄到已知条件。')).toBeInTheDocument();
+    expect(screen.queryByText(summaryAnswer)).not.toBeInTheDocument();
+    expect(screen.queryByText(laterAnswer)).not.toBeInTheDocument();
     expect(
-      screen.getByRole('heading', { name: '请用自己的话说说它描述了什么。' }),
-    ).toBeInTheDocument();
+      screen.queryByRole('heading', { name: '请用自己的话说说它描述了什么。' }),
+    ).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '开始本节讲解' })).not.toBeInTheDocument();
     expect(screen.queryByLabelText('练习回应')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '只读预览选项 A' })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: '只读预览选项 A' })).not.toBeInTheDocument();
+
+    rendered.unmount();
+    rendered = render(<LessonExecutionPanel {...repairProps} />);
+    await screen.findByRole('heading', { name: '讲解已安全保存，练习还需要重试' });
+    expect(screen.queryByText(summaryAnswer)).not.toBeInTheDocument();
+    expect(screen.queryByText(laterAnswer)).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: '重新准备非正式练习' }));
     expect(await screen.findByText('正在根据已接受的讲解准备非正式练习…')).toBeInTheDocument();
@@ -1316,16 +1328,54 @@ describe('LessonExecutionPanel', () => {
       }),
       expect.any(AbortSignal),
     );
-    expect(get).toHaveBeenCalledTimes(2);
+    expect(get).toHaveBeenCalledTimes(3);
     expect(command).not.toHaveBeenCalled();
 
-    const readyAfterRetry = structuredClone(prepared);
+    const readyAfterRetry = structuredClone(recovery);
+    readyAfterRetry.status = 'ready';
+    readyAfterRetry.allowedActions = ['start_lesson'];
     readyAfterRetry.session.version = authoritativeRecovery.session.version;
     readyAfterRetry.agenda!.version = authoritativeRecovery.agenda!.version;
     readyAfterRetry.progress!.stateVersion = authoritativeRecovery.progress!.stateVersion + 1;
     await act(async () => retry.resolve(readyAfterRetry));
     expect(await screen.findByRole('button', { name: '开始本节讲解' })).toBeInTheDocument();
+    expect(screen.queryByText(summaryAnswer)).not.toBeInTheDocument();
+    expect(screen.queryByText(laterAnswer)).not.toBeInTheDocument();
+    const started = structuredClone(readyAfterRetry);
+    started.progress!.stateVersion += 1;
+    started.progress!.presentationStatus = 'in_progress';
+    started.progress!.presentedSegmentIndexes = [0];
+    started.allowedActions = ['respond_to_informal_check'];
+    command.mockResolvedValueOnce(started);
+    await user.click(screen.getByRole('button', { name: '开始本节讲解' }));
+    expect(await screen.findByText('请用自己的话说说它描述了什么。')).toBeInTheDocument();
+    expect(screen.queryByText(summaryAnswer)).not.toBeInTheDocument();
+    expect(screen.queryByText(laterAnswer)).not.toBeInTheDocument();
   });
+
+  it.each(['summary_ready', 'presentation_completed'] as const)(
+    'keeps the legitimately revealed Summary visible during read-only recovery at %s',
+    async (presentationStatus) => {
+      const recovery = readyLesson({
+        stateVersion: 8,
+        currentSegmentIndex: 1,
+        segmentCount: 2,
+        presentedSegmentIndexes: [0, 1],
+        presentationStatus,
+        presentationCompletedAt:
+          presentationStatus === 'presentation_completed' ? '2026-08-19T01:04:00.000Z' : null,
+      });
+      recovery.status = 'practice_retry_available';
+      recovery.allowedActions = ['retry_preparation'];
+      recovery.practice = null;
+      vi.spyOn(api, 'getLessonExecution').mockResolvedValue(recovery);
+      render(<LessonExecutionPanel {...repairProps} />);
+      expect(await screen.findByText('条件概率把观察范围收窄到已知条件。')).toBeInTheDocument();
+      expect(screen.getByText('讲解提示：关注“已知”条件。')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '重新准备非正式练习' })).toBeEnabled();
+      expect(screen.queryByRole('button', { name: '完成本节讲解' })).not.toBeInTheDocument();
+    },
+  );
 
   it('adopts an authoritative ready result instead of starting duplicate retry work', async () => {
     const user = userEvent.setup();
@@ -1538,6 +1588,8 @@ describe('LessonExecutionPanel', () => {
         transfer: null,
       },
     };
+    const summaryAnswer = '迁移答案：重新判断并调整动作。';
+    initial.lesson!.summary.text = summaryAnswer;
     vi.spyOn(api, 'getLessonExecution').mockResolvedValue(initial);
 
     const wrong = structuredClone(initial);
@@ -1615,6 +1667,7 @@ describe('LessonExecutionPanel', () => {
     };
     const completed = structuredClone(transfer);
     completed.progress!.stateVersion = 7;
+    completed.progress!.presentationStatus = 'summary_ready';
     completed.allowedActions = ['complete_presentation', 'revisit_segment'];
     completed.lesson!.segments[1]!.workedProcess!.whyResultFollows =
       '一般模型是：条件变化必须传导到动作与结果。';
@@ -1636,7 +1689,7 @@ describe('LessonExecutionPanel', () => {
       .mockResolvedValueOnce(transfer)
       .mockResolvedValueOnce(completed);
 
-    render(
+    const rendered = render(
       <LessonExecutionPanel
         workspaceId="ws_1"
         sessionId="session_1"
@@ -1653,11 +1706,34 @@ describe('LessonExecutionPanel', () => {
     expect(screen.getByText('哪项信息决定动作能否执行？')).toBeInTheDocument();
     expect(screen.queryByText('现在应该怎样处理？')).not.toBeInTheDocument();
 
+    // Recovery must retain already revealed feedback without showing the
+    // Summary, which may contain the answer to the still-unanswered transfer.
+    const recovery = structuredClone(wrong);
+    recovery.status = 'practice_retry_available';
+    recovery.practice = null;
+    recovery.allowedActions = ['retry_preparation'];
+    vi.mocked(api.getLessonExecution).mockResolvedValue(recovery);
+    rendered.unmount();
+    let recovered = render(<LessonExecutionPanel {...repairProps} />);
+    expect(await screen.findByText('先找出真正限制下一步的条件。')).toBeInTheDocument();
+    expect(screen.getByText('熟悉并不能证明动作适用于当前条件。')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '当前条件' })).toBeDisabled();
+    expect(screen.queryByText(summaryAnswer)).not.toBeInTheDocument();
+    expect(screen.queryByText('得到符合条件的结果。')).not.toBeInTheDocument();
+    recovered.unmount();
+    recovered = render(<LessonExecutionPanel {...repairProps} />);
+    expect(await screen.findByText('先找出真正限制下一步的条件。')).toBeInTheDocument();
+    expect(screen.queryByText(summaryAnswer)).not.toBeInTheDocument();
+    vi.spyOn(api, 'prepareLessonExecution').mockResolvedValue(wrong);
+    await user.click(screen.getByRole('button', { name: '重新准备非正式练习' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: '当前条件' })).toBeEnabled());
+
     await user.click(screen.getByRole('button', { name: '当前条件' }));
     expect(await screen.findByText('执行条件允许的动作。')).toBeInTheDocument();
     expect(screen.getByText('得到符合条件的结果。')).toBeInTheDocument();
     expect(screen.getByText('原先允许该动作的条件被移除了。')).toBeInTheDocument();
     expect(screen.getByText('现在应该怎样处理？')).toBeInTheDocument();
+    expect(screen.queryByText(summaryAnswer)).not.toBeInTheDocument();
     expect(
       screen.queryByText('一般模型是：条件变化必须传导到动作与结果。'),
     ).not.toBeInTheDocument();
@@ -1670,6 +1746,7 @@ describe('LessonExecutionPanel', () => {
       screen.getByText('支持减少后仍使用同一心智模型，而不是照搬旧答案。'),
     ).toBeInTheDocument();
     expect(screen.queryByText('worked_interaction')).not.toBeInTheDocument();
+    expect(screen.getByText(summaryAnswer)).toBeInTheDocument();
     expect(command.mock.calls.map((call) => call[2].action)).toEqual([
       {
         kind: 'respond_to_worked_interaction',

@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { EvidenceContrastSchema } from './reasoningOperation.js';
+import { TeachingBriefInformalCheckSchema } from './teachingBrief.js';
 import {
   AcceptedLessonCheckpointSchema,
   TeachingLessonSlotContentSchema,
@@ -337,7 +339,19 @@ describe('Teaching Skeleton contracts', () => {
     expect(TeachingLessonSlotContentSchema.safeParse(reflective).success).toBe(true);
   });
 
-  it('rejects lexical reasoning without two distinct propositions', () => {
+  it('accepts compact Lesson contrast annotations through saved schemas without weakening Practice', () => {
+    const slot = content()[1]!;
+    const contrast = { evidence: 'x>0', replacement: 'x=0', alternativeOptionId: 'B' };
+    slot.informalCheck!.evidenceContrast = contrast;
+    expect(TeachingLessonSlotContentSchema.safeParse(slot).success).toBe(true);
+    expect(TeachingBriefInformalCheckSchema.safeParse(slot.informalCheck).success).toBe(true);
+    expect(EvidenceContrastSchema.safeParse(contrast).success).toBe(false);
+    slot.informalCheck!.evidenceContrast!.evidence = ' ';
+    expect(TeachingLessonSlotContentSchema.safeParse(slot).success).toBe(false);
+    expect(TeachingBriefInformalCheckSchema.safeParse(slot.informalCheck).success).toBe(false);
+  });
+
+  it('keeps relation richness out of schema authority and preserves mathematical operators', () => {
     expect(
       TeachingSemanticRelationSchema.safeParse({
         kind: 'cause_consequence',
@@ -345,6 +359,30 @@ describe('Teaching Skeleton contracts', () => {
         toProposition: 'Embedding is important!',
         relevanceToObjective: 'It says embedding matters.',
         sourceRefs: ['S1'],
+      }).success,
+    ).toBe(true);
+
+    for (const [fromProposition, toProposition] of [
+      ['P(B)>0', 'P(B)<0'],
+      ['x>0', 'x>=0'],
+    ]) {
+      expect(
+        TeachingSemanticRelationSchema.safeParse({
+          kind: 'condition_action',
+          fromProposition,
+          toProposition,
+          relevanceToObjective: 'O1',
+          sourceRefs: [],
+        }).success,
+      ).toBe(true);
+    }
+    expect(
+      TeachingSemanticRelationSchema.safeParse({
+        kind: 'condition_action',
+        fromProposition: ' ',
+        toProposition: 'x=1',
+        relevanceToObjective: 'O1',
+        sourceRefs: [],
       }).success,
     ).toBe(false);
 

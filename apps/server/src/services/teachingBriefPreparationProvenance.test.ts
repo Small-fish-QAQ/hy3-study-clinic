@@ -43,6 +43,7 @@ function acceptedCheckpoint(
     policyVersion?: string;
     promptVersion?: string;
     status?: 'pass' | 'fail';
+    findings?: AcceptedLessonCheckpoint['lessonEvaluation']['findings'];
   } = {},
 ): AcceptedLessonCheckpoint {
   const skeleton = planTeachingSkeleton({
@@ -94,7 +95,7 @@ function acceptedCheckpoint(
       boundedRepairAttempted: false,
       estimatedActiveMinutes: { min: 10, max: 20 },
       claimedAgendaMinutes: 18,
-      findings: [],
+      findings: overrides.findings ?? [],
       evaluatedAt: '2026-10-08T00:00:00.000Z',
       policyVersion: overrides.policyVersion ?? COMPOSITIONAL_LESSON_PEDAGOGY_POLICY_VERSION,
       status: overrides.status ?? 'pass',
@@ -150,9 +151,15 @@ function compositionalBrief(
     practicePolicyVersion?: string;
     answerabilityPolicyVersion?: string;
     acceptancePolicyVersion?: string;
+    lessonStatus?: 'pass' | 'fail';
+    lessonFindings?: AcceptedLessonCheckpoint['lessonEvaluation']['findings'];
   } = {},
 ): TeachingBrief {
-  const checkpoint = acceptedCheckpoint({ policyVersion: overrides.lessonPolicyVersion });
+  const checkpoint = acceptedCheckpoint({
+    policyVersion: overrides.lessonPolicyVersion,
+    status: overrides.lessonStatus,
+    findings: overrides.lessonFindings,
+  });
   const brief = {
     workspaceId: checkpoint.workspaceId,
     curriculumVersionId: checkpoint.curriculumVersionId,
@@ -173,7 +180,7 @@ function compositionalBrief(
     },
     pedagogyEvaluation: {
       policyVersion: overrides.lessonPolicyVersion ?? COMPOSITIONAL_LESSON_PEDAGOGY_POLICY_VERSION,
-      status: 'pass',
+      status: overrides.lessonStatus ?? 'pass',
     },
     objective: { title: 'Public Lesson', whyNow: 'A prior taught rule.', objectives: [] },
     prerequisites: [],
@@ -423,6 +430,55 @@ describe('Teaching Brief preparation provenance selection', () => {
     expect(selectCurrentAcceptedLessonCheckpoint(current)).toBe(current);
     expect(selectCurrentAcceptedLessonCheckpoint(undefined)).toBeUndefined();
   });
+
+  it.each(['failed_status', 'hard_finding'] as const)(
+    'revokes current Lesson reuse for %s without erasing quality warnings',
+    (defect) => {
+      const findings: AcceptedLessonCheckpoint['lessonEvaluation']['findings'] = [
+        {
+          severity: 'warning',
+          criterion: 'explanation_reasoning',
+          code: 'missing_typed_semantic_relation',
+          message: 'Optional relation metadata is absent.',
+          segmentIndexes: [1],
+          objectiveRefs: ['O1'],
+        },
+      ];
+      const checkpoint = acceptedCheckpoint({ findings });
+      const brief = compositionalBrief({ lessonFindings: findings });
+      expect(isCurrentAcceptedLessonCheckpoint(checkpoint)).toBe(true);
+      expect(isCurrentCompositionalBrief(brief, { fingerprint: SKELETON_FINGERPRINT })).toBe(true);
+      const status = defect === 'failed_status' ? 'fail' : 'pass';
+      const invalidFindings =
+        defect === 'hard_finding'
+          ? [
+              ...findings,
+              {
+                severity: 'error' as const,
+                criterion: 'learner_activity' as const,
+                code: 'missing_planned_learner_action',
+                message: 'A required action is absent.',
+                segmentIndexes: [1],
+                objectiveRefs: ['O1'],
+              },
+            ]
+          : findings;
+      // Bind otherwise current proofs after the bad evaluation, so this isolates
+      // hard-validity admission rather than merely detecting a stale proof hash.
+      const invalidCheckpoint = acceptedCheckpoint({ status, findings: invalidFindings });
+      const invalidBrief = compositionalBrief({
+        lessonStatus: status,
+        lessonFindings: invalidFindings,
+      });
+      expect(isCurrentAcceptedLessonCheckpoint(invalidCheckpoint)).toBe(false);
+      expect(isCurrentCompositionalBrief(invalidBrief, { fingerprint: SKELETON_FINGERPRINT })).toBe(
+        false,
+      );
+      expect(() => selectCurrentAcceptedLessonCheckpoint(invalidCheckpoint)).toThrowError(
+        expect.objectContaining({ code: 'VERSION_CONFLICT' }),
+      );
+    },
+  );
 
   it('rejects an exact legacy checkpoint before either paid phase can continue', () => {
     const legacy = acceptedCheckpoint({ lessonLogicalCallId: null });

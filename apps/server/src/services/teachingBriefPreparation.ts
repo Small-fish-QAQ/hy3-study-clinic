@@ -79,7 +79,9 @@ import {
   COMPOSITIONAL_LESSON_PEDAGOGY_POLICY_VERSION,
   COMPOSITIONAL_PRACTICE_QUALITY_POLICY_VERSION,
   assertCurrentCognitiveContract,
+  boundLessonFindings,
   evaluateLessonSlotPedagogy,
+  hasCurrentLessonPedagogy,
   evaluatePlannedPracticeQuality,
 } from './lessonPedagogyEvaluator.js';
 import { visualManifestMatchesCurrentDerivations } from './advisoryVisuals.js';
@@ -116,7 +118,7 @@ import {
 
 export const TEACHING_BRIEF_PROMPT_VERSION =
   'teaching-brief-v3-compositional-source-guided-interaction';
-export const LESSON_CONTENT_PROMPT_VERSION = 'teaching-lesson-content-v21-grounding-admission';
+export const LESSON_CONTENT_PROMPT_VERSION = 'teaching-lesson-content-v22-quality-advisory';
 export const PRACTICE_CONTENT_PROMPT_VERSION =
   'teaching-practice-content-v17-source-faithful-models';
 /**
@@ -215,7 +217,7 @@ export function isCurrentAcceptedLessonCheckpoint(
 ): checkpoint is AcceptedLessonCheckpoint {
   return (
     checkpoint?.promptVersion === LESSON_CONTENT_PROMPT_VERSION &&
-    checkpoint.lessonEvaluation.policyVersion === COMPOSITIONAL_LESSON_PEDAGOGY_POLICY_VERSION &&
+    hasCurrentLessonPedagogy(checkpoint.lessonEvaluation) &&
     checkpoint.lessonLogicalCallId !== null &&
     checkpoint.lessonContent[0]?.lessonNarrative !== undefined &&
     hasCurrentCheckpointLessonGrounding(checkpoint) &&
@@ -240,7 +242,8 @@ export function selectCurrentAcceptedLessonCheckpoint(
 export function hasCurrentPreparedLesson(brief: TeachingBrief): boolean {
   return (
     brief.composition?.lessonPromptVersion === LESSON_CONTENT_PROMPT_VERSION &&
-    brief.pedagogyEvaluation?.policyVersion === COMPOSITIONAL_LESSON_PEDAGOGY_POLICY_VERSION &&
+    hasCurrentLessonPedagogy(brief.pedagogyEvaluation) &&
+    !!brief.pedagogyEvaluation &&
     hasCurrentLessonGrounding(brief) &&
     hasAcceptedLessonChoiceContract(brief.segments, brief.pedagogyEvaluation, [
       brief.objective?.whyNow ?? '',
@@ -1723,6 +1726,18 @@ export function createTeachingBriefPreparationService({
         let groundingReview: LessonPedagogyEvaluation['groundingReview'];
         // Rendering/schema defects do not need (or wait for) semantic review.
         assertLessonChoiceContract(lessonPayload.slots);
+        const admission = validateLessonSlotContentCandidate(
+          lessonPayload,
+          compositionalLessonInput,
+        );
+        if (!admission.valid)
+          throw ProviderError.invalidOutput(
+            admission.diagnostics.join('; '),
+            'candidate',
+            'SEMANTIC_VALIDATION_FAILURE',
+            false,
+            admission.failureArtifact,
+          );
         {
           // REAL Lesson already uses this review once plus its existing bounded
           // corrections. The offline provider also exercises it for unresolved
@@ -1905,6 +1920,18 @@ export function createTeachingBriefPreparationService({
           if (verified.receipts.length) contentReview = verified.receipts;
           groundingReview = verified.groundingReview;
         }
+        const finalAdmission = validateLessonSlotContentCandidate(
+          lessonPayload,
+          compositionalLessonInput,
+        );
+        if (!finalAdmission.valid)
+          throw ProviderError.invalidOutput(
+            finalAdmission.diagnostics.join('; '),
+            'candidate',
+            'SEMANTIC_VALIDATION_FAILURE',
+            false,
+            finalAdmission.failureArtifact,
+          );
         assertLessonChoiceContract(lessonPayload.slots, [lessonPayload.narrative?.whyNow ?? '']);
         const lessonEvaluation = evaluateLessonSlotPedagogy(
           lessonPayload,
@@ -1922,9 +1949,14 @@ export function createTeachingBriefPreparationService({
             // Joint authoring mutates shared provenance. Keep the already proven
             // Lesson rather than introduce optional rollback machinery.
             lessonEvaluation.contentReviewQualityDisposition = 'retained';
-            lessonEvaluation.findings = [...lessonEvaluation.findings, ...advisories].slice(0, 100);
+            lessonEvaluation.findings = boundLessonFindings([
+              ...lessonEvaluation.findings,
+              ...advisories,
+            ]);
           }
         }
+        if (lessonEvaluation.findings.some((finding) => finding.severity === 'warning'))
+          lessonEvaluation.contentReviewQualityDisposition = 'retained';
         lessonEvaluation.groundingReview = groundingReview;
         if (jointAuthoring) lessonEvaluation.jointAuthoring = jointAuthoring;
         if (

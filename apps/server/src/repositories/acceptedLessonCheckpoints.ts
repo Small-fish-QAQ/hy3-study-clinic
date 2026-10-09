@@ -7,6 +7,8 @@ import {
 import type { SqliteDb } from '../db/database.js';
 import { AppError } from '../errors.js';
 import { hasCurrentCheckpointLessonGrounding } from '../services/lessonGrounding.js';
+import { hasCurrentLessonPedagogy } from '../services/lessonPedagogyEvaluator.js';
+import { hasAcceptedLessonChoiceContract } from '../services/lessonChoiceContract.js';
 
 interface AcceptedLessonCheckpointRow {
   id: string;
@@ -117,10 +119,14 @@ export function createAcceptedLessonCheckpointsRepo(db: SqliteDb) {
   const createTx = db.transaction(
     (rawInput: AcceptedLessonCheckpoint): AcceptedLessonCheckpoint => {
       const checkpoint = AcceptedLessonCheckpointSchema.parse(rawInput);
-      if (!hasCurrentCheckpointLessonGrounding(checkpoint))
+      if (
+        !hasCurrentCheckpointLessonGrounding(checkpoint) ||
+        !hasCurrentLessonPedagogy(checkpoint.lessonEvaluation) ||
+        !hasAcceptedLessonChoiceContract(checkpoint.lessonContent, checkpoint.lessonEvaluation)
+      )
         throw new AppError(
           ApiErrorCode.VersionConflict,
-          'Accepted Lesson checkpoint persistence requires complete current grounding.',
+          'Accepted Lesson checkpoint persistence requires complete current grounding and a hard-valid public choice/evaluation contract.',
         );
       const route = db
         .prepare(

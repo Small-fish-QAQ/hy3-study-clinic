@@ -361,6 +361,44 @@ export function createLessonExecutionService({
     return failure?.payload.cancelled === true || failure?.payload.recoveryReason === 'cancelled';
   }
 
+  function allLessonChecksAnswered(
+    brief: TeachingBrief | AcceptedLessonPreview,
+    state: LessonExecutionState,
+  ): boolean {
+    return brief.segments.every((segment) => {
+      const interaction = state.informalInteractions.find(
+        (candidate) => candidate.segmentIndex === segment.index,
+      );
+      return (
+        (!segment.informalCheck || Boolean(interaction?.response)) &&
+        workedInteractionComplete(segment, interaction)
+      );
+    });
+  }
+
+  function presentationProgress(
+    brief: TeachingBrief | AcceptedLessonPreview,
+    state: LessonExecutionState,
+  ): NonNullable<LessonExecutionProjection['progress']> {
+    return {
+      stateVersion: state.version,
+      stateId: state.id,
+      currentSegmentIndex: state.currentSegmentIndex,
+      segmentCount: brief.segments.length,
+      presentedSegmentIndexes: state.presentedSegmentIndexes,
+      presentationStatus:
+        state.practiceCompletedAt || state.presentationCompletedAt
+          ? 'presentation_completed'
+          : state.presentedSegmentIndexes.length === 0
+            ? 'not_started'
+            : state.presentedSegmentIndexes.length === brief.segments.length &&
+                allLessonChecksAnswered(brief, state)
+              ? 'summary_ready'
+              : 'in_progress',
+      presentationCompletedAt: state.presentationCompletedAt,
+    };
+  }
+
   function projection(
     context: RouteContext,
     state: LessonExecutionState | undefined,
@@ -420,15 +458,7 @@ export function createLessonExecutionService({
         session: { status: context.session.status, version: context.session.version },
         agenda: { version: context.agenda.version, itemState: context.item.state },
         lesson: projectLesson(acceptedLesson, state),
-        progress: {
-          stateVersion: state.version,
-          stateId: state.id,
-          currentSegmentIndex: 0,
-          segmentCount: acceptedLesson.segments.length,
-          presentedSegmentIndexes: [],
-          presentationStatus: 'not_started',
-          presentationCompletedAt: null,
-        },
+        progress: presentationProgress(acceptedLesson, state),
         currentInformalCheck: null,
         practice: null,
         allowedActions: ['retry_preparation'],
@@ -468,24 +498,7 @@ export function createLessonExecutionService({
     );
     const presentationCompleted = Boolean(state.presentationCompletedAt);
     const completed = Boolean(state.practiceCompletedAt);
-    const allChecksAnswered = brief.segments.every((segment) => {
-      const segmentInteraction = state.informalInteractions.find(
-        (candidate) => candidate.segmentIndex === segment.index,
-      );
-      return (
-        (!segment.informalCheck || Boolean(segmentInteraction?.response)) &&
-        workedInteractionComplete(segment, segmentInteraction)
-      );
-    });
-    const presentationStatus = completed
-      ? 'presentation_completed'
-      : presentationCompleted
-        ? 'presentation_completed'
-        : state.presentedSegmentIndexes.length === 0
-          ? 'not_started'
-          : state.presentedSegmentIndexes.length === brief.segments.length && allChecksAnswered
-            ? 'summary_ready'
-            : 'in_progress';
+    const allChecksAnswered = allLessonChecksAnswered(brief, state);
     const current = lesson.segments[state.currentSegmentIndex];
     const interaction = state.informalInteractions.find(
       (entry) => entry.segmentIndex === state.currentSegmentIndex,
@@ -553,15 +566,7 @@ export function createLessonExecutionService({
       session: { status: context.session.status, version: context.session.version },
       agenda: { version: context.agenda.version, itemState: context.item.state },
       lesson,
-      progress: {
-        stateVersion: state.version,
-        stateId: state.id,
-        currentSegmentIndex: state.currentSegmentIndex,
-        segmentCount: brief.segments.length,
-        presentedSegmentIndexes: state.presentedSegmentIndexes,
-        presentationStatus,
-        presentationCompletedAt: state.presentationCompletedAt,
-      },
+      progress: presentationProgress(brief, state),
       currentInformalCheck: informal,
       practice,
       allowedActions: [...allowed],
@@ -572,6 +577,9 @@ export function createLessonExecutionService({
     brief: TeachingBrief | AcceptedLessonPreview,
     state: LessonExecutionState,
   ): LessonExecutionProjection['lesson'] {
+    const presentationStatus = presentationProgress(brief, state).presentationStatus;
+    const summaryAvailable =
+      presentationStatus === 'summary_ready' || presentationStatus === 'presentation_completed';
     const sources = sourceProjection(brief, repos);
     const byRef = new Map(sources.map((source) => [source.referenceKey, source]));
     const refs = (ids: string[]) =>
@@ -778,10 +786,10 @@ export function createLessonExecutionService({
       sourceReferencesAvailable: sources.length > 0,
       visuals: brief.visualReferences.map((reference) => reference.context),
       summary: {
-        available: true,
-        text: brief.summary,
-        nextConnection: brief.nextConnection,
-        formalOpportunities: brief.formalOpportunities,
+        available: summaryAvailable,
+        text: summaryAvailable ? brief.summary : null,
+        nextConnection: summaryAvailable ? brief.nextConnection : null,
+        formalOpportunities: summaryAvailable ? brief.formalOpportunities : [],
       },
       ...(brief.pedagogyEvaluation
         ? {

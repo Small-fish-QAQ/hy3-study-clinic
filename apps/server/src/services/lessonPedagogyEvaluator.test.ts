@@ -6,6 +6,8 @@ import {
   type PracticeContentProposalPayload,
   type DesiredDepth,
   type TeachingBriefProposalPayload,
+  type LessonPedagogyFinding,
+  LessonPedagogyEvaluationSchema,
 } from '@hy3-clinic/shared';
 import type {
   LessonSlotContentGenerationInput,
@@ -17,10 +19,62 @@ import {
   evaluateLessonSlotPedagogy,
   evaluatePlannedPracticeQuality,
   evaluatePracticeQuality,
+  boundLessonFindings,
 } from './lessonPedagogyEvaluator.js';
 import { planTeachingSkeleton } from './teachingSkeletonPlanner.js';
 import { capsuleInputs } from './teachingCapsules.js';
 import { validateTeachingCapsule } from '../llm/teachingCapsule.js';
+
+describe('bounded Lesson diagnostics', () => {
+  it('preserves counts and complete hard-defect coverage when warning and error inventories overflow', () => {
+    const warnings: LessonPedagogyFinding[] = Array.from({ length: 102 }, (_, index) => ({
+      severity: 'warning',
+      criterion: 'explanation_reasoning',
+      code: 'missing_typed_semantic_relation',
+      message: `Optional relation annotation ${index + 1} is absent.`,
+      segmentIndexes: [index % 12],
+      objectiveRefs: [`O${(index % 12) + 1}`],
+    }));
+    const errors: LessonPedagogyFinding[] = Array.from({ length: 120 }, (_, index) => ({
+      severity: 'error',
+      criterion: 'learner_activity',
+      code: 'lesson_evidence_contrast_option_unavailable',
+      message: `Action ${index + 1} references an unavailable option.`,
+      segmentIndexes: [index % 12],
+      objectiveRefs: [`O${(index % 12) + 1}`],
+    }));
+    const findings = boundLessonFindings([...warnings, ...errors]);
+    expect(findings).toHaveLength(2);
+    expect(findings[1]).toMatchObject({
+      severity: 'error',
+      code: errors[0]!.code,
+      occurrenceCount: 120,
+      segmentIndexes: Array.from({ length: 12 }, (_, index) => index),
+      objectiveRefs: Array.from({ length: 12 }, (_, index) => `O${index + 1}`),
+    });
+    expect(findings[0]!.occurrenceCount).toBe(102);
+    expect(findings[1]!.message).toContain('Representative diagnostic');
+    // Appending review diagnostics to an already consolidated inventory retains
+    // the original counts instead of counting each summary as one occurrence.
+    const merged = boundLessonFindings([...findings, ...warnings]);
+    expect(merged[0]!.occurrenceCount).toBe(204);
+    expect(merged[1]!.occurrenceCount).toBe(120);
+    expect(
+      LessonPedagogyEvaluationSchema.safeParse({
+        schemaVersion: 1,
+        policyVersion: 'test-bounded-inventory',
+        evaluator: 'independent-deterministic-lesson-evaluator',
+        independent: true,
+        status: 'fail',
+        boundedRepairAttempted: false,
+        estimatedActiveMinutes: { min: 1, max: 2 },
+        claimedAgendaMinutes: 2,
+        findings: merged,
+        evaluatedAt: '2026-01-01T00:00:00.000Z',
+      }).success,
+    ).toBe(true);
+  });
+});
 
 function input(): TeachingBriefGenerationInput {
   return {
@@ -1028,7 +1082,7 @@ describe('compositional Lesson and Practice evaluators', () => {
     );
   });
 
-  it('accepts a numeric worked result without inventing prose and still rejects placeholders', () => {
+  it('accepts a numeric worked result without inventing prose and reports placeholder wording as quality', () => {
     const fixture = compositionalInputs('apply');
     const worked = fixture.lesson.slots.find((slot) => slot.workedProcess)!.workedProcess!;
     worked.result = '30/128';
@@ -1036,9 +1090,9 @@ describe('compositional Lesson and Practice evaluators', () => {
       evaluateLessonSlotPedagogy(fixture.lesson, fixture.lessonInput, { evaluatedAt }).findings.map(
         (f) => f.code,
       );
-    expect(codes()).not.toContain('worked_process_missing_required_structure');
+    expect(codes()).not.toContain('worked_process_richness_uncertain');
     worked.result = '{read}';
-    expect(codes()).not.toContain('worked_process_missing_required_structure');
+    expect(codes()).not.toContain('worked_process_richness_uncertain');
     for (const result of [
       'v≈4.25 m/s',
       'T = 273.15 K',
@@ -1050,15 +1104,15 @@ describe('compositional Lesson and Practice evaluators', () => {
       '[]',
     ]) {
       worked.result = result;
-      expect(codes()).not.toContain('worked_process_missing_required_structure');
+      expect(codes()).not.toContain('worked_process_richness_uncertain');
     }
     worked.interaction!.scaffold.options[0]!.feedbackIfSelected = '对，28%<30%';
-    expect(codes()).not.toContain('worked_interaction_missing_required_structure');
+    expect(codes()).not.toContain('worked_interaction_richness_uncertain');
     worked.result = 'placeholder';
-    expect(codes()).toContain('worked_process_missing_required_structure');
+    expect(codes()).toContain('worked_process_richness_uncertain');
     worked.result = '30/128';
     worked.steps[1]!.resultingState = '隐藏';
-    expect(codes()).toContain('worked_process_missing_required_structure');
+    expect(codes()).toContain('worked_process_richness_uncertain');
   });
   it.each(['5.2×10^0', '2.4×10^1', '2.4×10^-1', '-2.4 × 10 ^ +1', '2.4×10^−1', '２.４×１０^－１'])(
     'accepts a complete scientific notation worked result: %s',
@@ -1069,7 +1123,7 @@ describe('compositional Lesson and Practice evaluators', () => {
         evaluatedAt,
       });
       expect(evaluation.findings.map((finding) => finding.code)).not.toContain(
-        'worked_process_missing_required_structure',
+        'worked_process_richness_uncertain',
       );
     },
   );
@@ -1084,7 +1138,7 @@ describe('compositional Lesson and Practice evaluators', () => {
     '5.2×10^1.5',
     '5.2×10^--1',
     '5.2×10^1+1',
-  ])('rejects a malformed scientific notation worked result: %s', (result) => {
+  ])('reports uncertain mathematical representation without certifying its truth: %s', (result) => {
     const fixture = compositionalInputs('apply');
     fixture.lesson.slots.find((slot) => slot.workedProcess)!.workedProcess!.result = result;
     const evaluation = evaluateLessonSlotPedagogy(fixture.lesson, fixture.lessonInput, {
@@ -1092,12 +1146,12 @@ describe('compositional Lesson and Practice evaluators', () => {
     });
     expect(evaluation.findings).toContainEqual(
       expect.objectContaining({
-        code: 'worked_process_missing_required_structure',
-        severity: 'error',
+        code: 'worked_process_richness_uncertain',
+        severity: 'warning',
       }),
     );
   });
-  it('accepts concise mathematical premises while still refusing empty relation labels', () => {
+  it('accepts concise mathematical premises while keeping relation richness advisory', () => {
     const fixture = compositionalInputs('explain');
     const relation = fixture.lesson.slots.find((slot) => slot.semanticRelations.length)!
       .semanticRelations[0]!;
@@ -1164,7 +1218,7 @@ describe('compositional Lesson and Practice evaluators', () => {
     expect(
       evaluateLessonSlotPedagogy(fixture.lesson, fixture.lessonInput, { evaluatedAt }).findings,
     ).toContainEqual(
-      expect.objectContaining({ code: 'lesson_internal_alias_leak', severity: 'error' }),
+      expect.objectContaining({ code: 'lesson_internal_alias_leak', severity: 'warning' }),
     );
   });
   it('accepts an objective-aligned orientation', () => {
@@ -1182,7 +1236,7 @@ describe('compositional Lesson and Practice evaluators', () => {
     expect(evaluation.findings.every((finding) => finding.severity === 'warning')).toBe(true);
   });
 
-  it('requires one conceptual worked interaction in a focused working-fluency Lesson', () => {
+  it('prefers one conceptual interaction without rejecting an ordinary required action', () => {
     const fixture = compositionalInputs('explain');
     fixture.lessonInput.courseDesign = {
       desiredDepth: 'working_fluency',
@@ -1287,7 +1341,7 @@ describe('compositional Lesson and Practice evaluators', () => {
     expect(evaluation.findings.every((finding) => finding.severity === 'warning')).toBe(true);
   });
 
-  it('T13: rejects a depth-required boundary slot whose boundary content is absent', () => {
+  it('T13: reports absent dedicated boundary representation as advisory', () => {
     const fixture = compositionalInputs('identify', 14, 'deep_transfer');
     const boundarySlotId = fixture.lessonInput.skeleton.lessonSlots.find(
       (slot) => slot.qualityContract === 'boundary_work',
@@ -1304,7 +1358,7 @@ describe('compositional Lesson and Practice evaluators', () => {
     ).toContain('missing_planned_boundary_work');
   });
 
-  it('T13: rejects a depth-required relation slot that carries no typed relation', () => {
+  it('T13: reports absent relation metadata as advisory', () => {
     const fixture = compositionalInputs('identify', 14, 'deep_transfer');
     const relationSlotId = fixture.lessonInput.skeleton.lessonSlots.find(
       (slot) => slot.qualityContract === 'semantic_relation',
@@ -1337,7 +1391,7 @@ describe('compositional Lesson and Practice evaluators', () => {
     expect(evaluation.claimedAgendaMinutes).toBe(fixture.lessonInput.skeleton.targetMinutes);
   });
 
-  it('rejects lexical reasoning markers without typed propositions', () => {
+  it('reports missing relation metadata independently from public teaching', () => {
     const fixture = compositionalInputs('explain');
     const relationSlot = fixture.lesson.slots.find((slot) => slot.semanticRelations.length > 0)!;
     relationSlot.explanation =
@@ -1403,7 +1457,7 @@ describe('compositional Lesson and Practice evaluators', () => {
     expect(evaluation.status).toBe('fail');
     expect(evaluation.findings.map((finding) => finding.code)).toEqual(
       expect.arrayContaining([
-        'worked_process_missing_required_structure',
+        'worked_process_richness_uncertain',
         'worked_process_source_incompatible',
       ]),
     );

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { PrivateReasoningFields } from './reasoningOperation.js';
+import { LessonPrivateReasoningFields } from './reasoningOperation.js';
 export {
   ReasoningOperationSchema,
   PrivateReasoningFields,
@@ -145,9 +145,9 @@ export type TeachingBriefMisconception = z.infer<typeof TeachingBriefMisconcepti
 
 export const TeachingBriefInformalCheckSchema = z
   .object({
-    ...PrivateReasoningFields,
+    ...LessonPrivateReasoningFields,
     kind: InformalCheckKindSchema,
-    prompt: z.string().min(1).max(700),
+    prompt: z.string().trim().min(1).max(700),
     expectedSignal: z.string().max(500).nullable(),
     /** Open responses omit choices/key; current choice-kind requirements are enforced at server acceptance. */
     options: z
@@ -155,8 +155,8 @@ export const TeachingBriefInformalCheckSchema = z
         z
           .object({
             id: z.string().regex(/^[A-E]$/u),
-            text: z.string().min(1).max(600),
-            feedbackIfSelected: z.string().min(1).max(900),
+            text: z.string().trim().min(1).max(600),
+            feedbackIfSelected: z.string().trim().min(1).max(900),
           })
           .strict(),
       )
@@ -209,19 +209,19 @@ export const TeachingBriefSemanticRelationSchema = z
       'difference_discrimination',
       'evidence_conclusion',
     ]),
-    fromProposition: z.string().min(1).max(700),
-    toProposition: z.string().min(1).max(700),
-    relevanceToObjective: z.string().min(1).max(700),
-    sourceRefIds: z.array(z.string().min(1).max(40)).max(8),
+    fromProposition: z.string().trim().min(1).max(700),
+    toProposition: z.string().trim().min(1).max(700),
+    relevanceToObjective: z.string().trim().min(1).max(700),
+    sourceRefIds: z.array(z.string().trim().min(1).max(40)).max(8),
   })
   .strict();
 export type TeachingBriefSemanticRelation = z.infer<typeof TeachingBriefSemanticRelationSchema>;
 
 export const TeachingWorkedInteractionMisconceptionSchema = z
   .object({
-    hypothesis: z.string().min(1).max(600),
-    whyTempting: z.string().min(1).max(700),
-    correction: z.string().min(1).max(900),
+    hypothesis: z.string().trim().min(1).max(600),
+    whyTempting: z.string().trim().min(1).max(700),
+    correction: z.string().trim().min(1).max(900),
   })
   .strict();
 export type TeachingWorkedInteractionMisconception = z.infer<
@@ -231,8 +231,8 @@ export type TeachingWorkedInteractionMisconception = z.infer<
 export const TeachingWorkedInteractionOptionSchema = z
   .object({
     id: z.string().regex(/^[A-E]$/u),
-    text: z.string().min(1).max(600),
-    feedbackIfSelected: z.string().min(1).max(900),
+    text: z.string().trim().min(1).max(600),
+    feedbackIfSelected: z.string().trim().min(1).max(900),
     misconception: TeachingWorkedInteractionMisconceptionSchema.nullable(),
   })
   .strict();
@@ -241,8 +241,8 @@ export type TeachingWorkedInteractionOption = z.infer<typeof TeachingWorkedInter
 const TeachingWorkedInteractionSimpleOptionSchema = z
   .object({
     id: z.string().regex(/^[A-E]$/u),
-    text: z.string().min(1).max(600),
-    feedbackIfSelected: z.string().min(1).max(900),
+    text: z.string().trim().min(1).max(600),
+    feedbackIfSelected: z.string().trim().min(1).max(900),
   })
   .strict();
 
@@ -289,11 +289,11 @@ function validateWorkedInteractionChoices(
 
 export const TeachingWorkedInteractionActivitySchema = z
   .object({
-    ...PrivateReasoningFields,
-    prompt: z.string().min(1).max(900),
+    ...LessonPrivateReasoningFields,
+    prompt: z.string().trim().min(1).max(900),
     options: z.array(TeachingWorkedInteractionOptionSchema).min(3).max(5),
     correctOptionId: z.string().regex(/^[A-E]$/u),
-    correctDebrief: z.string().min(1).max(1200),
+    correctDebrief: z.string().trim().min(1).max(1200),
   })
   .strict()
   .superRefine((activity, ctx) => validateWorkedInteractionChoices(activity, ctx, true));
@@ -303,11 +303,11 @@ export type TeachingWorkedInteractionActivity = z.infer<
 
 export const TeachingWorkedInteractionScaffoldSchema = z
   .object({
-    ...PrivateReasoningFields,
-    prompt: z.string().min(1).max(800),
+    ...LessonPrivateReasoningFields,
+    prompt: z.string().trim().min(1).max(800),
     options: z.array(TeachingWorkedInteractionSimpleOptionSchema).min(2).max(4),
     correctOptionId: z.string().regex(/^[A-E]$/u),
-    debrief: z.string().min(1).max(1000),
+    debrief: z.string().trim().min(1).max(1000),
   })
   .strict()
   .superRefine((activity, ctx) => validateWorkedInteractionChoices(activity, ctx, false));
@@ -317,14 +317,14 @@ export type TeachingWorkedInteractionScaffold = z.infer<
 
 export const TeachingWorkedInteractionTransferSchema = z
   .object({
-    reasoningOperation: PrivateReasoningFields.reasoningOperation,
-    requiredInference: PrivateReasoningFields.requiredInference,
-    evidenceContrast: PrivateReasoningFields.evidenceContrast,
-    changedCondition: z.string().min(1).max(800),
-    prompt: z.string().min(1).max(900),
+    reasoningOperation: LessonPrivateReasoningFields.reasoningOperation,
+    requiredInference: LessonPrivateReasoningFields.requiredInference,
+    evidenceContrast: LessonPrivateReasoningFields.evidenceContrast,
+    changedCondition: z.string().trim().min(1).max(800),
+    prompt: z.string().trim().min(1).max(900),
     options: z.array(TeachingWorkedInteractionSimpleOptionSchema).min(3).max(5),
     correctOptionId: z.string().regex(/^[A-E]$/u),
-    debrief: z.string().min(1).max(1200),
+    debrief: z.string().trim().min(1).max(1200),
   })
   .strict()
   .superRefine((activity, ctx) => validateWorkedInteractionChoices(activity, ctx, false));
@@ -341,9 +341,9 @@ export const TeachingWorkedProcessInteractionSchema = z
   .object({
     pauseAfterStepIndex: z.number().int().nonnegative().max(6),
     /** Empty means the worked interaction is explicitly supplementary teaching. */
-    sourceRefs: z.array(z.string().min(1).max(40)).max(8),
+    sourceRefs: z.array(z.string().trim().min(1).max(40)).max(8),
     activity: TeachingWorkedInteractionActivitySchema,
-    hint: z.string().min(1).max(700),
+    hint: z.string().trim().min(1).max(700),
     scaffold: TeachingWorkedInteractionScaffoldSchema,
     transfer: TeachingWorkedInteractionTransferSchema,
   })
@@ -363,27 +363,27 @@ export type TeachingWorkedProcessInteraction = z.infer<
 
 export const TeachingBriefWorkedProcessSchema = z
   .object({
-    startingState: z.string().min(1).max(900),
+    startingState: z.string().trim().min(1).max(900),
     /** Optional only for historical non-interactive worked processes. */
-    inputs: z.array(z.string().min(1).max(500)).min(1).max(6).optional(),
-    ruleOrProcedure: z.string().min(1).max(1200),
+    inputs: z.array(z.string().trim().min(1).max(500)).min(1).max(6).optional(),
+    ruleOrProcedure: z.string().trim().min(1).max(1200),
     steps: z
       .array(
         z
           .object({
-            action: z.string().min(1).max(700),
-            reason: z.string().min(1).max(700),
-            resultingState: z.string().min(1).max(700),
+            action: z.string().trim().min(1).max(700),
+            reason: z.string().trim().min(1).max(700),
+            resultingState: z.string().trim().min(1).max(700),
           })
           .strict(),
       )
       .min(1)
       .max(8),
-    learnerDecision: z.string().min(1).max(700).nullable(),
-    result: z.string().min(1).max(900),
-    whyResultFollows: z.string().min(1).max(900),
+    learnerDecision: z.string().trim().min(1).max(700).nullable(),
+    result: z.string().trim().min(1).max(900),
+    whyResultFollows: z.string().trim().min(1).max(900),
     /** Empty means the worked case is Hy3 supplementary teaching, not source evidence. */
-    sourceRefIds: z.array(z.string().min(1).max(40)).max(8),
+    sourceRefIds: z.array(z.string().trim().min(1).max(40)).max(8),
     /** Absent on historical worked processes. */
     interaction: TeachingWorkedProcessInteractionSchema.optional(),
   })
@@ -395,13 +395,6 @@ export const TeachingBriefWorkedProcessSchema = z
         code: z.ZodIssueCode.custom,
         path: ['inputs'],
         message: 'interactive worked processes require explicit relevant inputs',
-      });
-    }
-    if (process.learnerDecision === null) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['learnerDecision'],
-        message: 'interactive worked processes require a concrete learner decision',
       });
     }
     if (process.interaction.pauseAfterStepIndex >= process.steps.length - 1) {

@@ -33,9 +33,49 @@ import {
 
 export const LESSON_PEDAGOGY_POLICY_VERSION = 'lesson-pedagogy-v2';
 export const PRACTICE_QUALITY_POLICY_VERSION = 'lesson-practice-v1';
-export const COMPOSITIONAL_LESSON_PEDAGOGY_POLICY_VERSION =
-  'lesson-pedagogy-v10-public-choice-contract';
+export const COMPOSITIONAL_LESSON_PEDAGOGY_POLICY_VERSION = 'lesson-pedagogy-v11-quality-advisory';
 export const COMPOSITIONAL_PRACTICE_QUALITY_POLICY_VERSION = 'lesson-practice-v8-literal-identity';
+
+/** Bound serialized diagnostics by rule, preserving severity, counts and all affected slots. */
+export function boundLessonFindings(findings: LessonPedagogyFinding[]): LessonPedagogyFinding[] {
+  if (findings.length <= 100) return findings;
+  // The deterministic Lesson rules and review advisory codes have fewer than
+  // 100 distinct rule/criterion/severity combinations. Never truncate errors.
+  const groups = new Map<string, LessonPedagogyFinding[]>();
+  for (const finding of findings) {
+    const key = `${finding.severity}:${finding.criterion}:${finding.code}`;
+    const group = groups.get(key) ?? [];
+    group.push(finding);
+    groups.set(key, group);
+  }
+  return [...groups.values()].map((group) => {
+    if (group.length === 1) return group[0]!;
+    const first = group[0]!;
+    const occurrenceCount = group.reduce(
+      (count, finding) => count + (finding.occurrenceCount ?? 1),
+      0,
+    );
+    const prefix = `${occurrenceCount} occurrences consolidated; all affected segments/objectives are listed. Representative diagnostic: `;
+    return {
+      ...first,
+      occurrenceCount,
+      message: `${prefix}${first.message}`.slice(0, 800),
+      segmentIndexes: [...new Set(group.flatMap((finding) => finding.segmentIndexes))],
+      objectiveRefs: [...new Set(group.flatMap((finding) => finding.objectiveRefs))],
+    };
+  });
+}
+
+/** A pass reports absence of deterministic hard defects, not achieved quality. */
+export function hasCurrentLessonPedagogy(
+  evaluation: LessonPedagogyEvaluation | undefined,
+): boolean {
+  return Boolean(
+    evaluation?.policyVersion === COMPOSITIONAL_LESSON_PEDAGOGY_POLICY_VERSION &&
+    evaluation.status === 'pass' &&
+    evaluation.findings.every((finding) => finding.severity !== 'error'),
+  );
+}
 
 const PRACTICE_AGGREGATE_QUALITY_CODES = new Set([
   'focused_unit_angle_coverage_insufficient',
@@ -1021,6 +1061,8 @@ const COGNITIVE_MESSAGES = {
     'evidenceContrast.evidence must occur verbatim in the visible case facts or modelled resultingState, not only in private declarations, a rule, an answer, or feedback. Put sufficient evidence in the learner case.',
   evidence_contrast_not_decisive:
     'The replacement must change the quoted fact and make a different offered option correct. A restated fact or unchanged answer does not establish case-dependent reasoning.',
+  lesson_evidence_contrast_option_unavailable:
+    'A supplied Lesson contrast must reference an option offered by its own action.',
   probabilistic_control_overclaimed:
     'A probabilistic model or Prompt instruction cannot guarantee obedience, eliminate fabrication, or prevent all errors. Distinguish risk reduction from an enforced validation boundary and state its limited scope.',
   missing_reasoning_declaration:
@@ -1033,14 +1075,6 @@ const COGNITIVE_MESSAGES = {
     'The private decisive-condition description is absent; description-based comparison is unavailable.',
   reasoning_demand_below_depth:
     'Each required objective needs a reasoning-class Lesson action, and guided/transfer actions must reason at working_fluency or deeper. Assertion authority does not cap cognition.',
-  worked_interaction_answer_pre_revealed:
-    'The guided inference may already be visible. Withhold the conclusion in the named surface; if immutable objectives already state it, ask a new inference using the modelled output.',
-  worked_interaction_hint_reveals_answer:
-    'The hint may reveal the answer. Point at concrete scenario evidence and leave the inference to the learner.',
-  informal_check_answer_pre_revealed:
-    'The check may repeat an already visible conclusion. Use the mechanism to ask a new inference.',
-  transfer_answer_pre_revealed:
-    'Transfer may repeat an already explained conclusion. Make the changed condition alter the reasoning or responsible component.',
   transfer_inference_not_changed:
     'Transfer inferences overlap; verify that the structural changed condition actually matters to the answer.',
   worked_interaction_correction_not_substantive:
@@ -1064,6 +1098,21 @@ const COGNITIVE_MESSAGES = {
   lesson_summary_callback_unanchored: 'Resolve the concrete opening situation in the summary.',
 } as const;
 type CognitiveCode = keyof typeof COGNITIVE_MESSAGES;
+
+const LESSON_ANNOTATION_MESSAGES: Partial<Record<CognitiveCode, string>> = {
+  probabilistic_control_overclaimed:
+    'This wording may overstate probabilistic control. Verify the claim in context, including quotation or denial; complete grounding determines factual correctness.',
+  missing_reasoning_declaration:
+    'Private reasoning annotations are incomplete; description-based quality comparisons are unavailable. Public tasks and current proofs determine correctness.',
+  reasoning_demand_below_depth:
+    'Declared operations do not demonstrate the preferred reasoning coverage at the selected depth. This quality observation does not establish a defective public task.',
+  evidence_contrast_missing:
+    'No private contrast describes this action. A useful counterfactual is a teaching preference, not public correctness evidence.',
+  evidence_contrast_not_visible:
+    'The private contrast is not a literal quotation of the case. A faithful paraphrase is valid; independent review checks actual public premises and claims.',
+  evidence_contrast_not_decisive:
+    'This private contrast does not demonstrate a changed competing answer under a lexical/identity proxy. Inspect its usefulness; grounding owns any claimed counterfactual truth.',
+};
 
 function missingDeclaration(action: CognitiveAction): boolean {
   return (
@@ -1203,13 +1252,17 @@ export function assertCurrentCognitiveContract(
   const errors = acceptedEvaluation.findings.filter(
     (finding) =>
       finding.severity === 'error' &&
-      (Object.hasOwn(COGNITIVE_MESSAGES, finding.code) ||
-        (evaluation.evaluator === 'independent-deterministic-lesson-evaluator' &&
-          isLessonChoiceContractCode(finding.code))),
+      (evaluation.evaluator === 'independent-deterministic-lesson-evaluator' ||
+        Object.hasOwn(COGNITIVE_MESSAGES, finding.code)),
   );
-  if (errors.length)
+  if (
+    errors.length ||
+    (evaluation.evaluator === 'independent-deterministic-lesson-evaluator' &&
+      acceptedEvaluation.status === 'fail')
+  )
     throw ProviderError.invalidOutput(
-      errors.map(({ code, message }) => `${code}: ${message}`).join('; '),
+      errors.map(({ code, message }) => `${code}: ${message}`).join('; ') ||
+        'The Lesson evaluation reports a hard failure.',
       'candidate',
       'SEMANTIC_VALIDATION_FAILURE',
       false,
@@ -1229,14 +1282,14 @@ function cognitiveLessonFindings(
     code: CognitiveCode,
     indexes: number[],
     refs: string[],
-    severity: 'error' | 'warning' = 'error',
+    severity: 'error' | 'warning' = lessonFindingSeverity(code),
     detail = '',
   ) => {
     findings.push(
       lessonFinding(
         lessonCriterionForCode(code),
         code,
-        `${COGNITIVE_MESSAGES[code]}${detail ? ` Surface: ${detail}.` : ''}`,
+        `${LESSON_ANNOTATION_MESSAGES[code] ?? COGNITIVE_MESSAGES[code]}${detail ? ` Surface: ${detail}.` : ''}`,
         indexes,
         refs,
         severity,
@@ -1247,8 +1300,6 @@ function cognitiveLessonFindings(
     payload.narrative ?? payload.slots.find((slot) => slot.lessonNarrative)?.lessonNarrative;
   const exposure = lessonReasoningExposure(payload.slots, input.skeleton);
   const depth = input.courseDesign?.desiredDepth;
-  const revealed = input.skeleton.objectives.flatMap((o) => [o.title, o.description]);
-  revealed.push(narrative?.whyNow ?? '');
   for (const [index, slot] of input.skeleton.lessonSlots.entries()) {
     const content = payload.slots.find((candidate) => candidate.slotId === slot.slotId);
     if (!content) continue;
@@ -1268,35 +1319,25 @@ function cognitiveLessonFindings(
       add('relation_objective_reference_outside_slot', [index], slot.objectiveRefs);
     if (actions.some((action) => action && missingDeclaration(action)))
       add('missing_reasoning_declaration', [index], slot.objectiveRefs);
-    const pre = [
-      ...revealed,
-      content.explanation,
-      content.example?.text ?? '',
-      content.contrast?.text ?? '',
-    ];
-    const inspect = (
-      action: CognitiveAction & {
-        options?: Array<{ id: string; text: string }>;
-        correctOptionId?: string;
-      },
-      texts: string[],
-      code: CognitiveCode,
-      surface: string,
-    ) => {
+    // Private inferences and previously taught rules cannot prove disclosure.
+    // The existing public review owns actual unanswered-result integrity.
+    for (const action of actions) {
+      if (!action) continue;
       const answer =
         action.options?.find((option) => option.id === action.correctOptionId)?.text ?? '';
-      const distractors =
-        action.options
-          ?.filter((option) => option.id !== action.correctOptionId)
-          .map((option) => option.text) ?? [];
-      const severity = revealSeverity(answer, action.requiredInference, distractors, texts);
-      if (severity) add(code, [index], slot.objectiveRefs, severity, surface);
+      if (
+        action.evidenceContrast &&
+        !action.options?.some(
+          (option) => option.id === action.evidenceContrast?.alternativeOptionId,
+        )
+      )
+        add('lesson_evidence_contrast_option_unavailable', [index], slot.objectiveRefs);
       if (
         isReasoningOperation(action.reasoningOperation) &&
         contextRemovedOverlap(answer, target, '') >= 0.75
       )
         add('reasoning_label_suspect', [index], slot.objectiveRefs, 'warning');
-    };
+    }
     const inspectEvidence = (
       action: CognitiveAction & {
         options?: Array<{ id: string }>;
@@ -1311,23 +1352,9 @@ function cognitiveLessonFindings(
         action.options?.map((option) => option.id) ?? [],
         action.correctOptionId,
       );
-      if (code) add(code, [index], slot.objectiveRefs, 'error', surface);
+      if (code) add(code, [index], slot.objectiveRefs, 'warning', surface);
     };
     if (interaction && process) {
-      const modelled = [
-        process.startingState,
-        ...(process.inputs ?? []),
-        process.ruleOrProcedure,
-        ...process.steps
-          .slice(0, interaction.pauseAfterStepIndex + 1)
-          .flatMap((step) => [step.action, step.reason, step.resultingState]),
-      ];
-      inspect(
-        interaction.activity,
-        [...pre, ...modelled, interaction.activity.prompt],
-        'worked_interaction_answer_pre_revealed',
-        'objectives, whyNow, earlier Lesson text, current explanation/modelled state or activity prompt',
-      );
       inspectEvidence(
         interaction.activity,
         [
@@ -1344,12 +1371,6 @@ function cognitiveLessonFindings(
         interaction.transfer,
         [interaction.transfer.changedCondition, interaction.transfer.prompt],
         'transfer.evidenceContrast',
-      );
-      inspect(
-        interaction.activity,
-        [interaction.hint],
-        'worked_interaction_hint_reveals_answer',
-        'interaction.hint',
       );
       if (
         depth &&
@@ -1387,20 +1408,6 @@ function cognitiveLessonFindings(
           slot.objectiveRefs,
           'warning',
         );
-      inspect(
-        interaction.transfer,
-        [
-          ...pre,
-          ...modelled,
-          interaction.activity.correctDebrief,
-          ...process.steps.flatMap((step) => [step.action, step.reason, step.resultingState]),
-          process.result,
-          interaction.transfer.changedCondition,
-          interaction.transfer.prompt,
-        ],
-        'transfer_answer_pre_revealed',
-        'completed worked case or transfer prompt',
-      );
     }
     if (check) {
       if (
@@ -1409,7 +1416,7 @@ function cognitiveLessonFindings(
         check.kind !== 'choose_alternative' &&
         check.options === undefined &&
         check.correctOptionId === undefined &&
-        lessonInformalChoiceIssues(check, pre).length === 0
+        lessonInformalChoiceIssues(check).length === 0
       )
         add('reasoning_choice_missing', [index], slot.objectiveRefs, 'warning');
       inspectEvidence(
@@ -1418,12 +1425,6 @@ function cognitiveLessonFindings(
           (text): text is string => Boolean(text),
         ),
         'informalCheck.evidenceContrast',
-      );
-      inspect(
-        check,
-        [...pre, check.prompt],
-        'informal_check_answer_pre_revealed',
-        'objectives, whyNow, earlier Lesson text, current explanation/example/contrast or check prompt',
       );
     }
     const claims = [
@@ -1442,22 +1443,6 @@ function cognitiveLessonFindings(
       add('lesson_attribution_voice', [index], slot.objectiveRefs, 'warning');
     if (input.skeleton.objectives.some((o) => o.title.length >= 8 && prose.includes(o.title)))
       add('lesson_objective_title_echo', [index], slot.objectiveRefs, 'warning');
-    revealed.push(
-      content.explanation,
-      content.example?.text ?? '',
-      content.contrast?.text ?? '',
-      content.misconception?.correction ?? '',
-      check?.expectedSignal ?? '',
-    );
-    if (process)
-      revealed.push(
-        process.ruleOrProcedure,
-        process.result,
-        process.whyResultFollows,
-        ...process.steps.flatMap((step) => [step.action, step.reason, step.resultingState]),
-        interaction?.activity.correctDebrief ?? '',
-        interaction?.transfer.debrief ?? '',
-      );
   }
   for (const objective of input.skeleton.objectives.filter(
     (o) => o.priority === 'required' || o.priority === 'high',
@@ -1639,20 +1624,41 @@ function cognitivePracticeFindings(
   return findings;
 }
 
+const LESSON_QUALITY_CODES = new Set([
+  'missing_reasoning_declaration',
+  'reasoning_demand_below_depth',
+  'evidence_contrast_missing',
+  'evidence_contrast_not_visible',
+  'evidence_contrast_not_decisive',
+  'probabilistic_control_overclaimed',
+  'lesson_slot_content_not_substantive',
+  'lesson_internal_alias_leak',
+  'lesson_planning_language_leak',
+  'lesson_source_location_trivia',
+  'semantic_relation_not_substantive',
+  'missing_typed_semantic_relation',
+  'missing_planned_boundary_work',
+  'missing_typed_worked_process',
+  'missing_focused_worked_interaction',
+  'worked_process_missing_interaction',
+  'worked_process_richness_uncertain',
+  'worked_interaction_richness_uncertain',
+  'worked_process_has_no_real_transition',
+  'worked_interaction_transfer_not_changed',
+  'worked_process_missing_application_decision',
+  'lesson_slot_content_not_objective_aligned',
+  'semantic_relation_not_objective_relevant',
+  'semantic_relation_source_incompatible',
+  'worked_process_relevance_uncertain',
+  'worked_process_result_not_justified',
+  'worked_process_source_incompatible',
+  'worked_process_application_relevance_uncertain',
+  'worked_interaction_relevance_uncertain',
+  'semantically_redundant_lesson_slots',
+]);
+
 function lessonFindingSeverity(code: string): LessonPedagogyFinding['severity'] {
-  return new Set([
-    'lesson_slot_content_not_objective_aligned',
-    'semantic_relation_not_objective_relevant',
-    'semantic_relation_source_incompatible',
-    'worked_process_relevance_uncertain',
-    'worked_process_result_not_justified',
-    'worked_process_source_incompatible',
-    'worked_process_application_relevance_uncertain',
-    'worked_interaction_relevance_uncertain',
-    'semantically_redundant_lesson_slots',
-  ]).has(code)
-    ? 'warning'
-    : 'error';
+  return LESSON_QUALITY_CODES.has(code) ? 'warning' : 'error';
 }
 
 function practiceFindingSeverity(code: string): PracticeQualityFinding['severity'] {
@@ -1897,7 +1903,7 @@ function workedProcessIssueCodes(
       (value) => !substantiveWorkedText(value) || GENERIC_PLACEHOLDER_LANGUAGE.test(value),
     )
   ) {
-    issues.push('worked_process_missing_required_structure');
+    issues.push('worked_process_richness_uncertain');
   }
   const interaction = process.interaction;
   if (!interaction) {
@@ -1938,7 +1944,7 @@ function workedProcessIssueCodes(
           GENERIC_PLACEHOLDER_LANGUAGE.test(option.text),
       )
     ) {
-      issues.push('worked_interaction_missing_required_structure');
+      issues.push('worked_interaction_richness_uncertain');
     }
     if (
       SOURCE_LOCATION_TRIVIA.test(interaction.activity.prompt) ||
@@ -2019,31 +2025,31 @@ function workedProcessIssueCodes(
 function lessonIssueMessage(code: string, slotId: string): string {
   const messages: Record<string, string> = {
     lesson_slot_content_not_objective_aligned: `${slotId} content is not meaningfully anchored to its locally planned objective or source.`,
-    lesson_slot_content_not_substantive: `${slotId} needs substantive instructional content rather than a field label or placeholder.`,
-    lesson_internal_alias_leak: `${slotId} exposes an internal objective, source, Lesson, or Practice alias in learner-facing text.`,
-    lesson_planning_language_leak: `${slotId} exposes internal planning language or copies a private obligation into learner-facing text.`,
-    lesson_source_location_trivia: `${slotId} asks where source text appears instead of eliciting the planned capability.`,
+    lesson_slot_content_not_substantive: `${slotId} explanation falls below a lexical richness heuristic; this does not establish missing or incorrect teaching.`,
+    lesson_internal_alias_leak: `${slotId} text contains a token resembling an internal alias; check its use in context. Structured reference permissions remain hard.`,
+    lesson_planning_language_leak: `${slotId} text resembles planning language; this style signal cannot distinguish valid domain vocabulary.`,
+    lesson_source_location_trivia: `${slotId} wording resembles source-location recall; inspect its pedagogical usefulness in context.`,
     missing_planned_learner_action: `${slotId} must contain the learner action required by the immutable skeleton.`,
     unplanned_lesson_learner_action: `${slotId} cannot add a learner action outside the immutable skeleton budget.`,
-    missing_planned_boundary_work: `${slotId} must fill the planned contrast or misconception boundary role.`,
-    missing_typed_semantic_relation: `${slotId} requires a typed relation between two distinct meaningful propositions.`,
+    missing_planned_boundary_work: `${slotId} has no dedicated boundary representation; equivalent public explanation may teach the distinction.`,
+    missing_typed_semantic_relation: `${slotId} has no typed relation metadata; public teaching and grounding are evaluated independently.`,
     semantic_relation_outside_slot_contract: `${slotId} uses a relation kind outside its immutable controlled relation set.`,
-    semantic_relation_not_substantive: `${slotId} relation must contain two distinct, meaningful propositions or states.`,
+    semantic_relation_not_substantive: `${slotId} relation fails a lexical richness/distinctness proxy; symbols, concise facts and verification may still be meaningful.`,
     semantic_relation_not_objective_relevant: `${slotId} relation does not explain its relevance to the locally planned objective.`,
     semantic_relation_source_incompatible: `${slotId} relation is not compatible with a locally allowed cited source.`,
-    missing_typed_worked_process: `${slotId} requires a typed worked process with start, rule, transitions, result, and justification.`,
-    worked_process_missing_required_structure: `${slotId} worked process contains labels or generic fields instead of an observable start/rule/transition/result path.`,
+    missing_typed_worked_process: `${slotId} has no typed worked example; inspect equivalent public teaching. A required learner action is validated separately.`,
+    worked_process_richness_uncertain: `${slotId} worked fields fall below lexical richness heuristics; schema-valid concise states still require independent grounding.`,
     worked_process_relevance_uncertain: `${slotId} worked process has low lexical overlap with its objective or source; retain this only as an advisory relevance signal.`,
-    worked_process_has_no_real_transition: `${slotId} worked process does not change state through its stated actions.`,
+    worked_process_has_no_real_transition: `${slotId} repeats a state; verification or a no-op may legitimately preserve it. Grounding checks the actual transition.`,
     worked_process_result_not_justified: `${slotId} worked process does not connect its final result to the rule and transitions.`,
     worked_process_source_incompatible: `${slotId} worked process does not use an exact locally allowed source-stated rule or procedure.`,
-    worked_process_missing_application_decision: `${slotId} worked process needs a concrete learner decision for the planned higher-order construct.`,
+    worked_process_missing_application_decision: `${slotId} has little private learner-decision description; the public action determines executable behavior.`,
     worked_process_application_relevance_uncertain: `${slotId} learner decision has low lexical overlap with the objective or source; retain this only as an advisory relevance signal.`,
-    worked_process_missing_interaction: `${slotId} must pause its worked process for a prepared learner decision before revealing the continuation.`,
-    worked_interaction_missing_required_structure: `${slotId} worked interaction needs a substantive guided choice, targeted feedback, hint, scaffold, debrief, and changed-condition transfer.`,
+    worked_process_missing_interaction: `${slotId} uses a worked example with an ordinary action rather than a paused interaction. Required actions remain mandatory.`,
+    worked_interaction_richness_uncertain: `${slotId} interaction text falls below lexical richness heuristics; concise truthful feedback is permitted.`,
     worked_interaction_relevance_uncertain: `${slotId} worked interaction has low lexical overlap with its objective or source; retain this only as an advisory relevance signal.`,
-    worked_interaction_transfer_not_changed: `${slotId} transfer activity must change the case rather than repeat the guided decision.`,
-    missing_focused_worked_interaction: `${slotId} must turn its already-planned learner action into one worked interaction for this working-fluency-or-deeper Lesson, including normal Units.`,
+    worked_interaction_transfer_not_changed: `${slotId} transfer wording overlaps the guided task; changed public facts may still require a different answer.`,
+    missing_focused_worked_interaction: `${slotId} uses an ordinary learner action rather than the preferred conceptual worked interaction.`,
     unplanned_worked_process: `${slotId} cannot add a worked process outside the immutable skeleton role.`,
   };
   return messages[code] ?? `${slotId} does not satisfy its immutable Lesson quality contract.`;
@@ -2065,8 +2071,8 @@ function lessonCriterionForCode(code: string): LessonPedagogyFinding['criterion'
 
 /**
  * Independent evaluation of provider-filled content against a frozen local
- * Teaching Skeleton. Typed relations/processes are authoritative here;
- * lexical connectors are deliberately not acceptance evidence.
+ * Teaching Skeleton. Executable ownership remains hard; representation and
+ * lexical quality signals are advisory. Independent reviews own correctness.
  */
 export function evaluateLessonSlotPedagogy(
   payload: LessonSlotContentProposalPayload,
@@ -2106,7 +2112,10 @@ export function evaluateLessonSlotPedagogy(
         lessonFinding(
           'source_grounding',
           'lesson_internal_alias_leak',
-          'The learner-facing Lesson narrative exposes an internal objective, source, Lesson, or Practice alias.',
+          'The Lesson narrative contains a token resembling an internal alias; its contextual meaning is not established by this pattern.',
+          [],
+          [],
+          'warning',
         ),
       );
     }
@@ -2115,7 +2124,10 @@ export function evaluateLessonSlotPedagogy(
         lessonFinding(
           'source_grounding',
           'lesson_planning_language_leak',
-          'The learner-facing Lesson narrative exposes internal planning language.',
+          'The Lesson narrative resembles planning language; this style signal cannot distinguish valid domain vocabulary.',
+          [],
+          [],
+          'warning',
         ),
       );
     }
@@ -2176,10 +2188,7 @@ export function evaluateLessonSlotPedagogy(
 
     const workedInteraction = content.workedProcess?.interaction;
     if (slot.learnerActionRequired) {
-      if (
-        (!content.informalCheck || !isSubstantiveText(content.informalCheck.prompt)) &&
-        !workedInteraction
-      ) {
+      if (!content.informalCheck && !workedInteraction) {
         codes.add('missing_planned_learner_action');
       } else if (
         content.informalCheck &&
@@ -2282,7 +2291,7 @@ export function evaluateLessonSlotPedagogy(
       max: plannedMinutes.maxMinutes,
     },
     claimedAgendaMinutes: input.skeleton.targetMinutes,
-    findings,
+    findings: boundLessonFindings(findings),
     evaluatedAt: options.evaluatedAt,
   });
 }

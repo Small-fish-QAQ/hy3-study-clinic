@@ -16,6 +16,7 @@ import { makeWorkspace, T0 } from '../testing/fixtures.js';
 import { HISTORICAL_TEACHING_SKELETON_V1 } from '../testing/historicalTeachingSkeletonV1.js';
 import { createRepositories, type Repositories } from './index.js';
 import { seedLessonGroundingProof } from '../testing/lessonGroundingFixture.js';
+import { COMPOSITIONAL_LESSON_PEDAGOGY_POLICY_VERSION } from '../services/lessonPedagogyEvaluator.js';
 
 const T1 = '2026-01-01T00:01:00.000Z';
 const LEASE_END = '2026-01-01T01:00:00.000Z';
@@ -211,7 +212,7 @@ function checkpoint(overrides: Partial<AcceptedLessonCheckpoint> = {}): Accepted
     })),
     lessonEvaluation: {
       schemaVersion: 1,
-      policyVersion: 'lesson-pedagogy-v3-compositional',
+      policyVersion: COMPOSITIONAL_LESSON_PEDAGOGY_POLICY_VERSION,
       evaluator: 'independent-deterministic-lesson-evaluator',
       independent: true,
       status: 'pass',
@@ -371,16 +372,33 @@ describe('accepted Lesson checkpoints repository', () => {
     },
   );
 
-  it('persists a failed independent Lesson evaluation as an immutable diagnostic', () => {
-    const failed = checkpoint();
-    failed.lessonEvaluation.status = 'fail';
-    seedLessonGroundingProof(failed);
-    const stored = repos.acceptedLessonCheckpoints.create(failed);
-    expect(stored.lessonEvaluation.status).toBe('fail');
-    expect(db.prepare('SELECT COUNT(*) AS count FROM accepted_lesson_checkpoints').get()).toEqual({
-      count: 1,
-    });
-  });
+  it.each(['failed_status', 'hard_finding', 'stale_policy'] as const)(
+    'rejects %s from accepted checkpoint persistence even with grounding',
+    (defect) => {
+      const failed = checkpoint();
+      if (defect === 'failed_status') failed.lessonEvaluation.status = 'fail';
+      if (defect === 'stale_policy')
+        failed.lessonEvaluation.policyVersion = 'lesson-pedagogy-v10-public-choice-contract';
+      if (defect === 'hard_finding')
+        failed.lessonEvaluation.findings.push({
+          severity: 'error',
+          criterion: 'learner_activity',
+          code: 'missing_planned_learner_action',
+          message: 'Required action is absent.',
+          segmentIndexes: [1],
+          objectiveRefs: ['O1'],
+        });
+      seedLessonGroundingProof(failed);
+      expect(() => repos.acceptedLessonCheckpoints.create(failed)).toThrow(
+        'hard-valid public choice/evaluation contract',
+      );
+      expect(db.prepare('SELECT COUNT(*) AS count FROM accepted_lesson_checkpoints').get()).toEqual(
+        {
+          count: 0,
+        },
+      );
+    },
+  );
 
   it.each([
     'missing',

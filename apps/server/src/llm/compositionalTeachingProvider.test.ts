@@ -819,7 +819,7 @@ describe('compositional Teaching providers', () => {
     expect(practicePrompt).toContain('Never quote or closely reproduce');
     expect(practicePrompt).toContain('never prove application');
     expect(schemaNames).toEqual([
-      'lesson-slot-content-v5-evidence-decisions',
+      'lesson-slot-content-v6-quality-advisory',
       'practice-content-v5-evidence-decisions',
     ]);
   });

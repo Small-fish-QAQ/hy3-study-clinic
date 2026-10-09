@@ -2,6 +2,7 @@ import {
   LessonSlotContentProposalPayloadSchema,
   type LessonGroundingResult,
   type LessonSlotContentProposalPayload,
+  type TeachingLessonSlotContent,
 } from '@hy3-clinic/shared';
 import { isDeepStrictEqual } from 'node:util';
 import type { LessonGroundingReviewInput, LessonSlotContentGenerationInput } from './provider.js';
@@ -371,6 +372,179 @@ function allowConciseFeedback(
   }
 }
 
+/** Dropping an annotation asserts no new fact. Operation labels describe quality,
+ * not the independently checked case outcome. Retained factual descriptions
+ * and counterfactuals must still match the controlled fixture. */
+function allowOptionalAnnotations(
+  expected: LessonSlotContentProposalPayload,
+  candidate: LessonSlotContentProposalPayload,
+) {
+  for (const slot of expected.slots) {
+    const actual = candidate.slots.find(({ slotId }) => slotId === slot.slotId);
+    const interaction = slot.workedProcess?.interaction;
+    const actualInteraction = actual?.workedProcess?.interaction;
+    for (const [action, actualAction] of [
+      [slot.informalCheck, actual?.informalCheck],
+      [interaction?.activity, actualInteraction?.activity],
+      [interaction?.scaffold, actualInteraction?.scaffold],
+      [interaction?.transfer, actualInteraction?.transfer],
+    ]) {
+      if (!action || !actualAction) continue;
+      for (const key of [
+        'reasoningOperation',
+        'requiredInference',
+        'decisiveCondition',
+        'evidenceContrast',
+      ] as const) {
+        if (!(key in actualAction)) Reflect.deleteProperty(action, key);
+      }
+      if (actualAction.reasoningOperation)
+        action.reasoningOperation = actualAction.reasoningOperation;
+    }
+    if (actual?.workedProcess?.learnerDecision === null && slot.workedProcess)
+      slot.workedProcess.learnerDecision = null;
+  }
+}
+
+/** An independently fixed ordinary-action case: 5 - 1 = 4 >= 3, then 4 - 3 = 1. */
+export function createFakeLessonOrdinaryCheck(): NonNullable<
+  TeachingLessonSlotContent['informalCheck']
+> {
+  return {
+    kind: 'choose_alternative',
+    prompt: '新案例：处理器容量5，甲正在运行并占用1；乙需要3个且不能拆分。甲完成前乙能否启动？',
+    expectedSignal: '5-1=4，4>=3，启动后4-3=1。',
+    options: [
+      {
+        id: 'A',
+        text: '乙可以启动，分配后剩1个空闲配额。',
+        feedbackIfSelected: '4>=3，启动后剩1。',
+      },
+      {
+        id: 'B',
+        text: '乙必须等甲完成才能启动。',
+        feedbackIfSelected: '当前空闲4已覆盖需求3，无需等待。',
+      },
+      { id: 'C', text: '乙永久失败。', feedbackIfSelected: '乙的需求可以满足，因此不会永久失败。' },
+    ],
+    correctOptionId: 'A',
+  };
+}
+
+/** The same question with new public facts: 4 - 1 = 3, then 3 - 3 = 0. */
+export function createFakeLessonChangedTransfer(prompt: string) {
+  return {
+    changedCondition: '新快照：处理器容量4，甲运行中占用1，空闲3；乙需要3且不能拆分。',
+    prompt,
+    options: [
+      {
+        id: 'A',
+        text: '乙继续等待，当前快照不足以支持它启动。',
+        feedbackIfSelected: '空闲3等于需求3，因此现在满足准入条件。',
+      },
+      {
+        id: 'B',
+        text: '乙立即运行，分配后空闲0。',
+        feedbackIfSelected: '3减3等于0，配额未超分配。',
+      },
+      {
+        id: 'C',
+        text: '乙直接失败退出，配额不足说明任务永远不能运行。',
+        feedbackIfSelected: '当前资源足以启动乙，不会永久失败。',
+      },
+    ],
+    correctOptionId: 'B',
+    debrief: '当前空闲3覆盖乙的需求3，乙启动后剩0；原案例中的等待结论不适用于这个新快照。',
+  };
+}
+
+/** Finite verified representations of the same fixture, never arbitrary prose
+ * or a candidate-provided key. Changed/unknown claims still fail closed. */
+function allowEquivalentRepresentation(
+  expected: LessonSlotContentProposalPayload,
+  candidate: LessonSlotContentProposalPayload,
+) {
+  for (const slot of expected.slots) {
+    const actual = candidate.slots.find(({ slotId }) => slotId === slot.slotId);
+    if (!actual) continue;
+    const process = slot.workedProcess;
+    const actualProcess = actual.workedProcess;
+    const interaction = process?.interaction;
+    if (process && interaction) {
+      if (actualProcess?.interaction?.hint === interaction.activity.options[0]!.text)
+        interaction.hint = interaction.activity.options[0]!.text;
+      if (actualProcess?.interaction?.activity.requiredInference === process.ruleOrProcedure)
+        interaction.activity.requiredInference = process.ruleOrProcedure;
+      const verification = {
+        action: '复核快照，不启动或结束任何任务。',
+        reason: '没有资源事件，空闲数保持不变。',
+        resultingState: process.steps[0]!.resultingState,
+      };
+      if (
+        actualProcess?.steps.length === 3 &&
+        isDeepStrictEqual(actualProcess.steps[1], verification)
+      )
+        process.steps.splice(1, 0, verification);
+      const transfer = createFakeLessonChangedTransfer(interaction.activity.prompt);
+      if (isDeepStrictEqual(actualProcess?.interaction?.transfer, transfer))
+        interaction.transfer = transfer;
+      if (
+        isDeepStrictEqual(actual.informalCheck, createFakeLessonOrdinaryCheck()) &&
+        !actualProcess?.interaction
+      ) {
+        slot.informalCheck = createFakeLessonOrdinaryCheck();
+        if (actualProcess === null) slot.workedProcess = null;
+        else Reflect.deleteProperty(process, 'interaction');
+      }
+    }
+    if (
+      slot.contrast &&
+      !actual.contrast &&
+      actual.sourceRefs.length === 0 &&
+      actual.explanation === `${slot.explanation} ${slot.contrast.text}`
+    ) {
+      slot.explanation = `${slot.explanation} ${slot.contrast.text}`;
+      slot.sourceRefs = [];
+      delete slot.contrast;
+    }
+  }
+}
+
+export const FAKE_LESSON_MATH_SOURCE =
+  'The strict condition x>0 implies x>=0. The reverse implication fails at x=0.';
+
+/** One source-backed compact implication, including its equality boundary. */
+function allowCompactMathRelation(
+  expected: LessonSlotContentProposalPayload,
+  candidate: LessonSlotContentProposalPayload,
+  input: LessonGroundingReviewInput,
+) {
+  for (const slot of expected.slots) {
+    const plan = input.lessonPlan.lessonSlots.find(({ slotId }) => slotId === slot.slotId)!;
+    const sourceRef = plan.allowedSourceRefs[0];
+    if (
+      !plan.allowedRelations.includes('condition_action') ||
+      input.sources.find((source) => source.sourceRef === sourceRef)?.text !==
+        FAKE_LESSON_MATH_SOURCE
+    )
+      continue;
+    const relation = {
+      kind: 'condition_action' as const,
+      fromProposition: 'x>0',
+      toProposition: 'x>=0',
+      relevanceToObjective: plan.objectiveRefs[0]!,
+      sourceRefs: [sourceRef!],
+    };
+    if (
+      isDeepStrictEqual(
+        candidate.slots.find(({ slotId }) => slotId === slot.slotId)?.semanticRelations,
+        [relation],
+      )
+    )
+      slot.semanticRelations = [relation];
+  }
+}
+
 /**
  * Rebuild expectations only from the current local plan and authorized sources.
  * Every authored field, including private declarations and unselected feedback,
@@ -387,6 +561,9 @@ export function reviewFakeLessonFixture(input: LessonGroundingReviewInput): Less
   };
   const expected = createFakeLessonFixture(context);
   allowConciseFeedback(expected, candidate);
+  allowEquivalentRepresentation(expected, candidate);
+  allowCompactMathRelation(expected, candidate, input);
+  allowOptionalAnnotations(expected, candidate);
   const findings: LessonGroundingResult['findings'] = [];
   const unsupported = (itemId: string) =>
     findings.push({
@@ -438,6 +615,9 @@ export function reviewFakeLessonFixture(input: LessonGroundingReviewInput): Less
       },
     });
     allowConciseFeedback(isolated, candidate);
+    allowEquivalentRepresentation(isolated, candidate);
+    allowCompactMathRelation(isolated, candidate, input);
+    allowOptionalAnnotations(isolated, candidate);
     const alternatives = [slot, isolated.slots[0]!].flatMap((known) => {
       const confined = confineTeachingCitations(
         { lesson: { slots: [known] }, practice: { items: [] } },

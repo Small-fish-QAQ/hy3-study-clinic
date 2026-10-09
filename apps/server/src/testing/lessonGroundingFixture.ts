@@ -9,6 +9,7 @@ import {
   checkpointLessonCandidate,
   prepareLessonGroundingReview,
 } from '../services/lessonGrounding.js';
+import { lessonChoiceContextFingerprint } from '../services/lessonChoiceContract.js';
 
 /** Simulated offline review evidence for repository fixtures, never a production adapter. */
 export function seedLessonGroundingProof(
@@ -74,6 +75,9 @@ export function seedLessonGroundingProof(
     },
   };
   const candidate = checkpointLessonCandidate(checkpoint);
+  checkpoint.lessonEvaluation.choiceContextFingerprint = lessonChoiceContextFingerprint(
+    checkpoint.lessonContent,
+  );
   const prepared = prepareLessonGroundingReview(context, candidate);
   checkpoint.lessonEvaluation.groundingReview = {
     policyVersion: LESSON_GROUNDING_POLICY_VERSION,
