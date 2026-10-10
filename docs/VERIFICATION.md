@@ -92,9 +92,19 @@ npm test
 | 证据支持与能力资格        | [objectiveAuthoritySemanticSupport.test.ts](../apps/server/src/services/objectiveAuthoritySemanticSupport.test.ts)、[formalConstructAuthority.test.ts](../apps/server/src/services/formalConstructAuthority.test.ts) |
 | 正式进度与掌握            | [formalProgression.test.ts](../apps/server/src/services/formalProgression.test.ts)、[共享规则测试](../packages/shared/src/domain/formalProgression.test.ts)                                                          |
 | 教学界面                  | [LessonExecutionPanel.test.tsx](../apps/web/src/components/LessonExecutionPanel.test.tsx)                                                                                                                            |
+| 完整课程 Golden Journey   | [courseGoldenJourney.integration.test.ts](../apps/server/src/services/courseGoldenJourney.integration.test.ts)、[StudySessionView.golden.test.tsx](../apps/web/src/views/StudySessionView.golden.test.tsx)           |
 | 配置与 Fake 隔离          | [providerRuntime.test.ts](../apps/server/src/services/providerRuntime.test.ts)、[config.test.ts](../apps/server/src/config.test.ts)                                                                                  |
 | 公开证据与源码卫生        | [publishedEvidence.test.ts](../apps/server/src/eval/publishedEvidence.test.ts)、[sourceHygiene.test.ts](../apps/server/src/sourceHygiene.test.ts)                                                                    |
 | StudyEval 契约与 Provider | [评估器测试](../eval/studyeval/test)                                                                                                                                                                                 |
+
+Phase 3A 的离线 Golden Journey 用三份独立讲义创建“工作记忆入门”，通过普通课程准备与接受入口自动启用学习路线，完成工作记忆、组块化、复述三个单元及正式检查。其中一次 Practice 答错后经过 Repair 和两次 Retest；最后通过生产命令记录 `achieved`，关闭文件 SQLite，再用新应用实例读取并核对保存状态。前端检查用 RTL 和本地 Fastify `inject` 连接真实 API，覆盖讲解、答错反馈、补救、两次重测与继续课程按钮。测试记录 Provider 调用数，并检查已接受内容复用与重载不触发重新生成。
+
+```bash
+npm run test -w @hy3-clinic/server -- src/services/courseGoldenJourney.integration.test.ts
+npm run test -w @hy3-clinic/web -- src/views/StudySessionView.golden.test.tsx
+```
+
+这两项检查只验证 Fake 流程与界面状态一致性，不证明真实模型教学或评分质量已经达标。
 
 例如检查公开证据与已跟踪文件：
 

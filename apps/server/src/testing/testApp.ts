@@ -16,7 +16,7 @@ export interface TestApp {
   provider: LlmProvider;
 }
 
-/** Build a fully-wired app on an in-memory database with a fixed clock. */
+/** Build a fully-wired app with a fixed clock; memory by default, optionally file-backed. */
 export function buildTestApp(
   options: {
     provider?: LlmProvider;
@@ -24,14 +24,15 @@ export function buildTestApp(
     clock?: Clock;
     providerConfigStore?: ProviderConfigStore | null;
     providerRuntime?: ProviderRuntime;
+    databasePath?: string;
   } = {},
 ): TestApp {
-  const db = openDatabase(':memory:');
+  const db = openDatabase(options.databasePath ?? ':memory:');
   migrate(db);
   const repos = createRepositories(db);
   // Documents always belong to a workspace; seed the default fixture one so
   // tests may insert `makeMaterial()` rows directly through the repos.
-  repos.workspaces.insert(makeWorkspace());
+  if (!repos.workspaces.get('ws_1')) repos.workspaces.insert(makeWorkspace());
   const provider = options.provider ?? new FakeProvider();
   const app = buildApp({
     repos,
