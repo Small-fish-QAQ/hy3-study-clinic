@@ -9,6 +9,7 @@ import {
   type MaterialRoleAssignment,
   type MaterialRoleHistoryResponse,
   type StudySession,
+  type StartStudySessionResponse,
   type Workspace,
 } from '@hy3-clinic/shared';
 import type { FastifyInstance } from 'fastify';
@@ -138,6 +139,45 @@ export async function prepareGoldenCourse(app: FastifyInstance) {
   if (activated.preparation.state !== 'complete')
     throw new Error(`Expected activated ordinary route: ${JSON.stringify(activated)}`);
   return { workspace, contract, curriculum, overview: await goldenOverview(app, workspaceId) };
+}
+
+/** Start the currently offered teaching item without seeding execution state. */
+export async function startGoldenStudy(
+  app: FastifyInstance,
+  course: Awaited<ReturnType<typeof prepareGoldenCourse>>,
+) {
+  const overview = await goldenOverview(app, course.workspace.id);
+  const { agendaId, item } = overview.nextAction!;
+  if (item.kind !== 'learning_unit_teaching') throw new Error('Expected offered teaching work.');
+  const { session } = await goldenRequest<StartStudySessionResponse>(
+    app,
+    `/api/workspaces/${course.workspace.id}/study-sessions`,
+    {
+      contractVersionId: course.contract.id,
+      curriculumVersionId: course.curriculum.id,
+      studyPlanVersionId: overview.acceptedStudyPlan!.id,
+      sessionAgendaId: agendaId,
+      expectedCourseExecutionVersion: overview.courseExecutionVersion,
+    },
+  );
+  return { session, item };
+}
+
+export async function prepareGoldenLesson(
+  app: FastifyInstance,
+  workspaceId: string,
+  sessionId: string,
+  agendaItemId: string,
+  id: string,
+) {
+  const base = `/api/workspaces/${workspaceId}/study-sessions/${sessionId}/lesson-execution`;
+  const current = await goldenRequest<LessonExecutionProjection>(app, base);
+  return goldenRequest<LessonExecutionProjection>(app, `${base}/prepare`, {
+    command: goldenCommand(workspaceId, id),
+    expectedSessionVersion: current.session.version,
+    expectedAgendaVersion: current.agenda!.version,
+    expectedAgendaItemId: agendaItemId,
+  });
 }
 
 export async function goldenLessonCommand(

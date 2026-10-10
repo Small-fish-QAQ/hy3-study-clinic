@@ -93,6 +93,7 @@ npm test
 | 正式进度与掌握            | [formalProgression.test.ts](../apps/server/src/services/formalProgression.test.ts)、[共享规则测试](../packages/shared/src/domain/formalProgression.test.ts)                                                          |
 | 教学界面                  | [LessonExecutionPanel.test.tsx](../apps/web/src/components/LessonExecutionPanel.test.tsx)                                                                                                                            |
 | 完整课程 Golden Journey   | [courseGoldenJourney.integration.test.ts](../apps/server/src/services/courseGoldenJourney.integration.test.ts)、[StudySessionView.golden.test.tsx](../apps/web/src/views/StudySessionView.golden.test.tsx)           |
+| Golden Journey 恢复路径   | [courseGoldenRecovery.integration.test.ts](../apps/server/src/services/courseGoldenRecovery.integration.test.ts)、[StudySessionView.recovery.test.tsx](../apps/web/src/views/StudySessionView.recovery.test.tsx)     |
 | 配置与 Fake 隔离          | [providerRuntime.test.ts](../apps/server/src/services/providerRuntime.test.ts)、[config.test.ts](../apps/server/src/config.test.ts)                                                                                  |
 | 公开证据与源码卫生        | [publishedEvidence.test.ts](../apps/server/src/eval/publishedEvidence.test.ts)、[sourceHygiene.test.ts](../apps/server/src/sourceHygiene.test.ts)                                                                    |
 | StudyEval 契约与 Provider | [评估器测试](../eval/studyeval/test)                                                                                                                                                                                 |
@@ -105,6 +106,43 @@ npm run test -w @hy3-clinic/web -- src/views/StudySessionView.golden.test.tsx
 ```
 
 这两项检查只验证 Fake 流程与界面状态一致性，不证明真实模型教学或评分质量已经达标。
+
+Phase 3B 复用同一三单元课程夹具，每次只运行当前恢复转换需要的教学路径。服务端包含 6 个测试，前端通过 RTL 与本地 Fastify `inject` 包含 4 个补充联动测试；没有通过测试直接改写数据库制造恢复状态。五类代表性结果如下：
+
+| 场景                       | 真实状态与可执行路径                                                                                                                                                              |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Retest 再次答错            | 保留未通过与原始错误，不标记 recovered、不完成、不授予 Formal credit；界面“换一种方式补上缺口”实际准备第二轮 Repair。                                                             |
+| Lesson / Practice 生成失败 | 各注入一次连接失败；API 与界面提供重试，重试后可以开始讲解；Practice 失败前接受的 Lesson checkpoint、来源和内容保持一致。                                                         |
+| 主动 Defer                 | 学习命令写入 Agenda、Plan progress 和 learner coverage-risk；界面展示保留的缺口，Tutor 提问实际可用；延期没有满足正式检查的教学前置条件，`achieved` 命令被拒绝。                  |
+| 暂停、重启、继续           | 中途暂停后关闭文件 SQLite，新应用实例恢复相同位置、内容、进度与允许操作；通过 API 继续讲解并完成 Practice，重启后的 Provider 调用为 0。                                           |
+| 迟到结果                   | 用已有 started/gate 并发模式延迟 Practice，在真实暂停命令后释放旧结果；旧请求返回版本冲突，暂停的 Session / Agenda 与接受的 Lesson 不变；继续后复用 Lesson，只重新生成 Practice。 |
+
+```bash
+npm run test -w @hy3-clinic/server -- src/services/courseGoldenRecovery.integration.test.ts
+npm run test -w @hy3-clinic/web -- src/views/StudySessionView.recovery.test.tsx
+```
+
+服务端每个场景的课程准备均调用 `analyzeConcepts` 3 次、`proposeCourseMap` 1 次、`proposeCurriculumDetails` 1 次。以下为各独立场景的后续 Fake Provider 调用数，包括审查；读取、已接受内容复用与普通学习命令均不产生额外生成：
+
+| 场景                         | Lesson | Practice | Repair | Tutor | reviewTeachingContent |
+| ---------------------------- | -----: | -------: | -----: | ----: | --------------------: |
+| Retest 未通过及继续 Repair   |      1 |        1 |      2 |     0 |                    13 |
+| Lesson 失败及重试            |      2 |        1 |      0 |     0 |                     5 |
+| Practice 失败及重试          |      1 |        2 |      0 |     0 |                     5 |
+| Defer 及请求支持             |      1 |        1 |      0 |     1 |                     5 |
+| 暂停 / 重启 / 继续（关闭前） |      1 |        1 |      0 |     0 |                     5 |
+| 暂停 / 重启 / 继续（重启后） |      0 |        0 |      0 |     0 |                     0 |
+| 迟到 Practice 及恢复         |      1 |        2 |      0 |     0 |                     5 |
+
+Phase 3B 的范围是故障状态、恢复操作、来源与正式证据隔离，以及 Provider 调用复用。真实模型的诊断与补救教学质量、新情境的有效性、生成和评分的语义正确性、真实网络中断下的模型表现仍须在 Phase 4 验证；这些离线结果不证明学习效果。
+
+2026-10-10 在 Windows / Node.js 24.14.1 上，Phase 3B 最终结论为 **PASS**：五类真实恢复场景全部通过，服务端 6/6、前端 4/4，Phase 3A 成功基线也通过。超时修复仅为 `teachingBriefPreparation.test.ts` 的 `real accumulated Tutor history (65 replies)` 用例增加专属 30 秒预算；全局仍为 15 秒，65 条历史、全部断言、真实生产路径及生产行为保持不变。2-worker 标准 `npm test` 最终为 **4129/4129 PASS**（shared 288/288，server 3310/3310，web 531/531），未使用命令行超时覆盖。
+
+修复前首次检查使用 4 workers，结论为 **PARTIAL**：shared 为 288/288，server 为 3309/3310，web 为 531/531。唯一失败是上述 65 replies 用例超过默认 15 秒，单 worker 按原限制复测仍超时。显式 `--testTimeout=30000` 的诊断运行在 17.82 秒完成并通过所有断言；这次诊断不计为修复前的标准检查通过。修复后的正常配置单项复测通过，2-worker 全量中该用例在 17.179 秒通过。
+
+独立 Fable 5.1 Final Closure Review 已实际复现全量结果，工程与测试无实质阻断。未发现生产正确性缺陷，没有修改生产代码。Phase 3B 已达到 Final Closure 接受条件，六个改动文件可整体提交，并在提交后关闭 Phase 3。
+
+`npm run build`、`npm run lint`、`eval:fake`（50/50）、StudyEval 单测（22/22）及两项冻结证据 verifier 均通过；lint 保留既有 `GraphWorkspaceView.tsx` 的 Hooks 依赖 warning，Vite 保留既有 chunk 大小提示。没有调用真实模型 API，也没有 commit / push。
 
 例如检查公开证据与已跟踪文件：
 

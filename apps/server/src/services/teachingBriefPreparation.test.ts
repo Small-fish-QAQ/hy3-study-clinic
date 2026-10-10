@@ -10600,97 +10600,105 @@ describe('Post-Practice recovery', () => {
     ).toEqual({ n: 0 });
   });
 
-  it.each(['65 replies', 'six long replies'])(
-    'completes Repair, reload and both Retests with real accumulated Tutor history (%s)',
-    async (history) => {
-      const fixture = await failedPracticeHarness();
-      const { harness, route, get, act } = fixture;
-      await act({ kind: 'prepare_practice_repair', learnerNote: '' });
-      const before = harness.repos.lessonExecution.getForSession(
-        route.session.id,
-        route.agendaItem.id,
-      )!;
-      const authority = recoveryAuthorityDigest(harness.db);
-      const count = history === '65 replies' ? 65 : 6;
-      const texts = Array.from({ length: count }, (_, index) => {
-        const prefix = '一般规则：分别核对每个条件。第' + index + '条。';
-        return history === '65 replies'
-          ? prefix
-          : (prefix + '条件判断。'.repeat(1600)).slice(0, 7500);
-      });
-      const exposed = await revealRepairTutorText(fixture, texts);
-      const fullHistory = harness.repos.studySessions.listTutorTeaching('ws_1');
-      expect(fullHistory).toHaveLength(count);
-      expect(fullHistory.map(({ content }) => content)).toEqual(exposed.texts);
-      if (history === 'six long replies') {
-        expect(fullHistory.every(({ content }) => content.length === 7500)).toBe(true);
-        expect(
-          Buffer.byteLength(JSON.stringify(fullHistory.map(({ content }) => content))),
-        ).toBeGreaterThan(128 * 1024);
-      }
-      // New relevant replies stale the previous packet, but real history remains.
-      expect(get().practice?.recovery?.phase).toBe('diagnosis');
-      await expect(act({ kind: 'start_practice_retest' })).rejects.toMatchObject({
-        code: 'VALIDATION_ERROR',
-      });
-      const reviews: TeachingContentReviewInput[] = [];
-      const review = harness.provider.reviewTeachingContent.bind(harness.provider);
-      harness.provider.reviewTeachingContent = async (input, opts) => {
-        if (input.purpose?.startsWith('repair_')) reviews.push(structuredClone(input));
-        return review(input, opts);
-      };
-      await act({ kind: 'prepare_practice_repair', learnerNote: '保留累计教学记录。' });
-      expect(reviews.map(({ purpose }) => purpose)).toEqual([
-        'repair_grounding',
-        'repair_answerability',
-        'repair_answerability',
-        'repair_integrity',
-      ]);
-      const saved = harness.repos.lessonExecution.get(before.id)!;
-      const round = saved.practiceInteractions[0]!.recovery!.rounds.at(-1)!;
-      expect(round.acceptance!.context.tutorExplanations).toEqual(exposed.texts.slice(-2));
-      expect(round.acceptance!.integrity.scope).toBe(PRACTICE_REPAIR_INTEGRITY_SCOPE);
-      expect(saved.practiceInteractions[0]!.recovery!.learnerNote).toBe('保留累计教学记录。');
-      const restarted = createServices({ repos: harness.repos, provider: harness.provider, clock });
-      const reloaded = () => restarted.lessonExecution.get('ws_1', route.session.id);
-      expect(reloaded().practice?.recovery?.phase).toBe('repair');
-      const execute = (action: LessonExecutionCommandRequest['action']) => {
-        const current = reloaded();
-        return restarted.lessonExecution.command('ws_1', route.session.id, {
-          command: command(
-            'capacity-reload-' + action.kind + '-' + ('index' in action ? action.index : ''),
-          ),
-          expectedSessionVersion: current.session.version,
-          expectedAgendaVersion: current.agenda!.version,
-          expectedAgendaItemId: route.agendaItem.id,
-          expectedLessonStateVersion: current.progress!.stateVersion,
-          action,
+  for (const history of ['65 replies', 'six long replies']) {
+    it(
+      `completes Repair, reload and both Retests with real accumulated Tutor history (${history})`,
+      async () => {
+        const fixture = await failedPracticeHarness();
+        const { harness, route, get, act } = fixture;
+        await act({ kind: 'prepare_practice_repair', learnerNote: '' });
+        const before = harness.repos.lessonExecution.getForSession(
+          route.session.id,
+          route.agendaItem.id,
+        )!;
+        const authority = recoveryAuthorityDigest(harness.db);
+        const count = history === '65 replies' ? 65 : 6;
+        const texts = Array.from({ length: count }, (_, index) => {
+          const prefix = '一般规则：分别核对每个条件。第' + index + '条。';
+          return history === '65 replies'
+            ? prefix
+            : (prefix + '条件判断。'.repeat(1600)).slice(0, 7500);
         });
-      };
-      await execute({ kind: 'start_practice_retest' });
-      expect(JSON.stringify(reloaded().practice?.recovery)).not.toContain(
-        round.content.retest[1]!.prompt,
-      );
-      await execute({
-        kind: 'submit_practice_retest',
-        index: 0,
-        optionId: round.content.retest[0]!.correctOptionId,
-      });
-      expect(reloaded().practice?.recovery?.retest?.index).toBe(1);
-      expect(
-        (
-          await execute({
-            kind: 'submit_practice_retest',
-            index: 1,
-            optionId: round.content.retest[1]!.correctOptionId,
-          })
-        ).practice?.completedAt,
-      ).toBeTruthy();
-      expect(harness.repos.lessonExecution.get(before.id)!.practiceCompletedAt).toBeTruthy();
-      expect(harness.repos.studySessions.listTutorTeaching('ws_1')).toEqual(fullHistory);
-      expect(recoveryAuthorityDigest(harness.db)).toEqual(authority);
-    },
-  );
+        const exposed = await revealRepairTutorText(fixture, texts);
+        const fullHistory = harness.repos.studySessions.listTutorTeaching('ws_1');
+        expect(fullHistory).toHaveLength(count);
+        expect(fullHistory.map(({ content }) => content)).toEqual(exposed.texts);
+        if (history === 'six long replies') {
+          expect(fullHistory.every(({ content }) => content.length === 7500)).toBe(true);
+          expect(
+            Buffer.byteLength(JSON.stringify(fullHistory.map(({ content }) => content))),
+          ).toBeGreaterThan(128 * 1024);
+        }
+        // New relevant replies stale the previous packet, but real history remains.
+        expect(get().practice?.recovery?.phase).toBe('diagnosis');
+        await expect(act({ kind: 'start_practice_retest' })).rejects.toMatchObject({
+          code: 'VALIDATION_ERROR',
+        });
+        const reviews: TeachingContentReviewInput[] = [];
+        const review = harness.provider.reviewTeachingContent.bind(harness.provider);
+        harness.provider.reviewTeachingContent = async (input, opts) => {
+          if (input.purpose?.startsWith('repair_')) reviews.push(structuredClone(input));
+          return review(input, opts);
+        };
+        await act({ kind: 'prepare_practice_repair', learnerNote: '保留累计教学记录。' });
+        expect(reviews.map(({ purpose }) => purpose)).toEqual([
+          'repair_grounding',
+          'repair_answerability',
+          'repair_answerability',
+          'repair_integrity',
+        ]);
+        const saved = harness.repos.lessonExecution.get(before.id)!;
+        const round = saved.practiceInteractions[0]!.recovery!.rounds.at(-1)!;
+        expect(round.acceptance!.context.tutorExplanations).toEqual(exposed.texts.slice(-2));
+        expect(round.acceptance!.integrity.scope).toBe(PRACTICE_REPAIR_INTEGRITY_SCOPE);
+        expect(saved.practiceInteractions[0]!.recovery!.learnerNote).toBe('保留累计教学记录。');
+        const restarted = createServices({
+          repos: harness.repos,
+          provider: harness.provider,
+          clock,
+        });
+        const reloaded = () => restarted.lessonExecution.get('ws_1', route.session.id);
+        expect(reloaded().practice?.recovery?.phase).toBe('repair');
+        const execute = (action: LessonExecutionCommandRequest['action']) => {
+          const current = reloaded();
+          return restarted.lessonExecution.command('ws_1', route.session.id, {
+            command: command(
+              'capacity-reload-' + action.kind + '-' + ('index' in action ? action.index : ''),
+            ),
+            expectedSessionVersion: current.session.version,
+            expectedAgendaVersion: current.agenda!.version,
+            expectedAgendaItemId: route.agendaItem.id,
+            expectedLessonStateVersion: current.progress!.stateVersion,
+            action,
+          });
+        };
+        await execute({ kind: 'start_practice_retest' });
+        expect(JSON.stringify(reloaded().practice?.recovery)).not.toContain(
+          round.content.retest[1]!.prompt,
+        );
+        await execute({
+          kind: 'submit_practice_retest',
+          index: 0,
+          optionId: round.content.retest[0]!.correctOptionId,
+        });
+        expect(reloaded().practice?.recovery?.retest?.index).toBe(1);
+        expect(
+          (
+            await execute({
+              kind: 'submit_practice_retest',
+              index: 1,
+              optionId: round.content.retest[1]!.correctOptionId,
+            })
+          ).practice?.completedAt,
+        ).toBeTruthy();
+        expect(harness.repos.lessonExecution.get(before.id)!.practiceCompletedAt).toBeTruthy();
+        expect(harness.repos.studySessions.listTutorTeaching('ws_1')).toEqual(fullHistory);
+        expect(recoveryAuthorityDigest(harness.db)).toEqual(authority);
+      },
+      // 65 persisted Tutor turns plus Repair/reload/Retests exceed the default budget.
+      history === '65 replies' ? 30_000 : undefined,
+    );
+  }
 
   it('preserves Repair input and Retest acceptance after omitted Practice descriptions', async () => {
     const { harness, route, act, brief } = await failedPracticeHarness(true);

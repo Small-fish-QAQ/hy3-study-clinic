@@ -39,6 +39,7 @@ export const GOLDEN_ANSWERS = {
   transfer: '由备用处理器接收乙，并在它自己的容量内分配资源。',
   practice: '完成处理没有归还配额，应检查完成事件到计数更新的链路。',
   wrongPractice: '新任务的优先级太低，只需提高优先级即可恢复配额。',
+  wrongRetest: '两区都供水，因为水库仍有水。',
   retest: ['只有西区供水，因为西阀开启。', '不能派送，因为邮资未付。'],
 } as const;
 
@@ -53,6 +54,24 @@ export function publicOptionId(
 }
 
 class GoldenCourseProvider extends FakeProvider {
+  constructor(private readonly hooks: GoldenGenerationHooks = {}) {
+    super();
+  }
+
+  override async generateLessonSlotContent(
+    ...args: Parameters<FakeProvider['generateLessonSlotContent']>
+  ) {
+    await this.hooks.lesson?.();
+    return super.generateLessonSlotContent(...args);
+  }
+
+  override async generatePracticeContent(
+    ...args: Parameters<FakeProvider['generatePracticeContent']>
+  ) {
+    await this.hooks.practice?.();
+    return super.generatePracticeContent(...args);
+  }
+
   override async proposeCurriculumDetails(
     ...args: Parameters<FakeProvider['proposeCurriculumDetails']>
   ) {
@@ -71,12 +90,18 @@ class GoldenCourseProvider extends FakeProvider {
   }
 }
 
+/** Narrow failure/gate injection for the same authored Golden Course. */
+export interface GoldenGenerationHooks {
+  lesson?: () => void | Promise<void>;
+  practice?: () => void | Promise<void>;
+}
+
 /** Count external Provider invocations, including reviews; internal Fake helpers
  * run with the original receiver and are not mistaken for model requests.
  */
-export function goldenProvider() {
+export function goldenProvider(hooks: GoldenGenerationHooks = {}) {
   const calls: Record<string, number> = {};
-  const provider = new Proxy(new GoldenCourseProvider(), {
+  const provider = new Proxy(new GoldenCourseProvider(hooks), {
     get(target, key, receiver) {
       const value: unknown = Reflect.get(target, key, receiver);
       if (typeof key !== 'string' || typeof value !== 'function') return value;
