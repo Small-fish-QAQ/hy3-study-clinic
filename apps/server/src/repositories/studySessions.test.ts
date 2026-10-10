@@ -143,6 +143,104 @@ beforeEach(() => {
 });
 
 describe('studySessions repository', () => {
+  it('keeps full records and selects the latest local relevant completed Tutor replies', () => {
+    repos.studySessions.create(session());
+    const cases = [
+      { agenda: 'another_item', role: 'tutor' as const, status: 'completed' as const },
+      { agenda: null, role: 'tutor' as const, status: 'completed' as const },
+      { agenda: 'agenda_item_1', role: 'tutor' as const, status: 'completed' as const },
+      { agenda: 'agenda_item_1', role: 'tutor' as const, status: 'failed' as const },
+      { agenda: 'agenda_item_1', role: 'learner' as const, status: 'completed' as const },
+      { agenda: 'agenda_item_1', role: 'tutor' as const, status: 'completed' as const },
+    ];
+    for (const [index, example] of cases.entries()) {
+      const id = `exposure_turn_${index}`;
+      repos.studySessions.insertTurn(
+        turn({
+          id,
+          seq: index,
+          commandId: id,
+          status: example.status,
+          tutorMetadata: {
+            move: 'EXPLAIN_DEEPER',
+            sourceRefs: [],
+            routeSignal: 'stay_on_route',
+            lessonSegmentIndex: null,
+            policyVersion: 'fixture',
+            studyContext: {
+              agendaItemId: example.agenda,
+              lessonTitle: '条件判断',
+              phase: 'practice',
+              anchor: null,
+            },
+          },
+        }),
+      );
+      repos.studySessions.insertExchange({
+        id: `exposure_exchange_${index}`,
+        turnId: id,
+        sessionId: 'session_1',
+        seq: index,
+        role: example.role,
+        content: index === 2 ? 'x'.repeat(8500) + 'FULL_TAIL' : `teaching_${index}`,
+        channel: 'conversation',
+        createdAt: index < 5 ? T0 : T1,
+      });
+    }
+    const complete = repos.studySessions.listTutorTeaching('ws_1', undefined, {
+      agendaItemId: 'agenda_item_1',
+      limit: 4,
+    });
+    expect(complete.map((entry) => entry.content)).toEqual([
+      'teaching_1',
+      'x'.repeat(8500) + 'FULL_TAIL',
+      'teaching_5',
+    ]);
+    expect(
+      repos.studySessions.listTutorTeaching('ws_1', undefined, {
+        agendaItemId: 'agenda_item_1',
+        limit: 2,
+      }),
+    ).toEqual(complete.slice(0, 2));
+    expect(
+      repos.studySessions.listTutorTeaching('ws_1', undefined, {
+        agendaItemId: 'agenda_item_1',
+        limit: 2,
+        latest: true,
+      }),
+    ).toEqual(complete.slice(-2));
+    expect(
+      repos.studySessions.listTutorTeaching('ws_1', T1, {
+        agendaItemId: 'agenda_item_1',
+        limit: 4,
+      }),
+    ).toEqual(complete.slice(0, 2));
+    expect(repos.studySessions.listTutorTeaching('other_workspace')).toEqual([]);
+    repos.studySessions.insertTurn(
+      turn({ id: 'latest_tutor', seq: 6, commandId: 'latest_tutor', status: 'completed' }),
+    );
+    repos.studySessions.insertExchange({
+      id: 'aaa_latest_exchange',
+      turnId: 'latest_tutor',
+      sessionId: 'session_1',
+      seq: 6,
+      role: 'tutor',
+      content: 'most_recent',
+      channel: 'conversation',
+      createdAt: T0,
+    });
+    // A clock tie/reversal or lexically smaller ID cannot hide newly published exposure.
+    expect(
+      repos.studySessions
+        .listTutorTeaching('ws_1', undefined, {
+          agendaItemId: 'agenda_item_1',
+          limit: 2,
+          latest: true,
+        })
+        .map(({ content }) => content),
+    ).toEqual(['teaching_5', 'most_recent']);
+  });
+
   it('round-trips session transcript, turn events, and rolling summary in sequence order', () => {
     expect(repos.studySessions.create(session())).toEqual(session());
     expect(repos.studySessions.insertTurn(turn())).toEqual(turn());

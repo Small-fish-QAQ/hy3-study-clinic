@@ -10,6 +10,7 @@ import type {
   PracticeRepairGroundingReviewInput,
   PracticeRepairIntegrityReviewInput,
 } from './provider.js';
+import { identicalRepairTasks, repairComparisonTasks } from './practiceRepair.js';
 import { ProviderError } from './errors.js';
 
 type Case = {
@@ -169,23 +170,16 @@ const core = (input: Pick<PracticeRepairInput, 'selectedAnswer' | 'objective'>) 
 });
 
 export function createFakePracticeRepairFixture(input: PracticeRepairInput): PracticeRepairContent {
-  const reserved = [
-    input.failedPrompt,
-    ...input.archivedRetestPrompts,
-    ...input.unseenPracticePrompts,
-  ];
+  const reserved = repairComparisonTasks(input);
   const pair = [0, 2, 4, 6].find(
     (start) =>
-      !input.priorRounds.some((round) =>
-        round.retest.some((surface) =>
-          cases.slice(start, start + 2).some((known) => known.prompt === surface.prompt),
-        ),
-      ) &&
       !cases
         .slice(start, start + 2)
         .some(
           (known) =>
-            reserved.includes(known.prompt) ||
+            reserved.some((task) =>
+              identicalRepairTasks(task, { prompt: known.prompt, options: known.answers }),
+            ) ||
             (input.tutorExplanations ?? []).some(
               (text) => text.includes(known.prompt) || text.includes(known.explanation),
             ),
@@ -281,8 +275,22 @@ export function reviewFakeRepairIntegrity(
   for (const [index, surface] of input.candidate.entries()) {
     const known = knownCase(surface);
     if (
-      input.comparisonPrompts.includes(surface.prompt) ||
-      input.candidate.slice(0, index).some((other) => other.prompt === surface.prompt)
+      [
+        ...input.comparisonTasks,
+        ...input.candidate.slice(0, index).map((other) => ({
+          prompt: other.prompt,
+          options: other.options.map(({ text }) => text),
+        })),
+      ].some((other) =>
+        identicalRepairTasks(other, {
+          prompt: surface.prompt,
+          options: surface.options.map(({ text }) => text),
+        }),
+      ) ||
+      // In this finite catalogue the known prompt owns ALL deciding facts and
+      // the decision. This is a controlled case identity, not a generic Tutor
+      // template/substring policy for arbitrary tasks.
+      (known && input.priorTeaching.some((text) => text.includes(known.prompt)))
     )
       findings.push({
         itemId: surface.itemId,
@@ -290,11 +298,7 @@ export function reviewFakeRepairIntegrity(
         problem: 'The same controlled public case is exposed or reserved.',
         repairInstruction: 'Choose a fresh independently checked case.',
       });
-    if (
-      input.priorTeaching.some(
-        (text) => text.includes(surface.prompt) || (known && text.includes(known.explanation)),
-      )
-    )
+    if (input.priorTeaching.some((text) => known && text.includes(known.explanation)))
       findings.push({
         itemId: surface.itemId,
         code: 'answer_leak',

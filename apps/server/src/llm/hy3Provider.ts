@@ -15,6 +15,7 @@ import {
   type CurriculumCoverageReviewInput,
 } from './curriculumCoverage.js';
 import {
+  ApiErrorCode,
   AlignmentProposalPayloadSchema,
   AssessmentProposalPayloadSchema,
   FormalAssessmentProposalPayloadSchema,
@@ -106,7 +107,8 @@ import {
   validateScoringReviewProposal,
   validateScoringChallenges,
 } from '../services/formalScoringReview.js';
-import { practiceRepairMessages } from './practiceRepair.js';
+import { practiceRepairMessages, PRACTICE_REPAIR_MAX_REQUEST_BYTES } from './practiceRepair.js';
+import { AppError } from '../errors.js';
 import type { PracticeRepairInput } from './provider.js';
 import { z, type ZodType, type ZodTypeDef } from 'zod';
 import { ProviderError } from './errors.js';
@@ -923,13 +925,14 @@ export class Hy3Provider implements LlmProvider {
 
   async generatePracticeRepair(input: PracticeRepairInput, opts?: ProviderCallOptions) {
     return this.complete(
-      practiceRepairMessages(input),
+      practiceRepairMessages(input, this.config.model),
       PracticeRepairContentSchema,
       opts,
       'Repair only the reported defects. Keep the same failed capability and return the complete packet.',
       {
         maxTokens: 16_384,
-        schemaName: 'practice-repair-v1',
+        schemaName: 'practice-repair-v2-local',
+        repairRequestBound: true,
         immutableItemIds: [],
         allowIndependentRepair: false,
       },
@@ -1221,7 +1224,7 @@ export class Hy3Provider implements LlmProvider {
       {
         maxTokens: 8000,
         schemaName: input.purpose?.startsWith('repair_')
-          ? `${input.purpose}-review-v1`
+          ? `${input.purpose}-review-v2-local`
           : input.purpose === 'practice_answerability'
             ? PRACTICE_ANSWERABILITY_POLICY_VERSION
             : input.purpose === 'practice_grounding'
@@ -1232,6 +1235,7 @@ export class Hy3Provider implements LlmProvider {
                   ? PRACTICE_ACCEPTANCE_POLICY_VERSION
                   : LESSON_CONTENT_REVIEW_POLICY_VERSION,
         immutableItemIds: [],
+        repairRequestBound: input.purpose?.startsWith('repair_'),
         allowIndependentRepair: false,
       },
     );
@@ -1643,6 +1647,7 @@ export class Hy3Provider implements LlmProvider {
     repairGuidance?: string,
     requestOptions: {
       maxTokens?: number;
+      repairRequestBound?: boolean;
       /** Opt in only for operations verified with this endpoint's JSON mode. */
       jsonObjectOutput?: boolean;
       schemaName?: string;
@@ -2268,7 +2273,11 @@ export class Hy3Provider implements LlmProvider {
   private async chatWithDiagnostic(
     messages: ChatMessage[],
     opts: ProviderCallOptions | undefined,
-    requestOptions: { maxTokens?: number; jsonObjectOutput?: boolean },
+    requestOptions: {
+      maxTokens?: number;
+      jsonObjectOutput?: boolean;
+      repairRequestBound?: boolean;
+    },
     schemaName: string,
     attemptNumber: 1 | 2 | 3,
     attemptKind: 'original' | 'repair' | 'retry',
@@ -2349,9 +2358,29 @@ export class Hy3Provider implements LlmProvider {
       temperature?: number;
       maxTokens?: number;
       jsonObjectOutput?: boolean;
+      repairRequestBound?: boolean;
     } = {},
   ): Promise<ChatCompletionResult> {
     if (opts?.signal?.aborted) throw ProviderError.cancelled();
+
+    const requestBody = JSON.stringify({
+      model: this.config.model,
+      messages,
+      ...(requestOptions.jsonObjectOutput ? { response_format: { type: 'json_object' } } : {}),
+      temperature: requestOptions.temperature ?? 0.2,
+      ...(requestOptions.maxTokens !== undefined ? { max_tokens: requestOptions.maxTokens } : {}),
+    });
+    if (
+      requestOptions.repairRequestBound &&
+      Buffer.byteLength(requestBody, 'utf8') > PRACTICE_REPAIR_MAX_REQUEST_BYTES
+    )
+      throw new AppError(
+        ApiErrorCode.ValidationError,
+        '当前纠错请求超出单次容量，请生成更简洁的候选。',
+        {
+          kind: 'practice_repair_request_limit',
+        },
+      );
 
     const timeoutMs = opts?.timeoutMs ?? this.config.timeoutMs;
     const controller = new AbortController();
@@ -2383,19 +2412,7 @@ export class Hy3Provider implements LlmProvider {
             'content-type': 'application/json',
             authorization: `Bearer ${this.config.apiKey}`,
           },
-          body: JSON.stringify({
-            model: this.config.model,
-            messages,
-            // Scope native JSON mode to the operation with observed syntax
-            // benefit. It constrains syntax, never schema or content validity.
-            ...(requestOptions.jsonObjectOutput
-              ? { response_format: { type: 'json_object' } }
-              : {}),
-            temperature: requestOptions.temperature ?? 0.2,
-            ...(requestOptions.maxTokens !== undefined
-              ? { max_tokens: requestOptions.maxTokens }
-              : {}),
-          }),
+          body: requestBody,
           signal: controller.signal,
         },
       );

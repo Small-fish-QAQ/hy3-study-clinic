@@ -4,10 +4,11 @@ import {
   LessonExecutionCommandRequestSchema,
   LessonExecutionProjectionSchema,
   LessonTutorContextSchema,
-  PracticeRepairContentSchema,
   PRACTICE_REPAIR_ACCEPTANCE_POLICY_VERSION,
   PRACTICE_REPAIR_GENERATION_VERSION,
   type PracticeRepairAcceptance,
+  type PracticeRepairLocalExposure,
+  type PracticeRecoveryState,
   type TeachingContentReview,
   groupLessonSegmentsForLearner,
   projectLearnerPracticeSurface,
@@ -24,6 +25,13 @@ import {
 } from '@hy3-clinic/shared';
 import { AppError, notFound } from '../errors.js';
 import { ProviderError } from '../llm/errors.js';
+import {
+  repairPublicTask,
+  storedRepairRetestTasks,
+  practiceRepairMessages,
+  assertRepairRequestSize,
+  PRACTICE_REPAIR_LOCAL_TUTOR_TURNS,
+} from '../llm/practiceRepair.js';
 import { enrichTutorContext } from '../tutor/studyContext.js';
 import type { Repositories } from '../repositories/index.js';
 import type { Clock } from '../util/ids.js';
@@ -49,6 +57,7 @@ import {
   practiceItemPassed,
   practiceRecoveryProjection,
   practiceRepairInput,
+  practiceRepairLocalExposure,
   validatePracticeRepair,
 } from './practiceRecovery.js';
 import {
@@ -804,17 +813,85 @@ export function createLessonExecutionService({
     };
   }
 
-  function repairDesign(context: RouteContext, state: LessonExecutionState) {
+  function repairDesign(
+    context: RouteContext,
+    state: LessonExecutionState,
+    itemIndex: number,
+    archive?: {
+      pending?: NonNullable<
+        LessonExecutionState['practiceInteractions'][number]['recovery']
+      >['rounds'][number];
+      acceptedLogicalCallId?: string;
+    },
+  ) {
+    const archived = repos.lessonExecution
+      .listEvents(state.id, {
+        itemIndex,
+        limit: 12,
+        excludeLogicalCallId: archive?.acceptedLogicalCallId,
+      })
+      .map((event) => {
+        const archived = event.payload.archivedRound as { content?: unknown } | undefined;
+        return storedRepairRetestTasks(archived?.content);
+      });
+    const ownArchivedRounds = archive?.pending
+      ? [archive.pending]
+      : archive?.acceptedLogicalCallId
+        ? repos.lessonExecution
+            .listEvents(state.id, {
+              itemIndex,
+              limit: 1,
+              logicalCallId: archive.acceptedLogicalCallId,
+            })
+            .map((event) => event.payload.archivedRound as PracticeRecoveryState['rounds'][number])
+        : [];
+    const ownArchive = ownArchivedRounds.map((round) => storedRepairRetestTasks(round?.content));
+    const rounds = failedPracticeAttempt(state, itemIndex)?.recovery?.rounds ?? [];
+    const acceptedRound = rounds.find(
+      (round) => round.logicalCallId === archive?.acceptedLogicalCallId,
+    );
+    const previousCallId = acceptedRound?.acceptance?.context.localPreviousRepair?.logicalCallId;
+    // Eligibility may discard a stale packet, but never its local exposure.
+    // On reload the existing preparation event holds that same archived round.
+    const previous = archive?.acceptedLogicalCallId
+      ? previousCallId
+        ? (rounds.find((round) => round.logicalCallId === previousCallId) ??
+          ownArchivedRounds.find((round) => round?.logicalCallId === previousCallId))
+        : undefined
+      : rounds.at(-1);
+    let localPreviousRepair: PracticeRepairLocalExposure | undefined;
+    let localComplete = !previousCallId || Boolean(previous);
+    if (previous) {
+      try {
+        localPreviousRepair = practiceRepairLocalExposure(state.id, itemIndex, previous);
+      } catch {
+        localComplete = false;
+      }
+    }
+    const tutor = repos.studySessions.listTutorTeaching(context.session.workspaceId, undefined, {
+      agendaItemId: state.agendaItemId,
+      limit: PRACTICE_REPAIR_LOCAL_TUTOR_TURNS,
+      latest: true,
+    });
     return {
       desiredDepth: context.planItem.targetDepth,
       unitFocus:
         context.curriculum.nodes.find((node) => node.id === state.learningUnitId)?.learningUnit
           ?.focus ?? ('normal' as const),
-      tutorExplanations: repos.studySessions
-        .listTutorTeaching(context.session.workspaceId)
-        .filter((turn) => turn.agendaItemId === null || turn.agendaItemId === state.agendaItemId)
-        .slice(-8)
-        .map((turn) => turn.content.slice(0, 8000)),
+      tutorExplanations: tutor.map((turn) => turn.content),
+      tutorExposureIds: tutor.map(({ id, createdAt, agendaItemId }) => ({
+        id,
+        createdAt,
+        agendaItemId,
+      })),
+      // Keep the same 24 pre-existing archives through preparation and reload.
+      // Bind this packet's own archive separately, preserving reviewed scope
+      // and detecting later changes without staling its own accepted proof.
+      archivedRetestTasks: archived.flatMap((tasks) => tasks ?? []).slice(-24),
+      archivingRetestTasks: ownArchive.flatMap((tasks) => tasks ?? []),
+      localPreviousRepair,
+      comparisonComplete:
+        localComplete && [...archived, ...ownArchive].every((tasks) => tasks !== undefined),
     };
   }
 
@@ -830,7 +907,12 @@ export function createLessonExecutionService({
       !round ||
       hasCurrentPracticeRepair(
         round,
-        practiceRepairBindingHash(brief, state, index, repairDesign(context, state)),
+        practiceRepairBindingHash(
+          brief,
+          state,
+          index,
+          repairDesign(context, state, index, { acceptedLogicalCallId: round.logicalCallId }),
+        ),
         rounds.slice(0, -1),
       )
     );
@@ -843,9 +925,17 @@ export function createLessonExecutionService({
     index: number,
   ) {
     const rounds = failedPracticeAttempt(state, index)?.recovery?.rounds ?? [];
-    const binding = practiceRepairBindingHash(brief, state, index, repairDesign(context, state));
     return practiceItemPassed(state, index, (round) =>
-      hasCurrentPracticeRepair(round, binding, rounds.slice(0, rounds.indexOf(round))),
+      hasCurrentPracticeRepair(
+        round,
+        practiceRepairBindingHash(
+          brief,
+          state,
+          index,
+          repairDesign(context, state, index, { acceptedLogicalCallId: round.logicalCallId }),
+        ),
+        rounds.slice(0, rounds.indexOf(round)),
+      ),
     );
   }
 
@@ -915,7 +1005,9 @@ export function createLessonExecutionService({
                 brief,
                 state,
                 attempt.itemIndex,
-                repairDesign(context, state),
+                repairDesign(context, state, attempt.itemIndex, {
+                  acceptedLogicalCallId: round.logicalCallId,
+                }),
               ),
               rounds.slice(0, index),
             ),
@@ -1489,59 +1581,38 @@ export function createLessonExecutionService({
           },
           current.version,
         );
-        const archivedRetestPrompts = repos.lessonExecution
-          .listEvents(current.id)
-          .flatMap((event) => {
-            if (event.kind !== 'practice_repair_prepared' || event.payload.itemIndex !== index)
-              return [];
-            const archived = event.payload.archivedRound as { content?: unknown } | undefined;
-            const parsed = PracticeRepairContentSchema.safeParse(archived?.content);
-            return parsed.success ? parsed.data.retest.map((item) => item.prompt) : [];
-          })
-          .slice(-24);
+        const pendingArchive =
+          last && !lastAccepted
+            ? last
+            : recovery.rounds.length >= 3
+              ? recovery.rounds[0]
+              : undefined;
+        const design = repairDesign(initial, current, index, { pending: pendingArchive });
+        if (!design.comparisonComplete)
+          throw new AppError(
+            ApiErrorCode.ValidationError,
+            '已有复测的公开题面无法完整核对；可暂缓本节。',
+            { kind: 'practice_repair_comparison_unavailable' },
+          );
         const priorRounds = recovery.rounds.filter(
           (round) =>
             hasPracticeRepairProof(round.content, round.acceptance) &&
             (round !== last || lastAccepted),
         );
-        const requestState = {
-          ...current,
-          practiceInteractions: current.practiceInteractions.map((value) =>
-            value === attempt
-              ? { ...value, recovery: { ...recovery, rounds: priorRounds } }
-              : value,
-          ),
-        };
-        const request = practiceRepairInput(brief, requestState, index, input.action.learnerNote, {
-          desiredDepth: initial.planItem.targetDepth,
-          unitFocus:
-            initial.curriculum.nodes.find((node) => node.id === current.learningUnitId)
-              ?.learningUnit?.focus ?? 'normal',
-          archivedRetestPrompts: [
-            ...archivedRetestPrompts,
+        const request = practiceRepairInput(brief, current, index, input.action.learnerNote, {
+          desiredDepth: design.desiredDepth,
+          unitFocus: design.unitFocus,
+          archivedRetestTasks: [
+            ...design.archivedRetestTasks,
             ...recovery.rounds
               .filter((round) => !priorRounds.includes(round))
-              .flatMap((round) => round.content.retest.map((surface) => surface.prompt)),
+              .flatMap((round) => round.content.retest.map(repairPublicTask)),
           ],
         });
-        const tutorTeaching = repos.studySessions
-          .listTutorTeaching(workspaceId)
-          .filter(
-            (turn) => turn.agendaItemId === null || turn.agendaItemId === current.agendaItemId,
-          );
-        request.tutorExplanations = tutorTeaching
-          .slice(-8)
-          .map((turn) => turn.content.slice(0, 8000));
-        const bindingHash = practiceRepairBindingHash(
-          brief,
-          current,
-          index,
-          repairDesign(initial, current),
-        );
-        const noveltyInput = {
-          ...request,
-          tutorExplanations: tutorTeaching.map((turn) => turn.content),
-        };
+        request.priorRounds = priorRounds.map((round) => round.content);
+        request.localPreviousRepair = design.localPreviousRepair;
+        request.tutorExplanations = design.tutorExplanations;
+        const bindingHash = practiceRepairBindingHash(brief, current, index, design);
         if (priorOperation) {
           const rejected = repos.operations
             .listEvents(priorOperation.id)
@@ -1566,7 +1637,7 @@ export function createLessonExecutionService({
               liveBrief,
               liveState,
               index,
-              repairDesign(context, liveState),
+              repairDesign(context, liveState, index, { pending: pendingArchive }),
             ) !== bindingHash
           )
             throw new AppError(
@@ -1577,6 +1648,10 @@ export function createLessonExecutionService({
         const { content, logicalCallId, acceptance } = await (async () => {
           for (let contentAttempt = 0; contentAttempt < 2; contentAttempt++) {
             commands.renew(claim, 5 * 60 * 1000);
+            assertRepairRequestSize(
+              practiceRepairMessages(request, provider.model),
+              provider.model,
+            );
             const logicalCallId = newId('llm_call');
             const content = await runRecoverableGenerationStage({
               repos,
@@ -1614,13 +1689,13 @@ export function createLessonExecutionService({
                   at: clock.now().toISOString(),
                   confirmedPolicyIds: [],
                 }),
-              validateResult: (value) => validatePracticeRepair(value, noveltyInput),
+              validateResult: (value) => validatePracticeRepair(value, request),
               invoke: (options) =>
                 provider.generatePracticeRepair!(structuredClone(request), {
                   ...options,
                   validateCandidate: (value) => {
                     try {
-                      validatePracticeRepair(value, noveltyInput);
+                      validatePracticeRepair(value, request);
                       return { valid: true, diagnostics: [], diagnosticCodes: [] };
                     } catch (error) {
                       return {
@@ -1632,7 +1707,31 @@ export function createLessonExecutionService({
                   },
                 }),
             });
-            const prepared = preparePracticeRepairReviews(request, content);
+            let prepared: ReturnType<typeof preparePracticeRepairReviews>;
+            try {
+              prepared = preparePracticeRepairReviews(request, content, provider.model);
+            } catch (error) {
+              if (
+                !(error instanceof AppError) ||
+                (error.details as { kind?: string } | undefined)?.kind !==
+                  'practice_repair_request_limit'
+              )
+                throw error;
+              const findings = [
+                'Shorten the current candidate so each complete review request fits its 128-KiB bound; preserve every required premise, key and feedback.',
+              ];
+              invalidateGenerationDependency(repos, logicalCallId, clock.now().toISOString());
+              commands.appendEvent(claim, 'practice_repair_rejected', { draft: content, findings });
+              if (contentAttempt === 0) {
+                request.revision = { draft: content, findings };
+                continue;
+              }
+              throw new AppError(
+                ApiErrorCode.ValidationError,
+                '当前纠错候选经有界修正后仍超出单次请求容量；可重试生成更简洁的候选或暂缓本节。',
+                { kind: 'practice_repair_content_rejected', findings },
+              );
+            }
             const reviewStage = async <T extends TeachingContentReview>(
               reviewInput: TeachingContentReviewInput,
               validate: (value: unknown) => T,
@@ -1653,7 +1752,7 @@ export function createLessonExecutionService({
                 learningUnitId: current.learningUnitId,
                 assessmentId: null,
                 operationType: 'review_practice_repair',
-                schemaFingerprint: `${reviewInput.purpose}-review-v1`,
+                schemaFingerprint: `${reviewInput.purpose}-review-v2-local`,
                 policyFingerprint: PRACTICE_REPAIR_ACCEPTANCE_POLICY_VERSION,
                 sourceFingerprint: current.sourceContextFingerprint,
                 logicalCallId: reviewLogicalCallId,
@@ -1715,7 +1814,7 @@ export function createLessonExecutionService({
               context: prepared.context,
               grounding,
               solves,
-              integrity,
+              integrity: { ...integrity, scope: prepared.integrity.scope },
             };
             const findings = practiceRepairAcceptanceFindings(content, acceptance);
             if (findings.length) {
@@ -1790,11 +1889,7 @@ export function createLessonExecutionService({
               itemIndex: index,
               round: ordinal,
               logicalCallId,
-              ...(last && !lastAccepted
-                ? { archivedRound: last }
-                : recovery.rounds.length >= 3
-                  ? { archivedRound: recovery.rounds[0] }
-                  : {}),
+              ...(pendingArchive ? { archivedRound: pendingArchive } : {}),
               credit: 'none',
             },
             createdAt: now,

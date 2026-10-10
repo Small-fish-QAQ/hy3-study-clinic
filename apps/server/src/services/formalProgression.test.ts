@@ -2432,8 +2432,9 @@ describe('formal progression service', () => {
       sourceExcerpts: [],
       priorRounds: [],
       priorResponses: [],
-      unseenPracticePrompts: [],
-      archivedRetestPrompts: [],
+      unseenPracticeTasks: [],
+      currentPracticeTasks: [],
+      archivedRetestTasks: [],
     });
     const state = {
       id: 'archive_state',

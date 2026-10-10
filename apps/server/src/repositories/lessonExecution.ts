@@ -210,7 +210,41 @@ export function createLessonExecutionRepo(db: SqliteDb) {
       ).run({ ...event, payload: JSON.stringify(event.payload) });
       return event;
     },
-    listEvents(stateId: string): LessonExecutionEvent[] {
+    listEvents(
+      stateId: string,
+      repairArchives?: {
+        itemIndex: number;
+        limit: number;
+        excludeLogicalCallId?: string;
+        logicalCallId?: string;
+      },
+    ): LessonExecutionEvent[] {
+      // Fetch Repair's existing bounded archive instead of materializing the
+      // entire timeline on every proof/reload/execution check.
+      if (repairArchives)
+        return (
+          db
+            .prepare(
+              `SELECT * FROM (
+            SELECT * FROM lesson_execution_events
+            WHERE lesson_execution_state_id = ? AND kind = 'practice_repair_prepared'
+              AND json_extract(payload, '$.itemIndex') = ?
+              AND json_type(payload, '$.archivedRound') = 'object'
+              AND (? IS NULL OR COALESCE(json_extract(payload, '$.logicalCallId'), '') <> ?)
+              AND (? IS NULL OR json_extract(payload, '$.logicalCallId') = ?)
+            ORDER BY seq DESC LIMIT ?
+          ) ORDER BY seq ASC`,
+            )
+            .all(
+              stateId,
+              repairArchives.itemIndex,
+              repairArchives.excludeLogicalCallId ?? null,
+              repairArchives.excludeLogicalCallId ?? null,
+              repairArchives.logicalCallId ?? null,
+              repairArchives.logicalCallId ?? null,
+              repairArchives.limit,
+            ) as EventRow[]
+        ).map(hydrateEvent);
       return (
         db
           .prepare(

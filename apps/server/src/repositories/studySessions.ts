@@ -349,22 +349,35 @@ export function createStudySessionsRepo(db: SqliteDb) {
     listTutorTeaching(
       workspaceId: string,
       before?: string,
-    ): Array<{ content: string; createdAt: string; agendaItemId: string | null }> {
-      return db
+      scope?: { agendaItemId: string; limit: number; latest?: boolean },
+    ): Array<{ id: string; content: string; createdAt: string; agendaItemId: string | null }> {
+      const rows = db
         .prepare(
-          `SELECT e.content, e.created_at AS createdAt,
+          `SELECT e.id, e.content, e.created_at AS createdAt,
         json_extract(t.pedagogy_metadata, '$.studyContext.agendaItemId') AS agendaItemId
         FROM study_session_exchanges e JOIN study_sessions s ON s.id=e.session_id
         JOIN study_session_turns t ON t.id=e.turn_id
         WHERE s.workspace_id=? AND e.role='tutor' AND t.status='completed'
           AND (? IS NULL OR e.created_at < ?)
-        ORDER BY e.created_at, e.id`,
+          AND (? IS NULL OR json_extract(t.pedagogy_metadata, '$.studyContext.agendaItemId') IS NULL
+            OR json_extract(t.pedagogy_metadata, '$.studyContext.agendaItemId') = ?)
+        ORDER BY ${scope?.latest ? 'e.rowid DESC' : 'e.created_at ASC, e.id ASC'} LIMIT ?`,
         )
-        .all(workspaceId, before ?? null, before ?? null) as Array<{
+        .all(
+          workspaceId,
+          before ?? null,
+          before ?? null,
+          scope?.agendaItemId ?? null,
+          scope?.agendaItemId ?? null,
+          scope?.limit ?? -1,
+        ) as Array<{
+        id: string;
         content: string;
         createdAt: string;
         agendaItemId: string | null;
       }>;
+      // Publication order, including equal timestamps, determines local freshness.
+      return scope?.latest ? rows.reverse() : rows;
     },
 
     insertTurnEvent(input: StudyTurnEvent): StudyTurnEvent {

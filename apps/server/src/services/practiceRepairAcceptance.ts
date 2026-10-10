@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import {
   PRACTICE_REPAIR_ACCEPTANCE_POLICY_VERSION,
+  PRACTICE_REPAIR_INTEGRITY_SCOPE,
   PracticeRepairAcceptanceSchema,
   PracticeRepairContextSchema,
   PracticeRepairGroundingResultSchema,
@@ -12,6 +13,7 @@ import {
   type PracticeRecoveryState,
   type TeachingBrief,
   type LessonExecutionState,
+  type PracticeRepairPublicTask,
 } from '@hy3-clinic/shared';
 import type {
   PracticeRepairInput,
@@ -20,6 +22,16 @@ import type {
   PracticeRepairIntegrityReviewInput,
 } from '../llm/provider.js';
 import { ProviderError } from '../llm/errors.js';
+import {
+  repairComparisonTasks,
+  repairTeaching,
+  localRepairComparisonTasks,
+  localRepairTutorExcerpts,
+  assertRepairRequestSize,
+  PRACTICE_REPAIR_LOCAL_TUTOR_TURNS,
+} from '../llm/practiceRepair.js';
+import { teachingContentReviewMessages } from '../llm/prompts.js';
+import { validatePracticeRepair } from './practiceRecovery.js';
 
 // JSON hydration may reorder keys; every value and array order remains significant.
 function canonical(value: unknown): unknown {
@@ -36,37 +48,43 @@ export const practiceRepairHash = (value: unknown) =>
     .update(JSON.stringify(canonical(value)))
     .digest('hex')}`;
 
-const teaching = (content: PracticeRepairContent) => [
-  content.diagnosis.observation,
-  content.diagnosis.gap,
-  content.explanation,
-  content.workedExample.prompt,
-  ...content.workedExample.steps,
-  content.workedExample.conclusion,
-  content.contrast,
-];
-
 export function preparePracticeRepairReviews(
   request: PracticeRepairInput,
   content: PracticeRepairContent,
+  model = '',
 ) {
   const { revision: _revision, ...rawContext } = request;
   const context = PracticeRepairContextSchema.parse(rawContext);
-  // Neither the original author key nor ANY saved Retest feedback is prior teaching.
-  // Failed feedback explicitly rendered by the UI is supplied by visibleFeedback.
+  context.tutorExplanations = (context.tutorExplanations ?? []).slice(
+    -PRACTICE_REPAIR_LOCAL_TUTOR_TURNS,
+  );
+  validatePracticeRepair(content, context);
+  // Only actually rendered feedback is prior teaching, never a saved key or
+  // the successful first-Retest feedback withheld by the UI.
   const priorTeaching = [
-    ...context.teachingContext,
     ...(context.visibleFeedback ?? []),
-    ...context.priorRounds.flatMap(teaching),
-    ...(context.tutorExplanations ?? []),
-    ...teaching(content),
+    ...(context.localPreviousRepair?.questions.flatMap(({ disclosedResponse }) =>
+      disclosedResponse ? [disclosedResponse.feedback] : [],
+    ) ?? []),
+    ...(context.localPreviousRepair?.teaching ??
+      context.priorRounds.slice(-1).flatMap(repairTeaching)),
+    ...localRepairTutorExcerpts(context.tutorExplanations),
+    ...repairTeaching(content),
   ];
   const grounding: PracticeRepairGroundingReviewInput = {
     purpose: 'repair_grounding',
     stage: 'practice',
     desiredDepth: context.desiredDepth,
     objective: context.objective,
-    evidence: structuredClone(context),
+    evidence: structuredClone({
+      objective: context.objective,
+      failedPrompt: context.failedPrompt,
+      selectedAnswer: context.selectedAnswer,
+      feedback: context.feedback,
+      failedCase: context.failedCase,
+      learnerNote: context.learnerNote,
+      sourceExcerpts: context.sourceExcerpts,
+    }),
     candidate: structuredClone(content),
     actionIds: [],
   };
@@ -74,29 +92,27 @@ export function preparePracticeRepairReviews(
     purpose: 'repair_answerability',
     stage: 'practice',
     candidate: { actionId: `retest${index}.check`, ...projectLearnerPracticeSurface(surface) },
-    priorTeaching: structuredClone(priorTeaching),
     actionIds: [`retest${index}.check`],
   }));
   const integrity: PracticeRepairIntegrityReviewInput = {
     purpose: 'repair_integrity',
     stage: 'practice',
+    scope: PRACTICE_REPAIR_INTEGRITY_SCOPE,
+    localPreviousRepair: context.localPreviousRepair,
+    collisionInventoryHash: practiceRepairHash(repairComparisonTasks(context, content)),
+    tutorReplyHash: practiceRepairHash(context.tutorExplanations),
     candidate: content.retest.map((surface, index) => ({
       itemId: `retest${index}`,
       ...projectLearnerPracticeSurface(surface),
     })),
     priorTeaching: structuredClone(priorTeaching),
-    comparisonPrompts: [
-      context.failedPrompt,
-      ...context.unseenPracticePrompts,
-      ...context.archivedRetestPrompts,
-      ...context.priorRounds.flatMap((round) => [
-        round.workedExample.prompt,
-        ...round.retest.map((surface) => surface.prompt),
-      ]),
-      content.workedExample.prompt,
-    ],
+    comparisonTasks: structuredClone(localRepairComparisonTasks(context, content)),
     actionIds: [],
   };
+  // All four complete purpose requests must fit before any receipt is acquired.
+  // Candidate size failures use the existing single bounded content correction.
+  for (const input of [grounding, ...solves, integrity])
+    assertRepairRequestSize(teachingContentReviewMessages(input), model);
   const inputHash = (input: unknown) =>
     practiceRepairHash({ policyVersion: PRACTICE_REPAIR_ACCEPTANCE_POLICY_VERSION, input });
   const ids = new Set(['repair', 'retest0', 'retest1']);
@@ -143,8 +159,16 @@ export function practiceRepairBindingHash(
   brief: TeachingBrief,
   state: LessonExecutionState,
   itemIndex: number,
-  design: Pick<PracticeRepairInput, 'desiredDepth' | 'unitFocus' | 'tutorExplanations'>,
+  design: Pick<
+    PracticeRepairInput,
+    | 'desiredDepth'
+    | 'unitFocus'
+    | 'tutorExplanations'
+    | 'archivedRetestTasks'
+    | 'localPreviousRepair'
+  > & { archivingRetestTasks: PracticeRepairPublicTask[]; comparisonComplete: boolean },
 ) {
+  if (!design.comparisonComplete) return '';
   const attempt = state.practiceInteractions.findLast(
     (entry) => entry.itemIndex === itemIndex && !entry.correct,
   );
@@ -197,6 +221,7 @@ export function hasPracticeRepairProof(
   const proof = parsed.data;
   if (
     proof.policyVersion !== PRACTICE_REPAIR_ACCEPTANCE_POLICY_VERSION ||
+    proof.integrity.scope !== PRACTICE_REPAIR_INTEGRITY_SCOPE ||
     proof.candidateHash !== practiceRepairHash(content)
   )
     return false;

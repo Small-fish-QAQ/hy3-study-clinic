@@ -1,7 +1,159 @@
 import type { PracticeRepairInput } from './provider.js';
+import type { ChatMessage } from './prompts.js';
+import {
+  ApiErrorCode,
+  PracticeRepairPublicTaskSchema,
+  type PracticeRepairContent,
+  type PracticeRepairPublicTask,
+} from '@hy3-clinic/shared';
+import { AppError } from '../errors.js';
 
-export function practiceRepairMessages(input: PracticeRepairInput) {
+export const PRACTICE_REPAIR_LOCAL_TUTOR_TURNS = 2;
+export const PRACTICE_REPAIR_MAX_REQUEST_BYTES = 128 * 1024;
+
+export const repairTeaching = (content: PracticeRepairContent) => [
+  content.diagnosis.observation,
+  content.diagnosis.gap,
+  content.explanation,
+  content.workedExample.prompt,
+  ...content.workedExample.steps,
+  content.workedExample.conclusion,
+  content.contrast,
+];
+
+/** Deliberate local scope: whole short replies, separate head/tail excerpts of
+ * long replies. Omitted middles and older history have no semantic certificate. */
+export function localRepairTutorExcerpts(replies: string[]): string[] {
+  return replies
+    .slice(-PRACTICE_REPAIR_LOCAL_TUTOR_TURNS)
+    .flatMap((text) => (text.length <= 1500 ? [text] : [text.slice(0, 750), text.slice(-750)]));
+}
+
+/** Binds the individual serialized request, including prompt/envelope escaping.
+ * Checked again with the actual model/options on every physical provider call. */
+export function assertRepairRequestSize(messages: ChatMessage[], model = ''): void {
+  if (
+    Buffer.byteLength(
+      JSON.stringify({ model, messages, temperature: 0.2, max_tokens: 32768 }),
+      'utf8',
+    ) > PRACTICE_REPAIR_MAX_REQUEST_BYTES
+  )
+    throw new AppError(
+      ApiErrorCode.ValidationError,
+      '本次纠错内容超出单次请求容量，需要缩短当前候选内容。',
+      {
+        kind: 'practice_repair_request_limit',
+      },
+    );
+}
+
+/** Semantic comparisons are local. The larger stored inventory is checked
+ * deterministically by validatePracticeRepair and remains proof-bound. */
+export function localRepairComparisonTasks(
+  input: PracticeRepairInput,
+  content?: PracticeRepairContent,
+) {
+  const previous = input.priorRounds.at(-1);
   return [
+    { prompt: input.failedPrompt, options: input.failedCase?.options ?? [] },
+    ...input.currentPracticeTasks,
+    ...(input.localPreviousRepair
+      ? [
+          input.localPreviousRepair.workedExample,
+          ...input.localPreviousRepair.questions.map(({ task }) => task),
+        ]
+      : previous
+        ? [
+            { prompt: previous.workedExample.prompt, options: [] },
+            ...previous.retest.map(repairPublicTask),
+          ]
+        : []),
+    ...(content ? [{ prompt: content.workedExample.prompt, options: [] }] : []),
+  ];
+}
+
+export function repairPublicTask(surface: {
+  prompt: string;
+  options: Array<{ text: string }>;
+}): PracticeRepairPublicTask {
+  return { prompt: surface.prompt, options: surface.options.map(({ text }) => text) };
+}
+
+/** Reservation depends on public task fields, never on private metadata being
+ * parseable. Missing public evidence must be reported, not silently skipped.
+ */
+export function storedRepairRetestTasks(content: unknown): PracticeRepairPublicTask[] | undefined {
+  const retest = (content as { retest?: unknown[] } | null)?.retest;
+  if (!Array.isArray(retest) || retest.length !== 2) return undefined;
+  const tasks: PracticeRepairPublicTask[] = [];
+  for (const value of retest) {
+    const surface = value as {
+      prompt?: unknown;
+      options?: Array<{ text?: unknown } | null>;
+    } | null;
+    const parsed = PracticeRepairPublicTaskSchema.safeParse({
+      prompt: surface?.prompt,
+      options: Array.isArray(surface?.options)
+        ? surface.options.map((option) => option?.text)
+        : undefined,
+    });
+    if (!parsed.success || parsed.data.options.length < 3) return undefined;
+    tasks.push(parsed.data);
+  }
+  return tasks;
+}
+
+/** A worked example's steps are public teaching, not offered Retest alternatives. */
+export function repairComparisonTasks(
+  input: PracticeRepairInput,
+  content?: PracticeRepairContent,
+): PracticeRepairPublicTask[] {
+  return [
+    { prompt: input.failedPrompt, options: input.failedCase?.options ?? [] },
+    ...input.unseenPracticeTasks,
+    ...input.archivedRetestTasks,
+    ...(input.localPreviousRepair?.questions.map(({ task }) => task) ?? []),
+    ...input.priorRounds.flatMap((round) => [
+      { prompt: round.workedExample.prompt, options: [] },
+      ...round.retest.map(repairPublicTask),
+    ]),
+    ...(content ? [{ prompt: content.workedExample.prompt, options: [] }] : []),
+  ];
+}
+
+/** Only exact complete content establishes local identity. Labels, option order
+ * and private author fields cannot disguise it. No normalization of literals,
+ * whitespace, types or punctuation; all other replay decisions require review.
+ */
+export function identicalRepairTasks(
+  left: PracticeRepairPublicTask,
+  right: PracticeRepairPublicTask,
+): boolean {
+  return (
+    left.prompt === right.prompt &&
+    JSON.stringify([...left.options].sort()) === JSON.stringify([...right.options].sort())
+  );
+}
+
+export function practiceRepairMessages(input: PracticeRepairInput, model = '') {
+  const authorContext = {
+    ...input,
+    teachingContext: [],
+    priorRounds: input.priorRounds
+      .slice(-1)
+      .map(({ diagnosis, explanation, workedExample, contrast, retest }) => ({
+        diagnosis,
+        explanation,
+        workedExample,
+        contrast,
+        retest: retest.map(repairPublicTask),
+      })),
+    priorResponses: [],
+    unseenPracticeTasks: [],
+    archivedRetestTasks: [],
+    tutorExplanations: localRepairTutorExcerpts(input.tutorExplanations ?? []),
+  };
+  const messages = [
     {
       role: 'system' as const,
       content: [
@@ -16,13 +168,30 @@ export function practiceRepairMessages(input: PracticeRepairInput) {
         'Give the rule and raw case facts, then leave the decisive intermediate result for the learner to derive. Do not precompute the relevant union/intersection/denominator in the retest prompt and ask which option repeats it. For permission cases use a genuinely new action set and an intervention or missing configuration; avoid repeating the read/write configuration already exposed. Explain only the failed case in feedback, never the subsequent retest case. tutorExplanations are previously delivered supplementary Tutor teaching: their examples and solved inferences are already exposed and must not be recycled as fresh Retests.',
         'Retest options use A/B/C (3 options), one correctOptionId, and answer-specific feedbackIfSelected. Prompt asks a case-based decision with its reasoning, not recall of a supplied answer. Supply hint and explanation for post-answer feedback only. No internal ids, source aliases or planning vocabulary in learner prose.',
         'Successful Retest 1 feedback is saved but the UI does not reveal it before Retest 2. Never rely on that feedback, another Retest, hidden failedCase data, source offers or reserved prompts as the new case givens. Previously delivered teaching rules may be reused; each question must own the facts needed to apply them. Every saved explanation, hint and option feedback must be correct in its own case context, even when never selected.',
-        'Solve each retest from ONLY its visible prompt before authoring the options. Check that exactly one option matches the complete result and every other option fails a stated condition. For interventions specify which facts are replaced, which persist, and every updated value needed for the inference. Deduplicating observations does not preserve a prior event count unless distinct membership or the resulting count is explicitly given. A subgroup majority never proves a whole-population majority without the required coverage and counts.',
+        'Solve each retest from its complete public task: prompt and offered alternatives, including any explicitly defined hypotheses or interventions. Check that exactly one option matches the complete result and every other option fails a stated condition. For interventions specify which facts are replaced, which persist, and every updated value needed for the inference. Deduplicating observations does not preserve a prior event count unless distinct membership or the resulting count is explicitly given. A subgroup majority never proves a whole-population majority without the required coverage and counts.',
         'Every distractor must be a plausible, specific reasoning error, preferably the observed misconception applied to the new case. Keep choices comparable in length and confidence. Never make a wrong choice confess guessing, ignoring the rule, or lacking evidence; never use an absurd impossible result such as a negative count with an arbitrary absolute value. A learner should need the repaired distinction to separate the choices.',
         'After a failed retest use the actual new error and change the teaching approach. Preserve the same capability, do not lower the goal or replay a previous question.',
+        'Historical novelty is a quality preference. Hard integrity covers the failed case, current Practice initial/retry, the last Repair packet, this packet, and explicitly supplied latest-two Tutor head/tail excerpts. Do not claim exhaustive historical novelty. Excerpts may omit middle text. Private comparison tasks are reservations, not delivered teaching; do not disclose their answers.',
         'If revision is supplied, correct its concrete findings in the draft, including affected teaching/answers/feedback. Re-solve the entire affected case from its revised givens; do not merely change the answer letter or repeat the rejected explanation. Replace an ambiguous case with a coherent self-contained case when a local wording change cannot establish all required premises.',
         'Return only JSON: {diagnosis:{observation,gap,uncertainty}, explanation, workedExample:{prompt,steps:[string],conclusion}, contrast, retest:[{prompt,options:[{id,text,feedbackIfSelected}],correctOptionId,hint,explanation}, {prompt,options:[{id,text,feedbackIfSelected}],correctOptionId,hint,explanation}]}. No additional fields.',
       ].join('\n'),
     },
-    { role: 'user' as const, content: JSON.stringify(input) },
+    {
+      role: 'user' as const,
+      content: JSON.stringify(authorContext),
+    },
   ];
+  if (input.revision) {
+    try {
+      assertRepairRequestSize(messages, model);
+    } catch {
+      // Clean regeneration uses all current purpose context plus exact findings;
+      // including an oversized rejected draft must not prevent its correction.
+      messages[1]!.content = JSON.stringify({
+        ...authorContext,
+        revision: { findings: input.revision.findings, regenerate: true },
+      });
+    }
+  }
+  return messages;
 }

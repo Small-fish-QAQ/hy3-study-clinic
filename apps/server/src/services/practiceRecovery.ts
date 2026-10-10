@@ -1,6 +1,7 @@
 import {
   ApiErrorCode,
   PracticeRepairContentSchema,
+  PracticeRepairLocalExposureSchema,
   TAUGHT_SURFACE_KINDS,
   teachingSurfaceText,
   projectPracticePriorTeaching,
@@ -13,7 +14,54 @@ import {
 } from '@hy3-clinic/shared';
 import { AppError } from '../errors.js';
 import type { PracticeRepairInput } from '../llm/provider.js';
-import { compareLearnerPracticeTasks } from './practiceTaskCanonicalization.js';
+import {
+  identicalRepairTasks,
+  repairComparisonTasks,
+  repairPublicTask,
+  repairTeaching,
+} from '../llm/practiceRepair.js';
+
+/** Read the existing round lifecycle, never its current acceptance, to recover
+ * what was exposed. Correct first-answer feedback remains withheld by the UI. */
+export function practiceRepairLocalExposure(
+  stateId: string,
+  itemIndex: number,
+  round: PracticeRecoveryState['rounds'][number],
+) {
+  return PracticeRepairLocalExposureSchema.parse({
+    lessonExecutionStateId: stateId,
+    itemIndex,
+    logicalCallId: round.logicalCallId,
+    ordinal: round.ordinal,
+    createdAt: round.createdAt,
+    startedAt: round.startedAt,
+    teaching: repairTeaching(round.content),
+    workedExample: { prompt: round.content.workedExample.prompt, options: [] },
+    questions: round.content.retest.map((surface, index) => {
+      const exposedAt =
+        index === 0
+          ? round.startedAt
+          : round.startedAt && round.responses[0]?.correct
+            ? round.responses[0].respondedAt
+            : null;
+      const response = exposedAt ? round.responses[index] : undefined;
+      return {
+        index,
+        task: repairPublicTask(surface),
+        exposedAt,
+        disclosedResponse:
+          response && (!response.correct || index === 1)
+            ? {
+                selectedAnswer: surface.options.find(({ id }) => id === response.selectedOptionId)
+                  ?.text,
+                feedback: response.feedback,
+                respondedAt: response.respondedAt,
+              }
+            : null,
+      };
+    }),
+  });
+}
 
 export function practiceItemPassed(
   state: Pick<LessonExecutionState, 'practiceInteractions'>,
@@ -136,7 +184,7 @@ export function practiceRepairInput(
   state: LessonExecutionState,
   index: number,
   learnerNote: string,
-  context: Pick<PracticeRepairInput, 'desiredDepth' | 'unitFocus' | 'archivedRetestPrompts'>,
+  context: Pick<PracticeRepairInput, 'desiredDepth' | 'unitFocus' | 'archivedRetestTasks'>,
 ): PracticeRepairInput {
   const item = brief.practice!.items[index]!;
   const attempt = failedPracticeAttempt(state, index)!;
@@ -189,7 +237,9 @@ export function practiceRepairInput(
         )
         .filter((text): text is string => Boolean(text)),
     ],
-    sourceExcerpts: brief.sourceReferences.map((reference) => reference.quote),
+    sourceExcerpts: brief.sourceReferences
+      .filter((reference) => item.sourceRefIds.includes(reference.refId))
+      .map((reference) => reference.quote),
     priorRounds: rounds.map((round) => round.content),
     priorResponses: rounds.flatMap((round) =>
       round.responses.map(
@@ -198,10 +248,11 @@ export function practiceRepairInput(
       ),
     ),
     visibleFeedback: revealedRecoveryFeedback(attempt, rounds),
-    unseenPracticePrompts: brief.practice!.items.flatMap((candidate) => [
-      candidate.initial.prompt,
-      candidate.retry.prompt,
+    unseenPracticeTasks: brief.practice!.items.flatMap((candidate) => [
+      repairPublicTask(candidate.initial),
+      repairPublicTask(candidate.retry),
     ]),
+    currentPracticeTasks: [repairPublicTask(item.initial), repairPublicTask(item.retry)],
   };
 }
 
@@ -210,36 +261,16 @@ export function validatePracticeRepair(
   input: PracticeRepairInput,
 ): PracticeRepairContent {
   const content = PracticeRepairContentSchema.parse(value);
-  const prior = [
-    input.failedPrompt,
-    ...input.unseenPracticePrompts,
-    ...input.archivedRetestPrompts,
-    ...input.priorRounds.flatMap((round) => [
-      round.workedExample.prompt,
-      ...round.retest.map((item) => item.prompt),
-    ]),
-    content.workedExample.prompt,
-  ];
+  const prior = repairComparisonTasks(input, content);
   for (const question of content.retest) {
-    if (
-      prior.some(
-        (prompt) =>
-          question.prompt === prompt ||
-          compareLearnerPracticeTasks(
-            { prompt: question.prompt, options: [] },
-            { prompt, options: [] },
-          ) === 'equal',
-      ) ||
-      (input.tutorExplanations ?? []).some((text) =>
-        text.replace(/\s+/gu, '').includes(question.prompt.replace(/\s+/gu, '')),
-      )
-    ) {
+    const task = repairPublicTask(question);
+    if (prior.some((other) => identicalRepairTasks(task, other))) {
       throw new AppError(
         ApiErrorCode.ValidationError,
         'Retest repeats an exposed or reserved case.',
       );
     }
-    prior.push(question.prompt);
+    prior.push(task);
   }
   return content;
 }

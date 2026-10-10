@@ -80,6 +80,8 @@ import type {
   UnitFocus,
   PracticeRepairContent,
   PracticeRepairContext,
+  PracticeRepairPublicTask,
+  PRACTICE_REPAIR_INTEGRITY_SCOPE,
   LearnerPracticeSolvingSurface,
   PracticePriorTeaching,
 } from '@hy3-clinic/shared';
@@ -893,7 +895,16 @@ export interface PracticeRepairGroundingReviewInput {
   stage: 'practice';
   desiredDepth: DesiredDepth;
   objective: PracticeRepairContext['objective'];
-  evidence: PracticeRepairContext;
+  evidence: Pick<
+    PracticeRepairContext,
+    | 'objective'
+    | 'failedPrompt'
+    | 'selectedAnswer'
+    | 'feedback'
+    | 'failedCase'
+    | 'learnerNote'
+    | 'sourceExcerpts'
+  >;
   candidate: PracticeRepairContent;
   actionIds: [];
 }
@@ -902,17 +913,20 @@ export interface PracticeRepairAnswerabilityReviewInput {
   purpose: 'repair_answerability';
   stage: 'practice';
   candidate: LearnerPracticeSolvingSurface & { actionId: string };
-  priorTeaching: string[];
   actionIds: [string];
 }
 
-/** Private reserved prompts are comparison evidence only, never solving givens. */
+/** Explicit local semantic scope; stored reservations have separate exact checks. */
 export interface PracticeRepairIntegrityReviewInput {
   purpose: 'repair_integrity';
   stage: 'practice';
+  scope: typeof PRACTICE_REPAIR_INTEGRITY_SCOPE;
+  localPreviousRepair?: PracticeRepairContext['localPreviousRepair'];
+  collisionInventoryHash: string;
+  tutorReplyHash: string;
   candidate: Array<LearnerPracticeSolvingSurface & { itemId: string }>;
   priorTeaching: string[];
-  comparisonPrompts: string[];
+  comparisonTasks: PracticeRepairPublicTask[];
   actionIds: [];
 }
 

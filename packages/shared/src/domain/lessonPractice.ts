@@ -535,11 +535,78 @@ export const PracticeRepairContentSchema = z
   .strict();
 export type PracticeRepairContent = z.infer<typeof PracticeRepairContentSchema>;
 
-/** V1 admitted unrevealed Practice hints and necessary-only Fake reservoir
- * premises. Its receipts cannot authorize current Repair packets. */
+/** Public comparison retains every offered alternative, without keys or feedback. */
+export const PracticeRepairPublicTaskSchema = z
+  .object({
+    prompt: z.string().min(1).max(1200),
+    options: z.array(z.string().min(1).max(600)).max(5),
+  })
+  .strict();
+export type PracticeRepairPublicTask = z.infer<typeof PracticeRepairPublicTaskSchema>;
+
+/** Immutable review projection of the most recent persisted Repair episode.
+ * Exposure is a factual record, independent of current execution eligibility. */
+export const PracticeRepairLocalExposureSchema = z
+  .object({
+    lessonExecutionStateId: z.string().min(1),
+    itemIndex: z.number().int().nonnegative(),
+    logicalCallId: z.string().min(1),
+    ordinal: z.number().int().positive().optional(),
+    createdAt: z.string().datetime(),
+    startedAt: z.string().datetime().nullable(),
+    teaching: z.array(z.string().min(1).max(1800)).max(11),
+    workedExample: PracticeRepairPublicTaskSchema,
+    questions: z
+      .array(
+        z
+          .object({
+            index: z.number().int().min(0).max(1),
+            task: PracticeRepairPublicTaskSchema,
+            exposedAt: z.string().datetime().nullable(),
+            disclosedResponse: z
+              .object({
+                selectedAnswer: z.string().min(1).max(600),
+                feedback: z.string().min(1).max(2200),
+                respondedAt: z.string().datetime(),
+              })
+              .strict()
+              .nullable(),
+          })
+          .strict(),
+      )
+      .length(2),
+  })
+  .strict()
+  .superRefine((episode, ctx) => {
+    for (const [index, question] of episode.questions.entries()) {
+      if (question.index !== index || (question.disclosedResponse && !question.exposedAt))
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['questions', index],
+          message:
+            'Exposure must retain public question order and only actually disclosed responses.',
+        });
+    }
+    if (
+      episode.questions[0]!.exposedAt !== episode.startedAt ||
+      (episode.questions[1]!.exposedAt &&
+        (!episode.startedAt || episode.questions[0]!.disclosedResponse))
+    )
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['questions'],
+        message: 'Retest 1 is unseen until a successful Retest 0 response.',
+      });
+  });
+export type PracticeRepairLocalExposure = z.infer<typeof PracticeRepairLocalExposureSchema>;
+
+/** Informal Repair certifies correctness and this local integrity scope, never
+ * exhaustive historical novelty. Other teaching policies are independent. */
 export const PRACTICE_REPAIR_ACCEPTANCE_POLICY_VERSION =
-  'practice-repair-acceptance-v2-visible-premises';
-export const PRACTICE_REPAIR_GENERATION_VERSION = 'practice-repair-v8-visible-premises';
+  'practice-repair-acceptance-v5-local-exposure';
+export const PRACTICE_REPAIR_GENERATION_VERSION = 'practice-repair-v11-local-exposure';
+export const PRACTICE_REPAIR_INTEGRITY_SCOPE =
+  'failed-case-current-practice-last-repair-latest2-tutor-head-tail-v2';
 
 /** Local immutable authoring context. Revision drafts never become evidence. */
 export const PracticeRepairContextSchema = z
@@ -564,9 +631,17 @@ export const PracticeRepairContextSchema = z
     teachingContext: z.array(z.string()),
     sourceExcerpts: z.array(z.string()),
     priorRounds: z.array(PracticeRepairContentSchema).max(3),
+    /** Most recent factual local episode, even when its acceptance is stale.
+     * Optional for first rounds and readable historical receipts. */
+    localPreviousRepair: PracticeRepairLocalExposureSchema.optional(),
     priorResponses: z.array(z.string()),
-    unseenPracticePrompts: z.array(z.string()),
-    archivedRetestPrompts: z.array(z.string()),
+    /** Comparison-only inventory; stored tasks do not establish learner exposure. */
+    unseenPracticeTasks: z.array(PracticeRepairPublicTaskSchema),
+    /** Current item's initial/retry: comparison only, not necessarily exposed. */
+    currentPracticeTasks: z.array(PracticeRepairPublicTaskSchema).max(2).default([]),
+    archivedRetestTasks: z.array(PracticeRepairPublicTaskSchema).max(30),
+    /** Latest two relevant completed replies; integrity reviews explicit head/tail
+     * excerpts, not all historical exposure. Full selected replies bind freshness. */
     tutorExplanations: z.array(z.string()).optional(),
     /** Only feedback/hints actually rendered before this packet; never all saved responses. */
     visibleFeedback: z.array(z.string()).optional(),
@@ -618,7 +693,13 @@ export const PracticeRepairAcceptanceSchema = z
       )
       .length(2),
     integrity: z
-      .object({ ...RepairReceiptFields, result: PracticeRepairIntegrityResultSchema })
+      .object({
+        ...RepairReceiptFields,
+        /** Legacy receipts can hydrate for recovery; only the current explicit
+         * scope can authorize execution. */
+        scope: z.string().min(1).max(120).optional(),
+        result: PracticeRepairIntegrityResultSchema,
+      })
       .strict(),
   })
   .strict();

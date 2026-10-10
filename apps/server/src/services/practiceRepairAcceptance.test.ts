@@ -1,13 +1,21 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   PRACTICE_REPAIR_ACCEPTANCE_POLICY_VERSION,
+  PRACTICE_REPAIR_INTEGRITY_SCOPE,
   PracticeRepairGroundingResultSchema,
+  PracticeRepairContentSchema,
   type PracticeRepairAcceptance,
 } from '@hy3-clinic/shared';
 import { FakeProvider } from '../llm/fakeProvider.js';
+import { maximumRepairCandidate } from '../testing/practiceRepairComparisonFixture.js';
 import { Hy3Provider } from '../llm/hy3Provider.js';
 import type { PracticeRepairInput } from '../llm/provider.js';
 import { teachingContentReviewMessages } from '../llm/prompts.js';
+import {
+  practiceRepairMessages,
+  PRACTICE_REPAIR_MAX_REQUEST_BYTES,
+  localRepairTutorExcerpts,
+} from '../llm/practiceRepair.js';
 import {
   hasPracticeRepairProof,
   preparePracticeRepairReviews,
@@ -36,8 +44,9 @@ const context: PracticeRepairInput = {
   priorRounds: [],
   priorResponses: ['UNREVEALED_RESPONSE'],
   visibleFeedback: ['PUBLIC_FEEDBACK: 两项同时成立。'],
-  unseenPracticePrompts: ['RESERVED_PROMPT'],
-  archivedRetestPrompts: ['ARCHIVED_PROMPT'],
+  unseenPracticeTasks: [{ prompt: 'RESERVED_PROMPT', options: ['RESERVED_OPTIONS'] }],
+  currentPracticeTasks: [{ prompt: 'CURRENT_RESERVED_PROMPT', options: ['CURRENT_OPTIONS'] }],
+  archivedRetestTasks: [{ prompt: 'ARCHIVED_PROMPT', options: ['ARCHIVED_OPTIONS'] }],
   tutorExplanations: ['PUBLIC_TUTOR_RULE'],
 };
 
@@ -65,12 +74,98 @@ async function fixture(input: PracticeRepairInput = context) {
     solves: await Promise.all(
       prepared.solves.map(async (input, index) => ({ index, ...(await receipt(input)) })),
     ),
-    integrity: await receipt(prepared.integrity),
+    integrity: { ...(await receipt(prepared.integrity)), scope: PRACTICE_REPAIR_INTEGRITY_SCOPE },
   };
   return { provider, content, prepared, proof };
 }
 
 describe('Repair purpose acceptance', () => {
+  it('rejects a schema-valid oversized complete candidate request while allowing a concise candidate under the same source scope', async () => {
+    const { content } = await fixture();
+    const input = {
+      ...context,
+      sourceExcerpts: Array.from({ length: 8 }, () => '源'.repeat(2000)),
+    };
+    const oversized = maximumRepairCandidate(content);
+    expect(PracticeRepairContentSchema.safeParse(oversized).success).toBe(true);
+    expect(() => preparePracticeRepairReviews(input, oversized)).toThrow(/单次请求容量/);
+    expect(() => preparePracticeRepairReviews(input, content)).not.toThrow();
+  });
+  it('softens older history while rejecting a concrete disclosure in reviewed recent excerpts', async () => {
+    const { provider, content } = await fixture();
+    const answer = content.retest[0]!.explanation;
+    for (const recent of [false, true]) {
+      const tutorExplanations = recent
+        ? ['一般规则。'.repeat(1800) + answer]
+        : [answer, ...Array.from({ length: 8 }, () => '共享的一般规则：逐项检查条件。')];
+      const input = { ...context, tutorExplanations };
+      const prepared = preparePracticeRepairReviews(input, content);
+      expect(JSON.stringify(prepared.integrity).includes(answer)).toBe(recent);
+      expect(practiceRepairMessages(input)[1]!.content.includes(answer)).toBe(recent);
+      const findings = (await provider.reviewTeachingContent(prepared.integrity)).findings;
+      if (recent)
+        expect(findings).toContainEqual(
+          expect.objectContaining({ itemId: 'retest0', code: 'answer_leak' }),
+        );
+      else expect(findings).toEqual([]);
+      expect(prepared.integrity.scope).toBe(PRACTICE_REPAIR_INTEGRITY_SCOPE);
+    }
+  });
+
+  it.each(['65 replies', 'six long replies', 'unrelated teaching'])(
+    'bounds purpose requests without rejecting accumulated history (%s)',
+    async (history) => {
+      const changed = structuredClone(context);
+      if (history === '65 replies')
+        changed.tutorExplanations = Array.from({ length: 65 }, () => 'General rule.');
+      if (history === 'six long replies')
+        changed.tutorExplanations = Array.from({ length: 6 }, () => '教'.repeat(7500));
+      if (history === 'unrelated teaching') changed.teachingContext = ['教'.repeat(150000)];
+      const { content, prepared, proof } = await fixture(changed);
+      expect(hasPracticeRepairProof(content, proof)).toBe(true);
+      expect(
+        localRepairTutorExcerpts(prepared.context.tutorExplanations ?? []).join('').length,
+      ).toBeLessThanOrEqual(3000);
+      for (const input of [prepared.grounding, ...prepared.solves, prepared.integrity]) {
+        expect(
+          Buffer.byteLength(
+            JSON.stringify({
+              model: 'test',
+              messages: teachingContentReviewMessages(input),
+              temperature: 0.2,
+              max_tokens: 32768,
+            }),
+          ),
+        ).toBeLessThan(PRACTICE_REPAIR_MAX_REQUEST_BYTES);
+      }
+      expect(JSON.stringify(prepared.grounding)).not.toContain('tutorExplanations');
+      expect(JSON.stringify(prepared.solves)).not.toContain('priorTeaching');
+    },
+  );
+
+  it('bounds actual Hy3 request bytes before transport even when bare input fits', async () => {
+    const { prepared } = await fixture();
+    const input = structuredClone(prepared.integrity);
+    input.priorTeaching = ['教'.repeat(40000)];
+    expect(Buffer.byteLength(JSON.stringify(input))).toBeLessThan(
+      PRACTICE_REPAIR_MAX_REQUEST_BYTES,
+    );
+    // JSON escaping/envelope/prompt also consume the genuine individual bound.
+    input.priorTeaching.push('"'.repeat(7000));
+    const transport = vi.fn();
+    const provider = new Hy3Provider({
+      baseUrl: 'https://example.test/v1',
+      apiKey: 'test',
+      model: 'test',
+      timeoutMs: 30000,
+      fetchImpl: transport as typeof fetch,
+    });
+    await expect(provider.reviewTeachingContent(input)).rejects.toMatchObject({
+      details: { kind: 'practice_repair_request_limit' },
+    });
+    expect(transport).not.toHaveBeenCalled();
+  });
+
   it.each(['necessary only', 'sufficient and public'] as const)(
     'certifies the controlled reservoir only with sufficient public premises (%s)',
     async (premises) => {
@@ -159,7 +254,7 @@ describe('Repair purpose acceptance', () => {
     );
   });
 
-  it('passes complete controlled claims and keeps legitimately taught rules in both isolated inputs', async () => {
+  it('passes complete controlled claims and restricts both isolated inputs to their own public tasks', async () => {
     const { content, prepared, proof } = await fixture();
     expect(hasPracticeRepairProof(content, proof)).toBe(true);
     // New generic metadata cannot broaden these completed purpose contracts.
@@ -197,9 +292,10 @@ describe('Repair purpose acceptance', () => {
     ).toBe(false);
     for (const [index, input] of prepared.solves.entries()) {
       const serialized = JSON.stringify(input);
-      expect(input.priorTeaching).toContain(context.teachingContext[0]);
-      expect(input.priorTeaching).toContain(context.visibleFeedback![0]);
-      expect(input.priorTeaching).toContain(context.tutorExplanations![0]);
+      expect(input).not.toHaveProperty('priorTeaching');
+      expect(serialized).not.toContain('PUBLIC_RULE');
+      expect(serialized).not.toContain('PUBLIC_FEEDBACK');
+      expect(serialized).not.toContain('PUBLIC_TUTOR_RULE');
       expect(serialized).not.toMatch(
         /PRIVATE_|RESERVED_PROMPT|ARCHIVED_PROMPT|UNREVEALED_RESPONSE/,
       );
@@ -208,6 +304,12 @@ describe('Repair purpose acceptance', () => {
       expect(serialized).not.toContain('feedbackIfSelected');
     }
     expect(prepared.grounding.candidate).toEqual(content);
+    expect(JSON.stringify(prepared.integrity)).not.toContain('PRIVATE_KEY');
+    expect(prepared.integrity.comparisonTasks).not.toContainEqual(context.archivedRetestTasks[0]);
+    expect(prepared.integrity.comparisonTasks).toContainEqual(context.currentPracticeTasks[0]);
+    expect(prepared.integrity.collisionInventoryHash).toMatch(/^sha256:/u);
+    expect(JSON.stringify(prepared.solves)).not.toContain('ARCHIVED_OPTIONS');
+    expect(JSON.stringify(prepared.solves)).not.toContain('RESERVED_OPTIONS');
     expect(JSON.stringify(prepared.integrity)).not.toContain(content.retest[0]!.explanation);
   });
 
@@ -242,10 +344,17 @@ describe('Repair purpose acceptance', () => {
       'B',
     );
     expect((await provider.reviewTeachingContent(prepared.grounding)).findings).toEqual([]);
-    for (const change of ['unknown prompt', 'missing givens', 'duplicate answer'] as const) {
+    for (const change of [
+      'unknown prompt',
+      'missing givens',
+      'duplicate answer',
+      'no offered answer',
+    ] as const) {
       const input = structuredClone(prepared.solves[0]!);
       if (change === 'duplicate answer')
         input.candidate.options[2]!.text = input.candidate.options[0]!.text;
+      else if (change === 'no offered answer')
+        input.candidate.options[0]!.text = 'Only the eastern district has water.';
       else input.candidate.prompt = change;
       expect((await provider.reviewTeachingContent(input)).decisions[0]!.answerId).toBeNull();
     }
@@ -273,7 +382,18 @@ describe('Repair purpose acceptance', () => {
     ).toBe(true);
     const variants = [
       { ...proof, policyVersion: 'practice-repair-acceptance-v1-purpose-proofs' },
+      { ...proof, policyVersion: 'practice-repair-acceptance-v3-public-comparison' },
+      { ...proof, policyVersion: 'practice-repair-acceptance-v4-local-integrity' },
+      { ...proof, integrity: { ...proof.integrity, scope: 'full-history' } },
       { ...proof, context: { ...proof.context, sourceExcerpts: ['changed source'] } },
+      { ...proof, context: { ...proof.context, tutorExplanations: ['changed public exposure'] } },
+      {
+        ...proof,
+        context: {
+          ...proof.context,
+          archivedRetestTasks: [{ prompt: 'ARCHIVED_PROMPT', options: ['CHANGED_OPTIONS'] }],
+        },
+      },
       { ...proof, solves: [proof.solves[0], proof.solves[0]] },
       {
         ...proof,
