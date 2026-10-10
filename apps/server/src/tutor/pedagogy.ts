@@ -34,7 +34,10 @@ const directAnswerPattern = /直接告诉我答案|告诉我答案|just tell me 
 const explicitSelfExplainPattern = /我来解释|让我解释|用自己的话|自我解释|先考我|self.?explain/iu;
 const sideQuestionPattern = /顺便|另外|题外|相关的另一个|side question|顺带/iu;
 
-export function inferRequestedTutorMove(message: string): TutorPedagogicalMove | null {
+export function inferRequestedTutorMove(
+  message: string,
+  allowedMoves?: readonly TutorPedagogicalMove[],
+): TutorPedagogicalMove | null {
   const value = message.trim();
   if (continuePattern.test(value)) return 'RETURN_TO_ROUTE';
   if (examplePattern.test(value)) return 'GIVE_EXAMPLE';
@@ -43,7 +46,10 @@ export function inferRequestedTutorMove(message: string): TutorPedagogicalMove |
   if (analogyPattern.test(value)) return 'SIMPLIFY';
   if (confusionPattern.test(value)) return 'SIMPLIFY';
   if (explicitSelfExplainPattern.test(value)) return 'SELF_EXPLANATION';
-  if (sideQuestionPattern.test(value)) return 'DETOUR';
+  if (sideQuestionPattern.test(value)) {
+    // Without a lesson to detour from, the same question remains answerable.
+    return allowedMoves && !allowedMoves.includes('DETOUR') ? 'ANSWER_QUESTION' : 'DETOUR';
+  }
   if (directAnswerPattern.test(value) || whyPattern.test(value) || /[?？]/u.test(value)) {
     return 'ANSWER_QUESTION';
   }
@@ -142,7 +148,7 @@ export function validateTutorTurnCandidate(
     );
     codes.push('TUTOR_SOURCE_REF_UNKNOWN');
   }
-  const requested = inferRequestedTutorMove(input.learnerMessage);
+  const requested = inferRequestedTutorMove(input.learnerMessage, input.allowedMoves);
   if (requested && !compatibleDirectMove(requested, value.move)) {
     diagnostics.push(
       `Direct learner intent requires a compatible pedagogical move (${requested}).`,
@@ -177,7 +183,7 @@ export function constrainTutorTurn(
   payload: ReturnType<typeof TutorTurnPayloadSchema.parse>,
   input: TutorTurnInput,
 ): ReturnType<typeof TutorTurnPayloadSchema.parse> {
-  const requested = inferRequestedTutorMove(input.learnerMessage);
+  const requested = inferRequestedTutorMove(input.learnerMessage, input.allowedMoves);
   let move = payload.move;
   if (requested && !compatibleDirectMove(requested, move)) move = requested;
   if (!input.allowedMoves.includes(move)) move = fallbackMove(input);

@@ -1324,7 +1324,7 @@ export class Hy3Provider implements LlmProvider {
   ): Promise<TutorTurnPayload> {
     const materialize = (reply: { text: string; sourceRefs: string[] }): TutorTurnPayload => ({
       ...reply,
-      move: inferRequestedTutorMove(input.learnerMessage) ?? 'ANSWER_QUESTION',
+      move: inferRequestedTutorMove(input.learnerMessage, input.allowedMoves) ?? 'ANSWER_QUESTION',
       routeSignal: 'stay_on_route',
       summaryDelta: {
         learnerQuestions: [],

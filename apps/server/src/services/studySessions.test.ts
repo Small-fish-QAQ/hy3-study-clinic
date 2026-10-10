@@ -1,16 +1,18 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   type Curriculum,
   type CurriculumObjective,
   type LearningContract,
   type SessionAgenda,
   type StudyPlan,
+  type TutorTurnPayload,
 } from '@hy3-clinic/shared';
 import { buildApp } from '../app.js';
 import { openDatabase, type SqliteDb } from '../db/database.js';
 import { migrate } from '../db/migrate.js';
 import { FakeProvider } from '../llm/fakeProvider.js';
-import type { ProviderCallOptions, TutorTurnInput, TutorTurnPayload } from '../llm/provider.js';
+import { Hy3Provider } from '../llm/hy3Provider.js';
+import type { LlmProvider, ProviderCallOptions, TutorTurnInput } from '../llm/provider.js';
 import { createRepositories, type Repositories } from '../repositories/index.js';
 import { makeSemanticallySupportedObjective, makeWorkspace, T0 } from '../testing/fixtures.js';
 import { fixedClock } from '../util/ids.js';
@@ -303,6 +305,380 @@ beforeEach(() => {
         throw new Error('Replanning is not exercised by this isolated StudySession fixture.');
       },
     },
+  });
+});
+
+const pendulumLesson: NonNullable<TutorTurnInput['lessonContext']> = {
+  objective: { title: '复摆', whyNow: '学习绕固定轴转动的刚体。' },
+  currentSegment: {
+    index: 0,
+    purpose: 'mechanism',
+    explanation: '复摆在重力矩作用下绕固定轴转动，转动惯量决定相同力矩下的角加速度。',
+    explanationOrigin: 'source_grounded',
+    example: null,
+    contrast: null,
+    possibleMisconception: null,
+    informalCheck: null,
+  },
+  nearbySegments: [],
+  sources: [
+    {
+      referenceKey: 'S1',
+      materialTitle: '复摆课程资料',
+      headingPath: ['复摆'],
+      pageNumber: null,
+      slideNumber: null,
+      locationLabel: '复摆',
+      exactExcerpt: '复摆在重力矩作用下绕固定轴转动，转动惯量决定相同力矩下的角加速度。',
+      classification: 'exact_source_excerpt',
+    },
+  ],
+  summary: null,
+  nextConnection: null,
+};
+
+function useTutorProvider(
+  provider: LlmProvider,
+  lessonContext: TutorTurnInput['lessonContext'] = null,
+) {
+  service = createStudySessionService({
+    repos,
+    provider,
+    clock: fixedClock(T1),
+    lessonExecution: { tutorContext: () => lessonContext },
+    replanning: {
+      qualifyReplanTrigger() {
+        throw new Error('Tutor must not replan the course.');
+      },
+      proposeQualifiedReplan() {
+        throw new Error('Tutor must not replan the course.');
+      },
+    },
+  });
+}
+
+function useHy3Tutor(replies: unknown[], lessonContext: TutorTurnInput['lessonContext'] = null) {
+  let replyIndex = 0;
+  const fetcher = vi.fn<typeof fetch>().mockImplementation(
+    async () =>
+      new Response(
+        JSON.stringify({
+          choices: [
+            {
+              message: {
+                content: JSON.stringify(replies[Math.min(replyIndex++, replies.length - 1)]),
+              },
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+  );
+  const provider = new Hy3Provider({
+    baseUrl: 'https://example.test/v1',
+    apiKey: 'test-key',
+    model: 'test-model',
+    timeoutMs: 30_000,
+    fetchImpl: fetcher,
+  });
+  const providerCall = vi.spyOn(provider, 'respondToTutorTurn');
+  useTutorProvider(provider, lessonContext);
+  return { fetcher, providerCall };
+}
+
+function startTutorSession() {
+  return service.start('ws_1', {
+    contractVersionId: 'contract_1',
+    curriculumVersionId: 'curriculum_1',
+    studyPlanVersionId: 'plan_1',
+    sessionAgendaId: 'agenda_1',
+    expectedCourseExecutionVersion: 1,
+  }).session;
+}
+
+function learningAuthoritySnapshot() {
+  return Object.fromEntries(
+    [
+      'course_execution_state',
+      'session_agendas',
+      'session_agenda_items',
+      'study_plan_versions',
+      'lesson_execution_states',
+      'formal_evidence_records',
+      'grading_results',
+      'assessment_grade_records',
+      'mastery_states',
+    ].map((table) => [table, db.prepare(`SELECT * FROM ${table}`).all()]),
+  );
+}
+
+describe('Tutor move policy through StudySession and Hy3 materialization', () => {
+  it.each([
+    ['顺便问一下，什么是刚体？', '补充说明：刚体是任意两点之间距离保持不变的理想化物体。'],
+    ['另外，转动惯量是什么？', '补充说明：转动惯量描述物体的转动惯性，取决于质量相对转轴的分布。'],
+    ['题外，什么是欧拉动力学方程？', '补充说明：欧拉动力学方程联系外力矩与刚体角动量的变化。'],
+  ])('answers without a current Lesson or Unit: %s', async (content, text) => {
+    const { fetcher, providerCall } = useHy3Tutor([{ text, sourceRefs: [] }]);
+    const session = startTutorSession();
+    const before = learningAuthoritySnapshot();
+    const completed = await service.submitTurn('ws_1', session.id, {
+      commandId: 'side_question_without_context',
+      expectedSessionVersion: session.version,
+      content,
+    });
+    expect(completed.turn.status).toBe('completed');
+    expect(completed.exchanges[1]!.content).toBe(text);
+    expect(completed.turn.tutorMetadata).toMatchObject({
+      move: 'ANSWER_QUESTION',
+      routeSignal: 'stay_on_route',
+      sourceRefs: [],
+      lessonSegmentIndex: null,
+    });
+    expect(providerCall.mock.calls[0]![0]).toMatchObject({
+      lessonContext: null,
+      currentUnit: null,
+    });
+    expect(providerCall.mock.calls[0]![0].allowedMoves).not.toContain('DETOUR');
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(learningAuthoritySnapshot()).toEqual(before);
+  });
+
+  it.each([
+    [
+      '刚体前置知识',
+      '什么是刚体，转动惯量表示什么？',
+      '补充说明：刚体的任意两点距离保持不变；转动惯量还取决于质量相对转轴的分布。',
+      'ANSWER_QUESTION',
+      [],
+    ],
+    [
+      '相关拓展',
+      '顺便，刚体的平动和转动怎么描述？',
+      '补充说明：可以用质心的平动与绕质心的转动共同描述刚体运动。',
+      'DETOUR',
+      [],
+    ],
+    [
+      '深入拓展',
+      '另外，三维刚体的欧拉动力学方程是什么？',
+      '补充说明：在随刚体转动的坐标系中，外力矩等于角动量的分量变化率加上角速度与角动量的叉积。',
+      'DETOUR',
+      [],
+    ],
+    [
+      '当前课程',
+      '为什么转动惯量影响复摆的角加速度？',
+      '根据课程资料，相同力矩下，转动惯量越大，角加速度越小。',
+      'ANSWER_QUESTION',
+      ['S1'],
+    ],
+    [
+      '当前课程举例',
+      '给个例子解释转动惯量。',
+      '举例：其他条件相同时，质量分布离转轴更远的物体更难改变转动速度。',
+      'GIVE_EXAMPLE',
+      [],
+    ],
+    ['继续课程', '继续', '可以使用讲解中的继续按钮进入下一段。', 'RETURN_TO_ROUTE', []],
+  ])(
+    'answers %s while learning a compound pendulum',
+    async (_label, content, text, move, sourceRefs) => {
+      const { fetcher } = useHy3Tutor([{ text, sourceRefs }], pendulumLesson);
+      const session = startTutorSession();
+      const before = learningAuthoritySnapshot();
+      const completed = await service.submitTurn('ws_1', session.id, {
+        commandId: 'pendulum_question',
+        expectedSessionVersion: session.version,
+        content,
+      });
+      expect(completed.exchanges[1]!.content).toBe(text);
+      expect(completed.turn.tutorMetadata).toMatchObject({
+        move,
+        sourceRefs,
+        lessonSegmentIndex: 0,
+      });
+      expect(completed.session).toMatchObject({
+        currentAgendaItemId: session.currentAgendaItemId,
+        routeState: 'on_route',
+      });
+      expect(fetcher).toHaveBeenCalledTimes(1);
+      expect(learningAuthoritySnapshot()).toEqual(before);
+    },
+  );
+
+  it.each([
+    ['active Lesson', pendulumLesson],
+    ['no Lesson or Unit', null],
+  ] as const)(
+    'accepts consecutive distant side questions with %s',
+    async (_label, lessonContext) => {
+      const questions = [
+        '顺便，什么是刚体？',
+        '另外，三维刚体的欧拉方程是什么？',
+        '题外，复数的欧拉公式是什么？',
+        '另外，光为什么会发生折射？',
+      ];
+      const replies = [
+        { text: '补充说明：刚体任意两点之间的距离保持不变。', sourceRefs: [] },
+        { text: '补充说明：欧拉动力学方程联系外力矩与刚体角动量的变化。', sourceRefs: [] },
+        { text: '补充说明：复数的欧拉公式把复指数与正弦、余弦联系起来。', sourceRefs: [] },
+        {
+          text: '补充说明：光在不同介质中的传播速度不同，斜入射时传播方向会发生变化。',
+          sourceRefs: [],
+        },
+      ];
+      const { fetcher } = useHy3Tutor(replies, lessonContext);
+      let session = startTutorSession();
+      const before = learningAuthoritySnapshot();
+      for (const [index, content] of questions.entries()) {
+        const completed = await service.submitTurn('ws_1', session.id, {
+          commandId: `consecutive_side_question_${index}`,
+          expectedSessionVersion: session.version,
+          content,
+        });
+        expect(completed.turn.status).toBe('completed');
+        expect(completed.exchanges[1]!.content).toBe(replies[index]!.text);
+        expect(completed.turn.tutorMetadata?.move).toBe(
+          lessonContext ? 'DETOUR' : 'ANSWER_QUESTION',
+        );
+        expect(completed.events.some((event) => event.kind === 'action_proposed')).toBe(false);
+        session = completed.session;
+      }
+      expect(fetcher).toHaveBeenCalledTimes(questions.length);
+      expect(session.routeState).toBe('on_route');
+      expect(learningAuthoritySnapshot()).toEqual(before);
+    },
+  );
+
+  it.each([
+    ['no Lesson or Unit', null],
+    ['active Lesson', pendulumLesson],
+  ] as const)('rejects unoffered course evidence with %s', async (_label, lessonContext) => {
+    useHy3Tutor(
+      [{ text: '课程资料支持这个说法。', sourceRefs: [lessonContext ? 'U1' : 'S1'] }],
+      lessonContext,
+    );
+    const session = startTutorSession();
+    const before = learningAuthoritySnapshot();
+    await expect(
+      service.submitTurn('ws_1', session.id, {
+        commandId: 'foreign_source',
+        expectedSessionVersion: session.version,
+        content: '顺便，什么是刚体？',
+      }),
+    ).rejects.toMatchObject({
+      technicalFailureCode: 'REPAIR_EXHAUSTED:SEMANTIC_VALIDATION_FAILURE',
+    });
+    expect(repos.studySessions.listExchanges(session.id).map((exchange) => exchange.role)).toEqual([
+      'learner',
+    ]);
+    expect(learningAuthoritySnapshot()).toEqual(before);
+  });
+
+  it.each([
+    ['state command', { command: { kind: 'complete', targetAgendaItemId: 'agenda_item_1' } }],
+    ['Formal grade and evidence', { grade: 100, formalEvidence: { stateCreditable: true } }],
+    ['Mastery', { mastery: { conceptId: 'rigid_body', mastery: 1 } }],
+    ['course completion', { courseCompleted: true }],
+    ['unsupported move', { move: 'UNSUPPORTED_MOVE' }],
+  ])('rejects model-authored %s rather than converting it to an answer', async (_label, fields) => {
+    useHy3Tutor([{ text: '解释刚体知识。', sourceRefs: [], ...fields }]);
+    const session = startTutorSession();
+    const before = learningAuthoritySnapshot();
+    await expect(
+      service.submitTurn('ws_1', session.id, {
+        commandId: 'unauthorized_output',
+        expectedSessionVersion: session.version,
+        content: '顺便，什么是刚体？',
+      }),
+    ).rejects.toMatchObject({ technicalFailureCode: 'REPAIR_EXHAUSTED:SCHEMA_VALIDATION_FAILURE' });
+    expect(repos.studySessions.listTurns(session.id)[0]?.status).toBe('failed');
+    expect(repos.studySessions.listExchanges(session.id)).toHaveLength(1);
+    expect(learningAuthoritySnapshot()).toEqual(before);
+  });
+
+  it('uses an available answer for the local provider after an earlier scaffolding move', async () => {
+    useTutorProvider(new FakeProvider());
+    const session = startTutorSession();
+    const before = learningAuthoritySnapshot();
+    const simplified = await service.submitTurn('ws_1', session.id, {
+      commandId: 'simplify_first',
+      expectedSessionVersion: session.version,
+      content: '没懂',
+    });
+    expect(simplified.turn.tutorMetadata?.move).toBe('SIMPLIFY');
+    const answered = await service.submitTurn('ws_1', session.id, {
+      commandId: 'local_side_question',
+      expectedSessionVersion: simplified.session.version,
+      content: '另外，什么是刚体？',
+    });
+    expect(answered.turn.tutorMetadata).toMatchObject({
+      move: 'ANSWER_QUESTION',
+      routeSignal: 'stay_on_route',
+    });
+    expect(learningAuthoritySnapshot()).toEqual(before);
+  });
+
+  it('rejects a stale session before calling the provider', async () => {
+    const { fetcher } = useHy3Tutor([{ text: '解释刚体知识。', sourceRefs: [] }]);
+    const session = startTutorSession();
+    const before = learningAuthoritySnapshot();
+    await expect(
+      service.submitTurn('ws_1', session.id, {
+        commandId: 'stale_side_question',
+        expectedSessionVersion: session.version + 1,
+        content: '顺便，什么是刚体？',
+      }),
+    ).rejects.toThrow('stale');
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(repos.studySessions.listTurns(session.id)).toHaveLength(0);
+    expect(learningAuthoritySnapshot()).toEqual(before);
+  });
+
+  it('still rejects unavailable Formal readiness in the final service guard', async () => {
+    const agenda = repos.sessionAgendas.get('agenda_1')!;
+    repos.sessionAgendas.update(
+      {
+        ...agenda,
+        version: agenda.version + 1,
+        items: agenda.items.map((item) =>
+          item.kind === 'formal_checkpoint'
+            ? {
+                ...item,
+                launch: { ...item.launch, status: 'blocked', reason: 'No launchable checkpoint.' },
+              }
+            : item,
+        ),
+      },
+      agenda.version,
+      {
+        id: 'block_checkpoint',
+        eventType: 'checkpoint_blocked',
+        actor: 'local',
+        payload: {},
+        createdAt: T1,
+      },
+    );
+    class UnavailableFormal extends FakeProvider {
+      override async respondToTutorTurn(
+        input: TutorTurnInput,
+        opts?: ProviderCallOptions,
+      ): Promise<TutorTurnPayload> {
+        return { ...(await super.respondToTutorTurn(input, opts)), move: 'FORMAL_CHECK_READY' };
+      }
+    }
+    useTutorProvider(new UnavailableFormal());
+    const session = startTutorSession();
+    const before = learningAuthoritySnapshot();
+    await expect(
+      service.submitTurn('ws_1', session.id, {
+        commandId: 'unavailable_formal',
+        expectedSessionVersion: session.version,
+        content: '顺便，什么是刚体？',
+      }),
+    ).rejects.toMatchObject({ technicalFailureCode: 'SEMANTIC_VALIDATION_FAILURE' });
+    expect(repos.studySessions.listExchanges(session.id)).toHaveLength(1);
+    expect(learningAuthoritySnapshot()).toEqual(before);
   });
 });
 
