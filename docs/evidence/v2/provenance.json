@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "recordedDate": "2026-10-14",
+  "productBaseline": "9ec6bde693455eac3df00e33984d9e0e0d9d8c93",
+  "publicSummary": "metrics-summary.json",
+  "sources": [
+    {
+      "localReference": "output/reliability-study/final-metrics.json",
+      "sha256": "83c6a49c7f5c2aaffa1f0180a5e2807ad5eb4684b743c81245fa61276abf9f09",
+      "public": false
+    },
+    {
+      "localReference": "output/reliability-study/reasoning-strategy-decision.json",
+      "sha256": "b9ea5d74ae72c1b22d8c116117b575aa1fe657078b19d9cd75ab957ada2ef02d",
+      "public": false
+    },
+    {
+      "localReference": "output/reliability-study/freeze24-cold-acceptance-audit.json",
+      "sha256": "5e0e76f2376b2afa7b4f0e64917036bd4fc4358505d685277fd5b646d5d74fec",
+      "public": false
+    },
+    {
+      "localReference": "output/final-ui-20261014/frozen-p0-acceptance.json",
+      "sha256": "313cf2435f0cc5fbdb64479ce98318fe6f6f21c369bc106c726628228c4f456e",
+      "public": false
+    },
+    {
+      "localReference": "output/final-ui-20261014/final-checks.json",
+      "sha256": "8b1be9dcb96b00634eb63b4a0854afbae5e41fc1a2ebeba6775282a975133807",
+      "public": false
+    },
+    {
+      "localReference": "output/final-ui-20261014/protection-final.json",
+      "sha256": "7afdcffcdc76109121ed9ec2bd8868dccfa11e32b40c6d0a1a149ca7689d4a64",
+      "public": false
+    },
+    {
+      "localReference": "docs/RELIABILITY_AND_REASONING_STUDY.md",
+      "sha256": "a64033e9d958d0c09cf3d4f73d4150fac1578f15ae1f8cf0288e0e946ef827e5",
+      "public": true
+    },
+    {
+      "localReference": "docs/FINAL_HUMAN_ACCEPTANCE_20261014.md",
+      "sha256": "fc32c587823a205b479cc3b558f4a047c301b764582af04c8939231a77c106ff",
+      "public": true
+    }
+  ],
+  "fieldMapping": {
+    "research": "final-metrics.json summary",
+    "controlled": "final-metrics.json goalB, reasoning-strategy-decision.json comparisons",
+    "coldStart": "freeze24-cold-acceptance-audit.json",
+    "finalLessonRecovery": "frozen-p0-acceptance.json physicalCalls",
+    "engineering": "final-checks.json and final-tests/build/final-lint logs"
+  },
+  "privacy": "Only hashes, task counts, timing, token aggregates and evaluation boundaries are published. Raw source text, database, provider config, credentials and model candidates stay local."
+}

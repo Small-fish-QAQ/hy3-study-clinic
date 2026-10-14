@@ -168,3 +168,14 @@ CLAUDE.local.md
 # Local browser / QA artifacts
 /.playwright-cli/
 /output/
+
+# V2 local credentials, database sidecars and nested QA artifacts
+*.sqlite.server-lock
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.key
+*.pem
+**/.playwright-cli/
+/.local-test-data/

@@ -1,0 +1,156 @@
+{
+  "schemaVersion": 1,
+  "capturedDate": "2026-10-14",
+  "productBaseline": "9ec6bde693455eac3df00e33984d9e0e0d9d8c93",
+  "sourceVerification": {
+    "matchedFiles": 211,
+    "different": 0,
+    "normalization": "Git LF/CRLF equivalent; exact capture hashes retained by B"
+  },
+  "provider": "moma",
+  "model": "glm-5.3",
+  "records": "Isolated SQLite online backup; original user state preserved.",
+  "scope": "Original 35-knowledge user course differs from the 32-knowledge research cold course.",
+  "learner": "User acceptance records and separately labelled B simulated operator interactions; no student learning gain measured.",
+  "privacy": "No API key, provider files, phone number, complete textbook or database.",
+  "rights": "Necessary product screenshots. Underlying imported source rights remain with owners; no textbook redistribution licence.",
+  "files": [
+    {
+      "file": "course-map.webp",
+      "caption": "原用户验收课程8模块/17Lesson/35知识/39目标，2课完成",
+      "source": "B/handoff/screenshots/02-course-map-overview.png",
+      "sourceSha256": "a44d027bfd52dbb6012bd33b373e1b7c38a9e18812fbebc82d03cac1e74e50f2",
+      "sha256": "822d529aec26513acdf253b4885cd1c94d69eaa3cfc06073d23de6d813505b19",
+      "sourceDimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "transform": "lossless PNG to WebP; no crop, composition or content change"
+    },
+    {
+      "file": "lesson-reading.webp",
+      "caption": "真实已保存MoMA课文和来源片段",
+      "source": "B/handoff/screenshots/07-lesson-reading-wide.png",
+      "sourceSha256": "cf25b8a9c8038981eea336df1dfc0f61781ed20d7a8bbbb5a3c89835beab2b89",
+      "sha256": "02c84202e40c03b5f51e8dc109776d7e428afccae2f7129ebb55f5d2614cb0df",
+      "sourceDimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "transform": "lossless PNG to WebP; no crop, composition or content change"
+    },
+    {
+      "file": "knowledge-evidence.webp",
+      "caption": "实际被测知识与未实测知识分别显示",
+      "source": "B/handoff/screenshots/09-knowledge-evidence-status.png",
+      "sourceSha256": "92c64165a38ee21f3ae91d1c1c8969d6e82f12fc7ed7895617e05dd56fbdd47c",
+      "sha256": "c053d47fc544f191d0566863f1b59dbc57cdd96b804dc4db1449e97db964409e",
+      "sourceDimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "transform": "lossless PNG to WebP; no crop, composition or content change"
+    },
+    {
+      "file": "moma-auto.webp",
+      "caption": "MoMA glm-5.3与auto设置，Key未显示",
+      "source": "B/handoff/screenshots/14-moma-auto-settings.png",
+      "sourceSha256": "a7d2841fde593382f94bfc7cb61f726321b6cca8daf01f92ce620daf25272719",
+      "sha256": "492e8fed76dbe9489158e1f74c18533b9747cfa162255a2050e9b539492a46cb",
+      "sourceDimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "transform": "lossless PNG to WebP; no crop, composition or content change"
+    },
+    {
+      "file": "tutor-counterexample.webp",
+      "caption": "B线真实MoMA答疑，模拟操作者提问，独立revisit",
+      "source": "B/handoff/screenshots/23-live-tutor-counterexample.png",
+      "sourceSha256": "a7eb21ccf09960575089ad26d04069ab7a14be66120c7343de524b8fbdc37c86",
+      "sha256": "be1c6d5ffb92abff9b37bac04eb8d68f92b0c59286107fbda5288428716df035",
+      "sourceDimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "transform": "lossless PNG to WebP; no crop, composition or content change"
+    },
+    {
+      "file": "practice-question.webp",
+      "caption": "B线真实MoMA新题，经独立解题和rubric核查",
+      "source": "B/handoff/screenshots/24-new-practice-question.png",
+      "sourceSha256": "cb90a909e242b2c228584f3b72ab56824f49eaff24e27a3e434e0a1ed3719c18",
+      "sha256": "2e1e844255f119aa54744e09d60674a2c2ba8b06e7f468ae1564131bd7be3b16",
+      "sourceDimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "transform": "lossless PNG to WebP; no crop, composition or content change"
+    },
+    {
+      "file": "repair-explanation.webp",
+      "caption": "2026-10-13真实MoMA历史补救，模拟学习者",
+      "source": "B/handoff/screenshots/39-discrete-repair-explanation.png",
+      "sourceSha256": "2a1852a9e209e1ce932f261e7ff7f18adf40f49ede8fb328f3066e5a4aa9f51d",
+      "sha256": "caf30ab2a7ca4d90c1cd698eaf7084f41ab75d6559e28fe8397988fa2334a00d",
+      "sourceDimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "transform": "lossless PNG to WebP; no crop, composition or content change"
+    },
+    {
+      "file": "variant-retest.webp",
+      "caption": "同一历史链条的结构变式、实际反例与复测，模拟学习者",
+      "source": "B/handoff/screenshots/40-discrete-variant-retest.png",
+      "sourceSha256": "feea5f42e863759325ec19d6aaf7959819f93af20cf7b15c10ecc0f6b27e1e1e",
+      "sha256": "3e16c764b4783abb59b9cb84bce0febb14dafbb56f9ce1625aeb052910792a83",
+      "sourceDimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "transform": "lossless PNG to WebP; no crop, composition or content change"
+    }
+  ],
+  "batchAudit": {
+    "source": "B/handoff/authenticity-audit.json",
+    "sourceSha256": "636e78ee89696fff1c2b8df9150ea319156efd61b65da7040ccc00f0f8ed353f",
+    "originalDatabaseTablesCompared": 32,
+    "originalDatabaseTablesUnchanged": 32,
+    "originalProviderAndKeyUnchanged": true,
+    "newLogicalCalls": 20,
+    "inputTokens": 153783,
+    "outputTokens": 40696,
+    "inputPlusOutputTokens": 194479,
+    "reasoningTokensSeparate": 20689,
+    "failedNewRepairRounds": 3,
+    "note": "Complete model responses are not equivalent to accepted candidates. Original records and unsuccessful candidates retained."
+  },
+  "creativeDemo": {
+    "schemaVersion": 1,
+    "source": "C/delivery/Study-Clinic-V2.mp4",
+    "sha256": "3cdff58e9f4a07c88345e481c6c1f881e3cadef6326bc45ec988e84800875835",
+    "bytes": 50675431,
+    "durationSeconds": 180.011,
+    "resolution": [1920, 1080],
+    "fps": 30,
+    "codecs": ["H.264", "AAC"],
+    "status": "candidate-for-unified-review",
+    "repositoryDistribution": "cover only; video kept outside source repository for a possible future Release attachment",
+    "audio": "Original procedural music; no voice narration",
+    "caveats": [
+      "Simulated learner scores are not student learning gains.",
+      "Historical 2026-10-13 Repair/Retest is independent of the new practice demonstration.",
+      "Current video must be reconciled with the latest scene/source manifest before final publication."
+    ],
+    "cover": {
+      "file": "demo-cover.webp",
+      "source": "C/delivery/Cover.png",
+      "sourceSha256": "89c09a55bb1c1e851ec08143da9cc28641737528f1cb5a45a5726cc4ab8b83d4",
+      "sha256": "d8654c0c171987f7a1d2aedbeeaf6ba652808ccf25042841b40d74f525ff88a2",
+      "dimensions": [1920, 1080],
+      "transform": "lossless PNG to WebP; no content change",
+      "identity": "Creative cover with brand decoration; not a product screenshot"
+    }
+  }
+}

@@ -1,0 +1,1117 @@
+{
+  "schemaVersion": 1,
+  "asOf": "2026-10-14",
+  "productBaseline": "9ec6bde693455eac3df00e33984d9e0e0d9d8c93",
+  "provider": "moma",
+  "model": "glm-5.3",
+  "research": {
+    "requests": 580,
+    "usageKnown": 574,
+    "inputTokens": 2639550,
+    "outputTokens": 777748,
+    "reasoningTokens": 293496,
+    "reportedInputPlusOutput": 3417298,
+    "elapsedMs": {
+      "count": 580,
+      "min": 151,
+      "median": 17903,
+      "max": 240010
+    },
+    "totalRequestElapsedMs": 14976760,
+    "classificationCounts": {
+      "transport_complete": 521,
+      "known_transport_or_output_failure": 20,
+      "known_content_rejected": 37,
+      "upstream_outcome_unknown": 2
+    },
+    "cost": null,
+    "currency": null,
+    "sourceFreeze": "goal-a-source-freeze-31.json",
+    "excludedLaterFinalUiAndBRequests": true
+  },
+  "controlled": {
+    "actualRequests": 103,
+    "contentComparisons": 98,
+    "capabilityProbes": 5,
+    "invariants": {
+      "maxTokens": 24000,
+      "temperature": 0.2,
+      "deadlineMs": 240000,
+      "model": "glm-5.3"
+    },
+    "comparisons": [
+      {
+        "batch": "reasoning",
+        "sourceFreeze": "goal-a-source-freeze-25.json",
+        "sample": "extract_physics",
+        "groups": [
+          {
+            "effort": "low",
+            "count": 2,
+            "technicalSuccess": 2,
+            "reviewed": 2,
+            "correctnessSuccess": 2,
+            "elapsedMs": {
+              "min": 11266,
+              "median": 11895,
+              "max": 12524
+            },
+            "inputTokens": 3860,
+            "outputTokens": 2349,
+            "usageUnknown": 0
+          },
+          {
+            "effort": "high",
+            "count": 2,
+            "technicalSuccess": 2,
+            "reviewed": 2,
+            "correctnessSuccess": 2,
+            "elapsedMs": {
+              "min": 29026,
+              "median": 54424.5,
+              "max": 79823
+            },
+            "inputTokens": 3860,
+            "outputTokens": 6077,
+            "usageUnknown": 0
+          }
+        ]
+      },
+      {
+        "batch": "reasoning",
+        "sourceFreeze": "goal-a-source-freeze-25.json",
+        "sample": "extract_logic",
+        "groups": [
+          {
+            "effort": "low",
+            "count": 2,
+            "technicalSuccess": 2,
+            "reviewed": 2,
+            "correctnessSuccess": 0,
+            "elapsedMs": {
+              "min": 13553,
+              "median": 16321.5,
+              "max": 19090
+            },
+            "inputTokens": 2640,
+            "outputTokens": 1366,
+            "usageUnknown": 0
+          },
+          {
+            "effort": "high",
+            "count": 2,
+            "technicalSuccess": 2,
+            "reviewed": 2,
+            "correctnessSuccess": 0,
+            "elapsedMs": {
+              "min": 39233,
+              "median": 41631.5,
+              "max": 44030
+            },
+            "inputTokens": 2640,
+            "outputTokens": 6453,
+            "usageUnknown": 0
+          }
+        ]
+      },
+      {
+        "batch": "reasoning",
+        "sourceFreeze": "goal-a-source-freeze-25.json",
+        "sample": "revise_plan",
+        "groups": [
+          {
+            "effort": "low",
+            "count": 2,
+            "technicalSuccess": 2,
+            "reviewed": 2,
+            "correctnessSuccess": 0,
+            "elapsedMs": {
+              "min": 5845,
+              "median": 7187,
+              "max": 8529
+            },
+            "inputTokens": 5854,
+            "outputTokens": 1187,
+            "usageUnknown": 0
+          },
+          {
+            "effort": "high",
+            "count": 2,
+            "technicalSuccess": 2,
+            "reviewed": 2,
+            "correctnessSuccess": 0,
+            "elapsedMs": {
+              "min": 21639,
+              "median": 22140,
+              "max": 22641
+            },
+            "inputTokens": 5854,
+            "outputTokens": 2737,
+            "usageUnknown": 0
+          }
+        ]
+      },
+      {
+        "batch": "reasoning",
+        "sourceFreeze": "goal-a-source-freeze-25.json",
+        "sample": "plan_physics",
+        "groups": [
+          {
+            "effort": "low",
+            "count": 2,
+            "technicalSuccess": 2,
+            "reviewed": 2,
+            "correctnessSuccess": 0,
+            "elapsedMs": {
+              "min": 21707,
+              "median": 30475.5,
+              "max": 39244
+            },
+            "inputTokens": 4774,
+            "outputTokens": 3739,
+            "usageUnknown": 0
+          },
+          {
+            "effort": "high",
+            "count": 2,
+            "technicalSuccess": 2,
+            "reviewed": 2,
+            "correctnessSuccess": 0,
+            "elapsedMs": {
+              "min": 42112,
+              "median": 54545,
+              "max": 66978
+            },
+            "inputTokens": 4774,
+            "outputTokens": 6832,
+            "usageUnknown": 0
+          }
+        ]
+      },
+      {
+        "batch": "reasoning",
+        "sourceFreeze": "goal-a-source-freeze-25.json",
+        "sample": "review_scope",
+        "groups": [
+          {
+            "effort": "low",
+            "count": 2,
+            "technicalSuccess": 2,
+            "reviewed": 2,
+            "correctnessSuccess": 2,
+            "elapsedMs": {
+              "min": 3881,
+              "median": 4491.5,
+              "max": 5102
+            },
+            "inputTokens": 4744,
+            "outputTokens": 503,
+            "usageUnknown": 0
+          },
+          {
+            "effort": "high",
+            "count": 2,
+            "technicalSuccess": 2,
+            "reviewed": 2,
+            "correctnessSuccess": 1,
+            "elapsedMs": {
+              "min": 5695,
+              "median": 6667.5,
+              "max": 7640
+            },
+            "inputTokens": 4744,
+            "outputTokens": 813,
+            "usageUnknown": 0
+          }
+        ]
+      },
+      {
+        "batch": "reasoning",
+        "sourceFreeze": "goal-a-source-freeze-25.json",
+        "sample": "lesson_physics",
+        "groups": [
+          {
+            "effort": "low",
+            "count": 2,
+            "technicalSuccess": 2,
+            "reviewed": 2,
+            "correctnessSuccess": 0,
+            "elapsedMs": {
+              "min": 19015,
+              "median": 25862,
+              "max": 32709
+            },
+            "inputTokens": 5758,
+            "outputTokens": 3597,
+            "usageUnknown": 0
+          },
+          {
+            "effort": "high",
+            "count": 2,
+            "technicalSuccess": 2,
+            "reviewed": 2,
+            "correctnessSuccess": 0,
+            "elapsedMs": {
+              "min": 41512,
+              "median": 46168.5,
+              "max": 50825
+            },
+            "inputTokens": 5758,
+            "outputTokens": 4469,
+            "usageUnknown": 0
+          }
+        ]
+      },
+      {
+        "batch": "reasoning",
+        "sourceFreeze": "goal-a-source-freeze-25.json",
+        "sample": "tutor_ordinary",
+        "groups": [
+          {
+            "effort": "low",
+            "count": 2,
+            "technicalSuccess": 2,
+            "reviewed": 2,
+            "correctnessSuccess": 2,
+            "elapsedMs": {
+              "min": 6575,
+              "median": 6934,
+              "max": 7293
+            },
+            "inputTokens": 7928,
+            "outputTokens": 1014,
+            "usageUnknown": 0
+          },
+          {
+            "effort": "high",
+            "count": 2,
+            "technicalSuccess": 2,
+            "reviewed": 2,
+            "correctnessSuccess": 2,
+            "elapsedMs": {
+              "min": 8562,
+              "median": 15139.5,
+              "max": 21717
+            },
+            "inputTokens": 7928,
+            "outputTokens": 1310,
+            "usageUnknown": 0
+          }
+        ]
+      },
+      {
+        "batch": "reasoning",
+        "sourceFreeze": "goal-a-source-freeze-25.json",
+        "sample": "tutor_complex",
+        "groups": [
+          {
+            "effort": "low",
+            "count": 3,
+            "technicalSuccess": 3,
+            "reviewed": 3,
+            "correctnessSuccess": 3,
+            "elapsedMs": {
+              "min": 23253,
+              "median": 27584,
+              "max": 38526
+            },
+            "inputTokens": 10011,
+            "outputTokens": 3893,
+            "usageUnknown": 0
+          },
+          {
+            "effort": "high",
+            "count": 3,
+            "technicalSuccess": 3,
+            "reviewed": 3,
+            "correctnessSuccess": 1,
+            "elapsedMs": {
+              "min": 27310,
+              "median": 46665,
+              "max": 50036
+            },
+            "inputTokens": 10011,
+            "outputTokens": 6469,
+            "usageUnknown": 0
+          }
+        ]
+      },
+      {
+        "batch": "reasoning",
+        "sourceFreeze": "goal-a-source-freeze-25.json",
+        "sample": "solve_physics",
+        "groups": [
+          {
+            "effort": "low",
+            "count": 2,
+            "technicalSuccess": 2,
+            "reviewed": 2,
+            "correctnessSuccess": 0,
+            "elapsedMs": {
+              "min": 11463,
+              "median": 11825.5,
+              "max": 12188
+            },
+            "inputTokens": 5538,
+            "outputTokens": 1799,
+            "usageUnknown": 0
+          },
+          {
+            "effort": "high",
+            "count": 2,
+            "technicalSuccess": 2,
+            "reviewed": 2,
+            "correctnessSuccess": 2,
+            "elapsedMs": {
+              "min": 15978,
+              "median": 16445,
+              "max": 16912
+            },
+            "inputTokens": 5538,
+            "outputTokens": 2621,
+            "usageUnknown": 0
+          }
+        ]
+      },
+      {
+        "batch": "reasoning",
+        "sourceFreeze": "goal-a-source-freeze-25.json",
+        "sample": "rubric_wrong",
+        "groups": [
+          {
+            "effort": "low",
+            "count": 2,
+            "technicalSuccess": 2,
+            "reviewed": 2,
+            "correctnessSuccess": 2,
+            "elapsedMs": {
+              "min": 10815,
+              "median": 11646.5,
+              "max": 12478
+            },
+            "inputTokens": 9646,
+            "outputTokens": 2082,
+            "usageUnknown": 0
+          },
+          {
+            "effort": "high",
+            "count": 2,
+            "technicalSuccess": 2,
+            "reviewed": 2,
+            "correctnessSuccess": 2,
+            "elapsedMs": {
+              "min": 21242,
+              "median": 33884.5,
+              "max": 46527
+            },
+            "inputTokens": 9646,
+            "outputTokens": 3890,
+            "usageUnknown": 0
+          }
+        ]
+      },
+      {
+        "batch": "reasoning",
+        "sourceFreeze": "goal-a-source-freeze-25.json",
+        "sample": "grade_partial",
+        "groups": [
+          {
+            "effort": "low",
+            "count": 3,
+            "technicalSuccess": 3,
+            "reviewed": 3,
+            "correctnessSuccess": 3,
+            "elapsedMs": {
+              "min": 7118,
+              "median": 7286,
+              "max": 12194
+            },
+            "inputTokens": 9039,
+            "outputTokens": 1724,
+            "usageUnknown": 0
+          },
+          {
+            "effort": "high",
+            "count": 3,
+            "technicalSuccess": 3,
+            "reviewed": 3,
+            "correctnessSuccess": 2,
+            "elapsedMs": {
+              "min": 10859,
+              "median": 16500,
+              "max": 23623
+            },
+            "inputTokens": 9039,
+            "outputTokens": 2639,
+            "usageUnknown": 0
+          }
+        ]
+      },
+      {
+        "batch": "reasoning",
+        "sourceFreeze": "goal-a-source-freeze-25.json",
+        "sample": "grade_correct",
+        "groups": [
+          {
+            "effort": "low",
+            "count": 2,
+            "technicalSuccess": 2,
+            "reviewed": 2,
+            "correctnessSuccess": 2,
+            "elapsedMs": {
+              "min": 9736,
+              "median": 10505.5,
+              "max": 11275
+            },
+            "inputTokens": 6300,
+            "outputTokens": 923,
+            "usageUnknown": 0
+          },
+          {
+            "effort": "high",
+            "count": 2,
+            "technicalSuccess": 2,
+            "reviewed": 2,
+            "correctnessSuccess": 2,
+            "elapsedMs": {
+              "min": 10434,
+              "median": 15696,
+              "max": 20958
+            },
+            "inputTokens": 6300,
+            "outputTokens": 1721,
+            "usageUnknown": 0
+          }
+        ]
+      },
+      {
+        "batch": "reasoning",
+        "sourceFreeze": "goal-a-source-freeze-25.json",
+        "sample": "author_formal",
+        "groups": [
+          {
+            "effort": "low",
+            "count": 2,
+            "technicalSuccess": 2,
+            "reviewed": 2,
+            "correctnessSuccess": 1,
+            "elapsedMs": {
+              "min": 29733,
+              "median": 42765.5,
+              "max": 55798
+            },
+            "inputTokens": 8236,
+            "outputTokens": 4611,
+            "usageUnknown": 0
+          },
+          {
+            "effort": "high",
+            "count": 2,
+            "technicalSuccess": 2,
+            "reviewed": 2,
+            "correctnessSuccess": 1,
+            "elapsedMs": {
+              "min": 46704,
+              "median": 61296,
+              "max": 75888
+            },
+            "inputTokens": 8236,
+            "outputTokens": 7310,
+            "usageUnknown": 0
+          }
+        ]
+      },
+      {
+        "batch": "reasoning26",
+        "sourceFreeze": "goal-a-source-freeze-26.json",
+        "sample": "revise_plan",
+        "groups": [
+          {
+            "effort": "low",
+            "count": 2,
+            "technicalSuccess": 2,
+            "reviewed": 2,
+            "correctnessSuccess": 2,
+            "elapsedMs": {
+              "min": 6261,
+              "median": 9115,
+              "max": 11969
+            },
+            "inputTokens": 6694,
+            "outputTokens": 740,
+            "usageUnknown": 0
+          },
+          {
+            "effort": "high",
+            "count": 2,
+            "technicalSuccess": 2,
+            "reviewed": 2,
+            "correctnessSuccess": 2,
+            "elapsedMs": {
+              "min": 26296,
+              "median": 35048,
+              "max": 43800
+            },
+            "inputTokens": 6694,
+            "outputTokens": 2983,
+            "usageUnknown": 0
+          }
+        ]
+      },
+      {
+        "batch": "reasoning26",
+        "sourceFreeze": "goal-a-source-freeze-26.json",
+        "sample": "lesson_physics",
+        "groups": [
+          {
+            "effort": "low",
+            "count": 1,
+            "technicalSuccess": 1,
+            "reviewed": 1,
+            "correctnessSuccess": 0,
+            "elapsedMs": {
+              "min": 16148,
+              "median": 16148,
+              "max": 16148
+            },
+            "inputTokens": 2295,
+            "outputTokens": 1336,
+            "usageUnknown": 0
+          },
+          {
+            "effort": "high",
+            "count": 1,
+            "technicalSuccess": 1,
+            "reviewed": 1,
+            "correctnessSuccess": 0,
+            "elapsedMs": {
+              "min": 64385,
+              "median": 64385,
+              "max": 64385
+            },
+            "inputTokens": 2295,
+            "outputTokens": 2584,
+            "usageUnknown": 0
+          }
+        ]
+      },
+      {
+        "batch": "reasoning26",
+        "sourceFreeze": "goal-a-source-freeze-26.json",
+        "sample": "extract_logic_complete",
+        "groups": [
+          {
+            "effort": "low",
+            "count": 2,
+            "technicalSuccess": 2,
+            "reviewed": 2,
+            "correctnessSuccess": 2,
+            "elapsedMs": {
+              "min": 44730,
+              "median": 48728,
+              "max": 52726
+            },
+            "inputTokens": 8506,
+            "outputTokens": 3995,
+            "usageUnknown": 0
+          },
+          {
+            "effort": "high",
+            "count": 2,
+            "technicalSuccess": 2,
+            "reviewed": 2,
+            "correctnessSuccess": 2,
+            "elapsedMs": {
+              "min": 34759,
+              "median": 90360.5,
+              "max": 145962
+            },
+            "inputTokens": 8506,
+            "outputTokens": 9205,
+            "usageUnknown": 0
+          }
+        ]
+      },
+      {
+        "batch": "reasoning26",
+        "sourceFreeze": "goal-a-source-freeze-26.json",
+        "sample": "grade_hidden",
+        "groups": [
+          {
+            "effort": "low",
+            "count": 2,
+            "technicalSuccess": 2,
+            "reviewed": 2,
+            "correctnessSuccess": 1,
+            "elapsedMs": {
+              "min": 4457,
+              "median": 7194.5,
+              "max": 9932
+            },
+            "inputTokens": 2622,
+            "outputTokens": 488,
+            "usageUnknown": 0
+          },
+          {
+            "effort": "high",
+            "count": 2,
+            "technicalSuccess": 2,
+            "reviewed": 2,
+            "correctnessSuccess": 2,
+            "elapsedMs": {
+              "min": 17365,
+              "median": 18574,
+              "max": 19783
+            },
+            "inputTokens": 2622,
+            "outputTokens": 1387,
+            "usageUnknown": 0
+          }
+        ]
+      },
+      {
+        "batch": "reasoning26",
+        "sourceFreeze": "goal-a-source-freeze-26.json",
+        "sample": "grade_proof_alternative",
+        "groups": [
+          {
+            "effort": "low",
+            "count": 2,
+            "technicalSuccess": 2,
+            "reviewed": 2,
+            "correctnessSuccess": 2,
+            "elapsedMs": {
+              "min": 3884,
+              "median": 4395.5,
+              "max": 4907
+            },
+            "inputTokens": 5488,
+            "outputTokens": 619,
+            "usageUnknown": 0
+          },
+          {
+            "effort": "high",
+            "count": 2,
+            "technicalSuccess": 2,
+            "reviewed": 2,
+            "correctnessSuccess": 2,
+            "elapsedMs": {
+              "min": 6936,
+              "median": 7776,
+              "max": 8616
+            },
+            "inputTokens": 5488,
+            "outputTokens": 1116,
+            "usageUnknown": 0
+          }
+        ]
+      },
+      {
+        "batch": "reasoning26",
+        "sourceFreeze": "goal-a-source-freeze-26.json",
+        "sample": "grade_proof_bad_boundary",
+        "groups": [
+          {
+            "effort": "low",
+            "count": 2,
+            "technicalSuccess": 2,
+            "reviewed": 2,
+            "correctnessSuccess": 2,
+            "elapsedMs": {
+              "min": 5774,
+              "median": 6074,
+              "max": 6374
+            },
+            "inputTokens": 5496,
+            "outputTokens": 806,
+            "usageUnknown": 0
+          },
+          {
+            "effort": "high",
+            "count": 2,
+            "technicalSuccess": 2,
+            "reviewed": 2,
+            "correctnessSuccess": 2,
+            "elapsedMs": {
+              "min": 11706,
+              "median": 16972.5,
+              "max": 22239
+            },
+            "inputTokens": 5496,
+            "outputTokens": 1671,
+            "usageUnknown": 0
+          }
+        ]
+      },
+      {
+        "batch": "reasoning26",
+        "sourceFreeze": "goal-a-source-freeze-26.json",
+        "sample": "review_scope_positive",
+        "groups": [
+          {
+            "effort": "low",
+            "count": 1,
+            "technicalSuccess": 1,
+            "reviewed": 1,
+            "correctnessSuccess": 1,
+            "elapsedMs": {
+              "min": 991,
+              "median": 991,
+              "max": 991
+            },
+            "inputTokens": 2112,
+            "outputTokens": 33,
+            "usageUnknown": 0
+          },
+          {
+            "effort": "high",
+            "count": 1,
+            "technicalSuccess": 1,
+            "reviewed": 1,
+            "correctnessSuccess": 1,
+            "elapsedMs": {
+              "min": 8344,
+              "median": 8344,
+              "max": 8344
+            },
+            "inputTokens": 2112,
+            "outputTokens": 506,
+            "usageUnknown": 0
+          }
+        ]
+      },
+      {
+        "batch": "reasoning26",
+        "sourceFreeze": "goal-a-source-freeze-26.json",
+        "sample": "rubric_correct",
+        "groups": [
+          {
+            "effort": "low",
+            "count": 1,
+            "technicalSuccess": 1,
+            "reviewed": 1,
+            "correctnessSuccess": 1,
+            "elapsedMs": {
+              "min": 10115,
+              "median": 10115,
+              "max": 10115
+            },
+            "inputTokens": 4909,
+            "outputTokens": 850,
+            "usageUnknown": 0
+          },
+          {
+            "effort": "high",
+            "count": 1,
+            "technicalSuccess": 1,
+            "reviewed": 1,
+            "correctnessSuccess": 1,
+            "elapsedMs": {
+              "min": 31487,
+              "median": 31487,
+              "max": 31487
+            },
+            "inputTokens": 4909,
+            "outputTokens": 1415,
+            "usageUnknown": 0
+          }
+        ]
+      },
+      {
+        "batch": "reasoning26",
+        "sourceFreeze": "goal-a-source-freeze-26.json",
+        "sample": "solve_ambiguous",
+        "groups": [
+          {
+            "effort": "low",
+            "count": 1,
+            "technicalSuccess": 0,
+            "reviewed": 1,
+            "correctnessSuccess": 0,
+            "elapsedMs": {
+              "min": 7601,
+              "median": 7601,
+              "max": 7601
+            },
+            "inputTokens": 1967,
+            "outputTokens": 448,
+            "usageUnknown": 0
+          },
+          {
+            "effort": "high",
+            "count": 1,
+            "technicalSuccess": 1,
+            "reviewed": 1,
+            "correctnessSuccess": 1,
+            "elapsedMs": {
+              "min": 19640,
+              "median": 19640,
+              "max": 19640
+            },
+            "inputTokens": 1967,
+            "outputTokens": 680,
+            "usageUnknown": 0
+          }
+        ]
+      },
+      {
+        "batch": "verification26",
+        "sourceFreeze": "goal-a-source-freeze-26.json",
+        "sample": "verify_signed_quantity",
+        "groups": [
+          {
+            "effort": "low",
+            "count": 1,
+            "technicalSuccess": 1,
+            "reviewed": 1,
+            "correctnessSuccess": 0,
+            "elapsedMs": {
+              "min": 4306,
+              "median": 4306,
+              "max": 4306
+            },
+            "inputTokens": 1572,
+            "outputTokens": 143,
+            "usageUnknown": 0
+          },
+          {
+            "effort": "high",
+            "count": 1,
+            "technicalSuccess": 1,
+            "reviewed": 1,
+            "correctnessSuccess": 0,
+            "elapsedMs": {
+              "min": 8624,
+              "median": 8624,
+              "max": 8624
+            },
+            "inputTokens": 1572,
+            "outputTokens": 360,
+            "usageUnknown": 0
+          }
+        ]
+      },
+      {
+        "batch": "reasoning27",
+        "sourceFreeze": "goal-a-source-freeze-27.json",
+        "sample": "bad_generalization",
+        "groups": [
+          {
+            "effort": "low",
+            "count": 1,
+            "technicalSuccess": 1,
+            "reviewed": 1,
+            "correctnessSuccess": 0,
+            "elapsedMs": {
+              "min": 3348,
+              "median": 3348,
+              "max": 3348
+            },
+            "inputTokens": 2190,
+            "outputTokens": 219,
+            "usageUnknown": 0
+          },
+          {
+            "effort": "high",
+            "count": 1,
+            "technicalSuccess": 1,
+            "reviewed": 1,
+            "correctnessSuccess": 1,
+            "elapsedMs": {
+              "min": 20799,
+              "median": 20799,
+              "max": 20799
+            },
+            "inputTokens": 2190,
+            "outputTokens": 962,
+            "usageUnknown": 0
+          }
+        ]
+      },
+      {
+        "batch": "reasoning27",
+        "sourceFreeze": "goal-a-source-freeze-27.json",
+        "sample": "correct_source_example",
+        "groups": [
+          {
+            "effort": "low",
+            "count": 1,
+            "technicalSuccess": 1,
+            "reviewed": 1,
+            "correctnessSuccess": 1,
+            "elapsedMs": {
+              "min": 2023,
+              "median": 2023,
+              "max": 2023
+            },
+            "inputTokens": 2249,
+            "outputTokens": 158,
+            "usageUnknown": 0
+          },
+          {
+            "effort": "high",
+            "count": 1,
+            "technicalSuccess": 1,
+            "reviewed": 1,
+            "correctnessSuccess": 1,
+            "elapsedMs": {
+              "min": 3512,
+              "median": 3512,
+              "max": 3512
+            },
+            "inputTokens": 2249,
+            "outputTokens": 271,
+            "usageUnknown": 0
+          }
+        ]
+      },
+      {
+        "batch": "reasoning27",
+        "sourceFreeze": "goal-a-source-freeze-27.json",
+        "sample": "tutor_invalid_entailment",
+        "groups": [
+          {
+            "effort": "low",
+            "count": 2,
+            "technicalSuccess": 2,
+            "reviewed": 2,
+            "correctnessSuccess": 2,
+            "elapsedMs": {
+              "min": 4709,
+              "median": 5267,
+              "max": 5825
+            },
+            "inputTokens": 6592,
+            "outputTokens": 656,
+            "usageUnknown": 0
+          },
+          {
+            "effort": "high",
+            "count": 2,
+            "technicalSuccess": 2,
+            "reviewed": 2,
+            "correctnessSuccess": 2,
+            "elapsedMs": {
+              "min": 11322,
+              "median": 15287,
+              "max": 19252
+            },
+            "inputTokens": 6592,
+            "outputTokens": 1323,
+            "usageUnknown": 0
+          }
+        ]
+      },
+      {
+        "batch": "reasoning27",
+        "sourceFreeze": "goal-a-source-freeze-27.json",
+        "sample": "tutor_cp_countermodel",
+        "groups": [
+          {
+            "effort": "low",
+            "count": 2,
+            "technicalSuccess": 2,
+            "reviewed": 2,
+            "correctnessSuccess": 2,
+            "elapsedMs": {
+              "min": 9004,
+              "median": 9368,
+              "max": 9732
+            },
+            "inputTokens": 6680,
+            "outputTokens": 1316,
+            "usageUnknown": 0
+          },
+          {
+            "effort": "high",
+            "count": 2,
+            "technicalSuccess": 2,
+            "reviewed": 2,
+            "correctnessSuccess": 2,
+            "elapsedMs": {
+              "min": 26091,
+              "median": 27823,
+              "max": 29555
+            },
+            "inputTokens": 6680,
+            "outputTokens": 2349,
+            "usageUnknown": 0
+          }
+        ]
+      }
+    ],
+    "tutorSelectedAggregate": [
+      {
+        "effort": "low",
+        "count": 9,
+        "correct": 9
+      },
+      {
+        "effort": "high",
+        "count": 9,
+        "correct": 7
+      }
+    ]
+  },
+  "coldStart": {
+    "sourceFreeze": "goal-a-source-freeze-24.json",
+    "sourceChars": 7187,
+    "sourceBlocks": 214,
+    "knowledge": 32,
+    "lessons": 17,
+    "operationsUntilDraft": 1,
+    "requests": 27,
+    "elapsedMs": 562226,
+    "inputTokens": 159850,
+    "outputTokens": 30668,
+    "reportedInputPlusOutput": 190518,
+    "boundedLocalRecoveryIncluded": true
+  },
+  "finalLessonRecovery": {
+    "frozenSourceFiles": 104,
+    "ordinaryUI": true,
+    "manualRecoveryClicks": 1,
+    "requests": 2,
+    "elapsedMs": 64633,
+    "inputTokens": 4215,
+    "outputTokens": 2393,
+    "reportedInputPlusOutput": 6608,
+    "healthySegmentsPreserved": 5,
+    "fullLessonRepurchased": false,
+    "restartBusinessTables": 9,
+    "restartReadModelRequests": 0,
+    "stageIncludingExploration": {
+      "requests": 4,
+      "inputTokens": 8406,
+      "outputTokens": 4953,
+      "reportedInputPlusOutput": 13359
+    }
+  },
+  "engineeringAcceptance": {
+    "tests": 363,
+    "shared": 20,
+    "server": 295,
+    "web": 48,
+    "build": true,
+    "lint": true,
+    "offline": true,
+    "localhostHttp": true
+  },
+  "limitations": [
+    "Small selected task samples; results do not estimate population reliability.",
+    "Content assessor is the same assistant; learner answers in research are simulated.",
+    "Original scanned PDF images unavailable; preserved stored text was assessed.",
+    "Free Tutor may contain ancillary errors, retained in fullResponseCorrectness=false.",
+    "Final UI recovery is a later, separate scope from the 580-request research ledger.",
+    "Input+Output is reported usage only; missing usage is unknown, reasoning is not added again.",
+    "Currency and actual monetary charge are unknown. No real-student learning gain was measured."
+  ],
+  "cost": {
+    "actualAmount": null,
+    "currency": null,
+    "coldStartScenario": "0.159850*p_in + 0.030668*p_out",
+    "recoveryScenario": "0.004215*p_in + 0.002393*p_out",
+    "rateUnit": "currency per million tokens",
+    "publicRateVerified": false
+  }
+}

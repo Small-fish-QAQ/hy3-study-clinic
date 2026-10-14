@@ -36,6 +36,8 @@ jobs:
         run: npm test
       - name: Offline clinic regression
         run: npm run eval:fake
+      - name: Local HTTP clinic regression
+        run: npm run verify:http
       - name: Test StudyEval evaluator
         run: node --test eval/studyeval/test/*.test.mjs
 

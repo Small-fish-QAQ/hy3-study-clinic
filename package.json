@@ -1,12 +1,12 @@
 {
   "name": "hy3-study-clinic",
-  "version": "0.1.0",
+  "version": "2.0.0",
   "private": true,
   "license": "Apache-2.0",
-  "description": "Hy3 Study Clinic - Course-centred, source-grounded, evidence-gated, learner-governed learning execution built on Hy3; a personal activity project, not an official Tencent release.",
+  "description": "Study Clinic V2 - persistent, source-grounded AI course learning with practice, targeted repair, voluntary assessment and traceable evidence.",
   "type": "module",
   "engines": {
-    "node": ">=20.9.0"
+    "node": "^20.19.0 || ^22.13.0 || ^24.0.0"
   },
   "workspaces": [
     "packages/*",
@@ -24,7 +24,8 @@
     "demo:offline": "node scripts/eval-clinic-offline.mjs",
     "eval:fake": "node scripts/eval-clinic-offline.mjs",
     "eval:hy3": "node scripts/validate-real-course.mjs",
-    "eval:evidence": "node eval/export-evidence.mjs"
+    "eval:evidence": "node eval/export-evidence.mjs",
+    "verify:http": "tsx scripts/verify-course-http.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",

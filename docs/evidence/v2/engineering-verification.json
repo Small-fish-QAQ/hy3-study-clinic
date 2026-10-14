@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-10-14T13:42:13.702Z",
+  "productBaseline": "9ec6bde693455eac3df00e33984d9e0e0d9d8c93",
+  "scope": "Independent checkout from git archive plus approved documentation/metadata/media overlay, excluding .env, private data and untracked research files.",
+  "candidateManifestSha256": "8ca4abe6872ea1d781c3d9684b8b06658e91a99b4515b0a186b97a8cc678b413",
+  "environment": {
+    "os": "Windows",
+    "node": "v24.14.1",
+    "npm": "11.11.0"
+  },
+  "install": {
+    "command": "npm ci --no-audit --no-fund",
+    "passed": true,
+    "logSha256": "2a37a7390f387de3af9ee9dcc5fe565f2265f24830c5ada782dc544f79efac56"
+  },
+  "steps": [
+    {
+      "name": "build",
+      "passed": true,
+      "exitCode": 0,
+      "elapsedMs": 32858,
+      "logSha256": "243811ce7d136345061f145cd253436c81a0d02a4451fe817e382af3bc86ca21"
+    },
+    {
+      "name": "lint",
+      "passed": true,
+      "exitCode": 0,
+      "elapsedMs": 47996,
+      "logSha256": "051c187cdda64b50434de15f891a677c2733aaa5f4d58e81b705a3fd2db9a0d0"
+    },
+    {
+      "name": "tests",
+      "passed": true,
+      "exitCode": 0,
+      "elapsedMs": 119244,
+      "logSha256": "63d1de2752d3ba163cc0c6be023684b5b9eac972e44bf1aa02b2ce7fcb7ee337"
+    },
+    {
+      "name": "offline",
+      "passed": true,
+      "exitCode": 0,
+      "elapsedMs": 2232,
+      "logSha256": "db9029c53ee4fe79e5d6b6b4aaf547cfc5fc7885e2146e673bb7cec88e06f5b2"
+    },
+    {
+      "name": "http",
+      "passed": true,
+      "exitCode": 0,
+      "elapsedMs": 3684,
+      "logSha256": "2e54c384bafc98e260f82438687620f36225dcb967d38c94a7515f10aef9495e"
+    },
+    {
+      "name": "studyeval-tests",
+      "passed": true,
+      "exitCode": 0,
+      "elapsedMs": 441,
+      "logSha256": "db65db4ea816df3ecfff737e5670506782ac4070afa36e667ee300b9aea2dc5a"
+    },
+    {
+      "name": "studyeval-evidence",
+      "passed": true,
+      "exitCode": 0,
+      "elapsedMs": 30315,
+      "logSha256": "b2b7a43f72e6367b3a690150be8ab253a8ee7f10991fedbd4668b288603d0631"
+    },
+    {
+      "name": "hy3-evidence",
+      "passed": true,
+      "exitCode": 0,
+      "elapsedMs": 8859,
+      "logSha256": "f7f69afc296d1f4cace569dc7d66d4b16b7a168f894ce03e30516414d474d082"
+    }
+  ],
+  "tests": {
+    "total": 363,
+    "shared": 20,
+    "server": 295,
+    "web": 48,
+    "studyevalHistoricalEvaluator": 22
+  },
+  "defaultStartup": {
+    "passed": true,
+    "health": {
+      "ok": true,
+      "formatVersion": 2,
+      "provider": "moma"
+    },
+    "provider": "moma",
+    "model": null,
+    "apiKeyConfigured": false,
+    "complete": false,
+    "emptyWorkspaces": true,
+    "defaultDatabaseCreated": true,
+    "externalModelRequests": 0,
+    "mode": "fresh public checkout; default configuration; read-only HTTP probes"
+  },
+  "externalModelRequests": 0,
+  "sourceFreeze": {
+    "files": 104,
+    "unchanged": true
+  },
+  "ci": {
+    "status": "pending-push",
+    "head": null,
+    "runUrl": null,
+    "note": "No V2 GitHub Actions run exists before final authorized push. Local results do not stand in for CI."
+  },
+  "limitations": [
+    "Checks establish engineering contracts and saved historical evidence integrity, not model teaching correctness.",
+    "Windows Node24 verified locally. Cross-platform matrix remains pending remote CI.",
+    "Documentation/media corrections after the engineering run are validated separately by links, hashes and formatting."
+  ]
+}

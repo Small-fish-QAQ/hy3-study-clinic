@@ -4,6 +4,17 @@
 
 本页定位过去版本、原人类评分和发布过程。当前结论集中在主报告；历史实验在对应 tag / commit 下阅读与复现，main 不复制完整旧实验包或旧报告。
 
+
+## 当前V2与阶段原件
+
+2026-10-14的已验收产品基线为9ec6bde693455eac3df00e33984d9e0e0d9d8c93。当前[产品与研究](REPORT.md)、[架构](ARCHITECTURE.md)、[运行](SETUP.md)、[验证](VERIFICATION.md)和[CHANGELOG](../CHANGELOG.md)分别维护V2入口。拟议第三个Tag为v2.0-mobile-cloud-cup-2026，尚待A/B/C成品整合与最终审阅，未创建。
+
+Phase4、精简实施、UI／准备恢复、首轮真实修复、MoMA集成、单元Formal、Goal A/B研究和最终真人验收按各自日期保留。旧schema／预算／A16待执行等文字是当时状态，不覆盖现行源码。阶段完整研究见[RELIABILITY_AND_REASONING_STUDY](RELIABILITY_AND_REASONING_STUDY.md)，最终验收见[FINAL_HUMAN_ACCEPTANCE_20261014](FINAL_HUMAN_ACCEPTANCE_20261014.md)。
+
+整理前的[README](https://github.com/Small-fish-QAQ/hy3-study-clinic/blob/9ec6bde693455eac3df00e33984d9e0e0d9d8c93/README.md)、[REPORT](https://github.com/Small-fish-QAQ/hy3-study-clinic/blob/9ec6bde693455eac3df00e33984d9e0e0d9d8c93/docs/REPORT.md)、[ARCHITECTURE](https://github.com/Small-fish-QAQ/hy3-study-clinic/blob/9ec6bde693455eac3df00e33984d9e0e0d9d8c93/docs/ARCHITECTURE.md)、SETUP与VERIFICATION可从同一固定Commit恢复；该Commit目前只在本地，正常Push后这些GitHub链接才可访问。
+
+历史Hy3／StudyEval指标不计入当前MoMA结果。下面原历史索引、Tag指向和维护审计保留。
+
 ## 长期维护与历史快照
 
 `main` 是唯一长期开发主线。后续活动继续在同一仓库演进；短期分支合并后，确认没有独有提交、重要检查点已由固定快照保留，再移除分支。已完成的比赛版本通过 Git tag 与 GitHub Release 固定，不依靠长期分支。
