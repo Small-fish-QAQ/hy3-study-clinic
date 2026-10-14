@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { ConfigError, loadConfig } from './config.js';
 
 describe('loadConfig', () => {
-  it('defaults to the fake provider with no env', () => {
-    const config = loadConfig({});
-    expect(config.provider).toBe('fake');
+  it('defaults to unconfigured MoMA with no env', () => {
+    const config = loadConfig({}, { allowIncompleteProvider: true });
+    expect(config.provider).toBe('moma');
     expect(config.visualProvider).toBe('disabled');
     expect(config.tokenHubVisualModel).toBe('hy-vision-2.0-instruct');
     expect(config.tokenHubVisualTimeoutMs).toBe(120_000);
@@ -15,13 +15,15 @@ describe('loadConfig', () => {
   });
 
   it('accepts an explicit provider configuration path', () => {
-    expect(loadConfig({ PROVIDER_CONFIG_PATH: 'C:/clinic/runtime-provider.json' })).toMatchObject({
+    expect(
+      loadConfig({ LLM_PROVIDER: 'fake', PROVIDER_CONFIG_PATH: 'C:/clinic/runtime-provider.json' }),
+    ).toMatchObject({
       providerConfigPath: 'C:/clinic/runtime-provider.json',
     });
   });
 
   it('parses only the explicit Fake automation expectation', () => {
-    expect(loadConfig({ AUTOMATION_EXPECT_PROVIDER: 'fake' })).toMatchObject({
+    expect(loadConfig({ LLM_PROVIDER: 'fake', AUTOMATION_EXPECT_PROVIDER: 'fake' })).toMatchObject({
       automationExpectedProvider: 'fake',
     });
     expect(() => loadConfig({ AUTOMATION_EXPECT_PROVIDER: 'hy3' })).toThrowError(ConfigError);
@@ -44,7 +46,7 @@ describe('loadConfig', () => {
     expect(config.hy3TimeoutMs).toBe(5000);
   });
 
-  it('allows incomplete startup Hy3 configuration only when runtime fallback is enabled', () => {
+  it('allows incomplete startup Hy3 configuration only when runtime configuration will resolve startup', () => {
     const config = loadConfig(
       { LLM_PROVIDER: 'hy3', HY3_MODEL: 'environment-model' },
       { allowIncompleteProvider: true },
@@ -69,7 +71,7 @@ describe('loadConfig', () => {
   });
 
   it('requires a complete explicit TokenHub visual configuration', () => {
-    expect(() => loadConfig({ VISUAL_PROVIDER: 'tokenhub' })).toThrowError(
+    expect(() => loadConfig({ LLM_PROVIDER: 'fake', VISUAL_PROVIDER: 'tokenhub' })).toThrowError(
       /TOKENHUB_VISUAL_BASE_URL, TOKENHUB_VISUAL_API_KEY/,
     );
   });
@@ -77,6 +79,7 @@ describe('loadConfig', () => {
   it('accepts only the frozen TokenHub visual model', () => {
     expect(
       loadConfig({
+        LLM_PROVIDER: 'fake',
         VISUAL_PROVIDER: 'tokenhub',
         TOKENHUB_VISUAL_BASE_URL: 'https://tokenhub.tencentmaas.com/v1',
         TOKENHUB_VISUAL_API_KEY: 'secret',

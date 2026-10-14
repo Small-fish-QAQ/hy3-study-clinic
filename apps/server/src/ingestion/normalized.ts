@@ -11,6 +11,7 @@ import {
   type SourceType,
 } from '@hy3-clinic/shared';
 import { IngestionError, normalizeText } from './ingest.js';
+import { checkTextResources } from './resources.js';
 import { HTML_PARSER_VERSION, parseHtml } from './html.js';
 
 export const STRUCTURE_AWARE_CHUNKER_VERSION = 'structure-aware-v1';
@@ -21,11 +22,8 @@ export const STRUCTURE_AWARE_CHUNKER_FINGERPRINT = `chunk_${fnv1a32(
   .padStart(8, '0')}`;
 
 export const NORMALIZED_DOCUMENT_LIMITS = {
-  maxContentChars: 100_000,
-  maxUnits: 20_000,
   targetChunkChars: 1_800,
   hardChunkChars: 3_000,
-  maxChunks: 2_000,
 } as const;
 
 export interface NormalizeInput {
@@ -168,18 +166,7 @@ function finishDocument(
   if (units.length === 0 || input.content.trim().length === 0) {
     throw new IngestionError('EMPTY_SOURCE', '未在源材料中找到可用的结构化正文。');
   }
-  if (input.content.length > NORMALIZED_DOCUMENT_LIMITS.maxContentChars) {
-    throw new IngestionError(
-      'SOURCE_TOO_LARGE',
-      `源材料超过 ${NORMALIZED_DOCUMENT_LIMITS.maxContentChars} 个字符。`,
-    );
-  }
-  if (units.length > NORMALIZED_DOCUMENT_LIMITS.maxUnits) {
-    throw new IngestionError(
-      'SOURCE_TOO_LARGE',
-      `源材料结构单元超过 ${NORMALIZED_DOCUMENT_LIMITS.maxUnits} 个。`,
-    );
-  }
+  checkTextResources(input.content);
   return NormalizedDocumentSchema.parse({
     materialRevisionId: input.revisionId,
     sourceType: input.sourceType,
@@ -491,12 +478,6 @@ export function normalizePdf(input: NormalizeInput): NormalizedDocument {
       return left.index - right.index;
     })
     .map((unit, index) => ({ ...unit, index }));
-  if (ordered.length > NORMALIZED_DOCUMENT_LIMITS.maxUnits) {
-    throw new IngestionError(
-      'SOURCE_TOO_LARGE',
-      `源材料结构单元超过 ${NORMALIZED_DOCUMENT_LIMITS.maxUnits} 个。`,
-    );
-  }
   return NormalizedDocumentSchema.parse({
     ...document,
     units: ordered,
@@ -918,11 +899,6 @@ export function chunkNormalizedDocument(document: NormalizedDocument): ChunkProj
     if (document.content.length === 0 && document.assets.length > 0) return [];
     throw new IngestionError('EMPTY_SOURCE', '未生成可用的源代码或正文块。');
   }
-  if (chunks.length > NORMALIZED_DOCUMENT_LIMITS.maxChunks)
-    throw new IngestionError(
-      'SOURCE_TOO_LARGE',
-      `源材料块数超过 ${NORMALIZED_DOCUMENT_LIMITS.maxChunks}。`,
-    );
   return chunks;
 }
 

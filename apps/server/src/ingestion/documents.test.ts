@@ -13,7 +13,7 @@ import {
   uploadKindForFilename,
   validateUploadDeclaration,
 } from './documents.js';
-import { segmentMaterial } from './segment.js';
+import { segmentMaterial } from '../testing/segmentFixture.js';
 
 const filesDir = join(dirname(fileURLToPath(import.meta.url)), '../testing/files');
 const samplePdf = () => readFileSync(join(filesDir, 'sample.pdf'));

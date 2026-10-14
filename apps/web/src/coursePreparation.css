@@ -1,0 +1,1976 @@
+/* Presentation rules reused from the protected original snapshot; no legacy runtime. */
+
+/* Source: styles.css */
+
+.course-preparation-status {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4) 0;
+  border-block: 1px solid var(--separator);
+}
+
+.course-preparation-status ol {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.course-preparation-status li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.course-preparation-status li > span:first-child {
+  display: inline-grid;
+  flex: none;
+  width: 1.35rem;
+  height: 1.35rem;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  font-weight: 700;
+}
+
+.course-preparation-status li[data-state='complete'] {
+  color: #166534;
+}
+
+.course-preparation-status li[data-state='in_progress'] {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.course-preparation-status li[data-state='blocked'] {
+  color: #9f1239;
+}
+
+:where(.clinic-preparation-view) .contract-editor {
+  max-width: 860px;
+  gap: 0;
+  padding: 32px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+:where(.clinic-preparation-view) .contract-header {
+  align-items: flex-start;
+  gap: var(--space-4);
+  padding-bottom: var(--space-5);
+  border-bottom: 1px solid var(--separator);
+}
+
+:where(.clinic-preparation-view) .contract-heading {
+  max-width: 42rem;
+}
+
+:where(.clinic-preparation-view) .contract-heading h2,
+:where(.clinic-preparation-view) .contract-heading p {
+  margin-top: 0;
+}
+
+:where(.clinic-preparation-view) .contract-heading h2 {
+  margin-bottom: var(--space-2);
+  font-size: 1.65rem;
+}
+
+:where(.clinic-preparation-view) .contract-heading > p:last-child {
+  margin-bottom: 0;
+}
+
+:where(.clinic-preparation-view) .contract-flow {
+  display: grid;
+}
+
+:where(.clinic-preparation-view) .contract-question {
+  min-width: 0;
+  margin: 0;
+  padding: var(--space-5) 0;
+  border: 0;
+  border-bottom: 1px solid var(--separator);
+}
+
+:where(.clinic-preparation-view) .contract-question legend {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+:where(.clinic-preparation-view) .contract-question legend > span {
+  display: inline-grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: 0.76rem;
+}
+
+:where(.clinic-preparation-view) .contract-question-hint {
+  max-width: 44rem;
+  margin: var(--space-2) 0 var(--space-3) 32px;
+  color: var(--text-muted);
+  font-size: 0.84rem;
+}
+
+:where(.clinic-preparation-view) .contract-question > label {
+  display: grid;
+  gap: 8px;
+  margin-left: 32px;
+  font-size: 13px;
+}
+
+:where(.clinic-preparation-view) .contract-question legend > span {
+  border-radius: 6px;
+  background: var(--primary-weak);
+  color: var(--primary);
+}
+
+:where(.clinic-preparation-view) .contract-question > label > select {
+  max-width: 390px;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-scope-row label {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+:where(.clinic-preparation-view) .contract-materials > .banner,
+:where(.clinic-preparation-view) .contract-materials > .material-scope-list {
+  margin-left: 32px;
+}
+
+:where(.clinic-preparation-view) .contract-materials > .banner {
+  margin-bottom: var(--space-3);
+}
+
+:where(.clinic-preparation-view) .contract-materials > .material-scope-list {
+  display: grid;
+  gap: var(--space-2);
+  padding: 0;
+  list-style: none;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-scope-row {
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+}
+
+:where(.clinic-preparation-view) .contract-actions {
+  position: sticky;
+  bottom: calc(-1 * var(--space-6));
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+  padding: var(--space-3) 0 max(var(--space-3), env(safe-area-inset-bottom));
+  border-top: 1px solid var(--separator);
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+:where(.clinic-preparation-view) .contract-actions p {
+  margin: 0;
+}
+
+:where(.clinic-preparation-view) .contract-actions button {
+  flex: none;
+}
+
+:where(.clinic-planning-view) .course-detail-disclosure {
+  border-bottom: 1px solid var(--border);
+  padding: var(--space-3) 0;
+}
+
+:where(.clinic-planning-view) .course-detail-disclosure > summary {
+  cursor: pointer;
+  font-weight: 650;
+}
+
+:where(.clinic-planning-view) .course-detail-disclosure[open] > summary {
+  margin-bottom: var(--space-2);
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-list {
+  border-top: 0;
+  display: grid;
+  gap: 14px;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-row {
+  padding: 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-sm);
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-page-intro {
+  align-items: flex-start;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-page-heading {
+  min-width: 0;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-page-heading h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-page-heading > .muted {
+  max-width: 50rem;
+  margin: var(--space-1) 0 0;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-page-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-count {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-row-layout {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-source-mark {
+  display: grid;
+  width: 48px;
+  height: 58px;
+  place-items: center;
+  overflow: hidden;
+  border: 0;
+  border-radius: 4px 10px 4px 4px;
+  background: var(--primary-weak);
+  color: var(--primary);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-row-content,
+:where(.clinic-materials-view, .clinic-preparation-view) .material-row-title {
+  min-width: 0;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-row-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-row h3 {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: 17px;
+  font-weight: 650;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem var(--space-2);
+  margin: 0.2rem 0 0;
+  font-size: 0.76rem;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-row-meta span + span::before {
+  margin-right: var(--space-2);
+  color: var(--text-faint);
+  content: '·';
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-status {
+  flex: none;
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-status.attention {
+  border-color: color-mix(in srgb, var(--warning) 24%, var(--border));
+  background: var(--warning-weak);
+  color: var(--warning);
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-row-content > .banner {
+  margin-top: var(--space-2);
+  padding: 0.45rem 0.65rem;
+  font-size: 0.78rem;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-row-footer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: 18px;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-actions {
+  flex: none;
+  gap: var(--space-1);
+  margin: 0;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-actions button {
+  min-height: 30px;
+  padding: 0.25rem 0.55rem;
+  font-size: 0.78rem;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-identity-note {
+  max-width: 52rem;
+  margin: var(--space-2) 0 0;
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--separator);
+  line-height: 1.6;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-provenance.technical-details {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view)
+  .material-provenance.technical-details
+  > summary {
+  width: max-content;
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view)
+  .material-provenance.technical-details[open]
+  > summary {
+  margin-bottom: 0;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-row dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.25rem var(--space-3);
+  margin: var(--space-2) 0 0;
+  padding-bottom: var(--space-1);
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-row dl > div {
+  display: contents;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-row dt {
+  color: var(--text-muted);
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-row dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-import {
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0 24px;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-import > summary {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 20px 0;
+  cursor: pointer;
+  font-weight: 650;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-import > summary small {
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  font-weight: 500;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-import-content {
+  margin: 0 0 var(--space-4);
+  padding: 6px 0 14px;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-import-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 20px;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-import-grid label {
+  display: grid;
+  gap: 8px;
+  font-size: 13px;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-import-grid .span-2 {
+  grid-column: span 2;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-import-actions {
+  align-items: center;
+  margin-top: var(--space-3);
+}
+
+:where(.clinic-planning-view) .curriculum-version-overview {
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(28rem, 1fr);
+  gap: var(--space-4) var(--space-6);
+  align-items: center;
+  padding: 24px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+:where(.clinic-planning-view) .curriculum-counts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-4);
+  margin: 0;
+}
+
+:where(.clinic-planning-view) .curriculum-counts > div {
+  display: grid;
+  gap: 0.1rem;
+}
+
+:where(.clinic-planning-view) .curriculum-counts dt {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+}
+
+:where(.clinic-planning-view) .curriculum-counts dd {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 25px;
+  font-weight: 500;
+}
+
+:where(.clinic-planning-view) .curriculum-level {
+  --curriculum-indent: var(--space-5);
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+:where(.clinic-planning-view) .curriculum-level .curriculum-level {
+  position: relative;
+  margin-left: var(--curriculum-indent);
+  padding-left: var(--space-4);
+  border-left: 1px solid var(--border);
+}
+
+:where(.clinic-planning-view) .curriculum-level .curriculum-level > .curriculum-node {
+  position: relative;
+}
+
+:where(.clinic-planning-view) .curriculum-level .curriculum-level > .curriculum-node::before {
+  position: absolute;
+  top: 1.85rem;
+  left: calc(-1 * var(--space-4));
+  width: var(--space-3);
+  border-top: 1px solid var(--border);
+  content: '';
+}
+
+:where(.clinic-planning-view) .curriculum-node-content {
+  position: relative;
+  padding: var(--space-3) var(--space-2);
+  border-bottom: 1px solid var(--border);
+}
+
+:where(.clinic-planning-view) .curriculum-node.is-major > .curriculum-node-content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-3) var(--space-5);
+  padding: 24px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin: 0 0 14px;
+}
+
+:where(.clinic-planning-view) .curriculum-node.is-major .curriculum-node-heading,
+:where(.clinic-planning-view) .curriculum-node.is-major .curriculum-major-summary {
+  grid-column: 1;
+}
+
+:where(.clinic-planning-view) .curriculum-node.is-major .curriculum-expand-button {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+}
+
+:where(.clinic-planning-view) .curriculum-node-children {
+  padding-bottom: var(--space-2);
+}
+
+:where(.clinic-planning-view) .curriculum-node.kind-course > .curriculum-node-content {
+  padding: var(--space-3) 0 var(--space-4);
+  border-bottom-color: var(--border-strong);
+}
+
+:where(.clinic-planning-view) .curriculum-node.is-current > .curriculum-node-content {
+  padding-left: var(--space-3);
+  border-left: 3px solid var(--primary);
+  background: var(--primary-weak);
+}
+
+:where(.clinic-planning-view) .curriculum-node-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+:where(.clinic-planning-view) .curriculum-node-title {
+  min-width: 0;
+}
+
+:where(.clinic-planning-view) .curriculum-node-heading h3 {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+:where(.clinic-planning-view) .kind-course > .curriculum-node-content .curriculum-node-heading h3 {
+  font-size: 1.15rem;
+}
+
+:where(.clinic-planning-view) .curriculum-kind {
+  display: block;
+  margin-bottom: 0.15rem;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 650;
+}
+
+:where(.clinic-planning-view) .curriculum-node-state {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  min-height: 1.5rem;
+}
+
+:where(.clinic-planning-view) .curriculum-counts dd small {
+  display: block;
+  margin-top: 0.15rem;
+  color: var(--text-muted);
+  font-size: 0.66rem;
+  font-weight: 500;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-row.is-source-target {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-empty-state {
+  border-top: 1px solid var(--separator);
+  border-bottom: 1px solid var(--separator);
+}
+
+@media (max-width: 1023px) {
+  :where(.clinic-materials-view, .clinic-preparation-view) .material-import-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .course-preparation-status ol {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  :where(.clinic-planning-view) .curriculum-version-overview {
+    grid-template-columns: 1fr;
+  }
+
+  :where(.clinic-materials-view, .clinic-preparation-view) .material-import-grid .span-2 {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 760px) {
+  :where(.clinic-materials-view, .clinic-preparation-view) .material-import-grid {
+    grid-template-columns: 1fr;
+  }
+
+  :where(.clinic-materials-view, .clinic-preparation-view) .material-import-grid .span-2 {
+    grid-column: auto;
+  }
+
+  :where(.clinic-planning-view) .curriculum-version-overview {
+    padding: var(--space-3);
+  }
+
+  :where(.clinic-planning-view) .curriculum-counts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  :where(.clinic-planning-view) .curriculum-node.is-major > .curriculum-node-content {
+    grid-template-columns: 1fr;
+  }
+
+  :where(.clinic-planning-view) .curriculum-node.is-major .curriculum-expand-button {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  :where(.clinic-materials-view, .clinic-preparation-view) .material-page-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  :where(.clinic-materials-view, .clinic-preparation-view) .material-row-layout {
+    grid-template-columns: 34px minmax(0, 1fr);
+    gap: var(--space-2);
+  }
+
+  :where(.clinic-materials-view, .clinic-preparation-view) .material-source-mark {
+    width: 34px;
+    height: 34px;
+    font-size: 0.55rem;
+  }
+
+  :where(.clinic-materials-view, .clinic-preparation-view) .material-row-main,
+  :where(.clinic-materials-view, .clinic-preparation-view) .material-row-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  :where(.clinic-materials-view, .clinic-preparation-view) .material-row-footer {
+    gap: var(--space-2);
+  }
+
+  :where(.clinic-materials-view, .clinic-preparation-view) .material-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  :where(.clinic-materials-view, .clinic-preparation-view) .material-provenance.technical-details {
+    width: 100%;
+  }
+
+  :where(.clinic-preparation-view) .contract-header,
+  :where(.clinic-preparation-view) .contract-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  :where(.clinic-preparation-view) .contract-question-hint,
+  :where(.clinic-preparation-view) .contract-materials > .banner,
+  :where(.clinic-preparation-view) .contract-materials > .material-scope-list {
+    margin-left: 0;
+  }
+
+  :where(.clinic-preparation-view) .contract-question {
+    padding: var(--space-4) 0;
+  }
+
+  :where(.clinic-preparation-view) .contract-actions button {
+    width: 100%;
+  }
+
+  :where(.clinic-planning-view) .curriculum-level .curriculum-level {
+    margin-left: var(--space-3);
+    padding-left: var(--space-2);
+  }
+
+  :where(.clinic-planning-view) .curriculum-level .curriculum-level > .curriculum-node::before {
+    left: calc(-1 * var(--space-2));
+    width: var(--space-2);
+  }
+
+  :where(.clinic-planning-view) .curriculum-node-heading,
+  :where(.clinic-planning-view) .curriculum-node-state {
+    align-items: flex-start;
+  }
+
+  :where(.clinic-planning-view) .curriculum-node-heading {
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  :where(.clinic-planning-view) .curriculum-node-state {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  :where(.clinic-materials-view, .clinic-preparation-view) .material-import-content {
+    padding-left: 0;
+    border-left: 0;
+  }
+}
+
+:where(.clinic-planning-view) .course-detail-disclosure {
+  border-bottom: 1px solid var(--border);
+}
+
+:where(.clinic-planning-view) .course-detail-disclosure > summary {
+  padding: 18px 0;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+:where(.clinic-planning-view) .course-detail-disclosure .detail-content {
+  font-size: 13px;
+  padding: 8px 0 20px;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-page-heading h2 {
+  font-size: 30px;
+  font-weight: 600;
+  margin: 8px 0 14px;
+  letter-spacing: -0.5px;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-page-heading > .muted {
+  font-size: 13px;
+  line-height: 1.85;
+}
+
+:where(.clinic-planning-view) .curriculum-node-heading h3,
+:where(.clinic-planning-view) .curriculum-node-heading h4 {
+  line-height: 1.6;
+}
+
+:where(.clinic-planning-view) .curriculum-counts dt {
+  font-size: 11px;
+}
+
+:where(.clinic-planning-view) .curriculum-node[aria-current] {
+  scroll-margin-top: 20px;
+}
+
+@media (max-width: 767px) {
+  :where(.clinic-materials-view, .clinic-preparation-view) .material-page-heading h2 {
+    font-size: 25px;
+    line-height: 1.5;
+  }
+  :where(.clinic-materials-view, .clinic-preparation-view) .material-row,
+  :where(.clinic-materials-view, .clinic-preparation-view) .material-import {
+    padding: 20px 16px;
+  }
+  :where(.clinic-materials-view, .clinic-preparation-view) .material-import {
+    padding-block: 0;
+  }
+  :where(.clinic-materials-view, .clinic-preparation-view) .material-row-layout {
+    grid-template-columns: 35px minmax(0, 1fr);
+    gap: 12px;
+  }
+  :where(.clinic-materials-view, .clinic-preparation-view) .material-source-mark {
+    width: 35px;
+    height: 44px;
+    font-size: 9px;
+  }
+  :where(.clinic-materials-view, .clinic-preparation-view) .material-row h3 {
+    font-size: 16px;
+  }
+  :where(.clinic-materials-view, .clinic-preparation-view) .material-row-main {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  :where(.clinic-materials-view, .clinic-preparation-view) .material-row-footer {
+    flex-direction: column;
+  }
+  :where(.clinic-materials-view, .clinic-preparation-view) .material-row-meta,
+  :where(.clinic-materials-view, .clinic-preparation-view)
+    .material-provenance.technical-details
+    > summary {
+    font-size: 11px;
+  }
+  :where(.clinic-materials-view, .clinic-preparation-view) .material-import-grid {
+    grid-template-columns: 1fr;
+  }
+  :where(.clinic-materials-view, .clinic-preparation-view) .material-import-grid .span-2 {
+    grid-column: auto;
+  }
+  :where(.clinic-materials-view, .clinic-preparation-view) .material-import > summary {
+    flex-direction: column;
+    gap: 4px;
+  }
+  :where(.clinic-materials-view, .clinic-preparation-view)
+    .material-provenance.technical-details
+    > summary {
+    width: auto;
+  }
+  :where(.clinic-materials-view, .clinic-preparation-view) .material-import-actions > button {
+    min-height: 44px;
+  }
+  :where(.clinic-planning-view) .curriculum-version-overview {
+    padding: 20px;
+  }
+  :where(.clinic-planning-view) .curriculum-node.is-major > .curriculum-node-content {
+    padding: 18px;
+  }
+}
+
+@media (max-width: 767px) {
+  :where(.clinic-preparation-view) .contract-editor {
+    padding: 24px 18px;
+  }
+  :where(.clinic-preparation-view) .contract-question > label {
+    margin-left: 0;
+  }
+  :where(.clinic-preparation-view) .contract-question-hint {
+    margin-left: 0;
+  }
+  :where(.clinic-preparation-view) .contract-materials > .material-scope-list {
+    margin-left: 0;
+  }
+}
+
+/* Source: studio.css */
+
+:where(.course-preparation-status) .preparation-controls {
+  display: grid;
+  flex: 0 0 250px;
+  gap: 16px;
+  padding: 20px 22px;
+  border: 1px solid rgb(225 236 208 / 25%);
+  border-radius: 12px;
+  background: rgb(15 43 32 / 82%);
+  backdrop-filter: blur(8px);
+}
+
+:where(.course-preparation-status) .preparation-controls .muted {
+  color: #edf1e3;
+  line-height: 1.7;
+}
+
+:where(.course-preparation-status) .preparation-controls .primary {
+  min-height: 42px;
+  border-radius: 8px;
+  background: #f5f1df;
+  color: #213f31;
+}
+
+.course-preparation-status {
+  margin: 8px 0 20px;
+  padding: 22px 24px;
+  gap: 20px;
+  border: 1px solid #dbe3d3;
+  border-radius: 12px;
+  background: rgb(255 254 249 / 92%);
+}
+
+:where(.course-preparation-status) .preparation-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+}
+
+:where(.course-preparation-status) .preparation-heading h3 {
+  font-size: 17px;
+  line-height: 1.6;
+}
+
+:where(.course-preparation-status) .preparation-elapsed {
+  flex: none;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.course-preparation-status ol {
+  gap: 12px;
+}
+
+.course-preparation-status li {
+  align-items: flex-start;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 2px solid #e1e5dc;
+}
+
+.course-preparation-status li > .preparation-step-number {
+  width: 24px;
+  height: 24px;
+  font-size: 11px;
+  color: #53664f;
+}
+
+.course-preparation-status li strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 550;
+}
+
+.course-preparation-status li small {
+  display: block;
+  margin-top: 4px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.course-preparation-status li[data-state='complete'] {
+  border-color: #a4b995;
+}
+
+.course-preparation-status li[data-state='in_progress'] {
+  border-color: #3b7255;
+}
+
+.course-preparation-status li[data-state='in_progress'] .preparation-step-number {
+  background: #285c48;
+  color: #fff;
+  box-shadow: 0 0 0 4px #e6efde;
+}
+
+.course-preparation-status li[data-state='blocked'],
+.course-preparation-status li[data-state='review'] {
+  border-color: #ba9e63;
+  color: #6f5527;
+}
+
+:where(.course-preparation-status) .preparation-observation {
+  display: grid;
+  gap: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--separator);
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+:where(.course-preparation-status) .preparation-observation p {
+  margin: 0;
+}
+
+:where(.course-preparation-status) .preparation-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  color: #365d43;
+  font-size: 12px;
+}
+
+:where(.clinic-planning-view) .course-detail-disclosure > summary {
+  padding-block: 20px;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-row {
+  padding: 26px;
+  box-shadow: var(--paper-shadow);
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-source-mark {
+  border: 1px solid #d3ddc9;
+  border-radius: 3px 9px 3px 3px;
+  background: linear-gradient(125deg, #f3f6ec, #e2ead8);
+  color: #38583e;
+  box-shadow: 2px 3px 0 #edf0e6;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-row h3 {
+  font-weight: 550;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-row-meta {
+  font-size: 12px;
+  margin-top: 8px;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-row-footer {
+  margin-top: 17px;
+  align-items: flex-start;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-provenance.technical-details {
+  flex: 1;
+  min-width: 0;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view)
+  .material-provenance.technical-details
+  > summary {
+  font-size: 12px;
+  min-height: 32px;
+  width: fit-content;
+  padding-block: 5px;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-provenance[open] {
+  padding: 14px 18px 18px;
+  background: #f3f6ee;
+  border: 1px solid #e0e7d8;
+  border-radius: 8px;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-provenance[open] > summary {
+  font-weight: 600;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view)
+  .material-provenance
+  .material-identity-note {
+  font-size: 13px;
+  line-height: 1.85;
+  margin-block: 12px;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-provenance dl {
+  padding-top: 12px;
+  font-size: 12px;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-provenance dl > div {
+  padding-block: 4px;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-actions .danger {
+  font-size: 12px;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-import {
+  margin-top: 4px;
+  box-shadow: var(--paper-shadow);
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-import > summary {
+  min-height: 72px;
+  padding-block: 21px;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-import[open] > summary {
+  margin-bottom: 22px;
+  border-bottom: 1px solid var(--separator);
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-import-grid {
+  max-width: 760px;
+  gap: 20px;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-import-grid label {
+  font-size: 13px;
+  gap: 9px;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-import-grid textarea {
+  min-height: 145px;
+  font-size: 14px;
+  line-height: 1.85;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-import-actions {
+  margin-top: 20px;
+}
+
+:where(.clinic-materials-view, .clinic-preparation-view) .material-import-content > p {
+  max-width: 760px;
+  line-height: 1.9;
+}
+
+:where(.clinic-planning-view) .curriculum-counts > div {
+  padding-left: 18px;
+  border-left: 1px solid var(--separator);
+}
+
+:where(.clinic-planning-view) .curriculum-counts dt {
+  font-size: 12px;
+}
+
+:where(.clinic-planning-view) .curriculum-counts dd {
+  font:
+    30px/1.6 Georgia,
+    serif;
+}
+
+:where(.clinic-planning-view) .curriculum-version-overview {
+  box-shadow: var(--paper-shadow);
+}
+
+:where(.clinic-planning-view) .curriculum-node.is-major {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--paper-shadow);
+  margin-bottom: 18px;
+  padding: 0 26px 12px;
+}
+
+:where(.clinic-planning-view) .curriculum-node.is-major > .curriculum-node-content {
+  border: 0;
+  border-radius: 0;
+  padding: 24px 0 16px;
+  background: transparent;
+  box-shadow: none;
+}
+
+:where(.clinic-planning-view) .curriculum-node.is-major > .curriculum-level {
+  margin-left: 10px;
+  padding-left: 24px;
+  border-color: #d3ddca;
+}
+
+:where(.clinic-planning-view) .curriculum-level .curriculum-level {
+  --curriculum-indent: 10px;
+  border-color: #d9e2d1;
+}
+
+:where(.clinic-planning-view) .curriculum-node-title h3,
+:where(.clinic-planning-view) .curriculum-node-title h4 {
+  font-size: 17px;
+  line-height: 1.6;
+  font-weight: 550;
+}
+
+:where(.clinic-planning-view) .curriculum-node-title h5 {
+  font-size: 16px;
+  line-height: 1.7;
+  font-weight: 600;
+}
+
+:where(.clinic-planning-view) .curriculum-node-title {
+  display: grid;
+  gap: 6px;
+}
+
+:where(.clinic-planning-view) .curriculum-node-title :is(h3, h4, h5) {
+  margin: 0;
+}
+
+:where(.clinic-planning-view) .curriculum-kind {
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  color: #6a7d64;
+}
+
+:where(.clinic-planning-view) .curriculum-node-content {
+  padding-block: 20px;
+}
+
+@media (max-width: 999px) {
+  :where(.course-preparation-status) .preparation-controls {
+    flex-basis: auto;
+  }
+  .course-preparation-status ol {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .course-preparation-status {
+    padding: 18px;
+  }
+  :where(.course-preparation-status) .preparation-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+  :where(.clinic-materials-view, .clinic-preparation-view) .material-row {
+    padding: 20px 16px;
+  }
+  :where(.clinic-materials-view, .clinic-preparation-view) .material-row-meta {
+    font-size: 12px;
+  }
+  :where(.clinic-materials-view, .clinic-preparation-view) .material-row-layout {
+    grid-template-columns: 32px minmax(0, 1fr);
+  }
+  :where(.clinic-materials-view, .clinic-preparation-view) .material-provenance[open] {
+    margin-left: -44px;
+    padding: 14px;
+    width: calc(100% + 44px);
+  }
+  :where(.clinic-materials-view, .clinic-preparation-view) .material-provenance dl > div {
+    grid-template-columns: 85px minmax(0, 1fr);
+  }
+  :where(.clinic-materials-view, .clinic-preparation-view) .material-import > summary {
+    min-height: 74px;
+  }
+  :where(.clinic-materials-view, .clinic-preparation-view) .material-import-grid textarea {
+    font-size: 16px;
+  }
+  :where(.clinic-planning-view) .curriculum-version-overview {
+    padding: 18px;
+  }
+  :where(.clinic-planning-view) .curriculum-counts {
+    gap: 10px;
+  }
+  :where(.clinic-planning-view) .curriculum-counts > div {
+    padding-left: 10px;
+  }
+  :where(.clinic-planning-view) .curriculum-counts > div:first-child {
+    padding-left: 0;
+    border-left: 0;
+  }
+  :where(.clinic-planning-view) .curriculum-counts dt {
+    font-size: 11px;
+  }
+  :where(.clinic-planning-view) .curriculum-counts dd {
+    font-size: 25px;
+  }
+  :where(.clinic-planning-view) .curriculum-node.is-major {
+    padding: 0 16px 6px;
+  }
+  :where(.clinic-planning-view) .curriculum-node.is-major > .curriculum-node-content {
+    padding: 18px 0;
+  }
+  :where(.clinic-planning-view) .curriculum-node.is-major > .curriculum-level {
+    margin-left: 0;
+    padding-left: 12px;
+  }
+  :where(.clinic-planning-view) .curriculum-level .curriculum-level {
+    --curriculum-indent: 0px;
+    padding-left: 8px;
+    margin-left: 0;
+  }
+  :where(.clinic-planning-view) .curriculum-node-content {
+    padding-inline: 0;
+  }
+  :where(.clinic-planning-view) .curriculum-node.kind-learning_unit > .curriculum-node-content {
+    padding-inline: 0;
+  }
+  :where(.clinic-planning-view) .curriculum-node-heading {
+    gap: 8px;
+  }
+  :where(.clinic-planning-view) .curriculum-node.is-major .curriculum-level .curriculum-level {
+    border-left: 0;
+    padding-left: 0;
+  }
+  :where(.clinic-planning-view)
+    .curriculum-node.is-major
+    .curriculum-level
+    .curriculum-level
+    > .curriculum-node::before {
+    display: none;
+  }
+  :where(.clinic-planning-view) .curriculum-node-title h3,
+  :where(.clinic-planning-view) .curriculum-node-title h4 {
+    font-size: 16px;
+  }
+  :where(.clinic-planning-view) .curriculum-node-title h5 {
+    font-size: 16px;
+  }
+}
+
+/* V2 adaptation: one complete planning document with independent learning. */
+.clinic-preparation-view,
+.clinic-planning-view {
+  max-width: 1120px;
+  margin-inline: auto;
+}
+.course-materials {
+  gap: 18px;
+}
+.material-page-heading h1,
+.clinic-planning-view h1 {
+  font-size: clamp(24px, 2.6vw, 32px);
+  line-height: 1.55;
+  margin-block: 8px 12px;
+  overflow-wrap: anywhere;
+}
+.material-page-actions {
+  padding-top: 6px;
+}
+.material-import-modes {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.material-import-modes button {
+  min-height: 38px;
+  padding: 8px 18px;
+}
+.material-import-modes button[aria-pressed='true'] {
+  background: var(--primary-weak);
+  border-color: #a2b69b;
+  color: var(--primary);
+}
+.material-import-content {
+  padding-bottom: 24px;
+}
+.material-upload-area {
+  background: #f7f8f1;
+  border: 1px dashed #c6d2bd;
+  border-radius: 9px;
+  padding: 22px;
+  margin-bottom: 20px;
+}
+.material-upload-area .file-upload {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  cursor: pointer;
+}
+.material-upload-area p {
+  overflow-wrap: anywhere;
+  margin-bottom: 0;
+}
+.material-reading-title,
+.material-text-input,
+.material-title-editor label {
+  display: grid;
+  gap: 9px;
+  max-width: 760px;
+  font-size: 13px;
+}
+.material-reading-title {
+  margin-top: 20px;
+}
+.material-reading-title small {
+  font-size: 12px;
+  line-height: 1.8;
+}
+.material-title-editor .row {
+  margin-top: 10px;
+}
+.material-feedback {
+  padding: 12px 18px;
+  border-left: 3px solid #89a374;
+  background: #eef3e7;
+  color: var(--primary);
+  border-radius: 0 8px 8px 0;
+  font-size: 13px;
+  margin: 0;
+}
+.material-remove-confirm {
+  margin-top: 16px;
+  padding: 14px 18px;
+  background: #fbf6ef;
+  border: 1px solid #e7d9c5;
+  border-radius: 8px;
+  font-size: 13px;
+}
+.material-next-step {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding-block: 18px 6px;
+  border-top: 1px solid var(--separator);
+}
+.material-next-step p {
+  font-size: 13px;
+  max-width: 650px;
+  margin: 0;
+  color: var(--text-muted);
+}
+.material-next-step button,
+.contract-actions button,
+.preparation-plan-confirm > button {
+  display: inline-flex;
+  gap: 16px;
+  align-items: center;
+  flex-shrink: 0;
+}
+.contract-editor {
+  width: 100%;
+  max-width: 980px;
+  box-shadow: var(--paper-shadow);
+  padding: 30px 34px;
+}
+.contract-question {
+  padding-block: 24px;
+}
+.contract-question > .ghost {
+  margin-left: 32px;
+  margin-top: 14px;
+  min-height: 34px;
+}
+.material-scope-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding-block: 12px;
+}
+.material-scope-row strong {
+  font-size: 14px;
+  font-weight: 550;
+  overflow-wrap: anywhere;
+}
+.preparation-depth-note {
+  background: #f1f5e9;
+  border-left: 2px solid #9eb788;
+  border-radius: 0 7px 7px 0;
+  padding: 13px 16px;
+  margin: 14px 0 0 32px;
+  font-size: 13px;
+  line-height: 1.9;
+}
+.course-preparation-status {
+  max-width: 1120px;
+  margin: 0 auto 26px;
+  background: #fff;
+  box-shadow: var(--paper-shadow);
+  padding: 28px 30px;
+}
+.course-preparation-status h2 {
+  font-size: 20px;
+  margin: 0;
+  line-height: 1.7;
+}
+.course-preparation-status ol {
+  padding: 0;
+  margin-block: 24px;
+}
+.course-preparation-status li {
+  min-width: 0;
+}
+.course-preparation-status .preparation-controls {
+  margin-top: 18px;
+}
+.preparation-observation p[role='alert'] {
+  color: var(--danger);
+}
+.preparation-plan-counts {
+  display: flex;
+  gap: 30px;
+  align-items: center;
+}
+.preparation-plan-version {
+  min-width: 175px;
+}
+.preparation-plan-version p {
+  margin-bottom: 0;
+}
+.preparation-plan-counts .curriculum-counts {
+  flex: 1;
+  margin: 0;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.preparation-plan-note {
+  border-top: 1px solid var(--separator);
+  padding-top: 16px;
+  margin-block: 18px 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.preparation-input-disclosure {
+  margin-top: 14px;
+  font-size: 13px;
+}
+.preparation-input-disclosure summary {
+  color: var(--primary);
+  cursor: pointer;
+  padding-block: 5px;
+}
+.preparation-input-disclosure p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.preparation-module > summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  list-style: none;
+  cursor: pointer;
+}
+.preparation-module > summary::-webkit-details-marker {
+  display: none;
+}
+.preparation-module > summary p {
+  margin: 0;
+}
+.preparation-module-toggle {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  color: var(--primary);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.preparation-module[open] .preparation-module-toggle img {
+  transform: rotate(180deg);
+}
+.preparation-module-lessons {
+  border-top: 1px solid var(--separator);
+}
+.preparation-lesson-row {
+  padding: 22px 0 26px 22px;
+  margin-left: 12px;
+  border-left: 1px solid #d9e2d1;
+}
+.preparation-lesson-row + .preparation-lesson-row {
+  border-top: 1px solid var(--separator);
+}
+.preparation-lesson-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+.preparation-lesson-heading h4 {
+  font-size: 17px;
+  line-height: 1.8;
+  font-weight: 550;
+  margin: 0;
+}
+.preparation-lesson-heading .eyebrow {
+  margin-bottom: 5px;
+}
+.preparation-lesson-summary {
+  font-size: 14px;
+  line-height: 1.95;
+  color: var(--text-muted);
+  margin-block: 10px 16px;
+}
+.preparation-lesson-options {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 18px;
+}
+.preparation-lesson-options label {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.preparation-lesson-options select {
+  width: 145px;
+  padding: 7px 12px;
+  min-height: 38px;
+  font-size: 13px;
+}
+.preparation-lesson-options label strong {
+  font-size: 13px;
+  color: var(--primary);
+  font-weight: 550;
+}
+.preparation-lesson-options > button {
+  display: inline-flex;
+  gap: 16px;
+  align-items: center;
+  margin-left: auto;
+}
+.preparation-depth-hint {
+  font-size: 12px;
+  color: #6a7d64;
+  margin-block: 12px;
+}
+.preparation-objectives ul {
+  list-style: none;
+  padding-left: 0;
+}
+.preparation-objectives li {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  font-size: 13px;
+}
+.preparation-objectives .pill {
+  flex-shrink: 0;
+}
+.preparation-assessment-domain {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--separator);
+  font-size: 13px;
+}
+.preparation-assessment-domain h3 {
+  font-size: 15px;
+}
+.preparation-assessment-domain li {
+  display: flex;
+  gap: 14px;
+  margin-block: 12px;
+}
+.preparation-plan-confirm {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 30px;
+  background: #f2f5e9;
+  border: 1px solid #d7e0cc;
+  border-radius: 12px;
+  padding: 26px 30px;
+  margin-top: 24px;
+}
+.preparation-plan-confirm h2 {
+  margin-block: 4px 10px;
+  font-size: 22px;
+}
+.preparation-plan-confirm p:not(.eyebrow) {
+  font-size: 13px;
+  line-height: 1.85;
+  max-width: 660px;
+  margin-bottom: 0;
+}
+@media (max-width: 1050px) {
+  .preparation-plan-counts {
+    display: block;
+  }
+  .preparation-plan-version {
+    margin-bottom: 22px;
+  }
+  .material-row-main,
+  .material-row-footer {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+}
+@media (max-width: 700px) {
+  .course-materials .material-page-intro,
+  .clinic-planning-view > header {
+    flex-direction: column;
+  }
+  .material-row,
+  .contract-editor,
+  .course-preparation-status {
+    padding: 22px 18px;
+  }
+  .material-row-layout {
+    grid-template-columns: 36px minmax(0, 1fr);
+    gap: 14px;
+  }
+  .material-source-mark {
+    width: 36px;
+    height: 46px;
+    font-size: 10px;
+  }
+  .material-row h3 {
+    font-size: 15px;
+  }
+  .material-row-main {
+    gap: 12px;
+  }
+  .material-row-footer,
+  .material-next-step,
+  .contract-actions,
+  .preparation-plan-confirm,
+  .preparation-heading {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .material-import > summary {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .material-import {
+    padding-inline: 18px;
+  }
+  .material-upload-area {
+    padding: 18px;
+  }
+  .material-reading-title input,
+  .material-title-editor input {
+    min-width: 0;
+    width: 100%;
+  }
+  .material-provenance dl {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .material-provenance dd {
+    margin-bottom: 8px;
+  }
+  .contract-question-hint,
+  .contract-question > label,
+  .contract-question > .ghost,
+  .preparation-depth-note {
+    margin-left: 0;
+  }
+  .material-scope-row {
+    flex-direction: column;
+    gap: 6px;
+  }
+  .course-preparation-status ol {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .course-preparation-status li {
+    padding: 12px 8px;
+    gap: 7px;
+  }
+  .course-preparation-status li strong {
+    font-size: 12px;
+  }
+  .preparation-plan-counts .curriculum-counts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+  }
+  .preparation-module.curriculum-node.is-major {
+    padding-inline: 18px;
+  }
+  .preparation-module-toggle {
+    font-size: 0;
+    gap: 0;
+  }
+  .preparation-lesson-row {
+    margin-left: 0;
+    padding-left: 12px;
+  }
+  .preparation-lesson-heading {
+    align-items: flex-start;
+  }
+  .preparation-lesson-options {
+    gap: 12px;
+  }
+  .preparation-lesson-options > button {
+    margin-left: 0;
+  }
+  .preparation-plan-confirm {
+    padding: 22px 18px;
+    gap: 20px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .course-preparation-status * {
+    animation: none;
+  }
+}
+
+.clinic-planning-view .curriculum-version-overview {
+  display: block;
+}
+.preparation-module-toggle img {
+  transform: rotate(90deg);
+}
+.preparation-module[open] .preparation-module-toggle img {
+  transform: rotate(-90deg);
+}
+
+.clinic-preparation-view .contract-question {
+  padding-top: 18px;
+  padding-bottom: 24px;
+}
+.clinic-preparation-view .contract-question + .contract-question {
+  margin-top: 20px;
+}
+.clinic-preparation-view .contract-question legend {
+  margin-bottom: 6px;
+}
+.clinic-planning-view .curriculum-version-overview {
+  display: block;
+}
+
+/* Original custom upload control, including visible keyboard focus. */
+.file-upload {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+}
+
+.file-upload {
+  position: relative;
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  padding: 8px 15px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface-raised);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.file-upload input[type='file'] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.file-upload:focus-within {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+
+.file-upload,
+.material-import-actions > button {
+  min-height: 44px;
+}
+.course-preparation-status .preparation-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px 0 0;
+  border: 0;
+  border-top: 1px solid var(--separator);
+  border-radius: 0;
+  background: transparent;
+  backdrop-filter: none;
+}
+.course-preparation-status .preparation-controls .primary {
+  background: var(--primary);
+  color: white;
+}
+.clinic-preparation-view .contract-actions {
+  position: static;
+  backdrop-filter: none;
+}
+.clinic-preparation-view > .course-home-context {
+  margin-bottom: 26px;
+}
+.course-preparation-status.is-ready {
+  padding: 0 24px;
+  margin-bottom: 22px;
+}
+.preparation-complete-disclosure > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  cursor: pointer;
+  padding-block: 18px;
+  color: var(--primary);
+  list-style: none;
+}
+.preparation-complete-disclosure > summary span {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.preparation-complete-disclosure[open] > div {
+  border-top: 1px solid var(--separator);
+  padding-block: 22px;
+}
+@media (max-width: 700px) {
+  .preparation-complete-disclosure > summary {
+    display: grid;
+    gap: 6px;
+  }
+}
+.course-read-status {
+  padding: 26px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text-muted);
+}
+.clinic-materials-view .material-actions .ghost {
+  border-color: transparent;
+  background: transparent;
+}
+.clinic-materials-view .material-actions .danger {
+  color: #a26050;
+}
+.preparation-module-open,
+.preparation-module[open] .preparation-module-closed {
+  display: none;
+}
+.preparation-module[open] .preparation-module-open {
+  display: inline;
+}
+
+/* Original action hierarchy, limited to this restoration. */
+:where(
+    .clinic-preparation-view,
+    .clinic-materials-view,
+    .clinic-planning-view,
+    .course-preparation-status
+  )
+  button.primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 2px 3px rgb(28 54 42 / 8%);
+}
+
+:where(
+    .clinic-preparation-view,
+    .clinic-materials-view,
+    .clinic-planning-view,
+    .course-preparation-status
+  )
+  button.primary:hover:not(:disabled) {
+  background: var(--primary-strong);
+}
+
+:where(
+    .clinic-preparation-view,
+    .clinic-materials-view,
+    .clinic-planning-view,
+    .course-preparation-status
+  )
+  button.danger {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+
+:where(
+    .clinic-preparation-view,
+    .clinic-materials-view,
+    .clinic-planning-view,
+    .course-preparation-status
+  )
+  button.ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--primary);
+  padding: 0.3rem 0.5rem;
+}
+
+:where(
+    .clinic-preparation-view,
+    .clinic-materials-view,
+    .clinic-planning-view,
+    .course-preparation-status
+  )
+  button.ghost.danger {
+  background: transparent;
+  border-color: transparent;
+  color: var(--danger);
+}
+
+:where(
+    .clinic-preparation-view,
+    .clinic-materials-view,
+    .clinic-planning-view,
+    .course-preparation-status
+  )
+  button.danger {
+  color: var(--danger);
+}
+
+.clinic-planning-view > header {
+  margin-bottom: 22px;
+}
+:where(.clinic-preparation-view, .clinic-materials-view, .clinic-planning-view)
+  button.primary
+  > img {
+  filter: brightness(0) invert(1);
+}

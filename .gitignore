@@ -145,6 +145,7 @@ vite.config.ts.timestamp-*
 # Local SQLite data
 data/
 **/provider-config.json
+**/provider-config.json.key
 *.sqlite
 *.sqlite-journal
 *.sqlite-wal

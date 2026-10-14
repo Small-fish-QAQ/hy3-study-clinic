@@ -3,6 +3,8 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig({
+  // Model credentials are resolved server-side; this client has no environment-file inputs.
+  envDir: './.client-env',
   plugins: [react()],
   server: {
     port: 5173,

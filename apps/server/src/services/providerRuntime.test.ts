@@ -9,9 +9,11 @@ import {
   type ProviderConfigStore,
   type StoredProviderConfig,
 } from './providerRuntime.js';
-import { FakeProvider } from '../llm/fakeProvider.js';
+import { CourseFakeProvider as FakeProvider } from '../llm/courseFakeProvider.js';
 import type { AppConfig } from '../config.js';
-import type { LlmProvider, ProviderCallOptions } from '../llm/provider.js';
+import { loadConfig } from '../config.js';
+import type { ProviderCallOptions } from '../llm/provider.js';
+import type { CourseProvider as LlmProvider } from '../llm/courseContract.js';
 
 const tempDirectories: string[] = [];
 
@@ -63,6 +65,165 @@ class MemoryStore implements ProviderConfigStore {
 }
 
 describe('ProviderRuntime', () => {
+  it('推理偏好保存重启，显式平台默认可恢复自动；不改模型身份', () => {
+    const store = new MemoryStore(),
+      runtime = new ProviderRuntime({ startup, store });
+    runtime.update({
+      provider: 'moma',
+      baseUrl: 'https://model.test/v1',
+      model: 'glm-5.3',
+      secret: { action: 'replace', value: 'offline-private' },
+      reasoningEffort: 'high',
+    });
+    expect(store.value?.reasoningEffort).toBe('high');
+    const restarted = new ProviderRuntime({ startup, store });
+    expect(restarted.safeConfig()).toMatchObject({ model: 'glm-5.3', reasoningEffort: 'high' });
+    restarted.update({ provider: 'moma', reasoningEffort: 'provider-default' });
+    expect(restarted.safeConfig().reasoningEffort).toBe('provider-default');
+    restarted.update({ provider: 'moma', reasoningEffort: 'auto' });
+    expect(restarted.safeConfig()).toMatchObject({ model: 'glm-5.3', reasoningEffort: 'auto' });
+  });
+  it('keeps an unconfigured default MoMA identity without inventing environment provenance or Fake output', async () => {
+    const runtime = new ProviderRuntime({
+      startup: loadConfig({}, { allowIncompleteProvider: true }),
+    });
+    expect(runtime.safeConfig()).toMatchObject({
+      provider: 'moma',
+      source: 'default',
+      complete: false,
+      apiKeyConfigured: false,
+    });
+    await expect(runtime.provider.testConnection()).rejects.toMatchObject({
+      code: 'VALIDATION_ERROR',
+    });
+  });
+  it.each(['moma', 'compatible'] as const)(
+    'keeps in-flight %s tasks on their endpoint while newly entered requests use the new connection',
+    async (platform) => {
+      const runtime = new ProviderRuntime({ startup });
+      runtime.update({
+        provider: platform,
+        baseUrl: 'https://old.test/v1',
+        model: 'shared-model',
+        secret: { action: 'replace', value: 'offline-old-key' },
+      });
+      const scope = new AsyncResource('model-task-old');
+      let release!: () => void;
+      const gate = new Promise<void>((done) => {
+        release = done;
+      });
+      const pending = scope.runInAsyncScope(async () => {
+        runtime.enterRequest();
+        const oldProvider = runtime.provider;
+        await gate;
+        expect(runtime.provider).toBe(oldProvider);
+        expect(runtime.provider.name).toBe(platform);
+        expect(runtime.provider.model).toBe('shared-model');
+        return runtime.provider.endpointIdentity;
+      });
+      runtime.update({
+        provider: platform,
+        baseUrl: 'https://new.test/v1',
+        model: 'shared-model',
+        secret: { action: 'replace', value: 'offline-new-key' },
+      });
+      const fresh = new AsyncResource('model-task-new');
+      const newEndpoint = fresh.runInAsyncScope(() => {
+        runtime.enterRequest();
+        return runtime.provider.endpointIdentity;
+      });
+      release();
+      expect(await pending).not.toBe(newEndpoint);
+      expect(runtime.safeConfig()).toMatchObject({ provider: platform, runtimeGeneration: 3 });
+      scope.emitDestroy();
+      fresh.emitDestroy();
+    },
+  );
+  it.each(['moma', 'compatible'] as const)(
+    'encrypts and reloads %s independently of legacy environment settings',
+    (platform) => {
+      const path = temporaryConfigPath();
+      const store = new JsonProviderConfigStore(path);
+      const first = new ProviderRuntime({ startup, store });
+      first.update({
+        provider: platform,
+        baseUrl: 'https://saved.test/v1/chat/completions/',
+        model: 'saved-model',
+        secret: { action: 'replace', value: 'offline-encrypted-secret' },
+      });
+      const reloaded = new ProviderRuntime({
+        startup: {
+          ...startup,
+          provider: 'hy3',
+          hy3BaseUrl: 'invalid-legacy-url',
+          hy3ApiKey: 'old-secret',
+          hy3Model: 'old-model',
+        },
+        store,
+      });
+      expect(reloaded.safeConfig()).toMatchObject({
+        provider: platform,
+        baseUrl: 'https://saved.test/v1',
+        model: 'saved-model',
+        source: 'saved',
+        apiKeyConfigured: true,
+      });
+      expect(readFileSync(path, 'utf8')).not.toContain('offline-encrypted-secret');
+      expect(readFileSync(`${path}.key`, 'utf8')).not.toContain('offline-encrypted-secret');
+      expect(reloaded.provider.name).toBe(platform);
+    },
+  );
+  it('encrypts a legacy v1 secret once without relabelling the historical Hy3 connection', () => {
+    const path = temporaryConfigPath();
+    writeFileSync(
+      path,
+      JSON.stringify({
+        version: 1,
+        provider: 'hy3',
+        baseUrl: 'https://old.test/v1',
+        model: 'legacy',
+        apiKey: 'offline-legacy-key',
+      }),
+    );
+    const store = new JsonProviderConfigStore(path);
+    expect(store.read()).toMatchObject({ provider: 'hy3', apiKey: 'offline-legacy-key' });
+    expect(readFileSync(path, 'utf8')).not.toContain('offline-legacy-key');
+    expect(JSON.parse(readFileSync(path, 'utf8')).version).toBe(2);
+  });
+  it('fails closed after an encryption key is lost and does not overwrite the configuration', () => {
+    const path = temporaryConfigPath();
+    const store = new JsonProviderConfigStore(path);
+    store.write({
+      version: 1,
+      provider: 'moma',
+      baseUrl: 'https://model.test/v1',
+      model: 'model',
+      apiKey: 'offline-lost-key',
+    });
+    const original = readFileSync(path, 'utf8');
+    rmSync(`${path}.key`);
+    expect(() => new ProviderRuntime({ startup, store })).toThrow(/无法读取模型服务配置/);
+    expect(readFileSync(path, 'utf8')).toBe(original);
+  });
+  it('requires new credentials on a platform switch and rejects stale activation', () => {
+    const runtime = new ProviderRuntime({ startup });
+    runtime.update({
+      provider: 'moma',
+      baseUrl: 'https://saved.test/v1',
+      model: 'model',
+      secret: { action: 'replace', value: 'offline-key' },
+    });
+    expect(() =>
+      runtime.update({
+        provider: 'compatible',
+        baseUrl: 'https://other.test/v1',
+        model: 'model',
+        secret: { action: 'unchanged' },
+      }),
+    ).toThrow(/完整/);
+    expect(() => runtime.update({ provider: 'moma', expectedGeneration: 1 })).toThrow(/已更新/);
+    expect(runtime.safeConfig().provider).toBe('moma');
+  });
   it('returns safe state and persists intentional updates without returning a secret', () => {
     const store = new MemoryStore();
     const runtime = new ProviderRuntime({ startup, store, initialProvider: new FakeProvider() });
@@ -188,7 +349,7 @@ describe('ProviderRuntime', () => {
     ).toThrow(/禁用外部视觉提供程序/);
   });
 
-  it('ignores a saved Hy3 configuration with a missing secret in favor of complete environment', () => {
+  it('keeps an intentionally disabled saved connection ahead of complete environment', () => {
     const store = new MemoryStore();
     store.value = {
       version: 1,
@@ -209,10 +370,11 @@ describe('ProviderRuntime', () => {
 
     expect(runtime.safeConfig()).toMatchObject({
       provider: 'hy3',
-      baseUrl: 'https://environment.test/v1',
-      model: 'environment-model',
-      apiKeyConfigured: true,
-      source: 'environment',
+      baseUrl: 'https://saved.test/v1',
+      model: 'saved-model',
+      apiKeyConfigured: false,
+      source: 'saved',
+      complete: false,
     });
   });
 
@@ -244,7 +406,8 @@ describe('ProviderRuntime', () => {
     });
 
     const persisted = readFileSync(path, 'utf8');
-    expect(persisted).toContain('persisted-secret');
+    expect(persisted).not.toContain('persisted-secret');
+    expect(JSON.parse(persisted)).toHaveProperty('encryptedSecret');
     const reloaded = new ProviderRuntime({ startup, store });
     expect(reloaded.safeConfig()).toMatchObject({
       provider: 'hy3',
@@ -255,29 +418,15 @@ describe('ProviderRuntime', () => {
     expect(JSON.stringify(reloaded.safeConfig())).not.toContain('persisted-secret');
   });
 
-  it('ignores malformed saved data and falls back to startup environment configuration', () => {
+  it('fails closed on malformed saved data instead of substituting an environment connection', () => {
     const path = temporaryConfigPath();
     writeFileSync(path, '{"version":1,"provider":"hy3","apiKey":', 'utf8');
-    const runtime = new ProviderRuntime({
-      startup: {
-        ...startup,
-        provider: 'hy3',
-        hy3BaseUrl: 'https://environment.test/v1',
-        hy3ApiKey: 'environment-secret',
-        hy3Model: 'environment-model',
-      },
-      store: new JsonProviderConfigStore(path),
-    });
-    expect(runtime.safeConfig()).toMatchObject({
-      provider: 'hy3',
-      baseUrl: 'https://environment.test/v1',
-      model: 'environment-model',
-      apiKeyConfigured: true,
-      source: 'environment',
-    });
+    expect(
+      () => new ProviderRuntime({ startup, store: new JsonProviderConfigStore(path) }),
+    ).toThrow(/无法读取模型服务配置/);
   });
 
-  it('ignores semantically unsafe saved URLs and falls back without aborting startup', () => {
+  it('rejects unsafe saved URLs before constructing a transport', () => {
     const store = new MemoryStore();
     store.value = {
       version: 1,
@@ -286,25 +435,10 @@ describe('ProviderRuntime', () => {
       apiKey: 'saved-secret',
       model: 'saved-model',
     };
-    const runtime = new ProviderRuntime({
-      startup: {
-        ...startup,
-        provider: 'hy3',
-        hy3BaseUrl: 'https://environment.test/v1',
-        hy3ApiKey: 'environment-secret',
-        hy3Model: 'environment-model',
-      },
-      store,
-    });
-    expect(runtime.safeConfig()).toMatchObject({
-      provider: 'hy3',
-      baseUrl: 'https://environment.test/v1',
-      model: 'environment-model',
-      source: 'environment',
-    });
+    expect(() => new ProviderRuntime({ startup, store })).toThrow(/API 地址/);
   });
 
-  it('falls back to Fake when an environment-selected Hy3 configuration is incomplete', () => {
+  it('keeps incomplete real configuration and reports it instead of falling back to Fake', () => {
     const runtime = new ProviderRuntime({
       startup: {
         ...startup,
@@ -316,23 +450,23 @@ describe('ProviderRuntime', () => {
     });
 
     expect(runtime.safeConfig()).toMatchObject({
-      provider: 'fake',
+      provider: 'hy3',
       baseUrl: 'https://environment.test/v1',
       model: 'environment-model',
       apiKeyConfigured: false,
       source: 'environment',
-      complete: true,
+      complete: false,
     });
   });
 
-  it('does not let an injected Hy3 provider contradict the Fake fallback mode', () => {
+  it('retains an injected provider with its matching real identity', () => {
     const injected = mockedHy3Provider(async () => undefined);
     const runtime = new ProviderRuntime({
       startup: { ...startup, provider: 'hy3', hy3Model: 'incomplete-only' },
       initialProvider: injected,
     });
-    expect(runtime.safeConfig()).toMatchObject({ provider: 'fake', complete: true });
-    expect(runtime.providerName).toBe('fake');
+    expect(runtime.safeConfig()).toMatchObject({ provider: 'hy3', complete: false });
+    expect(runtime.providerName).toBe('hy3');
   });
 
   it('keeps an entered request on its immutable provider generation while new requests advance', async () => {

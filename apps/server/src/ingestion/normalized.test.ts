@@ -16,11 +16,11 @@ const base = {
 };
 
 describe('normalized structure and chunking', () => {
-  it('declares and enforces bounded parser limits', () => {
-    expect(PARSER_REGISTRY.every((adapter) => adapter.limits.maxContentChars === 100_000)).toBe(
-      true,
+  it('keeps per-chunk resource protection without a course character or block count cap R39', () => {
+    expect(PARSER_REGISTRY.every((adapter) => adapter.limits.hardChunkChars === 3000)).toBe(true);
+    expect(normalizeMarkdown({ ...base, content: 'x'.repeat(100_001) }).content).toHaveLength(
+      100_001,
     );
-    expect(() => normalizeMarkdown({ ...base, content: 'x'.repeat(100_001) })).toThrow(/100000/u);
   });
 
   it('keeps fenced headings as code and preserves heading context', () => {

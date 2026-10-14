@@ -1,5 +1,7 @@
 # 系统架构
 
+本文件主体记录冻结历史架构。当前开发已切换到 [新版架构与运行](CLINIC_V2.md)：知识提取和一次规划、独立 Lesson、统一题目准入、逐题服务端签分、Repair 轮次及日常知识复习事件。生产仅注册 `routes/clinic.ts`，没有历史 API 兼容装配。
+
 [项目首页](../README.md) · [设计与评估报告](REPORT.md) · [运行指南](SETUP.md) · [验证与复现](VERIFICATION.md)
 
 Study Clinic 使用 React 和 Vite 构建界面，Fastify 提供本地 API，SQLite 保存课程、学习会话与作答记录。Hy3 生成课程、讲解、题目并参与评分；服务端检查返回内容，保存通过检查的版本，再按规则更新学习状态。

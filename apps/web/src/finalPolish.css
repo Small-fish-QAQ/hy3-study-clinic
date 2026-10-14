@@ -1,0 +1,289 @@
+/* Final navigation/layout adaptations; reuse the established brand assets. */
+.clinic-learning-center {
+  width: 100%;
+  max-width: var(--content-wide);
+  margin-inline: auto;
+}
+.clinic-center-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 24px 0 12px;
+  border-bottom: 1px solid var(--border);
+}
+.clinic-center-tabs button {
+  border: 0;
+  background: transparent;
+  padding: 12px 18px;
+  white-space: nowrap;
+}
+.clinic-center-tabs button[aria-selected='true'] {
+  background: var(--primary);
+  color: white;
+}
+.clinic-center-tabs + [role='tabpanel'] {
+  outline-offset: 4px;
+}
+.course-library-heading > div {
+  margin-left: auto;
+}
+.course-library-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.course-library-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.course-library-card-top .course-library-number {
+  margin: 0;
+}
+.course-library-card p {
+  margin: 0;
+  font-size: 13px;
+}
+.course-library-card small {
+  font-size: 11px;
+}
+.course-library-source {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-muted);
+}
+.course-library-card .course-library-open {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+  border: 0;
+  border-radius: 0;
+  padding: 14px 0 0;
+  background: transparent;
+  text-align: left;
+  width: 100%;
+}
+.course-library-card .course-library-open:hover {
+  background: transparent;
+  color: var(--primary);
+}
+.course-library-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0 18px;
+}
+.course-library-card.is-selected {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+.course-select {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.course-select input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
+}
+.clinic-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: grid;
+  place-items: center;
+  background: rgb(16 39 29 / 48%);
+  padding: 20px;
+}
+.clinic-delete-dialog {
+  width: min(560px, 100%);
+  max-height: calc(100dvh - 40px);
+  overflow: auto;
+  padding: 28px;
+}
+.clinic-delete-dialog ul {
+  max-height: 220px;
+  overflow: auto;
+  margin-block: 20px;
+  padding-left: 24px;
+}
+.clinic-delete-dialog li {
+  padding: 6px 0;
+}
+.clinic-delete-dialog p {
+  line-height: 1.8;
+}
+button.danger {
+  background: #8b342d;
+  border-color: #8b342d;
+  color: white;
+}
+button.danger:hover:not(:disabled) {
+  background: #70251f;
+  color: white;
+}
+.clinic-study.is-choosing .study-session-layout {
+  display: none;
+}
+.clinic-study .clinic-lesson-outline {
+  display: block;
+  width: 100%;
+  max-height: min(58dvh, 660px);
+  overflow: auto;
+  padding: 28px clamp(18px, 4vw, 48px);
+}
+.clinic-study.is-choosing .clinic-lesson-outline {
+  max-height: none;
+  min-height: 100%;
+  background: transparent;
+  border: 0;
+}
+.clinic-picker-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  max-width: var(--content-wide);
+  margin: 0 auto 24px;
+}
+.clinic-picker-heading h2 {
+  font-size: clamp(22px, 2.4vw, 30px);
+  margin-block: 8px 10px;
+}
+.clinic-picker-heading p {
+  font-size: 13px;
+  line-height: 1.8;
+  margin: 0;
+}
+.clinic-picker-module {
+  max-width: var(--content-wide);
+  margin: 20px auto;
+}
+.clinic-picker-module h3 {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  font-size: 16px;
+  line-height: 1.6;
+}
+.clinic-picker-module h3 > span {
+  color: var(--primary);
+  font-size: 13px;
+}
+.clinic-picker-module ol {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 24px;
+}
+.clinic-picker-module button {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  width: 100%;
+  height: 100%;
+  text-align: left;
+  padding: 16px;
+  background: var(--surface);
+}
+.clinic-picker-module button > span {
+  flex: 0 0 auto;
+  font-size: 13px;
+}
+.clinic-picker-module button strong {
+  font-size: 14px;
+  line-height: 1.75;
+  overflow-wrap: anywhere;
+  display: block;
+}
+.clinic-picker-module button small {
+  display: block;
+  font-size: 11px;
+  margin-top: 8px;
+  color: var(--text-muted);
+}
+.preparation-plan-confirm {
+  background: #103b2c url('/brand/pine-next-step.webp') center / cover no-repeat;
+  border: 0;
+  color: #f8f5e9;
+  padding: 34px 36px;
+  gap: 30px;
+}
+.preparation-plan-confirm .eyebrow {
+  color: #b9cbaa;
+}
+.preparation-plan-confirm h2 {
+  color: #fffbed;
+}
+.preparation-plan-confirm p:not(.eyebrow) {
+  color: #d6dfce;
+  max-width: 590px;
+}
+.preparation-plan-confirm > button.primary {
+  background: #f5f2de;
+  color: #164b37;
+  border-color: #f5f2de;
+  flex: 0 0 auto;
+}
+.preparation-plan-confirm > button.primary:hover:not(:disabled) {
+  background: white;
+  color: #164b37;
+}
+.clinic-operation-failure {
+  max-width: 900px;
+  overflow-wrap: anywhere;
+}
+.clinic-operation-failure > p {
+  margin: 6px 0;
+}
+.clinic-operation-failure details {
+  margin: 8px 0;
+  font-size: 12px;
+}
+.clinic-operation-failure details p {
+  line-height: 1.8;
+}
+@media (max-width: 767px) {
+  .clinic-center-tabs {
+    gap: 4px;
+    padding-top: 12px;
+  }
+  .clinic-center-tabs button {
+    flex: 1;
+    font-size: 13px;
+    padding: 12px 8px;
+  }
+  .course-library-heading {
+    flex-wrap: wrap;
+  }
+  .clinic-picker-module ol {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .clinic-study .clinic-lesson-outline {
+    padding: 22px 16px;
+    max-height: 55dvh;
+  }
+  .clinic-picker-heading {
+    align-items: flex-start;
+  }
+  .clinic-picker-heading > button {
+    flex: 0 0 auto;
+  }
+  .preparation-plan-confirm {
+    padding: 28px 22px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .preparation-plan-confirm > button.primary {
+    width: 100%;
+  }
+}

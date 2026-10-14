@@ -1,225 +1,99 @@
 import Fastify, { type FastifyInstance } from 'fastify';
 import { ZodError } from 'zod';
-import { ApiErrorCode, ProviderConnectionTestRequestSchema } from '@hy3-clinic/shared';
 import { AppError, statusForErrorCode } from './errors.js';
 import { IngestionError } from './ingestion/ingest.js';
+import { ingestionResources } from './ingestion/resources.js';
 import { ProviderError } from './llm/errors.js';
-import type { LlmProvider, VisualDescriptionProvider } from './llm/provider.js';
-import type { Repositories } from './repositories/index.js';
-import type { Clock } from './util/ids.js';
-import type { AppConfig } from './config.js';
-import { systemClock } from './util/ids.js';
-import { createServices } from './services/index.js';
-import { registerMaterialRoutes } from './routes/materials.js';
-import { registerStudyRoutes } from './routes/study.js';
-import { registerWorkspaceRoutes } from './routes/workspaces.js';
-import { registerAgentCourseRoutes } from './routes/agentCourse.js';
-import { registerStudySessionRoutes } from './routes/studySessions.js';
-import { registerFormalProgressionRoutes } from './routes/formalProgression.js';
-import { registerFormalAssessmentRoutes } from './routes/formalAssessments.js';
-import { registerRepairRoutes } from './routes/repair.js';
-import { registerMasteryRedTeamRoutes } from './routes/masteryRedTeam.js';
-import {
-  ProviderRuntime,
-  createRuntimeProvider,
-  type ProviderConfigStore,
-} from './services/providerRuntime.js';
-import { requestSignal } from './util/requestSignal.js';
-import { createTelemetryProvider } from './services/providerTelemetry.js';
+import type { CourseProvider } from './llm/courseContract.js';
+import type { SqliteDb } from './db/database.js';
+import { initializeClinic } from './db/schema.js';
+import { ClinicRepository } from './repositories/clinic.js';
+import { createClinic, type Clinic } from './services/clinic.js';
+import { registerClinicRoutes } from './routes/clinic.js';
+import type { ProviderRuntime } from './services/providerRuntime.js';
 
 export interface AppDeps {
-  repos: Repositories;
-  provider: LlmProvider;
-  visualProvider?: VisualDescriptionProvider;
+  db: SqliteDb;
+  provider: CourseProvider;
   providerRuntime?: ProviderRuntime;
-  providerConfigStore?: ProviderConfigStore | null;
-  startupConfig?: AppConfig;
-  clock?: Clock;
   logger?: boolean;
-  /** Model identifier recorded as graph provider metadata (hy3 only). */
-  providerModel?: string | undefined;
+  now?: () => string;
+  leaseMs?: number;
+  heartbeatMs?: number;
+  concurrency?: number;
 }
-
-export function buildApp(deps: AppDeps): FastifyInstance {
-  const runtime =
-    deps.providerRuntime ??
-    new ProviderRuntime({
-      startup: deps.startupConfig ?? {
-        port: 0,
-        host: '127.0.0.1',
-        databasePath: '',
-        provider: deps.provider.name,
-        hy3BaseUrl: undefined,
-        hy3ApiKey: undefined,
-        hy3Model: deps.providerModel,
-        hy3TimeoutMs: 30_000,
-        visualProvider: 'disabled',
-        tokenHubVisualBaseUrl: undefined,
-        tokenHubVisualApiKey: undefined,
-        tokenHubVisualModel: 'hy-vision-2.0-instruct',
-        tokenHubVisualTimeoutMs: 120_000,
-        providerConfigPath: '',
-      },
-      store: deps.providerConfigStore,
-      initialProvider: deps.provider,
-    });
+export type ClinicApp = FastifyInstance & { clinic: Clinic };
+export function buildApp(deps: AppDeps): ClinicApp {
+  initializeClinic(deps.db);
+  const resources = ingestionResources();
   const app = Fastify({
-    // Generous enough for the 100k-char source limit encoded as JSON and for
-    // base64-encoded PDF/DOCX uploads (10 MB decoded → ~13.7 MB encoded).
-    bodyLimit: 16 * 1024 * 1024,
-    logger: deps.logger
-      ? {
-          level: 'info',
-          redact: {
-            paths: [
-              'req.headers.authorization',
-              'req.headers.cookie',
-              'req.headers["x-api-key"]',
-              'req.body.secret.value',
-              'req.body.apiKey',
-              'req.body.token',
-            ],
-            censor: '[REDACTED]',
-          },
-        }
-      : false,
+    logger: deps.logger ?? false,
+    bodyLimit: Math.max(Math.ceil(resources.fileBytes / 3) * 4, resources.textBytes) + 128 * 1024,
+  }) as unknown as ClinicApp;
+  const selected = () => deps.providerRuntime?.provider ?? deps.provider;
+  const clinic = createClinic(new ClinicRepository(deps.db, deps.now), selected, {
+    leaseMs: deps.leaseMs,
+    heartbeatMs: deps.heartbeatMs,
+    concurrency: deps.concurrency,
   });
-
-  const clock = deps.clock ?? systemClock;
-  const runtimeProvider = createRuntimeProvider(runtime);
-  const provider = createTelemetryProvider({
-    repos: deps.repos,
-    clock,
-    provider: runtimeProvider,
-    providerGeneration: () => runtime.generation,
-  });
-  const visualProvider = createTelemetryProvider({
-    repos: deps.repos,
-    clock,
-    provider: deps.visualProvider ?? runtimeProvider,
-    providerGeneration: () => (deps.visualProvider ? 1 : runtime.generation),
-  });
-  const services = createServices({
-    repos: deps.repos,
-    provider,
-    visualProvider,
-    clock,
-    providerModel: runtime.providerModel,
-  });
-
-  app.addHook('onRequest', async () => {
-    runtime.enterRequest();
-  });
-
-  app.addHook('preHandler', async (request) => {
-    const path = request.url.split('?', 1)[0];
-    if ((path === '/api/config' && request.method !== 'GET') || path === '/api/config/test') {
-      const remote = request.ip.replace(/^::ffff:/, '');
-      if (!['127.0.0.1', '::1', 'localhost'].includes(remote)) {
-        throw new AppError(ApiErrorCode.ValidationError, '提供程序设置仅允许本机访问。');
+  app.decorate('clinic', clinic);
+  app.addHook('onRequest', async (request, reply) => {
+    deps.providerRuntime?.enterRequest();
+    const origin = request.headers.origin;
+    if (origin) {
+      const own = `${request.protocol}://${request.headers.host}`;
+      const allowed = [
+        own,
+        ...['localhost', '127.0.0.1', '[::1]'].flatMap((h) =>
+          [5173, 5174].map((p) => `http://${h}:${p}`),
+        ),
+      ];
+      if (!allowed.includes(origin)) {
+        reply
+          .code(403)
+          .send({ error: { code: 'VALIDATION_ERROR', message: '请求来源未获授权。' } });
+        return;
       }
-      const origin = request.headers.origin;
-      if (origin) {
-        let originHost = '';
-        try {
-          originHost = new URL(origin).hostname.replace(/^\[(.*)\]$/, '$1');
-        } catch {
-          throw new AppError(ApiErrorCode.ValidationError, '提供程序设置请求来源无效。');
-        }
-        if (!['127.0.0.1', '::1', 'localhost'].includes(originHost)) {
-          throw new AppError(ApiErrorCode.ValidationError, '提供程序设置仅允许本机页面访问。');
-        }
+      reply.header('Access-Control-Allow-Origin', origin).header('Vary', 'Origin');
+      if (request.method === 'OPTIONS') {
+        reply
+          .header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS')
+          .header('Access-Control-Allow-Headers', 'content-type');
+        reply.code(204).send();
       }
     }
   });
-
-  // Restart policy: a Tutor run can only legitimately be `running` while its
-  // request is in flight, so any leftover from a previous process is marked
-  // interrupted here. Interrupted runs never altered learning state.
-  deps.repos.tutor.markInterruptedRuns(clock.now().toISOString());
-  deps.repos.studySessions.markInterruptedTurns(clock.now().toISOString());
-  // Durable Agent operations cannot still have a live worker after this
-  // process starts. Preserve sent attempts as outcome_unknown and make the
-  // command retryable under a new physical attempt/fencing token.
-  deps.repos.operations.recoverRunningAfterRestart(clock.now().toISOString());
-
-  // Central error handler: converts known errors into structured API errors
-  // and never leaks stack traces, secrets, or raw payloads to the client.
-  app.setErrorHandler((error, request, reply) => {
-    if (error instanceof AppError) {
+  app.setErrorHandler((error, _request, reply) => {
+    if (error instanceof ZodError) {
       reply
-        .status(statusForErrorCode(error.code))
-        .send({ error: { code: error.code, message: error.message, details: error.details } });
+        .code(400)
+        .send({ error: { code: 'VALIDATION_ERROR', message: '请求不符合当前接口合同。' } });
       return;
     }
-    if (error instanceof IngestionError) {
+    if (
+      error instanceof AppError ||
+      error instanceof ProviderError ||
+      error instanceof IngestionError
+    ) {
       reply
-        .status(statusForErrorCode(error.code))
+        .code(statusForErrorCode(error.code))
         .send({ error: { code: error.code, message: error.message } });
       return;
     }
-    if (error instanceof ProviderError) {
+    if ((error as { statusCode?: number }).statusCode === 413) {
       reply
-        .status(statusForErrorCode(error.code))
-        .send({ error: { code: error.code, message: error.message, details: error.details } });
+        .code(413)
+        .send({ error: { code: 'SOURCE_TOO_LARGE', message: '请求超过配置的导入资源大小。' } });
       return;
     }
-    if (error instanceof ZodError) {
-      reply.status(400).send({
-        error: {
-          code: ApiErrorCode.ValidationError,
-          message: '请求数据校验失败。',
-          details: error.issues.map((i) => ({ path: i.path.join('.'), message: i.message })),
-        },
-      });
-      return;
-    }
-    const fastifyError = error as { code?: string; statusCode?: number; validation?: unknown };
-    if (fastifyError.code === 'FST_ERR_CTP_BODY_TOO_LARGE') {
-      reply.status(413).send({
-        error: { code: ApiErrorCode.SourceTooLarge, message: '请求体过大,已拒绝。' },
-      });
-      return;
-    }
-    if (fastifyError.validation || fastifyError.statusCode === 400) {
-      reply.status(400).send({
-        error: { code: ApiErrorCode.ValidationError, message: '请求数据校验失败。' },
-      });
-      return;
-    }
-    // Unknown error: log server-side (sanitized logger), return generic message.
-    request.log.error(error);
-    reply.status(500).send({ error: { code: ApiErrorCode.Internal, message: '服务器内部错误。' } });
+    reply
+      .code(500)
+      .send({ error: { code: 'INTERNAL', message: '处理未完成，请保留已保存结果并重试。' } });
   });
-
-  app.setNotFoundHandler((_request, reply) => {
-    reply.status(404).send({ error: { code: ApiErrorCode.NotFound, message: '接口不存在。' } });
+  registerClinicRoutes(app, clinic, selected, deps.providerRuntime);
+  app.addHook('onClose', async () => {
+    clinic.operations.close();
+    await clinic.operations.idle();
   });
-
-  app.get('/api/health', async () => ({ status: 'ok', service: 'hy3-study-clinic-server' }));
-
-  // Safe runtime state includes non-secret URL/model fields but never the key.
-  app.get('/api/config', async () => runtime.safeConfig());
-  app.patch('/api/config', async (request) => runtime.update(request.body));
-  app.post('/api/config/test', async (request, reply) => {
-    ProviderConnectionTestRequestSchema.parse(request.body ?? {});
-    return runtime.testConnection(requestSignal(request, reply), (options) =>
-      provider.testConnection({
-        ...options,
-        telemetry: { workspaceId: null, operationType: 'provider_connection_test' },
-      }),
-    );
-  });
-
-  registerMaterialRoutes(app, services.materials);
-  registerStudyRoutes(app, services);
-  registerWorkspaceRoutes(app, services);
-  registerAgentCourseRoutes(app, services);
-  registerStudySessionRoutes(app, services);
-  registerFormalProgressionRoutes(app, services);
-  registerFormalAssessmentRoutes(app, services);
-  registerRepairRoutes(app, services);
-  registerMasteryRedTeamRoutes(app, services);
-
   return app;
 }

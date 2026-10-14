@@ -6,7 +6,7 @@ import {
   type PdfPageInput,
   type PdfTextItem,
 } from './pdfLayout.js';
-import { segmentMaterial } from './segment.js';
+import { segmentMaterial } from '../testing/segmentFixture.js';
 
 /**
  * Layout-engine tests built on synthetic positioned items (no PDF bytes, no

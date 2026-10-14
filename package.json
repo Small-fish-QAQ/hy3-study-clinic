@@ -21,12 +21,9 @@
     "format": "prettier --write .",
     "pretest": "npm run build -w @hy3-clinic/shared",
     "test": "npm run test --workspaces --if-present",
-    "demo:offline": "node scripts/demo-offline.mjs",
-    "demo:http": "node scripts/smoke.mjs",
-    "demo:graph": "node scripts/smoke-graph.mjs",
-    "demo:adaptive": "node scripts/smoke-adaptive.mjs",
-    "eval:fake": "node eval/run-fake.mjs",
-    "eval:hy3": "node eval/run-hy3.mjs",
+    "demo:offline": "node scripts/eval-clinic-offline.mjs",
+    "eval:fake": "node scripts/eval-clinic-offline.mjs",
+    "eval:hy3": "node scripts/validate-real-course.mjs",
     "eval:evidence": "node eval/export-evidence.mjs"
   },
   "devDependencies": {

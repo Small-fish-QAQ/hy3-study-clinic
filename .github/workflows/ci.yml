@@ -34,6 +34,8 @@ jobs:
         run: npm run lint
       - name: Test
         run: npm test
+      - name: Offline clinic regression
+        run: npm run eval:fake
       - name: Test StudyEval evaluator
         run: node --test eval/studyeval/test/*.test.mjs
 

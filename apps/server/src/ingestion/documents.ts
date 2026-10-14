@@ -1,11 +1,7 @@
 import { Buffer } from 'node:buffer';
-import {
-  ApiErrorCode,
-  MAX_DOCUMENT_FILE_BYTES,
-  type MediaType,
-  type SourceType,
-} from '@hy3-clinic/shared';
+import { ApiErrorCode, type MediaType, type SourceType } from '@hy3-clinic/shared';
 import { IngestionError, looksBinary, normalizeText, sanitizeParsedText } from './ingest.js';
+import { ingestionResources } from './resources.js';
 import { analyzePdfLayout, type PdfPageInput, type PageSpan } from './pdfLayout.js';
 import { parseRichOoxml, type ExtractedEmbeddedAsset } from './richDocuments.js';
 import type { NormalizedDocument } from '@hy3-clinic/shared';
@@ -182,10 +178,10 @@ export function decodeUpload(dataBase64: string): Buffer {
   if (buffer.length === 0) {
     throw new IngestionError(ApiErrorCode.EmptySource, '上传的文件为空。');
   }
-  if (buffer.length > MAX_DOCUMENT_FILE_BYTES) {
+  if (buffer.length > ingestionResources().fileBytes) {
     throw new IngestionError(
       ApiErrorCode.SourceTooLarge,
-      `文件过大(${buffer.length} 字节),上限为 ${MAX_DOCUMENT_FILE_BYTES} 字节。`,
+      `文件过大(${buffer.length} 字节)，IMPORT_FILE_BYTES=${ingestionResources().fileBytes}；可调整资源配置。`,
     );
   }
   return buffer;

@@ -27,7 +27,6 @@ export interface RichDocumentResult {
 const DOCX_PARSER_VERSION = 'docx-ooxml-rich-v1';
 const PPTX_PARSER_VERSION = 'pptx-ooxml-rich-v1';
 const MAX_EMBEDDED_ASSETS = 2_000;
-const MAX_STRUCTURAL_UNITS = 20_000;
 const MAX_XML_NODES = 200_000;
 const MAX_XML_BYTES = 40 * 1024 * 1024;
 const OFFICE_RELATIONSHIP_NAMESPACE =
@@ -397,9 +396,6 @@ class UnitBuilder {
     location: NormalizedLocation,
     headingPath: string[] = [],
   ): NormalizedDocumentUnit {
-    if (this.units.length >= MAX_STRUCTURAL_UNITS) {
-      throw new IngestionError(ApiErrorCode.SourceTooLarge, '文档结构单元超过安全上限。');
-    }
     const startOffset = this.offset + (this.pieces.length ? 2 : 0);
     const unit: NormalizedDocumentUnit = {
       id: `unit_${fnv1a32(`${this.revisionId}:${this.units.length}:${kind}:${startOffset}`).toString(16).padStart(8, '0')}`,
@@ -440,9 +436,6 @@ class UnitBuilder {
   ): NormalizedDocumentUnit | null {
     const content = sanitizeParsedText(normalizeText(value));
     if (!content.trim()) return null;
-    if (this.units.length >= MAX_STRUCTURAL_UNITS) {
-      throw new IngestionError(ApiErrorCode.SourceTooLarge, '文档结构单元超过安全上限。');
-    }
     const separator = this.pieces.length ? '\n\n' : '';
     this.pieces.push(`${separator}${content}`);
     const startOffset = this.offset + separator.length;

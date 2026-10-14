@@ -1,4 +1,5 @@
-/* Study Clinic's material and typographic finish. Shared presentation only. */
+/* Restored presentation from the protected pre-V2 snapshot.
+   Domain-specific screens and retired workflow styles are excluded. */
 @font-face {
   font-family: 'Noto Serif SC';
   src: url('/fonts/noto-serif-sc.woff2') format('woff2');
@@ -28,17 +29,11 @@
   --paper-position: center;
   --paper-veil: rgb(250 249 243 / 0%);
 }
-
-/* All destinations share the same corner artwork around their content.
-   Opaque lesson, form and map surfaces keep the interior clear for reading. */
 .course-workspace {
   --paper-corner-top-left: url('/backgrounds/ivory-gold-top-left.webp');
   --paper-corner-top-right: url('/backgrounds/ivory-gold-top-right.webp');
   --paper-corners-bottom: url('/backgrounds/ivory-gold-bottom.webp');
 }
-
-/* Small labels may scroll over a gold contour. Keep their ink legible across
-   every destination; the pine sidebar has its own foreground palette. */
 .course-workspace {
   --text-muted: #465549;
   --text-faint: #465549;
@@ -47,10 +42,6 @@
 .view-home .course-home-context > .eyebrow {
   color: var(--pine);
 }
-
-/* The upper corners are independent; the lower pair shares one continuous
-   source band to avoid broken gold curves. Scrolling cannot stretch or tile
-   the artwork. Opaque cards protect reading surfaces. No overlay or motion. */
 .course-workspace {
   background-color: var(--bg);
   background-image:
@@ -73,28 +64,17 @@
     cover;
   background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, repeat, no-repeat;
 }
-
-/* Reading and utility views share the same material with a little less light
-   variation. Keep the large document surfaces opaque and free of texture. */
-.view-session,
-.view-settings {
-  --paper-veil: rgb(250 249 243 / 24%);
-}
 .study-session {
   background-color: transparent;
 }
 
 @media (max-width: 767px) {
   .course-workspace {
-    /* Keep the grazing light in view when cover crops the wide source. */
     --paper-position: 64% center;
     --paper-corner-top-size: min(48%, 240px);
     --paper-bottom-offset: -14px;
   }
 }
-
-/* Reference artwork stays behind the live navigation. Keep its proportions
-   and a pine fallback while the decorative image loads. */
 .course-sidebar {
   background: #102f24 url('/brand/pine-botanical-sidebar.webp') center top / cover no-repeat;
   box-shadow: inset -1px 0 rgb(255 255 255 / 7%);
@@ -158,8 +138,6 @@
 .course-sidebar-footer {
   border-color: rgb(226 235 216 / 10%);
 }
-/* In short desktop windows, the book can reach the system controls. A quiet
-   backing preserves their contrast while the existing rail remains scrollable. */
 @media (min-width: 768px) and (max-height: 780px) {
   .course-sidebar-footer {
     background-color: rgb(16 47 36 / 88%);
@@ -172,8 +150,6 @@
 .course-workspace-header > span {
   font-size: 12px;
 }
-
-/* The entry artwork is decorative; all titles, courses and actions are HTML. */
 .course-library-intro {
   position: relative;
   isolation: isolate;
@@ -277,26 +253,6 @@
   margin-bottom: 20px;
   opacity: 0.75;
 }
-.studio-about-brand {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding-block: 12px 26px;
-  border-bottom: 1px solid var(--separator);
-  margin-bottom: 24px;
-}
-.studio-about-brand strong {
-  font:
-    26px Georgia,
-    serif;
-}
-.studio-about-brand p {
-  margin: 5px 0 0;
-  font-size: 13px;
-  color: var(--text-muted);
-}
-
-/* Paper folds frame the next real action; setup uses a quieter material. */
 .course-home-context h2 {
   letter-spacing: -0.8px;
 }
@@ -348,110 +304,9 @@
 .setup-action > div:first-child > p:last-child {
   margin-bottom: 0;
 }
-.preparation-controls {
-  display: grid;
-  flex: 0 0 250px;
-  gap: 16px;
-  padding: 20px 22px;
-  border: 1px solid rgb(225 236 208 / 25%);
-  border-radius: 12px;
-  background: rgb(15 43 32 / 82%);
-  backdrop-filter: blur(8px);
-}
 .preparation-controls .muted {
   color: #edf1e3;
   line-height: 1.7;
-}
-.preparation-controls .primary {
-  min-height: 42px;
-  border-radius: 8px;
-  background: #f5f1df;
-  color: #213f31;
-}
-.course-preparation-status {
-  margin: 8px 0 20px;
-  padding: 22px 24px;
-  gap: 20px;
-  border: 1px solid #dbe3d3;
-  border-radius: 12px;
-  background: rgb(255 254 249 / 92%);
-}
-.preparation-heading {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 18px;
-}
-.preparation-heading h3 {
-  font-size: 17px;
-  line-height: 1.6;
-}
-.preparation-elapsed {
-  flex: none;
-  color: var(--text-muted);
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-}
-.course-preparation-status ol {
-  gap: 12px;
-}
-.course-preparation-status li {
-  align-items: flex-start;
-  gap: 10px;
-  padding-top: 12px;
-  border-top: 2px solid #e1e5dc;
-}
-.course-preparation-status li > .preparation-step-number {
-  width: 24px;
-  height: 24px;
-  font-size: 11px;
-  color: #53664f;
-}
-.course-preparation-status li strong {
-  display: block;
-  font-size: 13px;
-  font-weight: 550;
-}
-.course-preparation-status li small {
-  display: block;
-  margin-top: 4px;
-  color: var(--text-muted);
-  font-size: 11px;
-  font-weight: 400;
-}
-.course-preparation-status li[data-state='complete'] {
-  border-color: #a4b995;
-}
-.course-preparation-status li[data-state='in_progress'] {
-  border-color: #3b7255;
-}
-.course-preparation-status li[data-state='in_progress'] .preparation-step-number {
-  background: #285c48;
-  color: #fff;
-  box-shadow: 0 0 0 4px #e6efde;
-}
-.course-preparation-status li[data-state='blocked'],
-.course-preparation-status li[data-state='review'] {
-  border-color: #ba9e63;
-  color: #6f5527;
-}
-.preparation-observation {
-  display: grid;
-  gap: 8px;
-  padding-top: 16px;
-  border-top: 1px solid var(--separator);
-  font-size: 13px;
-  line-height: 1.8;
-}
-.preparation-observation p {
-  margin: 0;
-}
-.preparation-facts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 24px;
-  color: #365d43;
-  font-size: 12px;
 }
 .next-action h3 {
   font-size: 25px;
@@ -472,8 +327,6 @@
   width: fit-content;
   padding-block: 5px;
 }
-
-/* The supplied book-and-leaf artwork sits behind live, responsive controls. */
 .next-action-study {
   --next-step-serif: 'Noto Serif SC', 'Songti SC', 'STSong', 'SimSun', serif;
   container-type: inline-size;
@@ -599,29 +452,6 @@
   flex: 0 1 18rem;
   min-width: 0;
 }
-
-.today-work {
-  margin-top: 16px;
-}
-.today-work h3 {
-  margin-bottom: 14px;
-  font-weight: 550;
-}
-.today-work li {
-  padding-block: 18px;
-}
-.important-exceptions {
-  border-left: 3px solid #bea773;
-  background: #f9f4e7;
-}
-.important-exceptions p {
-  font-size: 13px;
-}
-.course-detail-disclosure > summary {
-  padding-block: 20px;
-}
-
-/* The reading document and companion teacher have different visual roles. */
 .lesson-execution-panel {
   box-shadow: var(--paper-shadow);
 }
@@ -640,17 +470,6 @@
 .lesson-player-header [role='status'] {
   font-size: 12px;
 }
-.lesson-segment-progress {
-  gap: 7px;
-}
-.lesson-segment-progress button {
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
-  min-width: 32px;
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-}
 .lesson-orientation {
   background: #f7f8f2;
   border-color: #e5e8dc;
@@ -660,12 +479,6 @@
 }
 .lesson-orientation > summary > span:last-child {
   font-size: 12px;
-}
-.lesson-time-estimate {
-  font-size: 12px;
-}
-.lesson-time-estimate summary {
-  padding-block: 4px;
 }
 .lesson-objective {
   font-size: 14px;
@@ -678,25 +491,7 @@
   border-left-color: #b2a17d;
   background: #f8f4e9;
 }
-.lesson-worked-activity {
-  background: #fffefa;
-  border-color: #dce3d3;
-}
-.lesson-check-options button,
-.lesson-practice-options button {
-  border-color: #d6ddcf;
-  border-radius: 9px;
-}
-.lesson-check-options button:hover:not(:disabled),
-.lesson-practice-options button:hover:not(:disabled) {
-  background: #f1f5eb;
-  border-color: #8ca580;
-}
 .lesson-source-reference {
-  font-size: 12px;
-}
-.lesson-origin-label,
-.lesson-no-source {
   font-size: 12px;
 }
 .lesson-source-reference > summary {
@@ -839,277 +634,6 @@
   border-left: 2px solid #94ab80;
   background: #f1f5eb;
 }
-.study-inspector {
-  box-shadow: -6px 0 24px rgb(34 57 43 / 5%);
-}
-.study-inspector-header {
-  background: #f3f5ec;
-  border-bottom: 1px solid #dce3d2;
-}
-.study-inspector-scroll {
-  font-size: 14px;
-  line-height: 1.85;
-}
-.study-inspector details > summary {
-  min-height: 34px;
-  padding-block: 6px;
-}
-
-/* Materials and provenance: a legible document with an attached record. */
-.material-row {
-  padding: 26px;
-  box-shadow: var(--paper-shadow);
-}
-.material-source-mark {
-  border: 1px solid #d3ddc9;
-  border-radius: 3px 9px 3px 3px;
-  background: linear-gradient(125deg, #f3f6ec, #e2ead8);
-  color: #38583e;
-  box-shadow: 2px 3px 0 #edf0e6;
-}
-.material-row h3 {
-  font-weight: 550;
-}
-.material-row-meta {
-  font-size: 12px;
-  margin-top: 8px;
-}
-.material-row-footer {
-  margin-top: 17px;
-  align-items: flex-start;
-}
-.material-provenance.technical-details {
-  flex: 1;
-  min-width: 0;
-}
-.material-provenance.technical-details > summary {
-  font-size: 12px;
-  min-height: 32px;
-  width: fit-content;
-  padding-block: 5px;
-}
-.material-provenance[open] {
-  padding: 14px 18px 18px;
-  background: #f3f6ee;
-  border: 1px solid #e0e7d8;
-  border-radius: 8px;
-}
-.material-provenance[open] > summary {
-  font-weight: 600;
-}
-.material-provenance .material-identity-note {
-  font-size: 13px;
-  line-height: 1.85;
-  margin-block: 12px;
-}
-.material-provenance dl {
-  padding-top: 12px;
-  font-size: 12px;
-}
-.material-provenance dl > div {
-  padding-block: 4px;
-}
-.material-actions .danger {
-  font-size: 12px;
-}
-.material-import {
-  margin-top: 4px;
-  box-shadow: var(--paper-shadow);
-}
-.material-import > summary {
-  min-height: 72px;
-  padding-block: 21px;
-}
-.material-import[open] > summary {
-  margin-bottom: 22px;
-  border-bottom: 1px solid var(--separator);
-}
-.material-import-grid {
-  max-width: 760px;
-  gap: 20px;
-}
-.material-import-grid label {
-  font-size: 13px;
-  gap: 9px;
-}
-.material-import-grid textarea {
-  min-height: 145px;
-  font-size: 14px;
-  line-height: 1.85;
-}
-.material-import-actions {
-  margin-top: 20px;
-}
-.material-import-content > p {
-  max-width: 760px;
-  line-height: 1.9;
-}
-
-/* Expanded syllabus follows a continuous white paper and sage evidence margin. */
-.curriculum-counts > div {
-  padding-left: 18px;
-  border-left: 1px solid var(--separator);
-}
-.curriculum-counts dt {
-  font-size: 12px;
-}
-.curriculum-counts dd {
-  font:
-    30px/1.6 Georgia,
-    serif;
-}
-.curriculum-version-overview {
-  box-shadow: var(--paper-shadow);
-}
-.curriculum-node.is-major {
-  background: #fff;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  box-shadow: var(--paper-shadow);
-  margin-bottom: 18px;
-  padding: 0 26px 12px;
-}
-.curriculum-node.is-major > .curriculum-node-content {
-  border: 0;
-  border-radius: 0;
-  padding: 24px 0 16px;
-  background: transparent;
-  box-shadow: none;
-}
-.curriculum-node.is-major > .curriculum-level {
-  margin-left: 10px;
-  padding-left: 24px;
-  border-color: #d3ddca;
-}
-.curriculum-level .curriculum-level {
-  --curriculum-indent: 10px;
-  border-color: #d9e2d1;
-}
-.curriculum-node-title h3,
-.curriculum-node-title h4 {
-  font-size: 17px;
-  line-height: 1.6;
-  font-weight: 550;
-}
-.curriculum-node-title h5 {
-  font-size: 16px;
-  line-height: 1.7;
-  font-weight: 600;
-}
-.curriculum-node-title {
-  display: grid;
-  gap: 6px;
-}
-.curriculum-node-title :is(h3, h4, h5) {
-  margin: 0;
-}
-.curriculum-kind {
-  font-size: 12px;
-  letter-spacing: 0.5px;
-  color: #6a7d64;
-}
-.curriculum-node-content {
-  padding-block: 20px;
-}
-.curriculum-major-summary p {
-  font-size: 13px;
-  line-height: 1.9;
-}
-.curriculum-objectives li {
-  padding-block: 17px;
-  gap: 22px;
-  border-color: var(--separator);
-  grid-template-columns: minmax(135px, 170px) minmax(0, 1fr);
-}
-.curriculum-objective-copy {
-  gap: 6px;
-  font-size: 14px;
-  line-height: 1.9;
-}
-.curriculum-objective-copy strong {
-  font-size: 15px;
-  font-weight: 550;
-}
-.objective-authority {
-  font-size: 12px;
-  line-height: 1.85;
-}
-.curriculum-evidence-disclosure {
-  margin-top: 16px;
-  border: 1px solid #e0e7d8;
-  padding: 0;
-  border-radius: 7px;
-  background: #f3f7ed;
-}
-.curriculum-evidence-disclosure > summary {
-  width: auto;
-  padding: 13px 17px;
-  font-size: 13px;
-  color: #3e5c3c;
-}
-.curriculum-evidence-content {
-  padding: 0 18px 18px;
-  max-width: none;
-}
-.curriculum-evidence-limit {
-  font-size: 12px;
-  line-height: 1.85;
-}
-.curriculum-source-heading strong {
-  font-size: 13px;
-}
-.curriculum-source-material blockquote,
-.curriculum-manifest-list blockquote {
-  color: #4f634a;
-  font-size: 14px;
-  line-height: 1.95;
-  padding-left: 16px;
-  border-color: #b2c3a4;
-}
-.curriculum-technical-details {
-  border-top: 1px solid #dce4d3;
-  padding-top: 10px;
-}
-.curriculum-source-reference-list {
-  font-size: 12px;
-  line-height: 1.85;
-}
-.curriculum-course-basis-content {
-  background: #fff;
-  padding: 20px;
-  border-radius: 8px;
-  margin-bottom: 12px;
-}
-
-/* Progress, records and forms share the same readable document vocabulary. */
-.subview-tabs {
-  gap: 8px;
-  border-bottom-color: #d4ddcc;
-}
-.subview-tabs button {
-  font-size: 13px;
-  min-height: 40px;
-  padding-inline: 17px;
-}
-.subview-tabs button[aria-selected='true'] {
-  background: #e9efdf;
-  border-color: #bfd0b3;
-  box-shadow: inset 0 -2px #75906b;
-}
-.formal-progress {
-  padding: 28px;
-  background: #fff;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  box-shadow: var(--paper-shadow);
-}
-.formal-progress-header h2 {
-  font-size: 22px;
-}
-.formal-progress-header p {
-  font-size: 14px;
-  line-height: 1.9;
-}
 .formal-progress-header .row {
   gap: 6px;
 }
@@ -1117,70 +641,9 @@
   font-size: 12px;
   min-height: 36px;
 }
-.progress-band {
-  padding-block: 21px;
-  border-color: var(--separator);
-}
-.progress-band h3 {
-  font-size: 16px;
-  font-weight: 550;
-  margin-top: 0;
-}
-.progress-band > p {
-  font-size: 14px;
-  line-height: 1.85;
-}
-.progress-table:not(:has([role='cell'])) {
-  display: none;
-}
-.progress-head {
-  background: #eff3e9;
-  font-size: 12px;
-  padding-block: 12px;
-}
-.progress-row {
-  font-size: 13px;
-  line-height: 1.85;
-}
 .progress-unit-name > .small {
   font-size: 11px;
   overflow-wrap: anywhere;
-}
-.course-history-groups {
-  background: #fff;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 26px;
-  box-shadow: var(--paper-shadow);
-}
-.course-history-groups h3 {
-  font-size: 16px;
-}
-.course-history-list {
-  border-left: 1px solid #cad7be;
-  padding-left: 22px;
-  margin-left: 3px;
-}
-.course-history-list li {
-  position: relative;
-  padding-block: 16px;
-}
-.course-history-list li::before {
-  content: '';
-  position: absolute;
-  left: -27px;
-  top: 25px;
-  width: 8px;
-  height: 8px;
-  border: 2px solid #fff;
-  border-radius: 50%;
-  background: #8aa379;
-  box-shadow: 0 0 0 1px #c7d4be;
-}
-.course-history-list strong {
-  font-size: 14px;
-  font-weight: 550;
-  line-height: 1.8;
 }
 .course-history-list .small {
   font-size: 12px;
@@ -1199,73 +662,8 @@
   font-size: 14px;
   line-height: 1.9;
 }
-.goal-outcome-form {
-  max-width: 760px;
-  gap: 18px;
-}
-.goal-outcome-form textarea {
-  min-height: 96px;
-}
-.course-assessment .quiz-config {
-  padding: 28px 30px;
-  box-shadow: var(--paper-shadow);
-}
-.course-assessment .quiz-config h2 {
-  margin: 0 0 25px;
-  font-size: 20px;
-  font-weight: 550;
-}
-.course-assessment .quiz-config .field {
-  max-width: 600px;
-  margin-bottom: 22px;
-  font-size: 14px;
-}
-.course-assessment .quiz-config .field > select {
-  max-width: 360px;
-  min-height: 44px;
-}
-.course-assessment .quiz-config .field > input[type='range'] {
-  margin-top: 18px;
-}
-.course-assessment .quiz-config > fieldset {
-  margin-bottom: 22px;
-}
-.course-assessment .quiz-config legend {
-  font-size: 14px;
-  margin-bottom: 10px;
-}
-.course-assessment .quiz-config label:has(input[type='checkbox']) {
-  min-height: 44px;
-  background: #f7f8f3;
-  border-color: #dce4d3;
-}
-.course-assessment .quiz-config label:has(input:checked) {
-  background: #edf3e5;
-  border-color: #a9bf9a;
-}
-.course-assessment .question,
 .course-assessment .card {
   box-shadow: var(--paper-shadow);
-}
-.evidence {
-  background: #f0f5e9;
-  border-color: #dce5d2;
-}
-.evidence .quote {
-  font-size: 14px;
-  line-height: 1.9;
-}
-.evidence-head {
-  align-items: flex-start;
-}
-.evidence-head > button {
-  flex: none;
-  white-space: nowrap;
-  min-height: 34px;
-}
-.graph-cta-banner {
-  border-color: #d4dec9;
-  background: #edf3e6;
 }
 .settings-section {
   box-shadow: var(--paper-shadow);
@@ -1289,187 +687,9 @@
   border: 1px solid #d9e0d0;
   box-shadow: 0 30px 90px rgb(16 38 27 / 24%);
 }
-
-/* Diagnosis is an invitation to repair; formal result colors keep their meaning. */
-.practice-recovery {
-  background: #faf7ec;
-  padding: 26px;
-  border-radius: 10px;
-  border-color: #e4dbc4;
-}
-.recovery-steps {
-  gap: 0;
-  padding-bottom: 22px;
-}
-.recovery-steps li {
-  flex: 1;
-  gap: 9px;
-  font-size: 12px;
-  align-items: center;
-}
-.recovery-steps li > span {
-  display: grid;
-  place-items: center;
-  width: 27px;
-  height: 27px;
-  border-radius: 50%;
-  border: 1px solid #d7d7c3;
-  font-size: 11px;
-  flex: none;
-}
-.recovery-steps li[aria-current='step'] > span {
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background: #365c43;
-  color: #fff;
-}
-.practice-diagnosis {
-  padding: 22px;
-  background: #fffefa;
-  border-left: 2px solid #b7a06d;
-}
-.practice-repair-teaching {
-  line-height: 1.95;
-}
-.formal-assessment-panel {
-  padding: 28px;
-  border-radius: 12px;
-  box-shadow: var(--paper-shadow);
-}
-.formal-assessment-panel h3 {
-  font-size: 22px;
-  line-height: 1.6;
-}
-.formal-assessment-panel > header {
-  padding-bottom: 18px;
-  border-bottom: 1px solid var(--separator);
-}
-.formal-assessment-item {
-  padding: 22px 0;
-  border-top-color: var(--separator);
-}
-.formal-assessment-item label {
-  font-size: 15px;
-  line-height: 1.85;
-}
-.formal-assessment-item textarea {
-  min-height: 132px;
-  line-height: 1.85;
-}
-.formal-result {
-  padding: 20px 22px;
-  border-radius: 8px;
-  line-height: 1.85;
-}
-.formal-criteria-feedback li {
-  padding: 16px;
-  font-size: 14px;
-  line-height: 1.85;
-}
-.formal-repair-panel {
-  margin-top: 24px;
-  background: #faf7ed;
-  border-color: #e0d7c1;
-  border-radius: 9px;
-  padding: 24px;
-}
-.formal-repair-panel p {
-  font-size: 14px;
-  line-height: 1.95;
-}
-
-/* Map geometry and cue colors remain authoritative; chrome follows the studio. */
-.knowledge-map-canvas {
-  /* Same paper, softened for the diagram. Applied to the stationary canvas,
-     outside React Flow's transformed viewport, so fibres never zoom or pan. */
-  background-color: #fafbf6;
-  background-image:
-    linear-gradient(rgb(250 251 246 / 66%), rgb(250 251 246 / 66%)), var(--paper-fiber),
-    var(--paper-light);
-  background-size:
-    auto,
-    384px 384px,
-    cover;
-  background-position:
-    center,
-    left top,
-    var(--paper-position);
-  background-repeat: no-repeat, repeat, no-repeat;
-  box-shadow: inset 0 1px 8px rgb(35 57 41 / 3%);
-}
-.knowledge-map-node {
-  box-shadow: 0 2px 6px rgb(28 54 42 / 8%);
-}
-.knowledge-map-node-title {
-  font-weight: 550;
-  line-height: 1.5;
-}
-.knowledge-map-node-kind {
-  letter-spacing: 0.3px;
-}
-.knowledge-map-mode-tabs {
-  border-color: #dce3d3;
-  background: #eaeee2;
-}
-.knowledge-map-mode-tabs button {
-  font-size: 13px;
-  min-height: 36px;
-}
-.knowledge-map-controls {
-  padding: 5px;
-  border-color: #dce3d3;
-  box-shadow: var(--paper-shadow);
-}
-.knowledge-map-controls button {
-  min-height: 34px;
-  min-width: 34px;
-  border-color: transparent;
-}
-.knowledge-map-controls button:hover:not(:disabled) {
-  background: #eef3e6;
-  border-color: #c4d3b9;
-}
-.knowledge-map-inspector {
-  border-color: #d7e1cd;
-  box-shadow: var(--paper-shadow);
-}
-.knowledge-map-inspector > header {
-  padding-bottom: 20px;
-  border-bottom-color: #dce5d4;
-}
-.knowledge-map-inspector h3 {
-  font-size: 18px;
-  line-height: 1.55;
-  font-weight: 550;
-}
-.knowledge-map-inspector h4 {
-  font-size: 13px;
-  letter-spacing: 0.3px;
-}
 .knowledge-map-inspector .small {
   font-size: 13px;
   line-height: 1.85;
-}
-.knowledge-map-inspector-facts {
-  padding: 12px;
-  background: #f3f6ed;
-  border-radius: 6px;
-}
-.knowledge-map-relation-list li {
-  font-size: 13px;
-  line-height: 1.8;
-}
-.knowledge-map-inspector blockquote {
-  font-size: 13px;
-  line-height: 1.95;
-  background: #f0f5e8;
-  border-color: #9bb68a;
-  padding: 15px;
-}
-.knowledge-map-inspector footer button {
-  min-height: 40px;
-  font-size: 13px;
 }
 
 @media (max-width: 1200px) {
@@ -1493,12 +713,6 @@
   }
   .setup-action .course-primary-cta {
     align-self: stretch;
-  }
-  .preparation-controls {
-    flex-basis: auto;
-  }
-  .course-preparation-status ol {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .course-library-intro {
     min-height: 0;
@@ -1554,7 +768,6 @@
     flex-direction: column;
     align-items: stretch;
     padding: 24px;
-    /* Protect the full copy height; reveal the folds around the action below it. */
     background-image:
       linear-gradient(
         180deg,
@@ -1583,14 +796,6 @@
     background-position:
       center,
       62% bottom;
-  }
-  .course-preparation-status {
-    padding: 18px;
-  }
-  .preparation-heading {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 8px;
   }
   .next-action h3 {
     font-size: 21px;
@@ -1621,21 +826,11 @@
   .next-action-study .course-continuation-blocked {
     flex-basis: auto;
   }
-  .important-exceptions {
-    padding: 18px;
-  }
-  .important-exceptions p {
-    font-size: 12px;
-  }
   .lesson-player-header {
     padding-bottom: 17px;
   }
   .lesson-player-header h3 {
     font-size: 23px;
-  }
-  .lesson-segment-progress {
-    gap: 6px;
-    max-width: 100%;
   }
   .lesson-orientation > summary {
     padding: 12px;
@@ -1662,168 +857,8 @@
   .study-tutor-secondary .study-transcript-inner {
     padding: 20px;
   }
-  .material-row {
-    padding: 20px 16px;
-  }
-  .material-row-meta {
-    font-size: 12px;
-  }
-  .material-row-layout {
-    grid-template-columns: 32px minmax(0, 1fr);
-  }
-  .material-provenance[open] {
-    margin-left: -44px;
-    padding: 14px;
-    width: calc(100% + 44px);
-  }
-  .material-provenance dl > div {
-    grid-template-columns: 85px minmax(0, 1fr);
-  }
-  .material-import > summary {
-    min-height: 74px;
-  }
-  .material-import-grid textarea {
-    font-size: 16px;
-  }
-  .curriculum-version-overview {
-    padding: 18px;
-  }
-  .curriculum-counts {
-    gap: 10px;
-  }
-  .curriculum-counts > div {
-    padding-left: 10px;
-  }
-  .curriculum-counts > div:first-child {
-    padding-left: 0;
-    border-left: 0;
-  }
-  .curriculum-counts dt {
-    font-size: 11px;
-  }
-  .curriculum-counts dd {
-    font-size: 25px;
-  }
-  .curriculum-node.is-major {
-    padding: 0 16px 6px;
-  }
-  .curriculum-node.is-major > .curriculum-node-content {
-    padding: 18px 0;
-  }
-  .curriculum-node.is-major > .curriculum-level {
-    margin-left: 0;
-    padding-left: 12px;
-  }
-  .curriculum-level .curriculum-level {
-    --curriculum-indent: 0px;
-    padding-left: 8px;
-    margin-left: 0;
-  }
-  .curriculum-node-content {
-    padding-inline: 0;
-  }
-  .curriculum-node.kind-learning_unit > .curriculum-node-content {
-    padding-inline: 0;
-  }
-  .curriculum-unit-detail {
-    margin-top: 8px;
-  }
-  .curriculum-node-heading {
-    gap: 8px;
-  }
-  .curriculum-node.is-major .curriculum-level .curriculum-level {
-    border-left: 0;
-    padding-left: 0;
-  }
-  .curriculum-node.is-major .curriculum-level .curriculum-level > .curriculum-node::before {
-    display: none;
-  }
-  .curriculum-node-title h3,
-  .curriculum-node-title h4 {
-    font-size: 16px;
-  }
-  .curriculum-node-title h5 {
-    font-size: 16px;
-  }
-  .curriculum-objectives li {
-    grid-template-columns: 1fr;
-    gap: 6px;
-    padding-block: 17px;
-  }
-  .curriculum-objective-copy {
-    font-size: 14px;
-  }
-  .curriculum-evidence-disclosure > summary {
-    padding: 12px;
-  }
-  .curriculum-evidence-content {
-    padding-inline: 12px;
-  }
-  .curriculum-source-heading {
-    flex-wrap: wrap;
-    gap: 7px;
-  }
-  .curriculum-source-material blockquote {
-    padding-left: 10px;
-  }
-  .formal-progress {
-    padding: 20px 16px;
-  }
-  .formal-progress-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  .subview-tabs {
-    gap: 4px;
-  }
-  .subview-tabs button {
-    padding-inline: 12px;
-    min-height: 40px;
-    font-size: 12px;
-  }
-  .course-history-groups {
-    padding: 20px;
-  }
   .course-empty-state {
     padding: 20px;
-  }
-  .course-assessment .quiz-config {
-    padding: 22px 20px;
-  }
-  .course-assessment .quiz-config .field {
-    max-width: none;
-  }
-  .course-assessment .quiz-config .field > select {
-    max-width: none;
-  }
-  .practice-recovery {
-    padding: 20px 14px;
-  }
-  .recovery-steps {
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-  .recovery-steps li {
-    gap: 6px;
-    font-size: 11px;
-    white-space: nowrap;
-  }
-  .recovery-steps li > span {
-    width: 24px;
-    height: 24px;
-  }
-  .practice-diagnosis {
-    padding: 18px;
-  }
-  .formal-assessment-panel {
-    padding: 22px 18px;
-  }
-  .formal-repair-panel {
-    padding: 18px;
-  }
-  .knowledge-map-mode-tabs button {
-    min-height: 38px;
-    font-size: 11px;
   }
   .lesson-player-header {
     gap: 14px;
@@ -1847,7 +882,6 @@
 }
 @media (forced-colors: active) {
   .course-workspace,
-  .knowledge-map-canvas,
   .course-sidebar,
   .course-mobile-bar,
   .next-action,
@@ -1857,8 +891,7 @@
 }
 
 @media (prefers-contrast: more), print {
-  .course-workspace,
-  .knowledge-map-canvas {
+  .course-workspace {
     background-image: none;
   }
 }

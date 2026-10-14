@@ -1,7 +1,6 @@
 import { ApiErrorCode, type SourceType } from '@hy3-clinic/shared';
+import { checkTextResources } from './resources.js';
 
-/** Hard limit on accepted source size (characters of normalized text). */
-export const MAX_SOURCE_CHARS = 100_000;
 /** Minimum meaningful source size. */
 export const MIN_SOURCE_CHARS = 1;
 
@@ -193,12 +192,7 @@ export function ingestSource(raw: string, options: IngestOptions): NormalizedSou
   if (charCount < MIN_SOURCE_CHARS) {
     throw new IngestionError(ApiErrorCode.EmptySource, '源材料为空,请粘贴或上传文本内容。');
   }
-  if (charCount > MAX_SOURCE_CHARS) {
-    throw new IngestionError(
-      ApiErrorCode.SourceTooLarge,
-      `源材料过长(${charCount} 字),上限为 ${MAX_SOURCE_CHARS} 字。`,
-    );
-  }
+  checkTextResources(content);
 
   return { content, charCount, sourceType: options.sourceType };
 }

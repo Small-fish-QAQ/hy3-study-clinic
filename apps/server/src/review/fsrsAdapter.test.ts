@@ -53,4 +53,24 @@ describe('Study Clinic FSRS-6 adapter', () => {
     ];
     expect(replayFsrs(events)).toEqual(replayFsrs(events));
   });
+  it('uses the persisted non-default configuration during replay', () => {
+    const events = [
+      { outcome: 'Good' as const, occurredAt: at.toISOString() },
+      { outcome: 'Good' as const, occurredAt: '2026-01-05T09:00:00.000Z' },
+    ];
+    const custom = {
+      ...DEFAULT_CONFIGURATION,
+      requestedRetention: 0.8,
+      maximumDueHorizonDays: 90,
+      configHash: 'custom',
+    };
+    const result = replayFsrs(events, 'target', custom);
+    expect(result.dueAt).not.toBe(replayFsrs(events, 'target').dueAt);
+    expect(
+      replayFsrs(
+        events.map((e) => ({ ...e, configuration: custom })),
+        'target',
+      ),
+    ).toEqual(result);
+  });
 });

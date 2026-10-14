@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ApiClientError } from '../api.js';
+import { ApiClientError } from '../clinicApi.js';
 
 export interface AsyncActionState {
   loading: boolean;
@@ -49,7 +49,7 @@ export function useAsyncAction(): AsyncActionState & {
       }
       if (mountedRef.current && controllerRef.current === controller) {
         setError(err instanceof Error ? err.message : String(err));
-        setErrorDetails(err instanceof ApiClientError ? (err.details ?? null) : null);
+        setErrorDetails(null);
       }
       return null;
     } finally {

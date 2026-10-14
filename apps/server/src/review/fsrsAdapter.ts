@@ -3,7 +3,6 @@ import { createEmptyCard, fsrs, type CardInput, type StateType } from 'ts-fsrs';
 import {
   REVIEW_ADAPTER_VERSION,
   REVIEW_ALGORITHM_GENERATION,
-  REVIEW_MAX_DUE_HORIZON_DAYS,
   REVIEW_PACKAGE_NAME,
   REVIEW_PACKAGE_VERSION,
   REVIEW_POLICY_VERSION,
@@ -42,6 +41,7 @@ export const DEFAULT_CONFIGURATION = SchedulerConfigurationSchema.parse({
   localAdapterVersion: REVIEW_ADAPTER_VERSION,
   ratingPolicyVersion: REVIEW_RATING_POLICY_VERSION,
   requestedRetention: 0.9,
+  weights: [...WEIGHTS],
   configHash: CONFIG_HASH,
   fuzz: false,
   shortTerm: false,
@@ -77,9 +77,9 @@ export function scheduleWithFsrs(input: AdapterInput): AdapterResult {
   const now = input.reviewTime;
   if (Number.isNaN(now.getTime())) throw new Error('Invalid scheduler timestamp.');
   const engine = fsrs({
-    request_retention: 0.9,
-    maximum_interval: 365,
-    w: [...WEIGHTS],
+    request_retention: config.requestedRetention,
+    maximum_interval: config.maximumDueHorizonDays,
+    w: [...(config.weights ?? WEIGHTS)],
     enable_fuzz: false,
     enable_short_term: false,
     learning_steps: [],
@@ -102,12 +102,12 @@ export function scheduleWithFsrs(input: AdapterInput): AdapterResult {
   const result = engine.next(card, now, input.outcome === 'Again' ? 1 : 3);
   const hardDue = Math.min(
     result.card.due.getTime(),
-    now.getTime() + REVIEW_MAX_DUE_HORIZON_DAYS * DAY,
+    now.getTime() + config.maximumDueHorizonDays * DAY,
   );
   const dueAt = new Date(hardDue).toISOString();
   const scheduledDays = Math.max(
     0,
-    Math.min(REVIEW_MAX_DUE_HORIZON_DAYS, (hardDue - now.getTime()) / DAY),
+    Math.min(config.maximumDueHorizonDays, (hardDue - now.getTime()) / DAY),
   );
   const state = {
     lifecycleState: 'review' as const,
@@ -132,16 +132,27 @@ export function scheduleWithFsrs(input: AdapterInput): AdapterResult {
   return { state, rawDueAt: result.card.due.toISOString() };
 }
 export function replayFsrs(
-  events: Array<{ outcome: AdapterOutcome; occurredAt: string }>,
+  events: Array<{
+    outcome: AdapterOutcome;
+    occurredAt: string;
+    configuration?: SchedulerConfiguration;
+  }>,
   targetId = 'replay',
+  configuration: SchedulerConfiguration = DEFAULT_CONFIGURATION,
 ): MemoryScheduleState {
   let state: ScheduledMemoryScheduleState | null = null;
   for (const event of events) {
     const at = date(event.occurredAt);
-    const result = scheduleWithFsrs({ state, outcome: event.outcome, reviewTime: at });
+    const config = event.configuration ?? configuration;
+    const result = scheduleWithFsrs({
+      state,
+      outcome: event.outcome,
+      reviewTime: at,
+      configuration: config,
+    });
     state = ScheduledMemoryScheduleStateSchema.parse({
       reviewTargetId: targetId,
-      policyVersion: DEFAULT_CONFIGURATION.version,
+      policyVersion: config.version,
       ...result.state,
       lastReviewEventId: null,
       rowVersion: (state?.rowVersion ?? 0) + 1,

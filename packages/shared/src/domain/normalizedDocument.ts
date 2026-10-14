@@ -113,7 +113,7 @@ export const NormalizedDocumentSchema = z
     sourceType: SourceTypeSchema,
     mediaType: MediaTypeSchema.nullable(),
     content: z.string(),
-    units: z.array(NormalizedDocumentUnitSchema).max(20_000),
+    units: z.array(NormalizedDocumentUnitSchema),
     capabilities: z.array(ParserCapabilitySchema).max(32),
     warnings: z.array(z.string().max(500)).max(50),
     complete: z.boolean(),

@@ -5,6 +5,10 @@ node_modules
 package-lock.json
 apps/web/dist
 data
+output
+docs/architecture-audit
+docs/architecture-redesign
+docs/architecture-simplification-plan
 *.sqlite
 # Frozen evaluation inputs and captured outputs retain their audited bytes.
 # Frozen StudyEval runtime bytes are checked against eval/studyeval/FREEZE.json.

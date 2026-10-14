@@ -1,5 +1,7 @@
 # Hy3 Study Clinic
 
+当前开发版本已切换为精简架构：完整知识与规划先确认，Lesson 按需生成，Practice/Repair/Formal 独立，成绩只由服务端签发。新版使用独立 `data/clinic-v2.sqlite`，不会转换旧库。[新版运行、恢复与真实模型验收](docs/CLINIC_V2.md)。下文演示及公开评测来自冻结历史版本，不能作为新版真实模型验收结果。
+
 把自己的资料变成课程：读讲解、做练习，遇到不懂的地方继续追问，答错后换个问题再试。
 
 [![CI](https://github.com/Small-fish-QAQ/hy3-study-clinic/actions/workflows/ci.yml/badge.svg)](https://github.com/Small-fish-QAQ/hy3-study-clinic/actions/workflows/ci.yml)
@@ -51,7 +53,9 @@ npm run build
 npm run dev
 ```
 
-打开 [http://localhost:5173](http://localhost:5173)。默认使用无需密钥的演示模式（Fake），通过预设内容体验操作流程。安装完成后，使用本地资料可离线重复运行；具体内容与排序可能变化。要查看真实生成效果，按[运行指南](docs/SETUP.md)配置 Hy3，并在设置页核对生效模型。
+打开 [http://localhost:5173](http://localhost:5173)，以终端打印的地址为准。新安装默认选择尚未配置的 MoMA；在“设置 → 模型服务”填写 API Base URL、API Key 和 Model ID 并保存启用后，才能使用真实模型生成，不会自动退回 Fake。接入步骤见[运行指南](docs/SETUP.md)。
+
+无需密钥的离线体验需显式在 `.env` 或进程环境中设置 `LLM_PROVIDER=fake`、`VISUAL_PROVIDER=disabled`，然后重启服务。已有 UI 保存配置优先于这些环境变量；请按[离线 Fake 启动指南](docs/SETUP.md#确保体验过程使用-fake)使用独立配置文件，并设置 `AUTOMATION_EXPECT_PROVIDER=fake` 核对实际生效模式。Fake 通过预设内容演示操作流程，不代表真实模型输出。
 
 可导入带文本层的 PDF、DOCX、PPTX、Markdown、HTML、网页快照和源码文本。当前教学与界面使用简体中文；扫描 PDF 暂不支持 OCR，复杂图表与公式的提取有限。应用按本地使用设计，公共部署尚需补充用户认证与数据隔离。
 

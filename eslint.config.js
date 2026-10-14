@@ -8,6 +8,11 @@ export default tseslint.config(
       '**/dist/**',
       '**/coverage/**',
       '**/node_modules/**',
+      'output/**',
+      // Frozen research tools are evidence, independently verified without rewriting their bytes.
+      'docs/architecture-audit/**',
+      'docs/architecture-redesign/**',
+      'docs/architecture-simplification-plan/**',
       '**/.claude/worktrees/**',
       '**/*.config.js',
       '**/*.config.ts',

@@ -1,140 +1,7 @@
 import { ApiErrorCode, type ApiErrorCodeValue } from '@hy3-clinic/shared';
-import type {
-  ProviderCandidateFailureArtifact,
-  ProviderCandidateFailureValue,
-  StructuredOutputDiagnostic,
-  StructuredOutputFailureCategory,
-} from './provider.js';
-
-export type ProviderErrorCode = Extract<
-  ApiErrorCodeValue,
-  'PROVIDER_ERROR' | 'PROVIDER_TIMEOUT' | 'PROVIDER_INVALID_OUTPUT' | 'REQUEST_CANCELLED'
->;
-
-const CANDIDATE_FAILURE_STRING_LIMIT = 500;
-const CANDIDATE_FAILURE_ARRAY_LIMIT = 20;
-const CANDIDATE_FAILURE_OBJECT_KEY_LIMIT = 30;
-const CANDIDATE_FAILURE_DEPTH_LIMIT = 4;
-const BLOCKED_CANDIDATE_FAILURE_KEY =
-  /authorization|api.?key|secret|token|prompt|raw|payload|body|stack/iu;
-
-function sanitizeCandidateFailureValue(
-  value: unknown,
-  depth = 0,
-): ProviderCandidateFailureValue | undefined {
-  if (depth > CANDIDATE_FAILURE_DEPTH_LIMIT) return undefined;
-  if (typeof value === 'string') return value.slice(0, CANDIDATE_FAILURE_STRING_LIMIT);
-  if (typeof value === 'number' || typeof value === 'boolean' || value === null) return value;
-  if (Array.isArray(value)) {
-    return value
-      .slice(0, CANDIDATE_FAILURE_ARRAY_LIMIT)
-      .map((item) => sanitizeCandidateFailureValue(item, depth + 1))
-      .filter((item): item is ProviderCandidateFailureValue => item !== undefined);
-  }
-  if (typeof value !== 'object') return undefined;
-  const safe: Record<string, ProviderCandidateFailureValue> = {};
-  for (const [key, item] of Object.entries(value).slice(0, CANDIDATE_FAILURE_OBJECT_KEY_LIMIT)) {
-    if (BLOCKED_CANDIDATE_FAILURE_KEY.test(key)) continue;
-    const sanitized = sanitizeCandidateFailureValue(item, depth + 1);
-    if (sanitized !== undefined) safe[key.slice(0, 100)] = sanitized;
-  }
-  return safe;
-}
-
-export function sanitizeProviderCandidateFailureArtifact(
-  artifact: unknown,
-): ProviderCandidateFailureArtifact | undefined {
-  if (!artifact || typeof artifact !== 'object' || Array.isArray(artifact)) return undefined;
-  const record = artifact as Record<string, unknown>;
-  if (typeof record.kind !== 'string' || !Array.isArray(record.diagnostics)) return undefined;
-  const context = record.context ? sanitizeCandidateFailureValue(record.context) : undefined;
-  const diagnostics = record.diagnostics
-    .slice(0, CANDIDATE_FAILURE_ARRAY_LIMIT)
-    .flatMap((value) => {
-      if (!value || typeof value !== 'object' || Array.isArray(value)) return [];
-      const diagnostic = value as Record<string, unknown>;
-      if (typeof diagnostic.code !== 'string' || typeof diagnostic.message !== 'string') return [];
-      const facts = diagnostic.facts ? sanitizeCandidateFailureValue(diagnostic.facts) : undefined;
-      return [
-        {
-          code: diagnostic.code.slice(0, 100),
-          message: diagnostic.message.slice(0, CANDIDATE_FAILURE_STRING_LIMIT),
-          ...(facts && !Array.isArray(facts) && typeof facts === 'object' ? { facts } : {}),
-        },
-      ];
-    });
-  return {
-    kind: record.kind.slice(0, 100),
-    ...(context && !Array.isArray(context) && typeof context === 'object' ? { context } : {}),
-    diagnostics,
-  };
-}
-
-function sanitizeStructuredOutputFailure(diagnostic: StructuredOutputDiagnostic | undefined) {
-  if (!diagnostic || diagnostic.failureCategory === null) return undefined;
-  return {
-    attemptNumber: diagnostic.attemptNumber,
-    attemptKind: diagnostic.attemptKind,
-    finishReason: diagnostic.finishReason,
-    truncated: diagnostic.truncated,
-    possiblyIncomplete: diagnostic.possiblyIncomplete,
-    jsonParseSuccess: diagnostic.jsonParseSuccess,
-    jsonFormat: diagnostic.jsonFormat,
-    schemaIssueCount: diagnostic.schemaIssueCount,
-    schemaIssues: diagnostic.schemaIssues.slice(0, 20).map((issue) => ({
-      path: issue.path.slice(0, 500),
-      code: issue.code.slice(0, 100),
-      // Structural type tags come from a closed Zod vocabulary, so a missing
-      // required array stays distinguishable from a wrongly typed one.
-      ...(issue.expected === undefined ? {} : { expected: issue.expected.slice(0, 40) }),
-      ...(issue.received === undefined ? {} : { received: issue.received.slice(0, 40) }),
-      ...(issue.unknownKeyCount === undefined ? {} : { unknownKeyCount: issue.unknownKeyCount }),
-      ...(issue.unknownKeyTokens
-        ? {
-            unknownKeyTokens: issue.unknownKeyTokens.slice(0, 5).map((token) => token.slice(0, 90)),
-          }
-        : {}),
-    })),
-    semanticIssueCodes: diagnostic.semanticIssueCodes
-      .slice(0, 20)
-      .map((code) => code.slice(0, 100)),
-    failureCategory: diagnostic.failureCategory,
-    repairAction: diagnostic.repairAction,
-    ...(diagnostic.preparationFailure ? { preparationFailure: diagnostic.preparationFailure } : {}),
-    ...(diagnostic.recoveryAction ? { recoveryAction: diagnostic.recoveryAction } : {}),
-    ...(diagnostic.normalizationRan !== undefined
-      ? { normalizationRan: diagnostic.normalizationRan }
-      : {}),
-    ...(diagnostic.normalizationActions
-      ? {
-          normalizationActions: diagnostic.normalizationActions.slice(0, 10).map((action) => ({
-            code: action.code,
-            paths: action.paths.slice(0, 50).map((path) => path.slice(0, 300)),
-          })),
-        }
-      : {}),
-    ...(diagnostic.localizedRepair !== undefined
-      ? { localizedRepair: diagnostic.localizedRepair }
-      : {}),
-    ...(diagnostic.immutableItemIds
-      ? { immutableItemIds: diagnostic.immutableItemIds.slice(0, 24) }
-      : {}),
-    ...(diagnostic.affectedItemIds
-      ? { affectedItemIds: diagnostic.affectedItemIds.slice(0, 24) }
-      : {}),
-    ...(diagnostic.affectedComponents
-      ? { affectedComponents: diagnostic.affectedComponents.slice(0, 50) }
-      : {}),
-  };
-}
-
-/**
- * Structured provider failure. Messages are user-facing and MUST NOT contain
- * API keys, endpoint URLs, raw HTTP bodies, or stack traces.
- */
 export class ProviderError extends Error {
   constructor(
-    readonly code: ProviderErrorCode,
+    readonly code: ApiErrorCodeValue,
     message: string,
     readonly details?: unknown,
     readonly technicalFailureCode?: string,
@@ -143,63 +10,55 @@ export class ProviderError extends Error {
     super(message);
     this.name = 'ProviderError';
   }
-
-  static timeout(ms: number): ProviderError {
+  static cancelled() {
+    return new ProviderError(ApiErrorCode.RequestCancelled, '请求已取消。');
+  }
+  static timeout(ms: number) {
     return new ProviderError(
       ApiErrorCode.ProviderTimeout,
-      '模型服务响应时间超过预期，请稍后重试。',
+      '模型请求超过配置的等待时间。已保存成果保留，请显式重试未完成范围。',
       { timeoutMs: ms },
     );
   }
-
-  static cancelled(): ProviderError {
-    return new ProviderError(ApiErrorCode.RequestCancelled, '请求已取消。');
+  static network() {
+    return new ProviderError(
+      ApiErrorCode.ProviderError,
+      '无法连接模型服务，请检查网络与 API 地址。',
+    );
   }
-
-  static invalidOutput(
-    _summary: string,
-    validationKind?: 'schema' | 'candidate',
-    failureCategory?: StructuredOutputFailureCategory,
-    repairExhausted = false,
-    candidateFailure?: ProviderCandidateFailureArtifact,
-    structuredOutputDiagnostic?: StructuredOutputDiagnostic,
-  ): ProviderError {
-    const safeCandidateFailure = sanitizeProviderCandidateFailureArtifact(candidateFailure);
-    const structuredFailure = sanitizeStructuredOutputFailure(structuredOutputDiagnostic);
+  static invalidOutput(_summary: string, _kind?: string, category?: string) {
     return new ProviderError(
       ApiErrorCode.ProviderInvalidOutput,
-      repairExhausted
-        ? '模型返回的数据经有界修复后仍不符合约定格式。'
-        : '模型返回的数据不符合约定格式。',
-      validationKind
-        ? {
-            validationKind,
-            ...(safeCandidateFailure ? { candidateFailure: safeCandidateFailure } : {}),
-            ...(structuredFailure ? { structuredFailure } : {}),
-          }
-        : undefined,
-      failureCategory
-        ? repairExhausted
-          ? `REPAIR_EXHAUSTED:${failureCategory}`
-          : failureCategory
-        : undefined,
+      category === 'EMPTY_RESPONSE'
+        ? '模型没有返回可见正文；推理用量不能替代内容。'
+        : category === 'TRUNCATED_OUTPUT'
+          ? '模型输出被截断，部分结果未发布。'
+          : '模型输出未通过当前内容合同。',
+      undefined,
+      category,
     );
   }
-
-  static http(status: number): ProviderError {
+  static completeCandidate(candidate: unknown, findings: string[]) {
     return new ProviderError(
-      ApiErrorCode.ProviderError,
-      `模型服务返回错误状态 ${status},请检查服务配置或稍后重试。`,
-      undefined,
-      undefined,
-      status,
+      ApiErrorCode.ProviderInvalidOutput,
+      '模型完整候选存在可定位的内容合同错误。',
+      { candidate, findings },
+      'COMPLETE_CANDIDATE_INVALID',
     );
   }
-
-  static network(): ProviderError {
-    return new ProviderError(
-      ApiErrorCode.ProviderError,
-      '无法连接模型服务,请检查网络与 HY3_BASE_URL 配置。',
-    );
+  static http(status: number) {
+    const message =
+      status === 401
+        ? 'API Key 错误或未授权。'
+        : status === 403
+          ? '账号没有访问该模型的权限。'
+          : status === 404
+            ? 'API 地址或 Model ID 不存在。'
+            : status === 429
+              ? '模型服务限流或配额不足，请稍后显式重试。'
+              : status >= 500
+                ? '模型服务暂时不可用，结果是否生成未知。'
+                : `模型服务返回状态 ${status}，请检查配置。`;
+    return new ProviderError(ApiErrorCode.ProviderError, message, undefined, undefined, status);
   }
 }

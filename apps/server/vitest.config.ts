@@ -4,6 +4,8 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['src/**/*.test.ts'],
+    setupFiles: ['../../docs/architecture-simplification-plan/tools/no-network.mjs'],
+    maxWorkers: 2,
     // SQLite file setup/teardown can be slightly slower on Windows CI.
     testTimeout: 15000,
   },
