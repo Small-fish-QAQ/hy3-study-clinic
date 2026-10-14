@@ -76,7 +76,7 @@ npm run dev
 
 ![已检验的知识与未实测知识分别显示](docs/media/v2/knowledge-evidence.webp)
 
-[截图导览](docs/DEMO.md)包含课程规划、课堂、Tutor、知识状态和模型设置，附采集版本、来源及内容边界。创意Demo已有候选成片，版本核定与统一审阅后可作为Release附件；[犀牛鸟历史演示](https://github.com/Small-fish-QAQ/hy3-study-clinic/blob/task1-final-2026-09-14-r2/docs/DEMO.md)保留在原发布中。
+[截图导览](docs/DEMO.md)包含课程规划、课堂、Tutor、知识状态和模型设置，附采集版本、来源及内容边界。创意Demo成片已完成素材与版本检查，统一审阅后可作为Release附件；[犀牛鸟历史演示](https://github.com/Small-fish-QAQ/hy3-study-clinic/blob/task1-final-2026-09-14-r2/docs/DEMO.md)保留在原发布中。
 
 自由Tutor仍可能有事实或措辞错误；高推理强度也可能生成错误。必要检查只能降低风险，不能提供绝对正确保证。长请求可能出现上游结果未知，服务端保留记录而不盲目重发；货币账单未知时不写零费用。公开部署、账号和多用户隔离属于后续工作。
 

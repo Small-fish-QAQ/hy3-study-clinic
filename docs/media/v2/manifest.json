@@ -129,19 +129,19 @@
   "creativeDemo": {
     "schemaVersion": 1,
     "source": "C/delivery/Study-Clinic-V2.mp4",
-    "sha256": "3cdff58e9f4a07c88345e481c6c1f881e3cadef6326bc45ec988e84800875835",
-    "bytes": 50675431,
+    "sha256": "1128fc7a697247ad90c2490f88a3aba6107cc3e9c1923b1a29b19b5e411bc0f5",
+    "bytes": 50965807,
     "durationSeconds": 180.011,
     "resolution": [1920, 1080],
     "fps": 30,
     "codecs": ["H.264", "AAC"],
-    "status": "candidate-for-unified-review",
+    "status": "ready-for-unified-review",
     "repositoryDistribution": "cover only; video kept outside source repository for a possible future Release attachment",
     "audio": "Original procedural music; no voice narration",
     "caveats": [
       "Simulated learner scores are not student learning gains.",
       "Historical 2026-10-13 Repair/Retest is independent of the new practice demonstration.",
-      "Current video must be reconciled with the latest scene/source manifest before final publication."
+      "Publication requires the final user and ChatGPT review; video is not yet uploaded."
     ],
     "cover": {
       "file": "demo-cover.webp",
@@ -151,6 +151,15 @@
       "dimensions": [1920, 1080],
       "transform": "lossless PNG to WebP; no content change",
       "identity": "Creative cover with brand decoration; not a product screenshot"
+    },
+    "review": {
+      "fullDecodePassed": true,
+      "sampledFrames": 30,
+      "assetLedgerEntries": 26,
+      "sourceHashesMatched": true,
+      "changedTutorAndRefreshScenesReconciled": true,
+      "licensesSource": "C/delivery/docs/licenses.md",
+      "licensesSha256": "944afe1370a0b905d9be8a7ee06bbf34d0589e80de1cc464b1c528f3c79d4597"
     }
   }
 }
