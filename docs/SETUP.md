@@ -44,11 +44,11 @@ DATABASE_PATH=:memory:只适合临时体验，停止服务后课程消失。评�
 
 支持moma、compatible、历史hy3和显式fake。当前只有一个启用连接；同一模型的auto策略不构成多模型路由。
 
-### 推理强度与等待时间
+### 按任务分配推理强度与等待时间
 
-思考强度可选auto、provider-default、low、high、max。auto在MoMA / glm-5.3使用已实测任务策略：提取、课程规划、局部规划修订、题目作者、Tutor使用low；Lesson、独立解题、主观评分、Repair和必要核查保守使用high。其他模型的auto不发送reasoning_effort。显式选择优先，兼容平台是否支持由该平台决定。
+思考强度可选auto、provider-default、low、high、max。选择“自动（auto）”时，MoMA / glm-5.3按任务分配推理强度：提取、课程规划、局部规划修订、题目作者、Tutor使用low；Lesson、独立解题、主观评分、Repair和必要核查保守使用high。其他模型的auto不发送reasoning_effort。显式选择优先，兼容平台是否支持由该平台决定。
 
-已知HTTP400/422明确拒绝reasoning_effort时，至多一次去掉字段的同模型兼容回退；结果未知不自动重发。[实验依据与失败边界](REPORT.md#推理强度实验与-auto)。
+已知HTTP400/422明确拒绝reasoning_effort时，至多一次去掉字段的同模型兼容回退；结果未知不自动重发。[实验依据与失败边界](REPORT.md#推理强度对照与任务分配)。
 
 代码普通请求默认30,000ms，长任务默认240,000ms。MoMA / GLM-5.3的真实验收使用过普通120,000ms、长任务240,000ms；较复杂Tutor可能超出30秒，可在设置中调整。它们是可配置资源参数，不是完成时限保证。
 

@@ -1104,14 +1104,32 @@
     "Free Tutor may contain ancillary errors, retained in fullResponseCorrectness=false.",
     "Final UI recovery is a later, separate scope from the 580-request research ledger.",
     "Input+Output is reported usage only; missing usage is unknown, reasoning is not added again.",
-    "Currency and actual monetary charge are unknown. No real-student learning gain was measured."
+    "No real-student learning gain was measured."
   ],
   "cost": {
-    "actualAmount": null,
-    "currency": null,
-    "coldStartScenario": "0.159850*p_in + 0.030668*p_out",
-    "recoveryScenario": "0.004215*p_in + 0.002393*p_out",
-    "rateUnit": "currency per million tokens",
-    "publicRateVerified": false
+    "basis": "Measured input+output tokens and reduced repeated generation",
+    "samples": {
+      "coursePreparation": {
+        "inputTokens": 159850,
+        "outputTokens": 30668,
+        "totalTokens": 190518,
+        "requests": 27,
+        "knowledgePoints": 32,
+        "plannedLessons": 17
+      },
+      "localLessonRecovery": {
+        "inputTokens": 4215,
+        "outputTokens": 2393,
+        "totalTokens": 6608,
+        "requests": 2,
+        "healthySegmentsPreserved": 5
+      }
+    },
+    "controls": [
+      "Generate lessons on demand",
+      "Read saved learning content without new model calls",
+      "Revise only the affected scope and reuse healthy content"
+    ],
+    "scope": "Different task samples, not a matched before/after cost comparison."
   }
 }
