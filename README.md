@@ -1,4 +1,4 @@
-# Study Clinic V2
+# Study Clinic
 
 面向长期、系统性学习的 AI 课程学习系统：把学习材料组织成可持续推进的课程，在讲解、答疑、变式练习与补救中检验理解，并保存学习状态和正式证据。
 
@@ -6,7 +6,7 @@
 
 [![CI](https://github.com/Small-fish-QAQ/hy3-study-clinic/actions/workflows/ci.yml/badge.svg)](https://github.com/Small-fish-QAQ/hy3-study-clinic/actions/workflows/ci.yml) [![Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 
-当前版本为 V2，已使用移动云 MoMA / GLM-5.3 完成代表性真实产品验收。第三个正式版本拟采用 v2.0-mobile-cloud-cup-2026；Tag 与 Release 尚待最终材料整合及审阅。上方徽章显示远端工作流状态，当前本地整理结果见[验证说明](docs/VERIFICATION.md)，不能把旧 Commit 的 CI 视为 V2 已通过。
+产品名称为 **Study Clinic**，当前版本为 **V2（2.0.0）**。已使用移动云 MoMA / GLM-5.3 完成代表性真实产品验收。第三个正式版本拟采用 v2.0-mobile-cloud-cup-2026；Tag 与 Release 尚待最终材料整合及审阅。上方徽章显示远端工作流状态，已推送的V2代码通过了[对应 Commit 的 CI](https://github.com/Small-fish-QAQ/hy3-study-clinic/actions/runs/38686237554)，环境与适用提交见[验证说明](docs/VERIFICATION.md)。
 
 ![真实 MoMA 课程规划：8模块、17 Lesson、35必学知识、39目标；当前完成2课](docs/media/v2/course-map.webp)
 
@@ -80,7 +80,7 @@ npm run dev
 
 自由Tutor仍可能有事实或措辞错误；高推理强度也可能生成错误。必要检查只能降低风险，不能提供绝对正确保证。长请求可能出现上游结果未知，服务端保留记录而不盲目重发；货币账单未知时不写零费用。公开部署、账号和多用户隔离属于后续工作。
 
-项目继续沿同一仓库main演进，以正式Tag / Release保存阶段成果。[CHANGELOG](CHANGELOG.md)记录V2改变，[历史索引](docs/HISTORY.md)保留两次犀牛鸟发布与旧Hy3 / StudyEval证据。StudyEval v2.0是历史评估器版本，与当前Study Clinic V2产品版本分开说明。
+项目继续沿同一仓库main演进，以正式Tag / Release保存阶段成果。[CHANGELOG](CHANGELOG.md)记录V2改变，[历史索引](docs/HISTORY.md)保留两次犀牛鸟发布与旧Hy3 / StudyEval证据。StudyEval v2.0是历史评估器版本，与Study Clinic当前V2产品版本分开说明。
 
 ## 开源与许可
 

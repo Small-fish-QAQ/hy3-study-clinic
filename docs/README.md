@@ -1,4 +1,6 @@
-# Study Clinic V2 文档导航
+# Study Clinic 文档导航
+
+适用版本：V2（2.0.0）。
 
 初次了解读[首页](../README.md)和[产品与研究报告](REPORT.md)，运行按[SETUP](SETUP.md)。
 
@@ -21,7 +23,7 @@ PHASE4_*、ARCHITECTURE_SIMPLIFICATION_IMPLEMENTATION、UI_RESTORATION、COURSE_
 
 本地未跟踪的architecture-audit、architecture-redesign、architecture-simplification-plan（除测试必须的no-network）、real-course-evaluation以及研究脚本继续原样保留，不作为当前公开运行依赖，不批量搬迁或删除。
 
-eval/studyeval、studyeval-validation、final-showcase保留历史冻结输入、输出、分析和verifier；StudyEval v2.0是评估器版本，不是Study Clinic V2产品验收。EVALUATION、EVALUATION_RESULTS、HUMAN_VALIDATION旧路径保留作历史入口。
+eval/studyeval、studyeval-validation、final-showcase保留历史冻结输入、输出、分析和verifier；StudyEval v2.0是评估器版本，不是Study Clinic的V2版本验收。EVALUATION、EVALUATION_RESULTS、HUMAN_VALIDATION旧路径保留作历史入口。
 
 ## 维护约定
 

@@ -1,6 +1,6 @@
 # 评测与保存证据
 
-当前Study Clinic V2的产品／技术结果见[REPORT](../docs/REPORT.md)，检查命令见[VERIFICATION](../docs/VERIFICATION.md)。当前公开摘要位于[docs/evidence/v2](../docs/evidence/v2/metrics-summary.json)。
+当前Study Clinic的V2版本产品／技术结果见[REPORT](../docs/REPORT.md)，检查命令见[VERIFICATION](../docs/VERIFICATION.md)。当前公开摘要位于[docs/evidence/v2](../docs/evidence/v2/metrics-summary.json)。
 
 ## 当前产品检查
 
@@ -32,7 +32,7 @@ node eval/studyeval-validation/scripts/verify.mjs
 node eval/final-showcase/publication/verify.mjs
 ```
 
-两个verifier重算保存结果，不调用模型、不改原件，也不证明语义质量。StudyEval v2.0是评估器版本名，不能与Study Clinic V2产品混用。
+两个verifier重算保存结果，不调用模型、不改原件，也不证明语义质量。StudyEval v2.0是评估器版本名，不能与Study Clinic的V2产品版本混用。
 
 ## 数据保留与归档
 

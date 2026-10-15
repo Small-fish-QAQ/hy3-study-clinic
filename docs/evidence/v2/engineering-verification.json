@@ -101,14 +101,33 @@
     "unchanged": true
   },
   "ci": {
-    "status": "pending-push",
-    "head": null,
-    "runUrl": null,
-    "note": "No V2 GitHub Actions run exists before final authorized push. Local results do not stand in for CI."
+    "status": "success",
+    "head": "53ef7c078bbd6eeb0b12e1ef75723d3cb04ad610",
+    "runUrl": "https://github.com/Small-fish-QAQ/hy3-study-clinic/actions/runs/38686237554",
+    "checkedAt": "2026-10-15T05:46:13.183Z",
+    "jobs": [
+      {
+        "name": "Software quality (ubuntu-latest, Node 20)",
+        "conclusion": "success"
+      },
+      {
+        "name": "Evidence verification",
+        "conclusion": "success"
+      },
+      {
+        "name": "Software quality (windows-latest, Node 24)",
+        "conclusion": "success"
+      },
+      {
+        "name": "Software quality (ubuntu-latest, Node 24)",
+        "conclusion": "success"
+      }
+    ],
+    "note": "This run verifies the stated commit. Subsequent documentation commits have separate CI runs."
   },
   "limitations": [
     "Checks establish engineering contracts and saved historical evidence integrity, not model teaching correctness.",
-    "Windows Node24 verified locally. Cross-platform matrix remains pending remote CI.",
+    "Windows Node24 verified locally; Ubuntu Node20/24 and Windows Node24 additionally passed the cited remote CI for its exact commit.",
     "Documentation/media corrections after the engineering run are validated separately by links, hashes and formatting."
   ]
 }

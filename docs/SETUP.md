@@ -1,4 +1,6 @@
-# Study Clinic V2 运行指南
+# Study Clinic 运行指南
+
+适用版本：V2（2.0.0）。
 
 [首页](../README.md) · [架构](ARCHITECTURE.md) · [验证](VERIFICATION.md)
 

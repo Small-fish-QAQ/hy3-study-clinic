@@ -1,4 +1,6 @@
-# Study Clinic V2 产品与技术研究报告
+# Study Clinic 产品与技术研究报告
+
+适用版本：V2（2.0.0）。
 
 更新：2026-10-14。已验收产品基线9ec6bde693455eac3df00e33984d9e0e0d9d8c93。正文说明当前产品、真实研究和证据边界；[历史索引](HISTORY.md)保留Hy3、StudyEval与两次犀牛鸟发布。
 

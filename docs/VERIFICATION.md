@@ -1,4 +1,6 @@
-# Study Clinic V2 验证与复现
+# Study Clinic 验证与复现
+
+适用版本：V2（2.0.0）。
 
 [运行指南](SETUP.md) · [结果与边界](REPORT.md) · [文档导航](README.md)
 
@@ -42,9 +44,9 @@ build先shared后server/web；npm test的pretest会重建shared，因此不要�
 
 ## 当前CI状态
 
-CI配置覆盖Ubuntu Node20/24、Windows Node24的软件检查，以及两个历史证据verifier。当前正式整理暂未Push，V2对应远端run尚不存在，记录为pending。远端旧Commit的成功徽章不能作为V2结果。
+CI配置覆盖Ubuntu Node20/24、Windows Node24的软件检查，以及两个历史证据verifier。2026-10-15，提交53ef7c078bbd6eeb0b12e1ef75723d3cb04ad610的[GitHub Actions运行](https://github.com/Small-fish-QAQ/hy3-study-clinic/actions/runs/38686237554)四个Job全部成功。该结果对应已推送V2业务版本，不依赖旧Hy3的CI。
 
-最终审阅后正常Push，再记录工作流run URL、head SHA、环境和结论；只有相应Commit的真实成功run可称为V2 CI通过。
+后续文档修正有各自Commit与run；只有对应SHA的真实成功运行才代表该次CI通过，不把之前的通过状态移作新Commit的结论。
 
 ## 核对公开研究摘要
 

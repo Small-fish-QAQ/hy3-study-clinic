@@ -1,4 +1,6 @@
-# Study Clinic V2 系统架构
+# Study Clinic 系统架构
+
+适用版本：V2（2.0.0）。
 
 [首页](../README.md) · [运行](SETUP.md) · [产品与评测](REPORT.md)
 

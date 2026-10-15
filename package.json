@@ -3,7 +3,7 @@
   "version": "2.0.0",
   "private": true,
   "license": "Apache-2.0",
-  "description": "Study Clinic V2 - persistent, source-grounded AI course learning with practice, targeted repair, voluntary assessment and traceable evidence.",
+  "description": "Study Clinic - persistent, source-grounded AI course learning with practice, targeted repair, voluntary assessment and traceable evidence.",
   "type": "module",
   "engines": {
     "node": "^20.19.0 || ^22.13.0 || ^24.0.0"
