@@ -44,9 +44,9 @@ build先shared后server/web；npm test的pretest会重建shared，因此不要�
 
 ## 当前CI状态
 
-CI配置覆盖Ubuntu Node20/24、Windows Node24的软件检查，以及两个历史证据verifier。2026-10-15，提交53ef7c078bbd6eeb0b12e1ef75723d3cb04ad610的[GitHub Actions运行](https://github.com/Small-fish-QAQ/hy3-study-clinic/actions/runs/38686237554)四个Job全部成功。该结果对应已推送V2业务版本，不依赖旧Hy3的CI。
+CI配置覆盖Ubuntu Node20/24、Windows Node24的软件检查，以及两个历史证据verifier。2026-10-15，提交a86731732505e7d5018ec41705e90ab52b4b6f4f的[GitHub Actions运行](https://github.com/Small-fish-QAQ/hy3-study-clinic/actions/runs/38692121698)四个Job全部成功。该结果对应已推送V2业务版本，不依赖旧Hy3的CI。
 
-后续文档修正有各自Commit与run；只有对应SHA的真实成功运行才代表该次CI通过，不把之前的通过状态移作新Commit的结论。
+正式里程碑的最终Commit、对应CI运行链接及四项Job结果随[Release](https://github.com/Small-fish-QAQ/hy3-study-clinic/releases/tag/v2.0-mobile-cloud-cup-2026)和release-verification.json附件记录。本次发布仅同步文档和公开素材，教学源码、Prompt与Schema保持冻结基线；仍以最终SHA的真实CI结果确认发布，不借用此前通过状态。
 
 ## 核对公开研究摘要
 

@@ -50,16 +50,28 @@ B本次新增模拟作答的三轮补救均未完成：第二课两轮题目准�
 
 Key仅显示已配置。“自动（auto）”表示同一模型按任务分配推理强度；[技术依据](REPORT.md#推理强度对照与任务分配)保留对照分母、失败和评价偏差。普通／长任务等待时间为实际保存的用户配置，并非所有新安装默认值。
 
-## 视频与历史演示
+## 《The Fourth》演示视频与公开方案
 
-![创意Demo封面，品牌装饰不是产品截图](media/v2/demo-cover.webp)
+[![《The Fourth》创意封面，品牌装饰不是产品截图](media/v2/the-fourth-cover.webp)](https://github.com/Small-fish-QAQ/hy3-study-clinic/releases/download/v2.0-mobile-cloud-cup-2026/Study-Clinic-The-Fourth-1080p.mp4)
 
-B已交付原速操作实录；C已交付3分钟、1920×1080、30fps的创意成片和中文字幕。本页封面与参赛成片的片尾已将产品名Study Clinic和版本V2（2.0.0）分开展示；修订成片保留原C交付，00:00–02:52实拍与机制示意沿用原时间线，最后8秒重渲染版本角标。封面使用现有品牌装饰，不代表真实课程状态。成片、字幕、素材清单及视频工程继续留在独立工作目录，成片已核对素材来源、版本对应和媒体解码，统一审阅后可将其作为GitHub Release附件。当前尚未发布视频，也未将大型影片或工程缓存纳入源码仓库。
+[观看／下载1080p视频](https://github.com/Small-fish-QAQ/hy3-study-clinic/releases/download/v2.0-mobile-cloud-cup-2026/Study-Clinic-The-Fourth-1080p.mp4) · [公开方案 PDF](https://github.com/Small-fish-QAQ/hy3-study-clinic/releases/download/v2.0-mobile-cloud-cup-2026/Study-Clinic-Design-V2.pdf) · [可编辑 PPT](https://github.com/Small-fish-QAQ/hy3-study-clinic/releases/download/v2.0-mobile-cloud-cup-2026/Study-Clinic-Design-V2.pptx)
 
-视频区分真实操作、机制示意、模拟作答和2026-10-13历史变式案例；不能将本次67%作答接成历史100%复测，或把单次模块成绩称为整课掌握。具体文件身份与展示边界记在[媒体清单](media/v2/manifest.json)。
+本次里程碑选用《The Fourth》，200秒、1920×1080、30fps、H.264/AAC，中文画面字幕，无人声旁白。影片按原件发布，未再次压缩。22页方案使用官方模型应用赛模板，覆盖产品、MoMA接入与Prompt、工程与模型实测、成本和商业路径；公开版封面仅保留团队名称。
 
-犀牛鸟时期的真实Hy3视频、截图、模拟作答和素材清单完整保留在[历史DEMO](https://github.com/Small-fish-QAQ/hy3-study-clinic/blob/task1-final-2026-09-14-r2/docs/DEMO.md)，旧媒体文件原位保留。旧视频不作为本次MoMA实测。
+| 时间 | 展示内容 | 证据边界 |
+| --- | --- | --- |
+| 00:00–00:22 | 长期聊天学习的机制示意 | 明确标注为示意，非真实聊天记录 |
+| 00:22–01:08 | Course Map、课文与来源 | 真实验收课程，35知识／17课规划不等于全部学完 |
+| 01:08–01:38 | Tutor反例答疑 | 连续30秒原速实录，保留等待 |
+| 01:38–02:04 | 67%练习与知识缺口 | 模拟学习者，不能作为学生提分证据 |
+| 02:04–02:40 | 补救与结构变式 | 明确切换到2026-10-13另一条历史；100%不是67%的连续复测 |
+| 02:40–03:02 | 自愿Formal与Evidence | 4条正式支持、31条未实测，不能外推整课掌握 |
+| 03:02–03:20 | 刷新恢复与品牌落版 | 持久状态读回；书页为品牌装饰 |
+
+新采集的三轮补救失败继续保留，影片选用另外的历史成功案例。41项来源与复制素材哈希一致，全片解码通过；[来源清单](media/v2/the-fourth-sources.json)与[媒体身份](media/v2/manifest.json)保留可复核记录。视频、PPT与PDF作为Release附件，原始录像、工程与缓存不进入源码仓库。
+
+此前C线3分钟方案及封面保留为制作阶段记录，已由本片替代为本次正式Demo。犀牛鸟时期的Hy3演示与素材完整保留在[历史DEMO](https://github.com/Small-fish-QAQ/hy3-study-clinic/blob/task1-final-2026-09-14-r2/docs/DEMO.md)，旧媒体文件原位保留，旧结果不作为本次MoMA实测。
 
 ## 资源与许可
 
-当前截图中的底层教材权利归相应权利人，必要片段的最终公开范围由用户确认；截图不授予教材再分发权。字体与图标声明见[第三方说明](../THIRD_PARTY_NOTICES.md)，原品牌／背景AI栅格素材和历史视频来源见[固定历史媒体说明](https://github.com/Small-fish-QAQ/hy3-study-clinic/blob/task1-final-2026-09-14-r2/docs/DEMO.md#资源与许可)。C成片采用原创程序合成配乐和中文画面字幕，无人声旁白；Noto字体按OFL保留许可，品牌书页为现有AI栅格装饰。详细音乐、字体与素材清单随仓库外的影片交付保留，封面来源见媒体清单。
+当前截图中的底层教材权利归相应权利人，本次公开范围为已审阅的必要产品展示片段；截图不授予教材再分发权。字体与图标声明见[第三方说明](../THIRD_PARTY_NOTICES.md)，原品牌／背景AI栅格素材和历史视频来源见[固定历史媒体说明](https://github.com/Small-fish-QAQ/hy3-study-clinic/blob/task1-final-2026-09-14-r2/docs/DEMO.md#资源与许可)。《The Fourth》使用原创72 BPM编曲、合成纸页声和GeneralUser GS 2.0.3乐器采样；[完整音源许可](media/v2/licenses/GeneralUser-GS-LICENSE.txt)允许私人及商业音乐创作，未分发音源库。Noto Sans SC与Noto Serif SC使用OFL许可；品牌装饰沿用已有素材。媒体许可说明另随Release附件提供，底层教材与官方模板标识不自动获得本项目Apache许可。

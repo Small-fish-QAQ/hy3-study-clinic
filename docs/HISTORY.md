@@ -7,11 +7,11 @@
 
 ## 当前V2与阶段原件
 
-2026-10-14的已验收产品基线为9ec6bde693455eac3df00e33984d9e0e0d9d8c93。当前[产品与研究](REPORT.md)、[架构](ARCHITECTURE.md)、[运行](SETUP.md)、[验证](VERIFICATION.md)和[CHANGELOG](../CHANGELOG.md)分别维护V2入口。拟议第三个Tag为v2.0-mobile-cloud-cup-2026，尚待A/B/C成品整合与最终审阅，未创建。
+2026-10-14的已验收产品基线为9ec6bde693455eac3df00e33984d9e0e0d9d8c93。当前[产品与研究](REPORT.md)、[架构](ARCHITECTURE.md)、[运行](SETUP.md)、[验证](VERIFICATION.md)和[CHANGELOG](../CHANGELOG.md)分别维护V2入口。2026-10-15以第三个正式Tag [v2.0-mobile-cloud-cup-2026](https://github.com/Small-fish-QAQ/hy3-study-clinic/releases/tag/v2.0-mobile-cloud-cup-2026)保存移动云杯阶段里程碑，整合《The Fourth》和公开22页方案。
 
 Phase4、精简实施、UI／准备恢复、首轮真实修复、MoMA集成、单元Formal、Goal A/B研究和最终真人验收按各自日期保留。旧schema／预算／A16待执行等文字是当时状态，不覆盖现行源码。阶段完整研究见[RELIABILITY_AND_REASONING_STUDY](RELIABILITY_AND_REASONING_STUDY.md)，最终验收见[FINAL_HUMAN_ACCEPTANCE_20261014](FINAL_HUMAN_ACCEPTANCE_20261014.md)。
 
-整理前的[README](https://github.com/Small-fish-QAQ/hy3-study-clinic/blob/9ec6bde693455eac3df00e33984d9e0e0d9d8c93/README.md)、[REPORT](https://github.com/Small-fish-QAQ/hy3-study-clinic/blob/9ec6bde693455eac3df00e33984d9e0e0d9d8c93/docs/REPORT.md)、[ARCHITECTURE](https://github.com/Small-fish-QAQ/hy3-study-clinic/blob/9ec6bde693455eac3df00e33984d9e0e0d9d8c93/docs/ARCHITECTURE.md)、SETUP与VERIFICATION可从同一固定Commit恢复；该Commit目前只在本地，正常Push后这些GitHub链接才可访问。
+整理前的[README](https://github.com/Small-fish-QAQ/hy3-study-clinic/blob/9ec6bde693455eac3df00e33984d9e0e0d9d8c93/README.md)、[REPORT](https://github.com/Small-fish-QAQ/hy3-study-clinic/blob/9ec6bde693455eac3df00e33984d9e0e0d9d8c93/docs/REPORT.md)、[ARCHITECTURE](https://github.com/Small-fish-QAQ/hy3-study-clinic/blob/9ec6bde693455eac3df00e33984d9e0e0d9d8c93/docs/ARCHITECTURE.md)、SETUP与VERIFICATION可从同一固定Commit恢复；该基线已推送，可通过固定Commit查看。
 
 历史Hy3／StudyEval指标不计入当前MoMA结果。下面原历史索引、Tag指向和维护审计保留。
 
@@ -29,7 +29,7 @@ Phase4、精简实施、UI／准备恢复、首轮真实修复、MoMA集成、�
 | `pre-v2-implementation`                                                                                                | `b828ec1` | v2 实现前检查点，本地 tag                                      |
 | [task1-final-2026-09-14-r2](https://github.com/Small-fish-QAQ/hy3-study-clinic/releases/tag/task1-final-2026-09-14-r2) | `df7bbd0` | 2026-09-14 最终 Task 1 交付，已发布 Release 与完整产品审计归档 |
 
-五个本地检查点 tag 尚未发布到远端。当前两个正式证据包仍在 main；最终 Task 1 tag 同时固定了当时的完整产品、v1.5 历史材料、StudyEval v2.0 验证与 Candidate 23 运行。归档以 Git 快照中的实际文件为准；Release 附件中的产品审计 ZIP 不代替 v1.5 包。
+五个本地检查点 tag 尚未发布到远端。两个历史正式证据包仍在 main；最终 Task 1 tag 同时固定了当时的完整产品、v1.5 历史材料、StudyEval v2.0 验证与 Candidate 23 运行。归档以 Git 快照中的实际文件为准；Release 附件中的产品审计 ZIP 不代替 v1.5 包。
 
 ## 历史实验与材料
 

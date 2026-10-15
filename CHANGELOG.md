@@ -1,8 +1,8 @@
 # Study Clinic 更新记录
 
-## 2.0.0 — 2026-10-14，正式发布待审阅
+## 2.0.0 — 2026-10-15，移动云杯里程碑
 
-产品业务基线9ec6bde693455eac3df00e33984d9e0e0d9d8c93。拟发布Tag为v2.0-mobile-cloud-cup-2026；截至本轮整理尚未Push、Tag或Release。项目继续沿原仓库main演进。
+产品业务基线9ec6bde693455eac3df00e33984d9e0e0d9d8c93。正式Tag为[v2.0-mobile-cloud-cup-2026](https://github.com/Small-fish-QAQ/hy3-study-clinic/releases/tag/v2.0-mobile-cloud-cup-2026)，保存当前源码、技术文档与公开展示资料。项目继续沿原仓库main演进。
 
 ### 产品与可靠性
 
@@ -20,6 +20,9 @@
 - 当前README、运行、架构、研究、验证和历史导航；少量脱敏指标及真实截图。
 - 版本元数据统一2.0.0，Node声明按锁定依赖校准，扩充本地数据／密钥忽略边界。
 - 保留历史Hy3、StudyEval证据及两个正式发布Tag。未重新运行真实课程生成。
+- 正式Demo选用《The Fourth》（3分20秒），公开22页PPT/PDF、素材来源及许可作为Release附件。
+- 补齐OpenAI兼容端点配置、模型列表获取及本版实测边界；明确行业试点与四层商业路径属于规划。
+- 发布Commit的CI与附件哈希记录在Release，私有参赛包和联系方式不公开。
 
 ### 已知限制
 

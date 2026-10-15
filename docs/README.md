@@ -2,6 +2,8 @@
 
 适用版本：V2（2.0.0）。
 
+[移动云杯正式里程碑](https://github.com/Small-fish-QAQ/hy3-study-clinic/releases/tag/v2.0-mobile-cloud-cup-2026)提供《The Fourth》与22页公开方案，素材身份和许可见[DEMO](DEMO.md)。
+
 初次了解读[首页](../README.md)和[产品与研究报告](REPORT.md)，运行按[SETUP](SETUP.md)。
 
 | 当前维护入口                            | 回答的问题                                                   |

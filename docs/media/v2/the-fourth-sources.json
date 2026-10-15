@@ -1,0 +1,210 @@
+{
+  "sourceCount": 41,
+  "sources": [
+    {
+      "file": "film/assets/screenshots/01-course-library.png",
+      "sha256": "72df9c8feb08b9a4f75e6cc2e3850336d615f6adf2f019fbacf5ac1b6d0c8947",
+      "origin": "B/handoff/screenshots/01-course-library.png"
+    },
+    {
+      "file": "film/assets/screenshots/02-course-map-overview.png",
+      "sha256": "a44d027bfd52dbb6012bd33b373e1b7c38a9e18812fbebc82d03cac1e74e50f2",
+      "origin": "B/handoff/screenshots/02-course-map-overview.png"
+    },
+    {
+      "file": "film/assets/screenshots/03-course-map-modules.png",
+      "sha256": "de793d8fa2ad146e0c0747634ffb60d210758dc43701cec3d7004645930f1308",
+      "origin": "B/handoff/screenshots/03-course-map-modules.png"
+    },
+    {
+      "file": "film/assets/screenshots/04-module-lesson-navigation.png",
+      "sha256": "d8b7ec49fb76cdf67f5130443619a4f88f1a1e62efe54f2f82910e6479858c5e",
+      "origin": "B/handoff/screenshots/04-module-lesson-navigation.png"
+    },
+    {
+      "file": "film/assets/screenshots/05-lesson-tutor-layout.png",
+      "sha256": "d7182542e4d9de06b537271bddca9a9b46f2ffb4bdf8a1a8b31e115c72f88ad8",
+      "origin": "B/handoff/screenshots/05-lesson-tutor-layout.png"
+    },
+    {
+      "file": "film/assets/screenshots/06-lesson-math-sources.png",
+      "sha256": "1bae64f8765d319fe044b0e96aa6523ea16236f648be9e89010266689e482c77",
+      "origin": "B/handoff/screenshots/06-lesson-math-sources.png"
+    },
+    {
+      "file": "film/assets/screenshots/07-lesson-reading-wide.png",
+      "sha256": "cf25b8a9c8038981eea336df1dfc0f61781ed20d7a8bbbb5a3c89835beab2b89",
+      "origin": "B/handoff/screenshots/07-lesson-reading-wide.png"
+    },
+    {
+      "file": "film/assets/screenshots/09-knowledge-evidence-status.png",
+      "sha256": "92c64165a38ee21f3ae91d1c1c8969d6e82f12fc7ed7895617e05dd56fbdd47c",
+      "origin": "B/handoff/screenshots/09-knowledge-evidence-status.png"
+    },
+    {
+      "file": "film/assets/screenshots/10-learning-records.png",
+      "sha256": "7066b6d110abbf0adae6f001863cb8a0ab296acecc3231e375ba2756fcc6b92c",
+      "origin": "B/handoff/screenshots/10-learning-records.png"
+    },
+    {
+      "file": "film/assets/screenshots/12-voluntary-formal.png",
+      "sha256": "5fb4e066561687cae0ec1fcc9f6f3d950555a395fa4faebcc69a6020b456e455",
+      "origin": "B/handoff/screenshots/12-voluntary-formal.png"
+    },
+    {
+      "file": "film/assets/screenshots/19-material-source-identity.png",
+      "sha256": "979759a10f8b6633f171d52ff0cd04c13799128cebdbc588a0f0d3b089227ee2",
+      "origin": "B/handoff/screenshots/19-material-source-identity.png"
+    },
+    {
+      "file": "film/assets/screenshots/23-live-tutor-counterexample.png",
+      "sha256": "a7eb21ccf09960575089ad26d04069ab7a14be66120c7343de524b8fbdc37c86",
+      "origin": "B/handoff/screenshots/23-live-tutor-counterexample.png"
+    },
+    {
+      "file": "film/assets/screenshots/24-new-practice-question.png",
+      "sha256": "cb90a909e242b2c228584f3b72ab56824f49eaff24e27a3e434e0a1ed3719c18",
+      "origin": "B/handoff/screenshots/24-new-practice-question.png"
+    },
+    {
+      "file": "film/assets/screenshots/25-practice-mistake-diagnosis.png",
+      "sha256": "195af17329b6df0bb5b50bfe3d38f0e96d72e19e8d771b88d3731e36586138a7",
+      "origin": "B/handoff/screenshots/25-practice-mistake-diagnosis.png"
+    },
+    {
+      "file": "film/assets/screenshots/27-formal-valid-versus-invalid.png",
+      "sha256": "3dea83ec4ffb86bc9ef213d7ed2633da48f1aaff39f37e8cb64ee9d7e798d592",
+      "origin": "B/handoff/screenshots/27-formal-valid-versus-invalid.png"
+    },
+    {
+      "file": "film/assets/screenshots/28-formal-evidence-and-untested.png",
+      "sha256": "27d6bf7d5cef2a8d6b85c97903bb79d82a30c8886ede101bb2f35ee4178a6d55",
+      "origin": "B/handoff/screenshots/28-formal-evidence-and-untested.png"
+    },
+    {
+      "file": "film/assets/screenshots/38-discrete-original-question-answer.png",
+      "sha256": "4fa50983c58927f4132b4577b10afa733a83e8f3edc307c58c4cc789957f2fc0",
+      "origin": "B/handoff/screenshots/38-discrete-original-question-answer.png"
+    },
+    {
+      "file": "film/assets/screenshots/39-discrete-repair-explanation.png",
+      "sha256": "2a1852a9e209e1ce932f261e7ff7f18adf40f49ede8fb328f3066e5a4aa9f51d",
+      "origin": "B/handoff/screenshots/39-discrete-repair-explanation.png"
+    },
+    {
+      "file": "film/assets/screenshots/40-discrete-variant-retest.png",
+      "sha256": "feea5f42e863759325ec19d6aaf7959819f93af20cf7b15c10ecc0f6b27e1e1e",
+      "origin": "B/handoff/screenshots/40-discrete-variant-retest.png"
+    },
+    {
+      "file": "film/assets/screenshots/42-discrete-repair-targeted.png",
+      "sha256": "364c20b731f40d8c89a028386795dfc70c099a7ba1f98f7901ea2f3266e1f96b",
+      "origin": "B/handoff/screenshots/42-discrete-repair-targeted.png"
+    },
+    {
+      "file": "film/assets/screenshots/43-live-tutor-variant-proof.png",
+      "sha256": "e20a2ca1aad4aceed364b734e94457dd7b7beb2a19111bf2efe161d8a5ccacab",
+      "origin": "B/handoff/screenshots/43-live-tutor-variant-proof.png"
+    },
+    {
+      "file": "film/assets/screenshots/44-restored-tutor-after-refresh.png",
+      "sha256": "506c9de7da9611e1a99f7951d791a91d6ffaaf859917b395986fb89ea0fe51c8",
+      "origin": "B/handoff/screenshots/44-restored-tutor-after-refresh.png"
+    },
+    {
+      "file": "film/assets/footage/01-lesson-and-sources.mp4",
+      "sha256": "01242ae235469af45f876df635a9d48ddabdeac8fc997f0e806ff140bf80f0b5",
+      "origin": "B/handoff/footage/01-lesson-and-sources.mp4"
+    },
+    {
+      "file": "film/assets/footage/07-practice-mistake-feedback.mp4",
+      "sha256": "de0ceaa55621132896fd75c09d223933e1312b72ede185770f13aee03b88a687",
+      "origin": "B/handoff/footage/07-practice-mistake-feedback.mp4"
+    },
+    {
+      "file": "film/assets/footage/11-formal-evidence-refresh.mp4",
+      "sha256": "cbe73f943bd24292ead503cbbbff3662f090c7aa06a1763e80dbdea44c6069c7",
+      "origin": "B/handoff/footage/11-formal-evidence-refresh.mp4"
+    },
+    {
+      "file": "film/assets/footage/18-discrete-variant-repair-compact.mp4",
+      "sha256": "7c6badfe24758178f31c2ea3fca405cb6cf1fda407a027acc61eb0de79100daa",
+      "origin": "B/handoff/footage/18-discrete-variant-repair-compact.mp4"
+    },
+    {
+      "file": "film/assets/footage/20-tutor-refresh-persistence.mp4",
+      "sha256": "eb4f7fce0c27af3b8dff6a0b9d8092deb70b75877744717cb6b5bbaf63725aed",
+      "origin": "B/handoff/footage/20-tutor-refresh-persistence.mp4"
+    },
+    {
+      "file": "film/assets/footage/21-live-tutor-first30.mp4",
+      "sha256": "319c38e9d1f834a02d77476835599f47aa64bf93e7da46ea5c7df6433ac896e5",
+      "origin": "B/handoff/footage/21-live-tutor-first30.mp4"
+    },
+    {
+      "file": "film/assets/fonts/noto-sans-sc.woff2",
+      "sha256": "a8c974f59d9cbf18b9b24fb010f78ea4282210307e0055832c1ebc9ae2607a7e",
+      "origin": "Study-Clinic-source/apps/web/public/fonts/noto-sans-sc.woff2"
+    },
+    {
+      "file": "film/assets/fonts/noto-serif-sc.woff2",
+      "sha256": "f8ae3f1e59e2fa27565a4435cf04a573bbe7b44a4f1170af2f27b0474c37fe4f",
+      "origin": "Study-Clinic-source/apps/web/public/fonts/noto-serif-sc.woff2"
+    },
+    {
+      "file": "film/assets/fonts/OFL.txt",
+      "sha256": "babcfe66c8a098b2fa279bc724a3a342f8124f77ce18941fbcc1bbb39823cded",
+      "origin": "Study-Clinic-source/apps/web/public/fonts/OFL.txt"
+    },
+    {
+      "file": "film/assets/fonts/OFL-serif.txt",
+      "sha256": "5e0da210fb04058a8c0087985d2d456b931c2579811a49655721d3cf0c36b6d6",
+      "origin": "Study-Clinic-source/apps/web/public/fonts/OFL-serif.txt"
+    },
+    {
+      "file": "film/assets/brand/brand-mark.svg",
+      "sha256": "b5a0957352f4205ab055a55da053e285dc6e9dbc469f9aa301d82990a177bb51",
+      "origin": "Study-Clinic-source/apps/web/public/brand-mark.svg"
+    },
+    {
+      "file": "film/assets/brand/pine-botanical-sidebar.webp",
+      "sha256": "1b7aa98d29fe68e8ac6e91870a4bdebe9d1c042ae4a1e27da3c0f14f182ed916",
+      "origin": "Study-Clinic-source/apps/web/public/brand/pine-botanical-sidebar.webp"
+    },
+    {
+      "file": "film/assets/brand/paper-study.webp",
+      "sha256": "bc0ae3ac637da67885656ad315de6091dee0fc0802ab3e173158474dae7e119a",
+      "origin": "Study-Clinic-source/apps/web/public/brand/paper-study.webp"
+    },
+    {
+      "file": "film/assets/brand/cotton-fiber.webp",
+      "sha256": "6d290cf3f03ac7d0b44bda14a6e60f4527af02ceb8df4ed76bfb7d67f4d25710",
+      "origin": "Study-Clinic-source/apps/web/public/backgrounds/cotton-fiber.webp"
+    },
+    {
+      "file": "film/assets/derived/saved-discrete-variant.json",
+      "sha256": "ff8dea442ffc97cdf32f0780903390b3cf59d8e2511c08e378103a36bf3bd9eb",
+      "origin": "B/handoff/evidence/saved-discrete-variant.json"
+    },
+    {
+      "file": "film/assets/brand/study-folio.webp",
+      "sha256": "d877da19aa2fa612314700c50555c27a2140b85539bdd70ddd6ed013f26a7ad0",
+      "origin": "Study-Clinic-source/apps/web/public/brand/study-folio.webp"
+    },
+    {
+      "file": "film/assets/brand/pine-pages.webp",
+      "sha256": "d5aa2c6fb5c1113b7993e62913a94f0d4b12691f89e3c82d0c1046dc838acb33",
+      "origin": "Study-Clinic-source/apps/web/public/brand/pine-pages.webp"
+    },
+    {
+      "file": "film/assets/brand/pine-bookcloth.webp",
+      "sha256": "901ef41b1ded2d2e5a8ea9bc86d430bf1b0275ed3d86a86844e3fec41224dd61",
+      "origin": "Study-Clinic-source/apps/web/public/brand/pine-bookcloth.webp"
+    },
+    {
+      "file": "film/assets/brand/mark-light.svg",
+      "sha256": "84559cb66f30febed020db6ea2775d42056a20c563a2e91f59f34087ef9329bd",
+      "origin": "Study-Clinic-source/apps/web/public/brand/mark-light.svg"
+    }
+  ]
+}

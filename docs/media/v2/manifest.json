@@ -128,53 +128,131 @@
   },
   "creativeDemo": {
     "schemaVersion": 1,
-    "source": "A/branding-output/Study-Clinic-Demo-v2.mp4",
-    "sha256": "f7fd6fbd90a725c648e70f27e94a7f35245c71fb01d21f371ab435ffcfce7f23",
-    "bytes": 45239401,
-    "durationSeconds": 180.011,
+    "title": "The Fourth",
+    "productName": "Study Clinic",
+    "productVersion": "V2 (2.0.0)",
+    "source": "codex-the-fourth-keyframes/out/film/The_Fourth_1080p.mp4",
+    "asset": "Study-Clinic-The-Fourth-1080p.mp4",
+    "downloadUrl": "https://github.com/Small-fish-QAQ/hy3-study-clinic/releases/download/v2.0-mobile-cloud-cup-2026/Study-Clinic-The-Fourth-1080p.mp4",
+    "sha256": "34cbcf88f0fe3bcbe7d6e82ec3d0f62821181cb0292a9bf7f420081b2c839424",
+    "bytes": 91864175,
+    "durationSeconds": 200,
     "resolution": [1920, 1080],
     "fps": 30,
     "codecs": ["H.264", "AAC"],
-    "status": "ready-for-unified-review",
-    "repositoryDistribution": "cover only; video kept outside source repository for a possible future Release attachment",
-    "audio": "Original procedural music; no voice narration",
-    "caveats": [
-      "Simulated learner scores are not student learning gains.",
-      "Historical 2026-10-13 Repair/Retest is independent of the new practice demonstration.",
-      "Publication requires the final user and ChatGPT review; video is not yet uploaded."
-    ],
+    "status": "selected-for-release",
+    "repositoryDistribution": "Poster and source ledger in Git; exact original video in Release assets",
+    "audio": "Original 72 BPM composition with GeneralUser GS 2.0.3 instruments and synthetic paper sounds; no narration",
     "cover": {
-      "file": "demo-cover.webp",
-      "source": "A/branding-output/Study-Clinic-Demo-Cover-v2.png",
-      "originalSource": "C/delivery/Cover.png",
-      "sourceSha256": "04f07b2a3bf9d8072ed9223c0db4055c28e21bf062a363b79c8c7a6de8027bb6",
-      "sha256": "07b80d5a3766e0316fbf8f0fa0a50b123bd308584e50df4074cb0ae7160a621c",
+      "file": "the-fourth-cover.webp",
+      "source": "codex-the-fourth-keyframes/out/film/POSTER.png",
+      "sourceSha256": "a946a5bd9bfd8e9bf479736bfc69080c7edd866f538fb120c186fec51f976ad3",
+      "sha256": "a8381e70dc11d93ef5bb5b5cee765d36616f74e30ca93aa5a466199b9bc8d173",
       "dimensions": [1920, 1080],
-      "transform": "Existing Remotion cover re-rendered with a separate version label, then lossless PNG to WebP; product artwork and layout retained",
-      "identity": "Creative cover with brand decoration; not a product screenshot",
-      "originalSourceSha256": "89c09a55bb1c1e851ec08143da9cc28641737528f1cb5a45a5726cc4ab8b83d4"
+      "transform": "Lossless PNG to WebP; no crop or content change",
+      "identity": "Creative poster with brand decoration; not a product screenshot"
     },
     "review": {
       "fullDecodePassed": true,
-      "sampledFrames": 30,
-      "assetLedgerEntries": 26,
-      "sourceHashesMatched": true,
-      "changedTutorAndRefreshScenesReconciled": true,
-      "licensesSource": "C/delivery/docs/licenses.md",
-      "licensesSha256": "944afe1370a0b905d9be8a7ee06bbf34d0589e80de1cc464b1c528f3c79d4597"
+      "sourceHashesMatched": 41,
+      "publicSourceLedger": "the-fourth-sources.json",
+      "musicLicense": "licenses/GeneralUser-GS-LICENSE.txt",
+      "approvedForPublication": true
     },
-    "originalSource": "C/delivery/Study-Clinic-V2.mp4",
-    "originalSha256": "1128fc7a697247ad90c2490f88a3aba6107cc3e9c1923b1a29b19b5e411bc0f5",
-    "subtitleSource": "A/branding-output/Study-Clinic-Demo-v2.zh-CN.srt",
-    "subtitleSha256": "4347003a2ffe2483273f0566ce4cca1af8fa0df5900df418e1415ab9f458582e",
-    "productName": "Study Clinic",
-    "productVersion": "V2 (2.0.0)",
-    "namingRevision": {
-      "scope": "Cover, closing version label, subtitle cue and video metadata",
-      "videoTimeline": "Original C video 00:00–02:52 retained, new render of the same closing artwork 02:52–03:00",
-      "encoding": "Video re-encoded with H.264 CRF17; original AAC audio stream copied",
-      "originalDeliveryPreserved": true,
-      "newAssets": "A/branding-output; no video source project or binary movie added to the source repository"
+    "caveats": [
+      "Conceptual chat frames are labelled illustrations, not real conversations.",
+      "67% simulated practice and 100% historical retest belong to different sessions.",
+      "Four formal evidence records do not prove mastery of all 35 knowledge items.",
+      "Three new repair attempts failed; historical successful footage does not erase them."
+    ]
+  },
+  "previousCreativeDemos": [
+    {
+      "schemaVersion": 1,
+      "source": "A/branding-output/Study-Clinic-Demo-v2.mp4",
+      "sha256": "f7fd6fbd90a725c648e70f27e94a7f35245c71fb01d21f371ab435ffcfce7f23",
+      "bytes": 45239401,
+      "durationSeconds": 180.011,
+      "resolution": [1920, 1080],
+      "fps": 30,
+      "codecs": ["H.264", "AAC"],
+      "status": "ready-for-unified-review",
+      "repositoryDistribution": "cover only; video kept outside source repository for a possible future Release attachment",
+      "audio": "Original procedural music; no voice narration",
+      "caveats": [
+        "Simulated learner scores are not student learning gains.",
+        "Historical 2026-10-13 Repair/Retest is independent of the new practice demonstration.",
+        "Publication requires the final user and ChatGPT review; video is not yet uploaded."
+      ],
+      "cover": {
+        "file": "demo-cover.webp",
+        "source": "A/branding-output/Study-Clinic-Demo-Cover-v2.png",
+        "originalSource": "C/delivery/Cover.png",
+        "sourceSha256": "04f07b2a3bf9d8072ed9223c0db4055c28e21bf062a363b79c8c7a6de8027bb6",
+        "sha256": "07b80d5a3766e0316fbf8f0fa0a50b123bd308584e50df4074cb0ae7160a621c",
+        "dimensions": [1920, 1080],
+        "transform": "Existing Remotion cover re-rendered with a separate version label, then lossless PNG to WebP; product artwork and layout retained",
+        "identity": "Creative cover with brand decoration; not a product screenshot",
+        "originalSourceSha256": "89c09a55bb1c1e851ec08143da9cc28641737528f1cb5a45a5726cc4ab8b83d4"
+      },
+      "review": {
+        "fullDecodePassed": true,
+        "sampledFrames": 30,
+        "assetLedgerEntries": 26,
+        "sourceHashesMatched": true,
+        "changedTutorAndRefreshScenesReconciled": true,
+        "licensesSource": "C/delivery/docs/licenses.md",
+        "licensesSha256": "944afe1370a0b905d9be8a7ee06bbf34d0589e80de1cc464b1c528f3c79d4597"
+      },
+      "originalSource": "C/delivery/Study-Clinic-V2.mp4",
+      "originalSha256": "1128fc7a697247ad90c2490f88a3aba6107cc3e9c1923b1a29b19b5e411bc0f5",
+      "subtitleSource": "A/branding-output/Study-Clinic-Demo-v2.zh-CN.srt",
+      "subtitleSha256": "4347003a2ffe2483273f0566ce4cca1af8fa0df5900df418e1415ab9f458582e",
+      "productName": "Study Clinic",
+      "productVersion": "V2 (2.0.0)",
+      "namingRevision": {
+        "scope": "Cover, closing version label, subtitle cue and video metadata",
+        "videoTimeline": "Original C video 00:00–02:52 retained, new render of the same closing artwork 02:52–03:00",
+        "encoding": "Video re-encoded with H.264 CRF17; original AAC audio stream copied",
+        "originalDeliveryPreserved": true,
+        "newAssets": "A/branding-output; no video source project or binary movie added to the source repository"
+      },
+      "selectedForRelease": false,
+      "supersededBy": "The Fourth"
     }
+  ],
+  "release": {
+    "tag": "v2.0-mobile-cloud-cup-2026",
+    "url": "https://github.com/Small-fish-QAQ/hy3-study-clinic/releases/tag/v2.0-mobile-cloud-cup-2026",
+    "presentationPages": 22,
+    "presentationRevision": "review3-public",
+    "publicCover": "Team name only; private identity fields excluded",
+    "assets": [
+      {
+        "file": "Study-Clinic-Design-V2.pptx",
+        "bytes": 13170918,
+        "sha256": "6745bce8951df5edb379c05dabb345b546cd606062958ee4eee64bc44db6b7c3",
+        "downloadUrl": "https://github.com/Small-fish-QAQ/hy3-study-clinic/releases/download/v2.0-mobile-cloud-cup-2026/Study-Clinic-Design-V2.pptx"
+      },
+      {
+        "file": "Study-Clinic-Design-V2.pdf",
+        "bytes": 18131325,
+        "sha256": "9dd7b0a17316ed90b4adc6a64fc62797c86542638d86e723b187fee41654732d",
+        "downloadUrl": "https://github.com/Small-fish-QAQ/hy3-study-clinic/releases/download/v2.0-mobile-cloud-cup-2026/Study-Clinic-Design-V2.pdf"
+      },
+      {
+        "file": "Study-Clinic-The-Fourth-1080p.mp4",
+        "bytes": 91864175,
+        "sha256": "34cbcf88f0fe3bcbe7d6e82ec3d0f62821181cb0292a9bf7f420081b2c839424",
+        "downloadUrl": "https://github.com/Small-fish-QAQ/hy3-study-clinic/releases/download/v2.0-mobile-cloud-cup-2026/Study-Clinic-The-Fourth-1080p.mp4"
+      },
+      {
+        "file": "Study-Clinic-Media-Notices.md",
+        "bytes": 12278,
+        "sha256": "ab9d330ccb0fd06b777d0540308e35995bc4082711c6b0cd04633c08639c28f5",
+        "downloadUrl": "https://github.com/Small-fish-QAQ/hy3-study-clinic/releases/download/v2.0-mobile-cloud-cup-2026/Study-Clinic-Media-Notices.md"
+      }
+    ],
+    "verification": "Final commit, matching CI run and publication checks recorded in release-verification.json asset; SHA256SUMS.txt covers all attached files except itself."
   }
 }

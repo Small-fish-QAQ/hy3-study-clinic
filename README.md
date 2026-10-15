@@ -6,7 +6,9 @@
 
 [![CI](https://github.com/Small-fish-QAQ/hy3-study-clinic/actions/workflows/ci.yml/badge.svg)](https://github.com/Small-fish-QAQ/hy3-study-clinic/actions/workflows/ci.yml) [![Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 
-产品名称为 **Study Clinic**，当前版本为 **V2（2.0.0）**。已使用移动云 MoMA / GLM-5.3 完成代表性真实产品验收。第三个正式版本拟采用 v2.0-mobile-cloud-cup-2026；Tag 与 Release 尚待最终材料整合及审阅。上方徽章显示远端工作流状态，已推送的V2代码通过了[对应 Commit 的 CI](https://github.com/Small-fish-QAQ/hy3-study-clinic/actions/runs/38686237554)，环境与适用提交见[验证说明](docs/VERIFICATION.md)。
+产品名称为 **Study Clinic**，当前版本为 **V2（2.0.0）**。本次移动云杯里程碑固定为 [v2.0-mobile-cloud-cup-2026](https://github.com/Small-fish-QAQ/hy3-study-clinic/releases/tag/v2.0-mobile-cloud-cup-2026)，使用移动云 MoMA / GLM-5.3 完成代表性真实产品验收。Release 提供公开版方案、演示视频及与最终 Commit 对应的 CI 记录；[验证说明](docs/VERIFICATION.md)区分工程测试、模型实测与教学效果。
+
+[观看《The Fourth》演示视频（3分20秒）](https://github.com/Small-fish-QAQ/hy3-study-clinic/releases/download/v2.0-mobile-cloud-cup-2026/Study-Clinic-The-Fourth-1080p.mp4) · [22页方案 PDF](https://github.com/Small-fish-QAQ/hy3-study-clinic/releases/download/v2.0-mobile-cloud-cup-2026/Study-Clinic-Design-V2.pdf) · [可编辑 PPT](https://github.com/Small-fish-QAQ/hy3-study-clinic/releases/download/v2.0-mobile-cloud-cup-2026/Study-Clinic-Design-V2.pptx)
 
 ![真实 MoMA 课程规划：8模块、17 Lesson、35必学知识、39目标；当前完成2课](docs/media/v2/course-map.webp)
 
@@ -37,6 +39,7 @@
 - **必要检查与有界局部恢复。** 身份、来源引文、知识归属、正文定位、公开题面和可信答案各有对应检查。完整失败候选保留；修订定位到知识、目标、题目或段落，保护健康成果。
 - **题目发布前独立解题。** 独立解题输入不含作者答案；主观题进一步检查参考答案、rubric与公开题面，客观评分由服务端确定执行。
 - **按任务分配推理强度。** 设置中选择“自动（auto）”后，已实测的MoMA glm-5.3将提取、规划、题目作者、Tutor配为low；Lesson、独立解题、评分和必要核查保守使用high。显式设置优先，其他模型的auto使用平台默认。
+- **兼容端点可配置。** 用户可设置OpenAI兼容API地址、Key与Model ID，并获取模型列表。其他兼容模型可经同一接入层配置；本版实测仍为MoMA / GLM-5.3，任务级推理强度分配不等于多模型自动路由。
 
 具体职责、Prompt与局部恢复边界见[架构](docs/ARCHITECTURE.md)；对照实验依据及失败记录见[研究摘要](docs/REPORT.md#推理强度对照与任务分配)。
 
@@ -76,7 +79,7 @@ npm run dev
 
 ![已检验的知识与未实测知识分别显示](docs/media/v2/knowledge-evidence.webp)
 
-[截图导览](docs/DEMO.md)包含课程规划、课堂、Tutor、知识状态和模型设置，附采集版本、来源及内容边界。创意Demo成片已完成素材与版本检查，统一审阅后可作为Release附件；[犀牛鸟历史演示](https://github.com/Small-fish-QAQ/hy3-study-clinic/blob/task1-final-2026-09-14-r2/docs/DEMO.md)保留在原发布中。
+[截图导览](docs/DEMO.md)包含课程规划、课堂、Tutor、知识状态和模型设置，附采集版本、来源及内容边界。[《The Fourth》](https://github.com/Small-fish-QAQ/hy3-study-clinic/releases/download/v2.0-mobile-cloud-cup-2026/Study-Clinic-The-Fourth-1080p.mp4)以真实课堂、连续Tutor实录、模拟作答和独立历史复测展示持续学习路径；[犀牛鸟历史演示](https://github.com/Small-fish-QAQ/hy3-study-clinic/blob/task1-final-2026-09-14-r2/docs/DEMO.md)保留在原发布中。
 
 自由Tutor仍可能有事实或措辞错误；高推理强度也可能生成错误。必要检查只能降低风险，不能提供绝对正确保证。长请求可能出现上游结果未知，服务端保留记录而不盲目重发；通过按需生成、读取复用和局部修订减少重复Token消耗，降低长期学习成本。公开部署、账号和多用户隔离属于后续工作。
 
